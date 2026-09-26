@@ -1,0 +1,10 @@
+# Projektweite Voreinstellungen (im Git)
+max_nachbesserungen: 3
+namensschema:
+  datei: "{auftrag}_{name}"
+  eigenschaften: [Benennung, Material, Ersteller, Auftrag]
+toleranzen:
+  anker_mm: 0.1
+  volumen_prozent: 0.5
+api:
+  max_jahr_compiler: 2025

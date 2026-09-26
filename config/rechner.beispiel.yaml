@@ -1,0 +1,7 @@
+# Vorlage – echte Datei wird von "python -m swki rechner init" erzeugt (config/rechner.yaml, nicht im Git)
+sw_jahr: 2025
+installationsordner: 'C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS'
+vorlage_teil: 'C:\ProgramData\SolidWorks\SOLIDWORKS 2025\templates\Teil.prtdot'
+vorlage_baugruppe: 'C:\ProgramData\SolidWorks\SOLIDWORKS 2025\templates\Baugruppe.asmdot'
+materialdatenbank: 'C:\ProgramData\SolidWorks\SOLIDWORKS 2024\Benutzerdefinierte Materialien'
+arbeitsordner: 'C:\Users\<Benutzer>\.swki\arbeit'
