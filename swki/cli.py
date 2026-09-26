@@ -38,8 +38,9 @@ def _parser() -> SwkiArgumentParser:
 
 
 def _befehlsgruppen() -> list:
-    """Module mit einer Funktion einrichten(subparsers). Wird in späteren Tasks ergänzt."""
-    return []
+    from swki import rechner
+
+    return [rechner]
 
 
 def main(argv: list[str] | None = None) -> int:
