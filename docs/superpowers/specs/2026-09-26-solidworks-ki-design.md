@@ -40,7 +40,9 @@ Skizze/Beschreibung ──► Claude (Skill „konstruieren“) ──► Spezif
 - **Gebaut wird ausschließlich über `swki`**, ein eigenes Python-Paket (pywin32/COM), das eine
   Spezifikation deterministisch in einem Durchlauf umsetzt.
 - **SolidworksMCP-python** (andrewbartels1, gepinnter Commit) dient Claude nur zum Ansehen:
-  Feature-Baum, Masseeigenschaften, Screenshots, Modellinfo. Alle schreibenden Tools sind gesperrt.
+  Feature-Baum, Masseeigenschaften, Modellinfo. Alle schreibenden Tools sind gesperrt, ebenso
+  `export_image` (Rückfall auf `SaveAs3` kann Dokumente überschreiben, siehe
+  docs/stufe0/ergebnisse.md). Screenshots/Bildexport laufen über `swki`, nicht über MCP.
 - **Lücken** im Spezifikationsformat werden über einen kontrollierten Skript-Notausgang geschlossen;
   bewährte Skripte werden von Claude selbstständig zu festen Compiler-Handlern.
 
@@ -180,8 +182,10 @@ python -m swki api suche|methode|enum|pruefe-code ...
 
 Module:
 
-- `verbindung` – Anbindung an laufendes SolidWorks (Version aus `rechner.yaml`), Early Binding
-  über makepy, Hilfen `mm()`, `grad()`, `VARIANT`-Callout.
+- `verbindung` – Anbindung an laufendes SolidWorks (Version aus `rechner.yaml`), Late Binding
+  (`win32com.client.GetActiveObject`, dynamischer Dispatch – Early Binding über makepy schlägt für
+  ein bereits laufendes Objekt fehl, siehe docs/stufe0/ergebnisse.md), Hilfen `mm()`, `grad()`,
+  `VARIANT`-Callout.
 - `spec` – Laden, Schema-Prüfung, Parameterauflösung, Prüfsumme.
 - `compiler` – Handler-Registry (`@handler("extrusion")`), je Feature-Typ eine kleine Funktion,
   Rückgabe: SW-Featurename und erzeugte Topologie für spätere Anker.
@@ -255,7 +259,8 @@ Der Index bleibt lokal (Dassault-Dokumentation), ins Git kommt nur der Parser.
   speichert (nur SW 2025) und trägt in den Katalog ein.
 - Kein Treffer: Claude hält an und nennt Typ, Maße, Einbausituation. Der Nutzer reicht eine Datei
   nach. Nur auf ausdrückliche Anweisung konstruiert Claude selbst (`normteile/eigene/`).
-- Toolbox: Machbarkeit per API wird in Stufe 0 geklärt. Rückfall: Größe einmal manuell in
+- Toolbox: in Stufe 0 geprüft – keine API im indizierten Bereich erzeugt ein Toolbox-Teil aus
+  Norm+Größe (siehe docs/stufe0/ergebnisse.md). Rückfall (einziger Weg): Größe einmal manuell in
   SolidWorks erzeugen und wie ein eigenes Normteil aufnehmen.
 
 ## 9. Einbindung in Claude Code
