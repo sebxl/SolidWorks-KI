@@ -18,7 +18,15 @@ def pruefen() -> dict:
             model.SketchManager.CreateCircleByRadius(0.0, 0.0, 0.0, 0.01)
             model.SketchManager.InsertSketch(True)
             skizzen.append(wert(letztes_feature(model).Name))
-        return {"ebenen": namen, "anzahl": len(ebenen), "skizzen": skizzen}
+        return {
+            "abweichungen": [
+                "standardebenen() (in _gemeinsam.py) greift FirstFeature/GetNextFeature als reinen "
+                "Attributzugriff ohne '()' ab (Bindungs-Eigenart, siehe dort).",
+            ],
+            "ebenen": namen,
+            "anzahl": len(ebenen),
+            "skizzen": skizzen,
+        }
     finally:
         schliesse(app, model)
 

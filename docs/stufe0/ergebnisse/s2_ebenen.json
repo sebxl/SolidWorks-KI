@@ -1,5 +1,8 @@
 {
   "ok": true,
+  "abweichungen": [
+    "standardebenen() (in _gemeinsam.py) greift FirstFeature/GetNextFeature als reinen Attributzugriff ohne '()' ab (Bindungs-Eigenart, siehe dort)."
+  ],
   "ebenen": [
     "Ebene vorne",
     "Ebene oben",

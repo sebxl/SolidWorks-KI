@@ -36,6 +36,18 @@ def grad(x: float) -> float:
 
 
 def wert(x):
+    """Nur für Getter/Properties mit primitivem Rückgabewert (str, int, bool, …) geeignet:
+    ist x nicht callable, wird x unverändert zurückgegeben; ist x callable, wird x() aufgerufen.
+
+    Einschränkung (gefunden in Stufe 0, Spike S2/S3/S4, siehe docs/stufe0/ergebnisse): bei
+    nullargumentigen Membern, die ein COM-Objekt liefern (z. B. IModelDoc2.FirstFeature,
+    IFeature.GetNextFeature, IModelDocExtension.CreateMassProperty), ruft pywin32s dynamischer
+    Dispatch den Member schon beim Attributzugriff auf – x ist dann bereits das Ergebnis, kein
+    Methoden-Stub. Da jedes win32com.client.CDispatch-Objekt selbst __call__ definiert, ist auch
+    dieses Ergebnis "callable", und wert() würde es fälschlich nochmal aufrufen
+    (com_error 'Mitglied nicht gefunden'). Für solche Member reinen Attributzugriff ohne wert()
+    verwenden, z. B. `model.FirstFeature` statt `wert(model.FirstFeature)`.
+    """
     return x() if callable(x) else x
 
 
