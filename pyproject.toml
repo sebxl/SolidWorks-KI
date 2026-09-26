@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swki"
+version = "0.1.0"
+description = "SolidWorks-KI: Spezifikation, Compiler und Prüfung für Claude Code"
+requires-python = ">=3.13"
+dependencies = [
+  "pywin32>=311",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["swki*"]
+
+[tool.setuptools.package-data]
+swki = ["wissen/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m \"not sw\""
+markers = ["sw: benötigt ein laufendes SolidWorks"]
