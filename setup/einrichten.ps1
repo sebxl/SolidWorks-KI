@@ -57,8 +57,8 @@ if (-not $OhneMcp) {
 }
 
 if (-not $OhneApi) {
-    Write-Host "== 5/5 API-Nachschlagewerk"
-    Write-Host "   (folgt in Task 12)"
+    Write-Host "== 5/5 API-Nachschlagewerk (kann einige Minuten dauern)"
+    & $VenvPy -m swki api bauen; Pruefe "swki api bauen"
 }
 
 Write-Host "Fertig. Claude Code neu starten, damit SWKI_SW_YEAR wirkt."

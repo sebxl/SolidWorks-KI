@@ -39,8 +39,9 @@ def _parser() -> SwkiArgumentParser:
 
 def _befehlsgruppen() -> list:
     from swki import rechner
+    from swki.api import bauen
 
-    return [rechner]
+    return [rechner, bauen]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -54,5 +55,5 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         return int(e.code)
     except SwkiFehler as e:
-        ausgabe({"fehler": str(e)})
+        ausgabe({"fehler": str(e), **getattr(e, "daten", {})})
         return 1
