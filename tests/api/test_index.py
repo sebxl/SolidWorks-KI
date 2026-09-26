@@ -68,3 +68,27 @@ def test_seit_je_member(db):
 
 def test_meta(db):
     assert meta(db)["jahr"] == "2025"
+
+
+def test_baue_zweimal_auf_gleichem_pfad(tmp_path):
+    """Regression: baue() muss Verbindungen schließen, sonst schlägt unlink() auf Windows fehl."""
+    pfad = tmp_path / "api.sqlite"
+
+    # Erstes Bauen
+    members1 = [Member("ITest", "Test1", "methode", [])]
+    enums1 = [EnumWert("swTest_e", "Wert1", 1)]
+    seiten1 = [Seite("a.htm", "Test1", "ITest", "Test1", "Method", 2020, "Original")]
+    stat1 = baue(pfad, members1, enums1, seiten1, 2020)
+    assert stat1 == {"member": 1, "enums": 1, "seiten": 1}
+    assert methode(pfad, "ITest.Test1")[0]["seit"] == 2020
+    assert meta(pfad)["jahr"] == "2020"
+
+    # Zweites Bauen auf gleichem Pfad (sollte nicht mit PermissionError fehlschlagen)
+    members2 = [Member("ITest", "Test2", "methode", [])]
+    enums2 = [EnumWert("swTest_e", "Wert2", 2)]
+    seiten2 = [Seite("b.htm", "Test2", "ITest", "Test2", "Method", 2025, "Neu")]
+    stat2 = baue(pfad, members2, enums2, seiten2, 2025)
+    assert stat2 == {"member": 1, "enums": 1, "seiten": 1}
+    assert methode(pfad, "ITest.Test2")[0]["seit"] == 2025
+    assert methode(pfad, "ITest.Test1") == []  # Das alte sollte weg sein
+    assert meta(pfad)["jahr"] == "2025"

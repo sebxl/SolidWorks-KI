@@ -3,6 +3,7 @@
 import json
 import re
 import sqlite3
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 
@@ -18,10 +19,15 @@ CREATE TABLE meta(k TEXT PRIMARY KEY, v TEXT);
 """
 
 
-def _verbinde(db: Path) -> sqlite3.Connection:
+@contextmanager
+def _verbinde(db: Path):
     con = sqlite3.connect(db)
     con.row_factory = sqlite3.Row
-    return con
+    try:
+        with con:
+            yield con
+    finally:
+        con.close()
 
 
 def baue(db: Path, members: list[Member], enums: list[EnumWert], seiten: list[Seite], jahr: int) -> dict:
