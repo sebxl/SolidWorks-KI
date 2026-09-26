@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "abweichungen": [
+    "CreateMassProperty und ViewZoomtofit2 werden wie FirstFeature in _gemeinsam.py als reiner Attributzugriff ohne '()' aufgerufen (Bindungs-Eigenart, siehe dort)."
+  ],
+  "volumen_mm3": 120000.0,
+  "volumen_soll_mm3": 120000.0,
+  "oberflaeche_mm2": 18400.0,
+  "huellquader_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "bilder": {
+    "iso.png": {
+      "fehler": 0,
+      "bytes": 304611
+    },
+    "iso.jpg": {
+      "fehler": 0,
+      "bytes": 218632
+    },
+    "vorne.png": {
+      "fehler": 0,
+      "bytes": 261853
+    },
+    "vorne.jpg": {
+      "fehler": 0,
+      "bytes": 181824
+    },
+    "oben.png": {
+      "fehler": 0,
+      "bytes": 246519
+    },
+    "oben.jpg": {
+      "fehler": 0,
+      "bytes": 180675
+    },
+    "rechts.png": {
+      "fehler": 0,
+      "bytes": 266395
+    },
+    "rechts.jpg": {
+      "fehler": 0,
+      "bytes": 181583
+    }
+  },
+  "ordner": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s4"
+}

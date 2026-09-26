@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "revision": "33.5.0",
+  "jahr": 2025,
+  "sichtbar": true,
+  "early_binding": "TypeError('This COM object can not automate the makepy process - please run makepy manually for this object')"
+}

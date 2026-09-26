@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "ebenen": [
+    "Ebene vorne",
+    "Ebene oben",
+    "Ebene rechts"
+  ],
+  "anzahl": 3,
+  "skizzen": [
+    "Skizze1",
+    "Skizze2",
+    "Skizze3"
+  ]
+}

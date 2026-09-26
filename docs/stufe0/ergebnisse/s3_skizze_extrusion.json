@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "abweichungen": [
+    "GetSpecificFeature2 (IFeature) wird wie FirstFeature in _gemeinsam.py als reiner Attributzugriff ohne '()' aufgerufen (Bindungs-Eigenart, siehe dort).",
+    "FullyDefineSketch: HorizontalDatumDisp/VerticalDatumDisp mit callout_leer() statt rohem Python None übergeben, sonst com_error 'Typenkonflikt' (arg 6)."
+  ],
+  "variante_a_rueckgabe": 0,
+  "status_nach_a": "swFullyConstrained",
+  "extrusion": "Aufsatz-Linear austragen1",
+  "rebuild_fehler": 0
+}
