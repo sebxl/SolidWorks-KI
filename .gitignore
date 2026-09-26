@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Rechnerspezifisch
+config/rechner.yaml
+
+# SolidWorks-Dateien aus Aufträgen und Temporärdateien
+auftraege/**/*.sldprt
+auftraege/**/*.sldasm
+auftraege/**/*.slddrw
+~$*
+
+# Lokale Claude-Einstellungen
+.claude/settings.local.json
