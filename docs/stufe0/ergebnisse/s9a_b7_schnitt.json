@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "deck_blind_5": {
+    "feature": "Schnitt-Linear austragen1",
+    "typname": "ICE",
+    "volumen_mm3": 119000.0,
+    "abgetragen_mm3": 1000.0,
+    "anzahl_flaechen": 5,
+    "y_bereich_flaechen_mm": [
+      15.0,
+      20.0
+    ],
+    "whatswrong": 0
+  },
+  "deck_durch_alles": {
+    "feature": "Schnitt-Linear austragen1",
+    "typname": "ICE",
+    "volumen_mm3": 116000.0,
+    "abgetragen_mm3": 4000.0,
+    "anzahl_flaechen": 4,
+    "y_bereich_flaechen_mm": [
+      0.0,
+      20.0
+    ],
+    "whatswrong": 0
+  },
+  "deck_blind_5_dir": {
+    "feature": null,
+    "volumen_mm3": 120000.0,
+    "whatswrong": 0
+  },
+  "ebene_oben_durch_alles": {
+    "feature": null,
+    "volumen_mm3": 120000.0,
+    "whatswrong": 0
+  },
+  "ebene_oben_durch_alles_dir": {
+    "feature": "Schnitt-Linear austragen1",
+    "typname": "ICE",
+    "volumen_mm3": 116000.0,
+    "abgetragen_mm3": 4000.0,
+    "anzahl_flaechen": 4,
+    "y_bereich_flaechen_mm": [
+      0.0,
+      20.0
+    ],
+    "whatswrong": 0
+  }
+}

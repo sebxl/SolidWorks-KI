@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "eingabe_mm": {
+    "u": 30.0,
+    "v": 10.0,
+    "breite_u": 20.0,
+    "hoehe_v": 10.0,
+    "tiefe": 5.0
+  },
+  "vorne": {
+    "ebene": "Ebene vorne",
+    "anzahl_segmente": 6,
+    "model_to_sketch_arraydata": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "extrusion": "Aufsatz-Linear austragen1",
+    "partbox_mm": [
+      20.0,
+      5.0,
+      0.0,
+      40.0,
+      15.0,
+      5.0
+    ]
+  },
+  "oben": {
+    "ebene": "Ebene oben",
+    "anzahl_segmente": 6,
+    "model_to_sketch_arraydata": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "extrusion": "Aufsatz-Linear austragen1",
+    "partbox_mm": [
+      20.0,
+      0.0,
+      -15.0,
+      40.0,
+      5.0,
+      -5.0
+    ]
+  },
+  "rechts": {
+    "ebene": "Ebene rechts",
+    "anzahl_segmente": 6,
+    "model_to_sketch_arraydata": [
+      -0.0,
+      0.0,
+      1.0,
+      -0.0,
+      1.0,
+      0.0,
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "extrusion": "Aufsatz-Linear austragen1",
+    "partbox_mm": [
+      0.0,
+      5.0,
+      -40.0,
+      5.0,
+      15.0,
+      -20.0
+    ]
+  }
+}

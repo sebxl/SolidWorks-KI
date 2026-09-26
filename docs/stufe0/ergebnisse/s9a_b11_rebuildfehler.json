@@ -1,0 +1,74 @@
+{
+  "ok": true,
+  "varianten": [
+    {
+      "GetErrorCode2 ohne Argument": "<bound method GetErrorCode2 of <COMObject <unknown>>>"
+    }
+  ],
+  "a_rueckgabe": null,
+  "a_letztes_feature": "Skizze2",
+  "a_whatswrong_count": 0,
+  "a_whatswrong_getwhatswrong": {
+    "rueckgabe": true,
+    "features": [],
+    "fehlercodes": [],
+    "warnungen": []
+  },
+  "b_schnitt": "Schnitt-Linear austragen1",
+  "b_volumen_ok_mm3": 119214.602,
+  "b_vorher_count": 0,
+  "b_vorher_getwhatswrong": {
+    "rueckgabe": true,
+    "features": [],
+    "fehlercodes": [],
+    "warnungen": []
+  },
+  "b_masse_cut_vorher": [
+    {
+      "name": "D1",
+      "fullname": "D1@Ebene1@Teil109.Part",
+      "typ2": 2,
+      "wert": 0.05
+    },
+    {
+      "name": "D1",
+      "fullname": "D1@Schnitt-Linear austragen1@Teil109.Part",
+      "typ2": 2,
+      "wert": 0.04
+    }
+  ],
+  "b_setsystemvalue3": 0,
+  "b_editrebuild3": false,
+  "b_volumen_nach_mm3": 120000.0,
+  "b_nachher_count": 1,
+  "b_nachher_getwhatswrong": {
+    "rueckgabe": true,
+    "features": [
+      "Schnitt-Linear austragen1"
+    ],
+    "fehlercodes": [
+      71
+    ],
+    "warnungen": [
+      false
+    ]
+  },
+  "b_geterrorcode2": {
+    "code": 71,
+    "ist_warnung": false
+  },
+  "b_masse_cut": [
+    {
+      "name": "D1",
+      "fullname": "D1@Ebene1@Teil109.Part",
+      "typ2": 2,
+      "wert": 0.05
+    },
+    {
+      "name": "D1",
+      "fullname": "D1@Schnitt-Linear austragen1@Teil109.Part",
+      "typ2": 2,
+      "wert": 0.01
+    }
+  ]
+}

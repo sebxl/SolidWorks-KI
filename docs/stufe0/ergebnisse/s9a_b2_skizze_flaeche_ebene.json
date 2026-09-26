@@ -1,0 +1,137 @@
+{
+  "ok": true,
+  "varianten": [
+    {
+      "variante": "mu.CreatePoint ohne _FlagAsMethod (Attributzugriff)",
+      "ergebnis": "liefert bereits Punkt (0.0, 0.0, 0.0); anschließender Aufruf mit Argument -> com_error 'Mitglied nicht gefunden'"
+    },
+    {
+      "variante": "CreatePoint([0.02, 0.02, -0.01]) rohe Liste",
+      "arraydata": [
+        1.123401881599e-311,
+        0.02,
+        0.0
+      ],
+      "bewertung": "Müll"
+    },
+    {
+      "variante": "CreatePoint(VARIANT(VT_ARRAY|VT_R8, [...]))",
+      "arraydata": [
+        0.02,
+        0.02,
+        -0.01
+      ],
+      "bewertung": "korrekt"
+    }
+  ],
+  "kasten_partbox_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "deckflaeche_gefunden": true,
+  "deckflaeche_box_mm": [
+    -50.0,
+    20.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "select4_face_rueckgabe": true,
+  "selektiert_anzahl": 1,
+  "a_aktive_skizze": true,
+  "a_skizzenkoord_mm": [
+    20.0,
+    10.0,
+    0.0
+  ],
+  "a_xform": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.02,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "a_schnitt": "Schnitt-Linear austragen1",
+  "a_zylinder_origin_mm_axis_r_mm": [
+    [
+      20.0,
+      10.0,
+      -10.0,
+      -0.0,
+      1.0,
+      -0.0,
+      5.0
+    ]
+  ],
+  "a_partbox_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "b_select4_auf_refplane_feature": true,
+  "b_selektiert_mark0": 1,
+  "b_refplane": "Ebene1",
+  "b_refplane_typ": "RefPlane",
+  "b_xform": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.05,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "b_skizzenkoord_mm": [
+    -20.0,
+    -15.0,
+    0.0
+  ],
+  "b_aufsatz": "Aufsatz-Linear austragen2",
+  "b_zylinder": [
+    [
+      -20.0,
+      60.0,
+      15.0,
+      -0.0,
+      -1.0,
+      -0.0,
+      4.0
+    ]
+  ],
+  "b_partbox_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    60.0,
+    30.0
+  ]
+}

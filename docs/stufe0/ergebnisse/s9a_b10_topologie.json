@@ -1,0 +1,459 @@
+{
+  "ok": true,
+  "quader_flaechen": [
+    {
+      "is_plane": true,
+      "is_cylinder": false,
+      "normal": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "box": [
+        -0.05,
+        0.0,
+        -0.03,
+        0.05,
+        0.0,
+        0.03
+      ],
+      "flaeche_m2": 0.00592146,
+      "anzahl_kanten": 5,
+      "planeparams": [
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "face_in_surface_sense": false
+    },
+    {
+      "is_plane": true,
+      "is_cylinder": false,
+      "normal": [
+        -0.0,
+        1.0,
+        -0.0
+      ],
+      "box": [
+        -0.05,
+        0.02,
+        -0.03,
+        0.05,
+        0.02,
+        0.03
+      ],
+      "flaeche_m2": 0.00592146,
+      "anzahl_kanten": 5,
+      "planeparams": [
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.02,
+        0.0
+      ],
+      "face_in_surface_sense": true
+    },
+    {
+      "is_plane": true,
+      "is_cylinder": false,
+      "normal": [
+        -0.0,
+        -0.0,
+        1.0
+      ],
+      "box": [
+        -0.05,
+        0.0,
+        0.03,
+        0.05,
+        0.02,
+        0.03
+      ],
+      "flaeche_m2": 0.002,
+      "anzahl_kanten": 4,
+      "planeparams": [
+        0.0,
+        0.0,
+        -1.0,
+        -0.05,
+        0.02,
+        0.03
+      ],
+      "face_in_surface_sense": true
+    },
+    {
+      "is_plane": true,
+      "is_cylinder": false,
+      "normal": [
+        -1.0,
+        0.0,
+        -0.0
+      ],
+      "box": [
+        -0.05,
+        0.0,
+        -0.03,
+        -0.05,
+        0.02,
+        0.03
+      ],
+      "flaeche_m2": 0.0012,
+      "anzahl_kanten": 4,
+      "planeparams": [
+        1.0,
+        -0.0,
+        0.0,
+        -0.05,
+        0.02,
+        0.03
+      ],
+      "face_in_surface_sense": true
+    },
+    {
+      "is_plane": true,
+      "is_cylinder": false,
+      "normal": [
+        -0.0,
+        -0.0,
+        -1.0
+      ],
+      "box": [
+        -0.05,
+        0.0,
+        -0.03,
+        0.05,
+        0.02,
+        -0.03
+      ],
+      "flaeche_m2": 0.002,
+      "anzahl_kanten": 4,
+      "planeparams": [
+        0.0,
+        0.0,
+        1.0,
+        -0.05,
+        0.02,
+        -0.03
+      ],
+      "face_in_surface_sense": true
+    },
+    {
+      "is_plane": true,
+      "is_cylinder": false,
+      "normal": [
+        1.0,
+        -0.0,
+        -0.0
+      ],
+      "box": [
+        0.05,
+        0.0,
+        -0.03,
+        0.05,
+        0.02,
+        0.03
+      ],
+      "flaeche_m2": 0.0012,
+      "anzahl_kanten": 4,
+      "planeparams": [
+        -1.0,
+        0.0,
+        0.0,
+        0.05,
+        0.02,
+        0.03
+      ],
+      "face_in_surface_sense": true
+    }
+  ],
+  "deckflaeche_kanten": [
+    {
+      "is_line": false,
+      "is_circle": true,
+      "circleparams": [
+        0.02,
+        0.02,
+        -0.01,
+        0.0,
+        1.0,
+        0.0,
+        0.005
+      ],
+      "start": null,
+      "ende": null
+    },
+    {
+      "is_line": true,
+      "is_circle": false,
+      "lineparams": [
+        0.05,
+        0.02,
+        0.03,
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "start": [
+        0.05,
+        0.02,
+        0.03
+      ],
+      "ende": [
+        0.05,
+        0.02,
+        -0.03
+      ]
+    },
+    {
+      "is_line": true,
+      "is_circle": false,
+      "lineparams": [
+        -0.05,
+        0.02,
+        -0.03,
+        -1.0,
+        -0.0,
+        -0.0
+      ],
+      "start": [
+        0.05,
+        0.02,
+        -0.03
+      ],
+      "ende": [
+        -0.05,
+        0.02,
+        -0.03
+      ]
+    },
+    {
+      "is_line": true,
+      "is_circle": false,
+      "lineparams": [
+        -0.05,
+        0.02,
+        0.03,
+        -0.0,
+        -0.0,
+        1.0
+      ],
+      "start": [
+        -0.05,
+        0.02,
+        -0.03
+      ],
+      "ende": [
+        -0.05,
+        0.02,
+        0.03
+      ]
+    },
+    {
+      "is_line": true,
+      "is_circle": false,
+      "lineparams": [
+        -0.05,
+        0.02,
+        0.03,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "start": [
+        -0.05,
+        0.02,
+        0.03
+      ],
+      "ende": [
+        0.05,
+        0.02,
+        0.03
+      ]
+    }
+  ],
+  "bohrung_zylinder": {
+    "normal": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "cylinderparams": [
+      0.02,
+      0.0,
+      -0.01,
+      -0.0,
+      1.0,
+      -0.0,
+      0.005
+    ],
+    "box": [
+      0.015,
+      0.0,
+      -0.015,
+      0.025,
+      0.02,
+      -0.005
+    ],
+    "kanten": [
+      {
+        "is_line": false,
+        "is_circle": true,
+        "circleparams": [
+          0.02,
+          0.0,
+          -0.01,
+          0.0,
+          1.0,
+          0.0,
+          0.005
+        ],
+        "start": null,
+        "ende": null
+      },
+      {
+        "is_line": false,
+        "is_circle": true,
+        "circleparams": [
+          0.02,
+          0.02,
+          -0.01,
+          0.0,
+          1.0,
+          0.0,
+          0.005
+        ],
+        "start": null,
+        "ende": null
+      }
+    ]
+  },
+  "face_getclosestpointon_(0.1,0.05,0.1)": [
+    0.05,
+    0.02,
+    0.03,
+    -0.03,
+    0.05
+  ],
+  "edge_getclosestpointon_(0.1,0.02,0)": [
+    0.024961,
+    0.0,
+    -0.00938,
+    1.446441,
+    0.0
+  ],
+  "edge_line_getclosestpointon_(0,0,0)": [
+    0.05,
+    0.02,
+    0.0,
+    0.03,
+    0.0
+  ],
+  "face_getfeature_name": "Schnitt-Linear austragen1",
+  "select4_face_mark2": true,
+  "select4_edge_mark1": true,
+  "select4_edge2_mark1": true,
+  "sel_anzahl_alle": 3,
+  "sel_anzahl_mark1": 2,
+  "sel_anzahl_mark2": 1,
+  "sel_typen": [
+    2,
+    1,
+    1
+  ],
+  "sel_marks": [
+    2,
+    1,
+    1
+  ],
+  "getselectedobject6_ist_deck": true,
+  "featurebaum": [
+    [
+      "Kommentare",
+      "CommentsFolder"
+    ],
+    [
+      "Favoriten",
+      "FavoriteFolder"
+    ],
+    [
+      "Historie",
+      "HistoryFolder"
+    ],
+    [
+      "Auswahlsätze",
+      "SelectionSetFolder"
+    ],
+    [
+      "Sensoren",
+      "SensorFolder"
+    ],
+    [
+      "Konstruktionsordner",
+      "DocsFolder"
+    ],
+    [
+      "Beschriftungen",
+      "DetailCabinet"
+    ],
+    [
+      "Oberflächenkörper",
+      "SurfaceBodyFolder"
+    ],
+    [
+      "Volumenkörper",
+      "SolidBodyFolder"
+    ],
+    [
+      "Beleuchtung und Kameras",
+      "EnvFolder"
+    ],
+    [
+      "Markierungen",
+      "InkMarkupFolder"
+    ],
+    [
+      "Gleichungen",
+      "EqnFolder"
+    ],
+    [
+      "Material <nicht festgelegt>",
+      "MaterialFolder"
+    ],
+    [
+      "Ebene vorne",
+      "RefPlane"
+    ],
+    [
+      "Ebene oben",
+      "RefPlane"
+    ],
+    [
+      "Ebene rechts",
+      "RefPlane"
+    ],
+    [
+      "Ursprung",
+      "OriginProfileFeature"
+    ],
+    [
+      "Skizze1",
+      "ProfileFeature"
+    ],
+    [
+      "Aufsatz-Linear austragen1",
+      "Extrusion"
+    ],
+    [
+      "Skizze2",
+      "ProfileFeature"
+    ],
+    [
+      "Schnitt-Linear austragen1",
+      "ICE"
+    ]
+  ]
+}

@@ -1,0 +1,448 @@
+{
+  "ok": true,
+  "addtodb_False": {
+    "rechteck": {
+      "rueckgabe_typ": "tuple",
+      "anzahl": 6,
+      "segmente": [
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie1",
+          "start_mm": [
+            -40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            -20.0,
+            0.0
+          ],
+          "laenge_mm": 80.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie2",
+          "start_mm": [
+            -40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            -40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 40.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie3",
+          "start_mm": [
+            -40.0,
+            20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 80.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie4",
+          "start_mm": [
+            40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 40.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "name": "Linie5",
+          "start_mm": [
+            -40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 89.4427
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "name": "Linie6",
+          "start_mm": [
+            -40.0,
+            20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            -20.0,
+            0.0
+          ],
+          "laenge_mm": 89.4427
+        }
+      ]
+    },
+    "rel_nach_rechteck": {
+      "anzahl": 7,
+      "typen": [
+        4,
+        4,
+        5,
+        5,
+        9,
+        9,
+        9
+      ]
+    },
+    "kreis": {
+      "typ": 1,
+      "konstruktion": false,
+      "name": "Kreisbogen1",
+      "mitte_mm": [
+        70.0,
+        0.0,
+        0.0
+      ],
+      "radius_mm": 10.0,
+      "laenge_mm": 62.8319
+    },
+    "dreieck": [
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "name": "Linie7",
+        "start_mm": [
+          100.0,
+          -10.0,
+          0.0
+        ],
+        "ende_mm": [
+          130.0,
+          -10.0,
+          0.0
+        ],
+        "laenge_mm": 30.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "name": "Linie8",
+        "start_mm": [
+          130.0,
+          -10.0,
+          0.0
+        ],
+        "ende_mm": [
+          115.0,
+          15.0,
+          0.0
+        ],
+        "laenge_mm": 29.1548
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "name": "Linie9",
+        "start_mm": [
+          115.0,
+          15.0,
+          0.0
+        ],
+        "ende_mm": [
+          100.0,
+          -10.0,
+          0.0
+        ],
+        "laenge_mm": 29.1548
+      }
+    ],
+    "dreieck_endpunkt_gemeinsam": true,
+    "mittellinie": {
+      "typ": 0,
+      "konstruktion": true,
+      "name": "Linie10",
+      "start_mm": [
+        -60.0,
+        -30.0,
+        0.0
+      ],
+      "ende_mm": [
+        -60.0,
+        30.0,
+        0.0
+      ],
+      "laenge_mm": 60.0
+    },
+    "rel_gesamt": {
+      "anzahl": 10,
+      "typen": [
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        6,
+        9,
+        9,
+        9
+      ],
+      "tangential_zwischen": [
+        [
+          "Kreisbogen1",
+          "Linie7"
+        ]
+      ]
+    },
+    "skizzenpunkte": 11,
+    "skizzensegmente": 11,
+    "select4_segment": {
+      "rueckgabe": true,
+      "anzahl_mark4": 1,
+      "typ_sel": 10
+    },
+    "select4_kreis_append": {
+      "rueckgabe": true,
+      "anzahl_mark4": 2
+    }
+  },
+  "addtodb_True": {
+    "rechteck": {
+      "rueckgabe_typ": "tuple",
+      "anzahl": 6,
+      "segmente": [
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie1",
+          "start_mm": [
+            -40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            -20.0,
+            0.0
+          ],
+          "laenge_mm": 80.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie2",
+          "start_mm": [
+            -40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            -40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 40.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie3",
+          "start_mm": [
+            -40.0,
+            20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 80.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "name": "Linie4",
+          "start_mm": [
+            40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 40.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "name": "Linie5",
+          "start_mm": [
+            -40.0,
+            -20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            20.0,
+            0.0
+          ],
+          "laenge_mm": 89.4427
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "name": "Linie6",
+          "start_mm": [
+            -40.0,
+            20.0,
+            0.0
+          ],
+          "ende_mm": [
+            40.0,
+            -20.0,
+            0.0
+          ],
+          "laenge_mm": 89.4427
+        }
+      ]
+    },
+    "rel_nach_rechteck": {
+      "anzahl": 7,
+      "typen": [
+        4,
+        4,
+        5,
+        5,
+        9,
+        9,
+        9
+      ]
+    },
+    "kreis": {
+      "typ": 1,
+      "konstruktion": false,
+      "name": "Kreisbogen1",
+      "mitte_mm": [
+        70.0,
+        0.0,
+        0.0
+      ],
+      "radius_mm": 10.0,
+      "laenge_mm": 62.8319
+    },
+    "dreieck": [
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "name": "Linie7",
+        "start_mm": [
+          100.0,
+          -10.0,
+          0.0
+        ],
+        "ende_mm": [
+          130.0,
+          -10.0,
+          0.0
+        ],
+        "laenge_mm": 30.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "name": "Linie8",
+        "start_mm": [
+          130.0,
+          -10.0,
+          0.0
+        ],
+        "ende_mm": [
+          115.0,
+          15.0,
+          0.0
+        ],
+        "laenge_mm": 29.1548
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "name": "Linie9",
+        "start_mm": [
+          115.0,
+          15.0,
+          0.0
+        ],
+        "ende_mm": [
+          100.0,
+          -10.0,
+          0.0
+        ],
+        "laenge_mm": 29.1548
+      }
+    ],
+    "dreieck_endpunkt_gemeinsam": true,
+    "mittellinie": {
+      "typ": 0,
+      "konstruktion": true,
+      "name": "Linie10",
+      "start_mm": [
+        -60.0,
+        -30.0,
+        0.0
+      ],
+      "ende_mm": [
+        -60.0,
+        30.0,
+        0.0
+      ],
+      "laenge_mm": 60.0
+    },
+    "rel_gesamt": {
+      "anzahl": 7,
+      "typen": [
+        4,
+        4,
+        5,
+        5,
+        9,
+        9,
+        9
+      ]
+    },
+    "skizzenpunkte": 11,
+    "skizzensegmente": 11,
+    "select4_segment": {
+      "rueckgabe": true,
+      "anzahl_mark4": 1,
+      "typ_sel": 10
+    },
+    "select4_kreis_append": {
+      "rueckgabe": true,
+      "anzahl_mark4": 2
+    }
+  }
+}

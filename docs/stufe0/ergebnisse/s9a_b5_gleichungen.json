@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "varianten": [],
+  "extrusion_tiefe_mass": {
+    "fullname": "D1@f1@Teil87.Part",
+    "name": "D1"
+  },
+  "partbox_start_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "add_L": 0,
+  "status_nach_add_L": 0,
+  "add_skizze": 1,
+  "add_tiefe": 2,
+  "status_nach_add": 2,
+  "add_ungueltig": -1,
+  "status_nach_ungueltig": -1,
+  "gleichungen_nach_add": [
+    {
+      "i": 0,
+      "text": "\"L\" = 296",
+      "wert": 296.0,
+      "global": true
+    },
+    {
+      "i": 1,
+      "text": "\"D1@f1_skizze\" = \"L\"",
+      "wert": 296.0,
+      "global": false
+    },
+    {
+      "i": 2,
+      "text": "\"D1@f1\" = \"L\" / 10",
+      "wert": 29.6,
+      "global": false
+    }
+  ],
+  "evaluateall": -1,
+  "partbox_ohne_rebuild_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "editrebuild3": true,
+  "partbox_L296_mm": [
+    -148.0,
+    0.0,
+    -30.0,
+    148.0,
+    29.6,
+    30.0
+  ],
+  "nach_setzen": {
+    "text": "\"L\" = 200",
+    "wert": 200.0,
+    "status": 0
+  },
+  "partbox_nach_setzen_vor_rebuild_mm": [
+    -148.0,
+    0.0,
+    -30.0,
+    148.0,
+    29.6,
+    30.0
+  ],
+  "partbox_L200_mm": [
+    -100.0,
+    0.0,
+    -30.0,
+    100.0,
+    20.0,
+    30.0
+  ],
+  "gleichungen_ende": [
+    {
+      "i": 0,
+      "text": "\"L\" = 200",
+      "wert": 200.0,
+      "global": true
+    },
+    {
+      "i": 1,
+      "text": "\"D1@f1_skizze\" = \"L\"",
+      "wert": 200.0,
+      "global": false
+    },
+    {
+      "i": 2,
+      "text": "\"D1@f1\" = \"L\" / 10",
+      "wert": 20.0,
+      "global": false
+    }
+  ],
+  "whatswrong_count": 0
+}

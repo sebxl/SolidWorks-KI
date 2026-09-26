@@ -1,0 +1,56 @@
+{
+  "ok": true,
+  "gen_path": "C:\\Users\\User\\AppData\\Local\\Temp\\gen_py\\3.14",
+  "gen_py_vorher": [
+    "__init__.py",
+    "__pycache__",
+    "dicts.dat"
+  ],
+  "probe_ohne_cache": {
+    "standard_getactiveobject_typ": "win32com.client.CDispatch",
+    "erzwungen_app_typ": "win32com.client.dynamic.CDispatch",
+    "revision_ohne_klammern": "33.5.0",
+    "model_typ": "win32com.client.dynamic.CDispatch",
+    "feature_typ": "win32com.client.dynamic.CDispatch",
+    "feature_typname_ohne_klammern": "CommentsFolder",
+    "featuremanager_typ": "CDispatch",
+    "alle_cdispatch": true
+  },
+  "ensuremodule_sldworks": {
+    "guid": "{83A33D31-27C5-11CE-BFD4-00400513BB57}",
+    "neue_dateien": [
+      "83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.cpython-314.pyc",
+      "83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.py"
+    ]
+  },
+  "probe_mit_cache": {
+    "standard_getactiveobject_typ": "win32com.gen_py.83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.SldWorks",
+    "erzwungen_app_typ": "win32com.client.dynamic.CDispatch",
+    "revision_ohne_klammern": "33.5.0",
+    "model_typ": "win32com.client.dynamic.CDispatch",
+    "feature_typ": "win32com.client.dynamic.CDispatch",
+    "feature_typname_ohne_klammern": "CommentsFolder",
+    "featuremanager_typ": "CDispatch",
+    "alle_cdispatch": true
+  },
+  "geloescht": [
+    "83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.py",
+    "83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.cpython-314.pyc"
+  ],
+  "dicts_dat_zurueckgesetzt": true,
+  "gen_py_nachher": [
+    "__init__.py",
+    "__pycache__",
+    "dicts.dat"
+  ],
+  "probe_nach_aufraeumen": {
+    "standard_getactiveobject_typ": "win32com.client.CDispatch",
+    "erzwungen_app_typ": "win32com.client.dynamic.CDispatch",
+    "revision_ohne_klammern": "33.5.0",
+    "model_typ": "win32com.client.dynamic.CDispatch",
+    "feature_typ": "win32com.client.dynamic.CDispatch",
+    "feature_typname_ohne_klammern": "CommentsFolder",
+    "featuremanager_typ": "CDispatch",
+    "alle_cdispatch": true
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "ok": true,
+  "varianten": [
+    {
+      "SetSystemValue3": 120,
+      "rueckgabe": 0
+    },
+    {
+      "SetSystemValue3": 50,
+      "rueckgabe": 0
+    },
+    {
+      "SetSystemValue3": 16,
+      "rueckgabe": 0
+    }
+  ],
+  "swInputDimValOnCreate_vorher": true,
+  "breite": {
+    "typ2": 2,
+    "name": "D1",
+    "fullname": "D1@Skizze1@Teil86.Part",
+    "namen_fuer_selektion": "D1@Skizze1",
+    "wert_mm": 100.0
+  },
+  "hoehe": {
+    "typ2": 2,
+    "name": "D2",
+    "fullname": "D2@Skizze1@Teil86.Part",
+    "namen_fuer_selektion": "D2@Skizze1",
+    "wert_mm": 60.0
+  },
+  "kreis": {
+    "typ2": 6,
+    "name": "D3",
+    "fullname": "D3@Skizze1@Teil86.Part",
+    "namen_fuer_selektion": "D3@Skizze1",
+    "wert_mm": 20.0
+  },
+  "laengen_nach_set_mm": {
+    "untere_linie_start_ende": [
+      -60.0,
+      -25.0,
+      60.0,
+      -25.0
+    ],
+    "kreis_mitte": [
+      25.0,
+      10.0
+    ],
+    "untere_linie": 120.0,
+    "linke_linie": 50.0,
+    "kreis_radius": 8.0
+  },
+  "status_vor_fullydefine": 2,
+  "fullydefine_rueckgabe": 0,
+  "status_nach_fullydefine": 3,
+  "laengen_nach_fullydefine_mm": {
+    "untere_linie_start_ende": [
+      -60.0,
+      -25.0,
+      60.0,
+      -25.0
+    ],
+    "kreis_mitte": [
+      25.0,
+      10.0
+    ],
+    "untere_linie": 120.0,
+    "linke_linie": 50.0,
+    "kreis_radius": 8.0
+  },
+  "skizze_name_alt": "Skizze1",
+  "skizze_typname": "ProfileFeature",
+  "dims_vor_umbenennen": [
+    {
+      "typ2": 2,
+      "name": "D1",
+      "fullname": "D1@Skizze1@Teil86.Part",
+      "namen_fuer_selektion": "D1@Skizze1",
+      "wert_mm": 120.0
+    },
+    {
+      "typ2": 2,
+      "name": "D2",
+      "fullname": "D2@Skizze1@Teil86.Part",
+      "namen_fuer_selektion": "D2@Skizze1",
+      "wert_mm": 50.0
+    },
+    {
+      "typ2": 6,
+      "name": "D3",
+      "fullname": "D3@Skizze1@Teil86.Part",
+      "namen_fuer_selektion": "D3@Skizze1",
+      "wert_mm": 16.0
+    },
+    {
+      "typ2": 11,
+      "name": "D4",
+      "fullname": "D4@Skizze1@Teil86.Part",
+      "namen_fuer_selektion": "D4@Skizze1",
+      "wert_mm": 35.0
+    },
+    {
+      "typ2": 12,
+      "name": "D5",
+      "fullname": "D5@Skizze1@Teil86.Part",
+      "namen_fuer_selektion": "D5@Skizze1",
+      "wert_mm": 15.0
+    }
+  ],
+  "skizze_name_neu": "f1_skizze",
+  "dims_nach_umbenennen": [
+    {
+      "typ2": 2,
+      "name": "D1",
+      "fullname": "D1@f1_skizze@Teil86.Part",
+      "namen_fuer_selektion": "D1@f1_skizze",
+      "wert_mm": 120.0
+    },
+    {
+      "typ2": 2,
+      "name": "D2",
+      "fullname": "D2@f1_skizze@Teil86.Part",
+      "namen_fuer_selektion": "D2@f1_skizze",
+      "wert_mm": 50.0
+    },
+    {
+      "typ2": 6,
+      "name": "D3",
+      "fullname": "D3@f1_skizze@Teil86.Part",
+      "namen_fuer_selektion": "D3@f1_skizze",
+      "wert_mm": 16.0
+    },
+    {
+      "typ2": 11,
+      "name": "D4",
+      "fullname": "D4@f1_skizze@Teil86.Part",
+      "namen_fuer_selektion": "D4@f1_skizze",
+      "wert_mm": 35.0
+    },
+    {
+      "typ2": 12,
+      "name": "D5",
+      "fullname": "D5@f1_skizze@Teil86.Part",
+      "namen_fuer_selektion": "D5@f1_skizze",
+      "wert_mm": 15.0
+    }
+  ],
+  "parameter_D1@f1_skizze": {
+    "fullname": "D1@f1_skizze@Teil86.Part",
+    "wert_mm": 120.0
+  },
+  "status_skizze_nach_verlassen": 3,
+  "swInputDimValOnCreate_zurueck": true
+}

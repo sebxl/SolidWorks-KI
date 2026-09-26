@@ -1,0 +1,191 @@
+{
+  "ok": true,
+  "blind_20": {
+    "feature": "Aufsatz-Linear austragen1",
+    "typname": "Extrusion",
+    "partbox_mm": [
+      -20.0,
+      0.0,
+      -15.0,
+      20.0,
+      20.0,
+      15.0
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Aufsatz-Linear austragen1@Teil88.Part",
+        "typ2": 2,
+        "wert": 0.02
+      }
+    ]
+  },
+  "blind_20_umgekehrt_dir": {
+    "feature": "Aufsatz-Linear austragen1",
+    "typname": "Extrusion",
+    "partbox_mm": [
+      -20.0,
+      -20.0,
+      -15.0,
+      20.0,
+      0.0,
+      15.0
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Aufsatz-Linear austragen1@Teil89.Part",
+        "typ2": 2,
+        "wert": 0.02
+      }
+    ]
+  },
+  "mittelebene_20": {
+    "feature": "Aufsatz-Linear austragen1",
+    "typname": "Extrusion",
+    "partbox_mm": [
+      -20.0,
+      -10.0,
+      -15.0,
+      20.0,
+      10.0,
+      15.0
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Aufsatz-Linear austragen1@Teil90.Part",
+        "typ2": 2,
+        "wert": 0.02
+      }
+    ]
+  },
+  "beidseitig_blind_20_10": {
+    "feature": "Aufsatz-Linear austragen1",
+    "typname": "Extrusion",
+    "partbox_mm": [
+      -20.0,
+      -10.0,
+      -15.0,
+      20.0,
+      20.0,
+      15.0
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Aufsatz-Linear austragen1@Teil91.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@Aufsatz-Linear austragen1@Teil91.Part",
+        "typ2": 2,
+        "wert": 0.01
+      }
+    ]
+  },
+  "durch_alles_aufsatz_innen": {
+    "feature": "Aufsatz-Linear austragen2",
+    "partbox_mm": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      20.0,
+      30.0
+    ],
+    "masse": [],
+    "anzahl_flaechen": 0,
+    "whatswrong": 0,
+    "zylinder_box_mm": []
+  },
+  "durch_alles_beide_aufsatz_innen": {
+    "feature": "Aufsatz-Linear austragen2",
+    "partbox_mm": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      20.0,
+      30.0
+    ],
+    "masse": [],
+    "anzahl_flaechen": 0,
+    "whatswrong": 0,
+    "zylinder_box_mm": []
+  },
+  "durch_alles_aufsatz_oberhalb": {
+    "feature": "Aufsatz-Linear austragen2",
+    "partbox_mm": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      35.0,
+      30.0
+    ],
+    "masse": [],
+    "anzahl_flaechen": 3,
+    "whatswrong": 0,
+    "zylinder_box_mm": [
+      [
+        -5.0,
+        25.0,
+        0.0,
+        5.0,
+        35.0,
+        30.0
+      ]
+    ]
+  },
+  "durch_alles_beide_aufsatz_oberhalb": {
+    "feature": "Aufsatz-Linear austragen2",
+    "partbox_mm": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      35.0,
+      30.0
+    ],
+    "masse": [],
+    "anzahl_flaechen": 3,
+    "whatswrong": 0,
+    "zylinder_box_mm": [
+      [
+        -5.0,
+        25.0,
+        0.0,
+        5.0,
+        35.0,
+        30.0
+      ]
+    ]
+  },
+  "durch_alles_zweiseitig_1_1_oberhalb": {
+    "feature": "Aufsatz-Linear austragen2",
+    "partbox_mm": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      35.0,
+      30.0
+    ],
+    "masse": [],
+    "anzahl_flaechen": 3,
+    "whatswrong": 0,
+    "zylinder_box_mm": [
+      [
+        -5.0,
+        25.0,
+        -30.0,
+        5.0,
+        35.0,
+        30.0
+      ]
+    ]
+  }
+}
