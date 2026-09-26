@@ -1,0 +1,285 @@
+{
+  "ok": true,
+  "bohrung_mm3": 502.655,
+  "winkel_konvention": "atan2(-Z, X) = Drehung um +Y (rechte Hand)",
+  "cd_achse_gleichmaessig": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 2513.275,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        15.0,
+        -25.981,
+        60.0
+      ],
+      [
+        -15.0,
+        -25.981,
+        120.0
+      ],
+      [
+        -30.0,
+        0.0,
+        180.0
+      ],
+      [
+        -15.0,
+        25.981,
+        240.0
+      ],
+      [
+        15.0,
+        25.981,
+        300.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "achse": {
+      "insertaxis2": true,
+      "name": "Achse1",
+      "typ": "RefAxis"
+    }
+  },
+  "cd_achse_gleichmaessig_60_gesamt": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 1005.31,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        15.0,
+        25.981,
+        300.0
+      ],
+      [
+        25.981,
+        15.0,
+        330.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "data_vor_createfeature": {
+      "TotalInstances": 3,
+      "Spacing": 1.0471975511965976,
+      "EqualSpacing": true
+    }
+  },
+  "cd_achse_teilung_30": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 1005.31,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        15.0,
+        25.981,
+        300.0
+      ],
+      [
+        25.981,
+        15.0,
+        330.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "data_vor_createfeature": {
+      "TotalInstances": 3,
+      "Spacing": 0.5235987755982988,
+      "EqualSpacing": false
+    }
+  },
+  "cd_achse_teilung_30_spacing_zuerst": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 0.0,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 1,
+      "features": [
+        "Kreismuster1"
+      ],
+      "codes": [
+        1
+      ],
+      "warnungen": [
+        true
+      ]
+    },
+    "data_vor_createfeature": {
+      "TotalInstances": 3,
+      "Spacing": 6.2831853071796,
+      "EqualSpacing": false
+    }
+  },
+  "cd_achse_teilung_30_reverse": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 1005.31,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        25.981,
+        -15.0,
+        30.0
+      ],
+      [
+        15.0,
+        -25.981,
+        60.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "data_vor_createfeature": {
+      "TotalInstances": 3,
+      "Spacing": 0.5235987755982988,
+      "EqualSpacing": false
+    }
+  },
+  "cd_zylinderflaeche": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 1507.965,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        -0.0,
+        -30.0,
+        90.0
+      ],
+      [
+        -30.0,
+        0.0,
+        180.0
+      ],
+      [
+        0.0,
+        30.0,
+        270.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "cp5_achse": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 2513.275,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        15.0,
+        -25.981,
+        60.0
+      ],
+      [
+        -15.0,
+        -25.981,
+        120.0
+      ],
+      [
+        -30.0,
+        0.0,
+        180.0
+      ],
+      [
+        -15.0,
+        25.981,
+        240.0
+      ],
+      [
+        15.0,
+        25.981,
+        300.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "cp5_teilung_30": {
+    "feature": "Kreismuster1",
+    "typ": "CirPattern",
+    "abnahme_mm3": 1005.31,
+    "instanzen_x_z_winkel": [
+      [
+        30.0,
+        0.0,
+        0.0
+      ],
+      [
+        15.0,
+        25.981,
+        300.0
+      ],
+      [
+        25.981,
+        15.0,
+        330.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  }
+}

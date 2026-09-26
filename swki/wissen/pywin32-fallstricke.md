@@ -1,6 +1,6 @@
 # pywin32 + SolidWorks: geprüfte Muster
 
-Stand: 2026-09-26, SW 2025, Python 3.14. Nur Einträge, die in `docs/stufe0/ergebnisse.md` und den
+Stand: 2026-09-27, SW 2025, Python 3.14. Nur Einträge, die in `docs/stufe0/ergebnisse.md` und den
 zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
 
 ## Verbindung
@@ -85,6 +85,56 @@ zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
   nachgemessen: konstanter Versatz von der halben Bauteiltiefe). Wer eine Komponente an einer
   bestimmten Ursprungsposition braucht, muss den Bounding-Box-Versatz selbst herausrechnen oder nach
   dem Einfügen per `Component2.Transform2`/Mates exakt positionieren.
+
+## Aufrufketten Stufe 2 (S9a/S9b, live belegt)
+
+Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*.json`, Spikes
+`spikes/s9a_*.py`, `spikes/s9b_*.py`.
+
+- **Late Binding erzwingen** (auch bei vorhandenem gen_py-Cache): `pythoncom.GetActiveObject(progid)` →
+  `win32com.client.dynamic.Dispatch(unk.QueryInterface(pythoncom.IID_IDispatch))` (S9a-0).
+- **Nicht jedes Objekt folgt der „ohne ()“-Regel:**
+  - `IBody2` (aus `GetBodies2`) liefert Typinfo → nullargumentige Methoden **mit** `()`:
+    `body.GetFaces()`, `body.GetType()`; ohne `()` nur gebundene Methode (S9b-14/19).
+  - `IModelDoc2.EditSketch` ohne `()` → gebundene Methode, nichts passiert (S9b-19).
+  - Methoden mit Argumenten, die SW auch argumentlos beantwortet, laufen schon beim Attributzugriff:
+    `IMathUtility.CreatePoint` (S9a-2), `IMeasure.Calculate` (S9b-19) → vorher
+    `obj._FlagAsMethod("Name")`.
+  - Robuste Prüfung: `isinstance(x, types.MethodType)` → dann `x()`.
+- **Arrays an COM immer als VARIANT:** `VARIANT(VT_ARRAY|VT_R8, …)` für Zahlen (rohe Liste liefert bei
+  `CreatePoint` stillschweigend Müll, S9a-2), `VARIANT(VT_ARRAY|VT_DISPATCH, …)` für Objekte (rohe
+  Liste bei `ISimpleFilletFeatureData2.Edges` wird ignoriert, S9b-12).
+- ByRef-Ausgaben: `VARIANT(VT_BYREF|VT_VARIANT, None)` (Arrays, `GetWhatsWrong`), `…|VT_BOOL`
+  (`GetErrorCode2`), `…|VT_I4` (`SaveAs3`/`OpenDoc6`), `…|VT_BSTR` (`Get6`,
+  `GetMaterialPropertyName2`); Wert in `.value` (S9a-11, S9b).
+- Parametrisierte Property-Put (`IEquationMgr.Equation`) nur per rohem
+  `_oleobj_.Invoke(dispid, 0, DISPATCH_PROPERTYPUT, False, idx, wert)` (S9a-5).
+- Selektion: `entity.Select4(append, selectData)` mit `SelectionManager.CreateSelectData` + `.Mark`
+  funktioniert direkt auf Face/Edge/Feature/Skizzensegment (S9a-10). Marken: Fillet-Kanten 1,
+  Muster Richtung 1/2 + Feature 4, Kreismuster Achse 1 + Feature 4, Spiegeln Feature 1 + Ebene 2
+  (S9b-12…16). CreateDefinition-Muster lesen die **Vorselektion** bei `CreateFeature`; nur
+  Properties ohne Selektion → `None` (S9b-14).
+- `ISketchManager.AddToDB = True` beim Skizzieren (sonst ungewollte Inferenz-Relationen), im
+  `finally` zurücksetzen (S9a-3).
+- Äußere Flächennormale nur über `IFace2.Normal`, nicht `PlaneParams` (S9a-10). Maße und
+  Zylinderflächen nie über Reihenfolge zuordnen (S9a-9/11).
+- **Stille Fehlschläge** (Rückgabe prüfen, Ergebnis nachmessen):
+  - `FeatureCut4` ohne Material → `None` (S9a-7).
+  - `InsertFeatureChamfer` Typ 16 → leeres Feature, kein Fehlercode; DD-Abstände gehören in
+    `Width`/`OtherDist`, nicht `VertexChamDist1/2` (S9b-13).
+  - `ICircularPatternFeatureData.EqualSpacing = …` setzt `Spacing` auf 2π zurück → erst
+    EqualSpacing, dann Spacing (S9b-15).
+  - Muster-Instanzen außerhalb des Körpers: teils nur Warnung (Code 1), teils gar keine Meldung
+    (S9b-14). Musterrichtung = `LineParams`-Richtung der Kante.
+  - `IPartDoc.SetMaterialPropertyName2` liefert immer `None`; falscher Name → still nichts
+    (S9b-17).
+  - `HoleWizard5` mit `Diameter = 0.0` → falsches Loch (r 12,7) nur mit Warnung; Normmaß mit `-1`
+    (S9b-21).
+- `IMassProperty2.UseSystemUnits = False` wirkt erst nach `mp.Recalculate` (dann mm³/g) (S9b-19).
+- `IModelDocExtension.SaveAs3` als `.sldprt` benennt das Dokument um → Titel für `CloseDoc` neu
+  lesen; `.step`/`.png` nicht (S9b-20). `CloseDoc` schließt auch geänderte Dokumente ohne Dialog
+  und ohne zu speichern (S9b-22). `OpenDoc6` auf bereits offene Datei → dasselbe Objekt,
+  Warnung 128 `swFileLoadWarning_AlreadyOpen` (S9b-23).
 
 ## Bekannte Fehlschläge
 

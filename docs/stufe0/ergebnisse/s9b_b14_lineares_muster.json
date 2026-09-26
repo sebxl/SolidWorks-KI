@@ -1,0 +1,305 @@
+{
+  "ok": true,
+  "bohrung_mm3": 1005.31,
+  "cd_1dir_kante": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 3015.929,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -20.0,
+        -20.0
+      ],
+      [
+        0.0,
+        -20.0
+      ],
+      [
+        20.0,
+        -20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "kante_richtung": [
+      1.0,
+      0.0,
+      0.0
+    ]
+  },
+  "cd_1dir_umgekehrt": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 0.0,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 1,
+      "features": [
+        "Lineares Muster1"
+      ],
+      "codes": [
+        1
+      ],
+      "warnungen": [
+        true
+      ]
+    }
+  },
+  "cd_1dir_achse": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 3015.929,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -20.0,
+        -20.0
+      ],
+      [
+        0.0,
+        -20.0
+      ],
+      [
+        20.0,
+        -20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "achse": {
+      "insertaxis2": true,
+      "name": "Achse1",
+      "typ": "RefAxis"
+    }
+  },
+  "cd_2dir_ohne_reverse": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 3015.929,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -20.0,
+        -20.0
+      ],
+      [
+        0.0,
+        -20.0
+      ],
+      [
+        20.0,
+        -20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "kante2_richtung": [
+      0.0,
+      0.0,
+      -1.0
+    ]
+  },
+  "cd_2dir": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 11058.406,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -40.0,
+        0.0
+      ],
+      [
+        -40.0,
+        20.0
+      ],
+      [
+        -20.0,
+        -20.0
+      ],
+      [
+        -20.0,
+        0.0
+      ],
+      [
+        -20.0,
+        20.0
+      ],
+      [
+        0.0,
+        -20.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        20.0
+      ],
+      [
+        20.0,
+        -20.0
+      ],
+      [
+        20.0,
+        0.0
+      ],
+      [
+        20.0,
+        20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "definition": {
+      "D2TotalInstances": 3,
+      "IsDirection2Specified": true,
+      "GetD1AxisType": 1,
+      "GetD2AxisType": 1
+    }
+  },
+  "cd_properties_ohne_selektion": {
+    "feature": null,
+    "typ": null,
+    "abnahme_mm3": 0.0,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "d1axis_gelesen": "None",
+    "featurecount": 1
+  },
+  "lp5_1dir": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 3015.929,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -20.0,
+        -20.0
+      ],
+      [
+        0.0,
+        -20.0
+      ],
+      [
+        20.0,
+        -20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "lp5_2dir": {
+    "feature": "Lineares Muster1",
+    "typ": "LPattern",
+    "abnahme_mm3": 11058.406,
+    "instanzen_xz_mm": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -40.0,
+        0.0
+      ],
+      [
+        -40.0,
+        20.0
+      ],
+      [
+        -20.0,
+        -20.0
+      ],
+      [
+        -20.0,
+        0.0
+      ],
+      [
+        -20.0,
+        20.0
+      ],
+      [
+        0.0,
+        -20.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        20.0
+      ],
+      [
+        20.0,
+        -20.0
+      ],
+      [
+        20.0,
+        0.0
+      ],
+      [
+        20.0,
+        20.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  }
+}

@@ -1,0 +1,535 @@
+{
+  "ok": true,
+  "hinweis": "InsertFeatureChamfer(Options, ChamferType, Width, Angle, OtherDist, VD1, VD2, VD3)",
+  "insertfeaturechamfer": {
+    "AD_3_45": {
+      "args": [
+        0,
+        1,
+        0.003,
+        0.7853981633974483,
+        0,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 450.0,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.7071,
+            0.7071
+          ],
+          "box_mm": [
+            -50.0,
+            17.0,
+            27.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ],
+        [
+          "D2",
+          3,
+          0.785398163
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "AD_3_45_mark0": {
+      "args": [
+        0,
+        1,
+        0.003,
+        0.7853981633974483,
+        0,
+        0,
+        0,
+        0
+      ],
+      "mark": 0,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 450.0,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.7071,
+            0.7071
+          ],
+          "box_mm": [
+            -50.0,
+            17.0,
+            27.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ],
+        [
+          "D2",
+          3,
+          0.785398163
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "AD_3_30": {
+      "args": [
+        0,
+        1,
+        0.003,
+        0.5235987755982988,
+        0,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 259.808,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.5,
+            0.866
+          ],
+          "box_mm": [
+            -50.0,
+            17.0,
+            28.268,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ],
+        [
+          "D2",
+          3,
+          0.523598776
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "AD_3_30_flip": {
+      "args": [
+        1,
+        1,
+        0.003,
+        0.5235987755982988,
+        0,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 259.808,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.866,
+            0.5
+          ],
+          "box_mm": [
+            -50.0,
+            18.268,
+            27.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ],
+        [
+          "D2",
+          3,
+          0.523598776
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "AD_3_30_bodenkante": {
+      "args": [
+        0,
+        1,
+        0.003,
+        0.5235987755982988,
+        0,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 259.808,
+      "flaechen": [
+        {
+          "normal": [
+            0.0,
+            -0.866,
+            0.5
+          ],
+          "box_mm": [
+            -50.0,
+            0.0,
+            27.0,
+            50.0,
+            1.732,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ],
+        [
+          "D2",
+          3,
+          0.523598776
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "DD_doku_vd1_vd2": {
+      "args": [
+        0,
+        2,
+        0.0,
+        0,
+        0,
+        0.002,
+        0.004,
+        0
+      ],
+      "mark": 1,
+      "feature": null,
+      "abnahme_mm3": 0.0
+    },
+    "DD_width_vd1_vd2": {
+      "args": [
+        0,
+        2,
+        0.002,
+        0,
+        0,
+        0.002,
+        0.004,
+        0
+      ],
+      "mark": 1,
+      "feature": null,
+      "abnahme_mm3": 0.0
+    },
+    "DD_width_otherdist": {
+      "args": [
+        0,
+        2,
+        0.002,
+        0,
+        0.004,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 400.0,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.8944,
+            0.4472
+          ],
+          "box_mm": [
+            -50.0,
+            18.0,
+            26.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.002
+        ],
+        [
+          "D3",
+          2,
+          0.004
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "DD_width_otherdist_flip": {
+      "args": [
+        1,
+        2,
+        0.002,
+        0,
+        0.004,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 400.0,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.8944,
+            0.4472
+          ],
+          "box_mm": [
+            -50.0,
+            18.0,
+            26.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.002
+        ],
+        [
+          "D3",
+          2,
+          0.004
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "DD_width_otherdist_bodenkante": {
+      "args": [
+        0,
+        2,
+        0.002,
+        0,
+        0.004,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 400.0,
+      "flaechen": [
+        {
+          "normal": [
+            0.0,
+            -0.4472,
+            0.8944
+          ],
+          "box_mm": [
+            -50.0,
+            0.0,
+            28.0,
+            50.0,
+            4.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.002
+        ],
+        [
+          "D3",
+          2,
+          0.004
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "EQ_otherdist": {
+      "args": [
+        0,
+        16,
+        0,
+        0,
+        0.003,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 0.0,
+      "flaechen": [],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.0
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "EQ_width_otherdist": {
+      "args": [
+        0,
+        16,
+        0.003,
+        0,
+        0.003,
+        0,
+        0,
+        0
+      ],
+      "mark": 1,
+      "feature": "Fase1",
+      "typ": "Chamfer",
+      "abnahme_mm3": 0.0,
+      "flaechen": [],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    }
+  },
+  "createdefinition": {
+    "swFmChamfer_0": "None",
+    "fillet_offsetfase_sym_3": {
+      "feature": "Fase1",
+      "typ": "Fillet",
+      "abnahme_mm3": 450.0,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.7071,
+            0.7071
+          ],
+          "box_mm": [
+            -50.0,
+            17.0,
+            27.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.003
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    },
+    "fillet_offsetfase_asym_2_4": {
+      "feature": "Fase1",
+      "typ": "Fillet",
+      "abnahme_mm3": 400.0,
+      "flaechen": [
+        {
+          "normal": [
+            -0.0,
+            0.8944,
+            0.4472
+          ],
+          "box_mm": [
+            -50.0,
+            18.0,
+            26.0,
+            50.0,
+            20.0,
+            30.0
+          ]
+        }
+      ],
+      "masse": [
+        [
+          "D1",
+          2,
+          0.002
+        ],
+        [
+          "D2",
+          2,
+          0.004
+        ]
+      ],
+      "errorcode2": 0,
+      "whatswrong": 0
+    }
+  },
+  "empfehlung": "InsertFeatureChamfer: AD (Typ 1, Width, Angle), DD (Typ 2, Width=d1, OtherDist=d2); Typ 16 (EqualDistance) liefert leeres Feature -> nicht verwenden"
+}

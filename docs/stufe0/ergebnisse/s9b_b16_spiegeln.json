@@ -1,0 +1,105 @@
+{
+  "ok": true,
+  "hinweis": "InsertMirrorFeature2(BMirrorBody, BGeometryPattern, BMerge, BKnit, ScopeOptions)",
+  "mirror2_ebene_rechts": {
+    "feature": "Spiegeln1",
+    "typ": "MirrorPattern",
+    "abnahme_mm3": 1005.309,
+    "bohrungen_xz_mm": [
+      [
+        -30.0,
+        -15.0
+      ],
+      [
+        30.0,
+        -15.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "mirror2_ebene_vorne": {
+    "feature": "Spiegeln1",
+    "typ": "MirrorPattern",
+    "abnahme_mm3": 1005.309,
+    "bohrungen_xz_mm": [
+      [
+        -30.0,
+        -15.0
+      ],
+      [
+        -30.0,
+        15.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "mirror2_ebene_rechts_merge": {
+    "feature": "Spiegeln1",
+    "typ": "MirrorPattern",
+    "abnahme_mm3": 1005.309,
+    "bohrungen_xz_mm": [
+      [
+        -30.0,
+        -15.0
+      ],
+      [
+        30.0,
+        -15.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "mirror2_marken_vertauscht": {
+    "feature": null,
+    "typ": null,
+    "abnahme_mm3": 0.0,
+    "bohrungen_xz_mm": [
+      [
+        -30.0,
+        -15.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "createdefinition_mirrorpattern": {
+    "feature": null,
+    "typ": null,
+    "abnahme_mm3": 0.0,
+    "bohrungen_xz_mm": [
+      [
+        -30.0,
+        -15.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "createdefinition": {
+      "7": "None",
+      "4": "None"
+    }
+  }
+}

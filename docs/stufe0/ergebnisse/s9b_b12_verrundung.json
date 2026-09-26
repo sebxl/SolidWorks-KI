@@ -1,0 +1,286 @@
+{
+  "ok": true,
+  "varianten": {
+    "createdefinition_mark1": {
+      "initialize": true,
+      "select": true,
+      "typ_data": 0,
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 536.505,
+      "soll_mm3": 536.505,
+      "zylinder": [
+        [
+          0.0,
+          15.0,
+          25.0,
+          1.0,
+          0.0,
+          0.0,
+          5.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil121.Part",
+          "typ2": 5,
+          "wert": 0.005
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "selektion_danach": 0
+    },
+    "createdefinition_edges_dispatch_array": {
+      "edgecount": 1,
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 536.505,
+      "soll_mm3": 536.505,
+      "zylinder": [
+        [
+          0.0,
+          15.0,
+          25.0,
+          1.0,
+          0.0,
+          0.0,
+          5.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil122.Part",
+          "typ2": 5,
+          "wert": 0.005
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    },
+    "createdefinition_edges_rohe_liste": {
+      "edgecount": 0,
+      "feature": null,
+      "typ": null,
+      "abnahme_mm3": 0.0,
+      "soll_mm3": 536.505,
+      "zylinder": null,
+      "masse": null,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    },
+    "createdefinition_mark0": {
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 536.505,
+      "soll_mm3": 536.505,
+      "zylinder": [
+        [
+          0.0,
+          15.0,
+          25.0,
+          1.0,
+          0.0,
+          0.0,
+          5.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil124.Part",
+          "typ2": 5,
+          "wert": 0.005
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    },
+    "createdefinition_4_kanten": {
+      "kanten": 4,
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 1073.761,
+      "zylinder": [
+        [
+          -46.0,
+          16.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          4.0
+        ],
+        [
+          0.0,
+          16.0,
+          26.0,
+          1.0,
+          0.0,
+          0.0,
+          4.0
+        ],
+        [
+          0.0,
+          16.0,
+          -26.0,
+          -1.0,
+          0.0,
+          0.0,
+          4.0
+        ],
+        [
+          46.0,
+          16.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          4.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil125.Part",
+          "typ2": 5,
+          "wert": 0.004
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    },
+    "featurefillet3_none": {
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 536.505,
+      "soll_mm3": 536.505,
+      "zylinder": [
+        [
+          0.0,
+          15.0,
+          25.0,
+          1.0,
+          0.0,
+          0.0,
+          5.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil126.Part",
+          "typ2": 5,
+          "wert": 0.005
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    },
+    "featurefillet3_r8_leer": {
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 536.505,
+      "soll_mm3": 536.505,
+      "zylinder": [
+        [
+          0.0,
+          15.0,
+          25.0,
+          1.0,
+          0.0,
+          0.0,
+          5.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil127.Part",
+          "typ2": 5,
+          "wert": 0.005
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    },
+    "featurefillet3_r8_radius": {
+      "feature": "Verrundung1",
+      "typ": "Fillet",
+      "abnahme_mm3": 536.505,
+      "soll_mm3": 536.505,
+      "zylinder": [
+        [
+          0.0,
+          15.0,
+          25.0,
+          1.0,
+          0.0,
+          0.0,
+          5.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@Verrundung1@Teil128.Part",
+          "typ2": 5,
+          "wert": 0.005
+        }
+      ],
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      }
+    }
+  },
+  "radius_aendern": {
+    "rebuild": true,
+    "abnahme_mm3": 1373.452,
+    "soll_mm3": 1373.452,
+    "zylinder": [
+      [
+        0.0,
+        12.0,
+        22.0,
+        1.0,
+        0.0,
+        0.0,
+        8.0
+      ]
+    ]
+  },
+  "empfehlung": "CreateDefinition(swFmFillet) + Initialize(0) + Kanten Select4 Mark 1 + CreateFeature"
+}

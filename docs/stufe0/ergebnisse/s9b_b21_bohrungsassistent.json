@@ -1,0 +1,204 @@
+{
+  "ok": true,
+  "soll_blind_mm3": 605.8,
+  "soll_durch_alles_mm3": 726.34,
+  "M8x1.25_blind_d6.8": {
+    "selectbyray": true,
+    "feature": "M8 Gewindebohrung1",
+    "typ": "HoleWzd",
+    "abnahme_mm3": 605.8,
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "subfeatures": [
+      [
+        "Skizze3",
+        "ProfileFeature"
+      ],
+      [
+        "Skizze2",
+        "ProfileFeature"
+      ],
+      [
+        "Bohrungsgewinde1",
+        "CosmeticThread"
+      ]
+    ],
+    "zylinder": [
+      [
+        10.0,
+        20.0,
+        -5.0,
+        -0.0,
+        1.0,
+        -0.0,
+        3.4
+      ]
+    ]
+  },
+  "M8_blind_d6.8": {
+    "selectbyray": true,
+    "feature": "M8 Gewindebohrung1",
+    "typ": "HoleWzd",
+    "abnahme_mm3": 605.8,
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "subfeatures": [
+      [
+        "Skizze3",
+        "ProfileFeature"
+      ],
+      [
+        "Skizze2",
+        "ProfileFeature"
+      ],
+      [
+        "Bohrungsgewinde1",
+        "CosmeticThread"
+      ]
+    ],
+    "zylinder": [
+      [
+        10.0,
+        20.0,
+        -5.0,
+        -0.0,
+        1.0,
+        -0.0,
+        3.4
+      ]
+    ]
+  },
+  "M8_blind_d_minus1_norm": {
+    "selectbyray": true,
+    "feature": "M8 Gewindebohrung1",
+    "typ": "HoleWzd",
+    "abnahme_mm3": 605.8,
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "subfeatures": [
+      [
+        "Skizze3",
+        "ProfileFeature"
+      ],
+      [
+        "Skizze2",
+        "ProfileFeature"
+      ],
+      [
+        "Bohrungsgewinde1",
+        "CosmeticThread"
+      ]
+    ],
+    "zylinder": [
+      [
+        10.0,
+        20.0,
+        -5.0,
+        -0.0,
+        1.0,
+        -0.0,
+        3.4
+      ]
+    ]
+  },
+  "M8_blind_d_0": {
+    "selectbyray": true,
+    "feature": "M8 Gewindebohrung1",
+    "typ": "HoleWzd",
+    "abnahme_mm3": 10134.15,
+    "whatswrong": {
+      "anzahl": 1,
+      "features": [
+        "M8 Gewindebohrung1"
+      ],
+      "codes": [
+        1
+      ],
+      "warnungen": [
+        true
+      ]
+    },
+    "subfeatures": [
+      [
+        "Skizze3",
+        "ProfileFeature"
+      ],
+      [
+        "Skizze2",
+        "ProfileFeature"
+      ]
+    ],
+    "zylinder": [
+      [
+        10.0,
+        20.0,
+        -5.0,
+        -0.0,
+        1.0,
+        -0.0,
+        12.7
+      ]
+    ]
+  },
+  "M8_durch_alles": {
+    "selectbyray": true,
+    "feature": "M8 Gewindebohrung1",
+    "typ": "HoleWzd",
+    "abnahme_mm3": 726.336,
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "subfeatures": [
+      [
+        "Skizze3",
+        "ProfileFeature"
+      ],
+      [
+        "Skizze2",
+        "ProfileFeature"
+      ],
+      [
+        "Bohrungsgewinde1",
+        "CosmeticThread"
+      ]
+    ],
+    "zylinder": [
+      [
+        10.0,
+        20.0,
+        -5.0,
+        -0.0,
+        1.0,
+        -0.0,
+        3.4
+      ]
+    ]
+  },
+  "M99_ungueltig": {
+    "selectbyray": true,
+    "feature": null,
+    "typ": null,
+    "abnahme_mm3": 0.0,
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  }
+}

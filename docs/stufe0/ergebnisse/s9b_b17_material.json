@@ -1,0 +1,234 @@
+{
+  "ok": true,
+  "datenbanken": [
+    "c:\\programdata\\solidworks\\solidworks 2024\\benutzerdefinierte materialien\\benutzerdefinierte materialien.sldmat",
+    "c:\\program files\\solidworks corp\\solidworks\\lang\\german\\sldmaterials\\solidworks din materials.sldmat",
+    "c:\\program files\\solidworks corp\\solidworks\\lang\\german\\sldmaterials\\solidworks materials.sldmat",
+    "c:\\program files\\solidworks corp\\solidworks\\lang\\german\\sldmaterials\\sustainability extras.sldmat"
+  ],
+  "rechner_yaml_materialdatenbank": "C:\\ProgramData\\SolidWorks\\SOLIDWORKS 2024\\Benutzerdefinierte Materialien",
+  "inhalt": {
+    "benutzerdefinierte materialien.sldmat": {
+      "anzahl": 2,
+      "erste": [
+        [
+          "Kunststoff",
+          "Benutzerdefinierter Kunststoff"
+        ],
+        [
+          "Kunststoff",
+          "XPS"
+        ]
+      ],
+      "treffer_2312": []
+    },
+    "solidworks din materials.sldmat": {
+      "anzahl": 207,
+      "erste": [
+        [
+          "DIN Aluminiumlegierungen",
+          "3.0205 (EN-AW 1200)"
+        ],
+        [
+          "DIN Aluminiumlegierungen",
+          "3.0255 (EN-AW 1350A)"
+        ],
+        [
+          "DIN Aluminiumlegierungen",
+          "3.0505 (EN-AW 3105)"
+        ]
+      ],
+      "treffer_2312": [
+        [
+          "DIN Stahl (Kaltarbeitsstahl)",
+          "1.2312 (40CrMnMoS8-6)"
+        ]
+      ]
+    },
+    "solidworks materials.sldmat": {
+      "anzahl": 259,
+      "erste": [
+        [
+          "Stahl",
+          "1023 Kohlenstoffstahlblech (SS)"
+        ],
+        [
+          "Stahl",
+          "201 Geglühter Edelstahl (SS)"
+        ],
+        [
+          "Stahl",
+          "A286 Eisen-Superlegierung"
+        ]
+      ],
+      "treffer_2312": []
+    },
+    "sustainability extras.sldmat": {
+      "anzahl": 8,
+      "erste": [
+        [
+          "Baumaterialien",
+          "Ziegel"
+        ],
+        [
+          "Baumaterialien",
+          "Beton"
+        ],
+        [
+          "Baumaterialien",
+          "Gips-Trockenbauwand"
+        ]
+      ],
+      "treffer_2312": []
+    }
+  },
+  "versuche": [
+    {
+      "database": "SolidWorks DIN Materials",
+      "name": "1.2312 (40CrMnMoS8-6)",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.942,
+        "dichte_kg_m3": 7850.0,
+        "volumen_mm3": 120000.0,
+        "name": "1.2312 (40CrMnMoS8-6)",
+        "db": "SolidWorks DIN Materials",
+        "material_id_name": "SolidWorks DIN Materials|1.2312 (40CrMnMoS8-6)|90"
+      }
+    },
+    {
+      "database": "solidworks din materials.sldmat",
+      "name": "1.2312 (40CrMnMoS8-6)",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.942,
+        "dichte_kg_m3": 7850.0,
+        "volumen_mm3": 120000.0,
+        "name": "1.2312 (40CrMnMoS8-6)",
+        "db": "SolidWorks DIN Materials",
+        "material_id_name": "SolidWorks DIN Materials|1.2312 (40CrMnMoS8-6)|90"
+      }
+    },
+    {
+      "database": "solidworks din materials",
+      "name": "1.2312",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      }
+    },
+    {
+      "database": "c:\\program files\\solidworks corp\\solidworks\\lang\\german\\sldmaterials\\solidworks din materials.sldmat",
+      "name": "1.2312 (40CrMnMoS8-6)",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.942,
+        "dichte_kg_m3": 7850.0,
+        "volumen_mm3": 120000.0,
+        "name": "1.2312 (40CrMnMoS8-6)",
+        "db": "SolidWorks DIN Materials",
+        "material_id_name": "SolidWorks DIN Materials|1.2312 (40CrMnMoS8-6)|90"
+      }
+    },
+    {
+      "database": "SOLIDWORKS Materials",
+      "name": "AISI 1020",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.948,
+        "dichte_kg_m3": 7900.0,
+        "volumen_mm3": 120000.0,
+        "name": "AISI 1020",
+        "db": "solidworks materials",
+        "material_id_name": "solidworks materials|AISI 1020|2"
+      }
+    },
+    {
+      "database": "Benutzerdefinierte Materialien",
+      "name": "XPS",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.0036,
+        "dichte_kg_m3": 30.0,
+        "volumen_mm3": 120000.0,
+        "name": "XPS",
+        "db": "Benutzerdefinierte Materialien",
+        "material_id_name": "Benutzerdefinierte Materialien|XPS"
+      }
+    },
+    {
+      "database": "gibtsnicht",
+      "name": "1.2312 (40CrMnMoS8-6)",
+      "rueckgabe": null,
+      "vorher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      },
+      "nachher": {
+        "masse_kg": 0.12,
+        "dichte_kg_m3": 1000.0,
+        "volumen_mm3": 120000.0,
+        "name": "",
+        "db": "",
+        "material_id_name": "Steel"
+      }
+    }
+  ]
+}

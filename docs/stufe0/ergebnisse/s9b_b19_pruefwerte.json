@@ -1,0 +1,130 @@
+{
+  "ok": true,
+  "soll_volumen_mm3": 117989.381,
+  "soll_masse_kg": 0.926217,
+  "soll_achsabstand_mm": 67.082,
+  "masse_system": {
+    "UseSystemUnits": true,
+    "recalculate": false,
+    "volumen": 0.00011798938070170251,
+    "oberflaeche": 0.019204247719318987,
+    "masse": 0.9262166385083648,
+    "dichte": 7850.0,
+    "schwerpunkt": [
+      -3.0846798869424056e-19,
+      0.01,
+      -1.2198506825635876e-18
+    ]
+  },
+  "masse_dokument_ohne_recalculate": {
+    "UseSystemUnits": false,
+    "recalculate": false,
+    "volumen": 0.00011798938070170251,
+    "oberflaeche": 0.019204247719318987,
+    "masse": 0.9262166385083648,
+    "dichte": 7850.0,
+    "schwerpunkt": [
+      -3.0846798869424056e-19,
+      0.01,
+      -1.2198506825635876e-18
+    ]
+  },
+  "masse_dokument_mit_recalculate": {
+    "UseSystemUnits": false,
+    "recalculate": true,
+    "volumen": 117989.38070170251,
+    "oberflaeche": 19204.247719318988,
+    "masse": 926.2166385083648,
+    "dichte": 0.00785,
+    "schwerpunkt": [
+      -3.084679886942406e-16,
+      10.0,
+      -1.2198506825635875e-15
+    ]
+  },
+  "partbox_mm": [
+    -50.0,
+    0.0,
+    -30.0,
+    50.0,
+    20.0,
+    30.0
+  ],
+  "zylinder": [
+    {
+      "o_mm": [
+        -30.0,
+        0.0,
+        -15.0
+      ],
+      "a": [
+        -0.0,
+        1.0,
+        -0.0
+      ],
+      "r_mm": 4.0
+    },
+    {
+      "o_mm": [
+        30.0,
+        0.0,
+        15.0
+      ],
+      "a": [
+        -0.0,
+        1.0,
+        -0.0
+      ],
+      "r_mm": 4.0
+    }
+  ],
+  "achsabstand_cylinderparams_mm": 67.082039,
+  "imeasure_ohne_flag": "TypeError(\"'bool' object is not callable\")",
+  "imeasure": {
+    "calculate": true,
+    "center_distance_mm": 67.08204,
+    "distance_mm": 67.08204,
+    "is_parallel": false
+  },
+  "skizzen_status": [
+    {
+      "name": "Skizze1",
+      "status": 2
+    },
+    {
+      "name": "Skizze2",
+      "status": 2
+    },
+    {
+      "name": "Skizze3",
+      "status": 2
+    }
+  ],
+  "editsketch_ohne_klammern": {
+    "typ": "method",
+    "active_sketch": false
+  },
+  "insertsketch_oeffnet": true,
+  "fullydefine": 0,
+  "skizzen_status_danach": [
+    {
+      "name": "Skizze1",
+      "status": 2
+    },
+    {
+      "name": "Skizze2",
+      "status": 2
+    },
+    {
+      "name": "Skizze3",
+      "status": 3
+    }
+  ],
+  "rebuild": true,
+  "whatswrong": {
+    "anzahl": 0,
+    "features": [],
+    "codes": [],
+    "warnungen": []
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "offen_vorher": [],
+  "neu_ungespeichert": {
+    "titel": "Teil226",
+    "saveflag": true,
+    "rueckgabe": null,
+    "sekunden": 0.099,
+    "noch_offen": false
+  },
+  "gespeichert_geaendert": {
+    "titel": "s9b_b20_teil",
+    "open": {
+      "model": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "volumen_vorher": 118994.69,
+    "volumen_geaendert": 117989.381,
+    "saveflag": true,
+    "rueckgabe": null,
+    "sekunden": 0.107,
+    "noch_offen": false,
+    "datei_unveraendert": true,
+    "volumen_nach_wiederoeffnen": 118994.69
+  },
+  "offen_am_ende": []
+}

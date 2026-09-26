@@ -1,0 +1,99 @@
+{
+  "ok": true,
+  "cpm_typ": "<class 'win32com.client.dynamic.CDispatch'>",
+  "namen_anfang": [],
+  "add3_neu": 0,
+  "get6_neu": {
+    "rueckgabe": 2,
+    "wert": "Formplatte AS",
+    "aufgeloest": "Formplatte AS",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "add3_ersetzen": 0,
+  "get6_ersetzt": {
+    "rueckgabe": 2,
+    "wert": "Formplatte DS",
+    "aufgeloest": "Formplatte DS",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "add3_onlyifnew_vorhanden": 2,
+  "get6_nach_onlyifnew": {
+    "rueckgabe": 2,
+    "wert": "Formplatte DS",
+    "aufgeloest": "Formplatte DS",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "add3_umlaut": 0,
+  "get6_umlaut": {
+    "rueckgabe": 2,
+    "wert": "1.2312 – vergütet (ä ö ü ß)",
+    "aufgeloest": "1.2312 – vergütet (ä ö ü ß)",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "add3_link": 0,
+  "get6_link": {
+    "rueckgabe": 2,
+    "wert": "\"SW-Masse@Teil220.SLDPRT\"",
+    "aufgeloest": "942.00",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "add3_link_kurz": 0,
+  "get6_link_kurz": {
+    "rueckgabe": 2,
+    "wert": "\"SW-Masse\"",
+    "aufgeloest": "942.00",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "add3_link_falsch": 0,
+  "get6_link_falsch": {
+    "rueckgabe": 2,
+    "wert": "\"SW-Masse@@@Teil220.SLDPRT\"",
+    "aufgeloest": "\"SW-Masse@@@Teil220.SLDPRT\"",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "get6_fehlt": {
+    "rueckgabe": 1,
+    "wert": "",
+    "aufgeloest": "",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "set2": 0,
+  "get6_nach_set2": {
+    "rueckgabe": 2,
+    "wert": "Formplatte neu",
+    "aufgeloest": "Formplatte neu",
+    "was_resolved": true,
+    "link_to_property": false
+  },
+  "gettype2": 30,
+  "count": 5,
+  "namen": [
+    "Benennung",
+    "Werkstoff",
+    "Gewicht",
+    "Gewicht2",
+    "Gewicht3"
+  ],
+  "delete2": 0,
+  "namen_nach_delete": [
+    "Benennung",
+    "Gewicht",
+    "Gewicht2",
+    "Gewicht3"
+  ],
+  "get6_neuer_manager": {
+    "rueckgabe": 2,
+    "wert": "Formplatte neu",
+    "aufgeloest": "Formplatte neu",
+    "was_resolved": true,
+    "link_to_property": false
+  }
+}

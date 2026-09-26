@@ -1,0 +1,64 @@
+{
+  "ok": true,
+  "datei": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT",
+  "existiert": true,
+  "offen_vorher": [],
+  "opendoc6": {
+    "model": true,
+    "errors": 0,
+    "warnings": 0,
+    "titel": "s9b_b20_teil",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT",
+    "typ": 1,
+    "volumen_mm3": 118994.69,
+    "partbox_mm": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      20.0,
+      30.0
+    ],
+    "aktiv_ist_model": true,
+    "whatswrong": 0,
+    "saveflag": false
+  },
+  "opendoc6_bereits_offen": {
+    "model": true,
+    "errors": 0,
+    "warnings": 128,
+    "gleiches_objekt": true,
+    "offen": [
+      "s9b_b20_teil"
+    ]
+  },
+  "opendoc7_bereits_offen": {
+    "model": true,
+    "error": 0,
+    "warning": 128,
+    "gleiches_objekt": true
+  },
+  "closedoc": null,
+  "offen_nach_close": [],
+  "datei_unveraendert": true,
+  "opendoc6_fehlt": {
+    "model": false,
+    "errors": 2,
+    "warnings": 0
+  },
+  "opendoc6_readonly": {
+    "model": true,
+    "errors": 0,
+    "warnings": 0,
+    "titel": "s9b_b20_teil",
+    "readonly": true
+  },
+  "opendoc7": {
+    "model": true,
+    "error": 0,
+    "warning": 0,
+    "doc_type": 1,
+    "volumen_mm3": 118994.69
+  },
+  "offen_am_ende": []
+}

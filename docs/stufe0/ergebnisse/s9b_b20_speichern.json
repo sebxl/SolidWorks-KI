@@ -1,0 +1,108 @@
+{
+  "ok": true,
+  "ordner": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9",
+  "volumen_mm3": 118994.69,
+  "titel_vorher": "Teil225",
+  "saveflag_vorher": true,
+  "step": {
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.step",
+    "options": 1,
+    "rueckgabe": true,
+    "errors": 0,
+    "warnings": 0,
+    "sekunden": 0.228,
+    "datei_bytes": 21188,
+    "titel_danach": "Teil225",
+    "pfad_danach": ""
+  },
+  "sldprt": {
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT",
+    "options": 1,
+    "rueckgabe": true,
+    "errors": 0,
+    "warnings": 0,
+    "sekunden": 0.459,
+    "datei_bytes": 63004,
+    "titel_danach": "s9b_b20_teil",
+    "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+  },
+  "saveflag_nach_speichern": false,
+  "step_ueberschreiben": {
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.step",
+    "options": 1,
+    "rueckgabe": true,
+    "errors": 0,
+    "warnings": 0,
+    "sekunden": 0.086,
+    "datei_bytes": 21188,
+    "titel_danach": "s9b_b20_teil",
+    "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+  },
+  "sldprt_ueberschreiben": {
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT",
+    "options": 1,
+    "rueckgabe": true,
+    "errors": 0,
+    "warnings": 0,
+    "sekunden": 0.237,
+    "datei_bytes": 63383,
+    "titel_danach": "s9b_b20_teil",
+    "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+  },
+  "step_kopf": [
+    "ISO-10303-21;",
+    "HEADER;",
+    "FILE_DESCRIPTION (( 'STEP AP203' ),",
+    "    '1' );",
+    "FILE_NAME ('s9b_b20_teil.step',",
+    "    '2026-09-26T22:42:52',"
+  ],
+  "bilder": {
+    "iso": {
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_iso.png",
+      "options": 3,
+      "rueckgabe": true,
+      "errors": 0,
+      "warnings": 0,
+      "sekunden": 0.786,
+      "datei_bytes": 306633,
+      "titel_danach": "s9b_b20_teil",
+      "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+    },
+    "vorne": {
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_vorne.png",
+      "options": 3,
+      "rueckgabe": true,
+      "errors": 0,
+      "warnings": 0,
+      "sekunden": 0.954,
+      "datei_bytes": 262069,
+      "titel_danach": "s9b_b20_teil",
+      "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+    },
+    "oben": {
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_oben.png",
+      "options": 3,
+      "rueckgabe": true,
+      "errors": 0,
+      "warnings": 0,
+      "sekunden": 0.928,
+      "datei_bytes": 251578,
+      "titel_danach": "s9b_b20_teil",
+      "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+    },
+    "rechts": {
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_rechts.png",
+      "options": 3,
+      "rueckgabe": true,
+      "errors": 0,
+      "warnings": 0,
+      "sekunden": 0.915,
+      "datei_bytes": 266553,
+      "titel_danach": "s9b_b20_teil",
+      "pfad_danach": "C:\\Users\\User\\.swki\\arbeit\\stufe0\\s9\\s9b_b20_teil.SLDPRT"
+    }
+  },
+  "titel_nach_bildern": "s9b_b20_teil",
+  "closedoc": null
+}
