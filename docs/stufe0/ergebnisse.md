@@ -5,7 +5,7 @@ stabil, keine Abstürze. Rohdaten je Spike: `docs/stufe0/ergebnisse/*.json`.
 
 | Spike | Frage | Ergebnis | Folge für Stufe 2+ |
 |---|---|---|---|
-| S1 | pywin32 3.14 ↔ SW, Early Binding | Verbindung per Late Binding (`win32com.client.GetActiveObject`, dynamischer Dispatch) funktioniert einwandfrei (Rev. 33.5.0, SW 2025, sichtbar). Early Binding über `gencache.EnsureDispatch` auf das bereits laufende Objekt schlägt fehl: `TypeError("This COM object can not automate the makepy process – please run makepy manually for this object")`. | Late Binding fest für `swki.verbindung`; Design korrigiert (war „Early Binding über makepy“, siehe Abschnitt „Designanpassungen“ unten). |
+| S1 | pywin32 3.14 ↔ SW, Early Binding | Verbindung per Late Binding (`win32com.client.GetActiveObject`, dynamischer Dispatch) funktioniert einwandfrei (Rev. 33.5.0, SW 2025, sichtbar). Early Binding über `gencache.EnsureDispatch` auf das bereits laufende Objekt schlägt fehl: `TypeError("This COM object can not automate the makepy process - please run makepy manually for this object")`. | Late Binding fest für `swki.verbindung`; Design korrigiert (war „Early Binding über makepy“, siehe Abschnitt „Designanpassungen“ unten). |
 | S2 | Ebenen sprachunabhängig | Die ersten drei `RefPlane`-Features liefern auf deutscher Oberfläche exakt „Ebene vorne“, „Ebene oben“, „Ebene rechts“; auf allen drei ließ sich problemlos eine Skizze einfügen. | Anker-Auflöser kann Standardebenen positionsbasiert (erste drei RefPlane-Features) statt namensbasiert auflösen. |
 | S3 | Voll bestimmte Skizze + Extrusion | Variante A (`FullyDefineSketch` mit allen Relations-Flags + Bemaßungsschema) reicht aus: Rückgabe 0, Status danach `swFullyConstrained`, Extrusion „Aufsatz-Linear austragen1“ erfolgreich, `rebuild_fehler: 0`. Variante B (Einzelmaße + Preference-Toggle) war nicht nötig. | Handler „skizze“ nutzt Variante A als Standardweg; Variante B bleibt Rückfallplan bei Fehlschlag von A. |
 | S4 | Masse, Hüllquader, Screenshots | Volumen exakt 120000 mm³ (= Soll), Hüllquader-Ausdehnung 100×20×60 mm (passt zum Sollteil). Alle 8 Bilder (4 Standardansichten × png/jpg, über `ShowNamedView2` + `SaveAs3`) fehlerfrei erzeugt und mit plausibler Größe; Sichtprüfung bestätigt korrekte Ansichten (Iso/Vorne/Oben/Rechts). | Prüfung in Stufe 2 kann `CreateMassProperty`, `GetPartBox`, `ShowNamedView2`+`SaveAs3` direkt nutzen. Bildexport (png und jpg) läuft über `swki`, nicht über MCP (siehe MCP-Zeile / Designanpassungen). |
@@ -24,7 +24,7 @@ Screenshot-/Bildexport ist eine `swki`-Funktion, nicht MCP.
 ## Stufe 1: API-Nachschlagewerk (Kriterium erfüllt)
 
 - `swki api methode IFeatureManager.FeatureExtrusion3` → 23 Parameter, seit 2014.
-- `swki api enum swEndConditions_e` → `Blind = 0`, `ThroughAll = 1`.
+- `swki api enum swEndConditions_e` → `swEndCondBlind = 0`, `swEndCondThroughAll = 1`.
 - Index-Umfang: 15.909 Members, 8.199 Enum-Werte, 18.722 Seiten.
 - `hh.exe` (CHM-Dekompilierung) braucht ein gesetztes Arbeitsverzeichnis (cwd) und relative Pfade;
   Pfade mit Leerzeichen scheitern lautlos (kein Fehlercode, einfach keine Ausgabe).

@@ -10,7 +10,7 @@ zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
 - Binding: **Late Binding** (dynamischer Dispatch über `GetActiveObject`) funktioniert einwandfrei
   unter Python 3.14 (S1). **Early Binding** über `win32com.client.gencache.EnsureDispatch` auf ein
   bereits laufendes Objekt schlägt fehl (`TypeError("This COM object can not automate the makepy
-  process – please run makepy manually for this object")`) – `gencache` kann für ein schon
+  process - please run makepy manually for this object")`) – `gencache` kann für ein schon
   existierendes OLE-Objekt keine passende generierte Wrapperklasse automatisch erzeugen; müsste
   vorher explizit per `makepy`/`EnsureModule` generiert werden. Für Stufe 0/1/2 nicht nötig, da Late
   Binding ausreicht.
@@ -43,7 +43,9 @@ zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
     (S3), `IModelDocExtension.CreateMassProperty` (S4), `IAssemblyDoc.InterferenceDetectionManager`
     (S5).
   - liefert der Member einen primitiven Wert (z. B. `bool`): `TypeError("'bool' object is not
-    callable")`. Belegt für `IModelDoc2.ViewZoomtofit2` (S4) und `IAssemblyDoc.EditRebuild3` (S6).
+    callable")`. Belegt für `IAssemblyDoc.EditRebuild3` (S6). `IModelDoc2.ViewZoomtofit2` (Sub ohne
+    Argumente) wurde in S4 nur ohne `()` angesprochen (kein Aufruf mit `()` protokolliert, also
+    keine Exception dafür belegt) – aus Vorsicht ebenfalls ohne `()` verwenden.
 
   **`swki.verbindung.wert()` ist für diesen Fall NICHT geeignet** (Ruling R11): `wert()` prüft nur
   `callable(x)`, und jedes COM-Objekt ist wegen `__call__` `callable` – auch ein bereits fertiges
