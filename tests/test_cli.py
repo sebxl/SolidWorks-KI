@@ -20,4 +20,12 @@ def test_modulaufruf():
 
 
 def test_unbekannter_befehl_gibt_fehler(capsys):
-    assert main(["gibtsnicht"]) != 0
+    assert main(["gibtsnicht"]) == 1
+    daten = json.loads(capsys.readouterr().out)
+    assert "fehler" in daten
+
+
+def test_help_gibt_null(capsys):
+    assert main(["--help"]) == 0
+    output = capsys.readouterr().out
+    assert "usage:" in output.lower()
