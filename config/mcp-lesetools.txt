@@ -1,0 +1,23 @@
+# Lesende Tools von solidworks-mcp (Commit 600624f). Alle anderen sind gesperrt.
+# Eine Zeile je Tool. Erzeugt/geprüft am 2026-09-26.
+analyze_drawing_annotations
+analyze_drawing_comprehensive
+analyze_drawing_dimensions
+analyze_drawing_views
+analyze_geometry
+analyze_macro
+check_drawing_compliance
+check_drawing_standards
+check_interference
+check_sketch_fully_defined
+export_image
+get_dimension
+get_file_properties
+get_mass_properties
+get_material_properties
+get_model_info
+list_components
+list_configurations
+list_features
+list_open_documents
+list_template_library
