@@ -1,6 +1,7 @@
 """Entpackt die lokale SolidWorks-API-Hilfe (CHM) und liest die HTML-Seiten."""
 
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -49,8 +50,10 @@ class _Text(HTMLParser):
 
 
 def _dekodiere(roh: bytes) -> str:
+    # Die echten CHM-Seiten sind UTF-8 mit BOM (kein cp1252); "utf-8-sig" entfernt das BOM,
+    # verhält sich sonst wie "utf-8" und faellt bei echtem cp1252 weiterhin auf den except-Zweig.
     try:
-        return roh.decode("utf-8")
+        return roh.decode("utf-8-sig")
     except UnicodeDecodeError:
         return roh.decode("cp1252", errors="replace")
 
@@ -84,7 +87,15 @@ def entpacke(chm: Path, ziel: Path, neu: bool = False) -> Path:
     if ziel.exists() and any(ziel.rglob("*.htm*")) and not neu:
         return ziel
     ziel.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["hh.exe", "-decompile", str(ziel), str(chm)], check=False, timeout=900)
+    # hh.exe -decompile scheitert stillschweigend, sobald Ziel- oder Quellpfad Leerzeichen
+    # enthält oder gequotet werden muss (z. B. "C:\Program Files\..."); daher die Quelle nach
+    # ziel/quelle.chm kopieren und relativ mit cwd=ziel ohne Anführungszeichen aufrufen.
+    kopie = ziel / "quelle.chm"
+    shutil.copyfile(chm, kopie)
+    try:
+        subprocess.run(["hh.exe", "-decompile", ".", "quelle.chm"], cwd=ziel, check=False, timeout=900)
+    finally:
+        kopie.unlink(missing_ok=True)
     if not any(ziel.rglob("*.htm*")):
         raise RuntimeError(f"Entpacken fehlgeschlagen: {chm}")
     return ziel
