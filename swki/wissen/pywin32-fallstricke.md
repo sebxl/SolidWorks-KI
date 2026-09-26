@@ -14,6 +14,32 @@ zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
   existierendes OLE-Objekt keine passende generierte Wrapperklasse automatisch erzeugen; müsste
   vorher explizit per `makepy`/`EnsureModule` generiert werden. Für Stufe 0/1/2 nicht nötig, da Late
   Binding ausreicht.
+- **Echtes Early Binding (S8: `gencache.EnsureModule(sldworks.tlb)` + `CastTo`) wurde getestet und
+  bringt keinen Vorteil:** `EnsureModule` selbst funktioniert (Cache unter `%TEMP%\gen_py\<py-version>`,
+  ein echter Kaltstart dauert für `sldworks.tlb` ca. 2,2 s, für das kleinere `swconst.tlb` ca. 0,1 s;
+  jeder weitere Aufruf im selben Prozess danach unter 5 ms). Aber: `CastTo(app, "ISldWorks")` auf das
+  laufende Application-Objekt liefert scheinbar erfolgreich ein `ISldWorks`-Objekt, dessen `_oleobj_`
+  jedoch fälschlich auf das CoClass-Objekt selbst zeigt (nicht auf einen echten IDispatch-Zeiger) –
+  jeder Methodenaufruf darauf bricht mit `AttributeError("... object has no attribute
+  'InvokeTypes'")`. Grund: `DispatchBaseClass.__init__` prüft nur `isinstance(oobj, (DispatchBaseClass,
+  PyIDispatchType))`; ein CoClass-Objekt (wie das von `GetActiveObject` nach vorherigem `EnsureModule`
+  automatisch getypt zurückgegebene `app`) erfüllt keine der beiden Bedingungen. Funktionierender
+  Workaround: `CastTo(app._dispobj_, "ISldWorks")` (das intern vom CoClass-Wrapper gehaltene
+  `DispatchBaseClass`-Objekt der Default-Schnittstelle). Wichtiger noch: `CastTo` auf **jedes**
+  zurückgegebene Kindobjekt (z. B. `model = app.NewDocument(...)`, `IModelDocExtension`,
+  `SketchManager`, `FeatureManager`) scheitert grundsätzlich mit demselben Fehler wie beim
+  Application-Objekt in S1 (`can not automate the makepy process`), weil `CastTo` dafür intern
+  `gencache.EnsureDispatch(ob)` aufruft, was `ob._oleobj_.GetTypeInfo()` braucht – und SOLIDWORKS-
+  COM-Objekte liefern `GetTypeInfo()` grundsätzlich nicht nutzbar (nicht nur für die Application,
+  für das gesamte Objektmodell). Diese Kindobjekte bleiben daher **immer** dynamisch (spät)
+  gebunden, mit denselben Klammer-/VARIANT-Regeln wie bisher (siehe unten) – unabhängig davon, ob
+  `EnsureModule` vorher aufgerufen wurde. Bei früh gebundenen Objekten (Application-Handle über den
+  Workaround) gilt für nullargumentige Member die **umgekehrte** Regel: MIT `()` aufrufen (echte
+  Python-`def`-Methoden, kein automatischer Attributzugriffs-Call). `swconst`-Enum-Konstanten sind
+  nach `EnsureModule(swconst.tlb)` per Name nutzbar (`win32com.client.constants.swEndCondBlind` etc.,
+  stimmen mit dem lokalen API-Index überein) – der einzige verifizierte Zusatznutzen, aber ohne
+  `CastTo` erreichbar und mit geringem Mehrwert gegenüber `swki api enum`. Fazit: Late Binding bleibt
+  gesetzt. Details/Rohdaten: `docs/stufe0/ergebnisse/s8_early_binding.json`.
 
 ## Einheiten
 

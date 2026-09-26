@@ -1,0 +1,139 @@
+{
+  "ok": true,
+  "frage1_ensuremodule": {
+    "gencache_pfad": "C:\\Users\\User\\AppData\\Local\\Temp\\gen_py\\3.14",
+    "sldworks_tlb": {
+      "datei": "sldworks.tlb",
+      "guid": "{83A33D31-27C5-11CE-BFD4-00400513BB57}",
+      "lcid": 0,
+      "major": 33,
+      "minor": 0,
+      "cache_datei": "C:\\Users\\User\\AppData\\Local\\Temp\\gen_py\\3.14\\83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.py",
+      "pyc_datei": "C:\\Users\\User\\AppData\\Local\\Temp\\gen_py\\3.14\\__pycache__\\83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.cpython-314.pyc",
+      "war_bereits_gecacht_vor_diesem_lauf": false,
+      "dauer_erster_lauf_s_echter_kaltstart": 2.167,
+      "dauer_zweiter_lauf_s_selber_prozess": 0.003,
+      "cache_datei_existiert_danach": true
+    },
+    "swconst_tlb": {
+      "datei": "swconst.tlb",
+      "guid": "{4687F359-55D0-4CD3-B6CF-2EB42C11F989}",
+      "lcid": 0,
+      "major": 33,
+      "minor": 0,
+      "cache_datei": "C:\\Users\\User\\AppData\\Local\\Temp\\gen_py\\3.14\\4687F359-55D0-4CD3-B6CF-2EB42C11F989x0x33x0.py",
+      "pyc_datei": "C:\\Users\\User\\AppData\\Local\\Temp\\gen_py\\3.14\\__pycache__\\4687F359-55D0-4CD3-B6CF-2EB42C11F989x0x33x0.cpython-314.pyc",
+      "war_bereits_gecacht_vor_diesem_lauf": false,
+      "dauer_erster_lauf_s_echter_kaltstart": 0.108,
+      "dauer_zweiter_lauf_s_selber_prozess": 0.001,
+      "cache_datei_existiert_danach": true
+    }
+  },
+  "frage2_castto_app": {
+    "varianten": [
+      {
+        "variante": "CastTo(app, 'ISldWorks')",
+        "cast_ok": true,
+        "aufruf_ok": false,
+        "fehler": "AttributeError(\"'<win32com.gen_py.SldWorks 2025 Type Library.ISldWorks instance at 0x2283000762384>' object has no attribute 'InvokeTypes'\")",
+        "befund": "CastTo liefert ein Objekt, dessen _oleobj_ auf das CoClass-Objekt selbst zeigt statt auf einen echten IDispatch-Zeiger (DispatchBaseClass.__init__ prueft nur isinstance(oobj, (DispatchBaseClass, PyIDispatchType)); ein CoClass-Objekt erfuellt keine der beiden Bedingungen, daher wird oobj unveraendert als _oleobj_ uebernommen)."
+      },
+      {
+        "variante": "CastTo(app._dispobj_, 'ISldWorks')",
+        "cast_ok": true,
+        "aufruf_ok": true,
+        "ergebnis": "33.5.0",
+        "befund": "Funktioniert: app._dispobj_ ist ein echtes DispatchBaseClass-Objekt, CastTo QueryInterface't dessen echten _oleobj_ korrekt."
+      },
+      {
+        "variante": "CastTo(dynamic.Dispatch(app._oleobj_), 'ISldWorks')",
+        "cast_ok": false,
+        "fehler": "TypeError('This COM object can not automate the makepy process - please run makepy manually for this object')",
+        "befund": "Gleicher Fehler wie S1 (EnsureDispatch auf das laufende Objekt): CastTo ruft fuer nicht-getypte Objekte intern gencache.EnsureDispatch(ob) auf, was ob._oleobj_.GetTypeInfo() braucht - scheitert, weil SOLIDWORKS-COM-Objekte GetTypeInfo() nicht nutzbar implementieren."
+      }
+    ],
+    "app_typ_nach_ensuremodule": "win32com.gen_py.83A33D31-27C5-11CE-BFD4-00400513BB57x0x33x0.SldWorks",
+    "app_ist_coclass": true
+  },
+  "sequenz": {
+    "model_typ": "win32com.client.CDispatch",
+    "model_ist_frueh_gebunden": false,
+    "castto_model": {
+      "cast_ok": false,
+      "fehler": "TypeError('This COM object can not automate the makepy process - please run makepy manually for this object')"
+    },
+    "sketchmanager_typ": "win32com.client.CDispatch",
+    "featuremanager_typ": "win32com.client.CDispatch",
+    "extension_typ": "win32com.client.CDispatch",
+    "fullydefinesketch_mit_none": {
+      "ok": false,
+      "fehler": "com_error(-2147352571, 'Typenkonflikt.', None, 6)"
+    },
+    "fullydefinesketch_mit_callout_leer": {
+      "ok": true,
+      "rueckgabe": 0
+    },
+    "extrusion": "Aufsatz-Linear austragen1",
+    "extrusion_typ": "win32com.client.CDispatch",
+    "feature_baum": [
+      "CommentsFolder",
+      "FavoriteFolder",
+      "HistoryFolder",
+      "SelectionSetFolder",
+      "SensorFolder",
+      "DocsFolder",
+      "DetailCabinet",
+      "SurfaceBodyFolder",
+      "SolidBodyFolder",
+      "EnvFolder",
+      "InkMarkupFolder",
+      "EqnFolder",
+      "MaterialFolder",
+      "RefPlane",
+      "RefPlane",
+      "RefPlane",
+      "OriginProfileFeature",
+      "ProfileFeature",
+      "Extrusion"
+    ],
+    "volumen_mm3": 120000.0,
+    "saveas3_fehlercode": 0,
+    "saveas3_datei_existiert": true
+  },
+  "frage3_nullargumentige_member": {
+    "frueh_gebundene_app_ebene": {
+      "mit_klammern": [
+        {
+          "member": "early_app.RevisionNumber() mit Klammern",
+          "mit_klammern_ok": true,
+          "ergebnis": "33.5.0"
+        }
+      ],
+      "ohne_klammern_verhalten": "liefert gebundene Methode, ruft NICHT auf (Attributzugriff allein reicht nicht)",
+      "befund": "Bei frueh gebundenen (DispatchBaseClass-)Objekten sind generierte Member fuer nullargumentige Methoden (z. B. RevisionNumber, FirstFeature, EditRebuild3, GetSpecificFeature2, CreateMassProperty) normale Python-def-Methoden, die self._oleobj_.InvokeTypes(...) aufrufen - sie MUESSEN mit () aufgerufen werden. Das ist das exakte Gegenteil der in swki/wissen/pywin32-fallstricke.md fuer dynamisch gebundene Objekte dokumentierten Regel (dort: ohne () aufrufen). Da ALLE in dieser Sitzung erreichbaren Kindobjekte (model, SketchManager, FeatureManager, Extension, Feature, ...) trotz frueh gebundenem app-Handle dynamisch bleiben (siehe frage2/sequenz), gilt fuer sie weiterhin die alte Regel OHNE Klammern - nur fuer das (mit CastTo(app._dispobj_,...) gewonnene) Application-Handle selbst gilt MIT Klammern. Gemischter Code muss also wissen, welcher Objekttyp gerade vorliegt."
+    }
+  },
+  "frage5_swconst_konstanten": {
+    "konstanten": {
+      "swEndCondBlind": 0,
+      "swEndCondThroughAll": 1,
+      "swThisConfiguration": 1,
+      "swFullyConstrained": 3
+    },
+    "stimmen_mit_api_index_ueberein": true
+  },
+  "frage6_mischbetrieb": {
+    "befund": "Mischbetrieb ist unproblematisch, weil er in der Praxis kaum vermeidbar ist: das app-Handle wird (sobald der gen_py-Plattencache existiert - auch aus einem frueheren Prozess) automatisch getypt zurueckgegeben, waehrend praktisch alle Kindobjekte (Modelle, Features, Manager) dynamisch bleiben, weil ihre generierten Rueckgabe-Handler kein festes IID kennen und GetTypeInfo() auf SOLIDWORKS-Objekten scheitert. swki.verbindung.wert() funktioniert in beiden Faellen korrekt, weil es callable() prueft: bei frueh gebundenen Methoden (echte Python-Funktion, callable) wird aufgerufen, bei dynamisch bereits aufgeloesten Attributen (nicht erneut callable im relevanten Sinn fuer Primitivwerte) wird durchgereicht. Objekte beider Art koennen in derselben Sitzung nebeneinander verwendet werden, ohne dass COM-Fehler auftreten - lediglich die Klammer-Konvention fuer nullargumentige Member unterscheidet sich je Objekt (siehe Frage 3).",
+    "seiteneffekt": "Nach diesem Spike liegt der gen_py-Cache fuer sldworks.tlb/swconst.tlb dauerhaft unter %TEMP%\\gen_py\\3.14 auf der Platte. Das bewirkt, dass kuenftige Prozesse (auch S1-S7, ohne eigenen EnsureModule-Aufruf) ueber GetActiveObject automatisch ein getyptes app-Handle erhalten statt eines rein dynamischen. Das ist unschaedlich fuer bestehenden Code, da dieser app-seitige Nullargument-Zugriffe ausschliesslich ueber wert() macht (siehe oben) und nie ungeklammert direkt auf app aufruft."
+  },
+  "frage7_empfehlung": {
+    "empfehlung": "Late Binding bleibt fuer Stufe 2 gesetzt; EnsureModule + CastTo wird NICHT eingefuehrt.",
+    "begruendung": [
+      "CastTo(app, 'ISldWorks') liefert scheinbar ein Ergebnis, das aber bei jedem Aufruf mit AttributeError bricht (_oleobj_ zeigt auf das CoClass-Objekt selbst); ein funktionierender Weg existiert nur ueber den undokumentierten Umweg CastTo(app._dispobj_, ...).",
+      "CastTo auf jedes zurueckgegebene Kindobjekt (Modell, Feature, SketchManager, Extension, ...) scheitert grundsaetzlich mit demselben Fehler wie in S1 ('can not automate the makepy process'), weil SOLIDWORKS-COM-Objekte GetTypeInfo() nicht liefern - das ist der Kern der Sache und nicht auf das Application-Objekt beschraenkt.",
+      "Dadurch bleiben praktisch alle fuer den Compiler relevanten Objekte (Modell, Feature, SketchManager, FeatureManager, Extension) so oder so dynamisch gebunden - der einzige erreichbare Vorteil eines fruehen Application-Handles (Klammerpflicht bei Nullargument-Membern) kollidiert mit der bestehenden, bereits verifizierten Regel fuer alle anderen Objekte und wuerde Code fehleranfaelliger statt klarer machen.",
+      "Der einzige echte, verifizierte Zusatznutzen ist die Verfuegbarkeit benannter swconst-Konstanten (win32com.client.constants.swEndCondBlind etc.) - dafuer ist kein CastTo noetig, nur EnsureModule(swconst.tlb); der Nutzen ist gering, da der lokale API-Index (`swki api enum`) dieselben Werte bereits nachschlagbar bereitstellt.",
+      "Der gen_py-Plattencache ist rechnerabhaengig (Pfad, Python-Version, SW-Jahr/Revision); auf Rechner B mit SW 2026 waere die Typbibliotheks-GUID/Version anders (major=34 vermutlich) und muesste dort neu generiert werden - ein weiterer Betriebsaufwand ohne belegten Gegenwert."
+    ]
+  }
+}
