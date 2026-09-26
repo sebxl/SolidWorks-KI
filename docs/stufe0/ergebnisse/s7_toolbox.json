@@ -19,7 +19,6 @@
     "PEM Inch",
     "PEM Metric",
     "SKF",
-    "ToolboxFiles.index",
     "Torrington Inch",
     "Torrington Metric",
     "Truarc",
@@ -27,49 +26,22 @@
   ],
   "interop_configure_addin": true,
   "doku_toolbox": [
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\sldworksapi\\Add_Component_and_Mate_Example_CSharp.htm",
-      "titel": "Add and Mate Component Example (C#)",
-      "auszug": " … MakeVirtual2 ( true ); // Get the name of the [component] for the mate strCompName = swComponent. Name2 ; // [Create] the name of the mate … "
-    },
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\sldworksapi\\Add_Component_and_Mate_Example_VB.htm",
-      "titel": "Add and Mate Component Example (VBA)",
-      "auszug": " … MakeVirtual2 (True) ' Get the name of the [component] for the \nmate strCompName = swcomponent. Name2 () ' [Create] the name of the mate … "
-    },
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\sldworksapi\\Add_Component_and_Mate_Example_VBNET.htm",
-      "titel": "Add and Mate Component Example (VB.NET)",
-      "auszug": " … MakeVirtual2 ( True ) ' Get the name of the [component] for the mate strCompName = swComponent. Name2 () ' [Create] the name of the mate … "
-    },
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\swconst\\SolidWorks.Interop.swconst~SolidWorks.Interop.swconst_namespace.html",
-      "titel": "SolidWorks.Interop.swconst Namespace",
-      "auszug": " … swApiToolboxItemExportStatus_e Return codes for [toolbox] item export. swApiToolboxItemImportStatus_e Return codes for [toolbox] item import. swAppCallBackCmd_e Types of … "
-    }
+    "Add and Mate Component Example (C#)",
+    "Add and Mate Component Example (VBA)",
+    "Add and Mate Component Example (VB.NET)",
+    "SolidWorks.Interop.swconst Namespace"
   ],
   "doku_toolbox_konfig": [
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\sldworksapi\\Get_Hole_Series_Information_Example_CSharp.htm",
-      "titel": "Get Hole Series Information Example (C#)",
-      "auszug": " … [Configure] holes in the SOLIDWORKS [Toolbox]. // // Postconditions: Inspect the Immediate window. //--------------------------------------------------------------------------- using Microsoft.VisualBasic; using System; using System.Collections; using … "
-    },
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\sldworksapi\\Get_Hole_Series_Information_Example_VBNET.htm",
-      "titel": "Get Hole Series Information Example (VB.NET)",
-      "auszug": " … [Configure] holes in the SOLIDWORKS [Toolbox]. ' ' Postconditions: Inspect the Immediate window. '--------------------------------------------------------------------------- Imports SolidWorks.Interop.sldworks Imports SolidWorks.Interop.swconst Imports … "
-    },
-    {
-      "schluessel": "C:\\Users\\User\\.swki\\api\\2025\\html\\sldworksapi\\Get_Hole_Series_Information_Example_VB.htm",
-      "titel": "Get Hole Series Information Example (VBA)",
-      "auszug": " … [Configure] holes and fasteners in the SOLIDWORKS [Toolbox]. ' ' Postconditions: Inspect the Immediate window. '--------------------------------------------------------------------------- Option Explicit Dim swApp As SldWorks.SldWorks … "
-    }
+    "Get Hole Series Information Example (C#)",
+    "Get Hole Series Information Example (VB.NET)",
+    "Get Hole Series Information Example (VBA)"
   ],
   "toolbox_member_im_index": [
     "IAssemblyDoc.UpdateToolboxComponent(AssemblyLevelToUpdate) – aktualisiert bereits eingefügte Toolbox-Komponenten anhand der aktuellen Toolbox-Einstellungen; erzeugt keine neue Komponente.",
     "IModelDocExtension.ToolboxPartType – get/set-Flag, ob ein bereits offenes Dokument als Toolbox-Teil markiert ist; keine Erzeugung.",
+    "IPackAndGo.IncludeToolboxComponents – get/set-Flag, ob Toolbox-Komponenten in ein Pack&Go aufgenommen werden; keine Erzeugung.",
     "ISldWorks.ImportToolboxItem(StdToImport, DestinationFilePath) / ExportToolboxItem – importieren/exportieren die Größentabellen (*.xlsx) einer Norm, keine Bauteilgeometrie."
   ],
   "entscheidung": "Rückfallweg",
-  "begruendung": "Der lokale API-Index deckt nur sldworks.tlb/swconst.tlb ab (siehe swki/api/bauen.py:TYPBIBLIOTHEKEN). Alle vier Member mit 'Toolbox' im Namen (s. 'toolbox_member_im_index') wurden per 'swki api methode' geprüft: keiner davon erzeugt ein Toolbox-Teil aus Norm+Größe in einem Dokument/einer Baugruppe. Suche nach 'Toolbox component create' liefert nur Beispielcode zu AddComponent/AddMate und die swconst-Namespace-Übersicht (Export/Import-Enums); Suche nach 'Toolbox configure size' liefert nur Hole-Wizard-Beispiele, nicht Toolbox-Teile. Die eigentliche Toolbox-Erzeugungs-Funktionalität (Drag&Drop aus dem Task-Pane, Norm/Größe wählen) liegt in einem eigenen Add-in mit eigener Typbibliothek (SolidWorks.Interop.sldtoolboxconfigureaddin.dll, vorhanden, s.o.), die nicht Teil der indizierten Typbibliotheken ist und daher hier nicht sichtbar/nutzbar ist. Kein 'versuch_erzeugen()' ergänzt (Brief: nur bei gefundener Methode). Größe manuell erzeugen, per 'swki normteil aufnehmen' übernehmen (Stufe 3)."
+  "begruendung": "Der lokale API-Index deckt für strukturierte 'methode'/'enum'-Einträge nur sldworks.tlb/swconst.tlb ab (siehe swki/api/bauen.py:TYPBIBLIOTHEKEN). Alle fünf Member mit 'Toolbox' im Namen dieser Typbibliotheken (s. 'toolbox_member_im_index') wurden per 'swki api methode' geprüft: keiner davon erzeugt ein Toolbox-Teil aus Norm+Größe in einem Dokument/einer Baugruppe. Suche nach 'Toolbox component create' liefert nur Beispielcode zu AddComponent/AddMate und die swconst-Namespace-Übersicht (Export/Import-Enums); Suche nach 'Toolbox configure size' liefert nur Hole-Wizard-Beispiele, nicht Toolbox-Teile. Die eigentliche Toolbox-Erzeugungs-Funktionalität (Drag&Drop aus dem Task-Pane, Norm/Größe wählen) liegt in einem eigenen Add-in mit eigener Typbibliothek (SolidWorks.Interop.sldtoolboxconfigureaddin.dll, vorhanden, s.o.), die nicht in TYPBIBLIOTHEKEN steht und daher keine strukturierten 'methode'/'enum'-Einträge liefert. Das ist NICHT gleichbedeutend mit 'nicht indiziert': 'toolboxapi.chm' ist als Hilfetext im Index durchsuchbar ('swki api suche') und zeigt die Interfaces IToolboxConfiguratorAddin, IToolBoxConfiguratorApplication, IPDMDocManager – deren Member sind aber nur Konfigurator-/PDM-Hooks (u. a. Connect/Disconnect, SetDocumentStatus, SetManagedDocument, SetCancelOperation, GetHWnd), keine Methode zum Erzeugen eines Teils. Kein 'versuch_erzeugen()' ergänzt (Brief: nur bei gefundener Methode). Größe manuell erzeugen, per 'swki normteil aufnehmen' übernehmen (Stufe 3)."
 }

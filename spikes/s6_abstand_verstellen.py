@@ -17,10 +17,13 @@ def pruefen() -> dict:
     ordner = r.arbeitsordner / "stufe0" / "s6"
     teil = neues_teil(app, r)
     kasten(teil, standardebenen(teil)[1], 40, 40, 20)  # Kasten lokal y=0..20mm (Extrusionsrichtung)
-    speichere(teil, ordner / "block.sldprt")
+    pfad_teil = ordner / "block.sldprt"
+    fehler = speichere(teil, pfad_teil)
+    if fehler:
+        raise RuntimeError(f"Speichern {pfad_teil}: Fehler {fehler}")
     assy = neue_baugruppe(app, r)
     try:
-        pfad = str(ordner / "block.sldprt")
+        pfad = str(pfad_teil)
         # AddComponent5 X/Y/Z ist laut API-Doku ("X coordinate of the component center") das
         # Zentrum der Bauteil-Bounding-Box, nicht dessen Ursprung (Abweichung zur Brief-Annahme
         # "erste = fixiert [am Ursprung]"/"y=50..70mm", siehe "abweichungen" unten). Bei einem
@@ -42,8 +45,8 @@ def pruefen() -> dict:
             # Attributzugriff nötig/möglich, da ein Argument verlangt wird).
             dim = m.DisplayDimension2(0).GetDimension2(0)
             dim.SetSystemValue3(mm(soll), 1, None)
-            # EditRebuild3 ist nullargumentig: pywin32 ruft es schon beim Attributzugriff auf und
-            # liefert direkt das bool-Ergebnis (Bindungs-Eigenart, siehe _gemeinsam.py). Ein
+            # IModelDoc2.EditRebuild3 ist nullargumentig: pywin32 ruft es schon beim Attributzugriff
+            # auf und liefert direkt das bool-Ergebnis (Bindungs-Eigenart, siehe _gemeinsam.py). Ein
             # zusätzliches "()" (wie im Brief-Snippet) scheitert mit
             # TypeError("'bool' object is not callable"), da das bool-Ergebnis kein Default-Member hat.
             assy.EditRebuild3
@@ -59,7 +62,7 @@ def pruefen() -> dict:
                 "fixiert'/'y=50..70mm'). Deshalb 'erwartet' als '10 + soll' statt '20 + soll' "
                 "berechnet (10mm = halbe Kastentiefe = Versatz zwischen Zentrum und Ursprung); "
                 "live per Transform2 vor/nach dem Mate nachgemessen, siehe Bericht.",
-                "IAssemblyDoc.EditRebuild3 ist nullargumentig und liefert bereits beim "
+                "IModelDoc2.EditRebuild3 ist nullargumentig und liefert bereits beim "
                 "Attributzugriff das bool-Ergebnis (gleiche Bindungs-Eigenart wie FirstFeature "
                 "in _gemeinsam.py); der Aufruf mit '()' aus dem Brief scheitert mit "
                 "TypeError(\"'bool' object is not callable\") und wurde durch reinen "

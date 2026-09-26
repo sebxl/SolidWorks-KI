@@ -43,7 +43,7 @@ zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
     (S3), `IModelDocExtension.CreateMassProperty` (S4), `IAssemblyDoc.InterferenceDetectionManager`
     (S5).
   - liefert der Member einen primitiven Wert (z. B. `bool`): `TypeError("'bool' object is not
-    callable")`. Belegt für `IAssemblyDoc.EditRebuild3` (S6). `IModelDoc2.ViewZoomtofit2` (Sub ohne
+    callable")`. Belegt für `IModelDoc2.EditRebuild3` (S6). `IModelDoc2.ViewZoomtofit2` (Sub ohne
     Argumente) wurde in S4 nur ohne `()` angesprochen (kein Aufruf mit `()` protokolliert, also
     keine Exception dafür belegt) – aus Vorsicht ebenfalls ohne `()` verwenden.
 
@@ -68,9 +68,16 @@ zugehörigen `docs/stufe0/ergebnisse/*.json` belegt sind.
   `com_error` „Typenkonflikt“ (arg 6) (S3) → `callout_leer()` verwenden.
 - `IComponent2.Select4` mit rohem Python-`None` für `Data`: derselbe „Typenkonflikt“-Fehler (S5) →
   `callout_leer()` verwenden.
-- `IAssemblyDoc.EditRebuild3()` mit Klammern: `TypeError("'bool' object is not callable")` (S6) →
+- `IModelDoc2.EditRebuild3()` mit Klammern: `TypeError("'bool' object is not callable")` (S6) →
   ohne Klammern (`assy.EditRebuild3`).
-- Toolbox-Teil aus Norm+Größe per API erzeugen: keine Methode im indizierten API-Bereich
-  (`sldworks.tlb`/`swconst.tlb`) gefunden; die Erzeugungsfunktionalität liegt in einem eigenen,
-  nicht indizierten Add-in (S7). Rückfallweg: manuell erzeugen, per `swki normteil aufnehmen`
-  übernehmen.
+- Toolbox-Teil aus Norm+Größe per API erzeugen: keine der fünf Member mit „Toolbox“ im Namen aus
+  `sldworks.tlb`/`swconst.tlb` (`IAssemblyDoc.UpdateToolboxComponent`, `IModelDocExtension.ToolboxPartType`,
+  `IPackAndGo.IncludeToolboxComponents`, `ISldWorks.Import-`/`ExportToolboxItem`) erzeugt ein Teil (S7).
+  Die eigentliche Erzeugungsfunktionalität (Task-Pane, Norm/Größe wählen) liegt in einem eigenen
+  Add-in mit eigener Typbibliothek (`SolidWorks.Interop.sldtoolboxconfigureaddin.dll`), die nicht in
+  `TYPBIBLIOTHEKEN` steht und daher keine strukturierten `methode`/`enum`-Einträge liefert – **nicht**
+  „nicht indiziert“: `toolboxapi.chm` ist als Hilfetext im Index durchsuchbar (`swki api suche`) und
+  zeigt die Interfaces `IToolboxConfiguratorAddin`, `IToolBoxConfiguratorApplication`,
+  `IPDMDocManager` – aber nur Konfigurator-/PDM-Hooks (`Connect`/`Disconnect`,
+  `SetDocumentStatus`, …), keine Methode zum Erzeugen eines Teils (S7). Rückfallweg: manuell
+  erzeugen, per `swki normteil aufnehmen` übernehmen.

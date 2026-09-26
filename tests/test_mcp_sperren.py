@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -31,3 +32,15 @@ def test_settings_behaelt_fremde_regeln():
     neu = mcp_sperren.aktualisiere_settings(settings, ["mcp__solidworks-mcp__x"])
     assert neu["permissions"]["deny"] == ["Bash(rm:*)", "mcp__solidworks-mcp__x"]
     assert neu["permissions"]["ask"] == ["Bash(git push:*)"]
+
+
+def test_settings_deny_stimmt_mit_sperrliste_ueberein():
+    """Driftprüfung: die mcp__solidworks-mcp__*-Einträge in .claude/settings.json permissions.deny
+    sind genau sperrliste(config/mcp-tools-alle.json, erlaubt aus config/mcp-lesetools.txt)."""
+    projekt = Path(__file__).resolve().parent.parent
+    alle = json.loads((projekt / "config" / "mcp-tools-alle.json").read_text(encoding="utf-8"))
+    erlaubt = mcp_sperren.lies_lesetools(projekt / "config" / "mcp-lesetools.txt")
+    erwartet = mcp_sperren.sperrliste(alle, erlaubt)
+    settings = json.loads((projekt / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    tatsaechlich = sorted(r for r in settings["permissions"]["deny"] if r.startswith(mcp_sperren.PRAEFIX))
+    assert tatsaechlich == erwartet

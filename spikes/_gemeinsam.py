@@ -32,10 +32,11 @@ def neue_baugruppe(app, r):
 
 
 def standardebenen(model) -> list:
-    # FirstFeature/GetNextFeature sind laut sldworks.tlb Property-Get-artig gebunden:
-    # pywin32 (dynamic dispatch) ruft sie schon beim Attributzugriff auf und liefert direkt
-    # das IFeature-Objekt zurück. Ein zusätzliches "()" – auch über wert(), da jedes
-    # CDispatch-Objekt selbst __call__ definiert und damit fälschlich "callable" ist –
+    # FirstFeature/GetNextFeature sind im Index als "methode" mit 0 Parametern geführt (nicht als
+    # Property). pywin32s dynamischer Dispatch (ohne Typinfo) ruft nullargumentige Member aber
+    # bereits beim Attributzugriff auf (METHOD- und PROPERTYGET-Aufruf sind für ihn ununterscheidbar)
+    # und liefert direkt das IFeature-Objekt zurück. Ein zusätzliches "()" – auch über wert(), da
+    # jedes CDispatch-Objekt selbst __call__ definiert und damit fälschlich "callable" ist –
     # scheitert dann mit com_error "Mitglied nicht gefunden". Daher reiner Attributzugriff.
     ebenen = []
     f = model.FirstFeature

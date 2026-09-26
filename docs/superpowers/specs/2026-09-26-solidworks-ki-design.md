@@ -183,8 +183,9 @@ python -m swki api suche|methode|enum|pruefe-code ...
 Module:
 
 - `verbindung` – Anbindung an laufendes SolidWorks (Version aus `rechner.yaml`), Late Binding
-  (`win32com.client.GetActiveObject`, dynamischer Dispatch – Early Binding über makepy schlägt für
-  ein bereits laufendes Objekt fehl, siehe docs/stufe0/ergebnisse.md), Hilfen `mm()`, `grad()`,
+  (`win32com.client.GetActiveObject`, dynamischer Dispatch – `EnsureDispatch` auf das bereits
+  laufende Objekt schlägt fehl, siehe docs/stufe0/ergebnisse.md; `EnsureModule(sldworks.tlb)` +
+  `CastTo` für echtes Early Binding ist ungetestet, vor Stufe 2 klären), Hilfen `mm()`, `grad()`,
   `VARIANT`-Callout.
 - `spec` – Laden, Schema-Prüfung, Parameterauflösung, Prüfsumme.
 - `compiler` – Handler-Registry (`@handler("extrusion")`), je Feature-Typ eine kleine Funktion,
@@ -247,6 +248,8 @@ Pro Rechner durch `einrichten.ps1`:
 Befehle: `swki api suche`, `methode`, `enum`, `pruefe-code` (warnt bei API-Aufrufen im Compiler, die
 erst nach SW 2025 verfügbar sind). Kuratiertes Wissen in `swki/wissen/pywin32-fallstricke.md`.
 Der Index bleibt lokal (Dassault-Dokumentation), ins Git kommt nur der Parser.
+Parametertypen und Rückgabetyp werden in Stufe 1 nicht indiziert (nur Name/aus/optional +
+Seitentext); Nachrüstung bei Bedarf.
 
 ## 8. Normteile
 
@@ -259,9 +262,11 @@ Der Index bleibt lokal (Dassault-Dokumentation), ins Git kommt nur der Parser.
   speichert (nur SW 2025) und trägt in den Katalog ein.
 - Kein Treffer: Claude hält an und nennt Typ, Maße, Einbausituation. Der Nutzer reicht eine Datei
   nach. Nur auf ausdrückliche Anweisung konstruiert Claude selbst (`normteile/eigene/`).
-- Toolbox: in Stufe 0 geprüft – keine API im indizierten Bereich erzeugt ein Toolbox-Teil aus
-  Norm+Größe (siehe docs/stufe0/ergebnisse.md). Rückfall (einziger Weg): Größe einmal manuell in
-  SolidWorks erzeugen und wie ein eigenes Normteil aufnehmen.
+- Toolbox: in Stufe 0 geprüft – keine der Toolbox-Methoden aus den indizierten Typbibliotheken
+  (`sldworks.tlb`/`swconst.tlb`) erzeugt ein Toolbox-Teil aus Norm+Größe; das eigene
+  Konfigurator-Add-in (eigene, nicht indizierte Typbibliothek) bietet nur Konfigurator-/PDM-Hooks,
+  keine Erzeugung (siehe docs/stufe0/ergebnisse.md). Rückfall (einziger Weg): Größe einmal manuell
+  in SolidWorks erzeugen und wie ein eigenes Normteil aufnehmen.
 
 ## 9. Einbindung in Claude Code
 

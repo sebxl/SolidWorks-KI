@@ -29,3 +29,14 @@ def test_help_gibt_null(capsys):
     assert main(["--help"]) == 0
     output = capsys.readouterr().out
     assert "usage:" in output.lower()
+
+
+def test_unerwartete_exception_wird_als_json_fehler_gemeldet(capsys, monkeypatch):
+    def _kaputt(args):
+        raise RuntimeError("kaputt")
+
+    monkeypatch.setattr("swki.rechner._zeigen", _kaputt)
+    assert main(["rechner", "zeigen"]) == 1
+    daten = json.loads(capsys.readouterr().out)
+    assert "RuntimeError" in daten["fehler"]
+    assert "kaputt" in daten["fehler"]

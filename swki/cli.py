@@ -57,3 +57,6 @@ def main(argv: list[str] | None = None) -> int:
     except SwkiFehler as e:
         ausgabe({"fehler": str(e), **getattr(e, "daten", {})})
         return 1
+    except Exception as e:
+        ausgabe({"fehler": f"{type(e).__name__}: {e}"})
+        return 1

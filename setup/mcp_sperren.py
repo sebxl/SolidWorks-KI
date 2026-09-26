@@ -15,6 +15,15 @@ PFLICHT_GESPERRT = {
 PROJEKT = Path(__file__).resolve().parent.parent
 
 
+def lies_lesetools(pfad: Path) -> list[str]:
+    """Liest die erlaubten (lesenden) Tool-Namen aus einer mcp-lesetools.txt: eine Zeile je Tool,
+    leere Zeilen und Zeilen, die mit '#' beginnen, werden ignoriert."""
+    return [
+        z.strip() for z in pfad.read_text(encoding="utf-8").splitlines()
+        if z.strip() and not z.startswith("#")
+    ]
+
+
 def sperrliste(alle: list[str], erlaubt: list[str]) -> list[str]:
     unbekannt = sorted(set(erlaubt) - set(alle))
     if unbekannt:
@@ -34,10 +43,7 @@ def aktualisiere_settings(settings: dict, deny: list[str]) -> dict:
 
 def main() -> None:
     alle = json.loads((PROJEKT / "config" / "mcp-tools-alle.json").read_text(encoding="utf-8"))
-    erlaubt = [
-        z.strip() for z in (PROJEKT / "config" / "mcp-lesetools.txt").read_text(encoding="utf-8").splitlines()
-        if z.strip() and not z.startswith("#")
-    ]
+    erlaubt = lies_lesetools(PROJEKT / "config" / "mcp-lesetools.txt")
     pfad = PROJEKT / ".claude" / "settings.json"
     settings = json.loads(pfad.read_text(encoding="utf-8")) if pfad.exists() else {}
     deny = sperrliste(alle, erlaubt)
