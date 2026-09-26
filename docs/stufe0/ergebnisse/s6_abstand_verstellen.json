@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "abweichungen": [
+    "AddComponent5 X/Y/Z ist laut API-Doku das Zentrum der Bauteil-Bounding-Box, nicht dessen Ursprung (im Brief als Ursprung angenommen, Kommentare 'erste = fixiert'/'y=50..70mm'). Deshalb 'erwartet' als '10 + soll' statt '20 + soll' berechnet (10mm = halbe Kastentiefe = Versatz zwischen Zentrum und Ursprung); live per Transform2 vor/nach dem Mate nachgemessen, siehe Bericht.",
+    "IAssemblyDoc.EditRebuild3 ist nullargumentig und liefert bereits beim Attributzugriff das bool-Ergebnis (gleiche Bindungs-Eigenart wie FirstFeature in _gemeinsam.py); der Aufruf mit '()' aus dem Brief scheitert mit TypeError(\"'bool' object is not callable\") und wurde durch reinen Attributzugriff ersetzt."
+  ],
+  "auswahl": [
+    true,
+    true
+  ],
+  "mate_ok": true,
+  "fehlerstatus": 1,
+  "messungen": [
+    {
+      "soll_abstand": 30,
+      "y_ursprung_oben_mm": 40.0,
+      "erwartet": 40
+    },
+    {
+      "soll_abstand": 10,
+      "y_ursprung_oben_mm": 20.0,
+      "erwartet": 20
+    },
+    {
+      "soll_abstand": 60,
+      "y_ursprung_oben_mm": 70.0,
+      "erwartet": 70
+    }
+  ],
+  "unten_fixiert": true
+}

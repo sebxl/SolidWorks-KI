@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "abweichungen": [
+    "InterferenceDetectionManager (IAssemblyDoc) wird wie FirstFeature in _gemeinsam.py als reiner Attributzugriff ohne '()' aufgerufen (Bindungs-Eigenart, siehe docs/stufe0/ergebnisse/s2_ebenen.json).",
+    "IComponent2.Select4: Data-Parameter (SelectData) mit callout_leer() statt rohem Python None übergeben, sonst com_error 'Typenkonflikt' (wie FullyDefineSketch in S3)."
+  ],
+  "komponenten_ok": true,
+  "kollisionen_ueberlappend": 1,
+  "kollisionen_frei": 0
+}
