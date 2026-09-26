@@ -70,6 +70,7 @@
       "mcp__solidworks-mcp__exit_sketch",
       "mcp__solidworks-mcp__export_dwg",
       "mcp__solidworks-mcp__export_iges",
+      "mcp__solidworks-mcp__export_image",
       "mcp__solidworks-mcp__export_pdf",
       "mcp__solidworks-mcp__export_step",
       "mcp__solidworks-mcp__export_stl",

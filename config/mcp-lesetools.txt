@@ -1,5 +1,6 @@
 # Lesende Tools von solidworks-mcp (Commit 600624f). Alle anderen sind gesperrt.
 # Eine Zeile je Tool. Erzeugt/geprüft am 2026-09-26.
+# export_image bewusst gesperrt: Rückfall auf SaveAs3 kann Dokumente an beliebigem Pfad speichern (Screenshots über swki).
 analyze_drawing_annotations
 analyze_drawing_comprehensive
 analyze_drawing_dimensions
@@ -10,7 +11,6 @@ check_drawing_compliance
 check_drawing_standards
 check_interference
 check_sketch_fully_defined
-export_image
 get_dimension
 get_file_properties
 get_mass_properties
