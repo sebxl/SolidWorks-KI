@@ -157,3 +157,21 @@ Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*
   `IPDMDocManager` – aber nur Konfigurator-/PDM-Hooks (`Connect`/`Disconnect`,
   `SetDocumentStatus`, …), keine Methode zum Erzeugen eines Teils (S7). Rückfallweg: manuell
   erzeugen, per `swki normteil aufnehmen` übernehmen.
+
+## Stufe 2a: Compiler (live belegt beim Schreiben des Plans und in den Live-Tests)
+
+- **Voll bestimmte Skizzen ohne FullyDefineSketch:** Elemente mit `SketchManager.AddToDB = True` erzeugen und alle Maße selbst
+  setzen (Größen per `AddDimension2`, Lage jedes Kennpunkts zum Ursprung per `AddHorizontalDimension2`/`AddVerticalDimension2`,
+  bei 0 `SketchAddConstraints("sgVERTICALPOINTS2D"/"sgHORIZONTALPOINTS2D")`, bei (0,0) `"sgCOINCIDENT"`).
+  `FullyDefineSketch` lässt mit AddToDB erzeugte Elemente unterbestimmt und bemaßt ohne Bezug relativ zu irgendeinem Element.
+- **Ursprungspunkt sprachunabhängig:** Feature mit `GetTypeName2 == "OriginProfileFeature"`, dann
+  `Extension.SelectByID2(f"Point1@{name}", "EXTSKETCHPOINT", 0, 0, 0, False, 0, callout_leer(), 0)` und
+  `SelectionManager.GetSelectedObject6(1, -1)`.
+- **`CreateCenterRectangle` legt den Mittelpunkt nicht verlässlich an** (je nach SolidWorks-Zustand fehlten Mittelpunkt und
+  Diagonal-Beziehungen) → `CreateCornerRectangle` und die Ecke bemaßen.
+- **`ViewZoomtofit2` und `BlankRefGeom`** nur nach `model._FlagAsMethod(...)` und mit `()`; der reine Attributzugriff passt die
+  Ansicht nicht ein.
+- **`IPartDoc.FeatureByName(name)`** findet Features im geöffneten Teil (Features heißen wie ihre Spezifikations-ID).
+- **Abgebrochene Prozesse** (Zeitlimit, Kill) setzen umgeschaltete Benutzereinstellungen nicht zurück – nach einem Abbruch
+  `swInputDimValOnCreate` (Toggle 10) prüfen. Live-Tests deshalb einzeln mit Zeitlimit (`tests/live_einzeln.py`).
+- **Lineare Muster** lassen Instanzen außerhalb des Körpers ohne Meldung weg (nur Volumen/Achsen zeigen es).
