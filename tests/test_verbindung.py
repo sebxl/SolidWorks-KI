@@ -18,3 +18,15 @@ def test_einheiten():
 def test_wert():
     assert wert(lambda: 5) == 5
     assert wert(5) == 5
+
+
+def test_com_hilfen():
+    import pythoncom
+
+    from swki.verbindung import byref_bool, byref_str, byref_variant, r8_array
+
+    a = r8_array([1, 2.5, -3])
+    assert a.varianttype == pythoncom.VT_ARRAY | pythoncom.VT_R8 and a.value == [1.0, 2.5, -3.0]
+    assert byref_bool().varianttype == pythoncom.VT_BYREF | pythoncom.VT_BOOL
+    assert byref_variant().varianttype == pythoncom.VT_BYREF | pythoncom.VT_VARIANT
+    assert byref_str().varianttype == pythoncom.VT_BYREF | pythoncom.VT_BSTR

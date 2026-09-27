@@ -65,21 +65,59 @@ def byref_long(start: int = 0):
     return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, start)
 
 
-def verbinde(jahr: int):
-    """Hängt sich an ein laufendes SolidWorks. Startet SolidWorks nicht selbst."""
+def byref_bool():
+    """ByRef-bool-Ausgabeparameter (z. B. IFeature.GetErrorCode2); Wert danach in .value."""
     import pythoncom
     import win32com.client
 
+    return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_BOOL, False)
+
+
+def byref_variant():
+    """ByRef-Ausgabeparameter für Arrays/Objekte (z. B. GetWhatsWrong); Wert danach in .value."""
+    import pythoncom
+    import win32com.client
+
+    return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_VARIANT, None)
+
+
+def byref_str():
+    """ByRef-String-Ausgabeparameter (z. B. GetMaterialPropertyName2, Get6); Wert danach in .value."""
+    import pythoncom
+    import win32com.client
+
+    return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_BSTR, "")
+
+
+def r8_array(werte) -> object:
+    """double-Array für COM. Eine rohe Python-Liste liefert bei IMathUtility.CreatePoint still falsche Werte."""
+    import pythoncom
+    import win32com.client
+
+    return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, [float(x) for x in werte])
+
+
+def verbinde(jahr: int):
+    """Hängt sich an ein laufendes SolidWorks (startet es nicht) und liefert es immer late-bound.
+
+    win32com.client.GetActiveObject würde bei vorhandenem gen_py-Cache ein early-bound Objekt liefern,
+    für das andere Aufrufregeln gelten (Spike S8/S9a). Der Weg über pythoncom + dynamic.Dispatch
+    bleibt in jedem Fall dynamisch.
+    """
+    import pythoncom
+    import win32com.client.dynamic
+
     major = jahr - _REVISION_BASIS
-    app = None
+    unbekannt = None
     for progid in (f"SldWorks.Application.{major}", "SldWorks.Application"):
         try:
-            app = win32com.client.GetActiveObject(progid)
+            unbekannt = pythoncom.GetActiveObject(progid)
             break
         except pythoncom.com_error:
             continue
-    if app is None:
+    if unbekannt is None:
         raise SolidWorksNichtGestartet(f"SOLIDWORKS {jahr} läuft nicht. Bitte zuerst starten.")
+    app = win32com.client.dynamic.Dispatch(unbekannt.QueryInterface(pythoncom.IID_IDispatch))
     ist = jahr_aus_revision(wert(app.RevisionNumber))
     if ist != jahr:
         raise FalscheVersion(f"Laufendes SOLIDWORKS ist {ist}, erwartet {jahr} (config/rechner.yaml).")
