@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "swki/teil.schema.json",
+  "title": "SolidWorks-KI: Spezifikation eines Teils (Längen in mm, Winkel in Grad)",
+  "type": "object",
+  "required": ["art", "name", "features"],
+  "additionalProperties": false,
+  "properties": {
+    "art": {"const": "teil"},
+    "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"},
+    "material": {"type": "string", "minLength": 1},
+    "eigenschaften": {"type": "object", "additionalProperties": {"type": "string"}},
+    "parameter": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+      "additionalProperties": {"type": "number"}
+    },
+    "features": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/feature"}},
+    "pruefung": {"$ref": "#/$defs/pruefung"},
+    "max_nachbesserungen": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "wert": {"oneOf": [{"type": "number"}, {"type": "string", "pattern": "^=.+"}]},
+    "punkt2": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 2, "maxItems": 2},
+    "punkt3": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
+    "richtung": {"enum": ["+x", "-x", "+y", "-y", "+z", "-z"]},
+    "standardebene": {"enum": ["vorne", "oben", "rechts"]},
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "flaechenanker": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["feature", "flaeche"], "additionalProperties": false,
+          "properties": {"feature": {"$ref": "#/$defs/id"}, "flaeche": {"$ref": "#/$defs/richtung"}}
+        },
+        {
+          "type": "object", "required": ["nahe"], "additionalProperties": false,
+          "properties": {"nahe": {"$ref": "#/$defs/punkt3"}}
+        }
+      ]
+    },
+    "ebene": {
+      "oneOf": [
+        {"$ref": "#/$defs/standardebene"},
+        {
+          "type": "object", "required": ["versatz"], "additionalProperties": false,
+          "properties": {
+            "versatz": {
+              "type": "object", "required": ["ebene", "abstand"], "additionalProperties": false,
+              "properties": {"ebene": {"$ref": "#/$defs/standardebene"}, "abstand": {"$ref": "#/$defs/wert"}}
+            }
+          }
+        },
+        {"$ref": "#/$defs/flaechenanker"}
+      ]
+    },
+    "kantenanker": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["feature", "auswahl"], "additionalProperties": false,
+          "properties": {"feature": {"$ref": "#/$defs/id"}, "auswahl": {"enum": ["senkrechte_kanten", "alle_kanten"]}}
+        },
+        {
+          "type": "object", "required": ["feature", "kanten_an"], "additionalProperties": false,
+          "properties": {"feature": {"$ref": "#/$defs/id"}, "kanten_an": {"$ref": "#/$defs/richtung"}}
+        },
+        {
+          "type": "object", "required": ["nahe"], "additionalProperties": false,
+          "properties": {"nahe": {"$ref": "#/$defs/punkt3"}}
+        }
+      ]
+    },
+    "element": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["rechteck"], "additionalProperties": false,
+          "properties": {
+            "rechteck": {
+              "type": "object", "required": ["mitte", "breite", "hoehe"], "additionalProperties": false,
+              "properties": {
+                "mitte": {"$ref": "#/$defs/punkt2"}, "breite": {"$ref": "#/$defs/wert"}, "hoehe": {"$ref": "#/$defs/wert"}
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "required": ["kreis"], "additionalProperties": false,
+          "properties": {
+            "kreis": {
+              "type": "object", "required": ["mitte", "durchmesser"], "additionalProperties": false,
+              "properties": {"mitte": {"$ref": "#/$defs/punkt2"}, "durchmesser": {"$ref": "#/$defs/wert"}}
+            }
+          }
+        },
+        {
+          "type": "object", "required": ["polygon"], "additionalProperties": false,
+          "properties": {
+            "polygon": {
+              "type": "object", "required": ["punkte"], "additionalProperties": false,
+              "properties": {"punkte": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/punkt2"}}}
+            }
+          }
+        },
+        {
+          "type": "object", "required": ["mittellinie"], "additionalProperties": false,
+          "properties": {
+            "mittellinie": {
+              "type": "object", "required": ["von", "bis"], "additionalProperties": false,
+              "properties": {"von": {"$ref": "#/$defs/punkt2"}, "bis": {"$ref": "#/$defs/punkt2"}}
+            }
+          }
+        }
+      ]
+    },
+    "skizze": {
+      "type": "object", "required": ["ebene", "elemente"], "additionalProperties": false,
+      "properties": {
+        "ebene": {"$ref": "#/$defs/ebene"},
+        "elemente": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/element"}}
+      }
+    },
+    "ende": {
+      "type": "object", "required": ["typ"], "additionalProperties": false,
+      "properties": {
+        "typ": {"enum": ["blind", "durch_alles", "mittig"]},
+        "tiefe": {"$ref": "#/$defs/wert"},
+        "umkehren": {"type": "boolean"}
+      },
+      "if": {"properties": {"typ": {"enum": ["blind", "mittig"]}}},
+      "then": {"required": ["tiefe"]}
+    },
+    "musterrichtung": {
+      "type": "object", "required": ["achse", "abstand", "anzahl"], "additionalProperties": false,
+      "properties": {
+        "achse": {"enum": ["x", "y", "z"]},
+        "abstand": {"$ref": "#/$defs/wert"},
+        "anzahl": {"type": "integer", "minimum": 2},
+        "umkehren": {"type": "boolean"}
+      }
+    },
+    "featureliste": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}},
+    "f_extrusion": {
+      "required": ["skizze", "ende"], "additionalProperties": false,
+      "properties": {"id": true, "typ": true, "skizze": {"$ref": "#/$defs/skizze"}, "ende": {"$ref": "#/$defs/ende"}}
+    },
+    "f_rotation": {
+      "required": ["skizze"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true, "skizze": {"$ref": "#/$defs/skizze"},
+        "winkel": {"$ref": "#/$defs/wert"}, "schnitt": {"type": "boolean"}
+      }
+    },
+    "f_bohrung": {
+      "required": ["flaeche", "positionen", "durchmesser"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "flaeche": {"$ref": "#/$defs/flaechenanker"},
+        "positionen": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt2"}},
+        "durchmesser": {"$ref": "#/$defs/wert"},
+        "tiefe": {"$ref": "#/$defs/wert"},
+        "durch": {"const": true},
+        "senkung": {
+          "type": "object", "required": ["durchmesser", "tiefe"], "additionalProperties": false,
+          "properties": {"durchmesser": {"$ref": "#/$defs/wert"}, "tiefe": {"$ref": "#/$defs/wert"}}
+        }
+      },
+      "oneOf": [{"required": ["tiefe"]}, {"required": ["durch"]}]
+    },
+    "f_verrundung": {
+      "required": ["kanten", "radius"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "kanten": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/kantenanker"}},
+        "radius": {"$ref": "#/$defs/wert"}
+      }
+    },
+    "f_fase": {
+      "required": ["kanten", "abstand"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "kanten": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/kantenanker"}},
+        "abstand": {"$ref": "#/$defs/wert"},
+        "winkel": {"$ref": "#/$defs/wert"}
+      }
+    },
+    "f_muster_linear": {
+      "required": ["features", "richtung1"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true, "features": {"$ref": "#/$defs/featureliste"},
+        "richtung1": {"$ref": "#/$defs/musterrichtung"}, "richtung2": {"$ref": "#/$defs/musterrichtung"}
+      }
+    },
+    "f_muster_kreis": {
+      "required": ["features", "achse", "anzahl"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true, "features": {"$ref": "#/$defs/featureliste"},
+        "achse": {"enum": ["x", "y", "z"]},
+        "anzahl": {"type": "integer", "minimum": 2},
+        "winkel": {"$ref": "#/$defs/wert"}
+      }
+    },
+    "f_spiegeln": {
+      "required": ["features", "ebene"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true, "features": {"$ref": "#/$defs/featureliste"}, "ebene": {"$ref": "#/$defs/ebene"}
+      }
+    },
+    "f_skript": {
+      "required": ["datei", "luecke"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "datei": {"type": "string", "pattern": "^skripte/[A-Za-z0-9_-]+\\.py$"},
+        "luecke": {"type": "string", "minLength": 3}
+      }
+    },
+    "feature": {
+      "type": "object",
+      "required": ["id", "typ"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "typ": {"enum": ["extrusion", "schnitt", "rotation", "bohrung", "verrundung", "fase",
+                         "muster_linear", "muster_kreis", "spiegeln", "skript"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"typ": {"enum": ["extrusion", "schnitt"]}}}, "then": {"$ref": "#/$defs/f_extrusion"}},
+        {"if": {"properties": {"typ": {"const": "rotation"}}}, "then": {"$ref": "#/$defs/f_rotation"}},
+        {"if": {"properties": {"typ": {"const": "bohrung"}}}, "then": {"$ref": "#/$defs/f_bohrung"}},
+        {"if": {"properties": {"typ": {"const": "verrundung"}}}, "then": {"$ref": "#/$defs/f_verrundung"}},
+        {"if": {"properties": {"typ": {"const": "fase"}}}, "then": {"$ref": "#/$defs/f_fase"}},
+        {"if": {"properties": {"typ": {"const": "muster_linear"}}}, "then": {"$ref": "#/$defs/f_muster_linear"}},
+        {"if": {"properties": {"typ": {"const": "muster_kreis"}}}, "then": {"$ref": "#/$defs/f_muster_kreis"}},
+        {"if": {"properties": {"typ": {"const": "spiegeln"}}}, "then": {"$ref": "#/$defs/f_spiegeln"}},
+        {"if": {"properties": {"typ": {"const": "skript"}}}, "then": {"$ref": "#/$defs/f_skript"}}
+      ]
+    },
+    "messpunkt": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["feature", "instanz", "achse"], "additionalProperties": false,
+          "properties": {"feature": {"$ref": "#/$defs/id"}, "instanz": {"type": "integer", "minimum": 1}, "achse": {"const": true}}
+        },
+        {
+          "type": "object", "required": ["feature", "flaeche"], "additionalProperties": false,
+          "properties": {"feature": {"$ref": "#/$defs/id"}, "flaeche": {"$ref": "#/$defs/richtung"}}
+        },
+        {
+          "type": "object", "required": ["punkt"], "additionalProperties": false,
+          "properties": {"punkt": {"$ref": "#/$defs/punkt3"}}
+        }
+      ]
+    },
+    "massepruefung": {
+      "type": "object", "required": ["was", "von", "zu", "soll"], "additionalProperties": false,
+      "properties": {
+        "was": {"type": "string", "minLength": 1},
+        "von": {"$ref": "#/$defs/messpunkt"},
+        "zu": {"$ref": "#/$defs/messpunkt"},
+        "soll": {"$ref": "#/$defs/wert"},
+        "tol": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "pruefung": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "huellquader": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
+        "huellquader_tol": {"type": "number", "exclusiveMinimum": 0},
+        "volumen": {
+          "type": "object", "required": ["soll"], "additionalProperties": false,
+          "properties": {
+            "soll": {"oneOf": [{"$ref": "#/$defs/wert"}, {"const": "auto"}]},
+            "toleranz_prozent": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "masse_pruefen": {"type": "array", "items": {"$ref": "#/$defs/massepruefung"}},
+        "schwerpunkt": {
+          "type": "object", "required": ["soll"], "additionalProperties": false,
+          "properties": {
+            "soll": {
+              "type": "array", "minItems": 3, "maxItems": 3,
+              "items": {"oneOf": [{"$ref": "#/$defs/wert"}, {"type": "null"}]}
+            },
+            "tol": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      }
+    }
+  }
+}
