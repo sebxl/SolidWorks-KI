@@ -16,6 +16,14 @@ Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpo
 - Nur Dokumente anfassen, die selbst angelegt wurden. Nur im Arbeitsordner speichern (`arbeitsordner` aus `config/rechner.yaml`). Nie in Kundenordner oder Bibliotheks-Originale schreiben.
 - Compiler-Code nur mit API-Aufrufen, die in SW 2025 verfügbar sind (`swki api pruefe-code`).
 
+## Konstruieren (Stufe 2)
+- Spezifikation eines Teils: YAML nach `schema/teil.schema.json` im Auftragsordner (`auftraege/<auftrag>/`).
+- `swki validieren <spec>` → `swki freigeben <spec>` (nur nach ausdrücklichem OK des Nutzers) → `swki bauen <spec>`.
+- Nach der Freigabe nur noch den Bauweg ändern (Features, Anker, Reihenfolge, Skripte); Parameter, Material, Eigenschaften und
+  `pruefung` sind tabu (`swki bauen` verweigert sonst mit FREIGABE_VERALTET).
+- Was das Format nicht kann: `typ: skript` mit `luecke:` (Notausgang), nie still weglassen.
+- Live-Tests einzeln mit Zeitlimit: `.venv\Scripts\python.exe tests\live_einzeln.py <datei> …`.
+
 ## Git
 - Kein `git push` ohne Rückfrage.
 - Erzeugte SolidWorks-Dateien kommen nicht ins Git.
