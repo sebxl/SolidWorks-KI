@@ -40,8 +40,9 @@ def _parser() -> SwkiArgumentParser:
 def _befehlsgruppen() -> list:
     from swki import rechner
     from swki.api import bauen
+    from swki.spec import befehle as spec_befehle
 
-    return [rechner, bauen]
+    return [rechner, bauen, spec_befehle]
 
 
 def main(argv: list[str] | None = None) -> int:
