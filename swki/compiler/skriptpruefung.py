@@ -20,6 +20,10 @@ VERBOTENE_ATTRIBUTE = {
     "DeleteFile", "SetUserPreferenceToggle", "SetUserPreferenceIntegerValue",
     "SetUserPreferenceDoubleValue", "SetUserPreferenceStringValue",
 }
+VERBOTENE_PRAEFIXE = {
+    "save", "close", "quit", "exit", "activatedoc", "opendoc", "loadfile",
+    "runmacro", "runcommand", "setuserpreference", "deletefile",
+}
 
 
 def _befund(knoten, meldung: str) -> dict:
@@ -43,10 +47,12 @@ def pruefe_skript(quelltext: str) -> list[dict]:
                 befunde.append(_befund(k, f"Import aus {k.module!r} nicht erlaubt (erlaubt: math)"))
         elif isinstance(k, ast.Name) and k.id in VERBOTENE_NAMEN:
             befunde.append(_befund(k, f"{k.id!r} ist nicht erlaubt"))
+        elif isinstance(k, ast.Name) and k.id.startswith("__"):
+            befunde.append(_befund(k, f"Dunder-Name {k.id!r} ist nicht erlaubt"))
         elif isinstance(k, ast.Attribute):
             if k.attr.startswith("__"):
                 befunde.append(_befund(k, f"Dunder-Attribut {k.attr!r} ist nicht erlaubt"))
-            elif k.attr in VERBOTENE_ATTRIBUTE:
+            elif k.attr in VERBOTENE_ATTRIBUTE or k.attr.lower().startswith(tuple(VERBOTENE_PRAEFIXE)):
                 befunde.append(_befund(k, f"API-Aufruf {k.attr!r} ist im Skript nicht erlaubt"))
     bauen = [
         k for k in baum.body
