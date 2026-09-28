@@ -17,6 +17,8 @@ def test_validieren_ok(capsys, tmp_path):
     pfad.write_text(yaml.safe_dump(GUELTIG, allow_unicode=True), encoding="utf-8")
     code, daten = _lauf(capsys, "validieren", str(pfad))
     assert code == 0 and daten["gueltig"] is True and daten["features"] == 6
+    # feste Maße sind erlaubt, werden aber gemeldet (die Freigabe-Prüfsumme deckt sie nicht ab)
+    assert [h["pfad"] for h in daten["hinweise"]][0] == "features[1].durchmesser"
 
 
 def test_validieren_meldet_befunde(capsys, tmp_path):
