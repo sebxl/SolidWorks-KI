@@ -1,5 +1,7 @@
 # Übergabe für die nächste Sitzung (Stand 2026-09-28)
 
+> **Abgelöst** durch `docs/superpowers/uebergabe-2026-09-28-stufe2b.md` (2a und Nachtrag sind umgesetzt).
+
 ## Auftrag der nächsten Sitzung
 Stufe 2a ist umgesetzt und auf `main` (PR #1, 2026-09-27). Als Nächstes der **Nachtrag zu 2a**, danach **Stufe 2b**:
 

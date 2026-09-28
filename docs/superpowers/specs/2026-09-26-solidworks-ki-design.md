@@ -229,6 +229,9 @@ Nachbesserung:
   Komponenten und erwartete Bewegungen. Claude ändert nur den Bauweg (Anker, Reihenfolge,
   Handler-Optionen, Skripte). Weicht die Prüfsumme ab, verweigert `swki bauen`. Hält Claude eine
   Anforderung für falsch, fragt es den Nutzer.
+- `swki freigeben` legt zusätzlich die Spezifikation als `<spec>.freigegeben.yaml` ab (Prüfsumme der Kopie in
+  `freigabe.json`). Sie ist das Soll für den Prüfer-Agenten und für das Sollvolumen `auto`. Feste Zahlen in Features
+  meldet `swki validieren` als Hinweis; Anforderungsmaße gehören in `parameter`.
 - Maximale Läufe: Spezifikation > Anweisung im Chat > `config/standard.yaml` (Vorgabe 3).
 - Abbruch ohne Fortschritt: sinkt die Zahl offener Mängel gegenüber dem Vorlauf nicht, stoppt
   Claude und meldet sich.

@@ -1,7 +1,7 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-09-27-stufe2.md
+Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-09-28-stufe2b.md
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -19,6 +19,8 @@ Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpo
 ## Konstruieren (Stufe 2)
 - Spezifikation eines Teils: YAML nach `schema/teil.schema.json` im Auftragsordner (`auftraege/<auftrag>/`).
 - `swki validieren <spec>` → `swki freigeben <spec>` (nur nach ausdrücklichem OK des Nutzers) → `swki bauen <spec>`.
+- Anforderungsmaße als `parameter` führen; `validieren` meldet feste Zahlen in Features als `hinweise` (die Freigabe
+  schützt sie nicht). `freigeben` legt `<spec>.freigegeben.yaml` ab – diese Kopie nie ändern.
 - Nach der Freigabe nur noch den Bauweg ändern (Features, Anker, Reihenfolge, Skripte); Parameter, Material, Eigenschaften und
   `pruefung` sind tabu (`swki bauen` verweigert sonst mit FREIGABE_VERALTET).
 - Was das Format nicht kann: `typ: skript` mit `luecke:` (Notausgang), nie still weglassen.

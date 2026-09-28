@@ -175,3 +175,12 @@ Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*
 - **Abgebrochene Prozesse** (Zeitlimit, Kill) setzen umgeschaltete Benutzereinstellungen nicht zurück – nach einem Abbruch
   `swInputDimValOnCreate` (Toggle 10) prüfen. Live-Tests deshalb einzeln mit Zeitlimit (`tests/live_einzeln.py`).
 - **Lineare Muster** lassen Instanzen außerhalb des Körpers ohne Meldung weg (nur Volumen/Achsen zeigen es).
+
+## Maßnamen von Features (live belegt 2026-09-28)
+
+- Lineares Muster: `D1`/`D2` Anzahl, `D3`/`D4` Abstand Richtung 1/2 (auch bei nur einer Richtung ist der Abstand `D3`).
+- Kreismuster: `D1` Anzahl, `D3` Gesamtwinkel. Fase (Abstand-Winkel): `D1` Abstand, `D2` Winkel.
+- Versetzte Referenzebene: `D1@<Ebenenname>`, Betrag; die Richtung steckt im Umkehren-Flag. Der Name ist sprachabhängig
+  (`Ebene1`) → aus `IFeature.Name` lesen.
+- Maße eines Features auflisten: `feature.GetFirstDisplayDimension`, `feature.GetNextDisplayDimension(dd)`,
+  `dd.GetDimension2(0).FullName` bzw. `.SystemValue`; Wert eines Maßes: `model.Parameter("D3@f3").SystemValue`.

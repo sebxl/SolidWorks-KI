@@ -3,7 +3,9 @@ import json
 
 import pytest
 
-from swki.spec.freigabe import FreigabeFehler, freigabe_pfad, freigeben, pruefe_freigabe, pruefsumme
+from swki.spec.freigabe import (
+    FreigabeFehler, freigabe_pfad, freigeben, freigegebene_spec, kopie_pfad, pruefe_freigabe, pruefsumme,
+)
 
 SPEC = {
     "art": "teil", "name": "Platte", "material": "1.2312", "parameter": {"L": 100},
@@ -28,7 +30,7 @@ def test_pruefsumme_erfasst_anforderungen(feld):
 def test_freigeben_und_pruefen(tmp_path):
     pfad = tmp_path / "platte.yaml"
     eintrag = freigeben(pfad, SPEC, zeitpunkt="2026-09-27T10:00:00")
-    assert eintrag == {"pruefsumme": pruefsumme(SPEC), "freigegeben": "2026-09-27T10:00:00"}
+    assert eintrag["pruefsumme"] == pruefsumme(SPEC) and eintrag["freigegeben"] == "2026-09-27T10:00:00"
     assert json.loads(freigabe_pfad(pfad).read_text(encoding="utf-8"))["platte.yaml"] == eintrag
     assert pruefe_freigabe(pfad, SPEC) == eintrag
 
@@ -51,3 +53,37 @@ def test_geaenderte_anforderung(tmp_path):
     with pytest.raises(FreigabeFehler) as e:
         pruefe_freigabe(pfad, {**SPEC, "parameter": {"L": 101}})
     assert e.value.daten["code"] == "FREIGABE_VERALTET"
+
+
+def test_freigabe_legt_kopie_ab(tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    eintrag = freigeben(pfad, SPEC)
+    assert kopie_pfad(pfad) == tmp_path / "platte.freigegeben.yaml"
+    assert freigegebene_spec(pfad) == SPEC
+    assert len(eintrag["kopie_sha256"]) == 64
+
+
+def test_bauweg_aendern_laesst_kopie_unberuehrt(tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    freigeben(pfad, SPEC)
+    nachgebessert = {**SPEC, "features": [{"id": "f1", "typ": "extrusion"}, {"id": "f2", "typ": "fase"}]}
+    pruefe_freigabe(pfad, nachgebessert)
+    assert freigegebene_spec(pfad)["features"] == SPEC["features"]
+
+
+def test_veraenderte_kopie(tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    freigeben(pfad, SPEC)
+    kopie_pfad(pfad).write_text("art: teil\n", encoding="utf-8")
+    with pytest.raises(FreigabeFehler) as e:
+        pruefe_freigabe(pfad, SPEC)
+    assert e.value.daten["code"] == "FREIGABE_VERALTET"
+
+
+def test_fehlende_kopie(tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    freigeben(pfad, SPEC)
+    kopie_pfad(pfad).unlink()
+    with pytest.raises(FreigabeFehler) as e:
+        pruefe_freigabe(pfad, SPEC)
+    assert e.value.daten["code"] == "FREIGABE_FEHLT"
