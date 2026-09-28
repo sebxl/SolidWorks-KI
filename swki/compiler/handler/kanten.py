@@ -52,4 +52,6 @@ def fase(ctx, f: dict) -> FeatureErgebnis:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"fase {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
     ctx.verknuepfe(f"D1@{f['id']}", f["abstand"])
+    if "winkel" in f:
+        ctx.verknuepfe(f"D2@{f['id']}", f["winkel"])  # D2 = Winkel (live belegt)
     return FeatureErgebnis([feature])

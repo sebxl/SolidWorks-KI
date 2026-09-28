@@ -70,6 +70,9 @@ def ebene_aufloesen(ctx, ebene) -> Skizzenebene:
         neu = ctx.model.FeatureManager.InsertRefPlane(art, mm(abs(abstand)), 0, 0.0, 0, 0.0)
         if neu is None:
             raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Versetzte Ebene {basis} {abstand:g} mm", schritt="ebene")
+        # Das Maß ist der Betrag, die Richtung steckt im Umkehren-Flag (live belegt: D1@<Ebenenname>).
+        # Wechselt der Parameter später das Vorzeichen, kippt die Ebene nicht mit – dann neu bauen.
+        ctx.verknuepfe(f"D1@{neu.Name}", ebene["versatz"]["abstand"], -1 if abstand < 0 else 1)
         return Skizzenebene(neu, basis, abstand, NORMALE[basis])
     return ebene_aus_flaeche(loese_flaeche(ctx, ebene))
 

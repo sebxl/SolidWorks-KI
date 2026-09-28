@@ -76,6 +76,10 @@ def muster_linear(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"muster_linear {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
+    # Maße des Musters (live belegt): D1/D2 Anzahl, D3/D4 Abstand Richtung 1/2
+    ctx.verknuepfe(f"D3@{f['id']}", r1["abstand"])
+    if r2:
+        ctx.verknuepfe(f"D4@{f['id']}", r2["abstand"])
     return FeatureErgebnis([feature])
 
 
@@ -95,6 +99,8 @@ def muster_kreis(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"muster_kreis {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
+    if "winkel" in f:
+        ctx.verknuepfe(f"D3@{f['id']}", f["winkel"])  # D1 Anzahl, D3 Gesamtwinkel (live belegt)
     return FeatureErgebnis([feature], richtung=richtung)
 
 
