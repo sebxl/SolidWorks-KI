@@ -1,10 +1,17 @@
-# Übergabe für die nächste Sitzung (Stand 2026-09-27)
+# Übergabe für die nächste Sitzung (Stand 2026-09-28)
 
 ## Auftrag der nächsten Sitzung
-Plan **Stufe 2a** umsetzen, danach **Stufe 2b**:
+Stufe 2a ist umgesetzt und auf `main` (PR #1, 2026-09-27). Als Nächstes der **Nachtrag zu 2a**, danach **Stufe 2b**:
 
-1. `docs/superpowers/plans/2026-09-27-stufe-2a-spezifikation-compiler.md` (15 Tasks)
-2. `docs/superpowers/plans/2026-09-27-stufe-2b-pruefung-schleife-referenzen.md` (9 Tasks, setzt 2a voraus)
+1. ~~`docs/superpowers/plans/2026-09-27-stufe-2a-spezifikation-compiler.md` (15 Tasks)~~ – erledigt
+2. `docs/superpowers/plans/2026-09-28-stufe-2a-nachtrag-freigabe-parametrik.md` (2 Tasks: Freigabe-Kopie
+   `<spec>.freigegeben.yaml` + Hinweise auf feste Maße; Musterabstände, Kreismusterwinkel, Ebenenversatz und
+   Fasenwinkel per Gleichung – Entscheidung des Nutzers vom 2026-09-28 nach dem Gesamt-Review von 2a)
+3. `docs/superpowers/plans/2026-09-27-stufe-2b-pruefung-schleife-referenzen.md` (9 Tasks, setzt 2a und den Nachtrag
+   voraus; Task 2, 4, 5, 6 sind auf die Freigabe-Kopie angepasst)
+
+Referenz für Nachtrag und angepasstes 2b: lokaler Branch `entwurf-2b-ergaenzung` (live grün inkl. beider
+Referenzteile, **nicht mergen**).
 
 Umsetzung mit **superpowers:subagent-driven-development** (ein Implementer-Agent pro Task, Review zwischen den Tasks).
 Design: `docs/superpowers/specs/2026-09-26-solidworks-ki-design.md`.

@@ -8,18 +8,19 @@
 
 **Tech Stack:** Python ≥ 3.13, pywin32 (Late Binding), PyYAML, jsonschema, pytest; SOLIDWORKS 2025 / 2026.
 
-**Voraussetzung:** Plan [2026-09-27-stufe-2a-spezifikation-compiler.md](2026-09-27-stufe-2a-spezifikation-compiler.md) ist vollständig umgesetzt (`swki validieren|freigeben|bauen`, alle Live-Tests grün).
+**Voraussetzung:** Plan [2026-09-27-stufe-2a-spezifikation-compiler.md](2026-09-27-stufe-2a-spezifikation-compiler.md) und der Nachtrag [2026-09-28-stufe-2a-nachtrag-freigabe-parametrik.md](2026-09-28-stufe-2a-nachtrag-freigabe-parametrik.md) sind vollständig umgesetzt (`swki validieren|freigeben|bauen`, Freigabe-Kopie `<spec>.freigegeben.yaml` mit `freigegebene_spec(spec_pfad)`, alle Live-Tests grün).
 
 **Spec:** [docs/superpowers/specs/2026-09-26-solidworks-ki-design.md](../specs/2026-09-26-solidworks-ki-design.md) – §6 Prüfung und Nachbesserung, §9 Einbindung in Claude Code, §11 Stufe 2 („Referenzen *Formplatte* und *Buchse* bestehen auf SW 2025 **und** SW 2026“), §12 Tests.
 
-**Herkunft des Codes:** Jede Datei wurde vor dem Schreiben des Plans implementiert und getestet (Unit-Tests grün; Live-Tests und beide Referenzteile mit SOLIDWORKS 2025 Rev. 33.5.0 grün, Screenshots gesichtet). Code **wörtlich** übernehmen; Abweichungen live nicht raten, sondern nachschlagen und im Task-Bericht dokumentieren.
+**Herkunft des Codes:** Jede Datei wurde vor dem Schreiben des Plans implementiert und getestet (Unit-Tests grün; Live-Tests und beide Referenzteile mit SOLIDWORKS 2025 Rev. 33.5.0 grün, Screenshots gesichtet). Die Anpassungen an die Freigabe-Kopie (Task 2, 4, 5, 6; Stand 2026-09-28) wurden ebenso geprüft (Unit-Tests, `test_live_pruefen`, beide Referenzteile). Code **wörtlich** übernehmen; Abweichungen live nicht raten, sondern nachschlagen und im Task-Bericht dokumentieren.
 
 ## Global Constraints
 
 - Alle Global Constraints aus Plan 2a gelten unverändert (Late Binding und seine Ausnahmen, mm/Grad, JSON-Ausgabe mit Exit 0/1, nur eigene Dokumente, Speichern nur im Arbeitsordner, Benutzereinstellungen nur über `sw.einstellung`, Live-Tests einzeln mit `tests\live_einzeln.py`, Deutsch, kein Push ohne Rückfrage, Commit-Trailer exakt `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`).
 - `swki pruefen` öffnet den gespeicherten Lauf mit `OpenDoc6`. Ist die Datei schon geöffnet (Warnung 128), **abbrechen** statt sie zu schließen – sie könnte dem Nutzer gehören (S9b).
 - Anker werden im fertigen Teil **nicht** neu aufgelöst (der Ankerpunkt kann weggeschnitten sein). Bohrungsachsen kommen aus dem Bauprotokoll (`Knoten.punkte`), Flächen über die Feature-Namen (`IPartDoc.FeatureByName`, Features heißen wie ihre ID).
-- Der Prüfer-Agent sieht nur Eingabe, freigegebene Spezifikation, Prüfbericht und Screenshots – nie Protokolle oder Skripte (Spec §6). Er hat nur Lesezugriff; sein Urteil schreibt Claude unverändert nach `protokolle/<spec>.lauf-<n>.pruefer.json`.
+- Der Prüfer-Agent sieht nur Eingabe, freigegebene Spezifikation (`<spec>.freigegeben.yaml`, die bei `swki freigeben` abgelegte Kopie), Prüfbericht und Screenshots – nie Protokolle oder Skripte (Spec §6). Er hat nur Lesezugriff; sein Urteil schreibt Claude unverändert nach `protokolle/<spec>.lauf-<n>.pruefer.json`.
+- Das analytische Sollvolumen (`volumen: auto`) wird aus der freigegebenen Kopie berechnet, damit ein nachgebesserter Bauweg das Soll nicht verschiebt.
 - Maximale Läufe = 1 + `max_nachbesserungen` (Vorrang: Spezifikation > Anweisung im Chat > `config/standard.yaml`). Abbruch ohne Fortschritt: sinkt die Zahl offener Mängel gegenüber dem Vorlauf nicht, anhalten (Spec §6).
 
 ## Dateistruktur nach diesem Plan
@@ -41,7 +42,7 @@ docs/stufe2/ergebnisse.md
 ## Dateien eines Laufs
 
 - Arbeitsordner: `<arbeitsordner>/<auftrag>/lauf-<n>/` mit `<auftrag>_<name>.sldprt`, `.step`, `protokoll.json`, `pruefbericht.json`, `bilder/{iso,vorne,oben,rechts}.png`.
-- Auftragsordner (im Repo bzw. `auftraege/<auftrag>/`): `protokolle/<spec>.lauf-<n>.protokoll.json`, `….pruefbericht.json`, `….pruefer.json` (`{"bestanden": bool, "maengel": [{"knoten": [...], "beschreibung": "..."}]}`), `bericht.md`.
+- Auftragsordner (im Repo bzw. `auftraege/<auftrag>/`): `freigabe.json`, `<spec>.freigegeben.yaml` (Kopie bei der Freigabe), `protokolle/<spec>.lauf-<n>.protokoll.json`, `….pruefbericht.json`, `….pruefer.json` (`{"bestanden": bool, "maengel": [{"knoten": [...], "beschreibung": "..."}]}`), `bericht.md`.
 
 ---
 
@@ -292,7 +293,7 @@ git commit -m "pruefung: Abstände und analytisches Sollvolumen" -m "Co-Authored
 
 **Interfaces:**
 - Consumes: `Messgeometrie`, `NichtMessbar`, `abstand`, `volumen_auto` (Task 1); `material_passt` (2a Task 7); `auswerten`.
-- Produces: `Messwerte(rebuild_fehler, skizzen, box, volumen, schwerpunkt, material, eigenschaften, messpunkte)`; `messpunkt_schluessel(messpunkt) -> str`; `bewerte(spec, messwerte, standard) -> {bestanden, pruefungen, maengel}`. Prüfungen (Spec §6): `rebuild`, `skizzen` (voll bestimmt), `huellquader` [X, Y, Z], `volumen`, `mass:<was>`, `schwerpunkt` (Spiegel-/Vorzeichenfehler), `material`, `eigenschaften`. Jeder Mangel nennt die Knoten-IDs der Spezifikation (SW-Namen wie `f2_senkung`, `f10_2/Skizze7` werden der ID zugeordnet). Ein nicht berechenbares Sollvolumen ist ein Hinweis (`ok: null`), kein Mangel.
+- Produces: `Messwerte(rebuild_fehler, skizzen, box, volumen, schwerpunkt, material, eigenschaften, messpunkte)`; `messpunkt_schluessel(messpunkt) -> str`; `bewerte(spec, messwerte, standard, freigegeben=None) -> {bestanden, pruefungen, maengel}` (`freigegeben`: Spezifikation im Stand der Freigabe, Quelle des Sollvolumens `auto`; ohne Angabe `spec`). Prüfungen (Spec §6): `rebuild`, `skizzen` (voll bestimmt), `huellquader` [X, Y, Z], `volumen`, `mass:<was>`, `schwerpunkt` (Spiegel-/Vorzeichenfehler), `material`, `eigenschaften`. Jeder Mangel nennt die Knoten-IDs der Spezifikation (SW-Namen wie `f2_senkung`, `f10_2/Skizze7` werden der ID zugeordnet). Ein nicht berechenbares Sollvolumen ist ein Hinweis (`ok: null`), kein Mangel.
 
 - [ ] **Step 1: Failing tests schreiben**
 
@@ -392,6 +393,16 @@ def test_schwerpunkt_spiegelfehler():
 @pytest.mark.parametrize("mp", [VON, {"punkt": [0, 0, 0]}, {"feature": "f1", "flaeche": "+y"}])
 def test_messpunkt_schluessel_stabil(mp):
     assert messpunkt_schluessel(mp) == messpunkt_schluessel(dict(reversed(list(mp.items()))))
+
+
+def test_sollvolumen_aus_freigegebener_spec():
+    # Nachgebessert: Tiefe im Bauweg auf 21 geändert (fest eingetragen, von der Prüfsumme nicht erfasst) –
+    # das Soll kommt aus der freigegebenen Kopie (Tiefe 20), das zu hohe Volumen wird ein Mangel
+    nachgebessert = copy.deepcopy(SPEC)
+    nachgebessert["features"][0]["ende"]["tiefe"] = 21
+    bericht = bewerte(nachgebessert, _messwerte(volumen=126000.0), STANDARD, freigegeben=SPEC)
+    volumen = next(p for p in bericht["pruefungen"] if p["id"] == "volumen")
+    assert volumen["soll"] == 120000.0 and volumen["ok"] is False
 ```
 
 - [ ] **Step 2: Test fehlschlagen lassen**
@@ -445,7 +456,9 @@ def _pruefung(pid: str, ok: bool | None, **daten) -> dict:
     return {"id": pid, "ok": ok, **daten}
 
 
-def bewerte(spec: dict, m: Messwerte, standard: dict) -> dict:
+def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None = None) -> dict:
+    """freigegeben: Spezifikation im Stand der Freigabe; das Sollvolumen "auto" wird aus ihr berechnet,
+    damit ein nachgebesserter Bauweg das Soll nicht mitverschiebt."""
     p = spec.get("parameter", {})
     pr = spec.get("pruefung", {})
     ergebnisse = []
@@ -466,7 +479,7 @@ def bewerte(spec: dict, m: Messwerte, standard: dict) -> dict:
 
     if "volumen" in pr:
         roh = pr["volumen"]["soll"]
-        soll, grund = volumen_auto(spec) if roh == "auto" else (auswerten(roh, p), "vorgegeben")
+        soll, grund = volumen_auto(freigegeben or spec) if roh == "auto" else (auswerten(roh, p), "vorgegeben")
         prozent = pr["volumen"].get("toleranz_prozent", standard["toleranzen"]["volumen_prozent"])
         if soll is None:
             ergebnisse.append(_pruefung("volumen", None, ist=m.volumen, hinweis=f"Sollvolumen nicht berechenbar ({grund})",
@@ -524,7 +537,7 @@ def _beschreibung(e: dict) -> str:
 - [ ] **Step 4: Tests laufen lassen**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/pruefung/test_bewertung.py -v`
-Expected: 9 passed.
+Expected: 10 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -805,7 +818,7 @@ git commit -m "pruefung: Nachbesserungsschleife und Bericht" -m "Co-Authored-By:
 - Modify: `swki/cli.py` (`_befehlsgruppen`)
 
 **Interfaces:**
-- Consumes: `sw.*`, `flaechen`, `flaeche_in_richtung`, `zylinder_zu_punkten`, `lies_eigenschaften`, `Kontext`, `FeatureErgebnis` (2a); `bewerte`, `Messwerte`, `messpunkt_schluessel` (Task 2); `lies_laeufe`, `max_laeufe`, `empfehlung`, `bericht_markdown` (Task 3).
+- Consumes: `sw.*`, `flaechen`, `flaeche_in_richtung`, `zylinder_zu_punkten`, `lies_eigenschaften`, `Kontext`, `FeatureErgebnis` (2a); `bewerte`, `Messwerte`, `messpunkt_schluessel` (Task 2); `freigegebene_spec` (2a-Nachtrag Task 1); `lies_laeufe`, `max_laeufe`, `empfehlung`, `bericht_markdown` (Task 3).
 - Produces (`messen.py`): `PruefFehler(SwkiFehler)`; `oeffne(app, pfad)` (bricht bei „bereits geöffnet“ ab); `skizzenstatus(model)` (auch Unterskizzen als `<Feature>/<Skizze>`); `rebuild_fehler(model)`; `kontext_aus_datei(app, model, spec, spec_pfad, tol_mm, protokoll)`; `messpunkte(ctx, spec)`; `messe(ctx) -> Messwerte`.
 - Produces (`bilder.py`): `ANSICHTEN = {iso: 7, vorne: 1, oben: 5, rechts: 4}`; `screenshots(model, ordner) -> dict`.
 - Befehle: `swki pruefen <spec> [--lauf N]` (Vorgabe letzter Lauf; Exit 0 auch bei Mängeln – `bestanden` steht im JSON), `swki status <spec> [--max N]`, `swki bericht <spec>` (schreibt `bericht.md`, Compiler-Änderungen aus `git log --since=<erster Lauf> -- swki/compiler schema`).
@@ -1078,7 +1091,7 @@ from swki.pruefung.bewertung import bewerte
 from swki.pruefung.bilder import screenshots
 from swki.pruefung.messen import kontext_aus_datei, messe, oeffne
 from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
-from swki.spec.freigabe import pruefe_freigabe
+from swki.spec.freigabe import freigegebene_spec, pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import verbinde
 
@@ -1109,7 +1122,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         sw.schliesse(app, model)
     bericht = {
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil),
-        **bewerte(spec, messwerte, standard), "bilder": bilder,
+        **bewerte(spec, messwerte, standard, freigegebene_spec(spec_pfad)), "bilder": bilder,
     }
     text = json.dumps(bericht, indent=2, ensure_ascii=False) + "\n"
     (ordner / "pruefbericht.json").write_text(text, encoding="utf-8")
@@ -1230,7 +1243,8 @@ Du prüfst ein von SolidWorks-KI gebautes Teil unabhängig vom Konstrukteur. Du 
 
 ## Was du bekommst (Pfade in der Aufgabe)
 - die Eingabe des Nutzers (Skizze, Beschreibung, Anweisungen) unter `auftraege/<auftrag>/eingabe/`
-- die freigegebene Spezifikation (`*.yaml`) des Auftrags
+- die freigegebene Spezifikation `<spec>.freigegeben.yaml` des Auftrags (Stand der Freigabe; die Arbeitsdatei
+  `<spec>.yaml` kann einen nachgebesserten Bauweg enthalten und ist nicht dein Maßstab)
 - den Prüfbericht `protokolle/<spec>.lauf-<n>.pruefbericht.json`
 - die Screenshots des Laufs (iso, vorne, oben, rechts – PNG, mit Read ansehen)
 
@@ -1298,6 +1312,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 ## 2. Spezifikation schreiben
 - Datei `auftraege/<auftrag>/<name>.yaml` nach `schema/teil.schema.json`. Vorlagen: `tests/referenz/*/`.
 - Maße, die zusammenhängen, als `parameter` und Ausdrücke (`"=L/2-20"`); sie werden SW-Gleichungen.
+- Anforderungsmaße (vom Nutzer vorgegeben oder zu prüfen) immer als `parameter` führen: feste Zahlen in Features
+  gehören zum Bauweg und sind von der Freigabe-Prüfsumme nicht geschützt.
 - Ebenen: `vorne` (Normale +Z), `oben` (+Y), `rechts` (+X). Skizzenkoordinaten (u, v): vorne X=u, Y=v · oben X=u, Z=−v ·
   rechts Z=−u, Y=v.
 - Flächen/Kanten bevorzugt semantisch (`{feature, flaeche}`, `{feature, auswahl}`), sonst `{nahe: [x, y, z]}`.
@@ -1308,17 +1324,19 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 
 ## 3. Validieren und Rückfragen
 - `swki validieren <spec>` bis `"gueltig": true`.
+- `hinweise` aus `validieren` (feste Zahlen in maßtragenden Feldern) vor der Freigabe beheben – meist als Parameter –
+  oder dem Nutzer bei der Freigabe ausdrücklich nennen.
 - Unklarheiten in der Eingabe (fehlende Maße, Toleranzen, Material) gesammelt beim Nutzer erfragen, nicht raten.
 
 ## 4. Freigabe (einziger menschlicher Eingriff)
 - Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten.
-- Erst nach ausdrücklichem OK: `swki freigeben <spec>`.
+- Erst nach ausdrücklichem OK: `swki freigeben <spec>` (legt `<name>.freigegeben.yaml` ab; diese Kopie nie ändern).
 
 ## 5. Bauen, prüfen, Prüfer
 - `swki bauen <spec>` → Lauf n (Protokoll unter `protokolle/`). Bei Bauabbruch: Fehlercode und Knoten lesen.
 - `swki pruefen <spec> --lauf n` → Prüfbericht + Screenshots.
-- Prüfer-Agent (`subagent_type: pruefer`) starten mit den Pfaden: Eingabeordner, Spezifikation, Prüfbericht,
-  Screenshot-Ordner des Laufs. Keine Protokolle, keine Skripte übergeben.
+- Prüfer-Agent (`subagent_type: pruefer`) starten mit den Pfaden: Eingabeordner, freigegebene Spezifikation
+  (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs. Keine Protokolle, keine Skripte übergeben.
 - Sein JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json` schreiben.
 
 ## 6. Schleife
