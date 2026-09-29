@@ -40,7 +40,8 @@ f9 Spiegeln 0,52 s, f10 Skript (Notausgang, M8-Gewinde) 4,182 s.
   kein Unit-Test für `Kontext.verknuepfe`; Notausgang-Skripte können die statische Prüfung gezielt
   umgehen.
 - Screenshots: Exportoption „Print capture“ wird während der Aufnahme auf „Screen capture“
-  umgeschaltet (Fund 2026-09-29); `bilder.py` holt sich dafür eine eigene App-Verbindung.
+  umgeschaltet (Fund 2026-09-29, über `sw.einstellung_int`); nach einem hart beendeten Prozess prüfen, ob sie
+  zurückgesetzt ist.
 - Prüfer-Agent antwortet trotz Anweisung mit Code-Fences; Claude legt nur das JSON-Objekt ab
   (Skill `konstruieren`).
 - Baugruppen/Normteile: Befunde aus S5/S6 (Kollision, `AddComponent5` platziert die
