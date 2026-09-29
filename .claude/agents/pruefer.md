@@ -31,5 +31,8 @@ oder
 ```json
 {"bestanden": false, "maengel": [{"knoten": ["f3"], "beschreibung": "Tasche liegt auf der Unterseite statt oben (Bild oben)"}]}
 ```
+Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach. `bestanden` ist genau dann `true`,
+wenn `maengel` leer ist; Beobachtungen ohne Mangel gehören nicht in `maengel`.
+
 `knoten` sind die Feature-IDs der Spezifikation (leer, wenn das ganze Teil betroffen ist). Beschreibe jeden Mangel so,
 dass der Konstrukteur ihn ohne Rückfrage beheben kann, und nenne das Bild oder den Prüfbericht-Eintrag als Beleg.
