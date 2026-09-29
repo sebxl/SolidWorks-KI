@@ -68,6 +68,17 @@ def einstellung(app, toggle: int, wert: bool):
 
 
 @contextmanager
+def einstellung_int(app, wert_id: int, wert: int):
+    """Wie einstellung(), aber für Integer-Benutzereinstellungen (Get/SetUserPreferenceIntegerValue)."""
+    alt = app.GetUserPreferenceIntegerValue(wert_id)
+    app.SetUserPreferenceIntegerValue(wert_id, wert)
+    try:
+        yield
+    finally:
+        app.SetUserPreferenceIntegerValue(wert_id, alt)
+
+
+@contextmanager
 def ohne_inferenz(sketch_manager):
     """AddToDB=True: keine automatischen Beziehungen beim Erzeugen (S9a); danach immer zurück."""
     sketch_manager.AddToDB = True

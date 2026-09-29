@@ -2,6 +2,7 @@ import copy
 import json
 
 import pytest
+import yaml
 
 from swki.spec.freigabe import (
     FreigabeFehler, freigabe_pfad, freigeben, freigegebene_spec, kopie_pfad, pruefe_freigabe, pruefsumme,
@@ -87,3 +88,33 @@ def test_fehlende_kopie(tmp_path):
     with pytest.raises(FreigabeFehler) as e:
         pruefe_freigabe(pfad, SPEC)
     assert e.value.daten["code"] == "FREIGABE_FEHLT"
+
+
+def test_kopie_ist_rohtext_mit_kommentaren(tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    text = (
+        "art: teil\n"
+        "name: Platte\n"
+        "material: '1.2312'\n"
+        "parameter:\n"
+        "  L: 100\n"
+        "features:\n"
+        "  - id: f1\n"
+        "    typ: extrusion\n"
+        "pruefung:\n"
+        "  # Führungsbohrungen Ø22\n"
+        "  huellquader: [100, 20, 60]\n"
+    )
+    pfad.write_text(text, encoding="utf-8")
+    assert yaml.safe_load(text) == SPEC
+    eintrag = freigeben(pfad, SPEC)
+    assert kopie_pfad(pfad).read_text(encoding="utf-8") == text
+    assert freigegebene_spec(pfad) == SPEC
+    assert pruefe_freigabe(pfad, SPEC) == eintrag
+
+
+def test_kopie_rueckfall_wenn_datei_nicht_zum_spec_passt(tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    pfad.write_text("art: teil\nname: Andere Platte\n", encoding="utf-8")
+    freigeben(pfad, SPEC)
+    assert freigegebene_spec(pfad) == SPEC

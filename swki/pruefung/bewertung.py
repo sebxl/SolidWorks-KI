@@ -1,0 +1,117 @@
+"""Bewertung der Messwerte gegen die Spezifikation (ohne SolidWorks) → Prüfungen und Mängel mit Knoten-IDs."""
+
+from dataclasses import dataclass, field
+
+from swki.compiler.eigenschaften import material_passt
+from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
+from swki.spec.ausdruck import auswerten
+
+SKIZZE_VOLL_BESTIMMT = 3  # swConstrainedStatus_e.swFullyConstrained
+_TOL_HUELLQUADER = 0.01
+_TOL_MASS = 0.01
+_TOL_SCHWERPUNKT = 0.05
+
+
+@dataclass
+class Messwerte:
+    rebuild_fehler: list[str]  # ["f3: Code 71"]
+    skizzen: dict[str, int]  # Skizzenname → swConstrainedStatus_e
+    box: list[float]  # [xmin, ymin, zmin, xmax, ymax, zmax] mm
+    volumen: float  # mm³
+    schwerpunkt: tuple[float, float, float]  # mm
+    material: str
+    eigenschaften: dict[str, str]
+    messpunkte: dict[str, Messgeometrie | str] = field(default_factory=dict)  # Schlüssel → Geometrie oder Fehlertext
+
+
+def messpunkt_schluessel(messpunkt: dict) -> str:
+    return ",".join(f"{k}={messpunkt[k]}" for k in sorted(messpunkt))
+
+
+def _knoten_aus(text: str, ids: list[str]) -> str:
+    """SW-Name ("f2_senkung: Code 71", "f10_2/Skizze7", "f1_skizze") → Feature-ID der Spezifikation."""
+    name = text.split(":")[0].split("/")[0].strip()
+    passend = [i for i in ids if name == i or name.startswith(f"{i}_")]
+    return max(passend, key=len) if passend else name
+
+
+def _pruefung(pid: str, ok: bool | None, **daten) -> dict:
+    return {"id": pid, "ok": ok, **daten}
+
+
+def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None = None) -> dict:
+    """freigegeben: Spezifikation im Stand der Freigabe; das Sollvolumen "auto" wird aus ihr berechnet,
+    damit ein nachgebesserter Bauweg das Soll nicht mitverschiebt."""
+    p = spec.get("parameter", {})
+    pr = spec.get("pruefung", {})
+    ergebnisse = []
+
+    ids = [f["id"] for f in spec["features"]]
+    knoten = sorted({_knoten_aus(t, ids) for t in m.rebuild_fehler})
+    ergebnisse.append(_pruefung("rebuild", not m.rebuild_fehler, ist=m.rebuild_fehler, knoten=knoten))
+
+    offen = {n: s for n, s in m.skizzen.items() if s != SKIZZE_VOLL_BESTIMMT}
+    ergebnisse.append(_pruefung("skizzen", not offen, ist=offen, knoten=sorted({_knoten_aus(n, ids) for n in offen})))
+
+    if "huellquader" in pr:
+        soll = [auswerten(v, p) for v in pr["huellquader"]]
+        ist = [round(m.box[i + 3] - m.box[i], 6) for i in range(3)]
+        tol = pr.get("huellquader_tol", _TOL_HUELLQUADER)
+        ok = all(abs(a - b) <= tol for a, b in zip(ist, soll))
+        ergebnisse.append(_pruefung("huellquader", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
+
+    if "volumen" in pr:
+        roh = pr["volumen"]["soll"]
+        soll, grund = volumen_auto(freigegeben or spec) if roh == "auto" else (auswerten(roh, p), "vorgegeben")
+        prozent = pr["volumen"].get("toleranz_prozent", standard["toleranzen"]["volumen_prozent"])
+        if soll is None:
+            ergebnisse.append(_pruefung("volumen", None, ist=m.volumen, hinweis=f"Sollvolumen nicht berechenbar ({grund})",
+                                        knoten=[]))
+        else:
+            abweichung = abs(m.volumen - soll) / soll * 100
+            ergebnisse.append(_pruefung("volumen", abweichung <= prozent, ist=round(m.volumen, 3), soll=round(soll, 3),
+                                        abweichung_prozent=round(abweichung, 4), tol_prozent=prozent, knoten=[]))
+
+    for mp in pr.get("masse_pruefen", []):
+        von, zu = m.messpunkte.get(messpunkt_schluessel(mp["von"])), m.messpunkte.get(messpunkt_schluessel(mp["zu"]))
+        knoten = sorted({x["feature"] for x in (mp["von"], mp["zu"]) if "feature" in x})
+        soll, tol = auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS)
+        if isinstance(von, str) or isinstance(zu, str) or von is None or zu is None:
+            fehler = next(x for x in (von, zu, "Messpunkt fehlt") if isinstance(x, str))
+            ergebnisse.append(_pruefung(f"mass:{mp['was']}", False, soll=soll, hinweis=fehler, knoten=knoten))
+            continue
+        try:
+            ist = round(abstand(von, zu), 6)
+        except NichtMessbar as e:
+            ergebnisse.append(_pruefung(f"mass:{mp['was']}", False, soll=soll, hinweis=str(e), knoten=knoten))
+            continue
+        ergebnisse.append(_pruefung(f"mass:{mp['was']}", abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
+
+    if "schwerpunkt" in pr:
+        soll = [None if v is None else auswerten(v, p) for v in pr["schwerpunkt"]["soll"]]
+        tol = pr["schwerpunkt"].get("tol", _TOL_SCHWERPUNKT)
+        ist = [round(v, 6) for v in m.schwerpunkt]
+        ok = all(s is None or abs(i - s) <= tol for i, s in zip(ist, soll))
+        ergebnisse.append(_pruefung("schwerpunkt", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
+
+    if "material" in spec:
+        ergebnisse.append(_pruefung("material", material_passt(m.material, spec["material"]), ist=m.material, soll=spec["material"],
+                                    knoten=[]))
+
+    soll_eig = spec.get("eigenschaften", {})
+    abweichend = {k: m.eigenschaften.get(k) for k, v in soll_eig.items() if m.eigenschaften.get(k) != v}
+    ergebnisse.append(_pruefung("eigenschaften", not abweichend, ist=abweichend, soll=soll_eig, knoten=[]))
+
+    maengel = [
+        {"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": _beschreibung(e)}
+        for e in ergebnisse if e["ok"] is False
+    ]
+    return {"bestanden": not maengel, "pruefungen": ergebnisse, "maengel": maengel}
+
+
+def _beschreibung(e: dict) -> str:
+    if "hinweis" in e:
+        return f"{e['id']}: {e['hinweis']}"
+    if "soll" in e:
+        return f"{e['id']}: ist {e.get('ist')} statt {e['soll']}"
+    return f"{e['id']}: {e.get('ist')}"

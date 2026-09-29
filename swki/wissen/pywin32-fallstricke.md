@@ -176,6 +176,24 @@ Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*
   `swInputDimValOnCreate` (Toggle 10) prüfen. Live-Tests deshalb einzeln mit Zeitlimit (`tests/live_einzeln.py`).
 - **Lineare Muster** lassen Instanzen außerhalb des Körpers ohne Meldung weg (nur Volumen/Achsen zeigen es).
 
+## PNG-Screenshots: Print capture vs. Screen capture (live belegt 2026-09-29)
+
+- `IModelDocExtension.SaveAs3` auf `.png` rendert je nach System Option "Export > TIF/PSD/JPG/PNG > Output as"
+  entweder das tatsächliche Grafikfenster ("Screen capture", `swTiffScreenOrPrintCapture` = 0) oder eine
+  Papierseite ("Print capture" = 1, Seitenformat/DPI aus `swTiffPrintPaperSize`/`swTiffPrintDPI`, hier
+  vorgefunden: Letter @ 300 dpi = 3300×2550 px, Seitenverhältnis 1,294). `ViewZoomtofit2` zoomt immer auf das
+  tatsächliche Grafikfenster (hier 1741×973 px, Seitenverhältnis 1,789) – steht die Export-Option auf "Print
+  capture", weicht das gerenderte Bild-Seitenverhältnis vom gezoomten ab, und bei schmal-langen Standard­ansichten
+  (z. B. Vorne/Rechts eines flachen, breiten Teils) wird das Teil sichtbar rechts abgeschnitten, obwohl
+  `ViewZoomtofit2` korrekt gearbeitet hat. Reproduziert durch Vertauschen der Ansichtsreihenfolge (Beschnitt folgt
+  der Teilegeometrie, nicht der Position in der Schleife) und durch testweises Umschalten auf "Screen capture"
+  (Beschnitt verschwindet, Bildgröße ändert sich auf die tatsächliche Fenstergröße).
+- `swTiffScreenOrPrintCapture` ist ein **System Option**, kein Document Property: `IModelDoc2.Get/SetUserPreferenceIntegerValue`
+  (obsolet) und `IModelDocExtension.Get/SetUserPreferenceInteger` liefern dafür `-1` bzw. `False` (live geprüft) –
+  nur `ISldWorks.Get/SetUserPreferenceIntegerValue` (App-Ebene, über `swki.verbindung.verbinde`) funktioniert.
+  Vor der Bildaufnahme auf `0` setzen und danach den vorgefundenen Wert wiederherstellen (temporär, wie bei
+  Toggle 10) – nicht dauerhaft umstellen, da es eine geteilte Einstellung der laufenden SolidWorks-Instanz ist.
+
 ## Maßnamen von Features (live belegt 2026-09-28)
 
 - Lineares Muster: `D1`/`D2` Anzahl, `D3`/`D4` Abstand Richtung 1/2 (auch bei nur einer Richtung ist der Abstand `D3`).

@@ -1,0 +1,85 @@
+# Referenzteil Stufe 2: Formplatte Düsenseite (selbst definiert, angelehnt an das Beispiel im Design §4)
+# Platte 296 × 246 × 46 auf Ebene oben (wächst nach +Y), Mitte im Ursprung.
+art: teil
+name: Formplatte_DS
+material: "1.2312"
+eigenschaften: {Benennung: Formplatte DS}
+parameter: {L: 296, B: 246, H: 46, T: 20}
+features:
+  - id: f1
+    typ: extrusion
+    skizze:
+      ebene: oben
+      elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]
+    ende: {typ: blind, tiefe: "=H"}
+  - id: f2            # Führungsbohrungen Ø22 durch, 23 mm vom Rand
+    typ: bohrung
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen:
+      - ["=-L/2+23", "=-B/2+23"]
+      - ["=L/2-23", "=-B/2+23"]
+      - ["=L/2-23", "=B/2-23"]
+      - ["=-L/2+23", "=B/2-23"]
+    durchmesser: 22
+    durch: true
+  - id: f3            # Tasche 120 × 80, Tiefe T
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente: [{rechteck: {mitte: [0, 0], breite: 120, hoehe: 80}}]
+    ende: {typ: blind, tiefe: "=T"}
+  - id: f4            # Außenecken R5
+    typ: verrundung
+    kanten: [{feature: f1, auswahl: senkrechte_kanten}]
+    radius: 5
+  - id: f5            # Taschenecken R6
+    typ: verrundung
+    kanten: [{feature: f3, auswahl: senkrechte_kanten}]
+    radius: 6
+  - id: f6            # Fase 1 × 45° umlaufend oben (eine Kante, setzt sich tangential fort)
+    typ: fase
+    kanten: [{nahe: ["=L/2", "=H", 0]}]
+    abstand: 1
+  - id: f7            # Durchgangsbohrung M6 mit Flachsenkung
+    typ: bohrung
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen: [[-60, -110]]
+    durchmesser: 6.6
+    durch: true
+    senkung: {durchmesser: 11, tiefe: 6.8}
+  - id: f8
+    typ: muster_linear
+    features: [f7]
+    richtung1: {achse: x, abstand: 40, anzahl: 4}
+  - id: f9
+    typ: spiegeln
+    features: [f7, f8]
+    ebene: vorne
+  - id: f10
+    typ: skript
+    datei: skripte/f10_gewinde.py
+    luecke: "Gewindebohrung M8 (Bohrungsassistent) – Gewinde kennt das Format noch nicht"
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  volumen:
+    # analytisch: Platte − 4 Führungsbohrungen − Tasche (mit R6-Ecken) − R5-Ecken − 8 Senkbohrungen
+    #             − Fase (≈ 0,5 mm² × Umfang) − 2 × M8 (605,80 mm³ je Loch laut S9b)
+    soll: 3069574.5
+    toleranz_prozent: 0.5
+  masse_pruefen:
+    - was: Führungsbohrungen 1–2
+      von: {feature: f2, instanz: 1, achse: true}
+      zu: {feature: f2, instanz: 2, achse: true}
+      soll: "=L-46"
+      tol: 0.01
+    - was: Führungsbohrungen 2–3
+      von: {feature: f2, instanz: 2, achse: true}
+      zu: {feature: f2, instanz: 3, achse: true}
+      soll: "=B-46"
+      tol: 0.01
+    - was: Taschenboden über Unterseite
+      von: {feature: f1, flaeche: "-y"}
+      zu: {feature: f3, flaeche: "+y"}
+      soll: "=H-T"
+      tol: 0.01
+  schwerpunkt: {soll: [0, null, 0], tol: 0.05}
