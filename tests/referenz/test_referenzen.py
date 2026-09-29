@@ -1,0 +1,40 @@
+"""Regressions-Suite: Referenzteile freigeben, bauen, prüfen – müssen bestehen (SolidWorks muss laufen).
+
+Die Aufträge werden in ein temporäres Verzeichnis kopiert, damit Freigaben und Protokolle nicht im Repo landen.
+"""
+
+import json
+import shutil
+from pathlib import Path
+
+import pytest
+
+from swki.cli import main
+from swki.konfig import lade_rechner
+
+pytestmark = pytest.mark.sw
+REFERENZEN = Path(__file__).parent
+
+
+def _lauf(capsys, *argv):
+    code = main(list(argv))
+    return code, json.loads(capsys.readouterr().out)
+
+
+@pytest.mark.parametrize(("ordner", "spec"), [("buchse", "buchse.yaml")])
+def test_referenz_besteht(capsys, tmp_path, ordner, spec):
+    auftrag = tmp_path / f"REF-{ordner}"
+    shutil.copytree(REFERENZEN / ordner, auftrag)
+    spec_pfad = auftrag / spec
+    try:
+        assert _lauf(capsys, "validieren", str(spec_pfad))[0] == 0
+        assert _lauf(capsys, "freigeben", str(spec_pfad))[0] == 0
+        code, bau = _lauf(capsys, "bauen", str(spec_pfad))
+        assert code == 0, bau
+        code, bericht = _lauf(capsys, "pruefen", str(spec_pfad))
+        assert code == 0, bericht
+        assert bericht["maengel"] == [], json.dumps(bericht["pruefungen"], indent=1, ensure_ascii=False)
+        assert bericht["bestanden"] is True
+        assert all(Path(p).stat().st_size > 0 for p in bericht["bilder"].values())
+    finally:
+        shutil.rmtree(lade_rechner().arbeitsordner / f"REF-{ordner}", ignore_errors=True)

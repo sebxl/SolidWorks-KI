@@ -1,0 +1,66 @@
+# Referenzteil Stufe 2: Führungsbuchse mit Bund (selbst definiert). Drehteil um die Modell-Y-Achse.
+art: teil
+name: Buchse
+material: "1.7131"
+eigenschaften: {Benennung: Führungsbuchse}
+parameter: {D_innen: 20, D_schaft: 32, D_bund: 50, L: 60, L_bund: 8}
+features:
+  - id: f1            # Halbschnitt in Ebene vorne (u = Radius, v = axiale Lage)
+    typ: rotation
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon:
+            punkte:
+              - ["=D_innen/2", 0]
+              - ["=D_bund/2", 0]
+              - ["=D_bund/2", "=L_bund"]
+              - ["=D_schaft/2", "=L_bund"]
+              - ["=D_schaft/2", "=L"]
+              - ["=D_innen/2", "=L"]
+        - mittellinie: {von: [0, -5], bis: [0, "=L+5"]}
+  - id: f2            # Fase außen oben 1 × 45°
+    typ: fase
+    kanten: [{nahe: [0, "=L", "=D_schaft/2"]}]
+    abstand: 1
+  - id: f3            # Fase innen oben 0,5 × 45°
+    typ: fase
+    kanten: [{nahe: [0, "=L", "=D_innen/2"]}]
+    abstand: 0.5
+  - id: f4            # Nut 1 mm tief, 3 mm breit
+    typ: rotation
+    schnitt: true
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon: {punkte: [[15, 40], [17, 40], [17, 43], [15, 43]]}
+        - mittellinie: {von: [0, -5], bis: [0, "=L+5"]}
+  - id: f5            # Befestigungsbohrung im Bund
+    typ: bohrung
+    flaeche: {nahe: [20, "=L_bund", 0]}
+    positionen: [[20, 0]]
+    durchmesser: 6
+    durch: true
+  - id: f6
+    typ: muster_kreis
+    features: [f5]
+    achse: y
+    anzahl: 4
+pruefung:
+  huellquader: ["=D_bund", "=L", "=D_bund"]
+  volumen:
+    # analytisch: Rotationskörper − Fasen (Pappus) − Nut − 4 Bohrungen Ø6 × 8
+    soll: 37425.1
+    toleranz_prozent: 0.5
+  masse_pruefen:
+    - was: Lochkreis Bohrung 1 zur Achse
+      von: {feature: f5, instanz: 1, achse: true}
+      zu: {punkt: [0, 0, 0]}
+      soll: 20
+      tol: 0.01
+    - was: Gesamtlänge
+      von: {feature: f1, flaeche: "-y"}
+      zu: {feature: f1, flaeche: "+y"}
+      soll: "=L"
+      tol: 0.01
+  schwerpunkt: {soll: [0, null, 0], tol: 0.01}
