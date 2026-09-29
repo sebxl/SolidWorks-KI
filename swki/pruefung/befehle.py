@@ -46,6 +46,11 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil),
         **bewerte(spec, messwerte, standard, freigegebene_spec(spec_pfad)), "bilder": bilder,
     }
+    pruefer_datei = lauf_datei(spec_pfad, lauf, "pruefer")
+    if pruefer_datei.exists():
+        # Urteil gehört zum vorherigen Prüfbericht dieses Laufs; sonst könnte "status" ein veraltetes "bestanden" melden.
+        pruefer_datei.unlink()
+        bericht["pruefer_urteil_verworfen"] = True
     text = json.dumps(bericht, indent=2, ensure_ascii=False) + "\n"
     (ordner / "pruefbericht.json").write_text(text, encoding="utf-8")
     ziel = lauf_datei(spec_pfad, lauf, "pruefbericht")

@@ -73,6 +73,12 @@ def test_pruefen_bestanden_und_status(capsys, spec_pfad):
     code, daten = _lauf(capsys, "bericht", str(spec_pfad))
     assert code == 0 and daten["status"] == "bestanden"
     assert "**Status:** bestanden" in (spec_pfad.parent / "bericht.md").read_text(encoding="utf-8")
+    # Erneute Prüfung desselben Laufs verwirft das veraltete Prüfer-Urteil (sonst meldet status weiter "bestanden").
+    code, bericht2 = _lauf(capsys, "pruefen", str(spec_pfad))
+    assert code == 0
+    assert bericht2["pruefer_urteil_verworfen"] is True
+    assert not lauf_datei(spec_pfad, 1, "pruefer").exists()
+    assert _lauf(capsys, "status", str(spec_pfad))[1]["empfehlung"] == "pruefer"
 
 
 def test_pruefen_findet_mangel_mit_knoten(capsys, spec_pfad):
