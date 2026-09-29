@@ -15,22 +15,17 @@ Deshalb während der Aufnahme auf "Screen capture" umschalten und danach den vor
 from pathlib import Path
 
 from swki.compiler import sw
-from swki.konfig import lade_rechner
-from swki.verbindung import verbinde
 
 ANSICHTEN = {"iso": 7, "vorne": 1, "oben": 5, "rechts": 4}  # swStandardViews_e
 SW_TIFF_SCREEN_OR_PRINT_CAPTURE = 6  # swUserPreferenceIntegerValue_e; 0 = Screen capture, 1 = Print capture
 
 
-def screenshots(model, ordner: Path) -> dict[str, str]:
+def screenshots(app, model, ordner: Path) -> dict[str, str]:
     # Nur als echter Methodenaufruf wird eingepasst; der reine Attributzugriff (S9b) zoomt nicht (Bild abgeschnitten).
     model._FlagAsMethod("ViewZoomtofit2")
     # Screen capture statt Print capture erzwingen, sonst bei schmal-langen Ansichten rechts abgeschnitten
     # (siehe Moduldocstring); danach immer den vorgefundenen Wert wiederherstellen.
-    app = verbinde(lade_rechner().sw_jahr)
-    vorher = app.GetUserPreferenceIntegerValue(SW_TIFF_SCREEN_OR_PRINT_CAPTURE)
-    app.SetUserPreferenceIntegerValue(SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0)
-    try:
+    with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
         bilder = {}
         for name, ansicht in ANSICHTEN.items():
             model.ShowNamedView2("", ansicht)
@@ -39,5 +34,3 @@ def screenshots(model, ordner: Path) -> dict[str, str]:
             sw.speichere(model, pfad, kopie=True)
             bilder[name] = str(pfad)
         return bilder
-    finally:
-        app.SetUserPreferenceIntegerValue(SW_TIFF_SCREEN_OR_PRINT_CAPTURE, vorher)

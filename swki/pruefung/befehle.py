@@ -39,7 +39,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     try:
         ctx = kontext_aus_datei(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], protokoll)
         messwerte = messe(ctx)
-        bilder = screenshots(model, ordner / "bilder")
+        bilder = screenshots(app, model, ordner / "bilder")
     finally:
         sw.schliesse(app, model)
     bericht = {
