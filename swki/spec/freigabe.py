@@ -4,6 +4,8 @@ Die Prüfsumme deckt nur die Anforderungen ab (Parameter, Material, Eigenschafte
 nicht den Bauweg (Features, Anker, Reihenfolge) – den darf Claude beim Nachbessern ändern.
 Zusätzlich wird die ganze Spezifikation als <spec>.freigegeben.yaml abgelegt: Sie ist das Soll für den
 Prüfer-Agenten und für das analytische Sollvolumen, auch wenn der Bauweg später nachgebessert wird.
+Die Kopie ist der Rohtext der Spezifikationsdatei (Kommentare bleiben erhalten); nur wenn die Datei
+fehlt oder inhaltlich nicht mehr zum übergebenen spec passt, dient yaml.safe_dump als Rückfall.
 """
 
 import hashlib
@@ -46,10 +48,19 @@ def _lies(pfad: Path) -> dict:
     return json.loads(pfad.read_text(encoding="utf-8")) if pfad.exists() else {}
 
 
+def _rohtext_oder_dump(spec_pfad: Path, spec: dict) -> str:
+    """Rohtext der Spezifikationsdatei, wenn er inhaltlich zu spec passt – sonst yaml.safe_dump als Rückfall."""
+    if spec_pfad.exists():
+        text = spec_pfad.read_text(encoding="utf-8")
+        if yaml.safe_load(text) == spec:
+            return text
+    return yaml.safe_dump(spec, allow_unicode=True, sort_keys=False)
+
+
 def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None) -> dict:
     pfad = freigabe_pfad(spec_pfad)
     daten = _lies(pfad)
-    kopie = yaml.safe_dump(spec, allow_unicode=True, sort_keys=False)
+    kopie = _rohtext_oder_dump(spec_pfad, spec)
     kopie_pfad(spec_pfad).write_text(kopie, encoding="utf-8")
     eintrag = {
         "pruefsumme": pruefsumme(spec),
