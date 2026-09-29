@@ -44,6 +44,7 @@ def test_max_laeufe_vorrang():
     assert max_laeufe({}, STANDARD) == 4
     assert max_laeufe({}, STANDARD, anweisung=1) == 2
     assert max_laeufe({"max_nachbesserungen": 5}, STANDARD, anweisung=1) == 6
+    assert max_laeufe({}, STANDARD, anweisung=0) == 1
 
 
 @pytest.mark.parametrize(("laeufe", "erwartet"), [

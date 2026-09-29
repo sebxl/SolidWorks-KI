@@ -47,7 +47,12 @@ def lies_laeufe(spec_pfad: Path) -> list[dict]:
 
 def max_laeufe(spec: dict, standard: dict, anweisung: int | None = None) -> int:
     """Erster Lauf + Nachbesserungen; Vorrang: Spezifikation > Anweisung im Chat > config/standard.yaml."""
-    nachbesserungen = spec.get("max_nachbesserungen") or anweisung or standard["max_nachbesserungen"]
+    if spec.get("max_nachbesserungen") is not None:
+        nachbesserungen = spec["max_nachbesserungen"]
+    elif anweisung is not None:
+        nachbesserungen = anweisung
+    else:
+        nachbesserungen = standard["max_nachbesserungen"]
     return 1 + nachbesserungen
 
 
