@@ -89,7 +89,8 @@ def _messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
     punkt = punkte[mp["instanz"] - 1]
     [zylinder] = zylinder_zu_punkten(flaechen(feature), [punkt], ctx.tol_mm)
     n = laenge(zylinder.achse)
-    return Messgeometrie("achse", punkt, tuple(c / n for c in zylinder.achse))
+    # Protokollpunkt diente nur der Zuordnung; gemessen wird der echte Achspunkt der Zylinderfläche.
+    return Messgeometrie("achse", zylinder.punkt, tuple(c / n for c in zylinder.achse))
 
 
 def messpunkte(ctx, spec: dict) -> dict[str, Messgeometrie | str]:
