@@ -19,8 +19,8 @@ Neue Feature-Typen laufen beim ersten Mal immer über den Notausgang (`typ: skri
 4. **Umsetzen**: Schema (`schema/teil.schema.json`) und Handler (`swki/compiler/handler/`) – kleinste Änderung.
 5. **Absichern** (alles muss bestehen, sonst Änderung verwerfen: `git restore` der eigenen Dateien):
    - `.venv\Scripts\python.exe -m pytest`
-   - `.venv\Scripts\python.exe -m pytest -m sw`
-   - Regressions-Suite `.venv\Scripts\python.exe -m pytest -m sw tests/referenz`
+   - `.venv\Scripts\python.exe tests\live_einzeln.py tests\live`
+   - Regressions-Suite `.venv\Scripts\python.exe tests\live_einzeln.py tests\referenz`
    - `.venv\Scripts\python.exe -m swki api pruefe-code` (nur API-Aufrufe aus SW 2025)
 6. **Commit**: eigener lokaler Commit je Änderung, Message `compiler: <was>` mit Trailer
    `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Kein Push ohne Rückfrage.
