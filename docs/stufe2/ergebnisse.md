@@ -14,7 +14,7 @@ Test wieder löscht. Beide Läufe: `bestanden: true`, `maengel: []`.
 | Referenz | SW 2025 (Rechner A) | SW 2026 (Rechner B) | Bemerkung |
 |---|---|---|---|
 | Buchse | 29.09.2026, Volumen ist 37425,139 mm³ / soll 37425,1 mm³ (Abw. 0,0001 %), Dauer 15,202 s | ausstehend | |
-| Formplatte DS | 29.09.2026, Volumen ist 3069575,535 mm³ / soll 3069574,5 mm³ (Abw. 0,0 %), Dauer 26,106 s | ausstehend | Notausgang f10 (M8-Gewinde) |
+| Formplatte DS | 29.09.2026, Volumen ist 3069575,535 mm³ / soll 3069574,5 mm³ (Abw. 0,0000 %), Dauer 26,106 s | ausstehend | Notausgang f10 (M8-Gewinde) |
 
 ## Laufzeiten (Phasenzeiten aus dem Protokoll, Rechner A)
 
@@ -46,3 +46,13 @@ f9 Spiegeln 0,52 s, f10 Skript (Notausgang, M8-Gewinde) 4,182 s.
 - Baugruppen/Normteile: Befunde aus S5/S6 (Kollision, `AddComponent5` platziert die
   Bounding-Box-Mitte, `AddMate5`/`CreateMassProperty` obsolet) und S7 (Toolbox nur über
   Rückfallweg).
+- Regel „kein Fortschritt" zählt einen Bauabbruch als genau einen Mangel (Entscheidung Nutzer offen).
+- Spec §6 „Vorgabe 3" vs. Code 1 + 3 = 4 Läufe (Entscheidung Nutzer offen).
+- `pruefen` prüft den Protokollstatus nicht: ein Teil nach Bauabbruch wird trotzdem gemessen.
+- `pruefer.json` wird nicht auf Form geprüft.
+- `_pappus` ignoriert Rechteck/Kreis in Rotationsskizzen; verschachtelte Profile werden addiert.
+- `_compiler_aenderungen` ohne git-Fehlerbehandlung.
+- `--max` akzeptiert negative Werte.
+- Nach hart beendetem Prozess kann `swTiffScreenOrPrintCapture` auf 0 stehen bleiben (wie Toggle 10).
+- Prüfer-Isolation nur per Anweisung.
+- Buchse führt Nut/Lochkreis als feste Zahlen (Vorlage für den Skill).
