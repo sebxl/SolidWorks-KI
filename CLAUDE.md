@@ -28,7 +28,7 @@ Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpo
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,
-  Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach
+  freigegebene Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach
   `protokolle/<spec>.lauf-<n>.pruefer.json` → `swki status <spec>` → nachbessern oder `swki bericht <spec>`.
 - Wiederholt sich eine Lücke oder ein Handlerfehler: Skill `compiler-erweitern` (Test zuerst, Regressions-Suite).
 - Regressions-Suite: `.venv\Scripts\python.exe tests\live_einzeln.py tests\referenz` (SolidWorks geöffnet).

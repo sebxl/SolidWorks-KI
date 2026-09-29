@@ -43,6 +43,10 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs. Keine Protokolle, keine Skripte übergeben.
 - Sein JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json` schreiben – nur das
   JSON-Objekt (Code-Fences und Text drumherum weglassen, am Inhalt nichts ändern).
+  Beispiel für `auftraege/A-1/platte.yaml` (Dateistamm `platte` = Name der Spezifikationsdatei ohne `.yaml`), Lauf 2:
+  Freigabe-Kopie `auftraege/A-1/platte.freigegeben.yaml`, Prüfbericht
+  `auftraege/A-1/protokolle/platte.lauf-2.pruefbericht.json`, Urteil
+  `auftraege/A-1/protokolle/platte.lauf-2.pruefer.json`.
 
 ## 6. Schleife
 - `swki status <spec>` (optional `--max N`, wenn der Nutzer eine Zahl genannt hat) → `empfehlung`:
