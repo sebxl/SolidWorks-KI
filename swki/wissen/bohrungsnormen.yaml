@@ -1,0 +1,40 @@
+# Maßtabelle der Normbohrungen: Maße, die der SOLIDWORKS-Bohrungsassistent (HoleWizard5) je Norm, Art und Größe
+# erzeugt. Erste Fassung aus Spike S10 (docs/stufe0/ergebnisse/s10_f3_normmasse.json, SOLIDWORKS 2025).
+# Nur live geprüfte Größen aufnehmen (Spec 2c §3.3). Weicht SolidWorks von der ISO-Norm ab, gilt der SolidWorks-Wert;
+# die Abweichung steht dann unter "abweichung".
+# Längen in mm, Winkel in Grad. Bohrungstiefe = zylindrischer Teil ab der Ansatzfläche; bei blind darunter die
+# Bohrspitze (bohrspitze_grad). Gewinde sind kosmetisch (kein Volumen), gebohrt wird das Kernloch.
+# sw_groesse: Text für HoleWizard5 (SSize); gelesen: Text aus IWizardHoleFeatureData2.FastenerSize, falls anders.
+# Größen-Schlüssel als Text schreiben (Stift: "8").
+bohrspitze_grad: 118
+normen:
+  ISO:
+    gewinde:                 # ISO-Gewindebohrung (swStandardISOTappedHole), Kernloch nach ISO 2306
+      M5: {sw_groesse: "M5", kernloch: 4.2}
+      M6: {sw_groesse: "M6", kernloch: 5.0}
+      M8: {sw_groesse: "M8", kernloch: 6.8}
+      M10: {sw_groesse: "M10", kernloch: 8.5}
+      M12: {sw_groesse: "M12", kernloch: 10.2}
+      M16: {sw_groesse: "M16", kernloch: 14.0}
+      M8x1: {sw_groesse: "M8x1.0", kernloch: 7.0}
+      M10x1: {sw_groesse: "M10x1.0", kernloch: 9.0}
+      M12x1.5: {sw_groesse: "M12x1.5", kernloch: 10.5}
+      M16x1.5: {sw_groesse: "M16x1.5", kernloch: 14.5}
+    zylinderschraube:        # ISO 4762 (swStandardISOSocketHeadCap), Durchgang "normal", Flachsenkung
+      M5: {sw_groesse: "M5", durchgang: 5.5, senkung_d: 10.0, senkung_t: 5.4}
+      M6: {sw_groesse: "M6", durchgang: 6.6, senkung_d: 11.0, senkung_t: 6.4}
+      M8: {sw_groesse: "M8", durchgang: 9.0, senkung_d: 15.0, senkung_t: 8.6, abweichung: "senkung_t ISO 8.4, SolidWorks 8.6"}
+      M10: {sw_groesse: "M10", durchgang: 11.0, senkung_d: 18.0, senkung_t: 10.6, abweichung: "senkung_t ISO 10.4, SolidWorks 10.6"}
+      M12: {sw_groesse: "M12", durchgang: 13.5, senkung_d: 20.0, senkung_t: 12.6, abweichung: "senkung_t ISO 12.4, SolidWorks 12.6"}
+    senkschraube:            # ISO 10642 (swStandardISOSocketCTSKFlatHead), Durchgang "normal", Kegelsenkung
+      M5: {sw_groesse: "M5", durchgang: 5.5, senkung_d: 11.2, senkwinkel: 90.0, abweichung: "senkung_d ISO 10.4, SolidWorks 11.2"}
+      M6: {sw_groesse: "M6", durchgang: 6.6, senkung_d: 13.44, senkwinkel: 90.0, abweichung: "senkung_d ISO 12.4, SolidWorks 13.44"}
+      M8: {sw_groesse: "M8", durchgang: 9.0, senkung_d: 17.92, senkwinkel: 90.0, abweichung: "senkung_d ISO 16.4, SolidWorks 17.92"}
+      M10: {sw_groesse: "M10", durchgang: 11.0, senkung_d: 22.4, senkwinkel: 90.0, abweichung: "senkung_d ISO 20.4, SolidWorks 22.4"}
+    stift:                   # Stiftloch (swStandardISODowelHole), Nennmaß; "durch" nur über CreateDefinition (siehe Spike S10)
+      "4": {sw_groesse: "Ø4.0", durchmesser: 4.0}
+      "5": {sw_groesse: "Ø5.0", durchmesser: 5.0}
+      "6": {sw_groesse: "Ø6.0", durchmesser: 6.0}
+      "8": {sw_groesse: "Ø8.0", durchmesser: 8.0}
+      "10": {sw_groesse: "Ø10.0", durchmesser: 10.0}
+      "12": {sw_groesse: "Ø12.0", durchmesser: 12.0}

@@ -1,0 +1,4758 @@
+{
+  "ok": true,
+  "gewinner": {
+    "gewinde": {
+      "M5": "M5",
+      "M6": "M6",
+      "M8": "M8",
+      "M10": "M10",
+      "M12": "M12",
+      "M16": "M16",
+      "M8x1": "M8x1.0",
+      "M10x1": "M10x1.0",
+      "M12x1.5": "M12x1.5",
+      "M16x1.5": "M16x1.5"
+    },
+    "zylinderschraube": {
+      "M5": "M5",
+      "M6": "M6",
+      "M8": "M8",
+      "M10": "M10",
+      "M12": "M12"
+    },
+    "senkschraube": {
+      "M5": "M5",
+      "M6": "M6",
+      "M8": "M8",
+      "M10": "M10"
+    },
+    "stift": {
+      "4": "Ø4.0",
+      "5": "Ø5.0",
+      "6": "Ø6.0",
+      "8": "Ø8.0",
+      "10": "Ø10.0",
+      "12": "Ø12.0"
+    }
+  },
+  "groessen": {
+    "gewinde M5": {
+      "M5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M5 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 282.916,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 2.1,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.1,
+                10.0,
+                -2.1,
+                2.1,
+                30.0,
+                2.1
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0021,
+                1.029744
+              ],
+              "box": [
+                -2.1,
+                8.7382,
+                -2.1,
+                2.1,
+                10.0,
+                2.1
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil1.Part",
+            "typ2": 6,
+            "wert": 0.005
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil1.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil1.Part",
+            "typ2": 2,
+            "wert": 0.0042
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil1.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil1.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M5",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.005,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.004200000000000001,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M6": {
+      "M6": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M6 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 402.531,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 2.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.5,
+                10.0,
+                -2.5,
+                2.5,
+                30.0,
+                2.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0025,
+                1.029744
+              ],
+              "box": [
+                -2.5,
+                8.4978,
+                -2.5,
+                2.5,
+                10.0,
+                2.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil2.Part",
+            "typ2": 6,
+            "wert": 0.006
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil2.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil2.Part",
+            "typ2": 2,
+            "wert": 0.005
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil2.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil2.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M6",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.005999999999999977,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.005,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M8": {
+      "M8": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M8 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 751.067,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 3.4,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.4,
+                10.0,
+                -3.4,
+                3.4,
+                30.0,
+                3.4
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0034,
+                1.029744
+              ],
+              "box": [
+                -3.4,
+                7.9571,
+                -3.4,
+                3.4,
+                10.0,
+                3.4
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil3.Part",
+            "typ2": 6,
+            "wert": 0.008
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil3.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil3.Part",
+            "typ2": 2,
+            "wert": 0.0068
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil3.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil3.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M8",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.008,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0068,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M10": {
+      "M10": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M10 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1183.203,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 4.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.25,
+                10.0,
+                -4.25,
+                4.25,
+                30.0,
+                4.25
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00425,
+                1.029744
+              ],
+              "box": [
+                -4.25,
+                7.4463,
+                -4.25,
+                4.25,
+                10.0,
+                4.25
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil4.Part",
+            "typ2": 6,
+            "wert": 0.01
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil4.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil4.Part",
+            "typ2": 2,
+            "wert": 0.0085
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil4.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil4.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M10",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.01,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0085,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M12": {
+      "M12": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M12 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1717.723,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 5.1,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.1,
+                10.0,
+                -5.1,
+                5.1,
+                30.0,
+                5.1
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0051,
+                1.029744
+              ],
+              "box": [
+                -5.1,
+                6.9356,
+                -5.1,
+                5.1,
+                10.0,
+                5.1
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil5.Part",
+            "typ2": 6,
+            "wert": 0.012
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil5.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil5.Part",
+            "typ2": 2,
+            "wert": 0.0102
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil5.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil5.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M12",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.012,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.010199999999999999,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M16": {
+      "M16": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M16 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 3294.583,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 7.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -7.0,
+                10.0,
+                -7.0,
+                7.0,
+                30.0,
+                7.0
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.007,
+                1.029744
+              ],
+              "box": [
+                -7.0,
+                5.794,
+                -7.0,
+                7.0,
+                10.0,
+                7.0
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil6.Part",
+            "typ2": 6,
+            "wert": 0.016
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil6.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil6.Part",
+            "typ2": 2,
+            "wert": 0.014
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil6.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil6.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M16",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.016,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.014,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M8x1": {
+      "M8x1": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "M8x1.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M8x1.0 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 796.668,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 3.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.5,
+                10.0,
+                -3.5,
+                3.5,
+                30.0,
+                3.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0035,
+                1.029744
+              ],
+              "box": [
+                -3.5,
+                7.897,
+                -3.5,
+                3.5,
+                10.0,
+                3.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil8.Part",
+            "typ2": 6,
+            "wert": 0.008
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil8.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil8.Part",
+            "typ2": 2,
+            "wert": 0.007
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil8.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil8.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M8x1.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.007999999999999976,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.007,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M10x1": {
+      "M10x1": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "M10x1.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M10x1.0 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1329.683,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 4.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.5,
+                10.0,
+                -4.5,
+                4.5,
+                30.0,
+                4.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0045,
+                1.029744
+              ],
+              "box": [
+                -4.5,
+                7.2961,
+                -4.5,
+                4.5,
+                10.0,
+                4.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil10.Part",
+            "typ2": 6,
+            "wert": 0.01
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil10.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil10.Part",
+            "typ2": 2,
+            "wert": 0.009
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil10.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil10.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M10x1.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.009999999999999978,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.009000000000000001,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M12x1.5": {
+      "M12x1.5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M12x1.5 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1822.853,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 5.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.25,
+                10.0,
+                -5.25,
+                5.25,
+                30.0,
+                5.25
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00525,
+                1.029744
+              ],
+              "box": [
+                -5.25,
+                6.8455,
+                -5.25,
+                5.25,
+                10.0,
+                5.25
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil11.Part",
+            "typ2": 6,
+            "wert": 0.012
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil11.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil11.Part",
+            "typ2": 2,
+            "wert": 0.0105
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil11.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil11.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M12x1.5",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.012,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0105,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M16x1.5": {
+      "M16x1.5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "M16x1.5 Gewindebohrung1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 3542.381,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          },
+          {
+            "name": "Bohrungsgewinde1",
+            "typ": "CosmeticThread"
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 7.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -7.25,
+                10.0,
+                -7.25,
+                7.25,
+                30.0,
+                7.25
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00725,
+                1.029744
+              ],
+              "box": [
+                -7.25,
+                5.6438,
+                -7.25,
+                7.25,
+                10.0,
+                7.25
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "D2",
+            "fullname": "D2@Bohrungsgewinde1@Teil12.Part",
+            "typ2": 6,
+            "wert": 0.016
+          },
+          {
+            "name": "D1",
+            "fullname": "D1@Bohrungsgewinde1@Teil12.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil12.Part",
+            "typ2": 2,
+            "wert": 0.0145
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil12.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil12.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M16x1.5",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.016,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0145,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M5": {
+      "M5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Stirnsenkung für M5 Zylinderschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 784.072,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 9,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 5.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.0,
+                24.6,
+                -5.0,
+                5.0,
+                30.0,
+                5.0
+              ]
+            },
+            {
+              "r": 2.75,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.75,
+                10.0,
+                -2.75,
+                2.75,
+                24.6,
+                2.75
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00275,
+                1.029744
+              ],
+              "box": [
+                -2.75,
+                8.3476,
+                -2.75,
+                2.75,
+                10.0,
+                2.75
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil13.Part",
+            "typ2": 2,
+            "wert": 0.0055
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil13.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser2",
+            "fullname": "Senkdurchmesser2@Skizze2@Teil13.Part",
+            "typ2": 2,
+            "wert": 0.01
+          },
+          {
+            "name": "Senktiefe2",
+            "fullname": "Senktiefe2@Skizze2@Teil13.Part",
+            "typ2": 2,
+            "wert": 0.0054
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil13.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M5",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0055,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.01,
+          "CounterBoreDepth": 0.0054,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M6": {
+      "M6": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Stirnsenkung für M6 Zylinderschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1096.107,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 9,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 5.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.5,
+                23.6,
+                -5.5,
+                5.5,
+                30.0,
+                5.5
+              ]
+            },
+            {
+              "r": 3.3,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.3,
+                10.0,
+                -3.3,
+                3.3,
+                23.6,
+                3.3
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0033,
+                1.029744
+              ],
+              "box": [
+                -3.3,
+                8.0172,
+                -3.3,
+                3.3,
+                10.0,
+                3.3
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil14.Part",
+            "typ2": 2,
+            "wert": 0.0066
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil14.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser2",
+            "fullname": "Senkdurchmesser2@Skizze2@Teil14.Part",
+            "typ2": 2,
+            "wert": 0.011
+          },
+          {
+            "name": "Senktiefe2",
+            "fullname": "Senktiefe2@Skizze2@Teil14.Part",
+            "typ2": 2,
+            "wert": 0.0064
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil14.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M6",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0066,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.011,
+          "CounterBoreDepth": 0.0064,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M8": {
+      "M8": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Stirnsenkung für M8 Zylinderschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 2302.32,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 9,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 7.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -7.5,
+                21.4,
+                -7.5,
+                7.5,
+                30.0,
+                7.5
+              ]
+            },
+            {
+              "r": 4.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.5,
+                10.0,
+                -4.5,
+                4.5,
+                21.4,
+                4.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0045,
+                1.029744
+              ],
+              "box": [
+                -4.5,
+                7.2961,
+                -4.5,
+                4.5,
+                10.0,
+                4.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil15.Part",
+            "typ2": 2,
+            "wert": 0.009
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil15.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser2",
+            "fullname": "Senkdurchmesser2@Skizze2@Teil15.Part",
+            "typ2": 2,
+            "wert": 0.015
+          },
+          {
+            "name": "Senktiefe2",
+            "fullname": "Senktiefe2@Skizze2@Teil15.Part",
+            "typ2": 2,
+            "wert": 0.0086
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil15.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M8",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.009000000000000001,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.015,
+          "CounterBoreDepth": 0.0086,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M10": {
+      "M10": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Stirnsenkung für M10 Zylinderschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 3695.37,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 9,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 9.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -9.0,
+                19.4,
+                -9.0,
+                9.0,
+                30.0,
+                9.0
+              ]
+            },
+            {
+              "r": 5.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.5,
+                10.0,
+                -5.5,
+                5.5,
+                19.4,
+                5.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0055,
+                1.029744
+              ],
+              "box": [
+                -5.5,
+                6.6953,
+                -5.5,
+                5.5,
+                10.0,
+                5.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil16.Part",
+            "typ2": 2,
+            "wert": 0.011
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil16.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser2",
+            "fullname": "Senkdurchmesser2@Skizze2@Teil16.Part",
+            "typ2": 2,
+            "wert": 0.018
+          },
+          {
+            "name": "Senktiefe2",
+            "fullname": "Senktiefe2@Skizze2@Teil16.Part",
+            "typ2": 2,
+            "wert": 0.0106
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil16.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M10",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.011,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.018000000000000002,
+          "CounterBoreDepth": 0.0106,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M12": {
+      "M12": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Stirnsenkung für M12 Zylinderschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 5211.149,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 9,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 10.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -10.0,
+                17.4,
+                -10.0,
+                10.0,
+                30.0,
+                10.0
+              ]
+            },
+            {
+              "r": 6.75,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -6.75,
+                10.0,
+                -6.75,
+                6.75,
+                17.4,
+                6.75
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00675,
+                1.029744
+              ],
+              "box": [
+                -6.75,
+                5.9442,
+                -6.75,
+                6.75,
+                10.0,
+                6.75
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil17.Part",
+            "typ2": 2,
+            "wert": 0.0135
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil17.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser2",
+            "fullname": "Senkdurchmesser2@Skizze2@Teil17.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senktiefe2",
+            "fullname": "Senktiefe2@Skizze2@Teil17.Part",
+            "typ2": 2,
+            "wert": 0.0126
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil17.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M12",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0135,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.02,
+          "CounterBoreDepth": 0.0126,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "senkschraube M5": {
+      "M5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Formsenkung für M5 Senkschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 582.667,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 10,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 2.75,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.75,
+                10.0,
+                -2.75,
+                2.75,
+                27.15,
+                2.75
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.03,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0056,
+                0.785398
+              ],
+              "box": [
+                -5.6,
+                27.15,
+                -5.6,
+                5.6,
+                30.0,
+                5.6
+              ]
+            },
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00275,
+                1.029744
+              ],
+              "box": [
+                -2.75,
+                8.3476,
+                -2.75,
+                2.75,
+                10.0,
+                2.75
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil18.Part",
+            "typ2": 2,
+            "wert": 0.0055
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil18.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser (Oben)",
+            "fullname": "Senkdurchmesser (Oben)@Skizze2@Teil18.Part",
+            "typ2": 2,
+            "wert": 0.0112
+          },
+          {
+            "name": "Senkwinkel (Oben)",
+            "fullname": "Senkwinkel (Oben)@Skizze2@Teil18.Part",
+            "typ2": 3,
+            "wert": 1.570796327
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil18.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 43,
+          "Standard2": 8,
+          "FastenerType2": 140,
+          "FastenerSize": "M5",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0055,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0112,
+          "CounterSinkAngle": 1.5707963267948966,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "senkschraube M6": {
+      "M6": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Formsenkung für M6 Senkschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 870.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 10,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 3.3,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.3,
+                10.0,
+                -3.3,
+                3.3,
+                26.58,
+                3.3
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.03,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00672,
+                0.785398
+              ],
+              "box": [
+                -6.72,
+                26.58,
+                -6.72,
+                6.72,
+                30.0,
+                6.72
+              ]
+            },
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0033,
+                1.029744
+              ],
+              "box": [
+                -3.3,
+                8.0172,
+                -3.3,
+                3.3,
+                10.0,
+                3.3
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil19.Part",
+            "typ2": 2,
+            "wert": 0.0066
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil19.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser (Oben)",
+            "fullname": "Senkdurchmesser (Oben)@Skizze2@Teil19.Part",
+            "typ2": 2,
+            "wert": 0.01344
+          },
+          {
+            "name": "Senkwinkel (Oben)",
+            "fullname": "Senkwinkel (Oben)@Skizze2@Teil19.Part",
+            "typ2": 3,
+            "wert": 1.570796327
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil19.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 43,
+          "Standard2": 8,
+          "FastenerType2": 140,
+          "FastenerSize": "M6",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0066,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.01344,
+          "CounterSinkAngle": 1.5707963267948966,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "senkschraube M8": {
+      "M8": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Formsenkung für M8 Senkschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1703.797,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 10,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 4.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.5,
+                10.0,
+                -4.5,
+                4.5,
+                25.54,
+                4.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.03,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00896,
+                0.785398
+              ],
+              "box": [
+                -8.96,
+                25.54,
+                -8.96,
+                8.96,
+                30.0,
+                8.96
+              ]
+            },
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0045,
+                1.029744
+              ],
+              "box": [
+                -4.5,
+                7.2961,
+                -4.5,
+                4.5,
+                10.0,
+                4.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil20.Part",
+            "typ2": 2,
+            "wert": 0.009
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil20.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser (Oben)",
+            "fullname": "Senkdurchmesser (Oben)@Skizze2@Teil20.Part",
+            "typ2": 2,
+            "wert": 0.01792
+          },
+          {
+            "name": "Senkwinkel (Oben)",
+            "fullname": "Senkwinkel (Oben)@Skizze2@Teil20.Part",
+            "typ2": 3,
+            "wert": 1.570796327
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil20.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 43,
+          "Standard2": 8,
+          "FastenerType2": 140,
+          "FastenerSize": "M8",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.009000000000000001,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.017920000000000002,
+          "CounterSinkAngle": 1.5707963267948966,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "senkschraube M10": {
+      "M10": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Formsenkung für M10 Senkschraube mit Innensechskant1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 2760.671,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 10,
+            "segmente": 8
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 5.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.5,
+                10.0,
+                -5.5,
+                5.5,
+                24.3,
+                5.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.03,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0112,
+                0.785398
+              ],
+              "box": [
+                -11.2,
+                24.3,
+                -11.2,
+                11.2,
+                30.0,
+                11.2
+              ]
+            },
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0055,
+                1.029744
+              ],
+              "box": [
+                -5.5,
+                6.6953,
+                -5.5,
+                5.5,
+                10.0,
+                5.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil21.Part",
+            "typ2": 2,
+            "wert": 0.011
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil21.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Senkdurchmesser (Oben)",
+            "fullname": "Senkdurchmesser (Oben)@Skizze2@Teil21.Part",
+            "typ2": 2,
+            "wert": 0.0224
+          },
+          {
+            "name": "Senkwinkel (Oben)",
+            "fullname": "Senkwinkel (Oben)@Skizze2@Teil21.Part",
+            "typ2": 3,
+            "wert": 1.570796327
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil21.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 43,
+          "Standard2": 8,
+          "FastenerType2": 140,
+          "FastenerSize": "M10",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.011,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0224,
+          "CounterSinkAngle": 1.5707963267948966,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "stift 4": {
+      "4": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "D4": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "Ø4.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Ø4.0 mm Stiftloch1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 256.361,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 2.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.0,
+                10.0,
+                -2.0,
+                2.0,
+                30.0,
+                2.0
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.002,
+                1.029744
+              ],
+              "box": [
+                -2.0,
+                8.7983,
+                -2.0,
+                2.0,
+                10.0,
+                2.0
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil24.Part",
+            "typ2": 2,
+            "wert": 0.004
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil24.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil24.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 22,
+          "Standard2": 8,
+          "FastenerType2": 710,
+          "FastenerSize": "Ø4.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.004,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "stift 5": {
+      "5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "D5": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "Ø5.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Ø5.0 mm Stiftloch1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 402.531,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 2.5,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.5,
+                10.0,
+                -2.5,
+                2.5,
+                30.0,
+                2.5
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0025,
+                1.029744
+              ],
+              "box": [
+                -2.5,
+                8.4978,
+                -2.5,
+                2.5,
+                10.0,
+                2.5
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil27.Part",
+            "typ2": 2,
+            "wert": 0.005
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil27.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil27.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 22,
+          "Standard2": 8,
+          "FastenerType2": 710,
+          "FastenerSize": "Ø5.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.005,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "stift 6": {
+      "6": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "D6": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "Ø6.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Ø6.0 mm Stiftloch1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 582.476,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 3.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.0,
+                10.0,
+                -3.0,
+                3.0,
+                30.0,
+                3.0
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.003,
+                1.029744
+              ],
+              "box": [
+                -3.0,
+                8.1974,
+                -3.0,
+                3.0,
+                10.0,
+                3.0
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil30.Part",
+            "typ2": 2,
+            "wert": 0.006
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil30.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil30.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 22,
+          "Standard2": 8,
+          "FastenerType2": 710,
+          "FastenerSize": "Ø6.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.006,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "stift 8": {
+      "8": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "D8": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "Ø8.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Ø8.0 mm Stiftloch1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1045.58,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 4.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.0,
+                10.0,
+                -4.0,
+                4.0,
+                30.0,
+                4.0
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.004,
+                1.029744
+              ],
+              "box": [
+                -4.0,
+                7.5966,
+                -4.0,
+                4.0,
+                10.0,
+                4.0
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil33.Part",
+            "typ2": 2,
+            "wert": 0.008
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil33.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil33.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 22,
+          "Standard2": 8,
+          "FastenerType2": 710,
+          "FastenerSize": "Ø8.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.008,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "stift 10": {
+      "10": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "D10": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "Ø10.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Ø10.0 mm Stiftloch1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 1649.449,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 5.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -5.0,
+                10.0,
+                -5.0,
+                5.0,
+                30.0,
+                5.0
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.005,
+                1.029744
+              ],
+              "box": [
+                -5.0,
+                6.9957,
+                -5.0,
+                5.0,
+                10.0,
+                5.0
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil36.Part",
+            "typ2": 2,
+            "wert": 0.01
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil36.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil36.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 22,
+          "Standard2": 8,
+          "FastenerType2": 710,
+          "FastenerSize": "Ø10.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.01,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "stift 12": {
+      "12": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "D12": {
+        "selectbyray": [
+          true
+        ],
+        "feature": null,
+        "typ": null,
+        "abnahme_mm3": 0.0,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        }
+      },
+      "Ø12.0": {
+        "selectbyray": [
+          true
+        ],
+        "feature": "Ø12.0 mm Stiftloch1",
+        "typ": "HoleWzd",
+        "abnahme_mm3": 2397.858,
+        "whatswrong": {
+          "anzahl": 0,
+          "features": [],
+          "codes": [],
+          "warnungen": []
+        },
+        "unterfeatures": [
+          {
+            "name": "Skizze3",
+            "typ": "ProfileFeature",
+            "status": 2,
+            "punkte": 1,
+            "segmente": 0
+          },
+          {
+            "name": "Skizze2",
+            "typ": "ProfileFeature",
+            "status": 3,
+            "punkte": 7,
+            "segmente": 6
+          }
+        ],
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 6.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -6.0,
+                10.0,
+                -6.0,
+                6.0,
+                30.0,
+                6.0
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.006,
+                1.029744
+              ],
+              "box": [
+                -6.0,
+                6.3948,
+                -6.0,
+                6.0,
+                10.0,
+                6.0
+              ]
+            }
+          ]
+        },
+        "masse": [
+          {
+            "name": "Bohrerdurchmesser",
+            "fullname": "Bohrerdurchmesser@Skizze2@Teil39.Part",
+            "typ2": 2,
+            "wert": 0.012
+          },
+          {
+            "name": "Bohrungstiefe",
+            "fullname": "Bohrungstiefe@Skizze2@Teil39.Part",
+            "typ2": 2,
+            "wert": 0.02
+          },
+          {
+            "name": "Spitzenwinkel",
+            "fullname": "Spitzenwinkel@Skizze2@Teil39.Part",
+            "typ2": 3,
+            "wert": 2.059488517
+          }
+        ],
+        "daten": {
+          "Type": 22,
+          "Standard2": 8,
+          "FastenerType2": 710,
+          "FastenerSize": "Ø12.0",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.012,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    }
+  },
+  "enden": {
+    "gewinde M8 blind 16, Gewinde 12 (Soll 605,80)": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "M8 Gewindebohrung1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 605.8,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 7,
+          "segmente": 6
+        },
+        {
+          "name": "Bohrungsgewinde1",
+          "typ": "CosmeticThread"
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 3.4,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -3.4,
+              14.0,
+              -3.4,
+              3.4,
+              30.0,
+              3.4
+            ]
+          }
+        ],
+        "kegel": [
+          {
+            "params": [
+              0.0,
+              0.014,
+              0.0,
+              0.0,
+              -1.0,
+              0.0,
+              0.0034,
+              1.029744
+            ],
+            "box": [
+              -3.4,
+              11.9571,
+              -3.4,
+              3.4,
+              14.0,
+              3.4
+            ]
+          }
+        ]
+      },
+      "masse": [
+        {
+          "name": "D2",
+          "fullname": "D2@Bohrungsgewinde1@Teil40.Part",
+          "typ2": 6,
+          "wert": 0.008
+        },
+        {
+          "name": "D1",
+          "fullname": "D1@Bohrungsgewinde1@Teil40.Part",
+          "typ2": 2,
+          "wert": 0.012
+        },
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil40.Part",
+          "typ2": 2,
+          "wert": 0.0068
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil40.Part",
+          "typ2": 2,
+          "wert": 0.016
+        },
+        {
+          "name": "Spitzenwinkel",
+          "fullname": "Spitzenwinkel@Skizze2@Teil40.Part",
+          "typ2": 3,
+          "wert": 2.059488517
+        }
+      ],
+      "daten": {
+        "Type": 46,
+        "Standard2": 8,
+        "FastenerType2": 147,
+        "FastenerSize": "M8",
+        "EndCondition": 0,
+        "Depth": 0.0,
+        "HoleDepth": 0.0,
+        "HoleDiameter": 0.0,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.012,
+        "ThreadDiameter": 0.008,
+        "ThreadEndCondition": 0,
+        "TapDrillDiameter": 0.0068,
+        "TapDrillDepth": 0.016,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0,
+        "ThruHoleDepth": 0.0,
+        "DrillAngle": 2.059488517353309,
+        "HoleFit": -1,
+        "CosmeticThreadType": 2,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "gewinde M8 durch, Gewinde durch": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "M8 Gewindebohrung1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 1089.504,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 6,
+          "segmente": 5
+        },
+        {
+          "name": "Bohrungsgewinde1",
+          "typ": "CosmeticThread"
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 3.4,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -3.4,
+              0.0,
+              -3.4,
+              3.4,
+              30.0,
+              3.4
+            ]
+          }
+        ],
+        "kegel": []
+      },
+      "masse": [
+        {
+          "name": "D2",
+          "fullname": "D2@Bohrungsgewinde1@Teil41.Part",
+          "typ2": 6,
+          "wert": 0.008
+        },
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil41.Part",
+          "typ2": 2,
+          "wert": 0.0068
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil41.Part",
+          "typ2": 2,
+          "wert": 0.03
+        }
+      ],
+      "daten": {
+        "Type": 48,
+        "Standard2": 8,
+        "FastenerType2": 147,
+        "FastenerSize": "M8",
+        "EndCondition": 1,
+        "Depth": 0.0,
+        "HoleDepth": 0.0,
+        "HoleDiameter": 0.0,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.008,
+        "ThreadEndCondition": 1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0,
+        "ThruHoleDepth": 0.0,
+        "DrillAngle": 0.0,
+        "HoleFit": -1,
+        "CosmeticThreadType": 2,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "gewinde M8 durch, Gewinde 12": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "M8 Gewindebohrung1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 1089.504,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 6,
+          "segmente": 5
+        },
+        {
+          "name": "Bohrungsgewinde1",
+          "typ": "CosmeticThread"
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 3.4,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -3.4,
+              0.0,
+              -3.4,
+              3.4,
+              30.0,
+              3.4
+            ]
+          }
+        ],
+        "kegel": []
+      },
+      "masse": [
+        {
+          "name": "D2",
+          "fullname": "D2@Bohrungsgewinde1@Teil42.Part",
+          "typ2": 6,
+          "wert": 0.008
+        },
+        {
+          "name": "D1",
+          "fullname": "D1@Bohrungsgewinde1@Teil42.Part",
+          "typ2": 2,
+          "wert": 0.012
+        },
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil42.Part",
+          "typ2": 2,
+          "wert": 0.0068
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil42.Part",
+          "typ2": 2,
+          "wert": 0.03
+        }
+      ],
+      "daten": {
+        "Type": 48,
+        "Standard2": 8,
+        "FastenerType2": 147,
+        "FastenerSize": "M8",
+        "EndCondition": 1,
+        "Depth": 0.0,
+        "HoleDepth": 0.0,
+        "HoleDiameter": 0.0,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.012,
+        "ThreadDiameter": 0.008,
+        "ThreadEndCondition": 0,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0,
+        "ThruHoleDepth": 0.0,
+        "DrillAngle": 0.0,
+        "HoleFit": -1,
+        "CosmeticThreadType": 2,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "zylinderschraube M8 blind 20": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "Stirnsenkung für M8 Zylinderschraube mit Innensechskant1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 2302.32,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 9,
+          "segmente": 8
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 7.5,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -7.5,
+              21.4,
+              -7.5,
+              7.5,
+              30.0,
+              7.5
+            ]
+          },
+          {
+            "r": 4.5,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -4.5,
+              10.0,
+              -4.5,
+              4.5,
+              21.4,
+              4.5
+            ]
+          }
+        ],
+        "kegel": [
+          {
+            "params": [
+              0.0,
+              0.01,
+              0.0,
+              0.0,
+              -1.0,
+              0.0,
+              0.0045,
+              1.029744
+            ],
+            "box": [
+              -4.5,
+              7.2961,
+              -4.5,
+              4.5,
+              10.0,
+              4.5
+            ]
+          }
+        ]
+      },
+      "masse": [
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil43.Part",
+          "typ2": 2,
+          "wert": 0.009
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil43.Part",
+          "typ2": 2,
+          "wert": 0.02
+        },
+        {
+          "name": "Senkdurchmesser2",
+          "fullname": "Senkdurchmesser2@Skizze2@Teil43.Part",
+          "typ2": 2,
+          "wert": 0.015
+        },
+        {
+          "name": "Senktiefe2",
+          "fullname": "Senktiefe2@Skizze2@Teil43.Part",
+          "typ2": 2,
+          "wert": 0.0086
+        },
+        {
+          "name": "Spitzenwinkel",
+          "fullname": "Spitzenwinkel@Skizze2@Teil43.Part",
+          "typ2": 3,
+          "wert": 2.059488517
+        }
+      ],
+      "daten": {
+        "Type": 10,
+        "Standard2": 8,
+        "FastenerType2": 139,
+        "FastenerSize": "M8",
+        "EndCondition": 0,
+        "Depth": 0.0,
+        "HoleDepth": 0.02,
+        "HoleDiameter": 0.009000000000000001,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.0,
+        "ThreadEndCondition": -1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.015,
+        "CounterBoreDepth": 0.0086,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0,
+        "ThruHoleDepth": 0.0,
+        "DrillAngle": 2.059488517353309,
+        "HoleFit": 1,
+        "CosmeticThreadType": -1,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "zylinderschraube M8 durch": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "Stirnsenkung für M8 Zylinderschraube mit Innensechskant1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 2881.155,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 8,
+          "segmente": 7
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 7.5,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -7.5,
+              21.4,
+              -7.5,
+              7.5,
+              30.0,
+              7.5
+            ]
+          },
+          {
+            "r": 4.5,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -4.5,
+              0.0,
+              -4.5,
+              4.5,
+              21.4,
+              4.5
+            ]
+          }
+        ],
+        "kegel": []
+      },
+      "masse": [
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil44.Part",
+          "typ2": 2,
+          "wert": 0.009
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil44.Part",
+          "typ2": 2,
+          "wert": 0.03
+        },
+        {
+          "name": "Senkdurchmesser2",
+          "fullname": "Senkdurchmesser2@Skizze2@Teil44.Part",
+          "typ2": 2,
+          "wert": 0.015
+        },
+        {
+          "name": "Senktiefe2",
+          "fullname": "Senktiefe2@Skizze2@Teil44.Part",
+          "typ2": 2,
+          "wert": 0.0086
+        }
+      ],
+      "daten": {
+        "Type": 14,
+        "Standard2": 8,
+        "FastenerType2": 139,
+        "FastenerSize": "M8",
+        "EndCondition": 1,
+        "Depth": 0.0,
+        "HoleDepth": 0.0,
+        "HoleDiameter": 0.0,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.0,
+        "ThreadEndCondition": -1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.015,
+        "CounterBoreDepth": 0.0086,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.009000000000000001,
+        "ThruHoleDepth": 0.03,
+        "DrillAngle": 0.0,
+        "HoleFit": 1,
+        "CosmeticThreadType": -1,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "senkschraube M6 blind 20": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "Formsenkung für M6 Senkschraube mit Innensechskant1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 870.0,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 10,
+          "segmente": 8
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 3.3,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -3.3,
+              10.0,
+              -3.3,
+              3.3,
+              26.58,
+              3.3
+            ]
+          }
+        ],
+        "kegel": [
+          {
+            "params": [
+              0.0,
+              0.03,
+              0.0,
+              0.0,
+              -1.0,
+              0.0,
+              0.00672,
+              0.785398
+            ],
+            "box": [
+              -6.72,
+              26.58,
+              -6.72,
+              6.72,
+              30.0,
+              6.72
+            ]
+          },
+          {
+            "params": [
+              0.0,
+              0.01,
+              0.0,
+              0.0,
+              -1.0,
+              0.0,
+              0.0033,
+              1.029744
+            ],
+            "box": [
+              -3.3,
+              8.0172,
+              -3.3,
+              3.3,
+              10.0,
+              3.3
+            ]
+          }
+        ]
+      },
+      "masse": [
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil45.Part",
+          "typ2": 2,
+          "wert": 0.0066
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil45.Part",
+          "typ2": 2,
+          "wert": 0.02
+        },
+        {
+          "name": "Senkdurchmesser (Oben)",
+          "fullname": "Senkdurchmesser (Oben)@Skizze2@Teil45.Part",
+          "typ2": 2,
+          "wert": 0.01344
+        },
+        {
+          "name": "Senkwinkel (Oben)",
+          "fullname": "Senkwinkel (Oben)@Skizze2@Teil45.Part",
+          "typ2": 3,
+          "wert": 1.570796327
+        },
+        {
+          "name": "Spitzenwinkel",
+          "fullname": "Spitzenwinkel@Skizze2@Teil45.Part",
+          "typ2": 3,
+          "wert": 2.059488517
+        }
+      ],
+      "daten": {
+        "Type": 43,
+        "Standard2": 8,
+        "FastenerType2": 140,
+        "FastenerSize": "M6",
+        "EndCondition": 0,
+        "Depth": 0.0,
+        "HoleDepth": 0.02,
+        "HoleDiameter": 0.0066,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.0,
+        "ThreadEndCondition": -1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.01344,
+        "CounterSinkAngle": 1.5707963267948966,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0,
+        "ThruHoleDepth": 0.0,
+        "DrillAngle": 2.059488517353309,
+        "HoleFit": 1,
+        "CosmeticThreadType": -1,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "senkschraube M6 durch": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "Formsenkung für M6 Senkschraube mit Innensechskant1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 1189.508,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 9,
+          "segmente": 7
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 3.3,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -3.3,
+              0.0,
+              -3.3,
+              3.3,
+              26.58,
+              3.3
+            ]
+          }
+        ],
+        "kegel": [
+          {
+            "params": [
+              0.0,
+              0.03,
+              0.0,
+              0.0,
+              -1.0,
+              0.0,
+              0.00672,
+              0.785398
+            ],
+            "box": [
+              -6.72,
+              26.58,
+              -6.72,
+              6.72,
+              30.0,
+              6.72
+            ]
+          }
+        ]
+      },
+      "masse": [
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil46.Part",
+          "typ2": 2,
+          "wert": 0.0066
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil46.Part",
+          "typ2": 2,
+          "wert": 0.03
+        },
+        {
+          "name": "Senkdurchmesser (Oben)",
+          "fullname": "Senkdurchmesser (Oben)@Skizze2@Teil46.Part",
+          "typ2": 2,
+          "wert": 0.01344
+        },
+        {
+          "name": "Senkwinkel (Oben)",
+          "fullname": "Senkwinkel (Oben)@Skizze2@Teil46.Part",
+          "typ2": 3,
+          "wert": 1.570796327
+        }
+      ],
+      "daten": {
+        "Type": 44,
+        "Standard2": 8,
+        "FastenerType2": 140,
+        "FastenerSize": "M6",
+        "EndCondition": 1,
+        "Depth": 0.0,
+        "HoleDepth": 0.0,
+        "HoleDiameter": 0.0,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.0,
+        "ThreadEndCondition": -1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.01344,
+        "CounterSinkAngle": 1.5707963267948966,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0066,
+        "ThruHoleDepth": 0.03,
+        "DrillAngle": 0.0,
+        "HoleFit": 1,
+        "CosmeticThreadType": -1,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "stift 8 blind 20": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "Ø8.0 mm Stiftloch1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 1045.58,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 7,
+          "segmente": 6
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 4.0,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -4.0,
+              10.0,
+              -4.0,
+              4.0,
+              30.0,
+              4.0
+            ]
+          }
+        ],
+        "kegel": [
+          {
+            "params": [
+              0.0,
+              0.01,
+              0.0,
+              0.0,
+              -1.0,
+              0.0,
+              0.004,
+              1.029744
+            ],
+            "box": [
+              -4.0,
+              7.5966,
+              -4.0,
+              4.0,
+              10.0,
+              4.0
+            ]
+          }
+        ]
+      },
+      "masse": [
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil47.Part",
+          "typ2": 2,
+          "wert": 0.008
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil47.Part",
+          "typ2": 2,
+          "wert": 0.02
+        },
+        {
+          "name": "Spitzenwinkel",
+          "fullname": "Spitzenwinkel@Skizze2@Teil47.Part",
+          "typ2": 3,
+          "wert": 2.059488517
+        }
+      ],
+      "daten": {
+        "Type": 22,
+        "Standard2": 8,
+        "FastenerType2": 710,
+        "FastenerSize": "Ø8.0",
+        "EndCondition": 0,
+        "Depth": 0.0,
+        "HoleDepth": 0.02,
+        "HoleDiameter": 0.008,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.0,
+        "ThreadEndCondition": -1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.0,
+        "ThruHoleDepth": 0.0,
+        "DrillAngle": 2.059488517353309,
+        "HoleFit": 1,
+        "CosmeticThreadType": -1,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    },
+    "stift 8 durch": {
+      "selectbyray": [
+        true
+      ],
+      "feature": "Ø8.0 mm Stiftloch1",
+      "typ": "HoleWzd",
+      "abnahme_mm3": 1507.964,
+      "whatswrong": {
+        "anzahl": 0,
+        "features": [],
+        "codes": [],
+        "warnungen": []
+      },
+      "unterfeatures": [
+        {
+          "name": "Skizze3",
+          "typ": "ProfileFeature",
+          "status": 2,
+          "punkte": 1,
+          "segmente": 0
+        },
+        {
+          "name": "Skizze2",
+          "typ": "ProfileFeature",
+          "status": 3,
+          "punkte": 6,
+          "segmente": 5
+        }
+      ],
+      "geometrie": {
+        "zylinder": [
+          {
+            "r": 4.0,
+            "achse_xz": [
+              0.0,
+              0.0
+            ],
+            "box": [
+              -4.0,
+              0.0,
+              -4.0,
+              4.0,
+              30.0,
+              4.0
+            ]
+          }
+        ],
+        "kegel": []
+      },
+      "masse": [
+        {
+          "name": "Bohrerdurchmesser",
+          "fullname": "Bohrerdurchmesser@Skizze2@Teil48.Part",
+          "typ2": 2,
+          "wert": 0.008
+        },
+        {
+          "name": "Bohrungstiefe",
+          "fullname": "Bohrungstiefe@Skizze2@Teil48.Part",
+          "typ2": 2,
+          "wert": 0.03
+        }
+      ],
+      "daten": {
+        "Type": 25,
+        "Standard2": 8,
+        "FastenerType2": -1,
+        "FastenerSize": "Ø8.0",
+        "EndCondition": 1,
+        "Depth": 0.0,
+        "HoleDepth": 0.0,
+        "HoleDiameter": 0.0,
+        "Diameter": 0.0,
+        "ThreadDepth": 0.0,
+        "ThreadDiameter": 0.0,
+        "ThreadEndCondition": -1,
+        "TapDrillDiameter": 0.0,
+        "TapDrillDepth": 0.0,
+        "CounterBoreDiameter": 0.0,
+        "CounterBoreDepth": 0.0,
+        "CounterSinkDiameter": 0.0,
+        "CounterSinkAngle": 0.0,
+        "NearCounterSinkDiameter": 0.0,
+        "ThruHoleDiameter": 0.008,
+        "ThruHoleDepth": 0.03,
+        "DrillAngle": 0.0,
+        "HoleFit": 1,
+        "CosmeticThreadType": -1,
+        "GetSketchPointCount": 1
+      },
+      "gelungen": true
+    }
+  }
+}
