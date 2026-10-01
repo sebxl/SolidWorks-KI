@@ -24,8 +24,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Schnitt geht standardmäßig gegen die Skizzennormale (von einer Deckfläche ins Material); `umkehren: true` dreht.
 - Bohrungen für Schrauben, Gewinde und Stifte als `typ: normbohrung` (`art: gewinde | zylinderschraube |
   senkschraube | stift`, `groesse` wie „M8“, „M10x1“ bzw. Stift-Nenndurchmesser `8`, `durch: true` oder `tiefe`,
-  bei Gewinde mit `tiefe` auch `gewindetiefe` ≤ `tiefe`). Nur Größen aus `swki/wissen/bohrungsnormen.yaml`; `validieren`
-  nennt die verfügbaren. Gewinde werden kosmetisch gebaut. `bohrung` bleibt für freie Durchmesser. Die erste Position
+  bei Gewinde mit `tiefe` ist `gewindetiefe` ≤ `tiefe` Pflicht, bei Gewinde mit `durch` ist sie erlaubt).
+  Nur Größen aus `swki/wissen/bohrungsnormen.yaml`; `validieren` nennt die verfügbaren. Gewinde werden kosmetisch gebaut. `bohrung` bleibt für freie Durchmesser. Die erste Position
   muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch).
 - Skizzenelemente: `rechteck` (optional `radius`), `polygon` (optional `radien`: ein Wert oder je Ecke, 0 = scharf,
   Radius < halbe kürzere Nachbarkante), `langloch` (`mitte`, `laenge` = Mittenabstand der Bögen, `breite`, `winkel`
@@ -35,6 +35,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   `abstand`; der Versatz geht zur Skizze hin – z. B. Restwandstärke über der Unterseite). Bekannte Einschränkung: ein
   Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt einen getrennten Körper
   – dafür `bis_flaeche` oder `blind` verwenden.
+- Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
+- `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
+  `schwerpunkt` für Symmetrie/Spiegelfehler.
 
 ### Modellierregeln (kompakter Feature-Baum)
 Änderbarkeit zuerst, sonst so wenige Features wie möglich:
@@ -48,9 +51,6 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 5. Tiefen, die sich auf eine andere Fläche beziehen (Restwandstärke, bis zum Boden), mit `versatz_von_flaeche` /
    `bis_flaeche`, nicht als gerechnete Zahl.
 6. Kantenverrundungen und Fasen gleichen Maßes in einem Knoten, am Ende des Baums.
-- Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
-- `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
-  `schwerpunkt` für Symmetrie/Spiegelfehler.
 
 ## 3. Validieren und Rückfragen
 - `swki validieren <spec>` bis `"gueltig": true`.

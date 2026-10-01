@@ -220,14 +220,14 @@ Rohdaten: `docs/stufe0/ergebnisse/s10_f*.json`, Spikes `spikes/s10_*.py`, Befund
   Teil A; Code `normbohrung._stiftloch_durch`.
 - **Größen-Strings:** Regelgewinde, Zylinderschraube (ISO 4762) und Senkschraube (ISO 10642) „M8“; Feingewinde „M8x1.0“ (mit „.0“,
   ohne kein Feature), „M12x1.5“; Stift „Ø8.0“ (Ø = U+00D8). Jede andere Schreibweise („8“, „Ø8“, „8.0“, „D8“) liefert still kein
-  Feature (`s10_f1_bohrungsassistent.json`: `groessen["stift 8"]`). Bei ISO-Bohrergrößen ergibt „Ø8“ ein Loch mit Ø0,18 mm. Auf dem
+  Feature (`s10_f1_bohrungsassistent.json`: `groessen["stift 8"]`). Bei der Norm `swStandardISODrillSizes` (anderer Standard, wird nicht genutzt) ergibt „Ø8“ ein Loch mit Ø0,18 mm. Auf dem
   `CreateDefinition`-Weg hat ein ungültiger Text vermutlich einen Dialog ausgelöst und SolidWorks hängen lassen (Ursache nicht
   bewiesen) → dort nur Texte aus `swki/wissen/bohrungsnormen.yaml` (`sw_groesse`) verwenden.
 - **Mehrere Positionen in einem Feature:** erste Position per `SelectByRay` (Marke 0), dann die Positionsskizze (Unterskizze
   ohne Segmente) mit `Select2` + `InsertSketch(True)` öffnen, weitere Punkte mit `CreatePoint` (`AddToDB = True`), alle Punkte
   zum Ursprung bemaßen und per Gleichung an Parameter binden; vorher Status 2, danach 3 (`s10_f2_positionen.json`: `b_positionsskizze`). Mehrere
   `SelectByRay` mit Marke 0 ergeben nur eine Bohrung. **Danach `ForceRebuild3(True)`:** `EditRebuild3` baut das HoleWzd-Feature
-  nach der Skizzenänderung nicht immer neu auf (Messung: vorher 1, `EditRebuild3` 1, `ForceRebuild3` 2 Instanzen; Task-8-Bericht).
+  nach der Skizzenänderung nicht immer neu auf (Messung: vorher 1, `EditRebuild3` 1, `ForceRebuild3` 2 Instanzen; Kommentar in `normbohrung.py`, Regressionstest `tests/live/test_live_normbohrung.py::test_senkschraube_von_unten`).
   `GetSketchPointCount` zählt Skizzenpunkte, nicht Bohrungen (lag bei 2 bei nur einer Bohrung) → der Handler prüft je Position
   eine Zylinderfläche mit Achse durch den Achspunkt. `SelectByRay` trifft die erste Fläche auf dem Strahl: der Treffer wird per
   `ISldWorks.IsSame(gewaehlt, flaeche) == 1` (`swObjectSame`) gegen die gemeinte Fläche geprüft (Absatz davor oder Position
@@ -237,7 +237,9 @@ Rohdaten: `docs/stufe0/ergebnisse/s10_f*.json`, Spikes `spikes/s10_*.py`, Befund
   allgemeine Lochart:** Gewinde blind 46 / durch 48, ISO 4762 blind 10 / durch 14, ISO 10642 blind 43 / durch 44, Stift blind 22 /
   durch 25. Besser `FastenerType2` (147/139/140/710; Stift-durch −1), `Standard2` (8), `FastenerSize` (Eingabetext),
   `EndCondition` (0 blind, 1 durch). **`Depth` liest immer 0.** Bohrungstiefe: bei blind Gewinde `TapDrillDepth`, sonst
-  `HoleDepth` (durch: `ThruHoleDepth` = Blockdicke); Gewindetiefe `ThreadDepth`; alles in m. Code `messen.lies_normbohrung`,
+  `HoleDepth`; bei durch ISO 4762/10642/Stift `ThruHoleDepth` (= Blockdicke), **Gewinde durch hat keine Tiefe**
+  (`TapDrillDepth`, `HoleDepth`, `ThruHoleDepth` lesen 0; `messen.lies_normbohrung` liest für Gewinde `TapDrillDepth`);
+  Gewindetiefe `ThreadDepth` (bei Gewinde durch nur, wenn angegeben); alles in m. Code `messen.lies_normbohrung`,
   `bewertung.normbohrung_abweichungen`.
 - **Maße je Größe:** Bohrungstiefe zählt ab der Ansatzfläche, Bohrspitze 118° nur bei blind, Senkungen von der Fläche aus. Der
   Bohrungsassistent weicht in 7 Größen von den ISO-Vorwerten ab (ISO 4762 M8/M10/M12 Senktiefe, ISO 10642 M5–M10
@@ -248,8 +250,9 @@ Rohdaten: `docs/stufe0/ergebnisse/s10_f*.json`, Spikes `spikes/s10_*.py`, Befund
   referenzierend (`getrieben` = 1). Das Maß wird über den Vergleich der Maßnamen vor und nach dem Aufruf gefunden
   (`schritte[].masse_von_createfillet`) und dann per Gleichung an den Parameter gebunden (`"D5@s_skizze" = "R"`; `R` ändern →
   Volumen stimmt). Code `Skizzierer.verrunde`.
-- **Langloch:** `CreateSketchSlot(1, 0, Breite, Mitte, Ende der Mittellinie, …, AddDimension = False)` (Mittelpunkt-Typ, Länge
-  Mitte–Mitte); der erste Punkt ist die Mitte. Es entstehen zwei Linien, zwei Bögen, eine Konstruktions-Mittellinie und ein
+- **Langloch:** `CreateSketchSlot(1, 0, Breite, Mitte, Endbogenmitte, …, AddDimension = False)` (Mittelpunkt-Typ, Länge
+  Mitte–Mitte); der erste Punkt ist die Mitte, der zweite die Mitte des Endbogens (Mitte + Länge/2 in Richtung des
+  Winkels, nicht das Ende der Mittellinie – sonst wird das Langloch doppelt so lang; `skizze.py` `xe`/`ye`). Es entstehen zwei Linien, zwei Bögen, eine Konstruktions-Mittellinie und ein
   Mittelpunkt (`GetCenterPointHandle`); die Mittellinie misst den **ganzen Mittenabstand** (Länge). Breite = Maß zwischen den
   beiden Seitenlinien, Länge = Maß an der Mittellinie, Lage der Mitte zum Ursprung → Status 3. 0°/90° per Beziehung
   (horizontal/vertikal an der Mittellinie); sonst Hilfslinie vom Mittelpunkt (`CreateCenterLine`) plus Winkelmaß, **der
@@ -265,7 +268,8 @@ Rohdaten: `docs/stufe0/ergebnisse/s10_f*.json`, Spikes `spikes/s10_*.py`, Befund
   `OffsetReverse1 = False` versetzt zur Skizze hin (Restwand 5 mm: Abnahme 6000 mm³), `True` darüber hinaus (8000 mm³). Das
   Versatzmaß heißt `D1@<Featurename>` (nicht `D1@<Skizze>`). Einschränkung: ein Aufsatz mit Versatz, dessen Skizze abgesetzt über
   der Zielfläche liegt (Testgeometrie: 5 mm Luft), ergibt zwei Körper (`d_aufsatz_versatz_5_offsetreverse_False.koerper`).
-- **Speicher von SolidWorks:** bei Live-Läufen wachsen die Private Bytes um etwa 50–550 MB je Test (Berichte Task 6–8). Nach
-  mehreren Läufen ab ca. 4–5 GB, bei Hängern oder „Ausnahmefehler des Servers“ (−2147417851; in der 7-GB-Instanz bei
+- **Speicher von SolidWorks:** bei Live-Läufen wachsen die Private Bytes um etwa 50–550 MB je Test (beobachtet bei den Live-Tests unter `tests/live/` und
+  `tests/referenz/`, Stufe 2c). Neustart ab
+  ca. 4 GB Private Bytes, bei Hängern oder „Ausnahmefehler des Servers“ (−2147417851; in der 7-GB-Instanz bei
   `ModelToSketchTransform`, `GetSlotPoints`, `CreateFillet`, in der frischen Instanz nicht, `s10_f5_skizzen.json`: `fehlversuche_serverfehler`)
   SolidWorks neu starten. Maßstab sind die Private Bytes, nicht das Working Set (blieb unter 700 MB).
