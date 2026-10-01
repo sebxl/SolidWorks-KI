@@ -11,7 +11,9 @@ from dataclasses import dataclass
 
 from swki.compiler import sw
 from swki.compiler.anker import Flaeche, Vektor
-from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, SKIZZE_NICHT_BESTIMMT, SKIZZE_UNGUELTIG, BauFehler
+from swki.compiler.fehler import (
+    FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, SKIZZE_NICHT_BESTIMMT, SKIZZE_UNGUELTIG, BauFehler,
+)
 from swki.compiler.topologie import loese_flaeche
 from swki.spec.ausdruck import ist_ausdruck
 from swki.spec.konturen import bogenende_koordinate, kontur_punkte_roh
@@ -419,6 +421,46 @@ def skizziere(ctx, ebene, elemente: list[dict], name: str):
     for m in masse:
         ctx.verknuepfe(f"{m.name}@{name}", m.roh, m.vorzeichen)
     return feature, se
+
+
+def positionsskizze(feature):
+    """Positionsskizze eines Bohrungsassistent-Features: die Unterskizze ohne Skizzensegmente (nur Punkte) –
+    Abhängig von S10 Frage 2."""
+    unter = feature.GetFirstSubFeature
+    while unter is not None:
+        if unter.GetTypeName2 == "ProfileFeature" and not (unter.GetSpecificFeature2.GetSketchSegments or ()):
+            return unter
+        unter = unter.GetNextSubFeature
+    raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"{feature.Name}: keine Positionsskizze gefunden", schritt="skizze")
+
+
+def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name: str) -> None:
+    """Die erste Position steht schon (SelectByRay); weitere als Skizzenpunkte in die Positionsskizze einfügen, alle
+    Punkte zum Ursprung bemaßen, die Skizze benennen und die Maße an Parameter binden (S10 Frage 2)."""
+    skizze = positionsskizze(feature)
+    model, sm = ctx.model, ctx.model.SketchManager
+    sw.auswahl_leeren(model)
+    skizze.Select2(False, 0)
+    sm.InsertSketch(True)  # öffnet die selektierte Skizze (S9b)
+    status, masse = None, []
+    try:
+        skizzierer = Skizzierer(ctx, se, sm.ActiveSketch)
+        with sw.einstellung(ctx.app, sw.SW_INPUT_DIM_VAL_ON_CREATE, False), sw.ohne_inferenz(sm):
+            for u, v in positionen[1:]:
+                x, y = skizzierer.zu_skizze(ctx.wert(u), ctx.wert(v))
+                if sm.CreatePoint(x, y, 0.0) is None:
+                    raise BauFehler(SKIZZE_UNGUELTIG, f"Positionspunkt ({u}, {v}) nicht angelegt", schritt="skizze")
+            for p in positionen:
+                skizzierer.lage(p, (ctx.wert(p[0]) + _MASS_ABSTAND_MM, ctx.wert(p[1]) + _MASS_ABSTAND_MM))
+        status, masse = sm.ActiveSketch.GetConstrainedStatus, skizzierer.masse
+    finally:
+        sm.InsertSketch(True)
+    if status != sw.SW_FULLY_CONSTRAINED:
+        raise BauFehler(SKIZZE_NICHT_BESTIMMT, f"Positionsskizze {name}: Status {status} statt voll bestimmt",
+                        schritt="skizze")
+    skizze.Name = name
+    for m in masse:
+        ctx.verknuepfe(f"{m.name}@{name}", m.roh, m.vorzeichen)
 
 
 def richtung(se: Skizzenebene, umkehren: bool) -> Vektor:
