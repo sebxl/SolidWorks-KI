@@ -3,7 +3,8 @@ import json
 import pytest
 
 from swki.auftrag import lauf_datei
-from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
+from swki.cli import SwkiFehler
+from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe, pruefe_urteil
 
 STANDARD = {"max_nachbesserungen": 3}
 
@@ -19,7 +20,8 @@ def _lauf(spec_pfad, n, bau="ok", code=None, pruefer=None):
     if code is not None:
         _schreibe(spec_pfad, n, "pruefbericht", {"bestanden": not code, "maengel": [{}] * code})
     if pruefer is not None:
-        _schreibe(spec_pfad, n, "pruefer", {"bestanden": not pruefer, "maengel": [{}] * pruefer})
+        _schreibe(spec_pfad, n, "pruefer", {"bestanden": not pruefer,
+                                            "maengel": [{"knoten": [], "beschreibung": "x"}] * pruefer})
 
 
 def test_laeufe_lesen(tmp_path):
@@ -95,3 +97,33 @@ def test_ungepruefte_laeufe_zaehlen_nicht_als_vergleich():
 def test_bauabbrueche_verbrauchen_laeufe():
     laeufe = [_l(1, bau="fehler"), _l(2, bau="fehler")]
     assert empfehlung(laeufe, 2)[0] == "stopp_max"
+
+
+@pytest.mark.parametrize("urteil", [
+    {"bestanden": True, "maengel": []},
+    {"bestanden": False, "maengel": [{"knoten": ["f2"], "beschreibung": "Fase fehlt"}]},
+])
+def test_gueltiges_urteil(urteil, tmp_path):
+    pruefe_urteil(urteil, tmp_path / "x.pruefer.json")
+
+
+@pytest.mark.parametrize("urteil", [
+    [],                                                    # kein Objekt
+    {"bestanden": "ja", "maengel": []},                    # bestanden kein bool
+    {"bestanden": False},                                  # maengel fehlt
+    {"bestanden": False, "maengel": [{"knoten": "f2", "beschreibung": "x"}]},  # knoten keine Liste
+    {"bestanden": False, "maengel": [{"knoten": []}]},     # beschreibung fehlt
+])
+def test_ungueltiges_urteil(urteil, tmp_path):
+    with pytest.raises(SwkiFehler) as e:
+        pruefe_urteil(urteil, tmp_path / "platte.lauf-1.pruefer.json")
+    assert e.value.daten == {"code": "PRUEFER_URTEIL_UNGUELTIG"}
+    assert "platte.lauf-1.pruefer.json" in str(e.value)
+
+
+def test_lies_laeufe_meldet_ungueltiges_urteil(tmp_path):
+    spec = tmp_path / "platte.yaml"
+    _lauf(spec, 1, code=0)
+    _schreibe(spec, 1, "pruefer", {"ok": True})
+    with pytest.raises(SwkiFehler):
+        lies_laeufe(spec)

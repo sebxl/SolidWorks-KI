@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, REBUILD_FEHLER, SPEICHERN_FEHLGESCHLAGEN, BauFehler
+from swki.konfig import lade_rechner
 from swki.verbindung import byref_long, byref_variant, callout_leer, in_mm, mm, r8_array
 
 SW_INPUT_DIM_VAL_ON_CREATE = 10  # swUserPreferenceToggle_e.swInputDimValOnCreate
@@ -145,7 +146,12 @@ def speichere(model, pfad: Path, kopie: bool = False) -> None:
     """IModelDocExtension.SaveAs3; Format über die Endung (.sldprt, .step, .png …).
 
     Ohne kopie wird das Dokument beim Speichern als .sldprt umbenannt (Titel danach neu lesen, S9b).
+    Gespeichert wird nur im Arbeitsordner aus config/rechner.yaml.
     """
+    arbeit = lade_rechner().arbeitsordner.resolve()
+    if not pfad.resolve().is_relative_to(arbeit):
+        raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"{pfad} liegt nicht im Arbeitsordner {arbeit} (CLAUDE.md)",
+                        schritt="speichern")
     pfad.parent.mkdir(parents=True, exist_ok=True)
     fehler, warnungen = byref_long(), byref_long()
     optionen = SW_SAVEAS_SILENT | (SW_SAVEAS_COPY if kopie else 0)

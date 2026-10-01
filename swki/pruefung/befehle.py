@@ -101,10 +101,16 @@ def _lies(pfad: Path) -> dict | None:
 
 
 def _compiler_aenderungen(seit: str) -> list[str]:
-    ergebnis = subprocess.run(
-        ["git", "log", f"--since={seit}", "--format=%h %s", "--", "swki/compiler", "schema"],
-        cwd=PROJEKT, capture_output=True, text=True, encoding="utf-8",
-    )
+    """Commits an Compiler und Schema seit dem ersten Lauf; ohne git eine Hinweiszeile statt eines Abbruchs."""
+    try:
+        ergebnis = subprocess.run(
+            ["git", "log", f"--since={seit}", "--format=%h %s", "--", "swki/compiler", "schema"],
+            cwd=PROJEKT, capture_output=True, text=True, encoding="utf-8",
+        )
+    except OSError as e:
+        return [f"(git nicht ausführbar: {e})"]
+    if ergebnis.returncode != 0:
+        return [f"(git log fehlgeschlagen: {ergebnis.stderr.strip() or ergebnis.returncode})"]
     return [z for z in ergebnis.stdout.splitlines() if z.strip()]
 
 

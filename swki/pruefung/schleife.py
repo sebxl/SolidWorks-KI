@@ -16,10 +16,28 @@ import re
 from pathlib import Path
 
 from swki.auftrag import lauf_datei, protokoll_ordner
+from swki.cli import SwkiFehler
 
 
 def _lies(pfad: Path) -> dict | None:
     return json.loads(pfad.read_text(encoding="utf-8")) if pfad.exists() else None
+
+
+_URTEIL_FORM = '{"bestanden": bool, "maengel": [{"knoten": [...], "beschreibung": "..."}]}'
+
+
+def pruefe_urteil(urteil, pfad: Path) -> None:
+    """Form des Prüfer-Urteils (vom Controller abgelegtes JSON des Prüfer-Agenten)."""
+    maengel = urteil.get("maengel") if isinstance(urteil, dict) else None
+    gueltig = (
+        isinstance(urteil, dict) and isinstance(urteil.get("bestanden"), bool) and isinstance(maengel, list)
+        and all(isinstance(m, dict) and isinstance(m.get("knoten"), list) and isinstance(m.get("beschreibung"), str)
+                for m in maengel)
+    )
+    if not gueltig:
+        fehler = SwkiFehler(f"{pfad.name}: kein gültiges Prüfer-Urteil – erwartet {_URTEIL_FORM}")
+        fehler.daten = {"code": "PRUEFER_URTEIL_UNGUELTIG"}
+        raise fehler
 
 
 def lies_laeufe(spec_pfad: Path) -> list[dict]:
@@ -31,6 +49,8 @@ def lies_laeufe(spec_pfad: Path) -> list[dict]:
         protokoll = _lies(lauf_datei(spec_pfad, n, "protokoll"))
         bericht = _lies(lauf_datei(spec_pfad, n, "pruefbericht"))
         urteil = _lies(lauf_datei(spec_pfad, n, "pruefer"))
+        if urteil is not None:
+            pruefe_urteil(urteil, lauf_datei(spec_pfad, n, "pruefer"))
         bau_ok = protokoll["status"] == "ok"
         code_maengel = len(bericht["maengel"]) if bericht else None
         pruefer_maengel = len(urteil["maengel"]) if urteil else None
