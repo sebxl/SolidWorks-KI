@@ -21,7 +21,11 @@ def _lauf(capsys, *argv):
     return code, json.loads(capsys.readouterr().out)
 
 
-@pytest.mark.parametrize(("ordner", "spec"), [("buchse", "buchse.yaml"), ("formplatte", "formplatte_ds.yaml")])
+@pytest.mark.parametrize(("ordner", "spec"), [
+    ("buchse", "buchse.yaml"),
+    ("formplatte", "formplatte_ds.yaml"),
+    ("auswerferhalteplatte", "auswerferhalteplatte.yaml"),
+])
 def test_referenz_besteht(capsys, tmp_path, ordner, spec):
     auftrag = tmp_path / f"REF-{ordner}"
     shutil.copytree(REFERENZEN / ordner, auftrag)
