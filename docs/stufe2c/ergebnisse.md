@@ -1,11 +1,11 @@
 # Stufe 2c – Ergebnisse
 
 Fertig-Kriterium Spec 2c §1 für Rechner A (SW 2025) erfüllt: Auswerferhalteplatte besteht (Prüfbericht und Prüfer), Buchse und
-Formplatte bestehen weiter (Prüfbericht und Regressions-Suite; Prüfer-Agent dort nicht gestartet), 273 Unit-Tests grün.
+Formplatte bestehen weiter (Prüfbericht und Regressions-Suite; Prüfer-Agent dort nicht gestartet), 276 Unit-Tests grün.
 Rechner B (SW 2026) offen.
 
 Rechner A (SOLIDWORKS 2025), 01.10.2026: `pytest -v` 273 bestanden (48 abgewählt, das sind die `sw`-markierten
-Live-/Referenztests), `tests/live_einzeln.py tests/live tests/referenz` alle 48 Einzeltests `OK` (45 in `tests/live`, 3 in
+Live-/Referenztests; nach der Korrekturrunde unten: 276 bestanden, 54 abgewählt), `tests/live_einzeln.py tests/live tests/referenz` alle 48 Einzeltests `OK` (45 in `tests/live`, 3 in
 `tests/referenz`; `test_sollvolumen.py` enthält keinen `sw`-Test), `swki api pruefe-code` ohne Befunde (`"befunde": []`), Toggle 10 (`GetUserPreferenceToggle`) vor und nach
 dem Lauf `False`, Integer-Einstellung 6 vor und nach dem Lauf `1`.
 
@@ -90,6 +90,13 @@ SolidWorks-Instanz mit rund 2 GB Private Bytes statt (Stufe 2: unter 700 MB). Ei
   und 120° auf `+y`, 150° und 30° auf `-y` (Lage der Zylinderachsen). Der Compiler brauchte keine Korrektur.
 - **W2:** neue Prüfung `koerper` in `swki/pruefung/bewertung.py` (Soll: genau 1 Volumenkörper, gemessen mit
   `topologie.koerper`); drei neue Unit-Tests, jetzt 276 Unit-Tests grün.
+- **Live-Nachlauf (Rechner A, SW 2025, frische Instanz, einzeln mit Zeitlimit):** `test_live_konturen.py` 14 OK (davon 6 neu),
+  `test_live_endbedingungen.py` 3 OK, `test_live_pruefen.py` 2 OK, `test_live_pruefen_normbohrung.py` 2 OK, `tests/referenz`
+  3 OK (Buchse, Formplatte, Auswerferhalteplatte, jetzt mit der Prüfung `koerper`) – zusammen 24 Einzeltests, alle `OK`.
+  Die übrigen Live-Dateien (54 `sw`-Tests insgesamt: 51 in `tests/live`, 3 in `tests/referenz`) liefen nach der Korrekturrunde
+  nicht erneut; ihr Code wurde nicht geändert (Änderungen: Prüfung `koerper`, Fehlerprüfung in `_langloch`). Speicher
+  Private Bytes: 429 MB nach Neustart, 2099 nach den Endbedingungen, 2463 nach `pruefen`, 2735 nach `pruefen_normbohrung`,
+  3209 nach den Referenzen. Toggle 10 `False`, Integer-Einstellung 6 `1` nach dem Lauf.
 
 ## Offene Punkte
 
