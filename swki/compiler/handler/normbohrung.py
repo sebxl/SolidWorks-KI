@@ -11,11 +11,12 @@ FeatureManager.CreateDefinition(swFmHoleWzd) → InitializeHole → Vorselektion
 """
 
 from swki.compiler import sw
+from swki.compiler.anker import AnkerFehler, zylinder_zu_punkten
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, BauFehler
 from swki.compiler.kontext import FeatureErgebnis
 from swki.compiler.registry import handler
 from swki.compiler.skizze import ebene_aus_flaeche, modellpunkt, positionen_festlegen, richtung
-from swki.compiler.topologie import loese_flaeche
+from swki.compiler.topologie import flaechen, loese_flaeche
 from swki.spec.normen import (
     SW_ART, SW_BEFESTIGUNG, SW_END_BLIND, SW_END_DURCH_ALLES, SW_NORM, groesse_text, norm_von, normmasse,
 )
@@ -55,6 +56,19 @@ def _stiftloch_durch(model, norm: str, masse: dict):
         SW_ART["stift"], SW_NORM[norm], SW_BEFESTIGUNG["stift"], masse["sw_groesse"], SW_END_DURCH_ALLES,
     )
     return model.FeatureManager.CreateFeature(definition)
+
+
+def _bohrungen_pruefen(ctx, feature, fid: str, punkte: list) -> None:
+    """Je Position muss das Feature eine Zylinderfläche haben, deren Achse durch den Achspunkt läuft (Senkung und
+    Bohrung sind koaxial, beim Gewinde zählt der Kernlochzylinder). GetSketchPointCount zählt nur Skizzenpunkte und
+    taugt dafür nicht: es lag bei 2, obwohl nur eine Bohrung erzeugt war."""
+    zylinder = flaechen(feature)
+    for k, punkt in enumerate(punkte, start=1):
+        try:
+            zylinder_zu_punkten(zylinder, [punkt], ctx.tol_mm)
+        except AnkerFehler as e:
+            raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {fid}: Bohrung an Position {k} fehlt "
+                                                   f"(keine Zylinderfläche mit Achse durch {punkt})", schritt="feature") from e
 
 
 @handler("normbohrung")
@@ -102,8 +116,5 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     # erzwungene Neuaufbauen aller Features nimmt sie mit.
     ctx.model.ForceRebuild3(True)
     sw.rebuild(ctx.model)
-    anzahl = feature.GetDefinition.GetSketchPointCount
-    if anzahl != len(f["positionen"]):
-        raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {f['id']}: {anzahl} statt {len(f['positionen'])} Positionen",
-                        schritt="feature")
+    _bohrungen_pruefen(ctx, feature, f["id"], punkte)
     return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)
