@@ -172,16 +172,16 @@ mit der analytischen Fläche. Alle Fälle in der frischen SolidWorks-Instanz (PI
   Breite (beide Seiten, D1), Länge (Mittellinie, D2), Richtung und Lage der Mitte (D3, D4) bestimmen es voll: Status 3, Volumen 2902,655 = Soll für **0°, 90° und
   Typ 0**. Breite und Länge per Gleichung (`D1 = "B"`, `D2 = "L"`) gebunden, `L = 40`, `B = 6` → 2682,743 = Soll, Lage der Mitte bleibt.
   Richtung 0°/90°: Beziehung horizontal/vertikal an der Mittellinie. **30°:** Hilfslinie (`CreateCenterLine`, 16 mm, horizontal, Länge als Maß) vom Mittelpunkt, Winkelmaß
-  Mittellinie–Hilfslinie (D4 = 0,5236 rad); der Hilfslinienanfang muss mit dem Slot-Mittelpunkt **per `sgCOINCIDENT`** verbunden werden – `sgMERGEPOINTS` lässt die Punkte
-  getrennt (Punktzahl bleibt 9, Status 2, Fall `c_langloch_mittelpunkt_30`), mit `sgCOINCIDENT` Status 3, Volumen und Gleichungsänderung stimmen
-  (Fall `…_30_koinzident`).
+  Mittellinie–Hilfslinie (D4 = 0,5236 rad); der Hilfslinienanfang muss mit dem Slot-Mittelpunkt **per `sgCOINCIDENT`** verbunden werden. Die Punktzahl ist kein Kriterium (laut JSON in beiden Varianten [9, 9]); entscheidend ist die Beziehung: Nur
+  `c_langloch_mittelpunkt_30_koinzident` enthält die COINCIDENT-Beziehung (`relationen`) und hat Status 3, Volumen und Gleichungsänderung stimmen;
+  `c_langloch_mittelpunkt_30` mit `sgMERGEPOINTS` legt keine Beziehung an und bleibt bei Status 2. Task 6 prüft deshalb Beziehung und Status, nicht die Punktzahl.
 - **Kontur (d)** 80 × 20 mit zwei Halbkreisen (R 10) aus `CreateLine`/`CreateArc` auf `oben`, `vorne`, `rechts`: `gleichsinnig` = True auf allen drei Ebenen → `CreateArc`-Richtung
   +1; die Bögen teilen die Endpunkte mit den Linien schon (`punkte_vor_verschmelzen` = 6, `punkte_nach_verschmelzen` = 6) → kein Verschmelzen nötig. Bemaßung: Mittelpunkt der Bögen
   voll, Endpunkt nur in der Koordinate mit dem kleineren Abstand zum Mittelpunkt (`lage_nur`), 10 Maße, Status 3, Volumen 19141,593 = Soll auf allen drei Ebenen.
 - **Störung der alten Instanz:** In der ersten SolidWorks-Instanz (PID 34808, später 7 GB) lieferte `ISketch.ModelToSketchTransform` bei einem Teil der neuen Skizzen
   dauerhaft „Ausnahmefehler des Servers“ (-2147417851), mitten in Skizzen auch `GetSlotPoints`/`lage`/`CreateFillet`, und das Langloch blieb Status 2. In der frisch
   gestarteten Instanz (PID 29128) trat das in 12 Fällen von Frage 5 und 8 von Frage 6 nicht ein (JSON: `fehlversuche_serverfehler` leer). Der Zustand der alten Instanz war
-  die Ursache; Hinweis: nach Hängern oder Speicherwachstum SolidWorks neu starten.
+  vermutlich die Ursache; Hinweis: nach Hängern oder Speicherwachstum SolidWorks neu starten.
 
 ### Frage 6
 
@@ -193,9 +193,10 @@ Block 100 × 60 × 20 (Y 0…20), Skizzen mit `skizziere`, Zielfläche mit `Sele
   `True` Abnahme 8000 mm³ (Versatz über die Zielfläche hinaus, Schnitt geht durch). Das Versatzmaß heißt `D1@<Featurename>` (Wert 0,005, nicht `D1@<Skizze>`).
   → `VERSATZ_WEG_VON_SKIZZE = False`, `VERSATZ_MASS = "D1"`.
 - **c) Aufsatz `swEndCondUpToSurface`**, Kreis Ø 10 von einer Ebene 40 über „oben“, umgekehrt, bis zur Deckfläche: Zunahme 1570,796 mm³ = π · 25 · 20 = Soll, 1 Körper, Box bis Y = 40.
-- **d) Aufsatz `swEndCondOffsetFromSurface`**, Versatz 5 von der Deckfläche: `False` Zunahme 1178,097 mm³ (= π · 25 · 15; Versatz zur Skizze hin, endet 5 mm über der Deckfläche, **2 Körper**),
-  `True` Zunahme 1570,796 mm³ (1 Körper, Versatz zur anderen Seite). Für einen Aufsatz mit Versatz zur Skizze hin entsteht also ein frei schwebender Körper; der Handler (Task 7) soll das
-  als Mangel/Warnung behandeln oder `versatz_von_flaeche` für Aufsätze nur dort zulassen, wo der Versatz im Körper endet (Entscheidung Controller, Spec §5 sieht Restwandstärke vor).
+- **d) Aufsatz `swEndCondOffsetFromSurface`**, Versatz 5 von der Deckfläche: `False` Zunahme 1178,097 mm³ (= π · 25 · 15; Versatz zur Skizze hin, endet 5 mm über der Deckfläche, **2 Körper**; Soll π · 25 · 15 = 1178,097 mm³, im JSON-`soll` fehlt es – dort stehen nur a, b und c),
+  `True` Zunahme 1570,796 mm³ (1 Körper, Versatz zur anderen Seite). Belegt ist der getrennte Körper nur für die Testgeometrie: Skizzenebene 40 mm über dem Block, Zielfläche = Deckfläche darunter,
+  also 5 mm Luft zwischen Aufsatz und Block (`d_aufsatz_versatz_5_offsetreverse_False.koerper` = 2). Er gilt damit für einen Aufsatz, dessen Skizze nicht am Körper anliegt;
+  für eine am Körper anliegende Skizze wurde er nicht gemessen. Entscheidung Controller: siehe „Entscheidung“, Zeile 6.
 
 ### Entscheidungen (Teil A)
 
@@ -227,3 +228,5 @@ Je Zeile der Tabelle „Abhängigkeiten vom Spike S10“ (Plan Stufe 2c):
    - `lage(nur=…)`: Plan unverändert. Beleg `d_kontur_*` (`lage_nur`).
 6. **Endbedingungen:** Plan unverändert: `MARKE_ZIELFLAECHE = 1`, `VERSATZ_WEG_VON_SKIZZE = False`, `VERSATZ_MASS = "D1"` (Maß `D1@<Featurename>`). Beleg `a_schnitt_bis_flaeche_marke_1`,
    `b_schnitt_versatz_5_offsetreverse_False`, `c_aufsatz_bis_flaeche_marke_1`, `d_aufsatz_versatz_5_offsetreverse_False` (dort 2 Körper – siehe Frage 6 d).
+   Entscheidung Controller: Aufsatz und Schnitt: Versatz immer zur Skizze hin (`OffsetReverse1 = False`, Plan-Auslegung). Bei einem Aufsatz, dessen Skizze abgesetzt über der Zielfläche liegt, entsteht dadurch
+   ein getrennter Körper (Beleg `d_aufsatz_versatz_5_offsetreverse_False`: `koerper` = 2, Testgeometrie Skizze 40 mm über dem Block). Das ist eine bekannte Einschränkung, Task 7 baut keinen Sonderweg.
