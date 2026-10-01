@@ -1,6 +1,7 @@
 """Laden einer Spezifikation (YAML) mit Schema- und Plausibilitätsprüfung."""
 
 import json
+import math
 from pathlib import Path
 
 import yaml
@@ -11,10 +12,13 @@ from swki.cli import SwkiFehler
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.konfig import PROJEKT
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
+from swki.spec.konturen import eckradien, kontur_punkte
+from swki.spec.normen import groesse_text, norm_von, normmasse, verfuegbare_groessen
 
 SCHEMA_ORDNER = PROJEKT / "schema"
-_POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand"}
+_POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "laenge", "gewindetiefe"}
 _WINKEL = {"winkel"}
+_TOL_KONTUR_MM = 1e-6
 
 
 class SpecFehler(SwkiFehler):
@@ -83,6 +87,96 @@ def _referenzen(obj, pfad: list):
             yield from _referenzen(v, [*pfad, i])
 
 
+def _abstand2(a, b) -> float:
+    return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def _radien_befunde(polygon: dict, pfad: str, p: dict) -> list[dict]:
+    pts = [(auswerten(u, p), auswerten(v, p)) for u, v in polygon["punkte"]]
+    roh, n = polygon.get("radien", 0), len(pts)
+    if isinstance(roh, list) and len(roh) != n:
+        return [{"pfad": f"{pfad}.radien", "meldung": f"radien: {len(roh)} Werte für {n} Ecken"}]
+    befunde = []
+    for k, r in enumerate(eckradien(polygon, p)):
+        stelle = f"{pfad}.radien[{k}]" if isinstance(roh, list) else f"{pfad}.radien"
+        kante = min(_abstand2(pts[k], pts[k - 1]), _abstand2(pts[k], pts[(k + 1) % n]))
+        if r < 0:
+            befunde.append({"pfad": stelle, "meldung": f"Radius an Ecke {k + 1} muss ≥ 0 sein (ist {r:g})"})
+        elif r > 0 and r >= kante / 2:
+            befunde.append({"pfad": stelle, "meldung": f"Radius {r:g} an Ecke {k + 1} muss kleiner als die halbe "
+                                                       f"kürzere Nachbarkante ({kante / 2:g}) sein"})
+    return befunde
+
+
+def _kontur_befunde(kontur: dict, pfad: str, p: dict) -> list[dict]:
+    punkte = kontur_punkte(kontur, p)
+    befunde = []
+    for k, s in enumerate(kontur["segmente"]):
+        if "bogen" not in s:
+            continue
+        mitte = (auswerten(s["mitte"][0], p), auswerten(s["mitte"][1], p))
+        ra, rb = _abstand2(punkte[k], mitte), _abstand2(punkte[k + 1], mitte)
+        if abs(ra - rb) > _TOL_KONTUR_MM:
+            befunde.append({"pfad": f"{pfad}.segmente[{k}]",
+                            "meldung": f"Bogen: Anfang und Ende ungleich weit vom Mittelpunkt ({ra:g} / {rb:g} mm)"})
+        elif _abstand2(punkte[k], punkte[k + 1]) <= _TOL_KONTUR_MM:
+            befunde.append({"pfad": f"{pfad}.segmente[{k}]",
+                            "meldung": "Bogen: Anfang = Ende (Vollkreis als kreis angeben)"})
+    if _abstand2(punkte[0], punkte[-1]) > _TOL_KONTUR_MM:
+        befunde.append({"pfad": f"{pfad}.segmente", "meldung": "Kontur ist nicht geschlossen: letzter Endpunkt muss start sein"})
+    return befunde
+
+
+def _element_befunde(e: dict, pfad: str, p: dict) -> list[dict]:
+    """Eckradien, Kontur (Spec 2c §4); Langloch-Maße prüft die allgemeine Positiv-/Winkelprüfung."""
+    try:
+        if "rechteck" in e and "radius" in e["rechteck"]:
+            r = e["rechteck"]
+            if auswerten(r["radius"], p) >= min(auswerten(r["breite"], p), auswerten(r["hoehe"], p)) / 2:
+                return [{"pfad": f"{pfad}.rechteck.radius",
+                         "meldung": "radius muss kleiner als die halbe kürzere Seite sein"}]
+        if "polygon" in e and "radien" in e["polygon"]:
+            return _radien_befunde(e["polygon"], f"{pfad}.polygon", p)
+        if "kontur" in e:
+            return _kontur_befunde(e["kontur"], f"{pfad}.kontur", p)
+    except AusdruckFehler:
+        pass  # bereits oben gemeldet
+    return []
+
+
+def _ende_befunde(ende: dict, pfad: str) -> list[dict]:
+    typ, befunde = ende["typ"], []
+    if "flaeche" in ende and typ not in ("bis_flaeche", "versatz_von_flaeche"):
+        befunde.append({"pfad": f"{pfad}.flaeche",
+                        "meldung": f"flaeche gilt nur bei bis_flaeche/versatz_von_flaeche (typ ist {typ})"})
+    if "abstand" in ende and typ != "versatz_von_flaeche":
+        befunde.append({"pfad": f"{pfad}.abstand", "meldung": f"abstand gilt nur bei versatz_von_flaeche (typ ist {typ})"})
+    if "tiefe" in ende and typ in ("bis_flaeche", "versatz_von_flaeche"):
+        befunde.append({"pfad": f"{pfad}.tiefe", "meldung": f"tiefe gilt nicht bei {typ} (die Tiefe folgt aus der Fläche)"})
+    return befunde
+
+
+def _normbohrung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
+    befunde = []
+    norm = norm_von(f)
+    if normmasse(f["art"], f["groesse"], norm) is None:
+        verfuegbar = ", ".join(verfuegbare_groessen(f["art"], norm)) or "keine"
+        befunde.append({"pfad": f"{pfad}.groesse",
+                        "meldung": f"Größe {groesse_text(f['groesse'])!r} für {f['art']} ({norm}) nicht in der "
+                                   f"Maßtabelle swki/wissen/bohrungsnormen.yaml; verfügbar: {verfuegbar}"})
+    if "gewindetiefe" in f and f["art"] != "gewinde":
+        befunde.append({"pfad": f"{pfad}.gewindetiefe", "meldung": "gewindetiefe nur bei art: gewinde"})
+    if f["art"] == "gewinde" and not f.get("durch") and "gewindetiefe" not in f:
+        befunde.append({"pfad": pfad, "meldung": "gewindetiefe ist Pflicht bei einer Gewindebohrung mit tiefe"})
+    if "gewindetiefe" in f and "tiefe" in f:
+        try:
+            if auswerten(f["gewindetiefe"], p) > auswerten(f["tiefe"], p):
+                befunde.append({"pfad": f"{pfad}.gewindetiefe", "meldung": "gewindetiefe darf nicht größer als tiefe sein"})
+        except AusdruckFehler:
+            pass  # bereits oben gemeldet
+    return befunde
+
+
 def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
     befunde = []
     parameter = spec.get("parameter", {})
@@ -109,7 +203,10 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             continue
         if schluessel in _POSITIV and "versatz" not in pfad and wert <= 0:
             befunde.append({"pfad": _pfad(pfad), "meldung": f"{schluessel} muss > 0 sein (ist {wert:g})"})
-        if schluessel in _WINKEL and not 0 < wert <= 360:
+        if schluessel in _WINKEL and "langloch" in pfad:
+            if not 0 <= wert < 180:
+                befunde.append({"pfad": _pfad(pfad), "meldung": f"langloch.winkel muss in [0, 180) liegen (ist {wert:g})"})
+        elif schluessel in _WINKEL and not 0 < wert <= 360:
             befunde.append({"pfad": _pfad(pfad), "meldung": f"winkel muss in (0, 360] liegen (ist {wert:g})"})
 
     for i, f in enumerate(features):
@@ -133,6 +230,12 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             else:
                 for b in pruefe_skript(datei.read_text(encoding="utf-8")):
                     befunde.append({"pfad": f"features[{i}].datei", "meldung": f"Zeile {b['zeile']}: {b['meldung']}"})
+        for k, e in enumerate(elemente):
+            befunde += _element_befunde(e, f"features[{i}].skizze.elemente[{k}]", parameter)
+        if "ende" in f:
+            befunde += _ende_befunde(f["ende"], f"features[{i}].ende")
+        if f["typ"] == "normbohrung":
+            befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
     return befunde
 
 

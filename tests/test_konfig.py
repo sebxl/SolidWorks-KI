@@ -40,6 +40,7 @@ def test_standard_projektdatei():
     daten = lade_standard()
     assert daten["max_nachbesserungen"] == 3
     assert daten["api"]["max_jahr_compiler"] == 2025
+    assert daten["bohrungsnorm"] == "ISO"
 
 
 def test_swki_home_aus_umgebung(swki_home):
