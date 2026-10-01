@@ -24,12 +24,17 @@ Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpo
 - Nach der Freigabe nur noch den Bauweg ändern (Features, Anker, Reihenfolge, Skripte); Parameter, Material, Eigenschaften und
   `pruefung` sind tabu (`swki bauen` verweigert sonst mit FREIGABE_VERALTET).
 - Was das Format nicht kann: `typ: skript` mit `luecke:` (Notausgang), nie still weglassen.
+- Normbohrungen (`typ: normbohrung`) nur in Größen aus `swki/wissen/bohrungsnormen.yaml`; die Tabelle nur um Größen
+  erweitern, die live gemessen sind (Muster: Spike S10, `spikes/s10_f3_normmasse.py`).
+- Kompakter Feature-Baum: Modellierregeln im Skill `konstruieren`; `validieren` meldet Zusammenfassbares als
+  `hinweise` mit `art: zusammenfassen`.
 - Live-Tests einzeln mit Zeitlimit: `.venv\Scripts\python.exe tests\live_einzeln.py <datei> …`.
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,
   freigegebene Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach
   `protokolle/<spec>.lauf-<n>.pruefer.json` → `swki status <spec>` → nachbessern oder `swki bericht <spec>`.
+- `swki pruefen` prüft Normbohrungen gegen die freigegebene Kopie (Größen sind Text, die Prüfsumme schützt sie nicht).
 - Wiederholt sich eine Lücke oder ein Handlerfehler: Skill `compiler-erweitern` (Test zuerst, Regressions-Suite).
 - Regressions-Suite: `.venv\Scripts\python.exe tests\live_einzeln.py tests\referenz` (SolidWorks geöffnet).
 
