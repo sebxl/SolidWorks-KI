@@ -279,9 +279,10 @@ def test_id_eines_skript_zusatzfeatures_ist_reserviert(tmp_path):
     spec = _spec()
     skript = {"id": "f7", "typ": "skript", "datei": "f7.py", "luecke": "Test"}
     spec["features"] += [skript, {**spec["features"][3], "id": "f7_2"}]
-    (tmp_path / "f7.py").write_text("def baue(ctx):\n    pass\n", encoding="utf-8")
+    (tmp_path / "f7.py").write_text("def bauen(ctx):\n    pass\n", encoding="utf-8")
     befunde = plausibel_befunde(spec, tmp_path)
     assert any(b["pfad"] == "features[7].id" and "reserviert" in b["meldung"] for b in befunde)
+    assert [b["pfad"] for b in befunde] == ["features[7].id"]  # Minimalskript ist zulässig: einziger Befund
 
 
 def test_normbohrung_doppelte_position(tmp_path):
