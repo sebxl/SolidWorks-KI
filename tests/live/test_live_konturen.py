@@ -6,6 +6,7 @@ import pythoncom
 import pytest
 
 from swki.compiler import sw
+from swki.compiler.topologie import flaechen
 
 from .bauhilfe import gebautes_teil, volumen_mm3
 
@@ -122,3 +123,67 @@ def test_kontur_mit_boegen(ebene, box):
             _setze(ctx.model, '"KH" = 20', '"KH" = 30')  # Höhe und damit Bogenradius wachsen
             assert volumen_mm3(ctx.model) == pytest.approx((3000 + 225 * math.pi) * 10, abs=1e-3)
             assert sw.teilebox_mm(ctx.model) == pytest.approx([-65, 0, -55, 65, 10, -25], abs=1e-6)
+
+
+# --- Flächen mit negativer Normale: die Abbildung (u, v) → Skizze kehrt den Drehsinn um (Befund W1) ---
+
+KLOTZ = {"id": "f1", "typ": "extrusion",
+         "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}]},
+         "ende": {"typ": "blind", "tiefe": 20}}  # X ±50, Y 0…20, Z ±30
+VOLL = 100 * 60 * 20
+
+
+def _auf_flaeche(element, flaeche: str, tiefe: float = 5) -> dict:
+    """Grundklotz und ein Schnitt `tiefe` mm tief in das Material, Skizze auf der Fläche {f1, flaeche}."""
+    schnitt = {"id": "f2", "typ": "schnitt", "skizze": {"ebene": {"feature": "f1", "flaeche": flaeche},
+                                                         "elemente": [element]},
+               "ende": {"typ": "blind", "tiefe": tiefe}}
+    return {"art": "teil", "name": "T", "parameter": {}, "features": [KLOTZ, schnitt]}
+
+
+def _zylinder_lagen(ctx) -> list[tuple[float, float, float]]:
+    """Achsenlagen (mm) der Zylinderflächen des Schnitts, nach (x, y, z) sortiert. Die Koordinate entlang der Achse
+    ist beliebig (Ursprung der Zylinderfläche) und wird auf 0 gesetzt."""
+    lagen = []
+    for f in flaechen(ctx.ergebnis("f2").features[0]):
+        if f.art == "zylinder":
+            lagen.append(tuple(round(0.0 if abs(a) > 0.5 else p, 6) for p, a in zip(f.punkt, f.achse)))
+    return sorted(lagen)
+
+
+@pytest.mark.parametrize(("flaeche", "kontur", "flaecheninhalt", "mitten"), [
+    # Unterseite: Skizzensystem gespiegelt, (u, v) → X = u, Z = −v; Bogenmitten bei u = −25 und 35, v = 5 → Z = −5
+    ("-y", {"start": [-25, -5], "segmente": [
+        {"linie": [35, -5]}, {"bogen": [35, 15], "mitte": [35, 5]},
+        {"linie": [-25, 15]}, {"bogen": [-25, -5], "mitte": [-25, 5]}]},
+     60 * 20 + 100 * math.pi, [(-25, 0, -5), (35, 0, -5)]),
+    # Rückseite: (u, v) → X = u, Y = v, Normale −z, Skizzensystem ebenfalls gespiegelt
+    ("-z", {"start": [-25, 5], "segmente": [
+        {"linie": [35, 5]}, {"bogen": [35, 15], "mitte": [35, 10]},
+        {"linie": [-25, 15]}, {"bogen": [-25, 5], "mitte": [-25, 10]}]},
+     60 * 10 + 25 * math.pi, [(-25, 10, 0), (35, 10, 0)]),
+], ids=["unterseite", "rueckseite"])
+def test_kontur_mit_boegen_auf_flaeche_mit_negativer_normale(flaeche, kontur, flaecheninhalt, mitten):
+    with gebautes_teil(_auf_flaeche({"kontur": kontur}, flaeche)) as (ctx, fehler, _):
+        assert fehler is None
+        # Bögen gegen den Uhrzeigersinn in (u, v) wölben sich nach außen; der Gegenbogen gäbe die Fläche abzüglich der Halbkreise
+        assert volumen_mm3(ctx.model) == pytest.approx(VOLL - flaecheninhalt * 5, abs=1e-3)
+        assert sw.teilebox_mm(ctx.model) == pytest.approx([-50, 0, -30, 50, 20, 30], abs=1e-6)
+        assert _zylinder_lagen(ctx) == pytest.approx(mitten, abs=1e-6)
+
+
+@pytest.mark.parametrize(("winkel", "flaeche"), [
+    (150, "+y"),   # Winkel in [90°, 180) auf gleichsinniger Fläche
+    (120, "+y"),
+    (150, "-y"),   # … und auf gespiegelter Fläche
+    (30, "-y"),
+], ids=["150-oben", "120-oben", "150-unten", "30-unten"])
+def test_langloch_winkel_ueber_90_grad_lage_der_bogenmitten(winkel, flaeche):
+    spec = _auf_flaeche({"langloch": {"mitte": [10, 5], "laenge": 30, "breite": 8, "winkel": winkel}}, flaeche)
+    with gebautes_teil(spec) as (ctx, fehler, _):
+        assert fehler is None
+        assert volumen_mm3(ctx.model) == pytest.approx(VOLL - (30 * 8 + 16 * math.pi) * 5, abs=1e-3)
+        # 30° und 150° haben dieselbe Box: die Lage der Bogenmitten (Modell: X = u, Z = −v) entscheidet
+        halb = 15 * math.cos(math.radians(winkel)), 15 * math.sin(math.radians(winkel))
+        erwartet = sorted((round(10 + s * halb[0], 6), 0, round(-(5 + s * halb[1]), 6)) for s in (-1, 1))
+        assert _zylinder_lagen(ctx) == pytest.approx(erwartet, abs=1e-6)
