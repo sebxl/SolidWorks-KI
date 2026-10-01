@@ -19,27 +19,50 @@ _ANKER = frozenset({"nahe", "kanten", "flaeche"})  # Anker wählen Geometrie aus
 _TOL_NORM_MM = 0.01
 
 
+_KEINE_MASSE = _ANKER | {"mittellinie"}  # Rotationsachse: Konstruktionslinie, kein Anforderungsmaß
+_SAMMELN = frozenset({"punkte", "kontur"})  # viele Koordinaten einer Kontur → ein Hinweis statt einer je Zahl
+
+
+def _feste_zahlen(wert) -> int:
+    if isinstance(wert, dict):
+        return sum(_feste_zahlen(v) for v in wert.values())
+    if isinstance(wert, list):
+        return sum(_feste_zahlen(v) for v in wert)
+    return int(isinstance(wert, (int, float)) and not isinstance(wert, bool) and wert != 0)
+
+
+def _standardwert(feature_typ: str, schluessel: str, wert) -> bool:
+    """Werte, die keine Anforderung tragen: Vollkreis 360° (Muster, Rotation), Fase 45°."""
+    return schluessel == "winkel" and (wert == 360 or (feature_typ == "fase" and wert == 45))
+
+
 def feste_masse(spec: dict) -> list[dict]:
-    """Feste Zahlen ≠ 0 in maßtragenden Feldern der Features als [{"art", "pfad", "meldung"}] (0 = Lage auf Achse/Ebene)."""
+    """Feste Zahlen ≠ 0 in maßtragenden Feldern der Features als [{"art", "pfad", "meldung"}] (0 = Lage auf Achse/Ebene).
+    Konturen (polygon.punkte, kontur) ergeben je Element einen Sammelhinweis; Mittellinien, 360° und Fase 45° nie."""
     hinweise = []
 
-    def gehe(wert, pfad: str, mass: bool) -> None:
+    def melde(pfad: str, meldung: str) -> None:
+        hinweise.append({"art": "feste_zahl", "pfad": pfad, "meldung": meldung})
+
+    def gehe(wert, pfad: str, mass: bool, typ: str) -> None:
         if isinstance(wert, dict):
             for k, v in wert.items():
-                if k not in _ANKER:
-                    gehe(v, f"{pfad}.{k}", mass or k in MASS_FELDER)
+                if k in _KEINE_MASSE or _standardwert(typ, k, v):
+                    continue
+                if k in _SAMMELN:
+                    if n := _feste_zahlen(v):
+                        melde(f"{pfad}.{k}", f"{n} feste Zahlen in {k}: als Parameter führen, wenn die Kontur eine "
+                                             "Anforderung ist, sonst deckt die Freigabe sie nicht ab")
+                    continue
+                gehe(v, f"{pfad}.{k}", mass or k in MASS_FELDER, typ)
         elif isinstance(wert, list):
             for i, v in enumerate(wert):
-                gehe(v, f"{pfad}[{i}]", mass)
+                gehe(v, f"{pfad}[{i}]", mass, typ)
         elif mass and isinstance(wert, (int, float)) and not isinstance(wert, bool) and wert != 0:
-            hinweise.append({
-                "art": "feste_zahl",
-                "pfad": pfad,
-                "meldung": f"feste Zahl {wert:g}: als Parameter führen, sonst deckt die Freigabe dieses Maß nicht ab",
-            })
+            melde(pfad, f"feste Zahl {wert:g}: als Parameter führen, sonst deckt die Freigabe dieses Maß nicht ab")
 
     for i, feature in enumerate(spec.get("features", [])):
-        gehe(feature, f"features[{i}]", False)
+        gehe(feature, f"features[{i}]", False, feature.get("typ", ""))
     return hinweise
 
 
@@ -70,6 +93,16 @@ def _iso_4762(f: dict, parameter: dict) -> str | None:
     return None
 
 
+_REGEL_3 = {
+    "muster_linear": "muster_linear mit festen Abständen: Positionen direkt angeben, außer Anzahl und Abstand sind "
+                     "Anforderungen – dann den Abstand als Parameter (Regel 3)",
+    "muster_kreis": "muster_kreis mit festem Winkel: Positionen direkt angeben, außer die Teilung ist eine Anforderung – "
+                    "dann den Winkel als Parameter; die Anzahl ist immer eine Zahl (Regel 3)",
+    "spiegeln": "spiegeln nur von Bohrungen: Positionen direkt angeben, außer die Symmetrie ist eine Anforderung "
+                "(Regel 3)",
+}
+
+
 def zusammenfassen(spec: dict) -> list[dict]:
     """Spec 2c §6.2: gleiche Bohrungen (Regel 2), gleiche Kantenmaße (Regel 6), Muster/Spiegeln mit festen Zahlen
     (Regel 3), Bohrung mit ISO-4762-Senkung (→ normbohrung, Regel 2)."""
@@ -91,8 +124,7 @@ def zusammenfassen(spec: dict) -> list[dict]:
         else:
             continue
         if fest:
-            ergebnis.append(_hinweis([(i, f)], f"{f['typ']} mit festen Zahlen: Positionen direkt angeben, außer Anzahl, "
-                                               "Abstand oder Symmetrie sind Anforderungen – dann als Parameter (Regel 3)"))
+            ergebnis.append(_hinweis([(i, f)], _REGEL_3[f["typ"]]))
     for i, f in enumerate(features):
         if f["typ"] == "bohrung" and "senkung" in f and (groesse := _iso_4762(f, parameter)):
             ergebnis.append(_hinweis([(i, f)], f"Bohrung mit Senkung entspricht ISO 4762 {groesse}: als normbohrung "
