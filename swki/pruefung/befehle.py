@@ -9,7 +9,7 @@ from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
 from swki.pruefung.bericht import bericht_markdown
-from swki.pruefung.bewertung import bewerte
+from swki.pruefung.bewertung import baum_kennzahl, bewerte
 from swki.pruefung.bilder import screenshots
 from swki.pruefung.messen import kontext_aus_datei, messe, oeffne
 from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
@@ -35,16 +35,17 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")
     app = verbinde(r.sw_jahr)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
+    soll = freigegebene_spec(spec_pfad)
     model = oeffne(app, teil)
     try:
         ctx = kontext_aus_datei(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], protokoll)
-        messwerte = messe(ctx)
+        messwerte = messe(ctx, soll)
         bilder = screenshots(app, model, ordner / "bilder")
     finally:
         sw.schliesse(app, model)
     bericht = {
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil),
-        **bewerte(spec, messwerte, standard, freigegebene_spec(spec_pfad)), "bilder": bilder,
+        **bewerte(spec, messwerte, standard, soll), "baum": baum_kennzahl(spec, protokoll), "bilder": bilder,
     }
     pruefer_datei = lauf_datei(spec_pfad, lauf, "pruefer")
     if pruefer_datei.exists():

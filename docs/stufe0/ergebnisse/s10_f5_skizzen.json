@@ -1,0 +1,3542 @@
+{
+  "ok": true,
+  "a_rechteck_linien": {
+    "stufe": "extrudiert",
+    "schritte": [
+      {
+        "ecke": [
+          -30,
+          -20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D5"
+        ]
+      },
+      {
+        "ecke": [
+          30,
+          -20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D6"
+        ]
+      },
+      {
+        "ecke": [
+          30,
+          20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D7"
+        ]
+      },
+      {
+        "ecke": [
+          -30,
+          20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D8"
+        ]
+      }
+    ],
+    "relationen": [
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ]
+    ],
+    "status": 3,
+    "punkte": 15,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -25.0,
+          -15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          -15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -25.0,
+          15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -25.0,
+          -20.0
+        ],
+        "ende": [
+          25.0,
+          -20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -30.0,
+          -15.0
+        ],
+        "ende": [
+          -30.0,
+          15.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -25.0,
+          20.0
+        ],
+        "ende": [
+          25.0,
+          20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          30.0,
+          -15.0
+        ],
+        "ende": [
+          30.0,
+          15.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.06,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D7",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D5@s_skizze = =R",
+      "D6@s_skizze = =R",
+      "D7@s_skizze = =R",
+      "D8@s_skizze = =R"
+    ],
+    "extrusion": true,
+    "volumen_ist": 23785.398,
+    "volumen_soll": 23785.398,
+    "box": [
+      -30.0,
+      0.0,
+      -20.0,
+      30.0,
+      10.0,
+      20.0
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "R": 4
+      },
+      "rebuild": true,
+      "volumen_ist": 23862.655,
+      "volumen_soll": 23862.655,
+      "box": [
+        -30.0,
+        0.0,
+        -20.0,
+        30.0,
+        10.0,
+        20.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.06
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.03
+        ],
+        [
+          "D4",
+          0.02
+        ],
+        [
+          "D5",
+          0.004
+        ],
+        [
+          "D6",
+          0.004
+        ],
+        [
+          "D7",
+          0.004
+        ],
+        [
+          "D8",
+          0.004
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "a_rechteck_linien_eigenes_mass": {
+    "stufe": "extrudiert",
+    "schritte": [
+      {
+        "ecke": [
+          -30,
+          -20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D5"
+        ],
+        "eigenes_mass": "D6",
+        "status_nach_eigenem_mass": 3
+      },
+      {
+        "ecke": [
+          30,
+          -20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D7"
+        ],
+        "eigenes_mass": "D8",
+        "status_nach_eigenem_mass": 3
+      },
+      {
+        "ecke": [
+          30,
+          20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D9"
+        ],
+        "eigenes_mass": "D10",
+        "status_nach_eigenem_mass": 3
+      },
+      {
+        "ecke": [
+          -30,
+          20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D11"
+        ],
+        "eigenes_mass": "D12",
+        "status_nach_eigenem_mass": 3
+      }
+    ],
+    "relationen": [
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ]
+    ],
+    "status": 3,
+    "punkte": 15,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -25.0,
+          -15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          -15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -25.0,
+          15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -25.0,
+          -20.0
+        ],
+        "ende": [
+          25.0,
+          -20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -30.0,
+          -15.0
+        ],
+        "ende": [
+          -30.0,
+          15.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -25.0,
+          20.0
+        ],
+        "ende": [
+          25.0,
+          20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          30.0,
+          -15.0
+        ],
+        "ende": [
+          30.0,
+          15.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.06,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.005,
+        "getrieben": 1
+      },
+      {
+        "name": "D7",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.005,
+        "getrieben": 1
+      },
+      {
+        "name": "D9",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D10",
+        "wert": 0.005,
+        "getrieben": 1
+      },
+      {
+        "name": "D11",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D12",
+        "wert": 0.005,
+        "getrieben": 1
+      }
+    ],
+    "gebunden": [],
+    "extrusion": true,
+    "volumen_ist": 23785.398,
+    "volumen_soll": 23785.398,
+    "box": [
+      -30.0,
+      0.0,
+      -20.0,
+      30.0,
+      10.0,
+      20.0
+    ],
+    "fehlversuche_serverfehler": []
+  },
+  "a_rechteck_punkt": {
+    "stufe": "extrudiert",
+    "schritte": [
+      {
+        "ecke": [
+          -30,
+          -20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D5"
+        ]
+      },
+      {
+        "ecke": [
+          30,
+          -20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D6"
+        ]
+      },
+      {
+        "ecke": [
+          30,
+          20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D7"
+        ]
+      },
+      {
+        "ecke": [
+          -30,
+          20
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D8"
+        ]
+      }
+    ],
+    "relationen": [
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ]
+    ],
+    "status": 3,
+    "punkte": 15,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -25.0,
+          -15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          -15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -25.0,
+          15.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -25.0,
+          -20.0
+        ],
+        "ende": [
+          25.0,
+          -20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -30.0,
+          -15.0
+        ],
+        "ende": [
+          -30.0,
+          15.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -25.0,
+          20.0
+        ],
+        "ende": [
+          25.0,
+          20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          30.0,
+          -15.0
+        ],
+        "ende": [
+          30.0,
+          15.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.06,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D7",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [],
+    "extrusion": true,
+    "volumen_ist": 23785.398,
+    "volumen_soll": 23785.398,
+    "box": [
+      -30.0,
+      0.0,
+      -20.0,
+      30.0,
+      10.0,
+      20.0
+    ],
+    "fehlversuche_serverfehler": []
+  },
+  "b_polygon_konkav": {
+    "stufe": "extrudiert",
+    "schritte": [
+      {
+        "ecke": [
+          0.0,
+          0.0
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D9"
+        ]
+      },
+      {
+        "ecke": [
+          40.0,
+          0.0
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D10"
+        ]
+      },
+      {
+        "ecke": [
+          40.0,
+          20.0
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D11"
+        ]
+      },
+      {
+        "ecke": [
+          20.0,
+          20.0
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D12"
+        ]
+      },
+      {
+        "ecke": [
+          20.0,
+          40.0
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D13"
+        ]
+      },
+      {
+        "ecke": [
+          0.0,
+          40.0
+        ],
+        "bogen": true,
+        "status_nach_fillet": 3,
+        "masse_von_createfillet": [
+          "D14"
+        ]
+      }
+    ],
+    "relationen": [
+      [
+        9,
+        2
+      ],
+      [
+        25,
+        2
+      ],
+      [
+        26,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        1
+      ]
+    ],
+    "status": 3,
+    "punkte": 24,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          3.0,
+          3.0
+        ],
+        "radius": 3.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          37.0,
+          3.0
+        ],
+        "radius": 3.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          37.0,
+          17.0
+        ],
+        "radius": 3.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          25.0
+        ],
+        "radius": 5.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          17.0,
+          37.0
+        ],
+        "radius": 3.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          3.0,
+          37.0
+        ],
+        "radius": 3.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          3.0,
+          0.0
+        ],
+        "ende": [
+          37.0,
+          0.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          40.0,
+          3.0
+        ],
+        "ende": [
+          40.0,
+          17.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          37.0,
+          20.0
+        ],
+        "ende": [
+          25.0,
+          20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          20.0,
+          25.0
+        ],
+        "ende": [
+          20.0,
+          37.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          17.0,
+          40.0
+        ],
+        "ende": [
+          3.0,
+          40.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          0.0,
+          37.0
+        ],
+        "ende": [
+          0.0,
+          3.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.02,
+        "getrieben": 2
+      },
+      {
+        "name": "D7",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D9",
+        "wert": 0.003,
+        "getrieben": 2
+      },
+      {
+        "name": "D10",
+        "wert": 0.003,
+        "getrieben": 2
+      },
+      {
+        "name": "D11",
+        "wert": 0.003,
+        "getrieben": 2
+      },
+      {
+        "name": "D12",
+        "wert": 0.005,
+        "getrieben": 2
+      },
+      {
+        "name": "D13",
+        "wert": 0.003,
+        "getrieben": 2
+      },
+      {
+        "name": "D14",
+        "wert": 0.003,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D9@s_skizze = =RK",
+      "D10@s_skizze = =RK",
+      "D11@s_skizze = =RK",
+      "D12@s_skizze = =RI",
+      "D13@s_skizze = =RK",
+      "D14@s_skizze = =RK"
+    ],
+    "extrusion": true,
+    "volumen_ist": 11957.08,
+    "volumen_soll": 11957.08,
+    "box": [
+      -0.0,
+      -0.0,
+      0.0,
+      40.0,
+      40.0,
+      10.0
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "RK": 2,
+        "RI": 4
+      },
+      "rebuild": true,
+      "volumen_ist": 11991.416,
+      "volumen_soll": 11991.416,
+      "box": [
+        -0.0,
+        -0.0,
+        0.0,
+        40.0,
+        40.0,
+        10.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.04
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.02
+        ],
+        [
+          "D4",
+          0.02
+        ],
+        [
+          "D5",
+          0.02
+        ],
+        [
+          "D6",
+          0.02
+        ],
+        [
+          "D7",
+          0.04
+        ],
+        [
+          "D8",
+          0.04
+        ],
+        [
+          "D9",
+          0.002
+        ],
+        [
+          "D10",
+          0.002
+        ],
+        [
+          "D11",
+          0.002
+        ],
+        [
+          "D12",
+          0.004
+        ],
+        [
+          "D13",
+          0.002
+        ],
+        [
+          "D14",
+          0.002
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "c_langloch_mittelpunkt_0": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "status_verlauf": [
+        [
+          "nach_slot",
+          2
+        ],
+        [
+          "nach_breite",
+          2
+        ],
+        [
+          "nach_laenge",
+          2
+        ],
+        [
+          "nach_richtung",
+          2
+        ],
+        [
+          "nach_lage",
+          3
+        ]
+      ],
+      "nut": true,
+      "relationen_nach_slot": [
+        [
+          4,
+          1
+        ]
+      ],
+      "punkte_nach_slot": [
+        [
+          -5.0,
+          5.0
+        ],
+        [
+          25.0,
+          5.0
+        ],
+        [
+          10.0,
+          5.0
+        ],
+        [
+          -5.0,
+          9.0
+        ],
+        [
+          25.0,
+          9.0
+        ],
+        [
+          -5.0,
+          1.0
+        ],
+        [
+          25.0,
+          1.0
+        ]
+      ],
+      "neue_segmente": [
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            -5.0,
+            5.0
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            25.0,
+            5.0
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "start": [
+            -5.0,
+            5.0
+          ],
+          "ende": [
+            25.0,
+            5.0
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -5.0,
+            9.0
+          ],
+          "ende": [
+            25.0,
+            9.0
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -5.0,
+            1.0
+          ],
+          "ende": [
+            25.0,
+            1.0
+          ]
+        }
+      ],
+      "mittelpunkt": [
+        10.0,
+        5.0
+      ],
+      "laenge_breite_mm": [
+        30.0,
+        8.0
+      ],
+      "seiten_achsen": [
+        2,
+        1
+      ],
+      "richtung": "beziehung",
+      "masse_merk": [
+        "D1",
+        "D2",
+        "D3",
+        "D4"
+      ]
+    },
+    "relationen": [
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 7,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -5.0,
+          5.0
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          5.0
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          -5.0,
+          5.0
+        ],
+        "ende": [
+          25.0,
+          5.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -5.0,
+          9.0
+        ],
+        "ende": [
+          25.0,
+          9.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -5.0,
+          1.0
+        ],
+        "ende": [
+          25.0,
+          1.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.008,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.01,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D1@s_skizze = =B",
+      "D2@s_skizze = =L"
+    ],
+    "extrusion": true,
+    "volumen_ist": 2902.655,
+    "volumen_soll": 2902.655,
+    "box": [
+      -9.0,
+      0.0,
+      -9.0,
+      29.0,
+      10.0,
+      -1.0
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "L": 40,
+        "B": 6
+      },
+      "rebuild": true,
+      "volumen_ist": 2682.743,
+      "volumen_soll": 2682.743,
+      "box": [
+        -13.0,
+        0.0,
+        -8.0,
+        33.0,
+        10.0,
+        -2.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.006
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.01
+        ],
+        [
+          "D4",
+          0.005
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "c_langloch_linie_0": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "status_verlauf": [
+        [
+          "nach_slot",
+          2
+        ],
+        [
+          "nach_breite",
+          2
+        ],
+        [
+          "nach_laenge",
+          2
+        ],
+        [
+          "nach_richtung",
+          2
+        ],
+        [
+          "nach_lage",
+          3
+        ]
+      ],
+      "nut": true,
+      "relationen_nach_slot": [
+        [
+          4,
+          1
+        ]
+      ],
+      "punkte_nach_slot": [
+        [
+          -5.0,
+          5.0
+        ],
+        [
+          25.0,
+          5.0
+        ],
+        [
+          10.0,
+          5.0
+        ],
+        [
+          -5.0,
+          9.0
+        ],
+        [
+          25.0,
+          9.0
+        ],
+        [
+          -5.0,
+          1.0
+        ],
+        [
+          25.0,
+          1.0
+        ]
+      ],
+      "neue_segmente": [
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            -5.0,
+            5.0
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            25.0,
+            5.0
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "start": [
+            -5.0,
+            5.0
+          ],
+          "ende": [
+            25.0,
+            5.0
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -5.0,
+            9.0
+          ],
+          "ende": [
+            25.0,
+            9.0
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -5.0,
+            1.0
+          ],
+          "ende": [
+            25.0,
+            1.0
+          ]
+        }
+      ],
+      "mittelpunkt": [
+        10.0,
+        5.0
+      ],
+      "laenge_breite_mm": [
+        30.0,
+        8.0
+      ],
+      "seiten_achsen": [
+        2,
+        1
+      ],
+      "richtung": "beziehung",
+      "masse_merk": [
+        "D1",
+        "D2",
+        "D3",
+        "D4"
+      ]
+    },
+    "relationen": [
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 7,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -5.0,
+          5.0
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          25.0,
+          5.0
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          -5.0,
+          5.0
+        ],
+        "ende": [
+          25.0,
+          5.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -5.0,
+          9.0
+        ],
+        "ende": [
+          25.0,
+          9.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -5.0,
+          1.0
+        ],
+        "ende": [
+          25.0,
+          1.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.008,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.01,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D1@s_skizze = =B",
+      "D2@s_skizze = =L"
+    ],
+    "extrusion": true,
+    "volumen_ist": 2902.655,
+    "volumen_soll": 2902.655,
+    "box": [
+      -9.0,
+      0.0,
+      -9.0,
+      29.0,
+      10.0,
+      -1.0
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "L": 40,
+        "B": 6
+      },
+      "rebuild": true,
+      "volumen_ist": 2682.743,
+      "volumen_soll": 2682.743,
+      "box": [
+        -13.0,
+        0.0,
+        -8.0,
+        33.0,
+        10.0,
+        -2.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.006
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.01
+        ],
+        [
+          "D4",
+          0.005
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "c_langloch_mittelpunkt_90": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "status_verlauf": [
+        [
+          "nach_slot",
+          2
+        ],
+        [
+          "nach_breite",
+          2
+        ],
+        [
+          "nach_laenge",
+          2
+        ],
+        [
+          "nach_richtung",
+          2
+        ],
+        [
+          "nach_lage",
+          3
+        ]
+      ],
+      "nut": true,
+      "relationen_nach_slot": [
+        [
+          5,
+          1
+        ]
+      ],
+      "punkte_nach_slot": [
+        [
+          10.0,
+          -10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          10.0,
+          5.0
+        ],
+        [
+          6.0,
+          -10.0
+        ],
+        [
+          6.0,
+          20.0
+        ],
+        [
+          14.0,
+          -10.0
+        ],
+        [
+          14.0,
+          20.0
+        ]
+      ],
+      "neue_segmente": [
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            10.0,
+            -10.0
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            10.0,
+            20.0
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "start": [
+            10.0,
+            -10.0
+          ],
+          "ende": [
+            10.0,
+            20.0
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            6.0,
+            -10.0
+          ],
+          "ende": [
+            6.0,
+            20.0
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            14.0,
+            -10.0
+          ],
+          "ende": [
+            14.0,
+            20.0
+          ]
+        }
+      ],
+      "mittelpunkt": [
+        10.0,
+        5.0
+      ],
+      "laenge_breite_mm": [
+        30.0,
+        8.0
+      ],
+      "seiten_achsen": [
+        2,
+        1
+      ],
+      "richtung": "beziehung",
+      "masse_merk": [
+        "D1",
+        "D2",
+        "D3",
+        "D4"
+      ]
+    },
+    "relationen": [
+      [
+        5,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 7,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          10.0,
+          -10.0
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          10.0,
+          20.0
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          10.0,
+          -10.0
+        ],
+        "ende": [
+          10.0,
+          20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          6.0,
+          -10.0
+        ],
+        "ende": [
+          6.0,
+          20.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          14.0,
+          -10.0
+        ],
+        "ende": [
+          14.0,
+          20.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.008,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.01,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D1@s_skizze = =B",
+      "D2@s_skizze = =L"
+    ],
+    "extrusion": true,
+    "volumen_ist": 2902.655,
+    "volumen_soll": 2902.655,
+    "box": [
+      6.0,
+      0.0,
+      -24.0,
+      14.0,
+      10.0,
+      14.0
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "L": 40,
+        "B": 6
+      },
+      "rebuild": true,
+      "volumen_ist": 2682.743,
+      "volumen_soll": 2682.743,
+      "box": [
+        7.0,
+        0.0,
+        -28.0,
+        13.0,
+        10.0,
+        18.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.006
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.01
+        ],
+        [
+          "D4",
+          0.005
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "c_langloch_mittelpunkt_30": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "status_verlauf": [
+        [
+          "nach_slot",
+          2
+        ],
+        [
+          "nach_breite",
+          2
+        ],
+        [
+          "nach_laenge",
+          2
+        ],
+        [
+          "nach_richtung",
+          2
+        ],
+        [
+          "nach_lage",
+          2
+        ]
+      ],
+      "nut": true,
+      "relationen_nach_slot": [],
+      "punkte_nach_slot": [
+        [
+          -2.9904,
+          -2.5
+        ],
+        [
+          22.9904,
+          12.5
+        ],
+        [
+          10.0,
+          5.0
+        ],
+        [
+          -4.9904,
+          0.9641
+        ],
+        [
+          20.9904,
+          15.9641
+        ],
+        [
+          -0.9904,
+          -5.9641
+        ],
+        [
+          24.9904,
+          9.0359
+        ]
+      ],
+      "neue_segmente": [
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            -2.9904,
+            -2.5
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            22.9904,
+            12.5
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "start": [
+            -2.9904,
+            -2.5
+          ],
+          "ende": [
+            22.9904,
+            12.5
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -4.9904,
+            0.9641
+          ],
+          "ende": [
+            20.9904,
+            15.9641
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -0.9904,
+            -5.9641
+          ],
+          "ende": [
+            24.9904,
+            9.0359
+          ]
+        }
+      ],
+      "mittelpunkt": [
+        10.0,
+        5.0
+      ],
+      "laenge_breite_mm": [
+        30.0,
+        8.0
+      ],
+      "seiten_achsen": [
+        2,
+        1
+      ],
+      "hilfslinie_punkte_vor_nach": [
+        9,
+        9
+      ],
+      "hilfslinie_gleiche_punkte": 2,
+      "hilfslinie_verschmelzen_mit": "sgMERGEPOINTS",
+      "richtung": "winkelmass",
+      "masse_merk": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    },
+    "relationen": [
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 2,
+    "punkte": 9,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -2.9904,
+          -2.5
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          22.9904,
+          12.5
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          -2.9904,
+          -2.5
+        ],
+        "ende": [
+          22.9904,
+          12.5
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -4.9904,
+          0.9641
+        ],
+        "ende": [
+          20.9904,
+          15.9641
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -0.9904,
+          -5.9641
+        ],
+        "ende": [
+          24.9904,
+          9.0359
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          10.0,
+          5.0
+        ],
+        "ende": [
+          26.0,
+          5.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.008,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.016,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.523598776,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.01,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D1@s_skizze = =B",
+      "D2@s_skizze = =L"
+    ],
+    "extrusion": true,
+    "volumen_ist": 2902.655,
+    "volumen_soll": 2902.655,
+    "box": [
+      -6.9904,
+      0.0,
+      -16.5,
+      26.9904,
+      10.0,
+      6.5
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "L": 40,
+        "B": 6
+      },
+      "rebuild": true,
+      "volumen_ist": 2682.743,
+      "volumen_soll": 2682.743,
+      "box": [
+        -10.3205,
+        0.0,
+        -18.0,
+        30.3205,
+        10.0,
+        8.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.006
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.016
+        ],
+        [
+          "D4",
+          0.523598776
+        ],
+        [
+          "D5",
+          0.01
+        ],
+        [
+          "D6",
+          0.005
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "c_langloch_mittelpunkt_30_koinzident": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "status_verlauf": [
+        [
+          "nach_slot",
+          2
+        ],
+        [
+          "nach_breite",
+          2
+        ],
+        [
+          "nach_laenge",
+          2
+        ],
+        [
+          "nach_richtung",
+          2
+        ],
+        [
+          "nach_lage",
+          3
+        ]
+      ],
+      "nut": true,
+      "relationen_nach_slot": [],
+      "punkte_nach_slot": [
+        [
+          -2.9904,
+          -2.5
+        ],
+        [
+          22.9904,
+          12.5
+        ],
+        [
+          10.0,
+          5.0
+        ],
+        [
+          -4.9904,
+          0.9641
+        ],
+        [
+          20.9904,
+          15.9641
+        ],
+        [
+          -0.9904,
+          -5.9641
+        ],
+        [
+          24.9904,
+          9.0359
+        ]
+      ],
+      "neue_segmente": [
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            -2.9904,
+            -2.5
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 1,
+          "konstruktion": false,
+          "mitte": [
+            22.9904,
+            12.5
+          ],
+          "radius": 4.0
+        },
+        {
+          "typ": 0,
+          "konstruktion": true,
+          "start": [
+            -2.9904,
+            -2.5
+          ],
+          "ende": [
+            22.9904,
+            12.5
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -4.9904,
+            0.9641
+          ],
+          "ende": [
+            20.9904,
+            15.9641
+          ]
+        },
+        {
+          "typ": 0,
+          "konstruktion": false,
+          "start": [
+            -0.9904,
+            -5.9641
+          ],
+          "ende": [
+            24.9904,
+            9.0359
+          ]
+        }
+      ],
+      "mittelpunkt": [
+        10.0,
+        5.0
+      ],
+      "laenge_breite_mm": [
+        30.0,
+        8.0
+      ],
+      "seiten_achsen": [
+        2,
+        1
+      ],
+      "hilfslinie_punkte_vor_nach": [
+        9,
+        9
+      ],
+      "hilfslinie_gleiche_punkte": 2,
+      "hilfslinie_verschmelzen_mit": "sgCOINCIDENT",
+      "richtung": "winkelmass",
+      "masse_merk": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    },
+    "relationen": [
+      [
+        9,
+        2
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 9,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -2.9904,
+          -2.5
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          22.9904,
+          12.5
+        ],
+        "radius": 4.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          -2.9904,
+          -2.5
+        ],
+        "ende": [
+          22.9904,
+          12.5
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -4.9904,
+          0.9641
+        ],
+        "ende": [
+          20.9904,
+          15.9641
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -0.9904,
+          -5.9641
+        ],
+        "ende": [
+          24.9904,
+          9.0359
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": true,
+        "start": [
+          10.0,
+          5.0
+        ],
+        "ende": [
+          26.0,
+          5.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.008,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.03,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.016,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.523598776,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.01,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.005,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [
+      "D1@s_skizze = =B",
+      "D2@s_skizze = =L"
+    ],
+    "extrusion": true,
+    "volumen_ist": 2902.655,
+    "volumen_soll": 2902.655,
+    "box": [
+      -6.9904,
+      0.0,
+      -16.5,
+      26.9904,
+      10.0,
+      6.5
+    ],
+    "aenderung": {
+      "neue_werte": {
+        "L": 40,
+        "B": 6
+      },
+      "rebuild": true,
+      "volumen_ist": 2682.743,
+      "volumen_soll": 2682.743,
+      "box": [
+        -10.3205,
+        0.0,
+        -18.0,
+        30.3205,
+        10.0,
+        8.0
+      ],
+      "whatswrong": 0,
+      "masse_nachher": [
+        [
+          "D1",
+          0.006
+        ],
+        [
+          "D2",
+          0.04
+        ],
+        [
+          "D3",
+          0.016
+        ],
+        [
+          "D4",
+          0.523598776
+        ],
+        [
+          "D5",
+          0.01
+        ],
+        [
+          "D6",
+          0.005
+        ]
+      ]
+    },
+    "fehlversuche_serverfehler": []
+  },
+  "d_kontur_oben": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "gleichsinnig": true,
+      "erzeugt": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "punkte_vor_verschmelzen": 6,
+      "verschmolzen": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "punkte_nach_verschmelzen": 6
+    },
+    "relationen": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 6,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          40.0,
+          35.0
+        ],
+        "radius": 10.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -40.0,
+          35.0
+        ],
+        "radius": 10.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -40.0,
+          25.0
+        ],
+        "ende": [
+          40.0,
+          25.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          40.0,
+          45.0
+        ],
+        "ende": [
+          -40.0,
+          45.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.025,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.035,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D7",
+        "wert": 0.045,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D9",
+        "wert": 0.035,
+        "getrieben": 2
+      },
+      {
+        "name": "D10",
+        "wert": 0.04,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [],
+    "extrusion": true,
+    "volumen_ist": 19141.593,
+    "volumen_soll": 19141.593,
+    "box": [
+      -50.0,
+      0.0,
+      -45.0,
+      50.0,
+      10.0,
+      -25.0
+    ],
+    "fehlversuche_serverfehler": []
+  },
+  "d_kontur_vorne": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "gleichsinnig": true,
+      "erzeugt": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "punkte_vor_verschmelzen": 6,
+      "verschmolzen": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "punkte_nach_verschmelzen": 6
+    },
+    "relationen": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 6,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          40.0,
+          35.0
+        ],
+        "radius": 10.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -40.0,
+          35.0
+        ],
+        "radius": 10.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -40.0,
+          25.0
+        ],
+        "ende": [
+          40.0,
+          25.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          40.0,
+          45.0
+        ],
+        "ende": [
+          -40.0,
+          45.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.025,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.035,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D7",
+        "wert": 0.045,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D9",
+        "wert": 0.035,
+        "getrieben": 2
+      },
+      {
+        "name": "D10",
+        "wert": 0.04,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [],
+    "extrusion": true,
+    "volumen_ist": 19141.593,
+    "volumen_soll": 19141.593,
+    "box": [
+      -50.0,
+      25.0,
+      0.0,
+      50.0,
+      45.0,
+      10.0
+    ],
+    "fehlversuche_serverfehler": []
+  },
+  "d_kontur_rechts": {
+    "stufe": "extrudiert",
+    "schritte": {
+      "gleichsinnig": true,
+      "erzeugt": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "punkte_vor_verschmelzen": 6,
+      "verschmolzen": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "punkte_nach_verschmelzen": 6
+    },
+    "relationen": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 3,
+    "punkte": 6,
+    "segmente": [
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          40.0,
+          35.0
+        ],
+        "radius": 10.0
+      },
+      {
+        "typ": 1,
+        "konstruktion": false,
+        "mitte": [
+          -40.0,
+          35.0
+        ],
+        "radius": 10.0
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          -40.0,
+          25.0
+        ],
+        "ende": [
+          40.0,
+          25.0
+        ]
+      },
+      {
+        "typ": 0,
+        "konstruktion": false,
+        "start": [
+          40.0,
+          45.0
+        ],
+        "ende": [
+          -40.0,
+          45.0
+        ]
+      }
+    ],
+    "masse": [
+      {
+        "name": "D1",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D2",
+        "wert": 0.025,
+        "getrieben": 2
+      },
+      {
+        "name": "D3",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D4",
+        "wert": 0.035,
+        "getrieben": 2
+      },
+      {
+        "name": "D5",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D6",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D7",
+        "wert": 0.045,
+        "getrieben": 2
+      },
+      {
+        "name": "D8",
+        "wert": 0.04,
+        "getrieben": 2
+      },
+      {
+        "name": "D9",
+        "wert": 0.035,
+        "getrieben": 2
+      },
+      {
+        "name": "D10",
+        "wert": 0.04,
+        "getrieben": 2
+      }
+    ],
+    "gebunden": [],
+    "extrusion": true,
+    "volumen_ist": 19141.593,
+    "volumen_soll": 19141.593,
+    "box": [
+      0.0,
+      25.0,
+      -50.0,
+      10.0,
+      45.0,
+      50.0
+    ],
+    "fehlversuche_serverfehler": []
+  }
+}

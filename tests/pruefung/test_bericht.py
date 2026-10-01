@@ -35,3 +35,12 @@ def test_offene_punkte_mit_knoten():
     assert "- f2: mass:Abstand: ist 81 statt 80" in md
     assert "- Teil: Fase fehlt oben (Prüfer)" in md
     assert "## Compiler-Änderungen während des Auftrags\n\n- keine" in md
+
+
+def test_feature_baum():
+    md = bericht_markdown(
+        {"name": "Platte"}, "A-1", LAEUFE, ("bestanden", "Lauf 2 bestanden"),
+        {"maengel": [], "bilder": {}, "baum": {"knoten": 10, "features": 10}}, None, None, [],
+    )
+    assert ("## Feature-Baum (letzter Lauf)\n\n- Knoten der Spezifikation: 10\n"
+            "- erzeugte Features (ohne Skizzen, Ebenen, Achsen): 10") in md

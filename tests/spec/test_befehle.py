@@ -19,6 +19,8 @@ def test_validieren_ok(capsys, tmp_path):
     assert code == 0 and daten["gueltig"] is True and daten["features"] == 6
     # feste Maße sind erlaubt, werden aber gemeldet (die Freigabe-Prüfsumme deckt sie nicht ab)
     assert [h["pfad"] for h in daten["hinweise"]][0] == "features[1].durchmesser"
+    assert daten["hinweise"][0]["art"] == "feste_zahl"
+    assert any(h["art"] == "zusammenfassen" for h in daten["hinweise"])
 
 
 def test_validieren_meldet_befunde(capsys, tmp_path):

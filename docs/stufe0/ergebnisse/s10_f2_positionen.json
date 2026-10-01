@@ -1,0 +1,153 @@
+{
+  "ok": true,
+  "a_selectbyray_mehrfach": {
+    "selectbyray": [
+      true,
+      true,
+      true
+    ],
+    "feature": "M8 Gewindebohrung1",
+    "punkte": 1,
+    "abnahme_mm3": 605.8,
+    "soll_mm3": 1817.4,
+    "achsen_xz": [
+      [
+        -30.0,
+        -10.0
+      ]
+    ],
+    "unterfeatures": [
+      {
+        "name": "Skizze3",
+        "typ": "ProfileFeature",
+        "status": 2,
+        "punkte": 1,
+        "segmente": 0
+      },
+      {
+        "name": "Skizze2",
+        "typ": "ProfileFeature",
+        "status": 3,
+        "punkte": 7,
+        "segmente": 6
+      },
+      {
+        "name": "Bohrungsgewinde1",
+        "typ": "CosmeticThread"
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "b_positionsskizze": {
+    "unterfeatures_vorher": [
+      {
+        "name": "Skizze3",
+        "typ": "ProfileFeature",
+        "status": 2,
+        "punkte": 1,
+        "segmente": 0
+      },
+      {
+        "name": "Skizze2",
+        "typ": "ProfileFeature",
+        "status": 3,
+        "punkte": 7,
+        "segmente": 6
+      },
+      {
+        "name": "Bohrungsgewinde1",
+        "typ": "CosmeticThread"
+      }
+    ],
+    "createpoint": [
+      true,
+      true
+    ],
+    "status_offen": 3,
+    "rebuild": true,
+    "status": 3,
+    "punkte": 3,
+    "abnahme_mm3": 1817.399,
+    "soll_mm3": 1817.4,
+    "achsen_xz": [
+      [
+        -30.0,
+        -10.0
+      ],
+      [
+        0.0,
+        -10.0
+      ],
+      [
+        30.0,
+        -10.0
+      ]
+    ],
+    "masse": [
+      "D1@f2_positionen = =-L/2+20",
+      "D2@f2_positionen = 10",
+      "D3@f2_positionen = 10",
+      "D4@f2_positionen = =L/2-20",
+      "D5@f2_positionen = 10"
+    ],
+    "gleichungen": [
+      "\"L\" = 100",
+      "\"D1@f2_positionen\" = -((-\"L\" / 2) + 20)",
+      "\"D4@f2_positionen\" = (\"L\" / 2) - 20"
+    ],
+    "rebuild_l120": true,
+    "achsen_xz_l120": [
+      [
+        -40.0,
+        -10.0
+      ],
+      [
+        0.0,
+        -10.0
+      ],
+      [
+        40.0,
+        -10.0
+      ]
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    },
+    "unterfeatures_nachher": [
+      {
+        "name": "f2_positionen",
+        "typ": "ProfileFeature",
+        "status": 3,
+        "punkte": 3,
+        "segmente": 0
+      },
+      {
+        "name": "Skizze2",
+        "typ": "ProfileFeature",
+        "status": 3,
+        "punkte": 7,
+        "segmente": 6
+      },
+      {
+        "name": "Bohrungsgewinde1",
+        "typ": "CosmeticThread"
+      },
+      {
+        "name": "Bohrungsgewinde2",
+        "typ": "CosmeticThread"
+      },
+      {
+        "name": "Bohrungsgewinde3",
+        "typ": "CosmeticThread"
+      }
+    ]
+  }
+}

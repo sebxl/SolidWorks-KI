@@ -77,7 +77,8 @@
             "rechteck": {
               "type": "object", "required": ["mitte", "breite", "hoehe"], "additionalProperties": false,
               "properties": {
-                "mitte": {"$ref": "#/$defs/punkt2"}, "breite": {"$ref": "#/$defs/wert"}, "hoehe": {"$ref": "#/$defs/wert"}
+                "mitte": {"$ref": "#/$defs/punkt2"}, "breite": {"$ref": "#/$defs/wert"}, "hoehe": {"$ref": "#/$defs/wert"},
+                "radius": {"$ref": "#/$defs/wert"}
               }
             }
           }
@@ -96,7 +97,13 @@
           "properties": {
             "polygon": {
               "type": "object", "required": ["punkte"], "additionalProperties": false,
-              "properties": {"punkte": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/punkt2"}}}
+              "properties": {
+                "punkte": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/punkt2"}},
+                "radien": {"oneOf": [
+                  {"$ref": "#/$defs/wert"},
+                  {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/wert"}}
+                ]}
+              }
             }
           }
         },
@@ -108,6 +115,42 @@
               "properties": {"von": {"$ref": "#/$defs/punkt2"}, "bis": {"$ref": "#/$defs/punkt2"}}
             }
           }
+        },
+        {
+          "type": "object", "required": ["langloch"], "additionalProperties": false,
+          "properties": {
+            "langloch": {
+              "type": "object", "required": ["mitte", "laenge", "breite"], "additionalProperties": false,
+              "properties": {
+                "mitte": {"$ref": "#/$defs/punkt2"}, "laenge": {"$ref": "#/$defs/wert"}, "breite": {"$ref": "#/$defs/wert"},
+                "winkel": {"$ref": "#/$defs/wert"}
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "required": ["kontur"], "additionalProperties": false,
+          "properties": {
+            "kontur": {
+              "type": "object", "required": ["start", "segmente"], "additionalProperties": false,
+              "properties": {
+                "start": {"$ref": "#/$defs/punkt2"},
+                "segmente": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/segment"}}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "segment": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["linie"], "additionalProperties": false,
+          "properties": {"linie": {"$ref": "#/$defs/punkt2"}}
+        },
+        {
+          "type": "object", "required": ["bogen", "mitte"], "additionalProperties": false,
+          "properties": {"bogen": {"$ref": "#/$defs/punkt2"}, "mitte": {"$ref": "#/$defs/punkt2"}}
         }
       ]
     },
@@ -121,12 +164,17 @@
     "ende": {
       "type": "object", "required": ["typ"], "additionalProperties": false,
       "properties": {
-        "typ": {"enum": ["blind", "durch_alles", "mittig"]},
+        "typ": {"enum": ["blind", "durch_alles", "mittig", "bis_flaeche", "versatz_von_flaeche"]},
         "tiefe": {"$ref": "#/$defs/wert"},
-        "umkehren": {"type": "boolean"}
+        "umkehren": {"type": "boolean"},
+        "flaeche": {"$ref": "#/$defs/flaechenanker"},
+        "abstand": {"$ref": "#/$defs/wert"}
       },
-      "if": {"properties": {"typ": {"enum": ["blind", "mittig"]}}},
-      "then": {"required": ["tiefe"]}
+      "allOf": [
+        {"if": {"properties": {"typ": {"enum": ["blind", "mittig"]}}}, "then": {"required": ["tiefe"]}},
+        {"if": {"properties": {"typ": {"const": "bis_flaeche"}}}, "then": {"required": ["flaeche"]}},
+        {"if": {"properties": {"typ": {"const": "versatz_von_flaeche"}}}, "then": {"required": ["flaeche", "abstand"]}}
+      ]
     },
     "musterrichtung": {
       "type": "object", "required": ["achse", "abstand", "anzahl"], "additionalProperties": false,
@@ -162,6 +210,24 @@
           "type": "object", "required": ["durchmesser", "tiefe"], "additionalProperties": false,
           "properties": {"durchmesser": {"$ref": "#/$defs/wert"}, "tiefe": {"$ref": "#/$defs/wert"}}
         }
+      },
+      "oneOf": [{"required": ["tiefe"]}, {"required": ["durch"]}]
+    },
+    "f_normbohrung": {
+      "required": ["art", "groesse", "flaeche", "positionen"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "art": {"enum": ["gewinde", "zylinderschraube", "senkschraube", "stift"]},
+        "groesse": {"oneOf": [
+          {"type": "string", "pattern": "^M[0-9]+(x[0-9]+(\\.[0-9]+)?)?$"},
+          {"type": "number", "exclusiveMinimum": 0}
+        ]},
+        "norm": {"enum": ["ISO"]},
+        "flaeche": {"$ref": "#/$defs/flaechenanker"},
+        "positionen": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt2"}},
+        "durch": {"const": true},
+        "tiefe": {"$ref": "#/$defs/wert"},
+        "gewindetiefe": {"$ref": "#/$defs/wert"}
       },
       "oneOf": [{"required": ["tiefe"]}, {"required": ["durch"]}]
     },
@@ -217,13 +283,14 @@
       "required": ["id", "typ"],
       "properties": {
         "id": {"$ref": "#/$defs/id"},
-        "typ": {"enum": ["extrusion", "schnitt", "rotation", "bohrung", "verrundung", "fase",
+        "typ": {"enum": ["extrusion", "schnitt", "rotation", "bohrung", "normbohrung", "verrundung", "fase",
                          "muster_linear", "muster_kreis", "spiegeln", "skript"]}
       },
       "allOf": [
         {"if": {"properties": {"typ": {"enum": ["extrusion", "schnitt"]}}}, "then": {"$ref": "#/$defs/f_extrusion"}},
         {"if": {"properties": {"typ": {"const": "rotation"}}}, "then": {"$ref": "#/$defs/f_rotation"}},
         {"if": {"properties": {"typ": {"const": "bohrung"}}}, "then": {"$ref": "#/$defs/f_bohrung"}},
+        {"if": {"properties": {"typ": {"const": "normbohrung"}}}, "then": {"$ref": "#/$defs/f_normbohrung"}},
         {"if": {"properties": {"typ": {"const": "verrundung"}}}, "then": {"$ref": "#/$defs/f_verrundung"}},
         {"if": {"properties": {"typ": {"const": "fase"}}}, "then": {"$ref": "#/$defs/f_fase"}},
         {"if": {"properties": {"typ": {"const": "muster_linear"}}}, "then": {"$ref": "#/$defs/f_muster_linear"}},

@@ -202,3 +202,74 @@ Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*
   (`Ebene1`) → aus `IFeature.Name` lesen.
 - Maße eines Features auflisten: `feature.GetFirstDisplayDimension`, `feature.GetNextDisplayDimension(dd)`,
   `dd.GetDimension2(0).FullName` bzw. `.SystemValue`; Wert eines Maßes: `model.Parameter("D3@f3").SystemValue`.
+
+## Stufe 2c: Normbohrungen, Konturen, Endbedingungen (Spike S10, live belegt)
+
+Rohdaten: `docs/stufe0/ergebnisse/s10_f*.json`, Spikes `spikes/s10_*.py`, Befunde und Entscheidungen in
+`docs/stufe0/ergebnisse.md` („Stufe 2c: Spike S10“). Umsetzung: `swki/compiler/handler/normbohrung.py`,
+`swki/compiler/skizze.py`, `swki/pruefung/messen.py`.
+
+- **HoleWizard5 (27 Parameter):** Value1…Value12 sind je Bohrungsart anders belegt (−1 = Normwert). Rückgelesen und damit
+  belegt: Gewinde Value1 = Gewindetiefe (`ThreadDepth` 0,012), Value7 = 2 kosmetisches Gewinde ohne Beschriftung
+  (`CosmeticThreadType` 2), Value8 = Gewinde-Ende (0 blind, 1 durch; `ThreadEndCondition`); Zylinder- und Senkschraube
+  Value4 = 1 Screw Fit normal (`HoleFit` 1). Durch alles: `EndType` 1 mit Tiefe 0 (`EndCondition` 1); Ausnahme Stift.
+- **Stift mit `durch`:** `HoleWizard5` liefert dafür nie ein Feature (Tiefe 0/−1/0,03, Durchmesser −1/9 mm, Screw Fit, Bohrwinkel
+  geprüft). Es geht über `FeatureManager.CreateDefinition(25)` (`swFmHoleWzd`) → `InitializeHole(2, 8, 710, "Ø8.0", 1)` →
+  Vorselektion (`SelectByRay`) → `CreateFeature(definition)` (1507,964 mm³). Gelesen wird danach `FastenerType2` = −1 (nicht 710,
+  per Late Binding nicht setzbar), `Type` = 25, `FastenerSize` „Ø8.0“. Beleg `s10_f1_bohrungsassistent.json`: `enden["stift 8 durch"]`, Entscheidung
+  Teil A; Code `normbohrung._stiftloch_durch`.
+- **Größen-Strings:** Regelgewinde, Zylinderschraube (ISO 4762) und Senkschraube (ISO 10642) „M8“; Feingewinde „M8x1.0“ (mit „.0“,
+  ohne kein Feature), „M12x1.5“; Stift „Ø8.0“ (Ø = U+00D8). Jede andere Schreibweise („8“, „Ø8“, „8.0“, „D8“) liefert still kein
+  Feature (`s10_f1_bohrungsassistent.json`: `groessen["stift 8"]`). Bei der Norm `swStandardISODrillSizes` (anderer Standard, wird nicht genutzt) ergibt „Ø8“ ein Loch mit Ø0,18 mm. Auf dem
+  `CreateDefinition`-Weg hat ein ungültiger Text vermutlich einen Dialog ausgelöst und SolidWorks hängen lassen (Ursache nicht
+  bewiesen) → dort nur Texte aus `swki/wissen/bohrungsnormen.yaml` (`sw_groesse`) verwenden.
+- **Mehrere Positionen in einem Feature:** erste Position per `SelectByRay` (Marke 0), dann die Positionsskizze (Unterskizze
+  ohne Segmente) mit `Select2` + `InsertSketch(True)` öffnen, weitere Punkte mit `CreatePoint` (`AddToDB = True`), alle Punkte
+  zum Ursprung bemaßen und per Gleichung an Parameter binden; vorher Status 2, danach 3 (`s10_f2_positionen.json`: `b_positionsskizze`). Mehrere
+  `SelectByRay` mit Marke 0 ergeben nur eine Bohrung. **Danach `ForceRebuild3(True)`:** `EditRebuild3` baut das HoleWzd-Feature
+  nach der Skizzenänderung nicht immer neu auf (Messung: vorher 1, `EditRebuild3` 1, `ForceRebuild3` 2 Instanzen; Kommentar in `normbohrung.py`, Regressionstest `tests/live/test_live_normbohrung.py::test_senkschraube_von_unten`).
+  `GetSketchPointCount` zählt Skizzenpunkte, nicht Bohrungen (lag bei 2 bei nur einer Bohrung) → der Handler prüft je Position
+  eine Zylinderfläche mit Achse durch den Achspunkt. `SelectByRay` trifft die erste Fläche auf dem Strahl: der Treffer wird per
+  `ISldWorks.IsSame(gewaehlt, flaeche) == 1` (`swObjectSame`) gegen die gemeinte Fläche geprüft (Absatz davor oder Position
+  außerhalb).
+- **Bohrungsdaten lesen:** `IFeature.GetDefinition` (ohne `()`) → `IWizardHoleFeatureData2`; auch nach Speichern, Schließen und
+  `OpenDoc6` identisch lesbar (`s10_f4_auslesen.json`: `geoeffnet`). **`Type` ist `swWzdHoleTypes_e` (Art und Ende zusammen), nicht die
+  allgemeine Lochart:** Gewinde blind 46 / durch 48, ISO 4762 blind 10 / durch 14, ISO 10642 blind 43 / durch 44, Stift blind 22 /
+  durch 25. Besser `FastenerType2` (147/139/140/710; Stift-durch −1), `Standard2` (8), `FastenerSize` (Eingabetext),
+  `EndCondition` (0 blind, 1 durch). **`Depth` liest immer 0.** Bohrungstiefe: bei blind Gewinde `TapDrillDepth`, sonst
+  `HoleDepth`; bei durch ISO 4762/10642/Stift `ThruHoleDepth` (= Blockdicke), **Gewinde durch hat keine Tiefe**
+  (`TapDrillDepth`, `HoleDepth`, `ThruHoleDepth` lesen 0; `messen.lies_normbohrung` liest für Gewinde `TapDrillDepth`);
+  Gewindetiefe `ThreadDepth` (bei Gewinde durch nur, wenn angegeben); alles in m. Code `messen.lies_normbohrung`,
+  `bewertung.normbohrung_abweichungen`.
+- **Maße je Größe:** Bohrungstiefe zählt ab der Ansatzfläche, Bohrspitze 118° nur bei blind, Senkungen von der Fläche aus. Der
+  Bohrungsassistent weicht in 7 Größen von den ISO-Vorwerten ab (ISO 4762 M8/M10/M12 Senktiefe, ISO 10642 M5–M10
+  Senkdurchmesser); es gilt der SolidWorks-Wert (`bohrungsnormen.yaml`, Feld `abweichung`; `s10_f3_normmasse.json`: `abgleich`).
+- **Skizzenverrundung:** die beiden Linien einer Ecke wählen (Marke 0), `CreateFillet(Radius, 1)` (1 =
+  `swConstrainedCornerKeepGeometry`): Maße der Ecke bleiben am virtuellen Schnittpunkt, Status 3 direkt danach. **`CreateFillet`
+  legt selbst ein maßgebendes Radiusmaß an** (`masse[].getrieben` = 2, je Ecke D5, D6, …); ein eigenes `AddDimension2` wäre nur
+  referenzierend (`getrieben` = 1). Das Maß wird über den Vergleich der Maßnamen vor und nach dem Aufruf gefunden
+  (`schritte[].masse_von_createfillet`) und dann per Gleichung an den Parameter gebunden (`"D5@s_skizze" = "R"`; `R` ändern →
+  Volumen stimmt). Code `Skizzierer.verrunde`.
+- **Langloch:** `CreateSketchSlot(1, 0, Breite, Mitte, Endbogenmitte, …, AddDimension = False)` (Mittelpunkt-Typ, Länge
+  Mitte–Mitte); der erste Punkt ist die Mitte, der zweite die Mitte des Endbogens (Mitte + Länge/2 in Richtung des
+  Winkels, nicht das Ende der Mittellinie – sonst wird das Langloch doppelt so lang; `skizze.py` `xe`/`ye`). Es entstehen zwei Linien, zwei Bögen, eine Konstruktions-Mittellinie und ein
+  Mittelpunkt (`GetCenterPointHandle`); die Mittellinie misst den **ganzen Mittenabstand** (Länge). Breite = Maß zwischen den
+  beiden Seitenlinien, Länge = Maß an der Mittellinie, Lage der Mitte zum Ursprung → Status 3. 0°/90° per Beziehung
+  (horizontal/vertikal an der Mittellinie); sonst Hilfslinie vom Mittelpunkt (`CreateCenterLine`) plus Winkelmaß, **der
+  Hilfslinienanfang wird per `sgCOINCIDENT` an `GetCenterPointHandle` gebunden** (`sgMERGEPOINTS` legt keine Beziehung an, Status
+  bleibt 2; `c_langloch_mittelpunkt_30` gegen `…_koinzident`). Code `Skizzierer._langloch`, `_richtung_zu_u`.
+- **Bögen (Kontur):** `CreateArc(Mitte, Start, Ende, 1)` (+1 = gegen den Uhrzeigersinn im Skizzensystem) ergab auf den drei
+  Standardebenen `oben`, `vorne`, `rechts` die richtige Kontur (`schritte.gleichsinnig` = True). **Die Bögen teilen ihre
+  Endpunkte mit den angrenzenden Linien schon** (6 Punkte vor und nach dem Verschmelzen) – `sgMERGEPOINTS` ist dafür nicht nötig.
+  Bemaßung: Mittelpunkt der Bögen voll, Endpunkt nur in der Koordinate mit dem kleineren Abstand zum Mittelpunkt (`lage(nur=…)`),
+  10 Maße, Status 3.
+- **Endbedingungen bis/versatz Fläche:** Skizze mit Marke 0, Zielfläche per `Select4` mit Marke 1 anhängen, dann `FeatureCut4` /
+  `FeatureExtrusion3` mit T1 = 4 (`swEndCondUpToSurface`) bzw. 5 (`swEndCondOffsetFromSurface`); Marke 2 und 32 wirken ebenso.
+  `OffsetReverse1 = False` versetzt zur Skizze hin (Restwand 5 mm: Abnahme 6000 mm³), `True` darüber hinaus (8000 mm³). Das
+  Versatzmaß heißt `D1@<Featurename>` (nicht `D1@<Skizze>`). Einschränkung: ein Aufsatz mit Versatz, dessen Skizze abgesetzt über
+  der Zielfläche liegt (Testgeometrie: 5 mm Luft), ergibt zwei Körper (`d_aufsatz_versatz_5_offsetreverse_False.koerper`).
+- **Speicher von SolidWorks:** bei Live-Läufen wachsen die Private Bytes um etwa 50–1250 MB je Testdatei (beobachtet bei den Live-Tests unter `tests/live/` und
+  `tests/referenz/`, Stufe 2c). Neustart ab
+  ca. 4 GB Private Bytes, bei Hängern oder „Ausnahmefehler des Servers“ (−2147417851; in der 7-GB-Instanz bei
+  `ModelToSketchTransform`, `GetSlotPoints`, `CreateFillet`, in der frischen Instanz nicht, `s10_f5_skizzen.json`: `fehlversuche_serverfehler`)
+  SolidWorks neu starten. Maßstab sind die Private Bytes, nicht das Working Set (blieb unter 700 MB).

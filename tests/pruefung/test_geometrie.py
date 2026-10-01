@@ -2,7 +2,8 @@ import math
 
 import pytest
 
-from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
+from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, normbohrung_volumen, volumen_auto
+from swki.spec.normen import normmasse
 
 P = Messgeometrie("punkt", (0, 0, 0))
 ACHSE_Y = Messgeometrie("achse", (125, 46, 100), (0, 1, 0))
@@ -75,9 +76,83 @@ def test_volumen_kreismuster():
     ({"id": "f2", "typ": "verrundung", "kanten": [{"nahe": [0, 0, 0]}], "radius": 1}, "f2: verrundung"),
     ({"id": "f2", "typ": "bohrung", "flaeche": {"nahe": [0, 0, 0]}, "positionen": [[0, 0]], "durchmesser": 4,
       "durch": True}, "f2: Bohrung durch"),
+    ({"id": "f2", "typ": "normbohrung", "art": "stift", "groesse": 8, "flaeche": {"nahe": [0, 0, 0]},
+      "positionen": [[0, 0]], "durch": True}, "f2: Normbohrung durch"),
+    ({"id": "f2", "typ": "schnitt", "skizze": {"ebene": "oben", "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 0.5}}]},
+      "ende": {"typ": "versatz_von_flaeche", "flaeche": {"feature": "f1", "flaeche": "-y"}, "abstand": 0.2}},
+     "f2: ende versatz_von_flaeche"),
+    ({"id": "f2", "typ": "rotation", "skizze": {"ebene": "vorne", "elemente": [
+        {"langloch": {"mitte": [5, 0], "laenge": 2, "breite": 1}}, {"mittellinie": {"von": [0, -1], "bis": [0, 1]}}]}},
+     "f2: Rotation mit Rundungen"),
 ])
 def test_volumen_nicht_berechenbar(feature, grund):
     spec = {"features": [_extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 1, "hoehe": 1}}], 1),
                          feature]}
     volumen, text = volumen_auto(spec)
     assert volumen is None and text.startswith(grund)
+
+
+def _platte(*elemente, tiefe=10, parameter=None):
+    return {"parameter": parameter or {}, "features": [_extr("f1", "extrusion", list(elemente), tiefe)]}
+
+
+def test_volumen_rechteck_mit_eckradius():
+    rechteck = {"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60, "radius": "=R"}}
+    assert volumen_auto(_platte(rechteck, parameter={"R": 6}))[0] == pytest.approx((6000 - (4 - math.pi) * 36) * 10)
+
+
+def test_volumen_polygon_mit_radien_konvex():
+    quadrat = {"polygon": {"punkte": [[0, 0], [40, 0], [40, 40], [0, 40]], "radien": 5}}
+    assert volumen_auto(_platte(quadrat))[0] == pytest.approx((1600 - 4 * (25 - 25 * math.pi / 4)) * 10)
+
+
+L_FORM = [[0, 0], [40, 0], [40, 20], [20, 20], [20, 40], [0, 40]]
+
+
+@pytest.mark.parametrize("umlauf", [1, -1])
+def test_volumen_polygon_mit_konkaver_ecke(umlauf):
+    # 5 konvexe Ecken R3 nehmen Material weg, die konkave Ecke (20, 20) R5 fügt hinzu – unabhängig vom Umlaufsinn
+    polygon = {"polygon": {"punkte": L_FORM[::umlauf], "radien": [3, 3, 3, 5, 3, 3][::umlauf]}}
+    erwartet = (1200 - 5 * (9 - 9 * math.pi / 4) + (25 - 25 * math.pi / 4)) * 10
+    assert volumen_auto(_platte(polygon))[0] == pytest.approx(erwartet)
+
+
+def test_volumen_langloch():
+    langloch = {"langloch": {"mitte": [10, 5], "laenge": 30, "breite": 8, "winkel": 30}}
+    assert volumen_auto(_platte(langloch))[0] == pytest.approx((30 * 8 + math.pi * 16) * 10)
+
+
+def test_volumen_kontur_mit_bogen():
+    kontur = {"kontur": {"start": [0, 0], "segmente": [{"linie": [40, 0]}, {"bogen": [40, 30], "mitte": [40, 15]},
+                                                       {"linie": [0, 30]}, {"linie": [0, 0]}]}}
+    assert volumen_auto(_platte(kontur))[0] == pytest.approx((1200 + math.pi * 225 / 2) * 10)
+
+
+def _mit_normbohrung(**nb):
+    return {"features": [
+        _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}], 20),
+        {"id": "f2", "typ": "normbohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, **nb},
+    ]}
+
+
+def test_volumen_gewinde_m8_wie_s9b():
+    spec = _mit_normbohrung(art="gewinde", groesse="M8", positionen=[[-20, 0], [20, 0]], tiefe=16, gewindetiefe=12)
+    volumen, grund = volumen_auto(spec)
+    assert grund == "analytisch"
+    assert volumen == pytest.approx(120000 - 2 * 605.80, abs=0.02)  # S9b Baustein 21: 605,80 mm³ je Loch
+
+
+def test_volumen_stift_blind():
+    d = normmasse("stift", 8)["durchmesser"]
+    spec = _mit_normbohrung(art="stift", groesse=8, positionen=[[0, 0]], tiefe=10)
+    spitze = math.pi * d**2 / 12 * (d / 2) / math.tan(math.radians(59))
+    assert volumen_auto(spec)[0] == pytest.approx(120000 - (math.pi * d**2 / 4 * 10 + spitze))
+
+
+@pytest.mark.parametrize(("art", "masse", "erwartet"), [
+    ("zylinderschraube", {"durchgang": 9, "senkung_d": 15, "senkung_t": 9}, math.pi / 4 * (81 * 22 + (225 - 81) * 9)),
+    ("senkschraube", {"durchgang": 6.6, "senkung_d": 12.4, "senkwinkel": 90},
+     math.pi / 4 * 6.6**2 * (22 - 2.9) + math.pi * 2.9 / 12 * (12.4**2 + 12.4 * 6.6 + 6.6**2)),
+])
+def test_normbohrung_volumen_durch(art, masse, erwartet):
+    assert normbohrung_volumen(art, masse, None, dicke=22) == pytest.approx(erwartet)

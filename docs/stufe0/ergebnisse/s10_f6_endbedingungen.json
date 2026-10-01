@@ -1,0 +1,311 @@
+{
+  "ok": true,
+  "soll": {
+    "a_mm3": 8000,
+    "b_false_mm3": 6000,
+    "c_mm3": 1570.796
+  },
+  "a_schnitt_bis_flaeche_marke_1": {
+    "feature": true,
+    "abnahme_mm3": 8000.0,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_skizze@Teil23.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_skizze@Teil23.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_skizze@Teil23.Part",
+        "typ2": 11,
+        "wert": 0.01
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_skizze@Teil23.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "a_schnitt_bis_flaeche_marke_2": {
+    "feature": true,
+    "abnahme_mm3": 8000.0,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_skizze@Teil24.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_skizze@Teil24.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_skizze@Teil24.Part",
+        "typ2": 11,
+        "wert": 0.01
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_skizze@Teil24.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "a_schnitt_bis_flaeche_marke_32": {
+    "feature": true,
+    "abnahme_mm3": 8000.0,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_skizze@Teil25.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_skizze@Teil25.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_skizze@Teil25.Part",
+        "typ2": 11,
+        "wert": 0.01
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_skizze@Teil25.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "b_schnitt_versatz_5_offsetreverse_False": {
+    "feature": true,
+    "abnahme_mm3": 6000.0,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Schnitt-Linear austragen1@Teil26.Part",
+        "typ2": 2,
+        "wert": 0.005
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@s_skizze@Teil26.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_skizze@Teil26.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_skizze@Teil26.Part",
+        "typ2": 11,
+        "wert": 0.01
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_skizze@Teil26.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "d_aufsatz_versatz_5_offsetreverse_False": {
+    "feature": true,
+    "zunahme_mm3": 1178.097,
+    "box": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      40.0,
+      30.0
+    ],
+    "koerper": 2,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Ebene1@Teil27.Part",
+        "typ2": 2,
+        "wert": 0.04
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@Aufsatz-Linear austragen2@Teil27.Part",
+        "typ2": 2,
+        "wert": 0.005
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@z_skizze@Teil27.Part",
+        "typ2": 6,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "b_schnitt_versatz_5_offsetreverse_True": {
+    "feature": true,
+    "abnahme_mm3": 8000.0,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Schnitt-Linear austragen1@Teil28.Part",
+        "typ2": 2,
+        "wert": 0.005
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@s_skizze@Teil28.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_skizze@Teil28.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_skizze@Teil28.Part",
+        "typ2": 11,
+        "wert": 0.01
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_skizze@Teil28.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "d_aufsatz_versatz_5_offsetreverse_True": {
+    "feature": true,
+    "zunahme_mm3": 1570.796,
+    "box": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      40.0,
+      30.0
+    ],
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Ebene1@Teil29.Part",
+        "typ2": 2,
+        "wert": 0.04
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@Aufsatz-Linear austragen2@Teil29.Part",
+        "typ2": 2,
+        "wert": 0.005
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@z_skizze@Teil29.Part",
+        "typ2": 6,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  },
+  "c_aufsatz_bis_flaeche_marke_1": {
+    "feature": true,
+    "zunahme_mm3": 1570.796,
+    "box": [
+      -50.0,
+      0.0,
+      -30.0,
+      50.0,
+      40.0,
+      30.0
+    ],
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Ebene1@Teil30.Part",
+        "typ2": 2,
+        "wert": 0.04
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@z_skizze@Teil30.Part",
+        "typ2": 6,
+        "wert": 0.01
+      }
+    ],
+    "whatswrong": {
+      "anzahl": 0,
+      "features": [],
+      "codes": [],
+      "warnungen": []
+    }
+  }
+}

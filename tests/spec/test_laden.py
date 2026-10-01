@@ -122,3 +122,145 @@ def test_skript_fehlt(tmp_path):
     spec = _spec()
     spec["features"].append({"id": "f7", "typ": "skript", "datei": "skripte/f7.py", "luecke": "Gewinde"})
     assert "fehlt" in plausibel_befunde(spec, tmp_path)[0]["meldung"]
+
+
+NB = {
+    "id": "f2", "typ": "normbohrung", "art": "zylinderschraube", "groesse": "M8",
+    "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [["=-L/2+20", 0], ["=L/2-20", 0]], "durch": True,
+}
+TASCHE = {
+    "id": "f7", "typ": "schnitt",
+    "skizze": {"ebene": {"feature": "f1", "flaeche": "+y"},
+               "elemente": [{"rechteck": {"mitte": [0, 0], "breite": 20, "hoehe": 10}}]},
+    "ende": {"typ": "versatz_von_flaeche", "flaeche": {"feature": "f1", "flaeche": "-y"}, "abstand": 5},
+}
+
+
+def _mit_feature(*features):
+    spec = _spec()
+    spec["features"] = [spec["features"][0], *features]
+    spec["pruefung"] = {"huellquader": ["=L", "=H", "=B"]}
+    return spec
+
+
+def _mit_element(element):
+    spec = _spec()
+    spec["features"][0]["skizze"]["elemente"] = [element]
+    return spec
+
+
+def test_normbohrung_gueltig(tmp_path):
+    gewinde = {k: v for k, v in NB.items() if k != "durch"} | {"id": "f3", "art": "gewinde", "groesse": "M10",
+                                                               "tiefe": 16, "gewindetiefe": 12}
+    stift = NB | {"id": "f4", "art": "stift", "groesse": 8}
+    spec = _mit_feature(NB, gewinde, stift)
+    assert schema_befunde(spec) == []
+    assert plausibel_befunde(spec, tmp_path) == []
+
+
+@pytest.mark.parametrize(("art", "groesse"), [("gewinde", "M7"), ("stift", "M8")])
+def test_normbohrung_groesse_nicht_in_tabelle(tmp_path, art, groesse):
+    [befund] = plausibel_befunde(_mit_feature(NB | {"art": art, "groesse": groesse}), tmp_path)
+    assert befund["pfad"] == "features[1].groesse"
+    assert "nicht in der Maßtabelle" in befund["meldung"] and "verfügbar:" in befund["meldung"]
+
+
+@pytest.mark.parametrize(("aenderung", "meldung"), [
+    ({"gewindetiefe": 10}, "nur bei art: gewinde"),
+    ({"art": "gewinde", "groesse": "M10", "durch": None, "tiefe": 16}, "Pflicht"),
+    ({"art": "gewinde", "groesse": "M10", "durch": None, "tiefe": 16, "gewindetiefe": 20}, "nicht größer als tiefe"),
+])
+def test_gewindetiefe_regeln(tmp_path, aenderung, meldung):
+    nb = {k: v for k, v in (NB | aenderung).items() if v is not None}
+    spec = _mit_feature(nb)
+    assert schema_befunde(spec) == []
+    assert any(meldung in b["meldung"] for b in plausibel_befunde(spec, tmp_path))
+
+
+def test_normbohrung_braucht_tiefe_oder_durch():
+    assert schema_befunde(_mit_feature({k: v for k, v in NB.items() if k != "durch"}))
+
+
+def test_runde_skizzenelemente_gueltig(tmp_path):
+    spec = _spec()
+    spec["features"][0]["skizze"]["elemente"] = [
+        {"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": "=B", "radius": 6}},
+        {"polygon": {"punkte": [[0, 0], [40, 0], [40, 20], [20, 20], [20, 40], [0, 40]], "radien": [0, 3, 3, 5, 3, 3]}},
+        {"langloch": {"mitte": [10, 5], "laenge": 30, "breite": 8, "winkel": 0}},
+        {"kontur": {"start": [0, 0], "segmente": [{"linie": [40, 0]}, {"bogen": [40, 30], "mitte": [40, 15]},
+                                                  {"linie": [0, 30]}, {"linie": [0, 0]}]}},
+    ]
+    assert schema_befunde(spec) == []
+    assert plausibel_befunde(spec, tmp_path) == []
+
+
+@pytest.mark.parametrize(("element", "pfad"), [
+    ({"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 20, "radius": 10}}, "rechteck.radius"),
+    ({"polygon": {"punkte": [[0, 0], [40, 0], [40, 10], [0, 10]], "radien": 5}}, "polygon.radien"),
+])
+def test_eckradius_zu_gross(tmp_path, element, pfad):
+    befunde = plausibel_befunde(_mit_element(element), tmp_path)
+    assert befunde and all(b["pfad"].startswith(f"features[0].skizze.elemente[0].{pfad}") for b in befunde)
+    assert "halbe" in befunde[0]["meldung"]
+
+
+def test_radien_passen_nicht_zur_eckenzahl(tmp_path):
+    element = {"polygon": {"punkte": [[0, 0], [40, 0], [40, 40], [0, 40]], "radien": [1, 2, 3]}}
+    [befund] = plausibel_befunde(_mit_element(element), tmp_path)
+    assert "3 Werte für 4 Ecken" in befund["meldung"]
+
+
+def test_kontur_bogen_ungleich_weit(tmp_path):
+    kontur = {"start": [0, 0], "segmente": [{"linie": [40, 0]}, {"bogen": [40, 31], "mitte": [40, 15]},
+                                            {"linie": [0, 31]}, {"linie": [0, 0]}]}
+    [befund] = plausibel_befunde(_mit_element({"kontur": kontur}), tmp_path)
+    assert befund["pfad"] == "features[0].skizze.elemente[0].kontur.segmente[1]"
+    assert "ungleich weit" in befund["meldung"]
+
+
+def test_kontur_nicht_geschlossen(tmp_path):
+    kontur = {"start": [0, 0], "segmente": [{"linie": [40, 0]}, {"bogen": [40, 30], "mitte": [40, 15]},
+                                            {"linie": [0, 30]}]}
+    [befund] = plausibel_befunde(_mit_element({"kontur": kontur}), tmp_path)
+    assert "nicht geschlossen" in befund["meldung"]
+
+
+def test_langloch_winkel_bereich(tmp_path):
+    spec = _mit_element({"langloch": {"mitte": [0, 0], "laenge": 30, "breite": 8, "winkel": 0}})
+    assert plausibel_befunde(spec, tmp_path) == []
+    spec["features"][0]["skizze"]["elemente"][0]["langloch"]["winkel"] = 180
+    [befund] = plausibel_befunde(spec, tmp_path)
+    assert "[0, 180)" in befund["meldung"]
+
+
+def test_ende_bis_flaeche_und_versatz_gueltig(tmp_path):
+    spec = _spec()
+    spec["features"] += [TASCHE, TASCHE | {"id": "f8", "ende": {"typ": "bis_flaeche",
+                                                               "flaeche": {"feature": "f7", "flaeche": "+y"}}}]
+    assert schema_befunde(spec) == []
+    assert plausibel_befunde(spec, tmp_path) == []
+
+
+def test_ende_versatz_braucht_abstand():
+    spec = _spec()
+    spec["features"].append(TASCHE | {"ende": {"typ": "versatz_von_flaeche",
+                                               "flaeche": {"feature": "f1", "flaeche": "-y"}}})
+    assert schema_befunde(spec)
+
+
+def test_ende_flaeche_nur_auf_fruehere_features(tmp_path):
+    spec = _spec()
+    spec["features"].append(TASCHE | {"ende": TASCHE["ende"] | {"flaeche": {"feature": "f9", "flaeche": "-y"}}})
+    [befund] = plausibel_befunde(spec, tmp_path)
+    assert befund["pfad"] == "features[6].ende.flaeche.feature"
+
+
+def test_ende_felder_passen_zum_typ(tmp_path):
+    spec = _spec()
+    spec["features"] += [
+        TASCHE | {"ende": {"typ": "blind", "tiefe": 5, "flaeche": {"feature": "f1", "flaeche": "-y"}}},
+        TASCHE | {"id": "f8", "ende": {"typ": "bis_flaeche", "flaeche": {"feature": "f1", "flaeche": "-y"}, "tiefe": 5}},
+    ]
+    meldungen = [b["meldung"] for b in plausibel_befunde(spec, tmp_path)]
+    assert any("flaeche gilt nur" in m for m in meldungen)
+    assert any("tiefe gilt nicht" in m for m in meldungen)

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from swki.spec.freigabe import freigeben, pruefsumme
-from swki.spec.hinweise import feste_masse
+from swki.spec.hinweise import hinweise
 from swki.spec.laden import lade_spec
 
 
@@ -16,7 +16,7 @@ def _validieren(args) -> dict:
         "name": spec["name"],
         "features": len(spec["features"]),
         "pruefsumme": pruefsumme(spec),
-        "hinweise": feste_masse(spec),
+        "hinweise": hinweise(spec),
     }
 
 

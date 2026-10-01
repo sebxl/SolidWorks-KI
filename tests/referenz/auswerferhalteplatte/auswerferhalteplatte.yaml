@@ -1,0 +1,158 @@
+# Referenzteil Stufe 2c: Auswerferhalteplatte (selbst definiert, angelehnt an eine Auswerferhalteplatte im Formenbau).
+# Nutzt jedes neue Element mindestens einmal: Rechteck mit Eckradius, normbohrung (ISO 4762, Stift, M-Regel- und
+# M-Feingewinde, ISO 10642), Tasche mit Eckradius und versatz_von_flaeche, Langloch mit bis_flaeche, kontur mit Bögen,
+# umlaufende Fase. Platte L × B × H auf Ebene oben (wächst nach +Y), Mitte im Ursprung; (u, v) auf der Deckfläche:
+# X = u, Z = −v. Alle Bohrungen und Aussparungen liegen symmetrisch zu u = 0 (Schwerpunkt X = 0).
+art: teil
+name: Auswerferhalteplatte
+material: "1.1191"
+eigenschaften: {Benennung: Auswerferhalteplatte}
+parameter:
+  L: 246      # Länge (X)
+  B: 156      # Breite (Z)
+  H: 22       # Dicke (Y)
+  R: 6        # Eckradius der Platte
+  A: 20       # Randabstand der Befestigung und der Stifte
+  F: 1        # Fase umlaufend oben
+  TL: 120     # Tasche Länge
+  TB: 60      # Tasche Breite
+  TR: 8       # Tasche Eckradius
+  RW: 6       # Restwandstärke unter der Tasche
+  LL: 40      # Langloch Mittenabstand
+  LB: 12      # Langloch Breite
+  KB: 80      # Aussparung: Mittenabstand der Bögen
+  KH: 20      # Aussparung: Breite (= 2 × Bogenradius)
+  KV: 25      # Aussparung: Lage der Unterkante (v)
+  KT: 8       # Aussparung: Tiefe
+  BT: 16      # Gewinde M10: Bohrtiefe
+  GT: 12      # Gewinde M10: Gewindetiefe
+features:
+  - id: f1            # Grundplatte mit Eckradius
+    typ: extrusion
+    skizze:
+      ebene: oben
+      elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", radius: "=R"}}]
+    ende: {typ: blind, tiefe: "=H"}
+  - id: f2            # Befestigung ISO 4762 M8, 4×
+    typ: normbohrung
+    art: zylinderschraube
+    groesse: M8
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen:
+      - ["=-L/2+A", "=-B/2+A"]
+      - ["=L/2-A", "=-B/2+A"]
+      - ["=L/2-A", "=B/2-A"]
+      - ["=-L/2+A", "=B/2-A"]
+    durch: true
+  - id: f3            # Stiftbohrungen Ø8 H7, 2×
+    typ: normbohrung
+    art: stift
+    groesse: 8
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen: [["=-L/2+A", 0], ["=L/2-A", 0]]
+    durch: true
+  - id: f4            # Gewinde M10 (Regelgewinde), Sackloch
+    typ: normbohrung
+    art: gewinde
+    groesse: M10
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen: [[-70, 50], [70, 50]]
+    tiefe: "=BT"
+    gewindetiefe: "=GT"
+  - id: f5            # Gewinde M12x1,5 (Feingewinde, z. B. Kühlanschluss), durch
+    typ: normbohrung
+    art: gewinde
+    groesse: M12x1.5
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen: [[0, 62]]
+    durch: true
+  - id: f6            # Senkschrauben ISO 10642 M6, 2×
+    typ: normbohrung
+    art: senkschraube
+    groesse: M6
+    flaeche: {feature: f1, flaeche: "+y"}
+    positionen: [[-80, -60], [80, -60]]
+    durch: true
+  - id: f7            # Tasche mit Eckradius, Restwandstärke RW über der Unterseite
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente: [{rechteck: {mitte: [0, -20], breite: "=TL", hoehe: "=TB", radius: "=TR"}}]
+    ende: {typ: versatz_von_flaeche, flaeche: {feature: f1, flaeche: "-y"}, abstand: "=RW"}
+  - id: f8            # Langloch-Durchbruch im Taschenboden bis zur Unterseite
+    typ: schnitt
+    skizze:
+      ebene: {feature: f7, flaeche: "+y"}
+      elemente: [{langloch: {mitte: [0, -20], laenge: "=LL", breite: "=LB", winkel: 0}}]
+    ende: {typ: bis_flaeche, flaeche: {feature: f1, flaeche: "-y"}}
+  - id: f9            # Aussparung als Kontur mit zwei Bögen
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente:
+        - kontur:
+            start: ["=-KB/2", "=KV"]
+            segmente:
+              - {linie: ["=KB/2", "=KV"]}
+              - {bogen: ["=KB/2", "=KV+KH"], mitte: ["=KB/2", "=KV+KH/2"]}
+              - {linie: ["=-KB/2", "=KV+KH"]}
+              - {bogen: ["=-KB/2", "=KV"], mitte: ["=-KB/2", "=KV+KH/2"]}
+    ende: {typ: blind, tiefe: "=KT"}
+  - id: f10           # Fase F × 45° umlaufend oben (eine Kante, setzt sich tangential fort)
+    typ: fase
+    kanten: [{nahe: ["=L/2", "=H", 0]}]
+    abstand: "=F"
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  volumen:
+    # analytisch (tests/referenz/auswerferhalteplatte/sollvolumen.py, Normmaße aus swki/wissen/bohrungsnormen.yaml):
+    #   Platte (L·B − (4 − π)·R²)·H                                      843592,141
+    # − Fase F²/2 · (2(L − 2R) + 2(B − 2R) + 2π(R − F/3))                     395,802
+    # − Tasche f7 (TL·TB − (4 − π)·TR²)·(H − RW)                         114320,991
+    # − Langloch f8 (LL·LB + π·LB²/4)·RW                                   3558,584
+    # − Aussparung f9 (KB·KH + π·(KH/2)²)·KT                              15313,274
+    # − f2 4 × ISO 4762 M8 durch (Ø9, Senkung Ø15 × 8,6)                   9488,866
+    # − f3 2 × Stift Ø8 durch                                              2211,681
+    # − f4 2 × M10, Kernloch Ø8,5 × BT + Bohrspitze 118°                   1912,445
+    # − f5 1 × M12x1,5 durch, Kernloch Ø10,5                               1904,983
+    # − f6 2 × ISO 10642 M6 durch (Ø6,6, Senkung Ø13,44 × 90°)             1831,624
+    # = 692653,890 mm³   (Normmaße live gemessen in Spike S10; bei geänderter Tabelle neu rechnen)
+    soll: 692653.890
+    toleranz_prozent: 0.05
+  masse_pruefen:
+    - was: Befestigung 1–2
+      von: {feature: f2, instanz: 1, achse: true}
+      zu: {feature: f2, instanz: 2, achse: true}
+      soll: "=L-2*A"
+      tol: 0.01
+    - was: Befestigung 2–3
+      von: {feature: f2, instanz: 2, achse: true}
+      zu: {feature: f2, instanz: 3, achse: true}
+      soll: "=B-2*A"
+      tol: 0.01
+    - was: Stiftabstand
+      von: {feature: f3, instanz: 1, achse: true}
+      zu: {feature: f3, instanz: 2, achse: true}
+      soll: "=L-2*A"
+      tol: 0.01
+    - was: Gewinde M10 Abstand
+      von: {feature: f4, instanz: 1, achse: true}
+      zu: {feature: f4, instanz: 2, achse: true}
+      soll: 140
+      tol: 0.01
+    - was: Senkschrauben Abstand
+      von: {feature: f6, instanz: 1, achse: true}
+      zu: {feature: f6, instanz: 2, achse: true}
+      soll: 160
+      tol: 0.01
+    - was: Gewinde M12x1,5 zur Plattenmitte
+      von: {feature: f5, instanz: 1, achse: true}
+      zu: {punkt: [0, 0, 0]}
+      soll: 62
+      tol: 0.01
+    - was: Restwandstärke unter der Tasche
+      von: {feature: f1, flaeche: "-y"}
+      zu: {feature: f7, flaeche: "+y"}
+      soll: "=RW"
+      tol: 0.01
+  schwerpunkt: {soll: [0, null, null], tol: 0.05}
