@@ -29,6 +29,21 @@ def _achsen_xz(feature) -> list:
     return sorted({(round(z.punkt[0], 4), round(z.punkt[2], 4)) for z in flaechen(feature) if z.art == "zylinder"})
 
 
+def _setze_l(ctx, alt: int, neu: int) -> None:
+    """Parameter L per Gleichung von alt auf neu ändern und neu aufbauen."""
+    g = ctx.model.GetEquationMgr
+    texte = [g.Equation(i) for i in range(g.GetCount)]
+    dispid = g._oleobj_.GetIDsOfNames("Equation")
+    g._oleobj_.Invoke(dispid, 0, pythoncom.DISPATCH_PROPERTYPUT, False, texte.index(f'"L" = {alt}'), f'"L" = {neu}')
+    g.EvaluateAll
+    sw.rebuild(ctx.model)
+
+
+def _gleichungen(ctx) -> list:
+    g = ctx.model.GetEquationMgr
+    return [g.Equation(i) for i in range(g.GetCount)]
+
+
 def test_gewinde_mit_drei_positionen_in_einem_feature():
     nb = {"id": "f2", "typ": "normbohrung", "art": "gewinde", "groesse": "M8", "flaeche": DECKFLAECHE,
           "positionen": [["=-L/2+20", 10], [0, 10], ["=L/2-20", 10]], "tiefe": 16, "gewindetiefe": 12}
@@ -43,13 +58,8 @@ def test_gewinde_mit_drei_positionen_in_einem_feature():
         assert volumen_mm3(ctx.model) == pytest.approx(VOLL - 3 * einzeln, abs=1e-2)
         assert _achsen_xz(erg.features[0]) == [(-30.0, -10.0), (0.0, -10.0), (30.0, -10.0)]
         # Lage der Positionen hängt an L (Gleichungen an der Positionsskizze f2_positionen)
-        g = ctx.model.GetEquationMgr
-        texte = [g.Equation(i) for i in range(g.GetCount)]
-        assert any("@f2_positionen" in t and '"L"' in t for t in texte)
-        dispid = g._oleobj_.GetIDsOfNames("Equation")
-        g._oleobj_.Invoke(dispid, 0, pythoncom.DISPATCH_PROPERTYPUT, False, texte.index('"L" = 100'), '"L" = 140')
-        g.EvaluateAll
-        sw.rebuild(ctx.model)
+        assert any("@f2_positionen" in t and '"L"' in t for t in _gleichungen(ctx))
+        _setze_l(ctx, 100, 140)
         assert _achsen_xz(erg.features[0]) == [(-50.0, -10.0), (0.0, -10.0), (50.0, -10.0)]
 
 
@@ -69,12 +79,23 @@ def test_arten_durch(art, groesse):
 
 
 def test_senkschraube_von_unten():
+    """Zwei parametrische Positionen auf der Unterseite (−y): (u, v) → Modell (u, 0, −v), Senkung unten, Lage hängt an L."""
     nb = {"id": "f2", "typ": "normbohrung", "art": "senkschraube", "groesse": "M6",
-          "flaeche": {"feature": "f1", "flaeche": "-y"}, "positionen": [[10, 5]], "durch": True}
-    with gebautes_teil(_spec(nb)) as (ctx, fehler, _):
+          "flaeche": {"feature": "f1", "flaeche": "-y"}, "positionen": [["=-L/2+30", 5], ["=L/2-30", 5]],
+          "durch": True}
+    einzeln = normbohrung_volumen("senkschraube", normmasse("senkschraube", "M6"), None, dicke=20)
+    with gebautes_teil(_spec(nb)) as (ctx, fehler, protokoll):
         assert fehler is None
         erg = ctx.ergebnis("f2")
-        assert erg.punkte == [(10.0, 0.0, -5.0)]
+        assert erg.punkte == [(-20.0, 0.0, -5.0), (20.0, 0.0, -5.0)]  # L = 100: u = −20, +20; v = 5 → Z = −5
+        assert protokoll.knoten[1].punkte == [[-20.0, 0.0, -5.0], [20.0, 0.0, -5.0]]
         assert erg.richtung == (0.0, 1.0, 0.0)  # ins Material = gegen die Flächennormale −y
+        assert erg.features[0].GetDefinition.GetSketchPointCount == 2
+        assert volumen_mm3(ctx.model) == pytest.approx(VOLL - 2 * einzeln, abs=1e-2)
         kegel = [fc for fc in erg.features[0].GetFaces if fc.GetSurface.IsCone]
-        assert kegel and all(abs(fc.GetBox[1]) < 1e-9 for fc in kegel)  # Senkung an der Unterseite (Y = 0)
+        assert len(kegel) == 2 and all(abs(fc.GetBox[1]) < 1e-9 for fc in kegel)  # Senkungen an der Unterseite (Y = 0)
+        assert _achsen_xz(erg.features[0]) == [(-20.0, -5.0), (20.0, -5.0)]
+        assert any("@f2_positionen" in t and '"L"' in t for t in _gleichungen(ctx))
+        _setze_l(ctx, 100, 140)  # Klotz 140 × 60 × 20: Achsen wandern nach X = ∓40/±40
+        assert _achsen_xz(erg.features[0]) == [(-40.0, -5.0), (40.0, -5.0)]
+        assert volumen_mm3(ctx.model) == pytest.approx(140 * 60 * 20 - 2 * einzeln, abs=1e-2)
