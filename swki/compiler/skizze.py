@@ -294,7 +294,10 @@ class Skizzierer:
         self._merke(self.model.AddDimension2(*self._text(mu_, mv + breite / 2 + _MASS_ABSTAND_MM)), l["breite"])
         sw.auswahl_leeren(self.model)
         self.groesse(achsen[0], (mu_, mv - breite / 2 - _MASS_ABSTAND_MM), l["laenge"])
-        self._richtung_zu_u(achsen[0], (mu_, mv), l.get("winkel", 0), nut.GetCenterPointHandle)
+        mitte_punkt = nut.GetCenterPointHandle
+        if mitte_punkt is None:
+            raise BauFehler(SKIZZE_UNGUELTIG, "Langloch: Mittelpunkt (GetCenterPointHandle) nicht verfügbar", schritt="skizze")
+        self._richtung_zu_u(achsen[0], (mu_, mv), l.get("winkel", 0), mitte_punkt)
         self.lage(l["mitte"], (mu_ - laenge / 2 - _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM))
 
     def _kontur(self, k: dict) -> None:

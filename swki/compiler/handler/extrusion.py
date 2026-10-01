@@ -5,6 +5,10 @@ Aufsatz wächst standardmäßig in Richtung der Skizzennormale, Schnitt standard
 (von einer Deckfläche also ins Material). "umkehren" dreht die Richtung (3. Parameter Dir, nicht Flip).
 Die Zielfläche von bis_flaeche/versatz_von_flaeche wird über den Flächenanker aufgelöst und mit Marke 1 zur Skizze
 gewählt; der Versatz geht zur Skizze hin (z. B. Restwandstärke über der Zielfläche).
+
+Bekannte Einschränkung: Ein Aufsatz mit versatz_von_flaeche, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt
+einen getrennten Körper. Der Bau meldet das nicht; die allgemeine Code-Prüfung "koerper" (swki.pruefung.bewertung)
+meldet es als Mangel ("2 Volumenkörper statt 1").
 """
 
 from swki.compiler import sw

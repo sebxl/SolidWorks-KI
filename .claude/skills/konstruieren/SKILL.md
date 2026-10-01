@@ -34,7 +34,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Endbedingungen: `blind`, `durch_alles`, `mittig`, `bis_flaeche` (`flaeche`), `versatz_von_flaeche` (`flaeche`,
   `abstand`; der Versatz geht zur Skizze hin – z. B. Restwandstärke über der Unterseite). Bekannte Einschränkung: ein
   Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt einen getrennten Körper
-  – dafür `bis_flaeche` oder `blind` verwenden.
+  – dafür `bis_flaeche` oder `blind` verwenden. `swki pruefen` meldet mehrere Volumenkörper als Mangel (Prüfung
+  `koerper`: „2 Volumenkörper statt 1“).
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
 - `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
   `schwerpunkt` für Symmetrie/Spiegelfehler.

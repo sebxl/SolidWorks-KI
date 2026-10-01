@@ -8,7 +8,7 @@ from swki.compiler.anker import AnkerFehler, flaeche_in_richtung, laenge, zylind
 from swki.compiler.eigenschaften import lies_eigenschaften
 from swki.compiler.fehler import BauFehler
 from swki.compiler.kontext import FeatureErgebnis, Kontext
-from swki.compiler.topologie import flaechen
+from swki.compiler.topologie import flaechen, koerper
 from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.normen import SW_BEFESTIGUNG
@@ -153,4 +153,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         eigenschaften=lies_eigenschaften(model),
         messpunkte=messpunkte(ctx, ctx.spec),
         normbohrungen=normbohrungen(model, freigegeben or ctx.spec),
+        koerper=len(koerper(model)),
     )

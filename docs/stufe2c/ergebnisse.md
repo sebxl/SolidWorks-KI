@@ -54,9 +54,10 @@ abgesetzter Skizze ergibt einen getrennten Körper, siehe Offene Punkte). Abweic
   `tests/live/test_live_normbohrung.py::test_senkschraube_von_unten`), nicht im Spike.
 - **`_verschmelze` entfällt bei der Kontur** (Entscheidung 5): die Bögen teilen ihre Endpunkte mit den Linien schon; das Verschmelzen
   bleibt nur für die Hilfslinie des Langlochs (dort als `sgCOINCIDENT`).
-- **Bohrungsdaten lesen:** `Type` ist `swWzdHoleTypes_e` (Art und Ende zusammen), `Depth` liest immer 0; die Bohrungstiefe
-  steht je nach Art in `TapDrillDepth`, `HoleDepth` oder `ThruHoleDepth` (Gewinde durch: keine Tiefe), Gewindetiefe in
-  `ThreadDepth`. Alle Tiefenfelder liest `messen.lies_normbohrung`.
+- **Bohrungsdaten lesen:** `Type` ist `swWzdHoleTypes_e` (Art und Ende zusammen), `Depth` liest immer 0. `messen.lies_normbohrung` liest
+  `TapDrillDepth` (Gewinde) bzw. `HoleDepth` (sonst) als Bohrtiefe und `ThreadDepth` als Gewindetiefe. Bei `durch` wird keine
+  Bohrtiefe verglichen (die Spezifikation hat dann kein `tiefe`); verglichen wird nur, was die Spezifikation angibt
+  (`tiefe`, `gewindetiefe`).
 - **Maßtabelle mit SolidWorks-Werten:** `bohrungsnormen.yaml` (25 Größen) enthält die vom Bohrungsassistenten gelieferten Maße;
   7 Größen weichen von den ISO-Vorwerten ab (ISO 4762 M8/M10/M12 Senktiefe, ISO 10642 M5–M10 Senkdurchmesser) und tragen das
   Feld `abweichung`.
@@ -81,14 +82,23 @@ f10 Skript (Notausgang, M8-Gewinde) 5,399 s.
 Buchse und Formplatte laufen gegenüber Stufe 2 (15,2 s bzw. 26,1 s) etwa 20–35 % langsamer; beide Läufe fanden in einer
 SolidWorks-Instanz mit rund 2 GB Private Bytes statt (Stufe 2: unter 700 MB). Eine Ursache wurde nicht untersucht.
 
+## Korrekturrunde nach dem Gesamt-Review
+
+- **W1 (belegt):** Der −1-Zweig der Bogenrichtung (`CreateArc`, Fläche mit gespiegeltem Skizzensystem) und Langlöcher mit
+  Winkel in [90°, 180) sind jetzt live belegt (`tests/live/test_live_konturen.py`): Kontur mit Bögen auf der Unterseite `-y`
+  und der Rückseite `-z` eines Grundklotzes (Volumen, Box und Achsenlage beider Bogenmitten stimmen) sowie Langloch 150°
+  und 120° auf `+y`, 150° und 30° auf `-y` (Lage der Zylinderachsen). Der Compiler brauchte keine Korrektur.
+- **W2:** neue Prüfung `koerper` in `swki/pruefung/bewertung.py` (Soll: genau 1 Volumenkörper, gemessen mit
+  `topologie.koerper`); drei neue Unit-Tests, jetzt 276 Unit-Tests grün.
+
 ## Offene Punkte
 
 - Bohr- und Gewindetiefe von `normbohrung` hängen nicht per Gleichung an Parametern (kein belegtes Maß am HoleWzd-Feature);
   die Prüfung `normbohrungen` erkennt Abweichungen gegenüber der Freigabe.
 - Formplatte: Notausgang f10 (M8) ließe sich jetzt als `normbohrung` bauen – Referenz bleibt bewusst unverändert.
 - Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt: der Versatz geht zur Skizze hin und
-  ergibt dadurch einen getrennten Körper (zwei Körper; Spike S10, Frage 6 d). Bekannte Einschränkung, kein Sonderweg.
-- Der −1-Zweig der Bogenrichtung (`CreateArc`) ist live unbelegt: auf `oben`, `vorne` und `rechts` war +1 jeweils richtig.
+  ergibt dadurch einen getrennten Körper (zwei Körper; Spike S10, Frage 6 d). Bekannte Einschränkung, kein Sonderweg; seit der
+  Korrekturrunde meldet die allgemeine Code-Prüfung `koerper` (Soll: genau 1 Volumenkörper) mehrere Körper als Mangel.
 - SolidWorks-Speicher wächst bei Live-Läufen (gemessen je Testdatei etwa 50–1250 MB Private Bytes); Neustart ab ca. 4 GB, die Live-Suite deshalb
   dateiweise laufen lassen.
 - `.gitignore` schließt unter `auftraege/` nur die SolidWorks-Dateien aus (`*.sldprt`, `*.sldasm`, `*.slddrw`); Spezifikationen,

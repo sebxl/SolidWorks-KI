@@ -29,6 +29,7 @@ class Messwerte:
     eigenschaften: dict[str, str]
     messpunkte: dict[str, Messgeometrie | str] = field(default_factory=dict)  # Schlüssel → Geometrie oder Fehlertext
     normbohrungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Bohrungsassistent-Daten oder Fehlertext
+    koerper: int = 1  # Anzahl Volumenkörper im Teil (Soll: genau 1)
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -106,6 +107,14 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
             elif fehler := normbohrung_abweichungen(f, ist, p_soll):
                 abweichend[f["id"]] = fehler
         ergebnisse.append(_pruefung("normbohrungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+
+    # Allgemeine Prüfung: ein Teil ist ein Volumenkörper. Ein Aufsatz mit Abstand zum Körper (z. B. versatz_von_flaeche
+    # bei abgesetzter Skizze) besteht sonst alle anderen Prüfungen, obwohl er getrennt im Teil steht.
+    if m.koerper == 1:
+        ergebnisse.append(_pruefung("koerper", True, ist=1, soll=1, knoten=[]))
+    else:
+        ergebnisse.append(_pruefung("koerper", False, ist=m.koerper, soll=1, knoten=[],
+                                    hinweis=f"{m.koerper} Volumenkörper statt 1"))
 
     if "huellquader" in pr:
         soll = [auswerten(v, p) for v in pr["huellquader"]]

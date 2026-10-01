@@ -7,6 +7,7 @@ auswerferhalteplatte.yaml (samt Kommentar) – nie ein Messwert.
 """
 
 import math
+import sys
 from pathlib import Path
 
 import yaml
@@ -51,6 +52,7 @@ def rechnung() -> dict[str, float]:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")  # Konsole unter cp1252: sonst brechen "³", "π" und "−" die Ausgabe ab
     teile = rechnung()
     for text, wert in teile.items():
         print(f"{wert:14.3f}  {text}")

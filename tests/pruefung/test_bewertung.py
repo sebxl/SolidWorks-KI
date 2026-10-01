@@ -42,8 +42,8 @@ def test_alles_bestanden():
     bericht = bewerte(SPEC, _messwerte(), STANDARD)
     assert bericht["bestanden"] is True and bericht["maengel"] == []
     ids = [p["id"] for p in bericht["pruefungen"]]
-    assert ids == ["rebuild", "skizzen", "huellquader", "volumen", "mass:Achsabstand", "schwerpunkt", "material",
-                   "eigenschaften"]
+    assert ids == ["rebuild", "skizzen", "koerper", "huellquader", "volumen", "mass:Achsabstand", "schwerpunkt",
+                   "material", "eigenschaften"]
 
 
 def test_maengel_mit_knoten():
@@ -164,3 +164,20 @@ def test_baum_kennzahl():
                             {"id": "f3", "sw_name": None}]}
     assert baum_kennzahl(SPEC_NB, protokoll) == {"knoten": 2, "features": 3}
     assert baum_kennzahl(SPEC_NB, None) == {"knoten": 2, "features": 0}
+
+
+def test_ein_koerper_besteht():
+    bericht = bewerte(SPEC, _messwerte(koerper=1), STANDARD)
+    koerper = next(p for p in bericht["pruefungen"] if p["id"] == "koerper")
+    assert koerper["ok"] is True and bericht["bestanden"] is True
+
+
+def test_mehrere_koerper_sind_ein_mangel():
+    bericht = bewerte(SPEC, _messwerte(koerper=2), STANDARD)
+    [mangel] = bericht["maengel"]
+    assert bericht["bestanden"] is False
+    assert mangel["pruefung"] == "koerper" and mangel["beschreibung"] == "koerper: 2 Volumenkörper statt 1"
+
+
+def test_koerper_ohne_angabe_gilt_als_ein_koerper():
+    assert _messwerte().koerper == 1
