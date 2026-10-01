@@ -1,5 +1,9 @@
 # Stufe 2c – Ergebnisse
 
+Fertig-Kriterium Spec 2c §1 für Rechner A (SW 2025) erfüllt: Auswerferhalteplatte besteht (Prüfbericht und Prüfer), Buchse und
+Formplatte bestehen weiter (Prüfbericht und Regressions-Suite; Prüfer-Agent dort nicht gestartet), 273 Unit-Tests grün.
+Rechner B (SW 2026) offen.
+
 Rechner A (SOLIDWORKS 2025), 01.10.2026: `pytest -v` 273 bestanden (48 abgewählt, das sind die `sw`-markierten
 Live-/Referenztests), `tests/live_einzeln.py tests/live tests/referenz` alle 48 Einzeltests `OK` (45 in `tests/live`, 3 in
 `tests/referenz`; `test_sollvolumen.py` enthält keinen `sw`-Test), `swki api pruefe-code` ohne Befunde (`"befunde": []`), Toggle 10 (`GetUserPreferenceToggle`) vor und nach
@@ -21,7 +25,7 @@ Regressions-Suite ihre Protokolle wieder löscht. Alle drei Prüfberichte: `best
 | Referenz | SW 2025 (Rechner A) | Knoten / Features | SW 2026 (Rechner B) | Bemerkung |
 |---|---|---|---|---|
 | Auswerferhalteplatte | 01.10.2026, Volumen ist 692653,890 mm³ / soll 692653,890 mm³ (Abw. 0,0000 %), Dauer 47,516 s | 10 / 10 | ausstehend | Prüfer-Urteil bestanden (Task 11), `swki status`: Lauf 1 bestanden |
-| Buchse | 01.10.2026, Volumen ist 37425,139 mm³ / soll 37425,1 mm³ (Abw. 0,0001 %), Dauer 18,518 s | 6 / 6 | ausstehend | unverändert gegenüber Stufe 2 (dort 15,202 s) |
+| Buchse | 01.10.2026, Volumen ist 37425,139 mm³ / soll 37425,1 mm³ (Abw. 0,0001 %), Dauer 18,518 s | 6 / 6 | ausstehend | Ergebnis unverändert gegenüber Stufe 2 (Dauer 18,5 s statt 15,2 s) |
 | Formplatte DS | 01.10.2026, Volumen ist 3069575,535 mm³ / soll 3069574,5 mm³ (Abw. 0,0000 %), Dauer 35,072 s | 10 / 12 | ausstehend | Notausgang f10 unverändert (dort 26,106 s) |
 
 Buchse und Formplatte hatten bei diesen manuellen Läufen noch kein Prüfer-Urteil (Prüfer-Agent nicht gestartet); `swki status`
@@ -33,7 +37,8 @@ Die Formplatte hat 12 Features bei 10 Knoten: f7 (Bohrung mit Senkung: `f7`, `f7
 
 Befunde und Entscheidungen: `docs/stufe0/ergebnisse.md`, Abschnitt „Stufe 2c: Spike S10“ (Rohdaten
 `docs/stufe0/ergebnisse/s10_f*.json`), Lehren für den Code in `swki/wissen/pywin32-fallstricke.md` (Abschnitt „Stufe 2c“).
-Alle sechs Fragen wurden mit „geht“ beantwortet. Abweichungen vom Plan:
+Alle sechs Fragen wurden mit „geht“ beantwortet, Frage 6 mit einer Einschränkung (Aufsatz mit `versatz_von_flaeche` bei
+abgesetzter Skizze ergibt einen getrennten Körper, siehe Offene Punkte). Abweichungen vom Plan:
 
 - **Stift mit `durch`:** `HoleWizard5` liefert dafür nie ein Feature. Der Handler geht über `CreateDefinition(25)` →
   `InitializeHole(2, 8, 710, "Ø<d>.0", 1)` → Vorselektion per `SelectByRay` → `CreateFeature`. Danach liest
@@ -44,7 +49,11 @@ Alle sechs Fragen wurden mit „geht“ beantwortet. Abweichungen vom Plan:
   Mittelpunkt des Langlochs gebunden; `sgMERGEPOINTS` legt keine Beziehung an und die Skizze bleibt unterbestimmt (Status 2).
 - **`ForceRebuild3` statt `EditRebuild3`** nach dem Ändern der Positionsskizze; ohne `ForceRebuild3` baut sich das
   Bohrungsfeature nicht immer neu auf. Dazu die **Zylinderprüfung je Position:** `GetSketchPointCount` zählt Skizzenpunkte,
-  nicht Bohrungen; der Handler prüft deshalb je Position eine Zylinderfläche mit Achse durch den Achspunkt.
+  nicht Bohrungen; der Handler prüft deshalb je Position eine Zylinderfläche mit Achse durch den Achspunkt. Beides ist in
+  Task 8 entstanden (`swki/compiler/handler/normbohrung.py`, Regressionstest
+  `tests/live/test_live_normbohrung.py::test_senkschraube_von_unten`), nicht im Spike.
+- **`_verschmelze` entfällt bei der Kontur** (Entscheidung 5): die Bögen teilen ihre Endpunkte mit den Linien schon; das Verschmelzen
+  bleibt nur für die Hilfslinie des Langlochs (dort als `sgCOINCIDENT`).
 - **Bohrungsdaten lesen:** `Type` ist `swWzdHoleTypes_e` (Art und Ende zusammen), `Depth` liest immer 0; die Bohrungstiefe
   steht je nach Art in `TapDrillDepth`, `HoleDepth` oder `ThruHoleDepth` (Gewinde durch: keine Tiefe), Gewindetiefe in
   `ThreadDepth`. Alle Tiefenfelder liest `messen.lies_normbohrung`.
@@ -80,7 +89,8 @@ SolidWorks-Instanz mit rund 2 GB Private Bytes statt (Stufe 2: unter 700 MB). Ei
 - Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt: der Versatz geht zur Skizze hin und
   ergibt dadurch einen getrennten Körper (zwei Körper; Spike S10, Frage 6 d). Bekannte Einschränkung, kein Sonderweg.
 - Der −1-Zweig der Bogenrichtung (`CreateArc`) ist live unbelegt: auf `oben`, `vorne` und `rechts` war +1 jeweils richtig.
-- SolidWorks-Speicher wächst bei Live-Läufen (50–550 MB Private Bytes je Test); Neustart ab ca. 4 GB, die Live-Suite deshalb
+- SolidWorks-Speicher wächst bei Live-Läufen (gemessen je Testdatei etwa 50–1250 MB Private Bytes); Neustart ab ca. 4 GB, die Live-Suite deshalb
   dateiweise laufen lassen.
-- `auftraege/` ist nicht in `.gitignore`; Beispielaufträge dürfen nicht versehentlich committet werden.
+- `.gitignore` schließt unter `auftraege/` nur die SolidWorks-Dateien aus (`*.sldprt`, `*.sldasm`, `*.slddrw`); Spezifikationen,
+  Protokolle und Prüfberichte sind nicht ausgeschlossen, `git status` zeigt `?? auftraege/`. Beispielaufträge nicht versehentlich committen.
 - Rechner B (SOLIDWORKS 2026): alle Referenzen noch nicht gelaufen (Abschluss Stufe 2 laut Spec §11).

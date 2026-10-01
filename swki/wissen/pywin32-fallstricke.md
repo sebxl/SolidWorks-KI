@@ -268,7 +268,7 @@ Rohdaten: `docs/stufe0/ergebnisse/s10_f*.json`, Spikes `spikes/s10_*.py`, Befund
   `OffsetReverse1 = False` versetzt zur Skizze hin (Restwand 5 mm: Abnahme 6000 mm³), `True` darüber hinaus (8000 mm³). Das
   Versatzmaß heißt `D1@<Featurename>` (nicht `D1@<Skizze>`). Einschränkung: ein Aufsatz mit Versatz, dessen Skizze abgesetzt über
   der Zielfläche liegt (Testgeometrie: 5 mm Luft), ergibt zwei Körper (`d_aufsatz_versatz_5_offsetreverse_False.koerper`).
-- **Speicher von SolidWorks:** bei Live-Läufen wachsen die Private Bytes um etwa 50–550 MB je Test (beobachtet bei den Live-Tests unter `tests/live/` und
+- **Speicher von SolidWorks:** bei Live-Läufen wachsen die Private Bytes um etwa 50–1250 MB je Testdatei (beobachtet bei den Live-Tests unter `tests/live/` und
   `tests/referenz/`, Stufe 2c). Neustart ab
   ca. 4 GB Private Bytes, bei Hängern oder „Ausnahmefehler des Servers“ (−2147417851; in der 7-GB-Instanz bei
   `ModelToSketchTransform`, `GetSlotPoints`, `CreateFillet`, in der frischen Instanz nicht, `s10_f5_skizzen.json`: `fehlversuche_serverfehler`)
