@@ -1,7 +1,7 @@
 from swki.pruefung.bericht import bericht_markdown
 
 LAEUFE = [
-    {"lauf": 1, "bau": "fehler", "code_maengel": None, "pruefer": "ausstehend", "offen": 1, "dauer_s": 8.1},
+    {"lauf": 1, "bau": "fehler", "code_maengel": None, "pruefer": "ausstehend", "offen": None, "dauer_s": 8.1},
     {"lauf": 2, "bau": "ok", "code_maengel": 0, "pruefer": "bestanden", "offen": 0, "dauer_s": 9.4},
 ]
 
@@ -15,7 +15,7 @@ def test_bestandener_auftrag():
     )
     assert md.startswith("# Bericht Platte (Auftrag A-1)\n")
     assert "**Status:** bestanden" in md
-    assert "| 1 | fehler | – | ausstehend | 1 | 8.1 |" in md
+    assert "| 1 | fehler | – | ausstehend | – | 8.1 |" in md
     assert "- iso: `C:/arbeit/A-1/lauf-2/iso.png`" in md
     assert "| bauen | 6.2 |" in md
     assert "- abc1234 compiler: fase mit Tangentenfortsetzung" in md

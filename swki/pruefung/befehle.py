@@ -1,5 +1,6 @@
 """Befehle "swki pruefen", "swki status" und "swki bericht"."""
 
+import argparse
 import json
 import subprocess
 from pathlib import Path
@@ -18,6 +19,31 @@ from swki.spec.laden import lade_spec
 from swki.verbindung import verbinde
 
 
+class LaufFehler(SwkiFehler):
+    def __init__(self, code: str, meldung: str):
+        super().__init__(meldung)
+        self.daten = {"code": code}
+
+
+def pruefe_lauf_gebaut(protokoll: dict, lauf: int) -> None:
+    """Ein abgebrochener Bau hinterlässt ein halbes Teil: nicht messen, sondern Bauweg nachbessern (Regel „kein
+    Fortschritt“, Option A – der Lauf zählt nur als verbrauchter Lauf)."""
+    if protokoll.get("status") != "ok":
+        f = protokoll.get("fehler") or {}
+        raise LaufFehler(
+            "LAUF_ABGEBROCHEN",
+            f"Lauf {lauf} ist beim Bau abgebrochen ({f.get('code')}: {f.get('meldung')}) – nicht prüfen, "
+            "Bauweg nachbessern und neu bauen",
+        )
+
+
+def _nicht_negativ(text: str) -> int:
+    wert = int(text)
+    if wert < 0:
+        raise argparse.ArgumentTypeError(f"--max muss ≥ 0 sein (ist {wert})")
+    return wert
+
+
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec(spec_pfad)
@@ -33,8 +59,9 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     teil = ordner / f"{dateiname(spec, auftrag, standard)}.sldprt"
     if not teil.exists():
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")
-    app = verbinde(r.sw_jahr)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
+    pruefe_lauf_gebaut(protokoll, lauf)
+    app = verbinde(r.sw_jahr)
     soll = freigegebene_spec(spec_pfad)
     model = oeffne(app, teil)
     try:
@@ -108,7 +135,7 @@ def einrichten(subparsers) -> None:
     p.set_defaults(func=lambda a: pruefen(Path(a.spec), a.lauf))
     p = subparsers.add_parser("status", help="Stand der Nachbesserungsschleife und Empfehlung")
     p.add_argument("spec")
-    p.add_argument("--max", type=int, help="maximale Nachbesserungen laut Anweisung im Chat")
+    p.add_argument("--max", type=_nicht_negativ, help="maximale Nachbesserungen laut Anweisung im Chat")
     p.set_defaults(func=lambda a: status(Path(a.spec), a.max))
     p = subparsers.add_parser("bericht", help="bericht.md des Auftrags schreiben")
     p.add_argument("spec")

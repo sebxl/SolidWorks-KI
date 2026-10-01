@@ -85,6 +85,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   - `nachbessern`: nur den Bauweg ändern (Anker, Reihenfolge, Handler-Optionen, Skripte). Anforderungen (Parameter,
     Material, Eigenschaften, Prüfwerte) sind tabu – `swki bauen` verweigert sonst (FREIGABE_VERALTET). Hält Claude eine
     Anforderung für falsch: Nutzer fragen. Dann neu bauen (Schritt 5).
+  - Bauabbruch (`swki bauen` meldet `status: fehler`): nicht `swki pruefen` (verweigert mit LAUF_ABGEBROCHEN), sondern
+    direkt den Bauweg nachbessern und neu bauen. Ein Abbruch verbraucht einen Lauf, wird aber nicht als Mängelzahl
+    verglichen; „kein Fortschritt“ vergleicht nur durchgebaute und geprüfte Läufe (höchstens 1 + 3 = 4 Läufe).
   - `stopp_max` / `stopp_kein_fortschritt`: anhalten, Nutzer mit Bericht informieren.
   - `bestanden`: weiter mit 7.
 - Wiederholt sich ein Compiler-Problem, Skill `compiler-erweitern` anwenden.

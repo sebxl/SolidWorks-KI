@@ -25,7 +25,7 @@ def bericht_markdown(
     for lauf in laeufe:
         zeilen.append(
             f"| {lauf['lauf']} | {lauf['bau']} | {_zelle(lauf['code_maengel'])} | {lauf['pruefer']} "
-            f"| {lauf['offen']} | {lauf['dauer_s']} |"
+            f"| {_zelle(lauf['offen'])} | {lauf['dauer_s']} |"
         )
     zeilen += ["", "## Offene Punkte (letzter Lauf)", ""]
     offene = []
