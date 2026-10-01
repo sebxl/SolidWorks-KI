@@ -6,7 +6,8 @@ from swki.compiler.eigenschaften import material_passt
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
 from swki.spec.ausdruck import auswerten
 from swki.spec.normen import (
-    SW_BEFESTIGUNG, SW_END_BLIND, SW_END_DURCH_ALLES, SW_NORM, groesse_text, norm_von, normmasse,
+    SW_BEFESTIGUNG, SW_BEFESTIGUNG_STIFT_DURCH, SW_END_BLIND, SW_END_DURCH_ALLES, SW_LOCH_DURCH, SW_NORM, groesse_text,
+    norm_von, normmasse,
 )
 
 SKIZZE_VOLL_BESTIMMT = 3  # swConstrainedStatus_e.swFullyConstrained
@@ -14,8 +15,6 @@ _TOL_HUELLQUADER = 0.01
 _TOL_MASS = 0.01
 _TOL_SCHWERPUNKT = 0.05
 _TOL_TIEFE = 0.01
-SW_BEFESTIGUNG_STIFT_DURCH = -1  # FastenerType2 eines über CreateDefinition gebauten Stiftlochs mit durch (Spike S10, Frage 4)
-SW_LOCH_DURCH = 25  # swWzdHoleTypes_e.swHoleThru: Type dieses Stiftlochs
 
 
 @dataclass

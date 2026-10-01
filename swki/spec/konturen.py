@@ -3,12 +3,16 @@
 from swki.spec.ausdruck import auswerten
 
 
-def eckradien(polygon: dict, parameter: dict) -> list[float]:
-    """Radius je Ecke eines Polygons: ein Wert für alle Ecken oder eine Liste je Ecke (0 = scharf); ohne radien 0."""
+def eckradien_roh(polygon: dict) -> list:
+    """Radius je Ecke wie in der Spezifikation (Zahl oder Ausdruck): ein Wert für alle Ecken oder eine Liste je Ecke
+    (0 = scharf); ohne radien 0."""
     roh = polygon.get("radien", 0)
-    if isinstance(roh, list):
-        return [auswerten(r, parameter) for r in roh]
-    return [auswerten(roh, parameter)] * len(polygon["punkte"])
+    return list(roh) if isinstance(roh, list) else [roh] * len(polygon["punkte"])
+
+
+def eckradien(polygon: dict, parameter: dict) -> list[float]:
+    """Radius je Ecke in mm (ausgewertet)."""
+    return [auswerten(r, parameter) for r in eckradien_roh(polygon)]
 
 
 def kontur_punkte_roh(kontur: dict) -> list:

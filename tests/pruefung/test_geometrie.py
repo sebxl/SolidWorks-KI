@@ -156,3 +156,27 @@ def test_volumen_stift_blind():
 ])
 def test_normbohrung_volumen_durch(art, masse, erwartet):
     assert normbohrung_volumen(art, masse, None, dicke=22) == pytest.approx(erwartet)
+
+
+def _drehteil(*elemente):
+    return {"features": [{"id": "f1", "typ": "rotation", "skizze": {"ebene": "vorne", "elemente": [
+        *elemente, {"mittellinie": {"von": [0, -10], "bis": [0, 10]}}]}}]}
+
+
+def test_rotation_rechteck():
+    # Ring: Querschnitt 10 × 20, Schwerpunkt 15 mm von der Achse
+    spec = _drehteil({"rechteck": {"mitte": [15, 0], "breite": 10, "hoehe": 20}})
+    assert volumen_auto(spec)[0] == pytest.approx(200 * 2 * math.pi * 15)
+
+
+def test_rotation_kreis():
+    # Torus: Kreis Ø4 im Abstand 20
+    spec = _drehteil({"kreis": {"mitte": [20, 0], "durchmesser": 4}})
+    assert volumen_auto(spec)[0] == pytest.approx(math.pi * 4 * 2 * math.pi * 20)
+
+
+def test_rotation_mit_mehreren_profilen_nicht_berechenbar():
+    spec = _drehteil({"rechteck": {"mitte": [15, 0], "breite": 10, "hoehe": 20}},
+                     {"kreis": {"mitte": [15, 0], "durchmesser": 4}})
+    volumen, grund = volumen_auto(spec)
+    assert volumen is None and grund == "f1: Rotation mit mehreren Profilen nicht analytisch"

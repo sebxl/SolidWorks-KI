@@ -138,24 +138,35 @@ def normbohrung_volumen(art: str, masse: dict, tiefe: float | None, dicke: float
     return volumen
 
 
-def _pappus(f: dict, p: dict) -> float:
+def _flaeche_schwerpunkt(element: dict, p: dict) -> tuple[float, tuple[float, float]]:
+    """Fläche (mm²) und Schwerpunkt (u, v) eines geschlossenen Skizzenelements ohne Rundungen."""
+    if "rechteck" in element:
+        r = element["rechteck"]
+        return auswerten(r["breite"], p) * auswerten(r["hoehe"], p), _punkte([r["mitte"]], p)[0]
+    if "kreis" in element:
+        k = element["kreis"]
+        return math.pi * auswerten(k["durchmesser"], p) ** 2 / 4, _punkte([k["mitte"]], p)[0]
+    pts = _punkte(element["polygon"]["punkte"], p)
+    a2 = _polygon_flaeche(pts)
+    kreuz = [(x1 * y2 - x2 * y1, x1 + x2, y1 + y2) for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1])]
+    cx = sum(c * sx for c, sx, _ in kreuz) / (6 * a2)
+    cy = sum(c * sy for c, _, sy in kreuz) / (6 * a2)
+    return abs(a2), (cx, cy)
+
+
+def _pappus(f: dict, p: dict) -> float | None:
+    """Rotationsvolumen nach Pappus für genau ein Profil (Rechteck, Kreis oder Polygon); mehrere Profile → None
+    (verschachtelte Profile zieht SolidWorks voneinander ab, das rechnet diese Formel nicht)."""
     elemente = f["skizze"]["elemente"]
+    profile = [e for e in elemente if "mittellinie" not in e]
+    if len(profile) != 1:
+        return None
     linie = next(e["mittellinie"] for e in elemente if "mittellinie" in e)
-    a = (auswerten(linie["von"][0], p), auswerten(linie["von"][1], p))
-    b = (auswerten(linie["bis"][0], p), auswerten(linie["bis"][1], p))
+    a, b = _punkte([linie["von"], linie["bis"]], p)
     d = (b[0] - a[0], b[1] - a[1])
-    n = math.hypot(*d)
-    volumen = 0.0
-    for e in elemente:
-        if "polygon" not in e:
-            continue
-        pts = [(auswerten(x, p), auswerten(y, p)) for x, y in e["polygon"]["punkte"]]
-        a2 = sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1])) / 2
-        cx = sum((x1 + x2) * (x1 * y2 - x2 * y1) for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1])) / (6 * a2)
-        cy = sum((y1 + y2) * (x1 * y2 - x2 * y1) for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1])) / (6 * a2)
-        r = abs(d[0] * (cy - a[1]) - d[1] * (cx - a[0])) / n
-        volumen += abs(a2) * 2 * math.pi * r
-    return volumen * auswerten(f.get("winkel", 360), p) / 360
+    flaeche, (cx, cy) = _flaeche_schwerpunkt(profile[0], p)
+    r = abs(d[0] * (cy - a[1]) - d[1] * (cx - a[0])) / math.hypot(*d)
+    return flaeche * 2 * math.pi * r * auswerten(f.get("winkel", 360), p) / 360
 
 
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
@@ -180,6 +191,8 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             if any(_hat_rundung(e) for e in f["skizze"]["elemente"]):
                 return None, f"{f['id']}: Rotation mit Rundungen (Eckradius, Langloch, Kontur) nicht analytisch"
             v = _pappus(f, p)
+            if v is None:
+                return None, f"{f['id']}: Rotation mit mehreren Profilen nicht analytisch"
             beitrag[f["id"]] = -v if f.get("schnitt") else v
         elif typ == "bohrung":
             if f.get("durch"):

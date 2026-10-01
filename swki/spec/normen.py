@@ -23,6 +23,9 @@ SW_BEFESTIGUNG = {  # swWzdHoleStandardFastenerTypes_e (Abhängig von S10 Frage 
 }
 SW_END_BLIND = 0  # swEndConditions_e.swEndCondBlind
 SW_END_DURCH_ALLES = 1  # swEndConditions_e.swEndCondThroughAll
+SW_FM_HOLE_WZD = 25  # swFeatureNameID_e.swFmHoleWzd (IFeatureManager.CreateDefinition; Stift durch, Spike S10 Frage 1)
+SW_BEFESTIGUNG_STIFT_DURCH = -1  # FastenerType2 eines über CreateDefinition gebauten Stiftlochs mit durch (S10 Frage 4)
+SW_LOCH_DURCH = 25  # swWzdHoleTypes_e.swHoleThru: Type dieses Stiftlochs
 
 
 def groesse_text(groesse) -> str:
