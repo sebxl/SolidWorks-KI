@@ -5,11 +5,17 @@ from dataclasses import dataclass, field
 from swki.compiler.eigenschaften import material_passt
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
 from swki.spec.ausdruck import auswerten
+from swki.spec.normen import (
+    SW_BEFESTIGUNG, SW_END_BLIND, SW_END_DURCH_ALLES, SW_NORM, groesse_text, norm_von, normmasse,
+)
 
 SKIZZE_VOLL_BESTIMMT = 3  # swConstrainedStatus_e.swFullyConstrained
 _TOL_HUELLQUADER = 0.01
 _TOL_MASS = 0.01
 _TOL_SCHWERPUNKT = 0.05
+_TOL_TIEFE = 0.01
+SW_BEFESTIGUNG_STIFT_DURCH = -1  # FastenerType2 eines über CreateDefinition gebauten Stiftlochs mit durch (Spike S10, Frage 4)
+SW_LOCH_DURCH = 25  # swWzdHoleTypes_e.swHoleThru: Type dieses Stiftlochs
 
 
 @dataclass
@@ -22,6 +28,7 @@ class Messwerte:
     material: str
     eigenschaften: dict[str, str]
     messpunkte: dict[str, Messgeometrie | str] = field(default_factory=dict)  # Schlüssel → Geometrie oder Fehlertext
+    normbohrungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Bohrungsassistent-Daten oder Fehlertext
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -39,9 +46,43 @@ def _pruefung(pid: str, ok: bool | None, **daten) -> dict:
     return {"id": pid, "ok": ok, **daten}
 
 
+def normbohrung_abweichungen(f: dict, ist: dict, parameter: dict) -> list[str]:
+    """Spec 2c §3.4: normbohrung-Knoten (freigegebene Kopie) gegen die Bohrungsassistent-Daten des gleichnamigen
+    Features (swki.pruefung.messen.lies_normbohrung, Längen in mm). Leere Liste = passt.
+
+    Die Art ergibt sich aus FastenerType2. Ausnahme Stiftloch mit durch (CreateDefinition): dort liest FastenerType2
+    −1, die Art zeigt nur Type = swHoleThru (Spike S10, Frage 4)."""
+    norm = norm_von(f)
+    durch = bool(f.get("durch"))
+    soll = {"norm": SW_NORM.get(norm), "positionen": len(f["positionen"]),
+            "ende": SW_END_DURCH_ALLES if durch else SW_END_BLIND}
+    if f["art"] == "stift" and durch:
+        soll = {"befestigung": SW_BEFESTIGUNG_STIFT_DURCH, "typ": SW_LOCH_DURCH, **soll}
+    else:
+        soll = {"befestigung": SW_BEFESTIGUNG[f["art"]], **soll}
+    abweichungen = [f"{k}: ist {ist.get(k)} statt {v}" for k, v in soll.items() if ist.get(k) != v]
+    masse = normmasse(f["art"], f["groesse"], norm) or {}
+    if ist.get("groesse") not in {masse.get("sw_groesse"), masse.get("gelesen")} - {None}:
+        abweichungen.append(f"groesse: ist {ist.get('groesse')} statt {masse.get('sw_groesse', groesse_text(f['groesse']))}")
+    for feld in ("tiefe", "gewindetiefe"):
+        if feld in f:
+            wert = auswerten(f[feld], parameter)
+            if abs(ist.get(feld, 0.0) - wert) > _TOL_TIEFE:
+                abweichungen.append(f"{feld}: ist {ist.get(feld, 0.0):g} statt {wert:g}")
+    return abweichungen
+
+
+def baum_kennzahl(spec: dict, protokoll: dict | None) -> dict:
+    """Spec 2c §6.3: Knoten der Spezifikation und vom Bau erzeugte Features (Namen aus dem Bauprotokoll; Skizzen,
+    Ebenen und Achsen legt der Compiler nebenbei an und zählen nicht)."""
+    namen = [n for k in (protokoll or {}).get("knoten", []) if k.get("sw_name") for n in k["sw_name"].split(", ")]
+    return {"knoten": len(spec["features"]), "features": len(namen)}
+
+
 def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None = None) -> dict:
     """freigegeben: Spezifikation im Stand der Freigabe; das Sollvolumen "auto" wird aus ihr berechnet,
-    damit ein nachgebesserter Bauweg das Soll nicht mitverschiebt."""
+    damit ein nachgebesserter Bauweg das Soll nicht mitverschiebt. Normbohrungen werden gegen die freigegebene Kopie
+    geprüft (Größen sind Text, die Prüfsumme schützt sie nicht)."""
     p = spec.get("parameter", {})
     pr = spec.get("pruefung", {})
     ergebnisse = []
@@ -52,6 +93,19 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
 
     offen = {n: s for n, s in m.skizzen.items() if s != SKIZZE_VOLL_BESTIMMT}
     ergebnisse.append(_pruefung("skizzen", not offen, ist=offen, knoten=sorted({_knoten_aus(n, ids) for n in offen})))
+
+    soll_spec = freigegeben or spec
+    soll_normbohrungen = [f for f in soll_spec["features"] if f["typ"] == "normbohrung"]
+    if soll_normbohrungen:
+        p_soll = soll_spec.get("parameter", {})
+        abweichend = {}
+        for f in soll_normbohrungen:
+            ist = m.normbohrungen.get(f["id"])
+            if not isinstance(ist, dict):
+                abweichend[f["id"]] = [ist or f"Feature {f['id']} fehlt im Teil"]
+            elif fehler := normbohrung_abweichungen(f, ist, p_soll):
+                abweichend[f["id"]] = fehler
+        ergebnisse.append(_pruefung("normbohrungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
 
     if "huellquader" in pr:
         soll = [auswerten(v, p) for v in pr["huellquader"]]

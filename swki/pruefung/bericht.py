@@ -35,6 +35,10 @@ def bericht_markdown(
     offene += [f"{', '.join(m['knoten']) or 'Teil'}: {m['beschreibung']}" for m in (letzter_bericht or {}).get("maengel", [])]
     offene += [f"{', '.join(m['knoten']) or 'Teil'}: {m['beschreibung']} (Prüfer)" for m in (letztes_urteil or {}).get("maengel", [])]
     zeilen += [f"- {o}" for o in offene] or ["- keine"]
+    baum = (letzter_bericht or {}).get("baum")
+    if baum:
+        zeilen += ["", "## Feature-Baum (letzter Lauf)", "", f"- Knoten der Spezifikation: {baum['knoten']}",
+                   f"- erzeugte Features (ohne Skizzen, Ebenen, Achsen): {baum['features']}"]
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]

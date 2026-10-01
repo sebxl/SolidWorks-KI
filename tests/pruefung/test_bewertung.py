@@ -2,8 +2,9 @@ import copy
 
 import pytest
 
-from swki.pruefung.bewertung import Messwerte, bewerte, messpunkt_schluessel
+from swki.pruefung.bewertung import Messwerte, baum_kennzahl, bewerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
+from swki.spec.normen import normmasse
 
 STANDARD = {"toleranzen": {"anker_mm": 0.1, "volumen_prozent": 0.5}}
 VON = {"feature": "f2", "instanz": 1, "achse": True}
@@ -101,3 +102,65 @@ def test_sollvolumen_aus_freigegebener_spec():
     bericht = bewerte(nachgebessert, _messwerte(volumen=126000.0), STANDARD, freigegeben=SPEC)
     volumen = next(p for p in bericht["pruefungen"] if p["id"] == "volumen")
     assert volumen["soll"] == 120000.0 and volumen["ok"] is False
+
+
+NB = {"id": "f2", "typ": "normbohrung", "art": "zylinderschraube", "groesse": "M8",
+      "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [["=-L/2+10", 0], ["=L/2-10", 0]], "durch": True}
+SPEC_NB = {**SPEC, "features": [*SPEC["features"], NB]}
+# typ = swWzdHoleTypes_e (Art und Ende zusammen): ISO 4762 durch = 14
+IST_NB = {"typ": 14, "befestigung": 139, "norm": 8, "groesse": normmasse("zylinderschraube", "M8")["sw_groesse"],
+          "ende": 1, "tiefe": 0.0, "gewindetiefe": 0.0, "positionen": 2}
+
+
+def test_normbohrung_passt():
+    bericht = bewerte(SPEC_NB, _messwerte(normbohrungen={"f2": IST_NB}), STANDARD)
+    assert bericht["bestanden"] is True
+    assert [p["id"] for p in bericht["pruefungen"]][:3] == ["rebuild", "skizzen", "normbohrungen"]
+
+
+def test_normbohrung_groesse_weicht_ab():
+    [mangel] = bewerte(SPEC_NB, _messwerte(normbohrungen={"f2": IST_NB | {"groesse": "M10"}}), STANDARD)["maengel"]
+    assert mangel["pruefung"] == "normbohrungen" and mangel["knoten"] == ["f2"]
+    assert "groesse: ist M10" in mangel["beschreibung"]
+
+
+def test_normbohrung_fehlt_im_teil():
+    [mangel] = bewerte(SPEC_NB, _messwerte(normbohrungen={"f2": "Feature f2 fehlt im Teil"}), STANDARD)["maengel"]
+    assert mangel["knoten"] == ["f2"] and "fehlt" in mangel["beschreibung"]
+
+
+def test_normbohrung_soll_aus_freigegebener_kopie():
+    # Nachgebessert auf M10 (Text, von der Prüfsumme nicht geschützt): gebaut ist M10, Soll bleibt M8
+    nachgebessert = copy.deepcopy(SPEC_NB)
+    nachgebessert["features"][1]["groesse"] = "M10"
+    ist = IST_NB | {"groesse": normmasse("zylinderschraube", "M10")["sw_groesse"]}
+    bericht = bewerte(nachgebessert, _messwerte(normbohrungen={"f2": ist}), STANDARD, freigegeben=SPEC_NB)
+    assert [m["pruefung"] for m in bericht["maengel"]] == ["normbohrungen"]
+
+
+def test_normbohrung_tiefen():
+    gewinde = {k: v for k, v in NB.items() if k != "durch"} | {"art": "gewinde", "groesse": "M10", "tiefe": "=T",
+                                                               "gewindetiefe": 12}
+    ohne_volumen = {k: v for k, v in SPEC["pruefung"].items() if k != "volumen"}  # Sackloch: Soll wäre berechenbar
+    spec = {**SPEC, "parameter": {"L": 100, "T": 16}, "features": [SPEC["features"][0], gewinde], "pruefung": ohne_volumen}
+    ist = IST_NB | {"typ": 46, "befestigung": 147, "groesse": normmasse("gewinde", "M10")["sw_groesse"], "ende": 0,
+                    "tiefe": 16.0, "gewindetiefe": 11.0}
+    [mangel] = bewerte(spec, _messwerte(normbohrungen={"f2": ist}), STANDARD)["maengel"]
+    assert mangel["beschreibung"] == "normbohrungen: {'f2': ['gewindetiefe: ist 11 statt 12']}"
+
+
+def test_normbohrung_stift_durch():
+    # Stift mit durch (CreateDefinition) liest FastenerType2 = -1; die Art zeigt dann nur Type = 25 (swHoleThru)
+    stift = {**NB, "art": "stift", "groesse": 8}
+    spec = {**SPEC, "features": [SPEC["features"][0], stift]}
+    ist = IST_NB | {"typ": 25, "befestigung": -1, "groesse": normmasse("stift", 8)["sw_groesse"]}
+    assert bewerte(spec, _messwerte(normbohrungen={"f2": ist}), STANDARD)["bestanden"] is True
+    [mangel] = bewerte(spec, _messwerte(normbohrungen={"f2": ist | {"typ": 22}}), STANDARD)["maengel"]
+    assert mangel["knoten"] == ["f2"] and "typ: ist 22 statt 25" in mangel["beschreibung"]
+
+
+def test_baum_kennzahl():
+    protokoll = {"knoten": [{"id": "f1", "sw_name": "f1"}, {"id": "f2", "sw_name": "f2, f2_senkung"},
+                            {"id": "f3", "sw_name": None}]}
+    assert baum_kennzahl(SPEC_NB, protokoll) == {"knoten": 2, "features": 3}
+    assert baum_kennzahl(SPEC_NB, None) == {"knoten": 2, "features": 0}
