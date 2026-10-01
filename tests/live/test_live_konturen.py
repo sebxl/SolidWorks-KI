@@ -64,29 +64,61 @@ def test_polygon_mit_konvexen_und_konkaver_ecke():
 @pytest.mark.parametrize(("winkel", "box"), [
     (0, [-9, 0, -9, 29, 10, -1]),     # oben: X = u, Z = −v
     (90, [6, 0, -24, 14, 10, 14]),
-    (30, None),
+    (30, None),                       # schräg: alle Maße an Parametern (Parametrik, Spec §4)
 ])
 def test_langloch(winkel, box):
-    spec = _platte({"langloch": {"mitte": [10, 5], "laenge": 30, "breite": 8, "winkel": winkel}})
+    if box is None:
+        spec = _platte({"langloch": {"mitte": ["=MU", 5], "laenge": "=LL", "breite": "=LB", "winkel": "=W"}},
+                       parameter={"MU": 10, "LL": 30, "LB": 8, "W": winkel})
+    else:
+        spec = _platte({"langloch": {"mitte": [10, 5], "laenge": 30, "breite": 8, "winkel": winkel}})
     with gebautes_teil(spec) as (ctx, fehler, _):
         assert fehler is None
         assert volumen_mm3(ctx.model) == pytest.approx((30 * 8 + 16 * math.pi) * 10, abs=1e-3)
         ist = sw.teilebox_mm(ctx.model)
         if box is not None:
             assert ist == pytest.approx(box, abs=1e-6)
-        else:  # schräg: Mitte bleibt (X 10, Z −5), Ausdehnung in X = 30·cos 30° + 8
-            assert ((ist[0] + ist[3]) / 2, (ist[2] + ist[5]) / 2) == pytest.approx((10, -5), abs=1e-6)
-            assert ist[3] - ist[0] == pytest.approx(30 * math.cos(math.radians(30)) + 8, abs=1e-6)
+            return
+        # schräg: Mitte bleibt (X 10, Z −5), Ausdehnung in X = 30·cos 30° + 8
+        assert ((ist[0] + ist[3]) / 2, (ist[2] + ist[5]) / 2) == pytest.approx((10, -5), abs=1e-6)
+        assert ist[3] - ist[0] == pytest.approx(30 * math.cos(math.radians(30)) + 8, abs=1e-6)
+        assert sum(1 for t in _gleichungen(ctx.model) if t.endswith(('= "LL"', '= "LB"', '= "W"', '= "MU"'))) >= 4
+        # Parameter ändern: Länge, Breite, Winkel und Lage der Mitte folgen
+        _setze(ctx.model, '"LL" = 30', '"LL" = 40')
+        _setze(ctx.model, '"LB" = 8', '"LB" = 6')
+        _setze(ctx.model, '"W" = 30', '"W" = 45')
+        _setze(ctx.model, '"MU" = 10', '"MU" = 15')
+        assert volumen_mm3(ctx.model) == pytest.approx((40 * 6 + 9 * math.pi) * 10, abs=1e-3)
+        ist = sw.teilebox_mm(ctx.model)
+        assert ((ist[0] + ist[3]) / 2, (ist[2] + ist[5]) / 2) == pytest.approx((15, -5), abs=1e-6)
+        assert ist[3] - ist[0] == pytest.approx(40 * math.cos(math.radians(45)) + 6, abs=1e-6)
+        assert ist[5] - ist[2] == pytest.approx(40 * math.sin(math.radians(45)) + 6, abs=1e-6)
+
+
+KONTUR_PARAMETRISCH = {"start": ["=-KB/2", "=KV"], "segmente": [
+    {"linie": ["=KB/2", "=KV"]}, {"bogen": ["=KB/2", "=KV+KH"], "mitte": ["=KB/2", "=KV+KH/2"]},
+    {"linie": ["=-KB/2", "=KV+KH"]}, {"bogen": ["=-KB/2", "=KV"], "mitte": ["=-KB/2", "=KV+KH/2"]},
+]}
 
 
 @pytest.mark.parametrize(("ebene", "box"), [
-    ("oben", [-50, 0, -45, 50, 10, -25]),     # X = u, Z = −v
+    ("oben", [-50, 0, -45, 50, 10, -25]),     # X = u, Z = −v; parametrisch (KB, KV, KH wie in der Referenz)
     ("vorne", [-50, 25, 0, 50, 45, 10]),      # X = u, Y = v
     ("rechts", [0, 25, -50, 10, 45, 50]),     # Z = −u, Y = v
 ])
 def test_kontur_mit_boegen(ebene, box):
-    with gebautes_teil(_platte({"kontur": KONTUR}, ebene=ebene)) as (ctx, fehler, _):
+    parametrisch = ebene == "oben"
+    spec = (_platte({"kontur": KONTUR_PARAMETRISCH}, ebene=ebene, parameter={"KB": 80, "KV": 25, "KH": 20})
+            if parametrisch else _platte({"kontur": KONTUR}, ebene=ebene))
+    with gebautes_teil(spec) as (ctx, fehler, _):
         assert fehler is None
         # Bögen gegen den Uhrzeigersinn in (u, v) wölben sich nach außen: Fläche 80·20 + π·10²
         assert volumen_mm3(ctx.model) == pytest.approx((1600 + 100 * math.pi) * 10, abs=1e-3)
         assert sw.teilebox_mm(ctx.model) == pytest.approx(box, abs=1e-6)
+        if parametrisch:
+            _setze(ctx.model, '"KB" = 80', '"KB" = 100')  # Mittenabstand der Bögen wächst, Höhe bleibt
+            assert volumen_mm3(ctx.model) == pytest.approx((2000 + 100 * math.pi) * 10, abs=1e-3)
+            assert sw.teilebox_mm(ctx.model) == pytest.approx([-60, 0, -45, 60, 10, -25], abs=1e-6)
+            _setze(ctx.model, '"KH" = 20', '"KH" = 30')  # Höhe und damit Bogenradius wachsen
+            assert volumen_mm3(ctx.model) == pytest.approx((3000 + 225 * math.pi) * 10, abs=1e-3)
+            assert sw.teilebox_mm(ctx.model) == pytest.approx([-65, 0, -55, 65, 10, -25], abs=1e-6)

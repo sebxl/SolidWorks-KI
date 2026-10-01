@@ -230,9 +230,9 @@ class Skizzierer:
                             schritt="skizze")
         self.masse.append(_Mass(neu[0], roh_radius))
 
-    def _richtung_zu_u(self, linie, mitte_uv: tuple[float, float], roh_winkel) -> None:
+    def _richtung_zu_u(self, linie, mitte_uv: tuple[float, float], roh_winkel, mitte_punkt) -> None:
         """Richtung einer Linie zur u-Achse: 0°/90° über Beziehungen, sonst Winkelmaß zu einer u-parallelen
-        Hilfslinie durch mitte_uv (Anfang per sgCOINCIDENT an die Mitte gebunden, S10 Frage 5)."""
+        Hilfslinie durch mitte_uv (Anfang per sgCOINCIDENT an mitte_punkt, den Slot-Mittelpunkt, gebunden, S10 Frage 5)."""
         winkel = self.ctx.wert(roh_winkel) % 180
         u_ist_x = self.x_von[0] == 0
         sw.auswahl_leeren(self.model)
@@ -248,15 +248,12 @@ class Skizzierer:
         hilfe = self.sm.CreateCenterLine(xa, ya, 0.0, xb, yb, 0.0)
         if hilfe is None:
             raise BauFehler(SKIZZE_UNGUELTIG, "Hilfslinie für den Langlochwinkel nicht erzeugt", schritt="skizze")
-        gleich = [p for p in self.skizze.GetSketchPoints2 or () if abs(p.X - xa) < 1e-8 and abs(p.Y - ya) < 1e-8]
-        if len(gleich) < 2:
-            raise BauFehler(SKIZZE_UNGUELTIG, f"Hilfslinie: {len(gleich)} Skizzenpunkte in der Langlochmitte",
-                            schritt="skizze")
-        for p in gleich[1:]:
-            sw.auswahl_leeren(self.model)
-            sw.waehle(self.model, gleich[0], 0)
-            sw.waehle(self.model, p, 0, anhaengen=True)
-            self.model.SketchAddConstraints("sgCOINCIDENT")
+        # Genau zwei Punkte verbinden: Anfang der Hilfslinie und Mittelpunkt des Langlochs. Weitere Punkte an derselben
+        # Stelle (konzentrischer Kreis, Polygonecke …) haben eigene Lagemaße und bleiben unberührt.
+        sw.auswahl_leeren(self.model)
+        sw.waehle(self.model, mitte_punkt, 0)
+        sw.waehle(self.model, hilfe.GetStartPoint2, 0, anhaengen=True)
+        self.model.SketchAddConstraints("sgCOINCIDENT")
         sw.auswahl_leeren(self.model)
         sw.waehle(self.model, hilfe, 0)
         self.model.SketchAddConstraints("sgHORIZONTAL2D" if u_ist_x else "sgVERTICAL2D")
@@ -295,7 +292,7 @@ class Skizzierer:
         self._merke(self.model.AddDimension2(*self._text(mu_, mv + breite / 2 + _MASS_ABSTAND_MM)), l["breite"])
         sw.auswahl_leeren(self.model)
         self.groesse(achsen[0], (mu_, mv - breite / 2 - _MASS_ABSTAND_MM), l["laenge"])
-        self._richtung_zu_u(achsen[0], (mu_, mv), l.get("winkel", 0))
+        self._richtung_zu_u(achsen[0], (mu_, mv), l.get("winkel", 0), nut.GetCenterPointHandle)
         self.lage(l["mitte"], (mu_ - laenge / 2 - _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM))
 
     def _kontur(self, k: dict) -> None:
