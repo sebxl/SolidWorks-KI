@@ -3,7 +3,7 @@
 import time
 from pathlib import Path
 
-from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, naechster_lauf
+from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.ablauf import baue_features
@@ -38,6 +38,8 @@ def bauen(spec_pfad: Path, lauf: int | None = None) -> dict:
     pruefe_freigabe(spec_pfad, spec)
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
+    if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):
+        raise SwkiFehler(f"Lauf {lauf} von {auftrag} existiert schon – ohne --lauf baut swki den nächsten freien Lauf")
     lauf = lauf or naechster_lauf(r, auftrag)
     ordner = lauf_ordner(r, auftrag, lauf)
     name = dateiname(spec, auftrag, standard)

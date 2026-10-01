@@ -47,3 +47,8 @@ def protokoll_ordner(spec_pfad: Path) -> Path:
 def lauf_datei(spec_pfad: Path, lauf: int, art: str) -> Path:
     """protokolle/<spec>.lauf-<n>.<art>.json im Auftragsordner (art: protokoll | pruefbericht | pruefer)."""
     return protokoll_ordner(spec_pfad) / f"{spec_pfad.stem}.lauf-{lauf}.{art}.json"
+
+
+def lauf_belegt(r: Rechner, auftrag: str, spec_pfad: Path, lauf: int) -> bool:
+    """Gibt es zu diesem Lauf schon einen Arbeitsordner oder ein Protokoll im Auftragsordner?"""
+    return lauf_ordner(r, auftrag, lauf).exists() or lauf_datei(spec_pfad, lauf, "protokoll").exists()

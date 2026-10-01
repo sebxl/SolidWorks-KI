@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from swki.auftrag import (
-    auftrag_name, dateiname, lauf_datei, lauf_ordner, laeufe, naechster_lauf, protokoll_ordner,
+    auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, laeufe, naechster_lauf, protokoll_ordner,
 )
 from swki.konfig import Rechner
 
@@ -37,3 +37,15 @@ def test_protokoll_ordner(tmp_path):
 
 def test_lauf_datei(tmp_path):
     assert lauf_datei(tmp_path / "platte.yaml", 2, "pruefbericht") == tmp_path / "protokolle" / "platte.lauf-2.pruefbericht.json"
+
+
+def test_lauf_belegt(tmp_path):
+    r = _rechner(tmp_path)
+    spec = tmp_path / "auftraege" / "A" / "platte.yaml"
+    assert not lauf_belegt(r, "A", spec, 1)
+    lauf_ordner(r, "A", 1).mkdir(parents=True)
+    assert lauf_belegt(r, "A", spec, 1)
+    datei = lauf_datei(spec, 2, "protokoll")
+    datei.parent.mkdir(parents=True)
+    datei.write_text("{}", encoding="utf-8")
+    assert lauf_belegt(r, "A", spec, 2)

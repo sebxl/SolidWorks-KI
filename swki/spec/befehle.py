@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from swki.spec.freigabe import freigeben, pruefsumme
+from swki.spec.freigabe import FreigabeFehler, freigeben, kopie_pfad, pruefsumme
 from swki.spec.hinweise import hinweise
 from swki.spec.laden import lade_spec
 
@@ -20,10 +20,17 @@ def _validieren(args) -> dict:
     }
 
 
+_KOPIE_ENDUNG = ".freigegeben.yaml"
+
+
 def _freigeben(args) -> dict:
     pfad = Path(args.spec)
+    if pfad.name.endswith(_KOPIE_ENDUNG):
+        original = pfad.name.removesuffix(_KOPIE_ENDUNG) + ".yaml"
+        raise FreigabeFehler("FREIGABE_KOPIE", f"{pfad.name} ist die Freigabe-Kopie; freigegeben wird die "
+                                               f"Spezifikation selbst ({original})")
     spec = lade_spec(pfad)
-    return {"spec": str(pfad), **freigeben(pfad, spec)}
+    return {"spec": str(pfad), "kopie": str(kopie_pfad(pfad)), **freigeben(pfad, spec)}
 
 
 def einrichten(subparsers) -> None:
