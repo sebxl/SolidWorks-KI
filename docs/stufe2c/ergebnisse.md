@@ -130,7 +130,7 @@ höchstens 4 Läufe (1 + 3), Bauabbruch-Läufe werden nicht verglichen, Rechner 
   - **D Tests (6d0d6a8, 618944c, 4a1aa7f, dieser Commit):** Ausdrucksfehler der Validierung, Randzweige der Hinweise,
     Skript-Zusatzfeature, `Kontext.verknuepfe`, Zylinderprüfung der Normbohrung ohne SolidWorks; live: Zwei-Körper-Fall und
     Toleranzen (`_flach`, `abs=1e-6`) in den Konturtests.
-  - **E Code-Pflege (29cc9e3):** Konstanten nach `swki/pruefung/normen.py`, `eckradien_roh`.
+  - **E Code-Pflege (29cc9e3):** Konstanten nach `swki/spec/normen.py`, `eckradien_roh`.
 
 ## Offene Punkte
 
