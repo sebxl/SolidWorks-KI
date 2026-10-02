@@ -18,6 +18,21 @@ class SwkiArgumentParser(argparse.ArgumentParser):
         raise SwkiFehler(message)
 
 
+def ganzzahl_ab(minimum: int, option: str):
+    """argparse-Typ für ganze Zahlen ≥ minimum; die Meldung nennt Option und Eingabe (nicht den Funktionsnamen)."""
+
+    def pruefe(text: str) -> int:
+        try:
+            wert = int(text)
+        except ValueError:
+            wert = None
+        if wert is None or wert < minimum:
+            raise argparse.ArgumentTypeError(f"{option} muss eine ganze Zahl ≥ {minimum} sein (ist {text!r})")
+        return wert
+
+    return pruefe
+
+
 def ausgabe(daten: dict) -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps(daten, ensure_ascii=False, indent=2, default=str))

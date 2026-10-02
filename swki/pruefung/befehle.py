@@ -1,12 +1,11 @@
 """Befehle "swki pruefen", "swki status" und "swki bericht"."""
 
-import argparse
 import json
 import subprocess
 from pathlib import Path
 
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeufe
-from swki.cli import SwkiFehler
+from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
 from swki.pruefung.bericht import bericht_markdown
@@ -35,13 +34,6 @@ def pruefe_lauf_gebaut(protokoll: dict, lauf: int) -> None:
             f"Lauf {lauf} ist beim Bau abgebrochen ({f.get('code')}: {f.get('meldung')}) – nicht prüfen, "
             "Bauweg nachbessern und neu bauen",
         )
-
-
-def _nicht_negativ(text: str) -> int:
-    wert = int(text)
-    if wert < 0:
-        raise argparse.ArgumentTypeError(f"--max muss ≥ 0 sein (ist {wert})")
-    return wert
 
 
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
@@ -137,11 +129,11 @@ def bericht(spec_pfad: Path) -> dict:
 def einrichten(subparsers) -> None:
     p = subparsers.add_parser("pruefen", help="gespeicherten Lauf messen, bewerten, Screenshots (pruefbericht.json)")
     p.add_argument("spec")
-    p.add_argument("--lauf", type=int, help="Vorgabe: letzter Lauf")
+    p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Vorgabe: letzter Lauf")
     p.set_defaults(func=lambda a: pruefen(Path(a.spec), a.lauf))
     p = subparsers.add_parser("status", help="Stand der Nachbesserungsschleife und Empfehlung")
     p.add_argument("spec")
-    p.add_argument("--max", type=_nicht_negativ, help="maximale Nachbesserungen laut Anweisung im Chat")
+    p.add_argument("--max", type=ganzzahl_ab(0, "--max"), help="maximale Nachbesserungen laut Anweisung im Chat")
     p.set_defaults(func=lambda a: status(Path(a.spec), a.max))
     p = subparsers.add_parser("bericht", help="bericht.md des Auftrags schreiben")
     p.add_argument("spec")

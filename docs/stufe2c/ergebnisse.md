@@ -100,10 +100,11 @@ SolidWorks-Instanz mit rund 2 GB Private Bytes statt (Stufe 2: unter 700 MB). Ei
 
 ## Aufräum-Paket (Stand 2026-10-02)
 
-Branch `aufraeumen`, Commits 124fe29 bis 4a1aa7f und der Abschluss-Commit dieses Tasks. Nutzerentscheidungen (2026-10-01):
+Branch `aufraeumen`, Commits 124fe29 bis 218a465, danach die Korrekturrunde nach Gesamt-Review (unten). Nutzerentscheidungen (2026-10-01):
 höchstens 4 Läufe (1 + 3), Bauabbruch-Läufe werden nicht verglichen, Rechner B zurückgestellt, Gruppen A–E vollständig.
 
-- **Unit-Tests:** 330 passed, 55 deselected (vorher 276 passed, 54 deselected). `swki api pruefe-code`: keine Befunde.
+- **Unit-Tests:** 349 passed, 55 deselected nach der Korrekturrunde (vorher 330 passed, 55 deselected; vor dem
+  Aufräum-Paket 276 passed, 54 deselected). `swki api pruefe-code`: keine Befunde.
 - **Live (Rechner A, SW 2025, einzeln mit Zeitlimit 240 s):** alle Dateien `OK`, in drei SolidWorks-Sitzungen (zwei Neustarts
   wegen Speicher, jeweils genau eine Instanz).
   - Sitzung 1 (Start 419 MB): `test_live_endbedingungen.py` 4 OK (davon 1 neu: Zwei-Körper-Fall), 2187 MB danach;
@@ -127,10 +128,22 @@ höchstens 4 Läufe (1 + 3), Bauabbruch-Läufe werden nicht verglichen, Rechner 
     Kontur mit Bogenmitte auf einem Konturpunkt (Kreissektor); keine Fehlalarme mehr bei Mittellinie, 360, Fase 45,
     Sammelhinweis für Konturpunkte; Text `muster_kreis` (Regel 3); `_pappus` für Rechteck/Kreis, mehrere Profile nicht
     analytisch.
-  - **D Tests (6d0d6a8, 618944c, 4a1aa7f, dieser Commit):** Ausdrucksfehler der Validierung, Randzweige der Hinweise,
+  - **D Tests (6d0d6a8, 618944c, 32e4882, 4a1aa7f, 218a465):** Ausdrucksfehler der Validierung, Randzweige der Hinweise (32e4882),
     Skript-Zusatzfeature, `Kontext.verknuepfe`, Zylinderprüfung der Normbohrung ohne SolidWorks; live: Zwei-Körper-Fall und
     Toleranzen (`_flach`, `abs=1e-6`) in den Konturtests.
   - **E Code-Pflege (29cc9e3):** Konstanten nach `swki/spec/normen.py`, `eckradien_roh`.
+  - **Korrekturrunde nach Gesamt-Review (+19 Unit-Tests, 330 → 349):**
+    - Stale Prüfdateien: Die automatisch vergebene Laufnummer (`naechster_lauf(r, auftrag, spec_pfad)`) ist nie belegt –
+      sie berücksichtigt neben den Laufordnern im Arbeitsordner jede Lauf-Datei (Protokoll, Prüfbericht, Prüfer-Urteil)
+      im Auftragsordner; `lauf_belegt` prüft dieselben Dateien. Vorher baute `swki bauen` nach aufgeräumtem
+      Arbeitsordner wieder Lauf 1 und `status` meldete den ungeprüften Lauf wegen alter Dateien als `bestanden`.
+      Neuer Unit-Test der Sperre in `bauen` (`tests/compiler/test_bauen.py`, ohne SolidWorks: `verbinde` wird nie erreicht).
+    - `pruefer.json` mit Code-Fences oder kaputtem JSON: `SwkiFehler` `PRUEFER_URTEIL_UNGUELTIG` mit Dateiname statt
+      `JSONDecodeError`; `knoten` müssen Texte sein.
+    - `--lauf` (`bauen`, `pruefen`) nur ≥ 1, `--max` ≥ 0, beide mit verständlicher Meldung auch bei nicht-numerischer
+      Eingabe (`swki.cli.ganzzahl_ab`); `bauen` prüft `lauf is None` statt `lauf or …`.
+    - Skill `konstruieren`: Verweis von Schritt 5 (Bauabbruch) auf Schritt 6, „1 + 3 = 4 Läufe“ als Vorgabe formuliert,
+      Zeile zu reservierten Feature-IDs.
 
 ## Offene Punkte
 

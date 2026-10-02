@@ -49,3 +49,32 @@ def test_lauf_belegt(tmp_path):
     datei.parent.mkdir(parents=True)
     datei.write_text("{}", encoding="utf-8")
     assert lauf_belegt(r, "A", spec, 2)
+
+
+def test_lauf_belegt_durch_pruefdatei_ohne_protokoll(tmp_path):
+    r = _rechner(tmp_path)
+    spec = tmp_path / "auftraege" / "A" / "platte.yaml"
+    for art in ("pruefbericht", "pruefer"):
+        datei = lauf_datei(spec, 3, art)
+        datei.parent.mkdir(parents=True, exist_ok=True)
+        datei.write_text("{}", encoding="utf-8")
+    assert lauf_belegt(r, "A", spec, 3)
+    assert not lauf_belegt(r, "A", spec, 1)
+    # Dateien einer anderen Spezifikation im selben Ordner belegen den Lauf nicht
+    fremd = lauf_datei(spec.with_name("andere.yaml"), 4, "protokoll")
+    fremd.write_text("{}", encoding="utf-8")
+    assert not lauf_belegt(r, "A", spec, 4)
+
+
+def test_naechster_lauf_beruecksichtigt_protokolle(tmp_path):
+    """Arbeitsordner aufgeräumt, Protokolle im (versionierten) Auftragsordner noch da: Lauf 1 ist nicht frei."""
+    r = _rechner(tmp_path)
+    spec = tmp_path / "auftraege" / "A" / "platte.yaml"
+    for n, art in ((1, "protokoll"), (1, "pruefbericht"), (1, "pruefer"), (2, "pruefbericht")):
+        datei = lauf_datei(spec, n, art)
+        datei.parent.mkdir(parents=True, exist_ok=True)
+        datei.write_text("{}", encoding="utf-8")
+    assert laeufe(r, "A") == []
+    assert naechster_lauf(r, "A", spec) == 3
+    lauf_ordner(r, "A", 5).mkdir(parents=True)
+    assert naechster_lauf(r, "A", spec) == 6

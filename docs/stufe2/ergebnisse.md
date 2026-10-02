@@ -35,7 +35,9 @@ f9 Spiegeln 0,52 s, f10 Skript (Notausgang, M8-Gewinde) 4,182 s.
   jeder Polygonpunkt einzeln (Buchse: 14 Hinweise) – erledigt (Aufräum-Paket, 32e4882).
 - `swki freigeben x.freigegeben.yaml` wird nicht abgelehnt; `freigeben` gibt den Pfad der Kopie
   nicht aus (beides erledigt, Aufräum-Paket, f5dd9d2); Grenze „Vorzeichenwechsel beim Ebenenversatz → neu bauen“ nur im Code-Kommentar.
-- Aus 2a geparkt: `swki bauen --lauf N` überschreibt bestehenden Lauf – erledigt (Aufräum-Paket, f5dd9d2);
+- Aus 2a geparkt: `swki bauen --lauf N` überschreibt bestehenden Lauf – erledigt (Aufräum-Paket, f5dd9d2; die Sperre deckt seit der
+  Korrekturrunde nach Gesamt-Review auch Läufe nur mit Prüfdateien ab, und die automatische Laufnummer überspringt alte
+  Prüfdateien im Auftragsordner);
   `speichere` prüft den Arbeitsordner nicht – erledigt (Aufräum-Paket, c51b1ee); Einheiten der Teilevorlage ungeprüft (wichtig für Rechner B);
   Compiler-Namen (`<id>_skizze`, `<id>_senkung`, `achse_x|y|z`) als Feature-IDs nicht verboten – erledigt
   (Aufräum-Paket, 6d0d6a8); kein Unit-Test für `Kontext.verknuepfe` – erledigt (Aufräum-Paket, 4a1aa7f); Notausgang-Skripte können die statische Prüfung gezielt

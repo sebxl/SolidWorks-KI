@@ -113,6 +113,8 @@ def test_gueltiges_urteil(urteil, tmp_path):
     {"bestanden": False},                                  # maengel fehlt
     {"bestanden": False, "maengel": [{"knoten": "f2", "beschreibung": "x"}]},  # knoten keine Liste
     {"bestanden": False, "maengel": [{"knoten": []}]},     # beschreibung fehlt
+    {"knoten": [2], "beschreibung": "x"},                  # Mangel statt Urteil
+    {"bestanden": False, "maengel": [{"knoten": [2], "beschreibung": "x"}]},  # Knoten keine Texte
 ])
 def test_ungueltiges_urteil(urteil, tmp_path):
     with pytest.raises(SwkiFehler) as e:
@@ -127,3 +129,18 @@ def test_lies_laeufe_meldet_ungueltiges_urteil(tmp_path):
     _schreibe(spec, 1, "pruefer", {"ok": True})
     with pytest.raises(SwkiFehler):
         lies_laeufe(spec)
+
+
+@pytest.mark.parametrize("inhalt", [
+    '```json\n{"bestanden": true, "maengel": []}\n```',   # Code-Fences
+    '{"bestanden": true, "maengel": [',                    # kaputtes JSON
+    "",                                                    # leere Datei
+])
+def test_lies_laeufe_unlesbares_urteil_meldet_dateinamen(tmp_path, inhalt):
+    spec = tmp_path / "platte.yaml"
+    _lauf(spec, 1, code=0)
+    lauf_datei(spec, 1, "pruefer").write_text(inhalt, encoding="utf-8")
+    with pytest.raises(SwkiFehler) as e:
+        lies_laeufe(spec)
+    assert e.value.daten == {"code": "PRUEFER_URTEIL_UNGUELTIG"}
+    assert "platte.lauf-1.pruefer.json" in str(e.value) and "Code-Fences" in str(e.value)
