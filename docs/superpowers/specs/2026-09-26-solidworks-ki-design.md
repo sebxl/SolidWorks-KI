@@ -258,6 +258,8 @@ Seitentext); Nachrüstung bei Bedarf.
 
 ## 8. Normteile
 
+**Stand Stufe 3a (2026-10-02):** Genormte Teile werden selbst konstruiert, aus Normtabelle und Bauvorlage, prüfen sich selbst und füllen eine lokale Bibliothek – siehe [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md). Katalog je Hersteller und `normteil aufnehmen` gelten nur noch für nicht genormte Kaufteile (eigenes Paket bei Bedarf); der Toolbox-Rückfall entfällt.
+
 - Katalog `normteile/katalog/<hersteller>.yaml`: `id`, `benennung`, `typ`, `kennmasse`,
   `quelle` (`datei` oder `toolbox`), `einbau` (Zuordnung Einbaureferenz → Geometrie im Teil),
   `eigenschaften` (Hersteller, Bestellnummer).
@@ -313,7 +315,8 @@ Normteil-Vorauswahl, Tool-/Skill-Routing. Vor Einsatz klären, welche Daten an T
 | 1 | API-Nachschlagewerk | `swki api` liefert korrekte Signatur für `FeatureExtrusion3` und Werte für `swEndConditions_e` |
 | 2 | Einzelteile: Schema, validieren/freigeben, Compiler (Extrusion, Schnitt/Tasche, Rotation, Bohrung, Verrundung, Fase, lineares/Kreismuster, Spiegeln), Anker, Notausgang, Prüfung 1+2, Prüfer-Agent, Schleife, Bericht, CLAUDE.md, Skills `konstruieren` + `compiler-erweitern` | Referenzen *Formplatte* und *Buchse* bestehen auf SW 2025 **und** SW 2026 |
 | 2c | Normbohrungen (Bohrungsassistent), runde Skizzenkonturen, Endbedingungen „bis Fläche“/„Versatz von Fläche“, kompakter Feature-Baum – Design: [2026-09-29-stufe-2c-design.md](2026-09-29-stufe-2c-design.md) | Referenz *Auswerferhalteplatte* besteht; Buchse und Formplatte bestehen weiter |
-| 3 | Baugruppen statisch + Normteile (Katalog, suchen, aufnehmen, Toolbox), Standardverknüpfungen, Bestimmtheit, statische Kollision, Skill `normteile` | Referenz *Säulenführung* besteht |
+| 3a | Normteile: Normtabellen mit Abgleich, Bauvorlagen, Selbstprüfung, Bibliothek (ISO 4762, 4032, 7089, 8734) – Design: [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md) | Tabellen abgeglichen oder begründet gesperrt, Prüfer-Urteile je Vorlage, Stichprobe 20 Teile besteht |
+| 3b | Baugruppen statisch: Standardverknüpfungen, Bestimmtheit, statische Kollision | allgemeine Referenzbaugruppe besteht (Festlegung in der Spec 3b) |
 | 4 | Mechanische Abläufe: Grenz-, Nut-, Scharnier-, Zahnrad-, Kurvenverknüpfung; `bewegungen`; kinematische Prüfung | Referenzen *Auswerferpaket* und *Schieber mit Schrägbolzen* bestehen |
 | 5 | Zeitauswertung + Jev; optional `swki` als MCP; Blech, Schweiß, Flächen, Formschräge, Zeichnungen | je Erweiterung eigene Referenz |
 
