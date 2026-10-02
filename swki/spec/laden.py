@@ -273,6 +273,10 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde += _ende_befunde(f["ende"], f"features[{i}].ende")
         if f["typ"] == "normbohrung":
             befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
+        if f["typ"] == "referenz" and "umkehren" in f.get("ebene", {}) and "abstand" not in f["ebene"]:
+            befunde.append({"pfad": f"features[{i}].ebene.umkehren",
+                            "meldung": "umkehren wirkt nur zusammen mit abstand (ohne Abstand ist die Ebene "
+                                       "deckungsgleich zur Basisebene)"})
     return befunde
 
 

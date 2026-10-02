@@ -26,8 +26,8 @@ def _ebene(ctx, f: dict):
     feature.Name = f["id"]
     if "abstand" in e:
         ctx.verknuepfe(f"D1@{f['id']}", e["abstand"])
-    normale = NORMALE[e["basis"]]
-    return feature, tuple(-c for c in normale) if e.get("umkehren") else normale
+    # Der Flip verschiebt nur die Lage auf die andere Seite, die Normale bleibt (wie in skizze.py, live belegt).
+    return feature, NORMALE[e["basis"]]
 
 
 @handler("referenz")

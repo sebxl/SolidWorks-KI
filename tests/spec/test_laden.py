@@ -357,3 +357,10 @@ def test_referenz_abstand_muss_positiv_sein(tmp_path):
     spec = _spec()
     spec["features"].append({"id": "R", "typ": "referenz", "ebene": {"basis": "oben", "abstand": -5}})
     assert any(b["pfad"].endswith("ebene.abstand") for b in plausibel_befunde(spec, tmp_path))
+
+
+def test_referenz_umkehren_braucht_abstand(tmp_path):
+    spec = _spec()
+    spec["features"].append({"id": "R", "typ": "referenz", "ebene": {"basis": "oben", "umkehren": True}})
+    assert schema_befunde(spec) == []
+    assert any(b["pfad"].endswith("ebene.umkehren") for b in plausibel_befunde(spec, tmp_path))
