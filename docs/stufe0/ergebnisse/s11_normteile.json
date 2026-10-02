@@ -1,0 +1,176 @@
+{
+  "ok": true,
+  "frage1_deckungsgleich": {
+    "erzeugt": true,
+    "typ": "RefPlane",
+    "wiedergefunden": true,
+    "array": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      -0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "zeile3": [
+      -0.0,
+      1.0,
+      0.0
+    ],
+    "spalte3": [
+      0.0,
+      -1.0,
+      0.0
+    ],
+    "ursprung_mm": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "frage1_abstand_12": {
+    "erzeugt": true,
+    "typ": "RefPlane",
+    "wiedergefunden": true,
+    "array": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.012,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "zeile3": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "spalte3": [
+      0.0,
+      -1.0,
+      0.0
+    ],
+    "ursprung_mm": [
+      0.0,
+      12.0,
+      0.0
+    ]
+  },
+  "frage2_achse": {
+    "erzeugt": true,
+    "typ": "RefAxis",
+    "wiedergefunden": true,
+    "punkte_mm": [
+      0.0,
+      55.00000000000001,
+      0.0,
+      0.0,
+      -55.00000000000001,
+      0.0
+    ]
+  },
+  "frage3_fehler": null,
+  "frage3_flaechen": {
+    "f1+y": {
+      "punkt": [
+        5.7,
+        8.0,
+        0.0
+      ],
+      "normale": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    "f1-y": {
+      "punkt": [
+        0.0,
+        -30.0,
+        0.0
+      ],
+      "normale": [
+        -0.0,
+        -1.0,
+        -0.0
+      ]
+    },
+    "f2+x": {
+      "punkt": [
+        -3.0,
+        4.0,
+        -1.7320508075688774
+      ],
+      "normale": [
+        1.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "f2-x": {
+      "punkt": [
+        3.0,
+        4.0,
+        1.7320508075688774
+      ],
+      "normale": [
+        -1.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "f2+y": {
+      "punkt": [
+        0.0,
+        4.0,
+        0.0
+      ],
+      "normale": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    }
+  },
+  "frage3_zylinder_f1": [
+    4.0,
+    6.5
+  ],
+  "frage3_erwartet": {
+    "k": 8,
+    "l": 30,
+    "s": 6,
+    "t": 4,
+    "zylinderradien": [
+      4.0,
+      6.5
+    ]
+  },
+  "frage4_werkstoffe": {
+    "1.1191": "1.1191 (C45E)",
+    "1.7225": "1.7225 (42CrMo4)",
+    "1.4301": "1.4301 (X5CrNi18-10)",
+    "1.0038": "1.0038 (S235JRG2)",
+    "1.3505": "FEHLT: Material '1.3505' in keiner Materialdatenbank gefunden"
+  }
+}

@@ -25,7 +25,8 @@ class BauAbbruch(SwkiFehler):
         self.daten = ergebnis
 
 
-def _vorbereiten(app, model, spec: dict, auftrag: str) -> None:
+def vorbereiten(app, model, spec: dict, auftrag: str) -> None:
+    """Parameter als Gleichungen, Werkstoff und Eigenschaften setzen (auch von swki.normteile.bau genutzt)."""
     globale_variablen(model, spec.get("parameter", {}))
     if "material" in spec:
         setze_material(app, model, spec["material"])
@@ -55,7 +56,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None) -> dict:
         ctx = Kontext(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"])
         try:
             with protokoll.phase("vorbereiten"):
-                _vorbereiten(app, model, spec, auftrag)
+                vorbereiten(app, model, spec, auftrag)
         except Exception as e:
             fehler = e
         if fehler is None:

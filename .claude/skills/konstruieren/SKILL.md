@@ -38,6 +38,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   `koerper`: „2 Volumenkörper statt 1“).
 - Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `<skript-id>_<n>`) nicht als Feature-IDs
   verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
+- Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
 - `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
   `schwerpunkt` für Symmetrie/Spiegelfehler.

@@ -1,0 +1,42 @@
+# Bauvorlage ISO 4762 (Spec 3a §5) – vereinfachte Darstellung: Schaft mit Nenn-Ø d über die volle Länge, kein Gewinde,
+# Innensechskant mit flachem Boden, Fase k/10 an der Kopfoberkante (die Norm legt sie nicht maßlich fest), Fase p × 45°
+# am Schaftende. Lage: Achse = Modell-Y, Kopfunterseite in der Ebene oben (y = 0), Kopf in +y, Schaft in −y.
+# Fasen liegen im Rotationsprofil, damit das Sollvolumen analytisch bleibt (volumen: auto).
+# Die Mittellinie steht an beiden Enden 1 mm über das Profil über, sonst scheitert der Bau (Spike S11).
+# parameter: Musterwerte M5 x 8; swki normteil setzt die Werte der Tabellenzeile ein.
+art: teil
+name: ISO4762_Muster
+parameter: {d: 5, dk: 8.5, k: 5, s: 4, t: 2.5, p: 0.8, l: 8}
+features:
+  - id: f1
+    typ: rotation
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon:
+            punkte: [[0, "=-l"], ["=d/2-p", "=-l"], ["=d/2", "=p-l"], ["=d/2", 0], ["=dk/2", 0],
+                     ["=dk/2", "=k-k/10"], ["=dk/2-k/10", "=k"], [0, "=k"]]
+        - mittellinie: {von: [0, "=-l-1"], bis: [0, "=k+1"]}
+  - id: f2
+    typ: schnitt
+    skizze:
+      ebene: {versatz: {ebene: oben, abstand: "=k"}}
+      elemente:
+        - polygon:
+            punkte: [["=s/2", "=-s/(2*3**0.5)"], ["=s/2", "=s/(2*3**0.5)"], [0, "=s/3**0.5"],
+                     ["=-s/2", "=s/(2*3**0.5)"], ["=-s/2", "=-s/(2*3**0.5)"], [0, "=-s/3**0.5"]]
+    ende: {typ: blind, tiefe: "=t"}
+  - {id: EINBAU_ACHSE, typ: referenz, achse: y}
+  - {id: EINBAU_EBENE, typ: referenz, ebene: {basis: oben}}
+pruefung:
+  huellquader: ["=dk", "=k+l", "=dk"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: k, von: {feature: f1, flaeche: "+y"}, zu: {punkt: [0, 0, 0]}, soll: "=k"}
+    - {was: l, von: {feature: f1, flaeche: "-y"}, zu: {punkt: [0, 0, 0]}, soll: "=l"}
+    - {was: s, von: {feature: f2, flaeche: "+x"}, zu: {feature: f2, flaeche: "-x"}, soll: "=s"}
+    - {was: t, von: {feature: f1, flaeche: "+y"}, zu: {feature: f2, flaeche: "+y"}, soll: "=t"}
+    - {was: EINBAU_EBENE, von: {referenz: EINBAU_EBENE}, zu: {feature: f1, flaeche: "+y"}, soll: "=k"}
+  durchmesser_pruefen:
+    - {was: d, feature: f1, nahe: ["=d/2", "=-l/2", 0], soll: "=d", referenz: EINBAU_ACHSE}
+    - {was: dk, feature: f1, nahe: ["=dk/2", "=k/2", 0], soll: "=dk", referenz: EINBAU_ACHSE}

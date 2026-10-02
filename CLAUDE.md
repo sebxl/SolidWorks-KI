@@ -1,7 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-10-01-aufraeumen.md
+Stand: Stufe 3a (Normteile) umgesetzt – Ergebnisse: docs/stufe3a/ergebnisse.md. Nächster Schritt: Stufe 3b (Baugruppen statisch):
+Brainstorming → Spec → Plan (Pläne: docs/superpowers/plans/).
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -14,6 +15,7 @@ Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpo
 - Die API rechnet in Metern und Radiant. Spezifikationen und Ausgaben an den Nutzer in mm und Grad.
 - Die Oberfläche ist deutsch: keine englischen Feature-/Ebenennamen verwenden; Ebenen über Position im Feature-Baum finden.
 - Nur Dokumente anfassen, die selbst angelegt wurden. Nur im Arbeitsordner speichern (`arbeitsordner` aus `config/rechner.yaml`). Nie in Kundenordner oder Bibliotheks-Originale schreiben.
+- Normteile: `swki normteil` kopiert selbst gebaute und geprüfte Teile in die `normteilbibliothek` (config/rechner.yaml) – sonst nichts dorthin schreiben.
 - Compiler-Code nur mit API-Aufrufen, die in SW 2025 verfügbar sind (`swki api pruefe-code`).
 
 ## Konstruieren (Stufe 2)
@@ -29,6 +31,11 @@ Aktueller Plan: docs/superpowers/plans/ – Übergabe zuerst lesen: docs/superpo
 - Kompakter Feature-Baum: Modellierregeln im Skill `konstruieren`; `validieren` meldet Zusammenfassbares als
   `hinweise` mit `art: zusammenfassen`.
 - Live-Tests einzeln mit Zeitlimit: `.venv\Scripts\python.exe tests\live_einzeln.py <datei> …`.
+
+## Normteile (Stufe 3a)
+- Genormte Teile immer über `swki normteil hole` (Skill `normteile`), nie als STEP-Download oder freihändig konstruiert. Herstellerdaten nur für nicht genormte Kaufteile.
+- Normtabellen (`swki/wissen/normteile/`) nur mit Abgleich erweitern: ≥ 2 unabhängige recherchierte Quellen je Wert; Widersprüche sperren und den Nutzer fragen.
+- Bauvorlagen nur mit neuem Prüfer-Urteil (`swki normteil muster` → Prüfer → `swki normteil urteil`).
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,

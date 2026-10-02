@@ -18,10 +18,8 @@ SW_FM_LPATTERN = 6
 _EBENEN_DER_ACHSE = {"x": ("vorne", "oben"), "y": ("vorne", "rechts"), "z": ("oben", "rechts")}
 
 
-def referenzachse(ctx, achse: str):
-    """Referenzachse (IFeature) und ihre Richtung als Einheitsvektor; je Teil nur einmal angelegt."""
-    if achse in ctx.achsen:
-        return ctx.achsen[achse]
+def neue_referenzachse(ctx, achse: str):
+    """Referenzachse aus zwei Standardebenen anlegen und ausblenden; (IFeature, Richtung als Einheitsvektor)."""
     ebenen = sw.standardebenen(ctx.model)
     a, b = _EBENEN_DER_ACHSE[achse]
     sw.auswahl_leeren(ctx.model)
@@ -30,15 +28,18 @@ def referenzachse(ctx, achse: str):
     if not ctx.model.InsertAxis2(True):
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Referenzachse {achse} nicht erzeugt", schritt="achse")
     feature = sw.letztes_feature(ctx.model)
-    feature.Name = f"achse_{achse}"
-    sw.auswahl_leeren(ctx.model)
-    feature.Select2(False, 0)
-    ctx.model._FlagAsMethod("BlankRefGeom")
-    ctx.model.BlankRefGeom()  # ausblenden, damit die Achse nicht in den Screenshots erscheint
-    sw.auswahl_leeren(ctx.model)
+    sw.ausblenden(ctx.model, feature)
     p = feature.GetSpecificFeature2.GetRefAxisParams  # (x1, y1, z1, x2, y2, z2) in m
     d = differenz(tuple(in_mm(v) for v in p[3:6]), tuple(in_mm(v) for v in p[0:3]))
-    ctx.achsen[achse] = (feature, tuple(c / laenge(d) for c in d))
+    return feature, tuple(c / laenge(d) for c in d)
+
+
+def referenzachse(ctx, achse: str):
+    """Referenzachse der Muster (IFeature, Richtung); je Teil nur einmal angelegt und "achse_<x|y|z>" benannt."""
+    if achse not in ctx.achsen:
+        feature, richtung = neue_referenzachse(ctx, achse)
+        feature.Name = f"achse_{achse}"
+        ctx.achsen[achse] = (feature, richtung)
     return ctx.achsen[achse]
 
 

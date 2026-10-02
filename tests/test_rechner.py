@@ -51,6 +51,7 @@ def test_erkenne_jahr_und_vorlagen(tmp_path, swki_home):
     assert r.vorlage_baugruppe == vorlagen / "Baugruppe.asmdot"   # Rückfall: Suche im Vorlagenordner
     assert str(r.materialdatenbank) == r"C:\Mat\Eigene"
     assert r.arbeitsordner == swki_home / "arbeit"
+    assert r.normteilbibliothek == r.arbeitsordner.parent / "normteile" == swki_home / "normteile"
 
 
 def test_ohne_jahr_neuestes(tmp_path, swki_home):

@@ -1,0 +1,565 @@
+{
+  "norm": "ISO 8734",
+  "quellenkreis": "a",
+  "groessen": {
+    "4": {
+      "masse": {
+        "d": [
+          {
+            "wert": 4,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          }
+        ],
+        "c": [
+          {
+            "wert": 0.63,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 0.63,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 0.63,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          },
+          {
+            "wert": 0.63,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "quelle": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-4/"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "quelle": "https://neue-physik.de/356.1_Elemente.php"
+        }
+      ]
+    },
+    "5": {
+      "masse": {
+        "d": [
+          {
+            "wert": 5,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          }
+        ],
+        "c": [
+          {
+            "wert": 0.8,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 0.98,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 0.8,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          },
+          {
+            "wert": 0.98,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70
+          ],
+          "quelle": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-5/"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "quelle": "https://neue-physik.de/356.1_Elemente.php"
+        }
+      ]
+    },
+    "6": {
+      "masse": {
+        "d": [
+          {
+            "wert": 6,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          }
+        ],
+        "c": [
+          {
+            "wert": 1.2,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 1.2,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 1.2,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "quelle": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-6/"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "quelle": "https://neue-physik.de/356.1_Elemente.php"
+        }
+      ]
+    },
+    "8": {
+      "masse": {
+        "d": [
+          {
+            "wert": 8,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          }
+        ],
+        "c": [
+          {
+            "wert": 1.6,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "quelle": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-8/"
+        },
+        {
+          "werte": [
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "quelle": "https://neue-physik.de/356.1_Elemente.php"
+        }
+      ]
+    },
+    "10": {
+      "masse": {
+        "d": [
+          {
+            "wert": 10,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          }
+        ],
+        "c": [
+          {
+            "wert": 2,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            16,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "quelle": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-10/"
+        },
+        {
+          "werte": [
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "quelle": "https://neue-physik.de/356.1_Elemente.php"
+        }
+      ]
+    },
+    "12": {
+      "masse": {
+        "d": [
+          {
+            "wert": 12,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          }
+        ],
+        "c": [
+          {
+            "wert": 2.5,
+            "quelle": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            20,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "quelle": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-12/"
+        },
+        {
+          "werte": [
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "quelle": "https://neue-physik.de/356.1_Elemente.php"
+        }
+      ]
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/",
+      "titel": "Fuller Fasteners: ISO 8734 Specifications - Parallel Pin - Dowel Pins",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schrauben-seimatec.de/media/pdf/c4/a5/55/ISO-8734-Zylinderstifte-1-4034-schrauben-seimatec-Tabelle.pdf",
+      "titel": "schrauben-seimatec.de: ISO 8734 Zylinderstifte (1.4034) Maßtabelle (PDF)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A",
+      "titel": "Rudolf Mühl: ISO 8734 -A- gehärtete Zylinderstifte, beidseitig gefast",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf",
+      "titel": "F. Reyher: Technische Informationen 2019 (PDF), Seite TI-116 Maße für Stifte, ISO 8734 ersetzt DIN 6325",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://neue-physik.de/356.1_Elemente.php",
+      "titel": "neue-physik.de: Zylinderstifte ISO 8734 - DIN 6325 - Tabelle (Nennlängen lieferbar)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-4/",
+      "titel": "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Durchmesser 4 mm (Längenauswahl)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-5/",
+      "titel": "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Durchmesser 5 mm (Längenauswahl)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-6/",
+      "titel": "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Durchmesser 6 mm (Längenauswahl)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-8/",
+      "titel": "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Durchmesser 8 mm (Längenauswahl)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-10/",
+      "titel": "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Durchmesser 10 mm (Längenauswahl)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schraubenhandel24.de/naegel-stifte/zylinderstifte/iso-8733/iso-8734-zylinderstifte-stahl-d-12/",
+      "titel": "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Durchmesser 12 mm (Längenauswahl)",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "c ist in allen Quellen ein Richtwert (c ≈ bzw. c ~), kein Höchst-/Mindestmaß; d ist das Nennmaß mit Toleranzfeld m6 (Fuller und Mühl nennen zusätzlich d max/min, z. B. d=6: 6.012 / 6.004; Werte hier nicht übernommen).",
+    "WIDERSPRUCH c bei d=5: Fuller Fasteners und Mühl nennen 0.8; Seimatec-Tabelle und Reyher-Tabelle nennen 0.98 (vermutlich Tippfehler/Übernahme in den beiden letztgenannten, nicht entschieden). Beide Werte sind unter 5/c eingetragen; die Nachbarwerte (d=4: 0.63, d=6: 1.2) sprechen für 0.8.",
+    "c für d=10 und d=12: 2 bzw. 2.5 nur bei Fuller Fasteners und Seimatec abgelesen; Mühl-Seite führt in dieser Tabelle nur d bis 8; bei Reyher ist die ISO-Zeile c für d>=6 im PDF-Text nicht lesbar (nur die DIN-6325-Zeile c: 1.2 / 1.6 / 2 / 2.5 für d=6/8/10/12, also gleich).",
+    "ISO/DIN: Reyher führt für DIN 6325 für d=6/8/10/12 c = 1.2/1.6/2/2.5 (gleich wie ISO); für d<=5 steht bei Reyher nur eine ISO-Zeile. Unterschiede ISO/DIN bei c wurden für die gefragten Größen nicht gefunden. Die Seite schrauben-lexikon.de nennt ISO 8734 'austauschbar mit DIN 6325'. Nicht mit ISO 2338 (ungehärtet; c max dort anders, Reyher: d=6 c max ISO 1.2) verwechseln.",
+    "Längenreihe: Zwei unabhängige Listen je Größe. schraubenhandel24.de (Händler, Lieferprogramm je Durchmesser, d=10 und d=12 einschließlich 110, d=4 ab 6) und neue-physik.de (Tabelle 'Nennlängen (lieferbar)', d=4 ab 8, d=5 ab 10, d=6 und 8 bis 100, d=10 und 12 bis 120). Die Listen weichen am Rand ab: d=4: 6 nur Händler; d=5: 8, 55, 70 nur Händler; d=6: 8 nur Händler; d=8: 10, 12 und 120 nur Händler; d=10: 110 nur Händler, 18 nur neue-physik; d=12: 20 und 110 nur Händler. Es handelt sich um lieferbare Reihen, nicht um den Normtext (ISO 8734 selbst nicht abgerufen).",
+    "Seefelder (Händler) zeigt dieselben Artikelzahlen je Durchmesser wie schraubenhandel24 (19/20/23/23/20/18) und wurde deshalb nicht als eigene Quelle geführt; Würth-eShop, Bossard, Böllhoff, fasteners.eu lieferten HTTP 403 oder keine Maßtabelle; ontrium-PDF ließ sich nicht abrufen (HTTP 500).",
+    "Mühl-Seite (ISO 8734 -A-) enthält ein Lagerprogramm-Raster (Stück je Verpackungseinheit) nur für d bis 8; wegen verschobener Zellen nicht als Längenreihe verwendet.",
+    "Seimatec-Tabelle gilt dem Werkstoff 1.4034 (Edelstahl, ISO 8734), enthält aber die ISO-8734-c-Werte."
+  ]
+}

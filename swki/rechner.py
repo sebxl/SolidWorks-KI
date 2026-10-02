@@ -92,6 +92,7 @@ def erkenne(reg: Registry, jahr: int | None = None) -> Rechner:
         vorlage_baugruppe=baugruppe_pfad,
         materialdatenbank=Path(mat) if mat else None,
         arbeitsordner=swki_home() / "arbeit",
+        normteilbibliothek=swki_home() / "normteile",
     )
 
 

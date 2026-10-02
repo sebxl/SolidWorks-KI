@@ -6,7 +6,7 @@ CircleParams = (cx, cy, cz, ax, ay, az, r), GetClosestPointOn(x, y, z) → 5 Wer
 """
 
 from swki.compiler.anker import (
-    Flaeche, Kante, flaeche_in_richtung, laenge, naechste, senkrechte_kanten,
+    AnkerFehler, Flaeche, Kante, Vektor, differenz, flaeche_in_richtung, laenge, naechste, senkrechte_kanten,
 )
 from swki.compiler.fehler import REFERENZ_NICHT_GEFUNDEN, BauFehler
 from swki.verbindung import in_mm, mm
@@ -106,3 +106,22 @@ def loese_kanten(ctx, anker: dict) -> list[Kante]:
     if ergebnis.richtung is None:
         raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"Feature {anker['feature']!r} hat keine Richtung für senkrechte_kanten")
     return senkrechte_kanten(alle, ergebnis.richtung)
+
+
+REF_ACHSE, REF_EBENE = "RefAxis", "RefPlane"  # IFeature.GetTypeName2 (Spike S11 Frage 2)
+
+
+def referenz_geometrie(feature) -> tuple[str, Vektor, Vektor]:
+    """Bezugsachse → ("achse", Punkt, Richtung); Bezugsebene → ("ebene", Ursprung, Normale). Punkte in mm, Richtungen
+    als Einheitsvektoren. Die Normale ist die dritte Zeile der Rotationsmatrix von IRefPlane.Transform (Spike S11)."""
+    typ = feature.GetTypeName2
+    if typ == REF_ACHSE:
+        p = feature.GetSpecificFeature2.GetRefAxisParams
+        a, b = _mm3(p[0:3]), _mm3(p[3:6])
+        d = differenz(b, a)
+        return "achse", a, tuple(c / laenge(d) for c in d)
+    if typ == REF_EBENE:
+        t = feature.GetSpecificFeature2.Transform.ArrayData
+        n = (t[6], t[7], t[8])
+        return "ebene", _mm3(t[9:12]), tuple(c / laenge(n) for c in n)
+    raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"{feature.Name} ist keine Bezugsachse oder -ebene ({typ})")

@@ -1,0 +1,27 @@
+# Bauvorlage ISO 8734 (Spec 3a §5) – vereinfachte Darstellung: Zylinder Ø d, Länge l, Fase c × 45° an beiden Enden
+# (die Norm sieht an einem Ende eine Kuppe vor). Lage: Achse = Modell-Y, eine Stirnseite in der Ebene oben (y = 0),
+# Länge in +y.
+# Die Mittellinie steht an beiden Enden 1 mm über das Profil über, sonst scheitert der Bau (Spike S11).
+art: teil
+name: ISO8734_Muster
+parameter: {d: 4, c: 0.63, l: 8}
+features:
+  - id: f1
+    typ: rotation
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon: {punkte: [[0, 0], ["=d/2-c", 0], ["=d/2", "=c"], ["=d/2", "=l-c"], ["=d/2-c", "=l"], [0, "=l"]]}
+        - mittellinie: {von: [0, "=-1"], bis: [0, "=l+1"]}
+  - {id: EINBAU_ACHSE, typ: referenz, achse: y}
+  - {id: EINBAU_EBENE_1, typ: referenz, ebene: {basis: oben}}
+  - {id: EINBAU_EBENE_2, typ: referenz, ebene: {basis: oben, abstand: "=l"}}
+pruefung:
+  huellquader: ["=d", "=l", "=d"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: l, von: {feature: f1, flaeche: "+y"}, zu: {feature: f1, flaeche: "-y"}, soll: "=l"}
+    - {was: EINBAU_EBENE_1, von: {referenz: EINBAU_EBENE_1}, zu: {feature: f1, flaeche: "+y"}, soll: "=l"}
+    - {was: EINBAU_EBENE_2, von: {referenz: EINBAU_EBENE_2}, zu: {feature: f1, flaeche: "-y"}, soll: "=l"}
+  durchmesser_pruefen:
+    - {was: d, feature: f1, nahe: ["=d/2", "=l/2", 0], soll: "=d", referenz: EINBAU_ACHSE}

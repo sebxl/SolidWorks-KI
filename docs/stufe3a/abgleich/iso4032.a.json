@@ -1,0 +1,330 @@
+{
+  "norm": "ISO 4032",
+  "quellenkreis": "a",
+  "groessen": {
+    "M5": {
+      "masse": {
+        "s": [
+          {
+            "wert": 8,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ],
+        "m": [
+          {
+            "wert": 4.7,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 4.7,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 4.7,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 4.7,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 4.7,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ]
+      }
+    },
+    "M6": {
+      "masse": {
+        "s": [
+          {
+            "wert": 10,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ],
+        "m": [
+          {
+            "wert": 5.2,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 5.2,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 5.2,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 5.2,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 5.2,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ]
+      }
+    },
+    "M8": {
+      "masse": {
+        "s": [
+          {
+            "wert": 13,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ],
+        "m": [
+          {
+            "wert": 6.8,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 6.8,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 6.8,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 6.8,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 6.8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ]
+      }
+    },
+    "M10": {
+      "masse": {
+        "s": [
+          {
+            "wert": 16,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ],
+        "m": [
+          {
+            "wert": 8.4,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ]
+      }
+    },
+    "M12": {
+      "masse": {
+        "s": [
+          {
+            "wert": 18,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ],
+        "m": [
+          {
+            "wert": 10.8,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 10.8,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 10.8,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 10.8,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 10.8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ]
+      }
+    },
+    "M16": {
+      "masse": {
+        "s": [
+          {
+            "wert": 24,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ],
+        "m": [
+          {
+            "wert": 14.8,
+            "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+          },
+          {
+            "wert": 14.8,
+            "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+          },
+          {
+            "wert": 14.8,
+            "quelle": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+          },
+          {
+            "wert": 14.8,
+            "quelle": "https://www.fasteners.eu/standards/iso/4032/"
+          },
+          {
+            "wert": 14.8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+          }
+        ]
+      }
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://schraube-mutter.de/schrauben/din-en-iso-4032/",
+      "titel": "ISO 4032 Sechskantmuttern mit kleinen ISO Schlüsselweiten (schraube-mutter.de)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk",
+      "titel": "ISO 4032 Sechskantmuttern, ISO-Schlüsselweiten für Behälterbau nach AD-TRD Regelwerk (Wegertseder)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934",
+      "titel": "Technische Daten - Sechskantmutter ISO 4032 / DIN 934 (schrauben24.biz)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.fasteners.eu/standards/iso/4032/",
+      "titel": "ISO 4032 - Hexagon Nuts (fasteners.eu)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/",
+      "titel": "ISO 4032 Specifications - Hex Regular Nuts (Fuller Fasteners)",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "d (Nenndurchmesser) ist kein Tabellenwert der Quellen, sondern die Gewindebezeichnung (M5 = 5 mm usw.); daher ohne Quellenwert weggelassen.",
+    "Alle fünf abgerufenen Quellen stimmen für s und m bei allen sechs Größen überein; keine Widersprüche.",
+    "s: Quellen führen s als Nennmaß = Höchstmaß (fasteners.eu: 'nominal = max'; Fuller: 'max = nominal size'); die Seiten schreiben teils 8 / 8,00 bzw. 10 / 10,0, hier als Zahl abgelegt.",
+    "m: Spalte 'm max' (Höchstmaß) laut Seiten; Seitenschreibweise teils 4,7 / 4,70 bzw. 4.7 (Fuller).",
+    "schrauben24.biz zeigt ISO/DIN gemeinsam: m ISO/DIN = 4,7/4; 5,2/5; 6,8/6,5; 8,4/8; 10,8/10; 14,8/13 und s ISO/DIN = 8; 10; 13; 16/17; 18/19; 24. Es wurden nur die ISO-Werte (jeweils der erste Wert) übernommen; die DIN-934-Werte (M10 s 17, M12 s 19, kleinere m) wurden bewusst nicht verwendet.",
+    "Reyher: Technische Informationen 2019 (PDF) war abrufbar, der Abruf lieferte aber keine lesbare ISO-4032-Tabelle; nicht als Quelle verwendet. Bossard, Würth, Fabory, Böllhoff, Schäfer+Peters: keine passende abgerufene Seite gefunden.",
+    "Unabhängigkeit: fünf verschiedene Unternehmen/Betreiber (schraube-mutter.de, Wegertseder, schrauben24.biz, fasteners.eu, Fuller Fasteners); alles Händler bzw. Händler-Informationsseiten, keine Hersteller-Primärkataloge der genannten Bevorzugten."
+  ]
+}

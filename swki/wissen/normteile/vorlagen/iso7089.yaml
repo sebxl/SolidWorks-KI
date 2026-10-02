@@ -1,0 +1,24 @@
+# Bauvorlage ISO 7089 (Spec 3a §5): Ring Innen-Ø d1, Außen-Ø d2, Dicke h. Lage: Achse = Modell-Y, Auflagefläche in der
+# Ebene oben (y = 0), Dicke in +y.
+art: teil
+name: ISO7089_Muster
+parameter: {d1: 5.3, d2: 10, h: 1}
+features:
+  - id: f1
+    typ: rotation
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon: {punkte: [["=d1/2", 0], ["=d2/2", 0], ["=d2/2", "=h"], ["=d1/2", "=h"]]}
+        - mittellinie: {von: [0, 0], bis: [0, "=h"]}
+  - {id: EINBAU_ACHSE, typ: referenz, achse: y}
+  - {id: EINBAU_EBENE, typ: referenz, ebene: {basis: oben}}
+pruefung:
+  huellquader: ["=d2", "=h", "=d2"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: h, von: {feature: f1, flaeche: "+y"}, zu: {feature: f1, flaeche: "-y"}, soll: "=h"}
+    - {was: EINBAU_EBENE, von: {referenz: EINBAU_EBENE}, zu: {feature: f1, flaeche: "+y"}, soll: "=h"}
+  durchmesser_pruefen:
+    - {was: d1, feature: f1, nahe: ["=d1/2", "=h/2", 0], soll: "=d1", referenz: EINBAU_ACHSE}
+    - {was: d2, feature: f1, nahe: ["=d2/2", "=h/2", 0], soll: "=d2", referenz: EINBAU_ACHSE}

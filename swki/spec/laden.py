@@ -75,10 +75,10 @@ def _werte(obj, pfad: list, eltern: str | None = None):
 
 
 def _referenzen(obj, pfad: list):
-    """Liefert (pfad, feature-id) für alle Verweise auf Features ("feature" und "features")."""
+    """Liefert (pfad, feature-id) für alle Verweise auf Features ("feature", "referenz" und "features")."""
     if isinstance(obj, dict):
         for k, v in obj.items():
-            if k == "feature" and isinstance(v, str):
+            if k in ("feature", "referenz") and isinstance(v, str):
                 yield [*pfad, k], v
             elif k == "features" and isinstance(v, list) and all(isinstance(x, str) for x in v):
                 for i, x in enumerate(v):
@@ -273,6 +273,10 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde += _ende_befunde(f["ende"], f"features[{i}].ende")
         if f["typ"] == "normbohrung":
             befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
+        if f["typ"] == "referenz" and "umkehren" in f.get("ebene", {}) and "abstand" not in f["ebene"]:
+            befunde.append({"pfad": f"features[{i}].ebene.umkehren",
+                            "meldung": "umkehren wirkt nur zusammen mit abstand (ohne Abstand ist die Ebene "
+                                       "deckungsgleich zur Basisebene)"})
     return befunde
 
 

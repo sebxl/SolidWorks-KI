@@ -1,0 +1,652 @@
+{
+  "norm": "ISO 8734",
+  "quellenkreis": "a",
+  "groessen": {
+    "4": {
+      "laengen": [
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "bereich": [
+            6,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60,
+            80
+          ],
+          "bereich": [
+            6,
+            80
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "bereich": [
+            6,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+        }
+      ]
+    },
+    "5": {
+      "laengen": [
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70
+          ],
+          "bereich": [
+            8,
+            70
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70
+          ],
+          "bereich": [
+            6,
+            70
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            10,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+        }
+      ]
+    },
+    "6": {
+      "laengen": [
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "bereich": [
+            8,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            8,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            100
+          ],
+          "bereich": [
+            10,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+        }
+      ]
+    },
+    "8": {
+      "laengen": [
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            10,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120,
+            140
+          ],
+          "bereich": [
+            10,
+            140
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+        },
+        {
+          "werte": [
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "bereich": [
+            14,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+        }
+      ]
+    },
+    "10": {
+      "laengen": [
+        {
+          "werte": [
+            16,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            16,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            16,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+        },
+        {
+          "werte": [
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            20,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+        }
+      ]
+    },
+    "12": {
+      "laengen": [
+        {
+          "werte": [
+            20,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            20,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+        },
+        {
+          "werte": [
+            20,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120,
+            130,
+            140
+          ],
+          "bereich": [
+            20,
+            140
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+        },
+        {
+          "werte": [
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            20,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+        }
+      ]
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383",
+      "titel": "DIN- und Normteile ISO 8734 Stahl gehärtet Zylinderstifte, Typ A, Toleranzfeld m6 online kaufen (alle 17 Listenseiten, 203 Varianten)",
+      "unternehmen": "SEEFELDER",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html",
+      "titel": "ISO 8734 / DIN 6325 Zylinderstift Stahl gehärtet (Variantenliste)",
+      "unternehmen": "Dunken Verbindungselemente GmbH",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884",
+      "titel": "DIN 6325/ISO 8734 Zylinderstifte h6 Stahl gehärtet, geschliffen (Variantenliste)",
+      "unternehmen": "Der Schraubenladen",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.ganternorm.com/de/produkte/3.2-Befestigen-Positionieren-Nivellieren-mit-Halteseilen-Schraub-Klemm-und-Auflageelementen/Positionierelemente-Pendelelemente-Bohrbuchsen/DIN-6325-Zylinderstifte-Stahl",
+      "titel": "DIN 6325 Zylinderstifte Stahl (nur Gesamt-Filterliste, keine Tabelle je Durchmesser)",
+      "unternehmen": "Otto Ganter GmbH & Co. KG",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.keller-kalmbach.de/produkte/verbindungselemente/stifte/zylinderstifte/iso-8734-zylinderstift/p/13873448",
+      "titel": "ISO 8734, Zylinderstift, 4x8, A, ST geh., blank (nur Hinweistext, keine Längenliste)",
+      "unternehmen": "Keller & Kalmbach GmbH & Co. KG",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.bossard.com/us-en/eshop/dowel-pins/parallel-pins-hardened-ground/p/857/",
+      "titel": "BN 857 - Parallel pins hardened, ground m6 (nur Normzuordnung, Varianten per JavaScript)",
+      "unternehmen": "Bossard",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "Alle drei Längenlisten (Seefelder, Dunken, Der Schraubenladen) sind Handels-Sortimente/Lagerlisten, KEIN Normbereich. Keine Quelle dieses Kreises druckt den genormten Längenbereich je Durchmesser (l von-bis) als Normtabelle; Normbereich ist daher aus dieser Gruppe nicht belegt (bereich = jeweils kleinste/größte gelistete Länge).",
+    "Ergebnis zu den Streitwerten (in allen drei Listen für alle Ø 4-12 übereinstimmend): 35, 65, 75, 85, 95 kommen nirgends vor; 36 ist in allen drei Listen für Ø 4, 5, 6, 8, 10, 12 vorhanden (Seefelder, Dunken, Schraubenladen). Ganter (DIN 6325, Gesamtliste über alle Ø): 5 6 8 10 12 14 16 18 20 24 28 32 36 40 45 50 55 60 70 80 90 100 120 - ebenfalls 36, aber weder 22/26/30 noch 35/65/75/85/95. Keller & Kalmbach vermerkt, DIN 6325 sei zurückgezogen und nur eingeschränkt mit ISO 8734 austauschbar wegen geänderter Nennlängen; Ganter vermerkt, DIN 6325 entspreche nicht ISO 8734, könne sie aber teilweise ersetzen. Beides stützt die Trennung ISO-Reihe (22/26/30 ...) und DIN-Reihe (24/28/32/36 ...). Seefelder und Dunken führen sowohl 22/26/30 als auch 24/28/32/36 (Mischsortiment); Der Schraubenladen führt nur 24/28/30/32/36, aber kein 26.",
+    "Untergrenzen je Ø in den Listen: Ø4 ab 6, Ø5 ab 8 (Seefelder) bzw. 6 (Dunken) bzw. 10 (Schraubenladen), Ø6 ab 8 (Seefelder, Dunken) bzw. 10, Ø8 ab 10 (Seefelder, Dunken) bzw. 14, Ø10 ab 16 (Seefelder, Dunken) bzw. 20, Ø12 ab 20 (alle drei). Obergrenzen: Ø4 bis 60 (Seefelder, Schraubenladen) bzw. 80 (Dunken); Ø10 bis 120 (alle drei), Ø12 bis 120 (Seefelder, Schraubenladen) bzw. 140 (Dunken); Ø5 bis 70 bzw. 60; Ø6 bis 100-120; Ø8 bis 100-140. Ø4 mit 45, 50, 60 sowie Ø10/12 mit 100 und 120 sind also in allen Listen vorhanden; 80 bei Ø4 und 130/140 bei Ø12 bzw. 140 bei Ø8 nur bei Dunken (vermutlich über den Normbereich hinaus).",
+    "Seefelder: 203 Varianten, per ?page=1..17 vollständig abgerufen (Seite 18 wiederholt Seite 1); Anzahl je Ø laut Filter: Ø4 19, Ø5 20, Ø6 23, Ø8 23, Ø10 20, Ø12 18 - stimmt mit den abgerufenen Werten überein. Seefelder benennt ISO 8734 Typ A, m6 und 'ersetzt die DIN 6325'. Dunken-Titel: 'ISO 8734 / DIN 6325', Werte aus der Varianten-Auswahlliste der Produktseite. Der Schraubenladen nennt 'DIN 6325/ISO 8734' mit Toleranz 'h6' (statt m6; vermutlich Fehlbezeichnung des Händlers), Werte aus der Variantenauswahl, daher norm_der_quelle DIN 6325.",
+    "Nicht auswertbar: Würth (HTTP 403 / Access Denied), Hoffmann und SFS (Sicherheitssperre), Bossard BN 857 (Varianten per JavaScript nachgeladen; Seite nennt nur 'DIN 6325 (Standard withdrawn) ~ISO 8734'), Keller & Kalmbach, Fibro, Hasco, Kipp, Norelem (Varianten dynamisch). mbo-osswald und schrauben-mutter.de führen nur Edelstahl C1 (ISO 8734 Typ C1) - nicht herangezogen. ekinsun.com nennt nur eine pauschale Serie 4, 5, 6, 8, 10, 12, 16, 20, 24, 28, 32, 36, 40, 45, 50, 60, 70, 80, 90, 100 'with availability narrowing by diameter' (ohne Tabelle je Ø; Hersteller-Blog, nicht verwendet).",
+    "Quellenunabhängigkeit: Seefelder, Dunken und Der Schraubenladen sind drei Unternehmen mit voneinander abweichenden Listen (keine Kopien); es gilt jedoch dieselbe Einschränkung: Handelslisten, nicht Normtext."
+  ]
+}

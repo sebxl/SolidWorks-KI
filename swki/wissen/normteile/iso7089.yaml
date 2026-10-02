@@ -1,0 +1,51 @@
+# Normtabelle ISO 7089 – Flache Scheiben, normale Reihe, Produktklasse A (Spec 3a §4). Stand: abgeglichen am
+# 2026-10-02 per Web-Recherche (je Wert ≥ 2 unabhängige Quellen, Rohdaten in docs/stufe3a/abgleich/). Maße in mm:
+# d1 Innendurchmesser (Mindestmaß), d2 Außendurchmesser (Höchstmaß), h Dicke (Nennmaß). Die Größe bezeichnet die
+# zugehörige Schraube.
+norm: ISO 7089
+benennung: Scheibe
+ersetzt: DIN 125-1
+vorlage: vorlagen/iso7089.yaml
+parameter: [d1, d2, h]
+laenge: false
+varianten:
+  "200 HV": {material: "1.0038"}
+  A2: {material: "1.4301"}
+vorgabe_variante: "200 HV"
+groessen:
+  M5: {masse: {d1: 5.3, d2: 10, h: 1}, status: abgeglichen}
+  M6: {masse: {d1: 6.4, d2: 12, h: 1.6}, status: abgeglichen}
+  M8: {masse: {d1: 8.4, d2: 16, h: 1.6}, status: abgeglichen}
+  M10: {masse: {d1: 10.5, d2: 20, h: 2}, status: abgeglichen}
+  M12: {masse: {d1: 13, d2: 24, h: 2.5}, status: abgeglichen}
+  M16: {masse: {d1: 17, d2: 30, h: 3}, status: abgeglichen}
+quellen:
+  - url: "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+    titel: "DIN EN ISO 7089 - fasten.it"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.fasteners.eu/de/standards/ISO/7089/"
+    titel: "ISO 7089 - Unterlegscheiben, Form A (ohne Fase) - fasteners.eu"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+    titel: "BN715 Unterlegscheiben BOSSARD (Hasler, DIN EN ISO 7089 Form A)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+    titel: "DIN 125 / DIN EN ISO 7089 Unterlegscheiben Form A ohne Fase - Schraube & Mutter"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+    titel: "ISO 7089 - Unterlegscheiben Form A = ohne Fase - schrauben-lexikon.de"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.theo-schrauben.de/ISO-7089"
+    titel: "ISO 7089 flache Unterlegscheiben - theo-schrauben.de"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+    titel: "ISO 7089 Scheiben, normale Reihe Produktklasse A - Wegertseder"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+regeln: ["d2 > d1", "h < d1"]

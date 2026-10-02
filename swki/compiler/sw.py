@@ -89,6 +89,15 @@ def ohne_inferenz(sketch_manager):
         sketch_manager.AddToDB = False
 
 
+def ausblenden(model, feature) -> None:
+    """Bezugsgeometrie ausblenden, damit sie nicht in den Screenshots erscheint."""
+    auswahl_leeren(model)
+    feature.Select2(False, 0)
+    model._FlagAsMethod("BlankRefGeom")
+    model.BlankRefGeom()
+    auswahl_leeren(model)
+
+
 def ursprung(model):
     """Ursprungspunkt des Teils (Skizzenpunkt des Features "OriginProfileFeature"), sprachunabhängig.
 

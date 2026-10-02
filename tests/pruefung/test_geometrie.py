@@ -180,3 +180,14 @@ def test_rotation_mit_mehreren_profilen_nicht_berechenbar():
                      {"kreis": {"mitte": [15, 0], "durchmesser": 4}})
     volumen, grund = volumen_auto(spec)
     assert volumen is None and grund == "f1: Rotation mit mehreren Profilen nicht analytisch"
+
+
+def test_volumen_referenz_traegt_nichts_bei():
+    spec = {"features": [
+        {"id": "f1", "typ": "extrusion", "skizze": {"ebene": "oben", "elemente": [
+            {"rechteck": {"mitte": [0, 0], "breite": 10, "hoehe": 20}}]}, "ende": {"typ": "blind", "tiefe": 5}},
+        {"id": "EINBAU_ACHSE", "typ": "referenz", "achse": "y"},
+        {"id": "EINBAU_EBENE", "typ": "referenz", "ebene": {"basis": "oben"}},
+    ]}
+    volumen, grund = volumen_auto(spec)
+    assert volumen == pytest.approx(1000.0) and grund == "analytisch"

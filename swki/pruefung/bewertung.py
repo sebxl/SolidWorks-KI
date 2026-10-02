@@ -29,6 +29,7 @@ class Messwerte:
     messpunkte: dict[str, Messgeometrie | str] = field(default_factory=dict)  # Schlüssel → Geometrie oder Fehlertext
     normbohrungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Bohrungsassistent-Daten oder Fehlertext
     koerper: int = 1  # Anzahl Volumenkörper im Teil (Soll: genau 1)
+    durchmesser: dict[str, dict | str] = field(default_factory=dict)  # was → {"durchmesser", "achse", "referenz"?} oder Fehlertext
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -148,6 +149,23 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
             ergebnisse.append(_pruefung(f"mass:{mp['was']}", False, soll=soll, hinweis=str(e), knoten=knoten))
             continue
         ergebnisse.append(_pruefung(f"mass:{mp['was']}", abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
+
+    for dp in pr.get("durchmesser_pruefen", []):
+        pid, knoten = f"durchmesser:{dp['was']}", [dp["feature"]]
+        soll, tol = auswerten(dp["soll"], p), dp.get("tol", _TOL_MASS)
+        ist = m.durchmesser.get(dp["was"], "Messung fehlt")
+        if isinstance(ist, str):
+            ergebnisse.append(_pruefung(pid, False, soll=soll, hinweis=ist, knoten=knoten))
+            continue
+        ok = abs(ist["durchmesser"] - soll) <= tol
+        daten = {"ist": ist["durchmesser"], "soll": soll, "tol": tol}
+        if "referenz" in dp:
+            try:
+                daten["achsversatz"] = round(abstand(ist["achse"], ist["referenz"]), 6)
+                ok = ok and daten["achsversatz"] <= tol
+            except NichtMessbar as e:
+                ok, daten["hinweis"] = False, f"nicht koaxial zu {dp['referenz']}: {e}"
+        ergebnisse.append(_pruefung(pid, ok, **daten, knoten=knoten))
 
     if "schwerpunkt" in pr:
         soll = [None if v is None else auswerten(v, p) for v in pr["schwerpunkt"]["soll"]]

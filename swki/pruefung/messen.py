@@ -4,11 +4,11 @@ from pathlib import Path
 
 from swki.cli import SwkiFehler
 from swki.compiler import sw
-from swki.compiler.anker import AnkerFehler, flaeche_in_richtung, laenge, zylinder_zu_punkten
+from swki.compiler.anker import AnkerFehler, flaeche_in_richtung, laenge, zylinder_durch_punkt, zylinder_zu_punkten
 from swki.compiler.eigenschaften import lies_eigenschaften
 from swki.compiler.fehler import BauFehler
 from swki.compiler.kontext import FeatureErgebnis, Kontext
-from swki.compiler.topologie import flaechen, koerper
+from swki.compiler.topologie import flaechen, koerper, referenz_geometrie
 from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.normen import SW_BEFESTIGUNG
@@ -109,6 +109,10 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
 def _messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
     if "punkt" in mp:
         return Messgeometrie("punkt", tuple(ctx.wert(v) for v in mp["punkt"]))
+    if "referenz" in mp:
+        if mp["referenz"] not in ctx.ergebnisse:
+            raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Referenz {mp['referenz']!r} fehlt im Teil")
+        return Messgeometrie(*referenz_geometrie(ctx.ergebnis(mp["referenz"]).features[0]))
     if mp["feature"] not in ctx.ergebnisse:
         raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Feature {mp['feature']!r} fehlt im Teil")
     feature = ctx.ergebnis(mp["feature"]).features[0]
@@ -138,6 +142,28 @@ def messpunkte(ctx, spec: dict) -> dict[str, Messgeometrie | str]:
     return ergebnis
 
 
+def durchmesser(ctx, spec: dict) -> dict[str, dict | str]:
+    """Durchmesser je pruefung.durchmesser_pruefen: Zylinderfläche des Features, auf deren Mantel `nahe` liegt; mit
+    `referenz` zusätzlich die Bezugsachse (Koaxialität bewertet bewertung.bewerte)."""
+    ergebnis = {}
+    for dp in spec.get("pruefung", {}).get("durchmesser_pruefen", []):
+        try:
+            for fid in (dp["feature"], dp.get("referenz")):
+                if fid is not None and fid not in ctx.ergebnisse:
+                    raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Feature {fid!r} fehlt im Teil")
+            nahe = tuple(ctx.wert(v) for v in dp["nahe"])
+            z = zylinder_durch_punkt(flaechen(ctx.ergebnis(dp["feature"]).features[0]), nahe, ctx.tol_mm)
+            n = laenge(z.achse)
+            wert = {"durchmesser": round(2 * z.radius, 6),
+                    "achse": Messgeometrie("achse", z.punkt, tuple(c / n for c in z.achse))}
+            if "referenz" in dp:
+                wert["referenz"] = Messgeometrie(*referenz_geometrie(ctx.ergebnis(dp["referenz"]).features[0]))
+            ergebnis[dp["was"]] = wert
+        except BauFehler as e:
+            ergebnis[dp["was"]] = f"{e.code}: {e}"
+    return ergebnis
+
+
 def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
     """freigegeben: Spezifikation im Stand der Freigabe (Soll der Prüfung normbohrungen); ohne Angabe ctx.spec."""
     model = ctx.model
@@ -154,4 +180,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         messpunkte=messpunkte(ctx, ctx.spec),
         normbohrungen=normbohrungen(model, freigegeben or ctx.spec),
         koerper=len(koerper(model)),
+        durchmesser=durchmesser(ctx, ctx.spec),
     )

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Normtabelle eines Normteils (swki/wissen/normteile/<norm>.yaml, Spec 3a §4)",
+  "type": "object",
+  "required": ["norm", "benennung", "vorlage", "parameter", "laenge", "varianten", "vorgabe_variante", "groessen",
+               "quellen", "regeln"],
+  "additionalProperties": false,
+  "properties": {
+    "norm": {"type": "string", "pattern": "^(ISO|DIN|EN) [0-9]+(-[0-9]+)?$"},
+    "benennung": {"type": "string", "minLength": 1},
+    "ersetzt": {"type": "string"},
+    "vorlage": {"type": "string", "pattern": "^vorlagen/[a-z0-9]+\\.yaml$"},
+    "parameter": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}},
+    "laenge": {"type": "boolean"},
+    "varianten": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {"type": "object", "required": ["material"], "additionalProperties": false,
+                               "properties": {"material": {"type": "string", "minLength": 1}}}
+    },
+    "vorgabe_variante": {"type": "string"},
+    "groessen": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/groesse"}},
+    "quellen": {"type": "array", "items": {"$ref": "#/$defs/quelle"}},
+    "regeln": {"type": "array", "items": {"type": "string", "minLength": 3}},
+    "hinweise": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "groesse": {
+      "type": "object", "required": ["masse", "status"], "additionalProperties": false,
+      "properties": {
+        "masse": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "number", "exclusiveMinimum": 0}},
+        "laengen": {"type": "array", "minItems": 1, "items": {"type": "number", "exclusiveMinimum": 0}},
+        "status": {"enum": ["abgeglichen", "gesperrt"]},
+        "grund": {"type": "string", "minLength": 1},
+        "entscheidung": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"if": {"properties": {"status": {"const": "gesperrt"}}}, "then": {"required": ["grund"]}}]
+    },
+    "quelle": {
+      "type": "object", "required": ["url", "abgerufen", "groessen"], "additionalProperties": false,
+      "properties": {
+        "url": {"type": "string", "pattern": "^https?://"},
+        "titel": {"type": "string"},
+        "abgerufen": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "groessen": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+# Testtabelle für Unit-Tests (keine echte Norm).
+norm: ISO 9999
+benennung: Testring
+vorlage: vorlagen/iso9999.yaml
+parameter: [a, b]
+laenge: true
+varianten:
+  "8.8": {material: "1.1191"}
+  A2: {material: "1.4301"}
+vorgabe_variante: "8.8"
+groessen:
+  M5: {masse: {a: 5, b: 10}, laengen: [10, 12, 16], status: abgeglichen}
+  M6: {masse: {a: 6, b: 12}, laengen: [10, 12, 16, 20], status: abgeglichen}
+  M8: {masse: {a: 8, b: 16}, laengen: [12, 16, 20], status: gesperrt, grund: "b: Quelle X 16, Quelle Y 15"}
+quellen:
+  - {url: "https://beispiel.invalid/a", abgerufen: "2026-10-02", groessen: [M5, M6]}
+  - {url: "https://beispiel.invalid/b", abgerufen: "2026-10-02", groessen: [M5, M6, M8]}
+regeln: ["b > a"]
