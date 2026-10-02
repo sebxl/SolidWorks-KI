@@ -78,3 +78,35 @@ def test_nutzerentscheidung_ersetzt_quellen():
         t["quellen"].pop(0)
         t["groessen"]["M5"]["entscheidung"] = "Nutzer 2026-10-05: b = 10 (Quelle A 10, Quelle B 10.5)"
     assert "groessen.M5.status" not in [b["pfad"] for b in _befunde(entscheiden)]
+
+
+def test_gleiche_url_zaehlt_einmal():
+    def doppelt(t):
+        t["quellen"] = [t["quellen"][0], {**t["quellen"][0], "groessen": ["M5", "M5"]}]
+    assert "groessen.M5.status" in [b["pfad"] for b in _befunde(doppelt)]
+
+
+def test_leere_datei_ist_ungueltig(tmp_path):
+    (tmp_path / "iso1.yaml").write_text("", encoding="utf-8")
+    with pytest.raises(NormteilFehler) as e:
+        lade_normtabelle("ISO 1", tmp_path)
+    assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG"
+
+
+@pytest.mark.parametrize("zusatz", ["groessen: [M5]", "quellen: [foo]", "varianten: [A2]",
+                                    "quellen: [{url: 'https://a.invalid', abgerufen: 2026-10-02, groessen: M5}]"])
+def test_falsche_typen_stuerzen_beim_laden_nicht_ab(tmp_path, zusatz):
+    text = (DATEN / "iso9999.yaml").read_text(encoding="utf-8")
+    # Schlüssel samt eingerückter Folgezeilen entfernen, dann ersetzen
+    bereinigt, aktiv = [], False
+    for z in text.splitlines():
+        if z.startswith(zusatz.split(":")[0] + ":"):
+            aktiv = True
+            continue
+        if aktiv and (z.startswith(" ") or z.startswith("-")):
+            continue
+        aktiv = False
+        bereinigt.append(z)
+    (tmp_path / "iso9999.yaml").write_text("\n".join(bereinigt + [zusatz]) + "\n", encoding="utf-8")
+    t = lade_normtabelle("ISO 9999", tmp_path)
+    assert tabellen_befunde(t, tmp_path)

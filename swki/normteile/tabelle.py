@@ -41,13 +41,24 @@ def lade_normtabelle(norm: str, ordner: Path = ORDNER) -> dict:
         raise NormteilFehler(NORMTEIL_UNBEKANNT,
                              f"Norm {norm!r} unbekannt; vorhanden: {', '.join(normen(ordner)) or 'keine'}")
     t = yaml.safe_load(pfad.read_text(encoding="utf-8"))
-    t["groessen"] = {groesse_text(g): z for g, z in (t.get("groessen") or {}).items()}
-    t["varianten"] = {str(v): w for v, w in (t.get("varianten") or {}).items()}
+    if not isinstance(t, dict):
+        raise NormteilFehler(NORMTABELLE_UNGUELTIG, f"Normtabelle {pfad.name}: kein YAML-Objekt (leer?)",
+                             befunde=[{"pfad": "(wurzel)", "meldung": "kein Objekt"}])
+    # Nur normalisieren, wenn der Typ passt; den Rest meldet die Schemaprüfung in tabellen_befunde.
+    if isinstance(t.get("groessen"), dict):
+        t["groessen"] = {groesse_text(g): z for g, z in t["groessen"].items()}
+    if isinstance(t.get("varianten"), dict):
+        t["varianten"] = {str(v): w for v, w in t["varianten"].items()}
     if "vorgabe_variante" in t:
         t["vorgabe_variante"] = str(t["vorgabe_variante"])
-    for q in t.get("quellen") or []:
-        q["abgerufen"] = str(q.get("abgerufen"))
-        q["groessen"] = [groesse_text(g) for g in q.get("groessen") or []]
+    if isinstance(t.get("quellen"), list):
+        for q in t["quellen"]:
+            if not isinstance(q, dict):
+                continue
+            if "abgerufen" in q:
+                q["abgerufen"] = str(q["abgerufen"])
+            if isinstance(q.get("groessen"), list):
+                q["groessen"] = [groesse_text(g) for g in q["groessen"]]
     return t
 
 
@@ -62,7 +73,7 @@ def regel_erfuellt(regel: str, masse: dict) -> bool:
 
 def tabellen_befunde(t: dict, ordner: Path = ORDNER) -> list[dict]:
     """Schema, Vorlage, Varianten, Maßnamen, Längenreihen, Regeln, „Maße steigen mit der Größe“, Quellenpflicht
-    (≥ 2 Quellen je abgeglichener Größe; eine dokumentierte Nutzerentscheidung `entscheidung` ersetzt sie)."""
+    (≥ 2 verschiedene Quellen-URLs je abgeglichener Größe; eine dokumentierte Nutzerentscheidung `entscheidung` ersetzt sie)."""
     schema = Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8")))
     befunde = [{"pfad": "/".join(map(str, f.absolute_path)) or "(wurzel)", "meldung": f.message}
                for f in schema.iter_errors(t)]
@@ -99,14 +110,15 @@ def tabellen_befunde(t: dict, ordner: Path = ORDNER) -> list[dict]:
         werte = [z["masse"].get(name) for z in t["groessen"].values()]
         if None not in werte and any(b < a for a, b in zip(werte, werte[1:])):
             befunde.append({"pfad": f"parameter.{name}", "meldung": f"{name} fällt mit der Größe: {werte}"})
-    belegt: dict[str, int] = {}
+    belegt: dict[str, set[str]] = {}  # je Größe die verschiedenen Quellen-URLs (gleiche URL zählt einmal)
     for q in t["quellen"]:
         for g in q["groessen"]:
-            belegt[g] = belegt.get(g, 0) + 1
+            belegt.setdefault(g, set()).add(q["url"])
     for g, z in t["groessen"].items():
-        if z["status"] == "abgeglichen" and belegt.get(g, 0) < 2 and not z.get("entscheidung"):
+        anzahl = len(belegt.get(g, ()))
+        if z["status"] == "abgeglichen" and anzahl < 2 and not z.get("entscheidung"):
             befunde.append({"pfad": f"groessen.{g}.status",
-                            "meldung": f"abgeglichen, aber nur {belegt.get(g, 0)} Quelle(n)"})
+                            "meldung": f"abgeglichen, aber nur {anzahl} verschiedene Quelle(n)"})
     return befunde
 
 
