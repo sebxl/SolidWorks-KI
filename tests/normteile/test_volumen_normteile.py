@@ -45,3 +45,16 @@ def test_iso4032(groesse):
     c = d / 20
     bohrung = math.pi * (d / 2) ** 2 * h + 2 * fasenring(d / 2 + c / 3, c)
     assert v == pytest.approx(sechskant(s) * h - bohrung, rel=1e-9)
+
+
+@pytest.mark.parametrize("groesse", ["M5", "M10", "M16"])
+def test_iso7089(groesse):
+    v, m = _volumen("ISO 7089", groesse)
+    assert v == pytest.approx(math.pi * ((m["d2"] / 2) ** 2 - (m["d1"] / 2) ** 2) * m["h"], rel=1e-9)
+
+
+@pytest.mark.parametrize(("groesse", "laenge"), [("4", 8), ("8", 30), ("12", 100)])
+def test_iso8734(groesse, laenge):
+    v, m = _volumen("ISO 8734", groesse, laenge)
+    d, c = m["d"], m["c"]
+    assert v == pytest.approx(math.pi * (d / 2) ** 2 * laenge - 2 * fasenring(d / 2 - c / 3, c), rel=1e-9)

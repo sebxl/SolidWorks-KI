@@ -1,0 +1,22 @@
+# Normtabelle ISO 7089 – Flache Scheiben, normale Reihe, Produktklasse A (Spec 3a §4). Werte aus Claudes Normwissen,
+# gültig erst nach Abgleich (Task 10). Maße in mm: d1 Innendurchmesser (Mindestmaß), d2 Außendurchmesser (Höchstmaß),
+# h Dicke (Nennmaß). Die Größe bezeichnet die zugehörige Schraube.
+norm: ISO 7089
+benennung: Scheibe
+ersetzt: DIN 125-1
+vorlage: vorlagen/iso7089.yaml
+parameter: [d1, d2, h]
+laenge: false
+varianten:
+  "200 HV": {material: "1.0038"}
+  A2: {material: "1.4301"}
+vorgabe_variante: "200 HV"
+groessen:
+  M5: {masse: {d1: 5.3, d2: 10, h: 1}, status: gesperrt, grund: noch nicht abgeglichen}
+  M6: {masse: {d1: 6.4, d2: 12, h: 1.6}, status: gesperrt, grund: noch nicht abgeglichen}
+  M8: {masse: {d1: 8.4, d2: 16, h: 1.6}, status: gesperrt, grund: noch nicht abgeglichen}
+  M10: {masse: {d1: 10.5, d2: 20, h: 2}, status: gesperrt, grund: noch nicht abgeglichen}
+  M12: {masse: {d1: 13, d2: 24, h: 2.5}, status: gesperrt, grund: noch nicht abgeglichen}
+  M16: {masse: {d1: 17, d2: 30, h: 3}, status: gesperrt, grund: noch nicht abgeglichen}
+quellen: []
+regeln: ["d2 > d1", "h < d1"]

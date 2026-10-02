@@ -1,0 +1,30 @@
+# Normtabelle ISO 8734 – Zylinderstifte, gehärtet (Spec 3a §4). Werte aus Claudes Normwissen, gültig erst nach
+# Abgleich (Task 10). Maße in mm: d Nenndurchmesser, c Fase (Richtwert). Die Größe ist der Nenndurchmesser.
+# Werkstoff 1.2210 statt 1.3505 (100Cr6), da 1.3505 in der SW-Materialdatenbank fehlt (Spike S11).
+norm: ISO 8734
+benennung: Zylinderstift gehärtet
+ersetzt: DIN 6325
+vorlage: vorlagen/iso8734.yaml
+parameter: [d, c]
+laenge: true
+varianten:
+  St: {material: "1.2210"}
+vorgabe_variante: St
+groessen:
+  "4": {masse: {d: 4, c: 0.63}, laengen: [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35, 40],
+        status: gesperrt, grund: noch nicht abgeglichen}
+  "5": {masse: {d: 5, c: 0.8}, laengen: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50],
+        status: gesperrt, grund: noch nicht abgeglichen}
+  "6": {masse: {d: 6, c: 1.2}, laengen: [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50, 55, 60],
+        status: gesperrt, grund: noch nicht abgeglichen}
+  "8": {masse: {d: 8, c: 1.6},
+        laengen: [14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80],
+        status: gesperrt, grund: noch nicht abgeglichen}
+  "10": {masse: {d: 10, c: 2},
+         laengen: [18, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95],
+         status: gesperrt, grund: noch nicht abgeglichen}
+  "12": {masse: {d: 12, c: 2.5},
+         laengen: [22, 24, 26, 28, 30, 32, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+         status: gesperrt, grund: noch nicht abgeglichen}
+quellen: []
+regeln: ["c < d/4"]

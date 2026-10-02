@@ -53,3 +53,14 @@ def test_verfaelschte_vorlage_scheitert():
     ergebnis = _pruefe(spec)
     assert not ergebnis["bestanden"]
     assert "mass:t" in {m["pruefung"] for m in ergebnis["maengel"]}
+
+
+@pytest.mark.parametrize("groesse", ["M5", "M10", "M16"])
+def test_iso7089(groesse):
+    _ok(_pruefe(_spec("ISO 7089", groesse)), "mass:h", "mass:EINBAU_EBENE", "durchmesser:d1", "durchmesser:d2")
+
+
+@pytest.mark.parametrize(("groesse", "laenge"), [("4", 8), ("8", 30), ("12", 100)])
+def test_iso8734(groesse, laenge):
+    _ok(_pruefe(_spec("ISO 8734", groesse, laenge)), "mass:l", "mass:EINBAU_EBENE_1", "mass:EINBAU_EBENE_2",
+        "durchmesser:d")
