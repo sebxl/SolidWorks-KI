@@ -30,29 +30,31 @@ def vorlage_geprueft(t: dict, text: str, wissen: Path = ORDNER) -> bool:
     return u.get("vorlage_pruefsumme") == vorlage_pruefsumme(text) and u.get("bestanden") is True
 
 
-def _laufordner(r, schluessel: str) -> Path:
-    """Neuer Laufordner <arbeitsordner>/NORMTEILE/<schluessel>/lauf-<n> (bleibt zur Analyse stehen)."""
+def _laufordner(r, schluessel: str) -> tuple[Path, int]:
+    """(Ordner, Nummer) des neuen Laufs <arbeitsordner>/NORMTEILE/<schluessel>/lauf-<n> (bleibt zur Analyse stehen)."""
     auftrag = f"{bau.AUFTRAG}/{schluessel}"
     bisher = laeufe(r, auftrag)
-    return lauf_ordner(r, auftrag, bisher[-1] + 1 if bisher else 1)
+    nummer = bisher[-1] + 1 if bisher else 1
+    return lauf_ordner(r, auftrag, nummer), nummer
 
 
 def _baue(t: dict, a: Anfrage, text: str, r, wissen: Path, mit_bildern: bool = False) -> tuple[Path, dict]:
     spec = erzeuge_spec(t, a, text)
     if befunde := spec_befunde(spec, wissen):
         raise NormteilFehler(NORMTEIL_PRUEFUNG, f"{a.schluessel}: erzeugte Spezifikation ungültig", befunde=befunde)
-    lauf = _laufordner(r, a.schluessel)
+    lauf, nummer = _laufordner(r, a.schluessel)
     lauf.mkdir(parents=True, exist_ok=True)
     (lauf / "spec.yaml").write_text(yaml.safe_dump(spec, allow_unicode=True, sort_keys=False), encoding="utf-8")
-    ergebnis = bau.baue_und_pruefe(spec, lauf, mit_bildern)
+    ergebnis = bau.baue_und_pruefe(spec, lauf, mit_bildern, nummer)
     text_bericht = json.dumps(ergebnis, indent=2, ensure_ascii=False, default=str) + "\n"
     (lauf / "pruefbericht.json").write_text(text_bericht, encoding="utf-8")
     return lauf, ergebnis
 
 
 def hole(norm: str, groesse: str, variante: str | None = None, wissen: Path = ORDNER) -> dict:
+    # Erst die Tabelle prüfen: loese_auf greift auf Pflichtschlüssel zu, die bei einer kaputten Tabelle fehlen können.
+    pruefe_tabelle(lade_normtabelle(norm, wissen), wissen)
     t, a = loese_auf(norm, groesse, variante, wissen)
-    pruefe_tabelle(t, wissen)
     text = vorlage_text(t, wissen)
     summe = teil_pruefsumme(t, a, text)
     r = lade_rechner()
@@ -80,21 +82,27 @@ def hole(norm: str, groesse: str, variante: str | None = None, wissen: Path = OR
             "pruefung": {"bestanden": True, "pruefungen": len(ergebnis["pruefungen"])}}
 
 
+def _zusammenfassung(t: dict, befunde: list[dict]) -> dict:
+    """Befunde, Anzahl der Größen und gesperrte Größen; liest nur, was auch bei einer kaputten Tabelle sicher da ist."""
+    groessen = t["groessen"] if isinstance(t.get("groessen"), dict) else {}
+    return {"befunde": befunde, "groessen": len(groessen),
+            "gesperrt": [g for g, z in groessen.items() if isinstance(z, dict) and z.get("status") == "gesperrt"]}
+
+
 def tabellen_pruefen(norm: str | None = None, wissen: Path = ORDNER) -> dict:
     """Tabellenbefunde und – wenn die Tabelle stimmt – Befunde jeder erzeugten Spezifikation (alle Größen und Längen)."""
     ergebnis = {}
     for name in [norm_datei(norm)] if norm else normen(wissen):
         t = lade_normtabelle(name, wissen)
         befunde = tabellen_befunde(t, wissen)
-        if not befunde:
+        if not befunde:  # nur eine gültige Tabelle hat alle Schlüssel, die erzeuge_spec liest
             text = vorlage_text(t, wissen)
             for g, z in t["groessen"].items():
                 for laenge in z.get("laengen") or [None]:
                     a = Anfrage(t["norm"], g, None if laenge is None else float(laenge), t["vorgabe_variante"])
                     befunde += [{**b, "pfad": f"{a.schluessel}: {b['pfad']}"}
                                 for b in spec_befunde(erzeuge_spec(t, a, text), wissen)]
-        ergebnis[t["norm"]] = {"befunde": befunde, "groessen": len(t["groessen"]),
-                               "gesperrt": [g for g, z in t["groessen"].items() if z["status"] == "gesperrt"]}
+        ergebnis[t.get("norm", name)] = _zusammenfassung(t, befunde)
     if any(e["befunde"] for e in ergebnis.values()):
         raise NormteilFehler(NORMTABELLE_UNGUELTIG, "Normtabellen mit Befunden", normen=ergebnis)
     return {"gueltig": True, "normen": ergebnis}

@@ -20,12 +20,13 @@ from swki.verbindung import verbinde
 AUFTRAG = "NORMTEILE"
 
 
-def baue_und_pruefe(spec: dict, ordner: Path, mit_bildern: bool = False) -> dict:
+def baue_und_pruefe(spec: dict, ordner: Path, mit_bildern: bool = False, lauf: int = 0) -> dict:
     """{"bestanden", "pruefungen", "maengel", "teil", "bilder", "fehler"}; ordner liegt im Arbeitsordner. Bei
-    Bauabbruch: bestanden False, fehler gesetzt, nichts gemessen und nichts gespeichert."""
+    Bauabbruch: bestanden False, fehler gesetzt, nichts gemessen und nichts gespeichert. lauf: Nummer des Laufordners
+    (lauf-<n>) für das Protokoll."""
     r, standard = lade_rechner(), lade_standard()
     ordner.mkdir(parents=True, exist_ok=True)
-    protokoll = Protokoll(AUFTRAG, f"{spec['name']}.yaml", 0, r.sw_jahr)
+    protokoll = Protokoll(AUFTRAG, f"{spec['name']}.yaml", lauf, r.sw_jahr)
     beginn = time.perf_counter()
     app = verbinde(r.sw_jahr)
     model = sw.neues_teil(app, r.vorlage_teil)

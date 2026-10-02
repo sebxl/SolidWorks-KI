@@ -27,7 +27,7 @@ def wissen(tmp_path, monkeypatch):
 def gebaut(monkeypatch):
     aufrufe = []
 
-    def fake(spec, ordner, mit_bildern=False):
+    def fake(spec, ordner, mit_bildern=False, lauf=0):
         aufrufe.append((spec["name"], mit_bildern))
         teil = ordner / f"{spec['name']}.sldprt"
         teil.write_bytes(b"teil")
@@ -92,7 +92,7 @@ def test_nicht_bestandenes_urteil_sperrt(wissen, gebaut, tmp_path):
 
 def test_gescheiterte_pruefung_legt_nichts_ab(wissen, monkeypatch, tmp_path):
     _urteil(wissen, tmp_path)
-    monkeypatch.setattr(befehle.bau, "baue_und_pruefe", lambda spec, ordner, mit_bildern=False: {
+    monkeypatch.setattr(befehle.bau, "baue_und_pruefe", lambda spec, ordner, mit_bildern=False, lauf=0: {
         "bestanden": False, "pruefungen": [], "teil": None, "bilder": {}, "fehler": None,
         "maengel": [{"pruefung": "mass:s", "knoten": ["f2"], "beschreibung": "s 6.2 statt 6"}]})
     with pytest.raises(NormteilFehler) as e:
@@ -127,6 +127,79 @@ def test_tabellen_pruefen_meldet_befunde(wissen):
     with pytest.raises(NormteilFehler) as e:
         befehle.tabellen_pruefen(wissen=wissen)
     assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG"
+
+
+def _tabelle_aendern(wissen, alt, neu):
+    pfad = wissen / "iso9999.yaml"
+    text = pfad.read_text(encoding="utf-8")
+    assert alt in text
+    pfad.write_text(text.replace(alt, neu), encoding="utf-8")
+
+
+def test_hole_tabelle_ohne_status_ist_ungueltig(wissen, gebaut):
+    _tabelle_aendern(wissen, "b: 12}, laengen: [10, 12, 16, 20], status: abgeglichen}",
+                     "b: 12}, laengen: [10, 12, 16, 20]}")
+    with pytest.raises(NormteilFehler) as e:
+        befehle.hole("ISO 9999", "M6x12", wissen=wissen)
+    assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG" and gebaut == []
+
+
+def test_hole_tabelle_ohne_laengen_ist_ungueltig(wissen, gebaut):
+    _tabelle_aendern(wissen, "laengen: [10, 12, 16, 20], ", "")
+    with pytest.raises(NormteilFehler) as e:
+        befehle.hole("ISO 9999", "M6x12", wissen=wissen)
+    assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG" and gebaut == []
+
+
+def test_tabellen_pruefen_ohne_status_meldet_befund_ohne_absturz(wissen):
+    _tabelle_aendern(wissen, "b: 12}, laengen: [10, 12, 16, 20], status: abgeglichen}",
+                     "b: 12}, laengen: [10, 12, 16, 20]}")
+    with pytest.raises(NormteilFehler) as e:
+        befehle.tabellen_pruefen(wissen=wissen)
+    assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG"
+    assert e.value.daten["normen"]["ISO 9999"]["befunde"]
+
+
+def test_tabellen_pruefen_ohne_norm_meldet_befund_ohne_absturz(wissen):
+    _tabelle_aendern(wissen, "norm: ISO 9999\n", "")
+    with pytest.raises(NormteilFehler) as e:
+        befehle.tabellen_pruefen("iso9999", wissen=wissen)
+    assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG"
+    assert e.value.daten["normen"]["iso9999"]["befunde"]
+
+
+def test_hole_regelverletzung_ist_ungueltig(wissen, gebaut):
+    _tabelle_aendern(wissen, "b: 12}", "b: 5}")
+    with pytest.raises(NormteilFehler) as e:
+        befehle.hole("ISO 9999", "M6x12", wissen=wissen)
+    assert e.value.daten["code"] == "NORMTABELLE_UNGUELTIG" and gebaut == []
+
+
+def test_hole_gesperrte_groesse_bleibt_gesperrt(wissen, gebaut):
+    with pytest.raises(NormteilFehler) as e:
+        befehle.hole("ISO 9999", "M8x16", wissen=wissen)
+    assert e.value.daten["code"] == "NORMTEIL_GESPERRT" and gebaut == []
+
+
+def test_hole_reicht_laufnummer_an_den_bau(wissen, monkeypatch, tmp_path):
+    _urteil(wissen, tmp_path)
+    laeufe = []
+
+    def fake(spec, ordner, mit_bildern=False, lauf=0):
+        laeufe.append((ordner.name, lauf))
+        teil = ordner / f"{spec['name']}.sldprt"
+        teil.write_bytes(b"teil")
+        return {"bestanden": True, "pruefungen": [], "maengel": [], "teil": str(teil), "bilder": {}, "fehler": None}
+
+    monkeypatch.setattr(befehle.bau, "baue_und_pruefe", fake)
+    befehle.hole("ISO 9999", "M6x12", wissen=wissen)
+    befehle.hole("ISO 9999", "M6x16", wissen=wissen)
+    befehle.hole("ISO 9999", "M6x12", "A2", wissen=wissen)
+    assert laeufe == [("lauf-1", 1), ("lauf-1", 1), ("lauf-1", 1)]
+    # Zweiter Bau desselben Schlüssels (Tabelle geändert) zählt hoch.
+    _tabelle_aendern(wissen, "b: 12}", "b: 12.5}")
+    befehle.hole("ISO 9999", "M6x12", wissen=wissen)
+    assert laeufe[-1] == ("lauf-2", 2)
 
 
 def test_cli_unbekannte_norm(capsys):
