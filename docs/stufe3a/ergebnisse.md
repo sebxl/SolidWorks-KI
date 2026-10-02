@@ -63,12 +63,13 @@ Prüfwerte wurden in keinem Lauf angepasst. Der Fix fc753d1 betraf nur den Testa
 
 ### Speicher
 
-SolidWorks wächst je gebautem Normteil um etwa 80–420 MB Private Bytes: die ersten Bauten einer frischen Instanz kosten
-bis ca. 420 MB (Aufbau), später meist 80–160 MB, einmal bis 374 MB. Der Speicher sinkt zwischendurch durch Freigabe nur
-teilweise. Deshalb lief die Stichprobe in Blöcken je Test ein Prozess:
+Der erste Bau nach einem SolidWorks-Neustart kostet einen Aufbausprung: 427 → 2036 MB (ca. +1,6 GB) beim ersten Bau von
+Block 3 der Stichprobe. Jeder weitere Bau wächst um etwa 80–160 MB Private Bytes, einmal um 374 MB. Der Mittelwert der vier
+Musterteile (424 → 2112 MB, ca. 420 MB je Bau) enthält diesen Aufbausprung und ist kein typischer Wert je Teil. Der Speicher sinkt
+zwischendurch durch Freigabe nur teilweise. Deshalb lief die Stichprobe in Blöcken, je Test ein Prozess:
 Block 1 (Stichprobe 0–6) 2285 → 3421 MB, Block 2 (7–8) 3189 → 3704 MB, danach Halt und SolidWorks-Neustart durch den Nutzer,
-Block 3 (9–20) 427 → 3324 MB. Die Grenze von ca. 3,8 GB wurde nicht überschritten. Bei den Musterteilen (4 Bauten) ergaben sich
-424 → 2112 MB. Für größere Läufe (z. B. weitere Normen) sind Neustarts einzuplanen.
+Block 3 (9–20) 427 → 3324 MB (Zwischenwerte: 2036, 2184, 2313, 2405, 2469, 2522, 2682, 2826, 2969, 3114, 3255, 3324 MB). Die
+Grenze von ca. 3,8 GB wurde nicht überschritten. Für größere Läufe (z. B. weitere Normen) sind Neustarts einzuplanen.
 
 ## Spike S11
 
@@ -112,7 +113,7 @@ Maßkorrektur** (alle Tabellenwerte wurden von den Quellen bestätigt), keine Gr
 | ISO 4762 | 13 für die Maße (u. a. fasteners.eu, Fuller, Wegertseder, Reyher, iTeh-Vorschau der ISO-Norm); dk, k, s je Größe 11–12, t 5–6, p 6–7 | alle bestätigt | nach Nachrecherche unverändert gegenüber dem Planstand: M5 8…50, M6 10…60, M8 12…80, M10 16…100, M12 20…120, M16 25…160 |
 | ISO 4032 | 7 (schraube-mutter.de, Wegertseder, schrauben24.biz, fasteners.eu, Fuller, AmesWeb, MechaHandbook) | s, m je Größe von 7 bestätigt | keine (Mutter) |
 | ISO 7089 | 7 (fasten.it, fasteners.eu, Hasler/Bossard BN715, schraube-mutter.de, schrauben-lexikon.de, theo-schrauben.de, Wegertseder) | d1, d2 je Größe von 7, h von 6 bestätigt | keine (Scheibe) |
-| ISO 8734 | 7 für die Maße (Mühl, Fuller, iTeh/ISO-8734-Normtext, Seimatec, Reyher, neue-physik, schraubenhandel24), für Längen 7 weitere Händler | d von 4 Unternehmen; c je Größe von 4–5, bei Ø 5 widersprüchlich (siehe unten) | Schnittmenge der Quellen ∩ ISO-Nennlängen; ohne 35 und 36 |
+| ISO 8734 | 5 für die Maße (Mühl, Fuller, iTeh/ISO-8734-Normtext, Seimatec, Reyher); für die Längen 9 Händler (neue-physik und schraubenhandel24 aus Runde 1, dazu 7 aus der Nachrecherche: Seefelder, Dunken, Der Schraubenladen, Biker-Normalien, Intafast, Blohm, Theo Schrauben) | d von 4 Unternehmen; c je Größe von 4–5, bei Ø 5 widersprüchlich (siehe unten) | Schnittmenge der Quellen ∩ ISO-Nennlängen; ohne 35 und 36 |
 
 Besonderheiten:
 
@@ -129,8 +130,8 @@ Besonderheiten:
   `entscheidung` in der Tabelle, Status `abgeglichen`).
 - **ISO 8734, Längen:** Reihe = Längen, die ≥ 2 unabhängige Unternehmen je Größe nennen und die in der ISO-Nennlängenreihe stehen.
   36 (alle Größen) ist DIN-6325-/Handelslänge und entfällt; 35 hat nur eine Quelle; der Nutzer bestätigte: weder 35 noch 36
-  (Hinweis in der Tabelle). 65, 75, 85, 95 nennt keine Quelle. Dünn belegt (je genau zwei Händler mit DIN-6325-Listen): Ø 5 L 6,
-  Ø 5 L 70, Ø 12 L 18.
+  (Hinweis in der Tabelle). 65, 75, 85, 95 nennt keine Quelle. Dünn belegt (DIN-6325-Händlerlisten): Ø 5 L 6 (nur Dunken und Intafast) und Ø 12 L 18 (nur Blohm und
+  Intafast); Ø 5 L 70 nennen Dunken, schraubenhandel24, Seefelder und Theo (die letzten drei mit identischen Listen).
 - **Werkstoff ISO 8734, Variante St:** `1.2210 (115CrV3)` statt `1.3505` (100Cr6), weil 1.3505 in der SW-Materialdatenbank fehlt
   (Spike S11). Gewählt: ein für Zylinderstifte DIN 6325/ISO 8734 von Herstellern genannter Werkstoff mit praktisch gleicher Dichte.
 
