@@ -151,6 +151,10 @@ def _zylinder_lagen(ctx) -> list[tuple[float, float, float]]:
     return sorted(lagen)
 
 
+def _flach(lagen) -> list[float]:
+    return [c for lage in lagen for c in lage]
+
+
 @pytest.mark.parametrize(("flaeche", "kontur", "flaecheninhalt", "mitten"), [
     # Unterseite: Skizzensystem gespiegelt, (u, v) → X = u, Z = −v; Bogenmitten bei u = −25 und 35, v = 5 → Z = −5
     ("-y", {"start": [-25, -5], "segmente": [
@@ -169,7 +173,7 @@ def test_kontur_mit_boegen_auf_flaeche_mit_negativer_normale(flaeche, kontur, fl
         # Bögen gegen den Uhrzeigersinn in (u, v) wölben sich nach außen; der Gegenbogen gäbe die Fläche abzüglich der Halbkreise
         assert volumen_mm3(ctx.model) == pytest.approx(VOLL - flaecheninhalt * 5, abs=1e-3)
         assert sw.teilebox_mm(ctx.model) == pytest.approx([-50, 0, -30, 50, 20, 30], abs=1e-6)
-        assert _zylinder_lagen(ctx) == pytest.approx(mitten, abs=1e-6)
+        assert _flach(_zylinder_lagen(ctx)) == pytest.approx(_flach(mitten), abs=1e-6)
 
 
 @pytest.mark.parametrize(("winkel", "flaeche"), [
@@ -186,4 +190,4 @@ def test_langloch_winkel_ueber_90_grad_lage_der_bogenmitten(winkel, flaeche):
         # 30° und 150° haben dieselbe Box: die Lage der Bogenmitten (Modell: X = u, Z = −v) entscheidet
         halb = 15 * math.cos(math.radians(winkel)), 15 * math.sin(math.radians(winkel))
         erwartet = sorted((round(10 + s * halb[0], 6), 0, round(-(5 + s * halb[1]), 6)) for s in (-1, 1))
-        assert _zylinder_lagen(ctx) == pytest.approx(erwartet, abs=1e-6)
+        assert _flach(_zylinder_lagen(ctx)) == pytest.approx(_flach(erwartet), abs=1e-6)

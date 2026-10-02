@@ -8,6 +8,7 @@ import pytest
 from swki.compiler import sw
 from swki.compiler.anker import flaeche_in_richtung
 from swki.compiler.topologie import flaechen
+from swki.pruefung.messen import messe
 
 from .bauhilfe import gebautes_teil, volumen_mm3
 
@@ -63,3 +64,15 @@ def test_aufsatz_bis_flaeche():
         assert fehler is None
         assert volumen_mm3(ctx.model) == pytest.approx(VOLL + math.pi * 25 * 20, abs=1e-3)
         assert sw.teilebox_mm(ctx.model)[4] == pytest.approx(40, abs=1e-6)
+
+
+def test_aufsatz_mit_versatz_bei_abgesetzter_skizze_ergibt_zwei_koerper():
+    # Bekannte Einschränkung (Spike S10 Frage 6 d): Versatz zur Skizze hin → 5 mm Luft → getrennter Körper.
+    # Die Code-Prüfung koerper muss das im echten Teil sehen.
+    zapfen = {"id": "f2", "typ": "extrusion",
+              "skizze": {"ebene": {"versatz": {"ebene": "oben", "abstand": 40}},
+                         "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 10}}]},
+              "ende": {"typ": "versatz_von_flaeche", "flaeche": DECKFLAECHE, "abstand": 5, "umkehren": True}}
+    with gebautes_teil(_spec(zapfen)) as (ctx, fehler, _):
+        assert fehler is None
+        assert messe(ctx).koerper == 2

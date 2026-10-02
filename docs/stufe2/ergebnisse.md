@@ -29,15 +29,16 @@ f9 Spiegeln 0,52 s, f10 Skript (Notausgang, M8-Gewinde) 4,182 s.
 
 ## Offene Punkte für Stufe 3
 
-- Rechner B (SOLIDWORKS 2026): Referenzen noch nicht gelaufen (Abschluss Stufe 2 laut Spec §11).
+- Rechner B (SOLIDWORKS 2026): Referenzen noch nicht gelaufen (Abschluss Stufe 2 laut Spec §11) –
+  zurückgestellt: Rechner steht nicht zur Verfügung (Nutzer, 2026-10-01).
 - Fehlalarme in `validieren`-`hinweise`: `mittellinie.von/bis`, Vollwinkel 360, `fase.winkel: 45`,
-  jeder Polygonpunkt einzeln (Buchse: 14 Hinweise).
+  jeder Polygonpunkt einzeln (Buchse: 14 Hinweise) – erledigt (Aufräum-Paket, 32e4882).
 - `swki freigeben x.freigegeben.yaml` wird nicht abgelehnt; `freigeben` gibt den Pfad der Kopie
-  nicht aus; Grenze „Vorzeichenwechsel beim Ebenenversatz → neu bauen“ nur im Code-Kommentar.
-- Aus 2a geparkt: `swki bauen --lauf N` überschreibt bestehenden Lauf; `speichere` prüft den
-  Arbeitsordner nicht; Einheiten der Teilevorlage ungeprüft (wichtig für Rechner B);
-  Compiler-Namen (`<id>_skizze`, `<id>_senkung`, `achse_x|y|z`) als Feature-IDs nicht verboten;
-  kein Unit-Test für `Kontext.verknuepfe`; Notausgang-Skripte können die statische Prüfung gezielt
+  nicht aus (beides erledigt, Aufräum-Paket, f5dd9d2); Grenze „Vorzeichenwechsel beim Ebenenversatz → neu bauen“ nur im Code-Kommentar.
+- Aus 2a geparkt: `swki bauen --lauf N` überschreibt bestehenden Lauf – erledigt (Aufräum-Paket, f5dd9d2);
+  `speichere` prüft den Arbeitsordner nicht – erledigt (Aufräum-Paket, c51b1ee); Einheiten der Teilevorlage ungeprüft (wichtig für Rechner B);
+  Compiler-Namen (`<id>_skizze`, `<id>_senkung`, `achse_x|y|z`) als Feature-IDs nicht verboten – erledigt
+  (Aufräum-Paket, 6d0d6a8); kein Unit-Test für `Kontext.verknuepfe` – erledigt (Aufräum-Paket, 4a1aa7f); Notausgang-Skripte können die statische Prüfung gezielt
   umgehen.
 - Screenshots: Exportoption „Print capture“ wird während der Aufnahme auf „Screen capture“
   umgeschaltet (Fund 2026-09-29, über `sw.einstellung_int`); nach einem hart beendeten Prozess prüfen, ob sie
@@ -47,13 +48,16 @@ f9 Spiegeln 0,52 s, f10 Skript (Notausgang, M8-Gewinde) 4,182 s.
 - Baugruppen/Normteile: Befunde aus S5/S6 (Kollision, `AddComponent5` platziert die
   Bounding-Box-Mitte, `AddMate5`/`CreateMassProperty` obsolet) und S7 (Toolbox nur über
   Rückfallweg).
-- Regel „kein Fortschritt" zählt einen Bauabbruch als genau einen Mangel (Entscheidung Nutzer offen).
-- Spec §6 „Vorgabe 3" vs. Code 1 + 3 = 4 Läufe (Entscheidung Nutzer offen).
-- `pruefen` prüft den Protokollstatus nicht: ein Teil nach Bauabbruch wird trotzdem gemessen.
-- `pruefer.json` wird nicht auf Form geprüft.
-- `_pappus` ignoriert Rechteck/Kreis in Rotationsskizzen; verschachtelte Profile werden addiert.
-- `_compiler_aenderungen` ohne git-Fehlerbehandlung.
-- `--max` akzeptiert negative Werte.
+- Regel „kein Fortschritt" zählt einen Bauabbruch als genau einen Mangel – erledigt (Aufräum-Paket, 124fe29;
+  Entscheidung Nutzer: Läufe mit Bauabbruch werden nicht verglichen).
+- Spec §6 „Vorgabe 3" vs. Code 1 + 3 = 4 Läufe – erledigt (Aufräum-Paket, 124fe29; Spec-Text präzisiert).
+- `pruefen` prüft den Protokollstatus nicht: ein Teil nach Bauabbruch wird trotzdem gemessen – erledigt
+  (Aufräum-Paket, 124fe29).
+- `pruefer.json` wird nicht auf Form geprüft – erledigt (Aufräum-Paket, c51b1ee).
+- `_pappus` ignoriert Rechteck/Kreis in Rotationsskizzen; verschachtelte Profile werden addiert – erledigt
+  (Aufräum-Paket, 29cc9e3).
+- `_compiler_aenderungen` ohne git-Fehlerbehandlung – erledigt (Aufräum-Paket, c51b1ee).
+- `--max` akzeptiert negative Werte – erledigt (Aufräum-Paket, 124fe29).
 - Nach hart beendetem Prozess kann `swTiffScreenOrPrintCapture` auf 0 stehen bleiben (wie Toggle 10).
 - Prüfer-Isolation nur per Anweisung.
 - Buchse führt Nut/Lochkreis als feste Zahlen (Vorlage für den Skill).
