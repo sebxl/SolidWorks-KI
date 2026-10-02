@@ -1,0 +1,37 @@
+# Normtabelle ISO 4762 – Zylinderschrauben mit Innensechskant (Spec 3a §4).
+# Werte aus Claudes Normwissen; eine Größe ist erst nach dem Abgleich mit ≥ 2 recherchierten Quellen nutzbar
+# (status: abgeglichen, Task 10). Maße in mm: d Nenndurchmesser, dk Kopfdurchmesser (Höchstmaß), k Kopfhöhe
+# (Höchstmaß), s Schlüsselweite (Nennmaß), t Innensechskanttiefe (Mindestmaß), p Steigung des Regelgewindes (ISO 261,
+# nur für die Fase am Schaftende).
+norm: ISO 4762
+benennung: Zylinderschraube mit Innensechskant
+ersetzt: DIN 912
+vorlage: vorlagen/iso4762.yaml
+parameter: [d, dk, k, s, t, p]
+laenge: true
+varianten:
+  "8.8": {material: "1.1191"}
+  "10.9": {material: "1.7225"}
+  "12.9": {material: "1.7225"}
+  "A2-70": {material: "1.4301"}
+vorgabe_variante: "8.8"
+groessen:
+  M5: {masse: {d: 5, dk: 8.5, k: 5, s: 4, t: 2.5, p: 0.8}, laengen: [8, 10, 12, 16, 20, 25, 30, 35, 40, 45, 50],
+       status: gesperrt, grund: noch nicht abgeglichen}
+  M6: {masse: {d: 6, dk: 10, k: 6, s: 5, t: 3, p: 1}, laengen: [10, 12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+       status: gesperrt, grund: noch nicht abgeglichen}
+  M8: {masse: {d: 8, dk: 13, k: 8, s: 6, t: 4, p: 1.25},
+       laengen: [12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80], status: gesperrt, grund: noch nicht abgeglichen}
+  M10: {masse: {d: 10, dk: 16, k: 10, s: 8, t: 5, p: 1.5},
+        laengen: [16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100], status: gesperrt,
+        grund: noch nicht abgeglichen}
+  M12: {masse: {d: 12, dk: 18, k: 12, s: 10, t: 6, p: 1.75},
+        laengen: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120], status: gesperrt,
+        grund: noch nicht abgeglichen}
+  M16: {masse: {d: 16, dk: 24, k: 16, s: 14, t: 8, p: 2},
+        laengen: [25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160], status: gesperrt,
+        grund: noch nicht abgeglichen}
+quellen: []
+regeln: ["dk > d", "k == d", "s < d", "t < k", "p < d/4", "s/3**0.5 < dk/2 - k/10"]
+hinweise:
+  - "dk und k sind Höchstmaße, t ist das Mindestmaß; die vereinfachte Darstellung baut genau diese Werte."
