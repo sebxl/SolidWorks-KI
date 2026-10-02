@@ -1,0 +1,479 @@
+{
+  "norm": "ISO 4762",
+  "quellenkreis": "b",
+  "groessen": {
+    "M5": {
+      "laengen": [
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50
+          ],
+          "bereich": [
+            8,
+            50
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004 (identisch mit ISO 4762:2004)",
+          "quelle": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            60
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912 (auch BS 4168, ISO 4762 genannt)",
+          "quelle": "https://www.farnell.com/datasheets/1755696.pdf"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        }
+      ]
+    },
+    "M6": {
+      "laengen": [
+        {
+          "werte": [
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            10,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004 (identisch mit ISO 4762:2004)",
+          "quelle": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            80
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912 (auch BS 4168, ISO 4762 genannt)",
+          "quelle": "https://www.farnell.com/datasheets/1755696.pdf"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        }
+      ]
+    },
+    "M8": {
+      "laengen": [
+        {
+          "werte": [
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            80
+          ],
+          "bereich": [
+            12,
+            80
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004 (identisch mit ISO 4762:2004)",
+          "quelle": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80,
+            90
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912 (auch BS 4168, ISO 4762 genannt)",
+          "quelle": "https://www.farnell.com/datasheets/1755696.pdf"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        }
+      ]
+    },
+    "M10": {
+      "laengen": [
+        {
+          "werte": [
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            80,
+            90,
+            100
+          ],
+          "bereich": [
+            16,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004 (identisch mit ISO 4762:2004)",
+          "quelle": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912 (auch BS 4168, ISO 4762 genannt)",
+          "quelle": "https://www.farnell.com/datasheets/1755696.pdf"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80,
+            90,
+            100
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        }
+      ]
+    },
+    "M12": {
+      "laengen": [
+        {
+          "werte": [
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            20,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004 (identisch mit ISO 4762:2004)",
+          "quelle": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            60,
+            65,
+            70,
+            75,
+            80,
+            90,
+            100
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912 (auch BS 4168, ISO 4762 genannt)",
+          "quelle": "https://www.farnell.com/datasheets/1755696.pdf"
+        },
+        {
+          "werte": [
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        }
+      ]
+    },
+    "M16": {
+      "laengen": [
+        {
+          "werte": [
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120,
+            130,
+            140,
+            150,
+            160
+          ],
+          "bereich": [
+            25,
+            160
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004 (identisch mit ISO 4762:2004)",
+          "quelle": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
+        },
+        {
+          "werte": [
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80,
+            90,
+            100,
+            110,
+            120,
+            130,
+            140,
+            150
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        }
+      ]
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf",
+      "titel": "Deutsche Fassung EN ISO 4762:2004 (Normtext, Tabelle 1 mit Nennlängen-Zeilen und Bereichsgrenzen)",
+      "unternehmen": "OOO Maschkomplekt (bolt.msk.ru)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.farnell.com/datasheets/1755696.pdf",
+      "titel": "Metric socket head cap screws DIN 912 / BS 4168 / ISO 4762 - Preferred Lengths (Datenblatt)",
+      "unternehmen": "TR Fastenings (Datenblatt bei Farnell)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf",
+      "titel": "Metric DIN 912 Hexagon Socket Head Cap Screw - Technical Specifications (Gewichtstabelle je Länge)",
+      "unternehmen": "Aspen Fasteners",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "Quelle msk (Normtext): Die Längenreihe steht als Zeilen der Tabelle 1 (2,5; 3; 4; 5; 6; 8; 10; 12; 16; 20; 25; 30; 35; 40; 45; 50; 55; 60; 65; 70; 80; 90; 100; 110; 120; 130; 140; 150; 160; 180; 200 ...). Fussnote g: Der Bereich der handelsueblichen Laengen liegt zwischen den durchgezogenen dicken Stufenlinien. Bereichsgrenzen aus dem Bild der Tabelle abgelesen (Text-Extraktion der PDF ist unbrauchbar, Ziffern fehlen): M5 8..50, M6 10..60, M8 12..80, M10 16..100, M12 20..120, M16 25..160. Kuerzere Laengen als 8 (M5), 10 (M6), 12 (M8), 16 (M10) gibt es laut Norm nicht (die Zellen oberhalb der Stufenlinie sind leer).",
+    "Der Pdf-Scan der Norm ist ein Wasserzeichen-Exemplar eines Haendlers (bolt.msk.ru); eine weitere Kopie derselben ISO-Tabelle (iTeh Standards Preview, cdn.standards.iteh.ai ISO-4762-2004.pdf, und Aramfix-Datenblatt) zeigt die gleichen Zeilenwerte (z. B. M12 Zeilen 55..120, M10 endet bei 100) und zaehlt als eine Quelle (Kopie derselben Tabelle); nicht separat aufgefuehrt.",
+    "Quelle Farnell/TR Fastenings: 'Preferred Lengths' = Lagerprogramm des Haendlers (HT = Stahl hochfest, A2 = Edelstahl), nur M3..M12, kein M16. Weicht von der Norm ab: enthaelt 14 (M5, M6, M6 auch 8) und 75 (M8, M10, M12), laesst Normlaengen aus (M5: 55, 65..80; M6: 75, 90, 100; M8: 100; M10: 90, 100; M12: 55). Kuerzeste gelistete Laenge je Groesse: M5 8, M6 8 (nicht genormt), M8 10 (nicht genormt), M10 16, M12 16 (nicht genormt, Norm: 20). Das Haendlerprogramm ist keine Norm.",
+    "Quelle Aspen Fasteners: Gewichtstabelle (kg/1000 Stk) je Laenge; Laengen je Groesse aus den belegten Zellen abgeleitet (Spaltenzuordnung per Bildansicht geprueft). Tabelle enthaelt erkennbare Tippfehler (z. B. K=1 bei M12, Gewicht 0.3 bei M10x50, doppelte Zeile 160). Laengen ab: M5 10, M6 10, M8 16, M10 16, M12 20, M16 30 - also KEIN M5 x 8, M8 x 12, M16 x 25; ausserdem 75 mm fuer M8..M16. Lagerliste/Katalog, nicht die Normreihe.",
+    "Wertung: Die Normreihe (ISO 4762) belegt nur der Normtext (msk). Die beiden Haendlerlisten weichen davon ab (14, 75, abweichende Minimal- und Maximallaengen) und sind keine Bestaetigung der Reihe, sondern zeigen das Lieferprogramm. Der Bereichsanfang M5 8 / M6 10 / M8 12 / M10 16 ist durch msk belegt; kuerzere Laengen sind dort nicht aufgefuehrt.",
+    "Nicht verwertbar (keine Laengenreihe auf der Seite, geprueft): roymech.co.uk, schrauben-lexikon.de/Wegertseder (ISO-4762-PDF), schraube-mutter.de, ssr-precision.com, engineeringhardware.com, fullerfasteners.com, Reyher Technische Informationen (PDF), Intafast-Datenblatt (nur M10 und groesser, Bildtabelle), Holo-Krome, Brighton Best, born2fix.de, Dresselhaus (Laengen dynamisch nachgeladen). engineersedge.com, nbk1560.com, schraubenhandel24.de: Abruf per Skript blockiert (Cloudflare/403), nicht ausgewertet."
+  ]
+}

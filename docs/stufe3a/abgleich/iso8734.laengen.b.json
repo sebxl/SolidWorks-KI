@@ -1,0 +1,1014 @@
+{
+  "norm": "ISO 8734",
+  "quellenkreis": "b",
+  "groessen": {
+    "4": {
+      "laengen": [
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "bereich": [
+            8,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50
+          ],
+          "bereich": [
+            6,
+            50
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40
+          ],
+          "bereich": [
+            6,
+            40
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "unklar",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40
+          ],
+          "bereich": [
+            8,
+            40
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            60
+          ],
+          "bereich": [
+            6,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.theo-schrauben.de/ISO-8734"
+        },
+        {
+          "werte": [],
+          "bereich": [
+            8,
+            40
+          ],
+          "reihe_selbst_genannt": false,
+          "art": "unklar",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/"
+        }
+      ]
+    },
+    "5": {
+      "laengen": [
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            10,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            6,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50
+          ],
+          "bereich": [
+            8,
+            50
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "unklar",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50
+          ],
+          "bereich": [
+            10,
+            50
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70
+          ],
+          "bereich": [
+            8,
+            70
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.theo-schrauben.de/ISO-8734"
+        },
+        {
+          "werte": [],
+          "bereich": [
+            10,
+            50
+          ],
+          "reihe_selbst_genannt": false,
+          "art": "unklar",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/"
+        }
+      ]
+    },
+    "6": {
+      "laengen": [
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80
+          ],
+          "bereich": [
+            10,
+            80
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            8,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            10,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "unklar",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60
+          ],
+          "bereich": [
+            10,
+            60
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+        },
+        {
+          "werte": [
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "bereich": [
+            8,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.theo-schrauben.de/ISO-8734"
+        },
+        {
+          "werte": [],
+          "bereich": [
+            12,
+            60
+          ],
+          "reihe_selbst_genannt": false,
+          "art": "unklar",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/"
+        }
+      ]
+    },
+    "8": {
+      "laengen": [
+        {
+          "werte": [
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            16,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80
+          ],
+          "bereich": [
+            10,
+            80
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+        },
+        {
+          "werte": [
+            12,
+            14,
+            16,
+            18,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80
+          ],
+          "bereich": [
+            12,
+            80
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "unklar",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment"
+        },
+        {
+          "werte": [
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80
+          ],
+          "bereich": [
+            12,
+            80
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+        },
+        {
+          "werte": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            10,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.theo-schrauben.de/ISO-8734"
+        },
+        {
+          "werte": [],
+          "bereich": [
+            16,
+            80
+          ],
+          "reihe_selbst_genannt": false,
+          "art": "unklar",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/"
+        }
+      ]
+    },
+    "10": {
+      "laengen": [
+        {
+          "werte": [
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            20,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+        },
+        {
+          "werte": [
+            16,
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            16,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "bereich": [
+            16,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "unklar",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment"
+        },
+        {
+          "werte": [
+            16,
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100
+          ],
+          "bereich": [
+            16,
+            100
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            16,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.theo-schrauben.de/ISO-8734"
+        },
+        {
+          "werte": [],
+          "bereich": [
+            20,
+            100
+          ],
+          "reihe_selbst_genannt": false,
+          "art": "unklar",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/"
+        }
+      ]
+    },
+    "12": {
+      "laengen": [
+        {
+          "werte": [
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            28,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+        },
+        {
+          "werte": [
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            18,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+        },
+        {
+          "werte": [
+            16,
+            20,
+            24,
+            28,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            16,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "unklar",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment"
+        },
+        {
+          "werte": [
+            18,
+            20,
+            24,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            120
+          ],
+          "bereich": [
+            18,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 6325",
+          "quelle": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+        },
+        {
+          "werte": [
+            20,
+            24,
+            26,
+            28,
+            30,
+            32,
+            36,
+            40,
+            45,
+            50,
+            55,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            20,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://www.theo-schrauben.de/ISO-8734"
+        },
+        {
+          "werte": [],
+          "bereich": [
+            25,
+            120
+          ],
+          "reihe_selbst_genannt": false,
+          "art": "unklar",
+          "norm_der_quelle": "ISO 8734",
+          "quelle": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/"
+        }
+      ]
+    }
+  },
+  "quellen": [
+    {
+      "url": "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf",
+      "titel": "Zylinderstifte DIN 6325 (DIN EN ISO 8734) - Standardabmessungen für lagermäßig geführte Zylinderstifte (PDF)",
+      "unternehmen": "BIKER-Normalien GmbH",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf",
+      "titel": "Dowel pins - Size range dowel pins to DIN 6325 m6 tolerance (PDF)",
+      "unternehmen": "Intafast",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://live-katalog.ganternorm.com/pdf/ganter/de/6325.pdf?dispositiontype=attachment",
+      "titel": "DIN 6325 Zylinderstifte, Auszug Stahl (Katalogseite 1101)",
+      "unternehmen": "GANTER (Otto Ganter GmbH & Co. KG)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html",
+      "titel": "Zylinderstifte DIN 6325 (Datenblatt B0523, Artikelauswahl)",
+      "unternehmen": "Blohm GmbH",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.theo-schrauben.de/ISO-8734",
+      "titel": "ISO 8734 Zylinderstifte im Onlineshop (Größenauswahl m6)",
+      "unternehmen": "Theo Schrauben",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://engineeringhardware.com/guide/standard/iso-8734-dowel-pins/",
+      "titel": "ISO 8734 Dowel Pins Dimensions, Tolerances & ISO Equivalent",
+      "unternehmen": "Engineering Hardware",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "Keine der sechs Quellen nennt für Ø 4, 5, 6, 8, 10, 12 die Längen 35, 65, 75, 85 oder 95. Die Länge 36 (DIN-/Handelsreihe) steht dagegen in allen fünf Listenquellen bei jedem der sechs Durchmesser (Biker, Intafast, Ganter, Blohm, Theo).",
+    "Die Quellen sind überwiegend Lagerlisten/Händlerprogramme zu DIN 6325 (Biker, Intafast, Blohm) bzw. Shop-Größenauswahl zu ISO 8734 (Theo Schrauben); sie geben das Lagerprogramm wieder, nicht zwingend den vollen Normbereich. Biker legt die Matrix ausdrücklich als 'lagermäßig geführte' Zylinderstifte mit der Legende 'genormte Abmessungen' an; Toleranz dort m5 statt m6.",
+    "Biker (PDF): die Tabelle ist reine Grafik (blaue Felder), die Werte wurden aus dem gerenderten Bild abgelesen. Ø4: 55 ist nicht blau (nicht genormt), 60 dagegen schon. Obere Grenzen: Ø4 60, Ø5 60, Ø6 80, Ø8/10/12 120; untere: Ø4 8, Ø5 10, Ø6 10, Ø8 16, Ø10 20, Ø12 28. In der Matrix fehlen die Zeilen 22, 26, 30, 35, 65, 75, 85, 95.",
+    "Intafast (PDF): graue Felder wurden aus den Vektorgrafiken des PDFs ausgelesen (Zuordnung Zelle zu Spalte/Zeile per Koordinaten) und gegen das gerenderte Bild geprüft. Die Matrix führt die Zeilen 4,5,6,8,10,12,14,16,18,20,24,28,30,32,36,40,45,50,55,60,70,80,90,100,110,120; Ø10 und Ø12 reichen bis 120 inkl. 110. 22 und 26 gibt es in der Matrix nicht (30 schon). Quelle meint DIN 6325 (Lagerstandard, m6), ISO 8734 nur als Verweis.",
+    "Ganter: Der Auszug (Seite 1101) ist DIN 6325; Ganter vermerkt ausdrücklich, die Abmessungen entsprächen 'nicht der ISO 8734', könnten diese aber teilweise ersetzen. Daher art 'unklar' (Katalogauszug, kein vollständiger Normbereich). Ø10 dort ohne 18/22/26, Ø12 ab 16. Obere Grenzen: Ø4 40, Ø5 50, Ø6 60, Ø8 80, Ø10 100, Ø12 120.",
+    "Blohm: Artikelauswahl des Datenblatts B0523 (DIN 6325, Hinweis 'Zylinderstifte entsprechen DIN 6325'), also Lieferprogramm. Die Tabelle wurde aus dem HTML-Rohtext der Seite ausgelesen (Ø4 8..40, Ø5 10..50, Ø6 10..60, Ø8 12..80, Ø10 16..100, Ø12 18..120).",
+    "Theo Schrauben: Dropdown 'Größe' der Normseite ISO 8734 (Shop, 'Auf Lager'); Stahl m6. Enthält zusätzlich 22/26 und 110 (Ø10/12), 70 bei Ø5, 120 bei Ø8, aber nirgends 35/65/75/85/95. Händlerprogramm, kein Normauszug.",
+    "Engineering Hardware: nur 'Common length range' je Durchmesser (Ø4 8~40, Ø5 10~50, Ø6 12~60, Ø8 16~80, Ø10 20~100, Ø12 25~120), gibt als Toleranz h6 an (passt nicht zu m6 der ISO 8734) und nennt keine Nennlängenliste. Deshalb art 'unklar' und nur als schwache Größenordnungs-Angabe (Ø12 bis 120, Ø10 bis 100); nicht allein verwerten.",
+    "Weitere gesichtete Seiten (nicht als Quelle geführt): EKINSUN (Hersteller, ekinsun.com) nennt eine 'standard series' 4,5,6,8,10,12,16,20,24,28,32,36,40,45,50,60,70,80,90,100 mm ohne Zuordnung je Durchmesser; ohne 35/65/75/85/95, mit 36. Würth-Shop und engineersedge ließen sich nicht verwertbar abrufen (JavaScript/Cloudflare). Wegertseder/Schrauben-Lexikon ('austauschbar mit DIN 6325, keine maßgeblichen Änderungen') und DEMA-Katalog enthalten keine Längentabelle. bme.bg (DIN 6325) nur als Balkengrafik ohne Zuordnung je Durchmesser.",
+    "Ober-/Untergrenzen laut den Lagerlisten: Ø4 untere Grenze 6 bis 8, obere 40 bis 60 (45 und 50 überall genannt, 60 bei Biker und Theo); Ø10 obere Grenze 100 (Blohm, Ganter) bis 120 (Biker, Intafast, Theo); Ø12 obere Grenze 120 in allen Quellen; 100 liegt bei Ø10 und Ø12 in allen Quellen im Bereich, 120 bei Ø12 in allen, bei Ø10 nur in Biker, Intafast, Theo."
+  ]
+}

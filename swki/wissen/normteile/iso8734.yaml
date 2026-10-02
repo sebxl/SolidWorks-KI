@@ -14,30 +14,51 @@ varianten:
 vorgabe_variante: St
 groessen:
   "4": {masse: {d: 4, c: 0.63},
-        laengen: [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 60],
+        laengen: [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 60],
         status: abgeglichen}
   "5": {masse: {d: 5, c: 0.8},
-        laengen: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 60],
-        status: gesperrt, grund: "c: Mühl 0.8, Fuller Fasteners 0.8, iTeh (ISO-Normtext) 0.8, Reyher 0.98, Seimatec 0.98"}
+        laengen: [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70],
+        status: abgeglichen,
+        entscheidung: "Nutzer 2026-10-02: c = 0.8 (Mühl, Fuller Fasteners, ISO-Normtext iTeh 0.8; Reyher, Seimatec 0.98)"}
   "6": {masse: {d: 6, c: 1.2},
-        laengen: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100],
+        laengen: [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100],
         status: abgeglichen}
   "8": {masse: {d: 8, c: 1.6},
-        laengen: [14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100],
+        laengen: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100, 120],
         status: abgeglichen}
   "10": {masse: {d: 10, c: 2},
-         laengen: [16, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100, 120],
+         laengen: [16, 18, 20, 22, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100, 120],
          status: abgeglichen}
   "12": {masse: {d: 12, c: 2.5},
-         laengen: [24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100, 120],
+         laengen: [18, 20, 24, 26, 28, 30, 32, 40, 45, 50, 55, 60, 70, 80, 90, 100, 120],
          status: abgeglichen}
 quellen:
+  - url: "http://www.biker-normalien.com/fileadmin/user_upload/pdfs/PDF-fuer-Druck/de/Zylinderstifte_DIN_6325__DIN-EN-ISO-8734_.pdf"
+    titel: "Zylinderstifte DIN 6325 (DIN EN ISO 8734) - Standardabmessungen für lagermäßig geführte Zylinderstifte (PDF)"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
+  - url: "https://www.blohm-gmbh.de/de/de/Produkte/Produkt%C3%BCbersicht/Maschinenelemente-Vorrichtungselemente/Schrauben-Muttern-und-Scheiben/Zylinderstifte-DIN-6325.html"
+    titel: "Zylinderstifte DIN 6325 (Datenblatt B0523, Artikelauswahl)"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
+  - url: "https://shop.der-schraubenladen.de/DIN-6325-ISO-8734-Zylinderstifte-h6-Stahl-gehaertet-geschliffen/SW11884"
+    titel: "DIN 6325/ISO 8734 Zylinderstifte h6 Stahl gehärtet, geschliffen (Variantenliste)"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
   - url: "https://www.dm-muehl.de/cgi-local/produkt/produkt_02.pl?wort=8734&link=zylinderstift_din-6325.shtml%2C8734A"
     titel: "Rudolf Mühl: ISO 8734 -A- gehärtete Zylinderstifte, beidseitig gefast"
     abgerufen: "2026-10-02"
     groessen: ["4", "5", "6", "8", "10", "12"]
+  - url: "https://www.dunken.de/stifte/zylinderstifte/iso-8734-din-6325-zylinderstift-stahl-gehartet-4-x-10.html"
+    titel: "ISO 8734 / DIN 6325 Zylinderstift Stahl gehärtet (Variantenliste)"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
   - url: "https://fullerfasteners.com/tech/iso-8734-specifications-parallel-pin-dowel-pins/"
     titel: "Fuller Fasteners: ISO 8734 Specifications - Parallel Pin - Dowel Pins"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
+  - url: "https://www.intafast.com/wp-content/uploads/2019/09/Dowel_-pin_-specifications.pdf"
+    titel: "Dowel pins - Size range dowel pins to DIN 6325 m6 tolerance (PDF)"
     abgerufen: "2026-10-02"
     groessen: ["4", "5", "6", "8", "10", "12"]
   - url: "https://cdn.standards.iteh.ai/samples/20002/ba95529de6a64437ac7454e14dbd2ef6/ISO-8734-1997.pdf"
@@ -56,8 +77,18 @@ quellen:
     titel: "schraubenhandel24.de: ISO 8734 Zylinderstifte Stahl, Längenauswahl (je Durchmesser eine Seite; angegeben ist die Seite für d 4)"
     abgerufen: "2026-10-02"
     groessen: ["4", "5", "6", "8", "10", "12"]
+  - url: "https://www.seefelder.net/de_DE/marke/din-und-normteile/iso-8734-stahl-gehaertet-zylinderstifte-typ-a-toleranzfeld-m6_p000000028383"
+    titel: "DIN- und Normteile ISO 8734 Stahl gehärtet Zylinderstifte, Typ A, Toleranzfeld m6 online kaufen (alle 17 Listenseiten, 203 Varianten)"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
+  - url: "https://www.theo-schrauben.de/ISO-8734"
+    titel: "ISO 8734 Zylinderstifte im Onlineshop (Größenauswahl m6)"
+    abgerufen: "2026-10-02"
+    groessen: ["4", "5", "6", "8", "10", "12"]
   - url: "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
     titel: "F. Reyher: Technische Informationen 2019 (PDF), Seite TI-116 Maße für Stifte, ISO 8734 ersetzt DIN 6325"
     abgerufen: "2026-10-02"
     groessen: ["4"]
 regeln: ["c < d/4"]
+hinweise:
+  - "Nutzerentscheidung 2026-10-02: Längenreihe ohne 35 und ohne 36 (36 ist keine ISO-Länge, 35 hat nur eine Quelle)."
