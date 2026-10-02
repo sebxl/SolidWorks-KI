@@ -1,0 +1,17 @@
+# Testvorlage: Rohr Innen-Ø a, Außen-Ø b, Länge l; Achse = Modell-Y.
+art: teil
+name: ISO9999_Muster
+parameter: {a: 5, b: 10, l: 10}
+features:
+  - id: f1
+    typ: rotation
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon: {punkte: [["=a/2", 0], ["=b/2", 0], ["=b/2", "=l"], ["=a/2", "=l"]]}
+        - mittellinie: {von: [0, 0], bis: [0, 10]}
+  - {id: EINBAU_ACHSE, typ: referenz, achse: y}
+  - {id: EINBAU_EBENE, typ: referenz, ebene: {basis: oben}}
+pruefung:
+  huellquader: ["=b", "=l", "=b"]
+  volumen: {soll: auto}
