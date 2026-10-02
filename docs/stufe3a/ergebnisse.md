@@ -3,7 +3,7 @@
 Fertig-Kriterium Spec 3a §12 für Rechner A (SW 2025) erfüllt: Normtabellen für ISO 4762, ISO 4032, ISO 7089 und ISO 8734
 (je Größen M5, M6, M8, M10, M12, M16 bzw. Ø 4, 5, 6, 8, 10, 12) sind mit Web-Recherche abgeglichen (24 von 24 Größen, keine
 gesperrt), je Bauvorlage liegt ein Prüfer-Urteil „bestanden“ vor, die Stichprobe mit 21 Teilen besteht, und die Referenzen
-(Buchse, Formplatte, Auswerferhalteplatte) bestehen weiter. 449 Unit-Tests grün. Rechner B (SW 2026) offen.
+(Buchse, Formplatte, Auswerferhalteplatte) bestehen weiter. 456 Unit-Tests grün (449 + 7 aus den Review-Fixes). Rechner B (SW 2026) offen.
 
 ## Stand
 
@@ -23,13 +23,14 @@ gesperrt), je Bauvorlage liegt ein Prüfer-Urteil „bestanden“ vor, die Stich
 | 9 | ISO 7089, ISO 8734, Passung zu Normbohrungen | a6acb60 |
 | 10 | Abgleich mit Web-Recherche, Nutzerentscheidungen | 7b30f25, dd787b8 |
 | 11 | Prüfer-Urteile je Vorlage, `hole` live, Stichprobe | feb2024 |
-| 12 | Skill `normteile`, `CLAUDE.md`, Design §8/§11, Ergebnisse | e8ddf87, dieser Commit |
+| 12 | Skill `normteile`, `CLAUDE.md`, Design §8/§11, Ergebnisse | e8ddf87, 0d0c71f, 07add37 |
+| Fix | Befunde des Gesamt-Reviews (siehe unten) | 82beffe (Code, Tabelle), Doku-Commit „docs: Review-Fixes Stufe 3a“ |
 
 ## Unit-Tests
 
-`.venv\Scripts\python.exe -m pytest -q`: **449 bestanden, 95 abgewählt** (die `sw`-markierten Live-Tests). Vor dem Plan:
+`.venv\Scripts\python.exe -m pytest -q`: **456 bestanden, 95 abgewählt** (die `sw`-markierten Live-Tests). Vor dem Plan:
 349 bestanden, 55 abgewählt. Zuwachs je Task (bestanden): Task 2 +10 (359), Task 3 +10 (369), Task 4 +31 (400), Task 5 +11
-(411), Task 6 +11 (422), Task 7 +7 (429), Task 8 +6 (435), Task 9 +14 (449); Tasks 1, 10–12 ohne neue Unit-Tests. Die
+(411), Task 6 +11 (422), Task 7 +7 (429), Task 8 +6 (435), Task 9 +14 (449), Review-Fixes +7 (456); Tasks 1, 10–12 ohne neue Unit-Tests. Die
 40 zusätzlichen abgewählten Tests sind Live-Tests: `test_live_referenz` 1, `test_live_durchmesser` 1,
 `test_live_normteile` 13, `test_live_normteil_hole` 4, `test_live_normteile_stichprobe` 21.
 `swki api pruefe-code`: keine Befunde (`max_jahr` 2025). `swki normteil tabellen-pruefen`: `"gueltig": true`, 6 Größen je
@@ -105,15 +106,16 @@ SolidWorks-Gleichungen unterscheiden Groß- und Kleinschreibung nicht. Zwei Para
 Rohdaten der Web-Recherche: `docs/stufe3a/abgleich/<norm>.<a|b>.json` (zwei getrennte Quellenkreise je Norm) und
 `…laengen.<a|b>.json` (Nachrecherche ISO 4762 und ISO 8734). Ein Wert gilt als abgeglichen, wenn ≥ 2 unabhängige Quellen
 ihn bestätigen; Claudes Normwissen zählt nicht. Unabhängig heißt: verschiedene Unternehmen/Organisationen über beide
-Rechercheläufe hinweg; je Unternehmen steht genau eine URL in `quellen`. Ergebnis: **24 von 24 Größen abgeglichen, keine
+Rechercheläufe hinweg; je Unternehmen steht genau eine URL in `quellen` (Ausnahme: bolt.msk.ru und iTeh in ISO 4762, zwei URLs für
+eine fachlich einzige Quelle, für keine Größe tragend). Ergebnis: **24 von 24 Größen abgeglichen, keine
 Maßkorrektur** (alle Tabellenwerte wurden von den Quellen bestätigt), keine Größe gesperrt.
 
 | Norm | Quellen (Unternehmen) | Maße | Längenreihe |
 |---|---|---|---|
-| ISO 4762 | 13 für die Maße (u. a. fasteners.eu, Fuller, Wegertseder, Reyher, iTeh-Vorschau der ISO-Norm); dk, k, s je Größe 11–12, t 5–6, p 6–7 | alle bestätigt | nach Nachrecherche unverändert gegenüber dem Planstand: M5 8…50, M6 10…60, M8 12…80, M10 16…100, M12 20…120, M16 25…160 |
+| ISO 4762 | 12 Unternehmen für die Maße (u. a. fasteners.eu, Fuller, Wegertseder, Reyher, iTeh-Vorschau der ISO-Norm; EKINSUN nur für Längen); dk, k, s je Größe 11–12, t 5–6, p 6–7; `quellen` führt nach der Nachrecherche 17 URLs | alle bestätigt | nach Nachrecherche unverändert gegenüber dem Planstand: M5 8…50, M6 10…60, M8 12…80, M10 16…100, M12 20…120, M16 25…160 |
 | ISO 4032 | 7 (schraube-mutter.de, Wegertseder, schrauben24.biz, fasteners.eu, Fuller, AmesWeb, MechaHandbook) | s, m je Größe von 7 bestätigt | keine (Mutter) |
 | ISO 7089 | 7 (fasten.it, fasteners.eu, Hasler/Bossard BN715, schraube-mutter.de, schrauben-lexikon.de, theo-schrauben.de, Wegertseder) | d1, d2 je Größe von 7, h von 6 bestätigt | keine (Scheibe) |
-| ISO 8734 | 5 für die Maße (Mühl, Fuller, iTeh/ISO-8734-Normtext, Seimatec, Reyher); für die Längen 9 Händler (neue-physik und schraubenhandel24 aus Runde 1, dazu 7 aus der Nachrecherche: Seefelder, Dunken, Der Schraubenladen, Biker-Normalien, Intafast, Blohm, Theo Schrauben) | d von 4 Unternehmen; c je Größe von 4–5, bei Ø 5 widersprüchlich (siehe unten) | Schnittmenge der Quellen ∩ ISO-Nennlängen; ohne 35 und 36 |
+| ISO 8734 | 5 für die Maße (Mühl nur Ø 4–8, Fuller, iTeh/ISO-8734-Normtext, Seimatec, Reyher); für die Längen 9 Händler (neue-physik und schraubenhandel24 aus Runde 1, dazu 7 aus der Nachrecherche: Seefelder, Dunken, Der Schraubenladen, Biker-Normalien, Intafast, Blohm, Theo Schrauben) | d von 4 Unternehmen; c je Größe von 4–5, bei Ø 5 widersprüchlich (siehe unten) | ≥ 2 unabhängige Unternehmen je Länge und Größe ∩ ISO-Nennlängen; weder 35 noch 36 |
 
 Besonderheiten:
 
@@ -128,12 +130,13 @@ Besonderheiten:
 - **ISO 8734, Ø 5, Maß c (Fasen-Richtwert):** Widerspruch, deshalb vorübergehend gesperrt. 0,8 nennen Mühl, Fuller und der
   ISO-Normtext (iTeh, Table 1), 0,98 nennen Reyher und Seimatec. Der Nutzer entschied am 02.10.2026: c = 0,8 (Eintrag
   `entscheidung` in der Tabelle, Status `abgeglichen`).
-- **ISO 8734, Längen:** Reihe = Längen, die ≥ 2 unabhängige Unternehmen je Größe nennen und die in der ISO-Nennlängenreihe stehen.
+- **ISO 8734, Längen:** Reihe = Längen, die ≥ 2 unabhängige Unternehmen je Länge und Größe nennen und die in der ISO-Nennlängenreihe stehen.
   36 (alle Größen) ist DIN-6325-/Handelslänge und entfällt; 35 hat nur eine Quelle; der Nutzer bestätigte: weder 35 noch 36
-  (Hinweis in der Tabelle). 65, 75, 85, 95 nennt keine Quelle. Dünn belegt (DIN-6325-Händlerlisten): Ø 5 L 6 (nur Dunken und Intafast) und Ø 12 L 18 (nur Blohm und
+  (Hinweis in der Tabelle). 65, 75, 85, 95: keine Händlerquelle; der ISO-Normtext nennt sie, ohne sie lesbar den Durchmessern zuzuordnen. Dünn belegt (DIN-6325-Händlerlisten): Ø 5 L 6 (nur Dunken und Intafast) und Ø 12 L 18 (nur Blohm und
   Intafast); Ø 5 L 70 nennen Dunken, schraubenhandel24, Seefelder und Theo (die letzten drei mit identischen Listen).
 - **Werkstoff ISO 8734, Variante St:** `1.2210 (115CrV3)` statt `1.3505` (100Cr6), weil 1.3505 in der SW-Materialdatenbank fehlt
-  (Spike S11). Gewählt: ein für Zylinderstifte DIN 6325/ISO 8734 von Herstellern genannter Werkstoff mit praktisch gleicher Dichte.
+  (Spike S11). Gewählt: ein für Zylinderstifte DIN 6325/ISO 8734 von Herstellern genannter Werkstoff mit praktisch gleicher Dichte;
+  1.2210 ist nicht chemisch gleich 100Cr6 (Cr-V-Stahl, nicht Wälzlagerstahl).
 
 ## Prüfer-Urteile
 
@@ -153,7 +156,7 @@ Die Musterteile haben vorher die Selbstprüfung (Tabelle, Spezifikation, Bau, Ma
 
 ## Stichprobe
 
-`tests/live/test_live_normteile_stichprobe.py`: 20 Teile über alle Größen, Längen und Varianten, gezogen mit festem Seed 3
+`tests/live/test_live_normteile_stichprobe.py`: 20 Teile, zufällig aus allen Größen, Längen und Varianten gezogen mit festem Seed 3
 (gleichverteilt über alle Teile, daher dominiert ISO 4762), dazu ein Teil für die nicht vertretene Norm: **21 Teile, alle
 bestanden.** Gezogen: 16 × ISO 4762 (M8×30 10.9, M16×45 A2-70, M12×110 12.9, M6×16 12.9, M10×50 10.9, M16×55 10.9, M12×45 12.9,
 M16×70 8.8, M16×40 10.9, M5×25 10.9, M16×55 12.9, M12×45 8.8, M8×45 8.8, M12×120 12.9, M8×25 A2-70, M6×55 12.9),
@@ -218,10 +221,10 @@ Entscheidungen des Nutzers (02.10.2026):
 
 - ISO 8734 Ø 5: **c = 0,8** (Größe wieder `abgeglichen`).
 - ISO 4762 kurze Längen M5–M10: **gezielt nachrecherchieren** (Ergebnis: Längen wieder in der Tabelle, siehe Abgleich).
-- ISO 8734 Längenbereich je Ø (35/65/75/85/95, Grenzen): **gezielt nachrecherchieren** (Ergebnis: Reihen erweitert, 65/75/85/95 ohne Beleg).
+- ISO 8734 Längenbereich je Ø (35/65/75/85/95, Grenzen): **gezielt nachrecherchieren** (Ergebnis: Reihen erweitert, 65/75/85/95 ohne Händlerbeleg und nicht zuordenbar).
 - ISO 8734 zwischen 32 und 40: **weder 35 noch 36** (Regel bleibt).
 
-Am 03.10.2026 erlaubte der Nutzer ausdrücklich, SolidWorks für die Regression bei Bedarf selbst neu zu starten (ab ca. 3 GB
+Am 03.10.2026 erlaubte der Nutzer ausdrücklich, SolidWorks für die Regression bei Bedarf selbst neu zu starten (Vorgabe des Controllers: ab ca. 3 GB
 Private Bytes vor einer Datei); das war im Lauf nicht nötig.
 
 ## Offene Punkte
@@ -252,7 +255,7 @@ Zurückgestellte Kleinbefunde aus den Reviews (Material für das Gesamt-Review, 
   inkl. gesperrter Größen; fehlende Randtests; komplexe Zahl/Überlauf in Regeln nicht gefangen.
 - **Task 5:** `NORMLAENGE_UNGUELTIG`-Text zeigt „None“ bei fehlender Nachbarlänge; Größe/Variante case-sensitiv („m6x12“, „a2“); `gesperrt` erst
   nach Längen/Variante gemeldet; `spec_befunde`-Parameter `ordner` ist semantisch der Auftragsordner; Teile ohne Länge (`laenge: false`) in den
-  Task-5-Tests ungetestet (kommt mit ISO 4032/7089); `loese_auf` validiert die Tabelle nicht vorher (`hole` ruft `pruefe_tabelle` danach).
+  Task-5-Tests ungetestet (kommt mit ISO 4032/7089); `loese_auf` validiert die Tabelle nicht selbst (seit den Review-Fixes prüft `hole` sie vorher).
 - **Task 6:** `bau.py`: Ausnahmen in `messe`/`bewerte`/`screenshots`/`speichere` kommen roh heraus (Protokoll steht schon auf ok, kein
   `NORMTEIL_PRUEFUNG` mit Ordner); `muster` nimmt die erste Tabellenzeile/Länge statt der kleinsten; defekte Eintrags-JSON bricht
   `hole`/`liste` roh ab; `.sldprt` ohne JSON in `liste` unsichtbar; kein Unit-Test für `baue_und_pruefe`; `fehler_dict` doppelt.
@@ -260,9 +263,32 @@ Zurückgestellte Kleinbefunde aus den Reviews (Material für das Gesamt-Review, 
 - **Task 8:** Kopfkommentare von `iso4032` (Abgleich-Satz, Senkung nicht normativ) dünner als bei `iso4762`.
 - **Task 9:** `EINBAU_EBENE_2`-Lage nur als Betrag belegt (Messung gegen +y mit Soll 0 wäre direkter); `c` (ISO 8734) nur über das
   Volumen; keine Passung Scheibe ↔ Schraube.
-- **Task 10:** Mühl-URL deckt Ø 10/12 nicht (zweite Mühl-Seite 6325_c1); EKINSUN-Längen aus Bereich plus ISO-888-Reihe abgeleitet; ISO 7089 `h` meist
+- **Task 10:** (Mühl-URL deckt Ø 10/12 nicht: behoben, Gruppe auf Ø 4–8 beschränkt); EKINSUN-Längen aus Bereich plus ISO-888-Reihe abgeleitet; ISO 7089 `h` meist
   unbeschriftet; schraubenhandel24-URL nur für d4; bolt.msk.ru und iTeh als zwei URLs in `quellen` von ISO 4762 (fachlich eine Quelle, für keine
   Größe tragend); schraubenhandel24/Seefelder/Theo mit identischen Listen (Runde 1 vs. 2 uneinheitlich, alle Längen trotzdem ≥ 2);
   dünne Belege ISO 8734 Ø 5 L 6, Ø 5 L 70, Ø 12 L 18 (DIN-6325-Händler).
-- **Task 12 Teil 1:** Skill `normteile`: `tabellen-pruefen` zeigt Anzahl Größen und gesperrte; Herkunft von `<x>` für `--vorlage-pruefsumme`
-  (aus `muster`) nennen; Leerzeile vor „## Fehlercodes“.
+- **Task 12 Teil 1:** erledigt in den Review-Fixes (Skill `normteile`: Anzahl der Größen, Herkunft von `<x>`, Leerzeile).
+
+## Gesamt-Review: behobene Befunde
+
+Commit 82beffe (Code, Tabelle) und Doku-Commit „docs: Review-Fixes Stufe 3a“:
+
+1. **Kaputte Normtabelle:** `hole` prüft die Tabelle (`pruefe_tabelle`) vor `loese_auf`; `tabellen_pruefen` liest bei Befunden keine
+   weiteren Schlüssel (`norm`, `status`) mehr. Fehlender `status`, `laengen` oder `norm` und Regelverletzung liefern jetzt
+   `NORMTABELLE_UNGUELTIG`; eine gesperrte Größe mit `grund` liefert weiter `NORMTEIL_GESPERRT`. +6 Unit-Tests.
+2. **ISO 8734, Quelle Mühl:** `groessen` auf Ø 4, 5, 6, 8 beschränkt (Ø 10/12 deckt die URL nicht); weiter alle Größen mit ≥ 2 Quellen.
+   Die Vorlagen und Prüfer-Urteile bleiben unverändert gültig (`quellen` gehen nicht in `teil_pruefsumme` ein).
+3. **Protokoll-Laufnummer:** `baue_und_pruefe(…, lauf=0)` schreibt die Nummer des Laufordners ins Protokoll; `hole`/`muster` reichen
+   sie durch. +1 Unit-Test.
+4. **Skill, `CLAUDE.md`, Ergebnisse:** Doku auf den Stand nach 3a gebracht.
+
+Später (aus dem Gesamt-Review, nichts davon blockiert):
+
+- `validieren`: Plausibilitätsbefunde für Groß-/Kleinschreibung bei Parametern und für Anker auf eine `referenz`-ID.
+- `EINBAU_EBENE_2` gegen +y mit Soll 0 messen statt nur als Betrag.
+- `p` (ISO 4762) und `c` (ISO 8734) direkt messen: neue Vorlagenversion und neues Prüfer-Urteil.
+- `teil_pruefsumme` enthält weder Längenreihe noch Status: `liste` zeigt eine gestrichene Länge weiter als aktuell.
+- `bau.py`: rohe Ausnahmen nach dem Bau (`messe`, `bewerte`, `screenshots`, `speichere`) in `NORMTEIL_PRUEFUNG` mit Ordner wandeln.
+- Eintrags-JSON der Bibliothek atomar schreiben (defekte Datei bricht `hole`/`liste` roh ab).
+- `lege_ab` überschreibt in-place; für 3b (Baugruppen verweisen auf Bibliotheksdateien) klären.
+- Materialnamen-Prüfung in `tabellen-pruefen` (Spec §4, nicht umgesetzt).
