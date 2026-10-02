@@ -41,8 +41,10 @@ def test_iso4762(groesse, laenge):
 
 def test_verfaelschte_vorlage_scheitert():
     # Bauweg falsch (Innensechskant 10 % zu tief), Prüfung unverändert → die Selbstprüfung muss es finden.
+    # Das Sollvolumen folgt dem Bauweg (volumen: auto aus derselben Spezifikation); einen falschen Bauweg fängt
+    # masse_pruefen.
     spec = copy.deepcopy(_spec("ISO 4762", "M8", 30))
     spec["features"][1]["ende"]["tiefe"] = "=t*1.1"
     ergebnis = _pruefe(spec)
     assert not ergebnis["bestanden"]
-    assert {m["pruefung"] for m in ergebnis["maengel"]} >= {"mass:t", "volumen"}
+    assert "mass:t" in {m["pruefung"] for m in ergebnis["maengel"]}
