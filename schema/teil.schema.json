@@ -270,6 +270,22 @@
         "id": true, "typ": true, "features": {"$ref": "#/$defs/featureliste"}, "ebene": {"$ref": "#/$defs/ebene"}
       }
     },
+    "f_referenz": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "achse": {"enum": ["x", "y", "z"]},
+        "ebene": {
+          "type": "object", "required": ["basis"], "additionalProperties": false,
+          "properties": {
+            "basis": {"$ref": "#/$defs/standardebene"},
+            "abstand": {"$ref": "#/$defs/wert"},
+            "umkehren": {"type": "boolean"}
+          }
+        }
+      },
+      "oneOf": [{"required": ["achse"]}, {"required": ["ebene"]}]
+    },
     "f_skript": {
       "required": ["datei", "luecke"], "additionalProperties": false,
       "properties": {
@@ -284,7 +300,7 @@
       "properties": {
         "id": {"$ref": "#/$defs/id"},
         "typ": {"enum": ["extrusion", "schnitt", "rotation", "bohrung", "normbohrung", "verrundung", "fase",
-                         "muster_linear", "muster_kreis", "spiegeln", "skript"]}
+                         "muster_linear", "muster_kreis", "spiegeln", "skript", "referenz"]}
       },
       "allOf": [
         {"if": {"properties": {"typ": {"enum": ["extrusion", "schnitt"]}}}, "then": {"$ref": "#/$defs/f_extrusion"}},
@@ -296,7 +312,8 @@
         {"if": {"properties": {"typ": {"const": "muster_linear"}}}, "then": {"$ref": "#/$defs/f_muster_linear"}},
         {"if": {"properties": {"typ": {"const": "muster_kreis"}}}, "then": {"$ref": "#/$defs/f_muster_kreis"}},
         {"if": {"properties": {"typ": {"const": "spiegeln"}}}, "then": {"$ref": "#/$defs/f_spiegeln"}},
-        {"if": {"properties": {"typ": {"const": "skript"}}}, "then": {"$ref": "#/$defs/f_skript"}}
+        {"if": {"properties": {"typ": {"const": "skript"}}}, "then": {"$ref": "#/$defs/f_skript"}},
+        {"if": {"properties": {"typ": {"const": "referenz"}}}, "then": {"$ref": "#/$defs/f_referenz"}}
       ]
     },
     "messpunkt": {

@@ -216,6 +216,8 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             beitrag[f["id"]] = (f["anzahl"] - 1) * sum(beitrag[q] for q in f["features"])
         elif typ == "spiegeln":
             beitrag[f["id"]] = sum(beitrag[q] for q in f["features"])
+        elif typ == "referenz":
+            beitrag[f["id"]] = 0.0  # Bezugsgeometrie hat kein Volumen
         else:
             return None, f"{f['id']}: {typ} nicht analytisch berechenbar"
     return sum(beitrag.values()), "analytisch"

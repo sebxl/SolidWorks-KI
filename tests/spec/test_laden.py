@@ -328,3 +328,32 @@ def test_ausdrucksfehler_in_gewindetiefe_genau_ein_befund(tmp_path):
                                                          "gewindetiefe": "=X"}
     [befund] = plausibel_befunde(_mit_feature(nb), tmp_path)
     assert "unbekannter Parameter 'X'" in befund["meldung"]
+
+
+@pytest.mark.parametrize("ref", [
+    {"id": "EINBAU_ACHSE", "typ": "referenz", "achse": "y"},
+    {"id": "EINBAU_EBENE", "typ": "referenz", "ebene": {"basis": "oben"}},
+    {"id": "EINBAU_EBENE_2", "typ": "referenz", "ebene": {"basis": "oben", "abstand": 20, "umkehren": True}},
+])
+def test_referenz_gueltig(tmp_path, ref):
+    spec = _spec()
+    spec["features"].append(ref)
+    assert schema_befunde(spec) == [] and plausibel_befunde(spec, tmp_path) == []
+
+
+@pytest.mark.parametrize("ref", [
+    {"id": "R", "typ": "referenz"},                                             # weder achse noch ebene
+    {"id": "R", "typ": "referenz", "achse": "y", "ebene": {"basis": "oben"}},   # beides
+    {"id": "R", "typ": "referenz", "achse": "w"},
+    {"id": "R", "typ": "referenz", "ebene": {"abstand": 5}},                    # basis fehlt
+])
+def test_referenz_ungueltig(ref):
+    spec = _spec()
+    spec["features"].append(ref)
+    assert schema_befunde(spec) != []
+
+
+def test_referenz_abstand_muss_positiv_sein(tmp_path):
+    spec = _spec()
+    spec["features"].append({"id": "R", "typ": "referenz", "ebene": {"basis": "oben", "abstand": -5}})
+    assert any(b["pfad"].endswith("ebene.abstand") for b in plausibel_befunde(spec, tmp_path))
