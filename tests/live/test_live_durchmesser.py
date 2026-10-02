@@ -9,19 +9,19 @@ from .bauhilfe import gebautes_teil
 
 pytestmark = pytest.mark.sw
 STANDARD = {"toleranzen": {"anker_mm": 0.1, "volumen_prozent": 0.5}}
-SPEC = {"art": "teil", "name": "T", "parameter": {"d": 8, "D": 20, "h": 12}, "features": [
+SPEC = {"art": "teil", "name": "T", "parameter": {"d": 8, "Da": 20, "h": 12}, "features": [
     {"id": "f1", "typ": "rotation", "skizze": {"ebene": "vorne", "elemente": [
-        {"polygon": {"punkte": [["=d/2", 0], ["=D/2", 0], ["=D/2", "=h"], ["=d/2", "=h"]]}},
+        {"polygon": {"punkte": [["=d/2", 0], ["=Da/2", 0], ["=Da/2", "=h"], ["=d/2", "=h"]]}},
         {"mittellinie": {"von": [0, 0], "bis": [0, 10]}}]}},
     {"id": "EINBAU_ACHSE", "typ": "referenz", "achse": "y"},
     {"id": "EINBAU_EBENE", "typ": "referenz", "ebene": {"basis": "oben"}}],
     "pruefung": {
-        "huellquader": ["=D", "=h", "=D"], "volumen": {"soll": "auto"},
+        "huellquader": ["=Da", "=h", "=Da"], "volumen": {"soll": "auto"},
         "masse_pruefen": [
             {"was": "h", "von": {"referenz": "EINBAU_EBENE"}, "zu": {"feature": "f1", "flaeche": "+y"}, "soll": "=h"}],
         "durchmesser_pruefen": [
             {"was": "d", "feature": "f1", "nahe": ["=d/2", "=h/2", 0], "soll": "=d", "referenz": "EINBAU_ACHSE"},
-            {"was": "D", "feature": "f1", "nahe": ["=D/2", "=h/2", 0], "soll": "=D", "referenz": "EINBAU_ACHSE"}]}}
+            {"was": "D", "feature": "f1", "nahe": ["=Da/2", "=h/2", 0], "soll": "=Da", "referenz": "EINBAU_ACHSE"}]}}
 
 
 def test_durchmesser_und_referenzen_messen():
