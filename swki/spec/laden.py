@@ -75,10 +75,10 @@ def _werte(obj, pfad: list, eltern: str | None = None):
 
 
 def _referenzen(obj, pfad: list):
-    """Liefert (pfad, feature-id) für alle Verweise auf Features ("feature" und "features")."""
+    """Liefert (pfad, feature-id) für alle Verweise auf Features ("feature", "referenz" und "features")."""
     if isinstance(obj, dict):
         for k, v in obj.items():
-            if k == "feature" and isinstance(v, str):
+            if k in ("feature", "referenz") and isinstance(v, str):
                 yield [*pfad, k], v
             elif k == "features" and isinstance(v, list) and all(isinstance(x, str) for x in v):
                 for i, x in enumerate(v):

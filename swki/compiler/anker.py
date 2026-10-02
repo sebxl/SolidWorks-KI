@@ -111,3 +111,15 @@ def zylinder_zu_punkten(zylinder: list[Flaeche], punkte: list[Vektor], tol_mm: f
             raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"keine Zylinderfläche für Instanz {i} bei {p}")
         ergebnis.append(min(passend, key=lambda z: z.radius))
     return ergebnis
+
+
+def zylinder_durch_punkt(flaechen: list[Flaeche], punkt: Vektor, tol_mm: float) -> Flaeche:
+    """Zylinderfläche, auf deren Mantel `punkt` liegt (|Abstand Punkt–Achse − Radius| ≤ tol_mm). SolidWorks teilt einen
+    Vollzylinder oft in zwei Flächen; Treffer mit gleichem Radius gelten als eine Fläche."""
+    treffer = [f for f in flaechen if f.art == "zylinder"
+               and abs(punkt_achse_abstand(punkt, f.punkt, f.achse) - f.radius) <= tol_mm]
+    if not treffer:
+        raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"keine Zylinderfläche durch {punkt}")
+    if len({round(f.radius, 6) for f in treffer}) > 1:
+        raise AnkerFehler(REFERENZ_MEHRDEUTIG, f"{len(treffer)} Zylinderflächen mit verschiedenen Radien durch {punkt}")
+    return treffer[0]

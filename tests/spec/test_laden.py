@@ -364,3 +364,22 @@ def test_referenz_umkehren_braucht_abstand(tmp_path):
     spec["features"].append({"id": "R", "typ": "referenz", "ebene": {"basis": "oben", "umkehren": True}})
     assert schema_befunde(spec) == []
     assert any(b["pfad"].endswith("ebene.umkehren") for b in plausibel_befunde(spec, tmp_path))
+
+
+def test_pruefung_durchmesser_und_referenz_im_schema(tmp_path):
+    spec = _spec()
+    spec["features"].append({"id": "EINBAU_EBENE", "typ": "referenz", "ebene": {"basis": "oben"}})
+    spec["pruefung"]["masse_pruefen"] = [
+        {"was": "h", "von": {"referenz": "EINBAU_EBENE"}, "zu": {"feature": "f1", "flaeche": "+y"}, "soll": 20}]
+    spec["pruefung"]["durchmesser_pruefen"] = [{"was": "d", "feature": "f2", "nahe": [0, 0, 0], "soll": 8}]
+    assert schema_befunde(spec) == [] and plausibel_befunde(spec, tmp_path) == []
+
+
+def test_unbekannte_referenz_in_pruefung(tmp_path):
+    spec = _spec()
+    spec["pruefung"]["masse_pruefen"] = [
+        {"was": "x", "von": {"referenz": "EINBAU_EBENE"}, "zu": {"punkt": [0, 0, 0]}, "soll": 1}]
+    spec["pruefung"]["durchmesser_pruefen"] = [{"was": "d", "feature": "f2", "nahe": [0, 0, 0], "soll": 8,
+                                                "referenz": "EINBAU_ACHSE"}]
+    meldungen = [b["meldung"] for b in plausibel_befunde(spec, tmp_path)]
+    assert any("EINBAU_EBENE" in m for m in meldungen) and any("EINBAU_ACHSE" in m for m in meldungen)

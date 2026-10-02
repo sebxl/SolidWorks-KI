@@ -2,7 +2,7 @@ import pytest
 
 from swki.compiler.anker import (
     AnkerFehler, Flaeche, Kante, flaeche_in_richtung, naechste, punkt_achse_abstand, senkrechte_kanten,
-    zylinder_zu_punkten,
+    zylinder_durch_punkt, zylinder_zu_punkten,
 )
 from swki.compiler.fehler import REFERENZ_MEHRDEUTIG, REFERENZ_NICHT_GEFUNDEN
 
@@ -75,3 +75,27 @@ def test_zylinder_zu_punkten_in_positionsreihenfolge():
 def test_zylinder_fehlt():
     with pytest.raises(AnkerFehler, match="Instanz 2"):
         zylinder_zu_punkten([ZYL], [(30, 20, 0), (0, 20, 0)], 0.01)
+
+
+def _zyl(r, x=0.0):
+    return Flaeche("zylinder", (x, 0.0, 0.0), achse=(0.0, 1.0, 0.0), radius=r)
+
+
+def test_zylinder_durch_punkt():
+    assert zylinder_durch_punkt([_zyl(4), _zyl(6.5)], (6.5, 10, 0), 0.1).radius == 6.5
+
+
+def test_zylinder_durch_punkt_geteilte_flaeche():
+    assert zylinder_durch_punkt([_zyl(4), _zyl(4)], (0, 3, 4), 0.1).radius == 4
+
+
+def test_zylinder_durch_punkt_fehlt():
+    with pytest.raises(AnkerFehler) as e:
+        zylinder_durch_punkt([_zyl(4)], (5, 0, 0), 0.1)
+    assert e.value.daten["code"] == REFERENZ_NICHT_GEFUNDEN
+
+
+def test_zylinder_durch_punkt_mehrdeutig():
+    with pytest.raises(AnkerFehler) as e:
+        zylinder_durch_punkt([_zyl(4), _zyl(5, x=9)], (4, 0, 0), 0.1)
+    assert e.value.daten["code"] == REFERENZ_MEHRDEUTIG

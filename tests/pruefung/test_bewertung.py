@@ -181,3 +181,31 @@ def test_mehrere_koerper_sind_ein_mangel():
 
 def test_koerper_ohne_angabe_gilt_als_ein_koerper():
     assert _messwerte().koerper == 1
+
+
+DM_SPEC = {**SPEC, "features": SPEC["features"] + [{"id": "EINBAU_ACHSE", "typ": "referenz", "achse": "y"}],
+           "pruefung": {"durchmesser_pruefen": [
+               {"was": "d", "feature": "f1", "nahe": [5, 10, 0], "soll": 10, "referenz": "EINBAU_ACHSE"}]}}
+
+
+def _dm(d=10.0, achspunkt=(0.0, 0.0, 0.0)):
+    return {"d": {"durchmesser": d, "achse": Messgeometrie("achse", achspunkt, (0, 1, 0)),
+                  "referenz": Messgeometrie("achse", (0, 5, 0), (0, -1, 0))}}
+
+
+def test_durchmesser_ok():
+    bericht = bewerte(DM_SPEC, _messwerte(durchmesser=_dm()), STANDARD)
+    [p] = [p for p in bericht["pruefungen"] if p["id"] == "durchmesser:d"]
+    assert bericht["bestanden"] and p["ok"] is True and p["ist"] == 10.0 and p["achsversatz"] == 0.0
+
+
+@pytest.mark.parametrize("messung", [
+    _dm(d=10.05),                                          # Durchmesser außerhalb 0,01
+    _dm(achspunkt=(0.5, 0.0, 0.0)),                        # nicht koaxial zur Bezugsachse
+    "REFERENZ_NICHT_GEFUNDEN: keine Zylinderfläche",       # Messung gescheitert
+])
+def test_durchmesser_mangel(messung):
+    m = _messwerte(durchmesser=messung if isinstance(messung, dict) else {"d": messung})
+    bericht = bewerte(DM_SPEC, m, STANDARD)
+    assert [x["pruefung"] for x in bericht["maengel"]] == ["durchmesser:d"]
+    assert bericht["maengel"][0]["knoten"] == ["f1"]

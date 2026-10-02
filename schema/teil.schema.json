@@ -329,6 +329,10 @@
         {
           "type": "object", "required": ["punkt"], "additionalProperties": false,
           "properties": {"punkt": {"$ref": "#/$defs/punkt3"}}
+        },
+        {
+          "type": "object", "required": ["referenz"], "additionalProperties": false,
+          "properties": {"referenz": {"$ref": "#/$defs/id"}}
         }
       ]
     },
@@ -340,6 +344,17 @@
         "zu": {"$ref": "#/$defs/messpunkt"},
         "soll": {"$ref": "#/$defs/wert"},
         "tol": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "durchmesserpruefung": {
+      "type": "object", "required": ["was", "feature", "nahe", "soll"], "additionalProperties": false,
+      "properties": {
+        "was": {"type": "string", "minLength": 1},
+        "feature": {"$ref": "#/$defs/id"},
+        "nahe": {"$ref": "#/$defs/punkt3"},
+        "soll": {"$ref": "#/$defs/wert"},
+        "tol": {"type": "number", "exclusiveMinimum": 0},
+        "referenz": {"$ref": "#/$defs/id"}
       }
     },
     "pruefung": {
@@ -355,6 +370,7 @@
           }
         },
         "masse_pruefen": {"type": "array", "items": {"$ref": "#/$defs/massepruefung"}},
+        "durchmesser_pruefen": {"type": "array", "items": {"$ref": "#/$defs/durchmesserpruefung"}},
         "schwerpunkt": {
           "type": "object", "required": ["soll"], "additionalProperties": false,
           "properties": {
