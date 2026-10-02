@@ -39,6 +39,11 @@ def test_iso4762(groesse, laenge):
         "durchmesser:d", "durchmesser:dk")
 
 
+@pytest.mark.parametrize("groesse", ["M5", "M10", "M16"])
+def test_iso4032(groesse):
+    _ok(_pruefe(_spec("ISO 4032", groesse)), "mass:m", "mass:s", "mass:EINBAU_EBENE", "durchmesser:d")
+
+
 def test_verfaelschte_vorlage_scheitert():
     # Bauweg falsch (Innensechskant 10 % zu tief), Prüfung unverändert → die Selbstprüfung muss es finden.
     # Das Sollvolumen folgt dem Bauweg (volumen: auto aus derselben Spezifikation); einen falschen Bauweg fängt

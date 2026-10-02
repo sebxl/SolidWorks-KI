@@ -1,0 +1,37 @@
+# Bauvorlage ISO 4032 (Spec 3a §5) – vereinfachte Darstellung: Sechskant (Schlüsselweite s, Flächen senkrecht zu x)
+# mit Bohrung Nenn-Ø d und 90°-Senkung d/20 an beiden Bohrungskanten (Senk-Ø 1,1·d); ohne Eckfasen am Sechskant, kein
+# Gewinde. Lage: Achse = Modell-Y, Auflagefläche in der Ebene oben (y = 0), Höhe m in +y.
+# Die Mittellinie steht an beiden Enden 1 mm über das Profil über, sonst scheitert der Bau (Spike S11).
+art: teil
+name: ISO4032_Muster
+parameter: {d: 5, s: 8, m: 4.7}
+features:
+  - id: f1
+    typ: extrusion
+    skizze:
+      ebene: oben
+      elemente:
+        - polygon:
+            punkte: [["=s/2", "=-s/(2*3**0.5)"], ["=s/2", "=s/(2*3**0.5)"], [0, "=s/3**0.5"],
+                     ["=-s/2", "=s/(2*3**0.5)"], ["=-s/2", "=-s/(2*3**0.5)"], [0, "=-s/3**0.5"]]
+    ende: {typ: blind, tiefe: "=m"}
+  - id: f2
+    typ: rotation
+    schnitt: true
+    skizze:
+      ebene: vorne
+      elemente:
+        - polygon:
+            punkte: [[0, 0], ["=d/2+d/20", 0], ["=d/2", "=d/20"], ["=d/2", "=m-d/20"], ["=d/2+d/20", "=m"], [0, "=m"]]
+        - mittellinie: {von: [0, "=-1"], bis: [0, "=m+1"]}
+  - {id: EINBAU_ACHSE, typ: referenz, achse: y}
+  - {id: EINBAU_EBENE, typ: referenz, ebene: {basis: oben}}
+pruefung:
+  huellquader: ["=s", "=m", "=2*s/3**0.5"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: m, von: {feature: f1, flaeche: "+y"}, zu: {feature: f1, flaeche: "-y"}, soll: "=m"}
+    - {was: s, von: {feature: f1, flaeche: "+x"}, zu: {feature: f1, flaeche: "-x"}, soll: "=s"}
+    - {was: EINBAU_EBENE, von: {referenz: EINBAU_EBENE}, zu: {feature: f1, flaeche: "+y"}, soll: "=m"}
+  durchmesser_pruefen:
+    - {was: d, feature: f2, nahe: ["=d/2", "=m/2", 0], soll: "=d", referenz: EINBAU_ACHSE}
