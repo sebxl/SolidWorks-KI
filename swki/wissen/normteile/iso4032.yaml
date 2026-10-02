@@ -1,5 +1,6 @@
-# Normtabelle ISO 4032 – Sechskantmuttern Typ 1 (Spec 3a §4). Werte aus Claudes Normwissen, gültig erst nach Abgleich
-# (Task 10). Maße in mm: d Nenndurchmesser, s Schlüsselweite (Nennmaß), m Mutterhöhe (Höchstmaß).
+# Normtabelle ISO 4032 – Sechskantmuttern Typ 1 (Spec 3a §4). Stand: abgeglichen am 2026-10-02 per Web-Recherche
+# (je Wert ≥ 2 unabhängige Quellen, Rohdaten in docs/stufe3a/abgleich/). Maße in mm: d Nenndurchmesser,
+# s Schlüsselweite (Nennmaß), m Mutterhöhe (Höchstmaß).
 norm: ISO 4032
 benennung: Sechskantmutter
 ersetzt: DIN 934
@@ -11,13 +12,41 @@ varianten:
   "A2-70": {material: "1.4301"}
 vorgabe_variante: "8"
 groessen:
-  M5: {masse: {d: 5, s: 8, m: 4.7}, status: gesperrt, grund: noch nicht abgeglichen}
-  M6: {masse: {d: 6, s: 10, m: 5.2}, status: gesperrt, grund: noch nicht abgeglichen}
-  M8: {masse: {d: 8, s: 13, m: 6.8}, status: gesperrt, grund: noch nicht abgeglichen}
-  M10: {masse: {d: 10, s: 16, m: 8.4}, status: gesperrt, grund: noch nicht abgeglichen}
-  M12: {masse: {d: 12, s: 18, m: 10.8}, status: gesperrt, grund: noch nicht abgeglichen}
-  M16: {masse: {d: 16, s: 24, m: 14.8}, status: gesperrt, grund: noch nicht abgeglichen}
-quellen: []
+  M5: {masse: {d: 5, s: 8, m: 4.7}, status: abgeglichen}
+  M6: {masse: {d: 6, s: 10, m: 5.2}, status: abgeglichen}
+  M8: {masse: {d: 8, s: 13, m: 6.8}, status: abgeglichen}
+  M10: {masse: {d: 10, s: 16, m: 8.4}, status: abgeglichen}
+  M12: {masse: {d: 12, s: 18, m: 10.8}, status: abgeglichen}
+  M16: {masse: {d: 16, s: 24, m: 14.8}, status: abgeglichen}
+quellen:
+  - url: "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"
+    titel: "Metric Hex Nut Dimensions (ISO 4032) - AmesWeb"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.fasteners.eu/standards/iso/4032/"
+    titel: "ISO 4032 - Hexagon Nuts (fasteners.eu)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"
+    titel: "ISO 4032 Specifications - Hex Regular Nuts (Fuller Fasteners)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"
+    titel: "Hex Nut Dimensions (ISO 4032) - MechaHandbook"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://schraube-mutter.de/schrauben/din-en-iso-4032/"
+    titel: "ISO 4032 Sechskantmuttern mit kleinen ISO Schlüsselweiten (schraube-mutter.de)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.schrauben24.biz/Technische-Daten-Sechskantmutter-ISO-4032/-DIN-934"
+    titel: "Technische Daten - Sechskantmutter ISO 4032 / DIN 934 (schrauben24.biz)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten-fuer-Behaelterbau-nach-AD-TRD-Regelwerk"
+    titel: "ISO 4032 Sechskantmuttern, ISO-Schlüsselweiten für Behälterbau nach AD-TRD Regelwerk (Wegertseder)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
 regeln: ["s > d*1.1", "m < d"]
 hinweise:
   - "ISO 4032 weicht bei M10 und M12 in der Schlüsselweite von DIN 934 ab (ISO 16/18, DIN 17/19) – beim Abgleich ISO-Werte verwenden."

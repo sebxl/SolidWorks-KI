@@ -1,8 +1,8 @@
-# Normtabelle ISO 4762 – Zylinderschrauben mit Innensechskant (Spec 3a §4).
-# Werte aus Claudes Normwissen; eine Größe ist erst nach dem Abgleich mit ≥ 2 recherchierten Quellen nutzbar
-# (status: abgeglichen, Task 10). Maße in mm: d Nenndurchmesser, dk Kopfdurchmesser (Höchstmaß), k Kopfhöhe
-# (Höchstmaß), s Schlüsselweite (Nennmaß), t Innensechskanttiefe (Mindestmaß), p Steigung des Regelgewindes (ISO 261,
-# nur für die Fase am Schaftende).
+# Normtabelle ISO 4762 – Zylinderschrauben mit Innensechskant (Spec 3a §4). Stand: abgeglichen am 2026-10-02 per
+# Web-Recherche (je Wert ≥ 2 unabhängige Quellen, Rohdaten in docs/stufe3a/abgleich/); nutzbar nur mit
+# status: abgeglichen. Die Längenreihe enthält nur Längen, die ≥ 2 unabhängige Quellen für die Größe nennen.
+# Maße in mm: d Nenndurchmesser, dk Kopfdurchmesser (Höchstmaß), k Kopfhöhe (Höchstmaß), s Schlüsselweite (Nennmaß),
+# t Innensechskanttiefe (Mindestmaß), p Steigung des Regelgewindes (ISO 261, nur für die Fase am Schaftende).
 norm: ISO 4762
 benennung: Zylinderschraube mit Innensechskant
 ersetzt: DIN 912
@@ -16,22 +16,75 @@ varianten:
   "A2-70": {material: "1.4301"}
 vorgabe_variante: "8.8"
 groessen:
-  M5: {masse: {d: 5, dk: 8.5, k: 5, s: 4, t: 2.5, p: 0.8}, laengen: [8, 10, 12, 16, 20, 25, 30, 35, 40, 45, 50],
-       status: gesperrt, grund: noch nicht abgeglichen}
-  M6: {masse: {d: 6, dk: 10, k: 6, s: 5, t: 3, p: 1}, laengen: [10, 12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60],
-       status: gesperrt, grund: noch nicht abgeglichen}
+  M5: {masse: {d: 5, dk: 8.5, k: 5, s: 4, t: 2.5, p: 0.8}, laengen: [20, 25, 30, 35, 40, 45, 50], status: abgeglichen}
+  M6: {masse: {d: 6, dk: 10, k: 6, s: 5, t: 3, p: 1},
+       laengen: [20, 25, 30, 35, 40, 45, 50, 55, 60],
+       status: abgeglichen}
   M8: {masse: {d: 8, dk: 13, k: 8, s: 6, t: 4, p: 1.25},
-       laengen: [12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80], status: gesperrt, grund: noch nicht abgeglichen}
+       laengen: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80],
+       status: abgeglichen}
   M10: {masse: {d: 10, dk: 16, k: 10, s: 8, t: 5, p: 1.5},
-        laengen: [16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100], status: gesperrt,
-        grund: noch nicht abgeglichen}
+        laengen: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100],
+        status: abgeglichen}
   M12: {masse: {d: 12, dk: 18, k: 12, s: 10, t: 6, p: 1.75},
-        laengen: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120], status: gesperrt,
-        grund: noch nicht abgeglichen}
+        laengen: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120],
+        status: abgeglichen}
   M16: {masse: {d: 16, dk: 24, k: 16, s: 14, t: 8, p: 2},
-        laengen: [25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160], status: gesperrt,
-        grund: noch nicht abgeglichen}
-quellen: []
+        laengen: [25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160],
+        status: abgeglichen}
+quellen:
+  - url: "https://www.cad-programme.com/tipps/zylinderschraube/"
+    titel: "Zylinderschraube ISO 4762 (DIN 912) - CAD Programme"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.ekinsun.com/custom-fasteners/bolt-length-chart/"
+    titel: "Bolt Length Chart - Standard Metric Bolt Lengths M3-M36 (ISO 4017, 4014, 4762) - EKINSUN"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+    titel: "ISO 4762 Socket Head Cap Screws Dimensions & ISO Equivalent (Engineering Hardware)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.fasteners.eu/de/standards/ISO/4762/"
+    titel: "ISO 4762 - Zylinderschrauben mit Innensechskant (EU Fasteners Portal, s.r.o.)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+    titel: "ISO 4762, 12474 Specifications - Hex Socket Cap Screws (Fuller Fasteners)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+    titel: "REYHER Technische Informationen 2019/2020, Seite TI-11 Maße für Schrauben (ISO 4762, 12474 entspricht DIN 912)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+    titel: "Technisches Datenblatt Innensechskantschrauben mit Zylinderkopf DIN 912 / DIN EN ISO 4762 (Schraube & Mutter)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+    titel: "ISO 4762 - Zylinderschrauben, mit Innensechskant (schrauben-lexikon.de)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://schrauben-ratgeber.de/normen/iso-4762/"
+    titel: "ISO 4762 - Schrauben Ratgeber (online-schrauben.de e.K.)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+    titel: "ISO 4762 Zylinderschrauben (schrauben24.biz, E. Kuhn GmbH)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+    titel: "DIN 912 / ISO 4762 Socket Head Cap Screw Dimensions (SS&R Precision Co., Ltd.)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+    titel: "ISO 4762 Zylinderschrauben, mit Innensechskant (austauschbar mit DIN912) - Techdat-PDF (Wegertseder GmbH)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12, M16]
+  - url: "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+    titel: "ISO 4762:2004 Hexagon socket head cap screws (iTeh Standards, Vorschau-PDF, Tabelle 1 nur bis M12)"
+    abgerufen: "2026-10-02"
+    groessen: [M5, M6, M8, M10, M12]
 regeln: ["dk > d", "k == d", "s < d", "t < k", "p < d/4", "s/3**0.5 < dk/2 - k/10"]
 hinweise:
   - "dk und k sind Höchstmaße, t ist das Mindestmaß; die vereinfachte Darstellung baut genau diese Werte."

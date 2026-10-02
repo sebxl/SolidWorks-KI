@@ -1,0 +1,359 @@
+{
+  "norm": "ISO 7089",
+  "quellenkreis": "a",
+  "groessen": {
+    "M5": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 5.3,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 10,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 1,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 1,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 1,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M6": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 6.4,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 12,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 1.6,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M8": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 8.4,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 16,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 1.6,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M10": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 10.5,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 20,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 2,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M12": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 13,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 24,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 2.5,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M16": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 17,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 30,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 3,
+            "quelle": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://www.hasler.ch/Scheiben-ohne-Fase-_BN715",
+      "titel": "BN715 Unterlegscheiben BOSSARD (Hasler, DIN EN ISO 7089 Form A)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.fasteners.eu/de/standards/ISO/7089/",
+      "titel": "ISO 7089 - Unterlegscheiben, Form A (ohne Fase) - fasteners.eu",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp",
+      "titel": "ISO 7089 - Unterlegscheiben Form A = ohne Fase - schrauben-lexikon.de",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/",
+      "titel": "DIN 125 / DIN EN ISO 7089 Unterlegscheiben Form A ohne Fase - Schraube & Mutter",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "Alle vier Quellen stimmen für alle sechs Größen in d1, d2 und h überein; keine Widersprüche.",
+    "fasteners.eu (Tabelle mit min/max) nennt d1 min und d2 max (d1 min = 5,3/6,4/8,4/10,5/13/17; d2 max = 10/12/16/20/24/30), passend zu Mindest-/Höchstmaß; dort steht h nur als min/max (M5 0,9-1,1; M6 1,4-1,8; M8 1,4-1,8; M10 1,8-2,2; M12 2,3-2,7; M16 2,7-3,3), daher dort kein Nennwert h angegeben. Weitere Grenzmaße der Seite: d1 max 5,48/6,62/8,62/10,77/13,27/17,27; d2 min 9,64/11,57/15,57/19,48/23,48/29,48.",
+    "Hasler (Bossard-Artikel BN715) nennt die Dicke als 's'; Seite führt DIN EN ISO 7089 Produktklasse A, Stahl blau passiviert 140 HV. Schraube & Mutter bezeichnet die Dicke ebenfalls als 's' (Seite gemeinsam für DIN 125 A und ISO 7089).",
+    "Hasler, Schrauben-Lexikon und Schraube & Mutter geben nur Nennwerte (keine Unterscheidung Mindest/Höchst); Art des Maßes ergibt sich aus der Aufgabenstellung und der Tabelle von fasteners.eu.",
+    "Nicht abrufbar/ohne Maßtabelle: Würth-eShop (keine Tabelle), Reyher-PDF und schrauben-lexikon-PDF (Text nicht lesbar), Misumi und Proselect/Schrauben24 (403 bzw. Weiterleitung, nicht ausgewertet), SchraubenGigant (keine Maßtabelle). Bossard selbst nicht direkt abgerufen; stattdessen Hasler-Seite zum Bossard-Artikel BN715."
+  ]
+}

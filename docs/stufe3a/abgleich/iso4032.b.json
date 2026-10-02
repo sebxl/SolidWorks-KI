@@ -1,0 +1,141 @@
+{
+  "norm": "ISO 4032",
+  "quellenkreis": "b",
+  "groessen": {
+    "M5": {
+      "masse": {
+        "s": [
+          {"wert": 8, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 8, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 8.00, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 8, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 8.00, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 8.0, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ],
+        "m": [
+          {"wert": 4.7, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 4.7, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 4.70, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 4.7, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 4.7, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 4.7, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ]
+      }
+    },
+    "M6": {
+      "masse": {
+        "s": [
+          {"wert": 10, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 10, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 10.0, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 10, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 10.00, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 10.0, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ],
+        "m": [
+          {"wert": 5.2, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 5.2, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 5.20, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 5.2, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 5.2, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 5.2, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ]
+      }
+    },
+    "M8": {
+      "masse": {
+        "s": [
+          {"wert": 13, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 13, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 13.00, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 13, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 13.00, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 13.0, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ],
+        "m": [
+          {"wert": 6.8, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 6.8, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 6.80, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 6.8, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 6.80, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 6.8, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ]
+      }
+    },
+    "M10": {
+      "masse": {
+        "s": [
+          {"wert": 16, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 16, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 16.00, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 16, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 16.00, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 16.0, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ],
+        "m": [
+          {"wert": 8.4, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 8.4, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 8.40, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 8.4, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 8.40, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 8.4, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ]
+      }
+    },
+    "M12": {
+      "masse": {
+        "s": [
+          {"wert": 18, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 18, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 18.00, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 18, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 18.00, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 18.0, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ],
+        "m": [
+          {"wert": 10.8, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 10.8, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 10.80, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 10.8, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 10.80, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 10.8, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ]
+      }
+    },
+    "M16": {
+      "masse": {
+        "s": [
+          {"wert": 24, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 24, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 24.00, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 24, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 24.00, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 24.0, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ],
+        "m": [
+          {"wert": 14.8, "quelle": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten"},
+          {"wert": 14.8, "quelle": "https://schraube-mutter.de/schrauben/din-en-iso-4032/"},
+          {"wert": 14.80, "quelle": "https://www.fasteners.eu/standards/ISO/4032/"},
+          {"wert": 14.8, "quelle": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/"},
+          {"wert": 14.8, "quelle": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx"},
+          {"wert": 14.8, "quelle": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/"}
+        ]
+      }
+    }
+  },
+  "quellen": [
+    {"url": "https://www.wegertseder.com/ISO-4032-Sechskantmuttern-ISO-Schluesselweiten", "titel": "ISO 4032 Sechskantmuttern, ISO-Typ 1 - Wegertseder", "abgerufen": "2026-10-02"},
+    {"url": "https://schraube-mutter.de/schrauben/din-en-iso-4032/", "titel": "ISO 4032 Sechskantmuttern mit kleinen ISO Schlüsselweiten - schraube-mutter.de", "abgerufen": "2026-10-02"},
+    {"url": "https://www.fasteners.eu/standards/ISO/4032/", "titel": "ISO 4032 - Hexagon Nuts - fasteners.eu", "abgerufen": "2026-10-02"},
+    {"url": "https://fullerfasteners.com/tech/iso-4032-specifications-hex-regular-nuts/", "titel": "ISO 4032 Specifications - Fuller Fasteners", "abgerufen": "2026-10-02"},
+    {"url": "https://amesweb.info/Fasteners/Nut/Metric-Hex-Nut-Sizes-Dimensions-Chart.aspx", "titel": "Metric Hex Nut Dimensions (ISO 4032) - AmesWeb", "abgerufen": "2026-10-02"},
+    {"url": "https://mechahandbook.com/en/tools/standard-components/nuts/hex-nut/", "titel": "Hex Nut Dimensions (ISO 4032) - MechaHandbook", "abgerufen": "2026-10-02"}
+  ],
+  "bemerkungen": [
+    "Alle sechs Quellen nennen identische ISO-4032-Werte (s = 8/10/13/16/18/24; m max = 4.7/5.2/6.8/8.4/10.8/14.8); kein Widerspruch. Die ISO-Werte bei M10 (s 16) und M12 (s 18) sind damit von DIN 934 (17/19) verschieden und hier nicht vermischt.",
+    "Art der Maße: s = Nennmass = s max (fasteners.eu, Fuller, AmesWeb weisen 's max = nominal' aus, s min jeweils kleiner: 7.78/9.78/12.73/15.73/17.73/23.67). m = Höchstmass m max (fasteners.eu, Fuller, AmesWeb weisen m max aus; m min 4.4/4.9/6.44/8.04/10.37/14.1). Wegertseder und schraube-mutter.de nennen m ohne min-Wert (schraube-mutter.de ausdrücklich als 'max.'); MechaHandbook gibt m als Bereich min-max an, hier der Höchstwert übernommen.",
+    "Zahlenschreibweise: Wegertseder/schraube-mutter.de mit Dezimalkomma (4,7 usw.), hier als Dezimalpunkt; Nachkommastellen in JSON sind durch Zahlentyp nicht unterscheidbar (z. B. 8.00 = 8).",
+    "d (Nenndurchmesser) ist nicht als eigene Spalte/Zahl auf den Seiten ausgewiesen (nur die Bezeichnung M5 ... M16), daher nicht eingetragen; er ergibt sich aus der Gewindebezeichnung.",
+    "Nicht aufgenommen: globalfastener.com/standards/detail_5294.html (Abruf lieferte für m fehlerhaft dieselben Werte wie für s, s-Werte stimmen); cad-programme.com (gleiche Werte, vermutlich Kopie der Händlertabelle, zählt nicht als eigene Quelle); intafast.com-PDF (nicht lesbar); engineersedge.com (HTTP 403); nfgab.com (keine Tabelle). Die Quellen fasteners.eu, Fuller, AmesWeb und MechaHandbook sind Nachschlage-/Händlerseiten, keine Normtexte; die Quellen sind unabhängige Betreiber, Wegertseder (Händler) und schraube-mutter.de (Händler) liegen im bevorzugten Quellenkreis."
+  ]
+}

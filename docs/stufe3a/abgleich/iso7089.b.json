@@ -1,0 +1,514 @@
+{
+  "norm": "ISO 7089",
+  "quellenkreis": "b",
+  "groessen": {
+    "M5": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 5.3,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 5.3,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 10,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 1,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 1,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 1,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 1,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 1,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M6": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 6.4,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 6.4,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 12,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 1.6,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M8": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 8.4,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 8.4,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 16,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 1.6,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 1.6,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M10": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 10.5,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 10.5,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 20,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 20,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 2,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M12": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 13,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 24,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 2.5,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    },
+    "M16": {
+      "masse": {
+        "d1": [
+          {
+            "wert": 17,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 17,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "d2": [
+          {
+            "wert": 30,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/7089/"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 30,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ],
+        "h": [
+          {
+            "wert": 3,
+            "quelle": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.fasten.it/en/norms/norm/din_en_iso_7089"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.theo-schrauben.de/ISO-7089"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/"
+          }
+        ]
+      }
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://www.wegertseder.com/ISO-7089-Scheiben-gehaertet-gestanzt-ohne-Fase-Produktklasse-A-m",
+      "titel": "ISO 7089 Scheiben, normale Reihe Produktklasse A - Wegertseder",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.fasten.it/en/norms/norm/din_en_iso_7089",
+      "titel": "DIN EN ISO 7089 - fasten.it",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.fasteners.eu/de/standards/ISO/7089/",
+      "titel": "ISO 7089 - Unterlegscheiben, Form A (ohne Fase) - fasteners.eu",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schrauben-lexikon.de/norm/ISO_7089.asp",
+      "titel": "ISO 7089 - Unterlegscheiben Form A = ohne Fase - schrauben-lexikon.de",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.theo-schrauben.de/ISO-7089",
+      "titel": "ISO 7089 flache Unterlegscheiben - theo-schrauben.de",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://schraube-mutter.de/din-125-unterlegscheiben-form-a/",
+      "titel": "DIN 125 / DIN EN ISO 7089 Unterlegscheiben Form A ohne Fase - schraube-mutter.de",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "Alle sechs abgerufenen Seiten stimmen in d1, d2 und h für alle sechs Größen überein; kein Widerspruch gefunden.",
+    "fasteners.eu führt Min/Max-Spalten: d1 min = 5.3/6.4/8.4/10.5/13/17 (entspricht Nennmaß = Mindestmaß), d2 max = 10/12/16/20/24/30 (entspricht Nennmaß = Höchstmaß). h dort nur als min/max (M5 0.9-1.1, M6 1.4-1.8, M8 1.4-1.8, M10 1.8-2.2, M12 2.3-2.7, M16 2.7-3.3), Nennmaß h daher aus den anderen Seiten (1/1.6/1.6/2/2.5/3); die Mitte der Grenzen passt dazu.",
+    "fasten.it beschriftet die Spalten 'd nom=min' und 'd1 nom=max' (Spaltenkürzel dort abweichend, inhaltlich d1 = Mindestmaß, d2 = Höchstmaß) und 's nom' für die Dicke; fasteners.eu hat keinen h-Nennwert und ist deshalb bei h nicht aufgeführt.",
+    "schrauben-lexikon.de, theo-schrauben.de, Wegertseder und schraube-mutter.de nennen nur einzelne Werte ohne Min/Max-Kennzeichnung; schraube-mutter.de bezieht sich auf DIN 125-1 Produktklasse A (gleiche Zahlen wie ISO 7089 A). Wegertseder zeigt Werte für gehärtete Ausführung.",
+    "Unabhängigkeit: Es sind verschiedene Händler/Seiten; ob einzelne Tabellen von derselben Normquelle abgeschrieben sind, ist nicht erkennbar. Hersteller wie Hoffmann, Kipp, Norelem, Ganter, Misumi wurden nicht abgerufen (Seiten nicht gefunden/abrufbar); engineersedge.com und frantos.com lieferten HTTP 403.",
+    "Die Wertlisten stammen ausschließlich aus abgerufenen Seiten (Tabellenzeilen M5 bis M16), nicht aus dem Gedächtnis."
+  ]
+}

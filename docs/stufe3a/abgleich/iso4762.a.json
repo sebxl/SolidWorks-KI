@@ -1,0 +1,1281 @@
+{
+  "norm": "ISO 4762",
+  "quellenkreis": "a",
+  "groessen": {
+    "M5": {
+      "masse": {
+        "d": [
+          {
+            "wert": 5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 8.5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 8.5,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "k": [
+          {
+            "wert": 5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "s": [
+          {
+            "wert": 4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "t": [
+          {
+            "wert": 2.5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 2.5,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          }
+        ],
+        "p": [
+          {
+            "wert": 0.8,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 0.8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 0.8,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 0.8,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 0.8,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 0.8,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          }
+        ]
+      },
+      "laengen": []
+    },
+    "M6": {
+      "masse": {
+        "d": [
+          {
+            "wert": 6,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "k": [
+          {
+            "wert": 6,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "s": [
+          {
+            "wert": 5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "t": [
+          {
+            "wert": 3,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          }
+        ],
+        "p": [
+          {
+            "wert": 1.0,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 1.0,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 1.0,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 1.0,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 1.0,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 1.0,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          }
+        ]
+      },
+      "laengen": []
+    },
+    "M8": {
+      "masse": {
+        "d": [
+          {
+            "wert": 8,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 13,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 13,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "k": [
+          {
+            "wert": 8,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "s": [
+          {
+            "wert": 6,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "t": [
+          {
+            "wert": 4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          }
+        ],
+        "p": [
+          {
+            "wert": 1.25,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 1.25,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 1.25,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 1.25,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 1.25,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 1.25,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          }
+        ]
+      },
+      "laengen": []
+    },
+    "M10": {
+      "masse": {
+        "d": [
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 16,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "k": [
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "s": [
+          {
+            "wert": 8,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "t": [
+          {
+            "wert": 5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 5,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          }
+        ],
+        "p": [
+          {
+            "wert": 1.5,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 1.5,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 1.5,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 1.5,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 1.5,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 1.5,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          }
+        ]
+      },
+      "laengen": []
+    },
+    "M12": {
+      "masse": {
+        "d": [
+          {
+            "wert": 12,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 18,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 18,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "k": [
+          {
+            "wert": 12,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 12,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "s": [
+          {
+            "wert": 10,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 10,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "t": [
+          {
+            "wert": 6,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 6,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          }
+        ],
+        "p": [
+          {
+            "wert": 1.75,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 1.75,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 1.75,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 1.75,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 1.75,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 1.75,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          }
+        ]
+      },
+      "laengen": []
+    },
+    "M16": {
+      "masse": {
+        "d": [
+          {
+            "wert": 16,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 24,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 24,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "k": [
+          {
+            "wert": 16,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 16,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "s": [
+          {
+            "wert": 14,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          },
+          {
+            "wert": 14,
+            "quelle": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762"
+          }
+        ],
+        "t": [
+          {
+            "wert": 8,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://schrauben-ratgeber.de/normen/iso-4762/"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 8,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          }
+        ],
+        "p": [
+          {
+            "wert": 2.0,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 2.0,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 2.0,
+            "quelle": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables"
+          },
+          {
+            "wert": 2.0,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 2.0,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 2.0,
+            "quelle": "https://www.cad-programme.com/tipps/zylinderschraube/"
+          }
+        ]
+      },
+      "laengen": []
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://www.fasteners.eu/de/standards/ISO/4762/",
+      "titel": "ISO 4762 - Zylinderschrauben mit Innensechskant (EU Fasteners Portal, s.r.o.)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/",
+      "titel": "ISO 4762, 12474 Specifications - Hex Socket Cap Screws (Fuller Fasteners)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://schrauben-ratgeber.de/normen/iso-4762/",
+      "titel": "ISO 4762 - Schrauben Ratgeber (online-schrauben.de e.K.)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://ssr-precision.com/en/blog/metric-din-912-iso-4762-socket-head-cap-screws-explained-complete-standard-dimension-tables",
+      "titel": "DIN 912 / ISO 4762 Socket Head Cap Screw Dimensions (SS&R Precision Co., Ltd.)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/",
+      "titel": "ISO 4762 Socket Head Cap Screws Dimensions & ISO Equivalent (Engineering Hardware)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf",
+      "titel": "ISO 4762 Zylinderschrauben, mit Innensechskant (austauschbar mit DIN912) - Techdat-PDF (Wegertseder GmbH)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf",
+      "titel": "REYHER Technische Informationen 2019/2020, Seite TI-11 Maße für Schrauben (ISO 4762, 12474 entspricht DIN 912)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schrauben-lexikon.de/norm/ISO_4762.asp",
+      "titel": "ISO 4762 - Zylinderschrauben, mit Innensechskant (schrauben-lexikon.de)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/",
+      "titel": "Technisches Datenblatt Innensechskantschrauben mit Zylinderkopf DIN 912 / DIN EN ISO 4762 (Schraube & Mutter)",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.cad-programme.com/tipps/zylinderschraube/",
+      "titel": "Zylinderschraube ISO 4762 (DIN 912) - CAD Programme",
+      "abgerufen": "2026-10-02"
+    },
+    {
+      "url": "https://www.schrauben24.biz/Zylinderschrauben-ISO-4762",
+      "titel": "ISO 4762 Zylinderschrauben (schrauben24.biz, E. Kuhn GmbH)",
+      "abgerufen": "2026-10-02"
+    }
+  ],
+  "bemerkungen": [
+    "Alle gefundenen Quellen stimmen bei dk, k, s und t ueberein, es gibt keine Widersprueche. Alle Werte gelten fuer glatten Kopf (dk max = 8.5 / 10 / 13 / 16 / 18 / 24).",
+    "Art des Masses: Ausdruecklich als Hoechstmass (dk max, k max), Nennmass (s nominal) bzw. Mindestmass (t min) beschriftet sind die Spalten bei fasteners.eu, fullerfasteners.com, schrauben-ratgeber.de und ssr-precision.com. Bei engineeringhardware.com stehen die Spalten als dk, k, s und t min. Wegertseder, Reyher, schrauben-lexikon.de, schraube-mutter.de, cad-programme.com und schrauben24.biz fuehren nur dk/k/s ohne Beschriftung der Massart; die Zahlen sind identisch mit den als max/nominal beschrifteten Werten.",
+    "t (Innensechskanttiefe, Mindestmass) steht nur auf fasteners.eu, fullerfasteners.com, schrauben-ratgeber.de, engineeringhardware.com und ssr-precision.com; Wegertseder, Reyher, schrauben-lexikon.de, schraube-mutter.de, cad-programme.com und schrauben24.biz haben keine t-Spalte. schrauben-ratgeber.de nennt die Spalte Innensechskanttiefe (t min.).",
+    "p (Steigung) steht nicht in den Tabellen von schrauben-ratgeber.de, Wegertseder, Reyher und schrauben-lexikon.de; dort nicht verwendet. p stammt aus fasteners.eu, fullerfasteners.com, engineeringhardware.com, ssr-precision.com, schraube-mutter.de (Spalte Gewindesteigung p fuer Regelgewinde) und cad-programme.com. d (Nenndurchmesser) ist die Zahl aus der Groessenbezeichnung der Tabellenzeile.",
+    "Unabhaengigkeit: Die Quellen sind verschiedene Unternehmen (EU Fasteners Portal, Fuller Fasteners, online-schrauben.de, SS&R Precision, Engineering Hardware, Wegertseder, Reyher, Schraube & Mutter, E. Kuhn GmbH usw.); Gleichheit der Tabellenwerte beruht vermutlich auf der gemeinsamen Norm, die Seiten sind keine erkennbaren Kopien.",
+    "ISO/DIN: Wegertseder und Reyher fuehren die Tabelle als ISO 4762 (austauschbar mit DIN 912) bzw. ISO 4762, 12474 entspricht DIN 912; fullerfasteners.com nennt die Tabelle ISO 4762, 12474 (ISO 12474 ist die Feingewinde-Variante, gleiche Kopfmasse). schraube-mutter.de und ssr-precision.com nennen DIN 912 / DIN EN ISO 4762 gemeinsam. Es wurden keine abweichenden DIN-912-Werte gefunden.",
+    "Hinweis zum Abruf: WebFetch liefert Seiteninhalte als verarbeitete Zusammenfassung. Die Wegertseder- und die Reyher-PDF wurden zusaetzlich lokal mit pdftotext gelesen (dk, k, s, b wortgetreu bestaetigt, auch M12 und M16; keine t-Spalte, keine Laengen). fasteners.eu war per direktem Abruf (curl) durch eine Firewall blockiert, Werte nur ueber WebFetch.",
+    "M5: dk 8.5 (nicht 8.72). torqbolt.com und boltport.com nennen abweichende bzw. offensichtlich fehlerhafte Zahlen (z. B. k max 4.583 / t min 4.82 bzw. 0.2) und wurden nicht verwendet.",
+    "LAENGENREIHE NICHT UEBERNOMMEN: Eine verlaessliche Nennlaengen-Reihe je Groesse konnte nicht abgelesen werden. fasteners.eu zeigt eine Laengentabelle mit der Nennlaengenspalte 2.5, 3, 4, 5, 6, 8, 10, 12, 16, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 180, 200, 220, 240, 260, 280, 300 (bei mehreren Abrufen gleich). Die Zuordnung der handelsueblichen Bereiche je Groesse war ueber WebFetch nicht stabil lesbar: ein Abruf lieferte M5 6-300, M6 8-300, M8 10-300, M10 12-300, M12 16-300, M16 20-300, ein anderer M5 6-70, M6 8-70, M8 10-80, M10 12-100, M12 16-120, M16 20-300. Daher laengen leer. Haendlerseiten (schraubenhandel24.de, schraubenbude.de) zeigen Lieferprogramme mit Nicht-Norm-Laengen (z. B. 14, 18, 22, 75, 85), das ist keine Normreihe. Es konnte keine zweite unabhaengige Quelle mit Normlaengen je Groesse abgerufen werden.",
+    "Anfangslaengen je Groesse nach fasteners.eu (in beiden Abrufen gleich, nur Hinweis, nicht uebernommen): M5=6, M6=8, M8=10, M10=12, M12=16, M16=20."
+  ]
+}
