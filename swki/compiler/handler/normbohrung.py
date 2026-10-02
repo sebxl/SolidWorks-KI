@@ -18,7 +18,8 @@ from swki.compiler.registry import handler
 from swki.compiler.skizze import ebene_aus_flaeche, modellpunkt, positionen_festlegen, richtung
 from swki.compiler.topologie import flaechen, loese_flaeche
 from swki.spec.normen import (
-    SW_ART, SW_BEFESTIGUNG, SW_END_BLIND, SW_END_DURCH_ALLES, SW_NORM, groesse_text, norm_von, normmasse,
+    SW_ART, SW_BEFESTIGUNG, SW_END_BLIND, SW_END_DURCH_ALLES, SW_FM_HOLE_WZD, SW_NORM, groesse_text, norm_von,
+    normmasse,
 )
 from swki.verbindung import mm
 
@@ -27,7 +28,6 @@ SW_GEWINDE_KOSMETISCH = 2  # swWzdHoleCosmeticThreadTypes_e.swCosmeticThreadWith
 SW_GEWINDE_BLIND = 0  # swWzdHoleThreadEndCondition_e.swEndThreadTypeBLIND
 SW_GEWINDE_DURCH = 1  # swWzdHoleThreadEndCondition_e.swEndThreadTypeTHROUGH_ALL
 SW_SEL_FACES = 2  # swSelectType_e.swSelFACES
-SW_FM_HOLE_WZD = 25  # swFeatureNameID_e.swFmHoleWzd (IFeatureManager.CreateDefinition, S10 Frage 1)
 SW_OBJEKT_GLEICH = 1  # swObjectEquality_e.swObjectSame (ISldWorks.IsSame)
 _STRAHL_MM = 1.0  # Start des Auswahlstrahls über der Fläche
 _STRAHL_RADIUS_M = 0.0005

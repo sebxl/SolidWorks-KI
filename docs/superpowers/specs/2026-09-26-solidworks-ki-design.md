@@ -232,9 +232,11 @@ Nachbesserung:
 - `swki freigeben` legt zusätzlich die Spezifikation als `<spec>.freigegeben.yaml` ab (Prüfsumme der Kopie in
   `freigabe.json`). Sie ist das Soll für den Prüfer-Agenten und für das Sollvolumen `auto`. Feste Zahlen in Features
   meldet `swki validieren` als Hinweis; Anforderungsmaße gehören in `parameter`.
-- Maximale Läufe: Spezifikation > Anweisung im Chat > `config/standard.yaml` (Vorgabe 3).
-- Abbruch ohne Fortschritt: sinkt die Zahl offener Mängel gegenüber dem Vorlauf nicht, stoppt
-  Claude und meldet sich.
+- Maximale Nachbesserungen: Spezifikation > Anweisung im Chat > `config/standard.yaml` (Vorgabe 3), also höchstens
+  1 + 3 = 4 Läufe.
+- Abbruch ohne Fortschritt: sinkt die Zahl offener Mängel gegenüber dem letzten durchgebauten und geprüften Lauf nicht,
+  stoppt Claude und meldet sich. Ein Bauabbruch wird nicht verglichen und verbraucht nur einen Lauf; `swki pruefen`
+  verweigert einen abgebrochenen Lauf (LAUF_ABGEBROCHEN). (Nutzerentscheidung 2026-10-01)
 - `bericht.md`: Status, Läufe, offene Punkte, Screenshots, Phasenzeiten, Compiler-Änderungen.
 
 ## 7. API-Nachschlagewerk

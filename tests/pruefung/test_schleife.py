@@ -3,7 +3,8 @@ import json
 import pytest
 
 from swki.auftrag import lauf_datei
-from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
+from swki.cli import SwkiFehler
+from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe, pruefe_urteil
 
 STANDARD = {"max_nachbesserungen": 3}
 
@@ -19,7 +20,8 @@ def _lauf(spec_pfad, n, bau="ok", code=None, pruefer=None):
     if code is not None:
         _schreibe(spec_pfad, n, "pruefbericht", {"bestanden": not code, "maengel": [{}] * code})
     if pruefer is not None:
-        _schreibe(spec_pfad, n, "pruefer", {"bestanden": not pruefer, "maengel": [{}] * pruefer})
+        _schreibe(spec_pfad, n, "pruefer", {"bestanden": not pruefer,
+                                            "maengel": [{"knoten": [], "beschreibung": "x"}] * pruefer})
 
 
 def test_laeufe_lesen(tmp_path):
@@ -30,7 +32,8 @@ def test_laeufe_lesen(tmp_path):
     _schreibe(tmp_path / "andere.yaml", 1, "protokoll", {"status": "ok", "dauer_s": 1})
     laeufe = lies_laeufe(spec)
     assert [x["lauf"] for x in laeufe] == [1, 2, 10]
-    assert [x["offen"] for x in laeufe] == [1, 3, 0]
+    assert [x["offen"] for x in laeufe] == [None, 3, 0]
+    assert [x["vergleichbar"] for x in laeufe] == [False, True, True]
     assert laeufe[0]["pruefer"] == "ausstehend" and laeufe[1]["pruefer"] == "maengel"
     assert [x["bestanden"] for x in laeufe] == [False, False, True]
 
@@ -47,15 +50,97 @@ def test_max_laeufe_vorrang():
     assert max_laeufe({}, STANDARD, anweisung=0) == 1
 
 
+def _l(lauf, bau="ok", code=None, pruefer="ausstehend", offen=None, bestanden=False):
+    vergleichbar = bau == "ok" and code is not None and pruefer != "ausstehend"
+    return dict(lauf=lauf, bau=bau, code_maengel=code, pruefer=pruefer, offen=offen, bestanden=bestanden,
+                vergleichbar=vergleichbar)
+
+
 @pytest.mark.parametrize(("laeufe", "erwartet"), [
-    ([dict(lauf=1, bau="ok", code_maengel=None, pruefer="ausstehend", offen=0, bestanden=False)], "pruefen"),
-    ([dict(lauf=1, bau="ok", code_maengel=0, pruefer="ausstehend", offen=0, bestanden=False)], "pruefer"),
-    ([dict(lauf=1, bau="ok", code_maengel=0, pruefer="bestanden", offen=0, bestanden=True)], "bestanden"),
-    ([dict(lauf=1, bau="fehler", code_maengel=None, pruefer="ausstehend", offen=1, bestanden=False)], "nachbessern"),
-    ([dict(lauf=1, bau="ok", code_maengel=2, pruefer="maengel", offen=3, bestanden=False),
-      dict(lauf=2, bau="ok", code_maengel=2, pruefer="maengel", offen=3, bestanden=False)], "stopp_kein_fortschritt"),
-    ([dict(lauf=1, bau="ok", code_maengel=3, pruefer="maengel", offen=4, bestanden=False),
-      dict(lauf=2, bau="ok", code_maengel=1, pruefer="maengel", offen=2, bestanden=False)], "stopp_max"),
+    ([_l(1)], "pruefen"),
+    ([_l(1, code=0, offen=0)], "pruefer"),
+    ([_l(1, code=0, pruefer="bestanden", offen=0, bestanden=True)], "bestanden"),
+    ([_l(1, bau="fehler")], "nachbessern"),
+    ([_l(1, code=2, pruefer="maengel", offen=3), _l(2, code=2, pruefer="maengel", offen=3)], "stopp_kein_fortschritt"),
+    ([_l(1, code=3, pruefer="maengel", offen=4), _l(2, code=1, pruefer="maengel", offen=2)], "stopp_max"),
 ])
 def test_empfehlung(laeufe, erwartet):
     assert empfehlung(laeufe, 2)[0] == erwartet
+
+
+def test_bauabbruch_nach_gebautem_lauf_ist_kein_stillstand():
+    # Lauf 2 bricht ab: kein Vergleich, nur ein Lauf verbraucht → weiter nachbessern
+    laeufe = [_l(1, code=4, pruefer="maengel", offen=5), _l(2, bau="fehler")]
+    assert empfehlung(laeufe, 4)[0] == "nachbessern"
+
+
+def test_gebauter_lauf_nach_bauabbruch_wird_nicht_mit_dem_abbruch_verglichen():
+    # Lauf 1 bricht ab, Lauf 2 baut mit 3 Mängeln: früher 1 → 3 = „kein Fortschritt“, jetzt kein Vergleichslauf
+    laeufe = [_l(1, bau="fehler"), _l(2, code=2, pruefer="maengel", offen=3)]
+    assert empfehlung(laeufe, 4)[0] == "nachbessern"
+
+
+def test_vergleich_ueberspringt_bauabbrueche():
+    # Lauf 1: 5, Lauf 2: Abbruch, Lauf 3: 6 → 6 gegen 5 → Stopp
+    laeufe = [_l(1, code=4, pruefer="maengel", offen=5), _l(2, bau="fehler"), _l(3, code=5, pruefer="maengel", offen=6)]
+    code, text = empfehlung(laeufe, 4)
+    assert code == "stopp_kein_fortschritt"
+    assert "Lauf 1" in text and "Lauf 3" in text
+
+
+def test_ungepruefte_laeufe_zaehlen_nicht_als_vergleich():
+    # Lauf 1 gebaut, aber nie vom Prüfer beurteilt → nicht vergleichbar; Lauf 2 ist der erste Vergleichslauf
+    laeufe = [_l(1, code=1, offen=1), _l(2, code=2, pruefer="maengel", offen=3)]
+    assert empfehlung(laeufe, 4)[0] == "nachbessern"
+
+
+def test_bauabbrueche_verbrauchen_laeufe():
+    laeufe = [_l(1, bau="fehler"), _l(2, bau="fehler")]
+    assert empfehlung(laeufe, 2)[0] == "stopp_max"
+
+
+@pytest.mark.parametrize("urteil", [
+    {"bestanden": True, "maengel": []},
+    {"bestanden": False, "maengel": [{"knoten": ["f2"], "beschreibung": "Fase fehlt"}]},
+])
+def test_gueltiges_urteil(urteil, tmp_path):
+    pruefe_urteil(urteil, tmp_path / "x.pruefer.json")
+
+
+@pytest.mark.parametrize("urteil", [
+    [],                                                    # kein Objekt
+    {"bestanden": "ja", "maengel": []},                    # bestanden kein bool
+    {"bestanden": False},                                  # maengel fehlt
+    {"bestanden": False, "maengel": [{"knoten": "f2", "beschreibung": "x"}]},  # knoten keine Liste
+    {"bestanden": False, "maengel": [{"knoten": []}]},     # beschreibung fehlt
+    {"knoten": [2], "beschreibung": "x"},                  # Mangel statt Urteil
+    {"bestanden": False, "maengel": [{"knoten": [2], "beschreibung": "x"}]},  # Knoten keine Texte
+])
+def test_ungueltiges_urteil(urteil, tmp_path):
+    with pytest.raises(SwkiFehler) as e:
+        pruefe_urteil(urteil, tmp_path / "platte.lauf-1.pruefer.json")
+    assert e.value.daten == {"code": "PRUEFER_URTEIL_UNGUELTIG"}
+    assert "platte.lauf-1.pruefer.json" in str(e.value)
+
+
+def test_lies_laeufe_meldet_ungueltiges_urteil(tmp_path):
+    spec = tmp_path / "platte.yaml"
+    _lauf(spec, 1, code=0)
+    _schreibe(spec, 1, "pruefer", {"ok": True})
+    with pytest.raises(SwkiFehler):
+        lies_laeufe(spec)
+
+
+@pytest.mark.parametrize("inhalt", [
+    '```json\n{"bestanden": true, "maengel": []}\n```',   # Code-Fences
+    '{"bestanden": true, "maengel": [',                    # kaputtes JSON
+    "",                                                    # leere Datei
+])
+def test_lies_laeufe_unlesbares_urteil_meldet_dateinamen(tmp_path, inhalt):
+    spec = tmp_path / "platte.yaml"
+    _lauf(spec, 1, code=0)
+    lauf_datei(spec, 1, "pruefer").write_text(inhalt, encoding="utf-8")
+    with pytest.raises(SwkiFehler) as e:
+        lies_laeufe(spec)
+    assert e.value.daten == {"code": "PRUEFER_URTEIL_UNGUELTIG"}
+    assert "platte.lauf-1.pruefer.json" in str(e.value) and "Code-Fences" in str(e.value)

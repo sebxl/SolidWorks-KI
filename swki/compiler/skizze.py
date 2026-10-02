@@ -16,7 +16,7 @@ from swki.compiler.fehler import (
 )
 from swki.compiler.topologie import loese_flaeche
 from swki.spec.ausdruck import ist_ausdruck
-from swki.spec.konturen import bogenende_koordinate, kontur_punkte_roh
+from swki.spec.konturen import bogenende_koordinate, eckradien_roh, kontur_punkte_roh
 from swki.verbindung import mm
 
 STANDARD = {"vorne": 0, "oben": 1, "rechts": 2}  # Index in sw.standardebenen()
@@ -381,8 +381,7 @@ class Skizzierer:
             for q in p["punkte"]:
                 self.lage(q, (w(q[0]) + _MASS_ABSTAND_MM, w(q[1]) + _MASS_ABSTAND_MM))
             if "radien" in p:
-                je_ecke = p["radien"] if isinstance(p["radien"], list) else [p["radien"]] * len(uv)
-                for ecke, radius in zip(uv, je_ecke):
+                for ecke, radius in zip(uv, eckradien_roh(p)):
                     self.verrunde(linien, ecke, radius)
         elif "langloch" in element:
             self._langloch(element["langloch"])

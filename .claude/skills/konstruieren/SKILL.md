@@ -36,6 +36,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt einen getrennten Körper
   – dafür `bis_flaeche` oder `blind` verwenden. `swki pruefen` meldet mehrere Volumenkörper als Mangel (Prüfung
   `koerper`: „2 Volumenkörper statt 1“).
+- Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `<skript-id>_<n>`) nicht als Feature-IDs
+  verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
 - `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
   `schwerpunkt` für Symmetrie/Spiegelfehler.
@@ -67,7 +69,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Erst nach ausdrücklichem OK: `swki freigeben <spec>` (legt `<name>.freigegeben.yaml` ab; diese Kopie nie ändern).
 
 ## 5. Bauen, prüfen, Prüfer
-- `swki bauen <spec>` → Lauf n (Protokoll unter `protokolle/`). Bei Bauabbruch: Fehlercode und Knoten lesen.
+- `swki bauen <spec>` → Lauf n (Protokoll unter `protokolle/`). Bei Bauabbruch: Fehlercode und Knoten lesen,
+  dann nicht `swki pruefen`, sondern nachbessern (Schritt 6, „Bauabbruch“).
 - `swki pruefen <spec> --lauf n` → Prüfbericht + Screenshots.
 - Der Prüfbericht vergleicht Normbohrungen (Art, Größe, Norm, Positionen, durch/Tiefe) mit der freigegebenen Kopie
   (Prüfung `normbohrungen`) und nennt unter `baum` Knoten- und Featurezahl.
@@ -85,6 +88,11 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   - `nachbessern`: nur den Bauweg ändern (Anker, Reihenfolge, Handler-Optionen, Skripte). Anforderungen (Parameter,
     Material, Eigenschaften, Prüfwerte) sind tabu – `swki bauen` verweigert sonst (FREIGABE_VERALTET). Hält Claude eine
     Anforderung für falsch: Nutzer fragen. Dann neu bauen (Schritt 5).
+  - Bauabbruch (`swki bauen` meldet `status: fehler`): nicht `swki pruefen` (verweigert mit LAUF_ABGEBROCHEN), sondern
+    direkt den Bauweg nachbessern und neu bauen. Ein Abbruch verbraucht einen Lauf, wird aber nicht als Mängelzahl
+    verglichen; „kein Fortschritt“ vergleicht nur durchgebaute und geprüfte Läufe. Vorgabe: 1 + 3 = 4 Läufe;
+    Spezifikation (`max_nachbesserungen`) oder Anweisung im Chat (`--max`)
+    können abweichen (`swki status` nennt `max_laeufe`).
   - `stopp_max` / `stopp_kein_fortschritt`: anhalten, Nutzer mit Bericht informieren.
   - `bestanden`: weiter mit 7.
 - Wiederholt sich ein Compiler-Problem, Skill `compiler-erweitern` anwenden.

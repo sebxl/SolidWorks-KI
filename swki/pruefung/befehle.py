@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeufe
-from swki.cli import SwkiFehler
+from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
 from swki.pruefung.bericht import bericht_markdown
@@ -16,6 +16,24 @@ from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
 from swki.spec.freigabe import freigegebene_spec, pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import verbinde
+
+
+class LaufFehler(SwkiFehler):
+    def __init__(self, code: str, meldung: str):
+        super().__init__(meldung)
+        self.daten = {"code": code}
+
+
+def pruefe_lauf_gebaut(protokoll: dict, lauf: int) -> None:
+    """Ein abgebrochener Bau hinterlässt ein halbes Teil: nicht messen, sondern Bauweg nachbessern (Regel „kein
+    Fortschritt“, Option A – der Lauf zählt nur als verbrauchter Lauf)."""
+    if protokoll.get("status") != "ok":
+        f = protokoll.get("fehler") or {}
+        raise LaufFehler(
+            "LAUF_ABGEBROCHEN",
+            f"Lauf {lauf} ist beim Bau abgebrochen ({f.get('code')}: {f.get('meldung')}) – nicht prüfen, "
+            "Bauweg nachbessern und neu bauen",
+        )
 
 
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
@@ -33,8 +51,9 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     teil = ordner / f"{dateiname(spec, auftrag, standard)}.sldprt"
     if not teil.exists():
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")
-    app = verbinde(r.sw_jahr)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
+    pruefe_lauf_gebaut(protokoll, lauf)
+    app = verbinde(r.sw_jahr)
     soll = freigegebene_spec(spec_pfad)
     model = oeffne(app, teil)
     try:
@@ -74,10 +93,16 @@ def _lies(pfad: Path) -> dict | None:
 
 
 def _compiler_aenderungen(seit: str) -> list[str]:
-    ergebnis = subprocess.run(
-        ["git", "log", f"--since={seit}", "--format=%h %s", "--", "swki/compiler", "schema"],
-        cwd=PROJEKT, capture_output=True, text=True, encoding="utf-8",
-    )
+    """Commits an Compiler und Schema seit dem ersten Lauf; ohne git eine Hinweiszeile statt eines Abbruchs."""
+    try:
+        ergebnis = subprocess.run(
+            ["git", "log", f"--since={seit}", "--format=%h %s", "--", "swki/compiler", "schema"],
+            cwd=PROJEKT, capture_output=True, text=True, encoding="utf-8",
+        )
+    except OSError as e:
+        return [f"(git nicht ausführbar: {e})"]
+    if ergebnis.returncode != 0:
+        return [f"(git log fehlgeschlagen: {ergebnis.stderr.strip() or ergebnis.returncode})"]
     return [z for z in ergebnis.stdout.splitlines() if z.strip()]
 
 
@@ -104,11 +129,11 @@ def bericht(spec_pfad: Path) -> dict:
 def einrichten(subparsers) -> None:
     p = subparsers.add_parser("pruefen", help="gespeicherten Lauf messen, bewerten, Screenshots (pruefbericht.json)")
     p.add_argument("spec")
-    p.add_argument("--lauf", type=int, help="Vorgabe: letzter Lauf")
+    p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Vorgabe: letzter Lauf")
     p.set_defaults(func=lambda a: pruefen(Path(a.spec), a.lauf))
     p = subparsers.add_parser("status", help="Stand der Nachbesserungsschleife und Empfehlung")
     p.add_argument("spec")
-    p.add_argument("--max", type=int, help="maximale Nachbesserungen laut Anweisung im Chat")
+    p.add_argument("--max", type=ganzzahl_ab(0, "--max"), help="maximale Nachbesserungen laut Anweisung im Chat")
     p.set_defaults(func=lambda a: status(Path(a.spec), a.max))
     p = subparsers.add_parser("bericht", help="bericht.md des Auftrags schreiben")
     p.add_argument("spec")

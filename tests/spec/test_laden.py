@@ -264,3 +264,67 @@ def test_ende_felder_passen_zum_typ(tmp_path):
     meldungen = [b["meldung"] for b in plausibel_befunde(spec, tmp_path)]
     assert any("flaeche gilt nur" in m for m in meldungen)
     assert any("tiefe gilt nicht" in m for m in meldungen)
+
+
+@pytest.mark.parametrize("fid", ["achse_x", "f1_skizze", "f2_senkung", "f3_positionen"])
+def test_reservierte_ids(tmp_path, fid):
+    spec = _spec()
+    spec["features"][1] = spec["features"][1] | {"id": fid}
+    spec["pruefung"]["masse_pruefen"] = []
+    befunde = plausibel_befunde(spec, tmp_path)
+    assert any(b["pfad"] == "features[1].id" and "reserviert" in b["meldung"] for b in befunde)
+
+
+def test_id_eines_skript_zusatzfeatures_ist_reserviert(tmp_path):
+    spec = _spec()
+    skript = {"id": "f7", "typ": "skript", "datei": "f7.py", "luecke": "Test"}
+    spec["features"] += [skript, {**spec["features"][3], "id": "f7_2"}]
+    (tmp_path / "f7.py").write_text("def bauen(ctx):\n    pass\n", encoding="utf-8")
+    befunde = plausibel_befunde(spec, tmp_path)
+    assert any(b["pfad"] == "features[7].id" and "reserviert" in b["meldung"] for b in befunde)
+    assert [b["pfad"] for b in befunde] == ["features[7].id"]  # Minimalskript ist zulässig: einziger Befund
+
+
+def test_normbohrung_doppelte_position(tmp_path):
+    nb = NB | {"positionen": [["=-L/2+20", 0], [-30, 0]]}  # L = 100 → beide bei u = −30
+    [befund] = plausibel_befunde(_mit_feature(nb), tmp_path)
+    assert befund["pfad"] == "features[1].positionen[1]" and "doppelt" in befund["meldung"]
+
+
+@pytest.mark.parametrize(("art", "groesse", "tiefe", "ok"), [
+    ("zylinderschraube", "M8", 8, False),   # Senktiefe M8 laut Tabelle 8,6 mm
+    ("zylinderschraube", "M8", 20, True),
+    ("senkschraube", "M6", 3, False),       # Kegelhöhe M6: (13,44 − 6,6) / 2 / tan 45° = 3,42 mm
+    ("senkschraube", "M6", 10, True),
+])
+def test_normbohrung_tiefe_gegen_senkung(tmp_path, art, groesse, tiefe, ok):
+    nb = {k: v for k, v in NB.items() if k != "durch"} | {"art": art, "groesse": groesse, "tiefe": tiefe}
+    befunde = plausibel_befunde(_mit_feature(nb), tmp_path)
+    assert (befunde == []) is ok
+    if not ok:
+        assert befunde[0]["pfad"] == "features[1].tiefe" and "Senk" in befunde[0]["meldung"]
+
+
+def test_kontur_kreissektor_wird_abgelehnt(tmp_path):
+    # Viertelkreis: Mittelpunkt (0, 0) ist zugleich Eckpunkt der Kontur
+    kontur = {"start": [0, 0], "segmente": [{"linie": [20, 0]}, {"bogen": [0, 20], "mitte": [0, 0]}, {"linie": [0, 0]}]}
+    [befund] = plausibel_befunde(_mit_element({"kontur": kontur}), tmp_path)
+    assert befund["pfad"] == "features[0].skizze.elemente[0].kontur.segmente[1]"
+    assert "Konturpunkt" in befund["meldung"]
+
+
+@pytest.mark.parametrize("element", [
+    {"polygon": {"punkte": [[0, 0], [40, 0], [40, 40], [0, 40]], "radien": "=X"}},
+    {"kontur": {"start": [0, 0], "segmente": [{"linie": ["=X", 0]}, {"bogen": [40, 30], "mitte": [40, 15]},
+                                              {"linie": [0, 30]}, {"linie": [0, 0]}]}},
+])
+def test_ausdrucksfehler_in_rundungen_genau_ein_befund(tmp_path, element):
+    [befund] = plausibel_befunde(_mit_element(element), tmp_path)
+    assert "unbekannter Parameter 'X'" in befund["meldung"]
+
+
+def test_ausdrucksfehler_in_gewindetiefe_genau_ein_befund(tmp_path):
+    nb = {k: v for k, v in NB.items() if k != "durch"} | {"art": "gewinde", "groesse": "M10", "tiefe": 16,
+                                                         "gewindetiefe": "=X"}
+    [befund] = plausibel_befunde(_mit_feature(nb), tmp_path)
+    assert "unbekannter Parameter 'X'" in befund["meldung"]

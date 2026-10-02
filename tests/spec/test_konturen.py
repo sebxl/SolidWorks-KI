@@ -1,6 +1,6 @@
 import pytest
 
-from swki.spec.konturen import bogenende_koordinate, eckradien, kontur_punkte, kontur_punkte_roh
+from swki.spec.konturen import bogenende_koordinate, eckradien, eckradien_roh, kontur_punkte, kontur_punkte_roh
 
 DREIECK = [[0, 0], [10, 0], [0, 10]]
 
@@ -31,3 +31,9 @@ def test_kontur_punkte():
 ])
 def test_bogenende_koordinate(ende, mitte, index):
     assert bogenende_koordinate(ende, mitte) == index
+
+
+def test_eckradien_roh():
+    assert eckradien_roh({"punkte": DREIECK, "radien": "=R"}) == ["=R", "=R", "=R"]
+    assert eckradien_roh({"punkte": DREIECK, "radien": [0, 1, "=R"]}) == [0, 1, "=R"]
+    assert eckradien_roh({"punkte": DREIECK}) == [0, 0, 0]

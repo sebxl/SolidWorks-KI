@@ -37,3 +37,19 @@ def test_freigeben(capsys, tmp_path):
     code, daten = _lauf(capsys, "freigeben", str(pfad))
     assert code == 0 and len(daten["pruefsumme"]) == 64
     assert (tmp_path / "freigabe.json").exists()
+
+
+def test_freigeben_nennt_die_kopie(capsys, tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    pfad.write_text(yaml.safe_dump(GUELTIG, allow_unicode=True), encoding="utf-8")
+    code, daten = _lauf(capsys, "freigeben", str(pfad))
+    assert code == 0 and daten["kopie"] == str(tmp_path / "platte.freigegeben.yaml")
+
+
+def test_freigabe_kopie_wird_nicht_freigegeben(capsys, tmp_path):
+    pfad = tmp_path / "platte.freigegeben.yaml"
+    pfad.write_text(yaml.safe_dump(GUELTIG, allow_unicode=True), encoding="utf-8")
+    code, daten = _lauf(capsys, "freigeben", str(pfad))
+    assert code == 1 and daten["code"] == "FREIGABE_KOPIE"
+    assert "platte.yaml" in daten["fehler"]
+    assert not (tmp_path / "freigabe.json").exists()

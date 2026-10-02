@@ -5,6 +5,10 @@ Dateien je Lauf im Auftragsordner (protokolle/):
   <spec>.lauf-<n>.pruefbericht.json  (swki pruefen)
   <spec>.lauf-<n>.pruefer.json       (Urteil des Prüfer-Agenten, von Claude geschrieben:
                                       {"bestanden": bool, "maengel": [{"knoten": [...], "beschreibung": "..."}]})
+
+Regel „kein Fortschritt“: verglichen werden nur Läufe, die durchgebaut und geprüft sind (Prüfbericht und Prüfer-Urteil),
+jeweils mit dem letzten solchen Lauf davor. Ein Bauabbruch (Protokollstatus "fehler") hat keine Mängelzahl (offen None)
+und verbraucht nur einen der höchstens 1 + max_nachbesserungen Läufe.
 """
 
 import json
@@ -12,10 +16,46 @@ import re
 from pathlib import Path
 
 from swki.auftrag import lauf_datei, protokoll_ordner
+from swki.cli import SwkiFehler
 
 
 def _lies(pfad: Path) -> dict | None:
     return json.loads(pfad.read_text(encoding="utf-8")) if pfad.exists() else None
+
+
+_URTEIL_FORM = '{"bestanden": bool, "maengel": [{"knoten": [...], "beschreibung": "..."}]}'
+
+
+def _urteil_fehler(pfad: Path, grund: str) -> SwkiFehler:
+    fehler = SwkiFehler(f"{pfad.name}: {grund} – erwartet {_URTEIL_FORM} (nur das JSON-Objekt, ohne Code-Fences)")
+    fehler.daten = {"code": "PRUEFER_URTEIL_UNGUELTIG"}
+    return fehler
+
+
+def pruefe_urteil(urteil, pfad: Path) -> None:
+    """Form des Prüfer-Urteils (vom Controller abgelegtes JSON des Prüfer-Agenten)."""
+    maengel = urteil.get("maengel") if isinstance(urteil, dict) else None
+    gueltig = (
+        isinstance(urteil, dict) and isinstance(urteil.get("bestanden"), bool) and isinstance(maengel, list)
+        and all(isinstance(m, dict) and isinstance(m.get("knoten"), list)
+                and all(isinstance(k, str) for k in m["knoten"]) and isinstance(m.get("beschreibung"), str)
+                for m in maengel)
+    )
+    if not gueltig:
+        raise _urteil_fehler(pfad, "kein gültiges Prüfer-Urteil")
+
+
+def lies_urteil(pfad: Path) -> dict | None:
+    """Prüfer-Urteil laden und prüfen; None, wenn die Datei fehlt. Kaputtes JSON (z. B. Code-Fences) wird wie eine
+    falsche Form gemeldet, mit Dateiname."""
+    if not pfad.exists():
+        return None
+    try:
+        urteil = json.loads(pfad.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise _urteil_fehler(pfad, f"Prüfer-Urteil nicht lesbar ({e.msg}, Zeile {e.lineno})") from e
+    pruefe_urteil(urteil, pfad)
+    return urteil
 
 
 def lies_laeufe(spec_pfad: Path) -> list[dict]:
@@ -26,11 +66,11 @@ def lies_laeufe(spec_pfad: Path) -> list[dict]:
     for n in nummern:
         protokoll = _lies(lauf_datei(spec_pfad, n, "protokoll"))
         bericht = _lies(lauf_datei(spec_pfad, n, "pruefbericht"))
-        urteil = _lies(lauf_datei(spec_pfad, n, "pruefer"))
+        urteil = lies_urteil(lauf_datei(spec_pfad, n, "pruefer"))
         bau_ok = protokoll["status"] == "ok"
         code_maengel = len(bericht["maengel"]) if bericht else None
         pruefer_maengel = len(urteil["maengel"]) if urteil else None
-        offen = (0 if bau_ok else 1) + (code_maengel or 0) + (pruefer_maengel or 0)
+        offen = (code_maengel or 0) + (pruefer_maengel or 0) if bau_ok else None  # Bauabbruch: nicht zählbar
         laeufe.append({
             "lauf": n,
             "bau": protokoll["status"],
@@ -39,6 +79,7 @@ def lies_laeufe(spec_pfad: Path) -> list[dict]:
             "pruefer": "ausstehend" if urteil is None else ("bestanden" if urteil["bestanden"] else "maengel"),
             "pruefer_maengel": pruefer_maengel,
             "offen": offen,
+            "vergleichbar": bau_ok and bericht is not None and urteil is not None,
             "bestanden": bau_ok and bericht is not None and bericht["bestanden"] and urteil is not None
             and urteil["bestanden"],
         })
@@ -66,9 +107,13 @@ def empfehlung(laeufe: list[dict], maximal: int) -> tuple[str, str]:
         return "pruefer", f"Prüfer-Agent für Lauf {letzter['lauf']} starten und Urteil ablegen"
     if letzter["bestanden"]:
         return "bestanden", f"Lauf {letzter['lauf']} bestanden: Bericht schreiben"
-    if len(laeufe) >= 2 and letzter["offen"] >= laeufe[-2]["offen"]:
+    # Regel „kein Fortschritt“ (Nutzerentscheidung 2026-10-01, Option A): nur durchgebaute und geprüfte Läufe werden
+    # verglichen, jeweils mit dem letzten solchen Lauf davor; ein Bauabbruch verbraucht nur einen Lauf.
+    vorher = [lauf for lauf in laeufe[:-1] if lauf["vergleichbar"]]
+    if letzter["vergleichbar"] and vorher and letzter["offen"] >= vorher[-1]["offen"]:
         return "stopp_kein_fortschritt", (
-            f"Offene Mängel {laeufe[-2]['offen']} → {letzter['offen']}: kein Fortschritt, anhalten und Nutzer informieren"
+            f"Offene Mängel Lauf {vorher[-1]['lauf']} → Lauf {letzter['lauf']}: {vorher[-1]['offen']} → "
+            f"{letzter['offen']}: kein Fortschritt, anhalten und Nutzer informieren"
         )
     if len(laeufe) >= maximal:
         return "stopp_max", f"{len(laeufe)} von {maximal} Läufen verbraucht: anhalten und Nutzer informieren"

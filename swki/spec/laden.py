@@ -2,6 +2,7 @@
 
 import json
 import math
+import re
 from pathlib import Path
 
 import yaml
@@ -19,6 +20,8 @@ SCHEMA_ORDNER = PROJEKT / "schema"
 _POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "laenge", "gewindetiefe"}
 _WINKEL = {"winkel"}
 _TOL_KONTUR_MM = 1e-6
+_RESERVIERT = re.compile(r"^achse_[xyz]$")  # Referenzachsen der Muster (handler/muster.py)
+_COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen")  # vom Compiler angelegte Skizzen/Features
 
 
 class SpecFehler(SwkiFehler):
@@ -115,6 +118,11 @@ def _kontur_befunde(kontur: dict, pfad: str, p: dict) -> list[dict]:
         if "bogen" not in s:
             continue
         mitte = (auswerten(s["mitte"][0], p), auswerten(s["mitte"][1], p))
+        if any(_abstand2(mitte, q) <= _TOL_KONTUR_MM for q in punkte):
+            befunde.append({"pfad": f"{pfad}.segmente[{k}]",
+                            "meldung": "Bogenmittelpunkt liegt auf einem Konturpunkt (Kreissektor) – wird nicht "
+                                       "unterstützt; Kontur anders aufteilen"})
+            continue
         ra, rb = _abstand2(punkte[k], mitte), _abstand2(punkte[k + 1], mitte)
         if abs(ra - rb) > _TOL_KONTUR_MM:
             befunde.append({"pfad": f"{pfad}.segmente[{k}]",
@@ -174,6 +182,28 @@ def _normbohrung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
                 befunde.append({"pfad": f"{pfad}.gewindetiefe", "meldung": "gewindetiefe darf nicht größer als tiefe sein"})
         except AusdruckFehler:
             pass  # bereits oben gemeldet
+    try:
+        pos = [(auswerten(u, p), auswerten(v, p)) for u, v in f["positionen"]]
+        for k, q in enumerate(pos):
+            gleich = next((j for j in range(k) if _abstand2(pos[j], q) <= _TOL_KONTUR_MM), None)
+            if gleich is not None:
+                befunde.append({"pfad": f"{pfad}.positionen[{k}]",
+                                "meldung": f"Position {k + 1} ist doppelt (gleich Position {gleich + 1})"})
+        masse = normmasse(f["art"], f["groesse"], norm)
+        if "tiefe" in f and masse is not None:
+            tiefe = auswerten(f["tiefe"], p)
+            if f["art"] == "zylinderschraube":
+                grenze, was = masse["senkung_t"], "Senktiefe"
+            elif f["art"] == "senkschraube":
+                grenze = (masse["senkung_d"] - masse["durchgang"]) / 2 / math.tan(math.radians(masse["senkwinkel"]) / 2)
+                was = "Senkungshöhe"
+            else:
+                grenze = None
+            if grenze is not None and tiefe <= grenze:
+                befunde.append({"pfad": f"{pfad}.tiefe",
+                                "meldung": f"tiefe {tiefe:g} muss größer als die {was} ({grenze:.4g} mm) sein"})
+    except AusdruckFehler:
+        pass  # bereits oben gemeldet
     return befunde
 
 
@@ -186,6 +216,13 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
     for i, fid in enumerate(ids):
         if fid in ids[:i]:
             befunde.append({"pfad": f"features[{i}].id", "meldung": f"ID {fid!r} ist doppelt"})
+    skripte = [f["id"] for f in features if f["typ"] == "skript"]
+    for i, fid in enumerate(ids):
+        zusatz = any(re.fullmatch(rf"{re.escape(s)}_\d+", fid) for s in skripte)  # weitere Features eines Skripts
+        if _RESERVIERT.match(fid) or fid.endswith(_COMPILER_ENDUNGEN) or zusatz:
+            befunde.append({"pfad": f"features[{i}].id",
+                            "meldung": f"ID {fid!r} ist für vom Compiler angelegte Features reserviert "
+                                       "(achse_x|y|z, <id>_skizze, <id>_senkung, <id>_positionen, <skript-id>_<n>)"})
 
     for i, f in enumerate(features):
         for pfad, ref in _referenzen({k: v for k, v in f.items() if k != "id"}, ["features", i]):

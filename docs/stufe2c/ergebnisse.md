@@ -98,6 +98,53 @@ SolidWorks-Instanz mit rund 2 GB Private Bytes statt (Stufe 2: unter 700 MB). Ei
   Private Bytes: 429 MB nach Neustart, 2099 nach den Endbedingungen, 2463 nach `pruefen`, 2735 nach `pruefen_normbohrung`,
   3209 nach den Referenzen. Toggle 10 `False`, Integer-Einstellung 6 `1` nach dem Lauf.
 
+## Aufräum-Paket (Stand 2026-10-02)
+
+Branch `aufraeumen`, Commits 124fe29 bis 218a465, danach die Korrekturrunde nach Gesamt-Review (unten). Nutzerentscheidungen (2026-10-01):
+höchstens 4 Läufe (1 + 3), Bauabbruch-Läufe werden nicht verglichen, Rechner B zurückgestellt, Gruppen A–E vollständig.
+
+- **Unit-Tests:** 349 passed, 55 deselected nach der Korrekturrunde (vorher 330 passed, 55 deselected; vor dem
+  Aufräum-Paket 276 passed, 54 deselected). `swki api pruefe-code`: keine Befunde.
+- **Live (Rechner A, SW 2025, einzeln mit Zeitlimit 240 s):** alle Dateien `OK`, in drei SolidWorks-Sitzungen (zwei Neustarts
+  wegen Speicher, jeweils genau eine Instanz).
+  - Sitzung 1 (Start 419 MB): `test_live_endbedingungen.py` 4 OK (davon 1 neu: Zwei-Körper-Fall), 2187 MB danach;
+    `test_live_konturen.py` 14 OK, 3137 MB; `test_live_api.py` 2 OK, 2887 MB; `test_live_bauen.py` 3 OK, 3312 MB;
+    `test_live_extrusion.py` 5 OK, 3651 MB; `test_live_kanten.py` 3 OK, 3837 MB. Danach angehalten (Neustart).
+  - Sitzung 2 (Start 425 MB): `test_live_muster.py` 3 OK, 1020 MB; `test_live_normbohrung.py` 6 OK, 1414 MB;
+    `test_live_parametrik.py` 1 OK, 2570 MB; `test_live_pruefen.py` 2 OK, 2924 MB; `test_live_pruefen_normbohrung.py` 2 OK,
+    3183 MB; `test_live_rotation_bohrung.py` 3 OK, 3365 MB; `test_live_skript.py` 2 OK, 3479 MB;
+    `test_live_verbindung.py` 2 OK, 3240 MB. Vor `tests/referenz` angehalten (Neustart).
+  - Sitzung 3 (Start 422 MB): `tests/referenz` 3 OK (Buchse, Formplatte, Auswerferhalteplatte), 1304 MB danach;
+    `test_sollvolumen.py` läuft ohne SolidWorks (Unit-Test, grün).
+  - Zusammen 54 `sw`-Tests + 1 neuer = 55 Live-Tests, alle `OK`. Höchster gemessener Speicher: 3837 MB (Private Bytes).
+- **Einstellungen:** Toggle 10 / Integer 6 vor dem ersten Lauf `False 1`, nach dem letzten Lauf `False 1`.
+- **Änderungen je Gruppe:**
+  - **A Prüfschleife (124fe29):** Läufe mit Bauabbruch werden bei „kein Fortschritt“ nicht verglichen; `pruefen` verweigert
+    einen abgebrochenen Lauf; `--max` nur ≥ 0; Spec-Text (Vorgabe 3, Regel) und Skill-Text präzisiert.
+  - **B Robustheit (f5dd9d2, c51b1ee, 6d0d6a8):** `freigeben` lehnt die Freigabe-Kopie ab und nennt deren Pfad;
+    `bauen --lauf N` überschreibt keinen vorhandenen Lauf; `pruefer.json` wird auf Form geprüft; git-Fehler in
+    `_compiler_aenderungen` werden abgefangen; `speichere` nur im Arbeitsordner; Compiler-Namen als Feature-IDs verboten.
+  - **C Validierung und Hinweise (6d0d6a8, 32e4882, 29cc9e3):** Normbohrung: doppelte Positionen und Tiefe gegen Senkung;
+    Kontur mit Bogenmitte auf einem Konturpunkt (Kreissektor); keine Fehlalarme mehr bei Mittellinie, 360, Fase 45,
+    Sammelhinweis für Konturpunkte; Text `muster_kreis` (Regel 3); `_pappus` für Rechteck/Kreis, mehrere Profile nicht
+    analytisch.
+  - **D Tests (6d0d6a8, 618944c, 32e4882, 4a1aa7f, 218a465):** Ausdrucksfehler der Validierung, Randzweige der Hinweise (32e4882),
+    Skript-Zusatzfeature, `Kontext.verknuepfe`, Zylinderprüfung der Normbohrung ohne SolidWorks; live: Zwei-Körper-Fall und
+    Toleranzen (`_flach`, `abs=1e-6`) in den Konturtests.
+  - **E Code-Pflege (29cc9e3):** Konstanten nach `swki/spec/normen.py`, `eckradien_roh`.
+  - **Korrekturrunde nach Gesamt-Review (+19 Unit-Tests, 330 → 349):**
+    - Stale Prüfdateien: Die automatisch vergebene Laufnummer (`naechster_lauf(r, auftrag, spec_pfad)`) ist nie belegt –
+      sie berücksichtigt neben den Laufordnern im Arbeitsordner jede Lauf-Datei (Protokoll, Prüfbericht, Prüfer-Urteil)
+      im Auftragsordner; `lauf_belegt` prüft dieselben Dateien. Vorher baute `swki bauen` nach aufgeräumtem
+      Arbeitsordner wieder Lauf 1 und `status` meldete den ungeprüften Lauf wegen alter Dateien als `bestanden`.
+      Neuer Unit-Test der Sperre in `bauen` (`tests/compiler/test_bauen.py`, ohne SolidWorks: `verbinde` wird nie erreicht).
+    - `pruefer.json` mit Code-Fences oder kaputtem JSON: `SwkiFehler` `PRUEFER_URTEIL_UNGUELTIG` mit Dateiname statt
+      `JSONDecodeError`; `knoten` müssen Texte sein.
+    - `--lauf` (`bauen`, `pruefen`) nur ≥ 1, `--max` ≥ 0, beide mit verständlicher Meldung auch bei nicht-numerischer
+      Eingabe (`swki.cli.ganzzahl_ab`); `bauen` prüft `lauf is None` statt `lauf or …`.
+    - Skill `konstruieren`: Verweis von Schritt 5 (Bauabbruch) auf Schritt 6, „1 + 3 = 4 Läufe“ als Vorgabe formuliert,
+      Zeile zu reservierten Feature-IDs.
+
 ## Offene Punkte
 
 - Bohr- und Gewindetiefe von `normbohrung` hängen nicht per Gleichung an Parametern (kein belegtes Maß am HoleWzd-Feature);
@@ -105,9 +152,13 @@ SolidWorks-Instanz mit rund 2 GB Private Bytes statt (Stufe 2: unter 700 MB). Ei
 - Formplatte: Notausgang f10 (M8) ließe sich jetzt als `normbohrung` bauen – Referenz bleibt bewusst unverändert.
 - Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt: der Versatz geht zur Skizze hin und
   ergibt dadurch einen getrennten Körper (zwei Körper; Spike S10, Frage 6 d). Bekannte Einschränkung, kein Sonderweg; seit der
-  Korrekturrunde meldet die allgemeine Code-Prüfung `koerper` (Soll: genau 1 Volumenkörper) mehrere Körper als Mangel.
+  Korrekturrunde meldet die allgemeine Code-Prüfung `koerper` (Soll: genau 1 Volumenkörper) mehrere Körper als Mangel –
+  Zwei-Körper-Live-Test erledigt (Aufräum-Paket, `test_aufsatz_mit_versatz_bei_abgesetzter_skizze_ergibt_zwei_koerper`).
+  Erledigt im Aufräum-Paket außerdem: Kreissektor-Kontur, doppelte Positionen/Tiefe der Normbohrung, Toleranz in den
+  Konturtests.
 - SolidWorks-Speicher wächst bei Live-Läufen (gemessen je Testdatei etwa 50–1250 MB Private Bytes); Neustart ab ca. 4 GB, die Live-Suite deshalb
   dateiweise laufen lassen.
 - `.gitignore` schließt unter `auftraege/` nur die SolidWorks-Dateien aus (`*.sldprt`, `*.sldasm`, `*.slddrw`); Spezifikationen,
   Protokolle und Prüfberichte sind nicht ausgeschlossen, `git status` zeigt `?? auftraege/`. Beispielaufträge nicht versehentlich committen.
-- Rechner B (SOLIDWORKS 2026): alle Referenzen noch nicht gelaufen (Abschluss Stufe 2 laut Spec §11).
+- Rechner B (SOLIDWORKS 2026): alle Referenzen noch nicht gelaufen (Abschluss Stufe 2 laut Spec §11) – zurückgestellt:
+  Rechner steht nicht zur Verfügung (Nutzer, 2026-10-01).

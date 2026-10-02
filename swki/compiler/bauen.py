@@ -3,8 +3,8 @@
 import time
 from pathlib import Path
 
-from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, naechster_lauf
-from swki.cli import SwkiFehler
+from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
+from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.compiler.ablauf import baue_features
 from swki.compiler.eigenschaften import eigenschaften_fuer, globale_variablen, setze_eigenschaften, setze_material
@@ -38,7 +38,10 @@ def bauen(spec_pfad: Path, lauf: int | None = None) -> dict:
     pruefe_freigabe(spec_pfad, spec)
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
-    lauf = lauf or naechster_lauf(r, auftrag)
+    if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):
+        raise SwkiFehler(f"Lauf {lauf} von {auftrag} existiert schon – ohne --lauf baut swki den nächsten freien Lauf")
+    if lauf is None:
+        lauf = naechster_lauf(r, auftrag, spec_pfad)
     ordner = lauf_ordner(r, auftrag, lauf)
     name = dateiname(spec, auftrag, standard)
     protokoll = Protokoll(auftrag, spec_pfad.name, lauf, r.sw_jahr)
@@ -96,5 +99,5 @@ def _bauen(args) -> dict:
 def einrichten(subparsers) -> None:
     p = subparsers.add_parser("bauen", help="freigegebene Spezifikation in SolidWorks bauen (neuer Lauf)")
     p.add_argument("spec")
-    p.add_argument("--lauf", type=int, help="Laufnummer (Vorgabe: nächste freie)")
+    p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Laufnummer ≥ 1 (Vorgabe: nächste freie)")
     p.set_defaults(func=_bauen)
