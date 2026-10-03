@@ -66,7 +66,9 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   - Normteil-Codes wie im Skill `normteile`.
 - **`MANUELL_GEAENDERT`:** jemand hat Dateien des letzten Laufs geändert. `swki aenderungen <spec>` zeigt die
   Parameterdifferenz. Dem Nutzer zeigen und fragen (eine Frage, Empfehlung „übernehmen“): übernehmen → Spec ändern,
-  validieren, neu freigeben; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`.
+  validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen` (verweigert mit
+  `UEBERNAHME_OHNE_NEUE_FREIGABE`, solange die Freigabe nicht neuer als der Lauf ist); verwerfen → nur auf
+  ausdrückliche Anweisung `swki bauen --verwerfen`. Beide Schalter nie zugleich.
 - `swki pruefen <baugruppe.yaml>` → Prüfbericht mit `verknuepfungen`, `bestimmtheit`, `stueckliste`, `kollision`,
   `gewinde:<schraube>` (Einschraublänge, Volumen ist/soll), `mass:*`, `huellquader`, Teilprüfungen
   `<komponente>: <prüfung>`.

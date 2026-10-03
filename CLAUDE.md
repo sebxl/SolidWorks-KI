@@ -42,7 +42,9 @@ Stand: Stufe 3b (Baugruppen statisch) umgesetzt – Ergebnisse: docs/stufe3b/erg
 - Normteile kommen über `swki normteil hole` und werden in den Lauf-Ordner kopiert; die Baugruppe verweist nie auf die
   Bibliothek.
 - Die Spec ist die Quelle: `MANUELL_GEAENDERT` heißt, jemand hat gebaute Dateien geändert → `swki aenderungen`, Nutzer
-  fragen; `swki bauen --verwerfen` nur auf ausdrückliche Anweisung. Gilt auch für Einzelteile.
+  fragen: übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen` (nur mit
+  Freigabe, die neuer als der Lauf ist); verwerfen → `swki bauen --verwerfen` nur auf ausdrückliche Anweisung. Gilt auch
+  für Einzelteile.
 - Regressions-Suite enthält das Stehlager (`tests/referenz/stehlager/`).
 
 ## Prüfen und Nachbessern (Stufe 2)

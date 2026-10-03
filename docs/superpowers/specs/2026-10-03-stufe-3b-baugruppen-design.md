@@ -218,7 +218,9 @@ Auftragsordner (`<spec>.lauf-<n>.<art>.json`).
   Andere Änderungen meldet es als „Datei geändert, Parameter gleich“.
 - Claude zeigt die Änderung und fragt den Nutzer:
   - **übernehmen:** Claude überträgt die Änderung in die Spec (Parameter direkt; andere Änderungen nach Beschreibung des
-    Nutzers), dann `validieren` und neue Freigabe;
+    Nutzers), dann `validieren` und neue Freigabe, danach `swki bauen --uebernommen` (erlaubt den Bau trotz der
+    geänderten Dateien nur, wenn die Freigabe neuer als der verglichene Lauf ist, sonst `UEBERNAHME_OHNE_NEUE_FREIGABE`;
+    das Protokoll vermerkt es unter `uebernommen`; schließt sich mit `--verwerfen` aus);
   - **verwerfen:** nur auf ausdrückliche Anweisung `swki bauen --verwerfen`; das Protokoll vermerkt es.
 - `swki pruefen` und `swki aenderungen` öffnen Dateien nur und speichern nie (Test sichert das); sonst erzeugte die Prüfung
   selbst eine Änderung.
