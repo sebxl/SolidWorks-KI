@@ -8,10 +8,8 @@ __pycache__/
 # Rechnerspezifisch
 config/rechner.yaml
 
-# SolidWorks-Dateien aus Aufträgen und Temporärdateien
-auftraege/**/*.sldprt
-auftraege/**/*.sldasm
-auftraege/**/*.slddrw
+# Aufträge (Arbeitsstände; Referenzen liegen in tests/referenz/) und SolidWorks-Temporärdateien
+auftraege/
 ~$*
 
 # Lokale Claude-Einstellungen
