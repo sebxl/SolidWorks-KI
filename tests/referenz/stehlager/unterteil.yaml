@@ -1,0 +1,38 @@
+# Referenz Stehlager (Spec 3b): Lagerunterteil. Fuß y 0…HF, Lagerkörper bis zur Trennebene y = AH (Lagerachse).
+# Die Gewinde für den Deckel werden vor der Lagerbohrung gebohrt (Fläche +y von f2 ist dann noch ungeteilt);
+# die Trennebene ist eine benannte Referenz, weil die Fläche nach der Lagerbohrung zweigeteilt ist.
+# Der Lagerkörper (TK) ist schmaler als der Fuß (TF), damit die Fußoberseite eine zusammenhängende Fläche bleibt.
+art: teil
+name: Lagerunterteil
+material: "1.0038"
+eigenschaften: {Benennung: Lagerunterteil Stehlager}
+parameter: {LF: 160, TF: 60, HF: 20, LK: 90, TK: 50, AH: 50, DB: 40, AB: 65, A: 120, DG: 11, AS: 70, TG: 20, GT: 16, TS: 12}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=LF", hoehe: "=TF"}}]}
+    ende: {typ: blind, tiefe: "=HF"}
+  - id: f2
+    typ: extrusion
+    skizze: {ebene: {versatz: {ebene: oben, abstand: "=HF"}}, elemente: [{rechteck: {mitte: [0, 0], breite: "=LK", hoehe: "=TK"}}]}
+    ende: {typ: blind, tiefe: "=AH-HF"}
+  - {id: f3, typ: normbohrung, art: gewinde, groesse: M8, flaeche: {feature: f2, flaeche: "+y"},
+     positionen: [["=-AB/2", 0], ["=AB/2", 0]], tiefe: "=TG", gewindetiefe: "=GT"}
+  - id: f4
+    typ: schnitt
+    skizze: {ebene: vorne, elemente: [{kreis: {mitte: [0, "=AH"], durchmesser: "=DB"}}]}
+    ende: {typ: mittig, tiefe: "=TK"}
+  - {id: f5, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [["=-A/2", 0], ["=A/2", 0]],
+     durchmesser: "=DG", durch: true}
+  - {id: f6, typ: normbohrung, art: stift, groesse: 8, flaeche: {feature: f1, flaeche: "-y"},
+     positionen: [["=-AS/2", 0], ["=AS/2", 0]], tiefe: "=TS"}
+  - {id: TRENNEBENE, typ: referenz, ebene: {basis: oben, abstand: "=AH"}}
+pruefung:
+  huellquader: ["=LF", "=AH", "=TF"]
+  masse_pruefen:
+    - {was: Abstand Gewinde, von: {feature: f3, instanz: 1, achse: true}, zu: {feature: f3, instanz: 2, achse: true}, soll: "=AB"}
+    - {was: Abstand Durchgangsbohrungen, von: {feature: f5, instanz: 1, achse: true}, zu: {feature: f5, instanz: 2, achse: true}, soll: "=A"}
+    - {was: Abstand Stiftbohrungen, von: {feature: f6, instanz: 1, achse: true}, zu: {feature: f6, instanz: 2, achse: true}, soll: "=AS"}
+    - {was: Achshöhe, von: {referenz: TRENNEBENE}, zu: {feature: f1, flaeche: "-y"}, soll: "=AH"}
+  durchmesser_pruefen:
+    - {was: Lagerbohrung, feature: f4, nahe: [0, "=AH-DB/2", 0], soll: "=DB"}

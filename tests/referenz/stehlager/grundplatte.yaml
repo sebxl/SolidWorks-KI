@@ -1,0 +1,21 @@
+# Referenz Stehlager (Spec 3b): Grundplatte, fixiert. Ursprung Mitte Unterseite, Oberseite y = H.
+art: teil
+name: Grundplatte
+material: "1.0038"
+eigenschaften: {Benennung: Grundplatte Stehlager}
+parameter: {L: 200, B: 100, H: 20, A: 120, DG: 11, AS: 70}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [["=-A/2", 0], ["=A/2", 0]],
+     durchmesser: "=DG", durch: true}
+  - {id: f3, typ: normbohrung, art: stift, groesse: 8, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-AS/2", 0], ["=AS/2", 0]], durch: true}
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: Abstand Durchgangsbohrungen, von: {feature: f2, instanz: 1, achse: true}, zu: {feature: f2, instanz: 2, achse: true}, soll: "=A"}
+    - {was: Abstand Stiftbohrungen, von: {feature: f3, instanz: 1, achse: true}, zu: {feature: f3, instanz: 2, achse: true}, soll: "=AS"}
