@@ -11,6 +11,7 @@ steht im Abschnitt „Regression im Gesamtlauf“. Rechner B (SW 2026) offen.
 | Kriterium | Beleg |
 |---|---|
 | Stehlager besteht auf SW 2025 (Code-Prüfungen ohne Mangel, Prüfer „bestanden“) | `tests/referenz/test_referenzen.py::test_referenz_besteht[stehlager-stehlager.yaml]` OK im ersten Lauf (0 Bauweg-Änderungen). Auftrag `auftraege/REF-stehlager/`: Lauf 1 ok (170,8 s), 30 von 30 Verknüpfungen, `maengel` leer; Prüfer-Urteil `{"bestanden": true, "maengel": []}`; `swki status` → bestanden (Lauf 1). Einzelheiten: Abschnitt „Stehlager“ |
+| Laufgrenze (§16 „innerhalb der Laufgrenze“) | `swki status auftraege/REF-stehlager/stehlager.yaml`: `max_laeufe` 4, Lauf 1 `bau: ok`, `code_maengel` 0, `pruefer: bestanden`, `offen` 0, `empfehlung: bestanden` – bestanden in Lauf 1 von höchstens 4; Bau 170,8 s, unter dem Zeitlimit von 600 s je Live-Test |
 | Negativfälle (§14) liefern die erwarteten Mängel/Codes | `tests/live/test_live_stehlager.py`, 4/4 OK: zu lange Deckelschraube → Mangel `gewinde:deckelschraube.1` (Einschraublänge 18,60 mm); Überlappung → `kollision` mit Knoten `stift.1`, `unterteil`; unterbestimmte Komponente → `bestimmtheit` mit Knoten `unterteil`; manuelle Änderung → `MANUELL_GEAENDERT`, `aenderungen` zeigt `L` soll 200 / ist 210,0 |
 | Änderungserkennung live für Teil und Baugruppe | Teil: `test_live_aenderungen.py::test_manuelle_aenderung_am_teil` (Bau → `L` von Hand auf 120 → `MANUELL_GEAENDERT` → `aenderungen` `{L, soll 100, ist 120.0}` → `bauen --verwerfen` baut Lauf 2). Baugruppe: `test_live_baugruppe.py::test_manuelle_aenderung_an_der_baugruppe` (`S` 5 → 8, Verknüpfungswert `verknuepfung:w1` soll 5,0 / ist 8,0; Prüfsummen vor/nach `aenderungen` identisch) und der Stehlager-Negativfall |
 | ISO 7089 und ISO 8734: neue Vorlagenversionen mit bestandenem Urteil | Vorlagenprüfsummen `4ccce508…` (ISO 7089) und `f0a14a8f…` (ISO 8734), Urteil je `{"bestanden": true, "maengel": []}` (03.10.2026); `mass:EINBAU_EBENE_2` in beiden Musterteilen `ok: true`; `test_live_normteile.py` 13/13 OK |
@@ -184,8 +185,9 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
   `IsFixed`, was der Regel „überbestimmt ist immer ein Mangel“ widersprach. Der Spike zeigt Status 3 für die fixierte Komponente, also kein Fehlalarm.
 - **Ruling G (Task 12):** Die mit dem Nutzer abgestimmte Spec 3b bleibt unverändert; Abweichungen stehen hier und im Skill `baugruppe`. Die Skill-Zeile
   „eine zweite konzentrische Bohrung kann überbestimmen (Spike S12)“ aus dem Plan wurde korrigiert, weil Spike Z13 Status 3 zeigt: empfohlen bleibt
-  Auflage + **eine** konzentrische Bohrung + `parallel` (bewährt im Stehlager); Widersprüche meldet SolidWorks als überbestimmt (Status 5, Fehlercode 47),
-  `swki pruefen` als Mangel `bestimmtheit`.
+  Auflage + **eine** konzentrische Bohrung + `parallel` (bewährt im Stehlager); Widersprechen sich Verknüpfungen, bricht `swki bauen` mit `VERKNUEPFUNG_FEHLER` ab (Status 5 bzw. Fehlercode 47 in der Meldung, die Verknüpfung wird
+  gelöscht); `bestimmtheit` in `swki pruefen` meldet über- oder unterbestimmte Komponenten eines gebauten Laufs. Die Umkehr-Erkennung
+  greift nur bei Verknüpfungen mit ausdrücklicher `ausrichtung`.
 - **Neuer Fehlercode `SCHLIESSEN_FEHLER` (Task 8):** Schließen eines Dokuments nach dem Bau scheitert, ohne früheren Fehler. Ein Schließfehler verdeckt
   einen ursprünglichen Fehler nie und hält die übrigen Schließvorgänge nicht auf. Er fehlt in Spec §11.
 - **Fehlermeldungen (Review Task 8):** `bauen` nennt Komponente bzw. Verknüpfung in der `meldung` (Spec §11), und jedes selbst geöffnete Dokument wird im
@@ -232,4 +234,27 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
 
 ## Regression im Gesamtlauf
 
-Wird nach dem Lauf eingetragen (Task 12, Step 8).
+Task 12, 03.10.2026, SolidWorks 2025, jeder Test in einem eigenen Prozess (`tests\live_einzeln.py … --zeit 600`), genau eine Instanz, 0 offene Dokumente,
+`False 1` vor jedem Lauf. Der Gesamtlauf brauchte vier SolidWorks-Neustarts durch den Controller (Halt bei ca. 3 bis 3,5 GB Private Bytes vor dem
+nächsten Test). **Alle 27 Tests der Regression bestanden, kein Prüfwert angepasst, kein Code geändert.**
+
+| Instanz | Datei / Test | Ergebnis | Private Bytes vorher → nachher |
+|---|---|---|---|
+| PID 22628 | `testseferenz`: Buchse, Formplatte, Auswerferhalteplatte | 3/3 OK | 425 → 1296 MB |
+| | `test_live_muster.py` (3) | 3/3 OK | 1100 → 1479 MB |
+| | `test_live_pruefen.py` (2) | 2/2 OK | 1479 → 1795 MB |
+| | `test_live_referenz.py` (1) | 1/1 OK | 1795 → 1890 MB |
+| | `test_live_durchmesser.py` (1) | 1/1 OK | 1890 → 1940 MB |
+| | `test_live_aenderungen.py` (1) | 1/1 OK | 1940 → 2199 MB |
+| | `test_live_bauen.py` (3) | 3/3 OK | 2199 → 2388 MB |
+| | `test_live_baugruppe.py::test_probe_baut` | OK | 2388 → 3021 MB |
+| PID 21240 | `testseferenz`: Stehlager | OK (erster Lauf) | 424 → 4201 MB |
+| PID 9324 | `test_live_baugruppe.py::test_probe_besteht_pruefung` | OK | 424 → 2947 MB |
+| | `test_live_baugruppe.py::test_kollision_wird_gemeldet` | OK | 2947 → 3826 MB |
+| PID 14232 | `test_live_baugruppe.py::test_werte_verknuepfungen` | OK | 429 → 1450 MB |
+| | `test_live_baugruppe.py::test_senkrecht` | OK | 1450 → 1728 MB |
+| | `test_live_baugruppe.py::test_fehlende_referenz_bricht_ab` | OK | 1728 → 2289 MB |
+| | `test_live_baugruppe.py::test_manuelle_aenderung_an_der_baugruppe` | OK | 2289 → 2761 MB |
+
+Damit bestehen Buchse, Formplatte, Auswerferhalteplatte und das Stehlager (4/4 der Referenz-Suite), alle Live-Dateien aus Spec 3b §16 und die
+Live-Tests der Änderungserkennung. Die vier Stehlager-Negativfälle (`test_live_stehlager.py`) liefen in Task 11 (siehe oben) und wurden hier nicht wiederholt.

@@ -19,7 +19,8 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   Position einer `normbohrung`/`bohrung` (Instanzen `<id>.1 …`).
 - `verknuepfungen`: `deckungsgleich`, `konzentrisch`, `parallel`, `senkrecht`, `abstand` (`wert`), `winkel` (`wert`).
   `ausrichtung: gleich | entgegengesetzt` (Normalen nach dem Verknüpfen gleich- bzw. gegensinnig; Flächennormalen
-  zeigen aus dem Material, Bezugsebenen haben die Normale ihrer Basis) – Pflicht außer bei `konzentrisch`.
+  zeigen aus dem Material, Bezugsebenen haben die Normale ihrer Basis) – Pflicht bei `deckungsgleich`, `parallel`, `abstand`
+  und `winkel`; bei `konzentrisch` optional, bei `senkrecht` entfällt sie.
 - Referenzen: `{komponente, referenz}` (bei Normteilen nur `EINBAU_*`, Tabelle im Skill `normteile`),
   `{komponente, feature, flaeche}`, `{komponente, feature, instanz, achse}`, `{komponente, feature, instanz, flaeche}`
   (z. B. Senkungsgrund), `{komponente, ebene}`, `{komponente, nahe}` (Teilkoordinaten, nur als Rückfall).
@@ -29,14 +30,17 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - Je Normteil: **Ebene (mit `ausrichtung`) vor Achse** (erst die Auflage, dann `konzentrisch`). `konzentrisch` ohne
   `ausrichtung` legt swki mit „nächstliegend“ an: SolidWorks behält dann die Richtung, die die Ebene schon festgelegt
   hat. Legt man die Achse zuerst oder widersprechen sich zwei Ausrichtungen, kehrt SolidWorks die Ausrichtung einer
-  früheren Verknüpfung **still** um (Spike S12); `swki bauen` erkennt das beim Rücklesen und bricht mit
+  früheren Verknüpfung **still** um (Spike S12); `swki bauen` erkennt das beim Rücklesen für Verknüpfungen mit
+  **ausdrücklicher** `ausrichtung` (eine `konzentrisch` ohne Angabe, die vor der Ebene steht, wird ohne Meldung der
+  später festgelegten Ebene angepasst) und bricht mit
   `VERKNUEPFUNG_FEHLER` „<id> kehrt die Ausrichtung von <name> um“ ab. Dann die Ausrichtung der genannten Verknüpfung
   bzw. der neuen prüfen (sie widersprechen sich) oder die Reihenfolge ändern (Ebene vor Achse).
 - `drehung_sperren` ist bei Normteilen Vorgabe – jede Komponente muss voll bestimmt sein (sonst
   `freiheitsgrade: {<id>: unterbestimmt}` mit Begründung beim Nutzer).
 - Ein Eigenteil richtet man mit Auflage + **einer** konzentrischen Bohrung + `parallel` aus (bewährt im Stehlager).
-  Widersprüchliche Verknüpfungen meldet SolidWorks als überbestimmt (Status 5, Fehlercode 47); `swki pruefen` meldet
-  es als Mangel `bestimmtheit`.
+  Widersprechen sich Verknüpfungen, bricht `swki bauen` mit `VERKNUEPFUNG_FEHLER` ab (SolidWorks meldet Status 5 bzw.
+  Fehlercode 47 in der Meldung) und löscht die Verknüpfung: Verknüpfung oder Reihenfolge nachbessern. Ist eine Komponente
+  trotz angelegter Verknüpfungen über- oder unterbestimmt, meldet `swki pruefen` den Mangel `bestimmtheit`.
 - Eine fixierte Komponente ist ein Mangel, wenn sie nicht fixiert ist **oder** ihr Status überbestimmt ist.
 - Anforderungen als `parameter` (`wert: "=S"`); `pruefung`: `huellquader`, `masse_pruefen` (Messpunkte mit
   `komponente`, bei `je_position` die Instanz `stift.1`), optional `masse` (kg). Kollision, Bestimmtheit, Stückliste
@@ -54,7 +58,7 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - `swki bauen <baugruppe.yaml>`: baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
   verknüpft. Fehlercodes (die `meldung` nennt Komponente bzw. Verknüpfung):
   - `TEIL_BAU` (Knoten `<komponente>/<feature>`): Bauweg der Teil-Spec nachbessern.
-  - `KOMPONENTE_FEHLER`: Einfügen einer Komponente gescheitert (Komponente und Datei in der Meldung).
+  - `KOMPONENTE_FEHLER`: Einfügen oder Fixieren einer Komponente gescheitert (Komponente und Datei in der Meldung).
   - `VERKNUEPFUNG_FEHLER`, `REFERENZ_NICHT_GEFUNDEN`, `REFERENZ_MEHRDEUTIG` (Knoten `v<n>[.<i>]`): Referenz,
     Ausrichtung oder Reihenfolge nachbessern; „kehrt die Ausrichtung von … um“ siehe Abschnitt 2.
   - `SCHLIESSEN_FEHLER`: Schließen eines Dokuments nach dem Bau scheitert (ohne früheren Fehler); SolidWorks prüfen
