@@ -7,7 +7,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from swki.aenderungen import pruefe_unveraendert, pruefsummen
+from swki.aenderungen import pruefe_unveraendert, pruefsummen, vermerke_befund
 from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
 from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import Instanz, Verknuepfung, basis, instanzen, verknuepfungen
@@ -171,7 +171,7 @@ def _schliesse_alle(b: Baulauf) -> BauFehler | None:
     return erster
 
 
-def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False) -> dict:
+def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False) -> dict:
     spec_pfad = spec_pfad.resolve()
     bg = lade_baugruppe(spec_pfad)
     pruefe_freigabe_baugruppe(bg)
@@ -181,12 +181,12 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False) -> 
     auftrag = auftrag_name(spec_pfad)
     if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):
         raise SwkiFehler(f"Lauf {lauf} von {auftrag} existiert schon – ohne --lauf baut swki den nächsten freien Lauf")
-    verworfen = pruefe_unveraendert(r, auftrag, spec_pfad, verwerfen)
+    uebergangen = pruefe_unveraendert(r, auftrag, spec_pfad, verwerfen, uebernommen)
     if lauf is None:
         lauf = naechster_lauf(r, auftrag, spec_pfad)
     ordner = lauf_ordner(r, auftrag, lauf)
     protokoll = Protokoll(auftrag, spec_pfad.name, lauf, r.sw_jahr)
-    protokoll.verworfen = verworfen
+    vermerke_befund(protokoll, uebergangen, verwerfen)
     alle_instanzen, alle_verknuepfungen = instanzen(bg.spec, bg.quellen), verknuepfungen(bg.spec, bg.quellen)
     beginn = time.perf_counter()
     b = Baulauf(verbinde(r.sw_jahr), bg, auftrag, ordner, standard, protokoll)

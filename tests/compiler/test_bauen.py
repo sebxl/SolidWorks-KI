@@ -98,3 +98,44 @@ def test_verwerfen_baut_trotzdem(umgebung):
     with pytest.raises(_KeinSolidWorks):
         bauen_modul.bauen(spec_pfad, verwerfen=True)
     assert aufrufe["protokoll_lauf"] == 2
+
+
+def _freigabe_zeitpunkt(spec_pfad, zeitpunkt: str):
+    from swki.spec.freigabe import freigabe_pfad
+
+    freigabe_pfad(spec_pfad).write_text(
+        json.dumps({spec_pfad.name: {"pruefsumme": "x", "freigegeben": zeitpunkt, "kopie_sha256": "x"}}), encoding="utf-8")
+
+
+def _gebauter_lauf_von(r, spec_pfad, gestartet: str) -> None:
+    _gebauter_lauf(r, spec_pfad, b"von Hand geaendert")
+    protokoll = lauf_datei(spec_pfad, 1, "protokoll")
+    daten = json.loads(protokoll.read_text(encoding="utf-8"))
+    protokoll.write_text(json.dumps({**daten, "gestartet": gestartet}), encoding="utf-8")
+
+
+def test_uebernommen_baut_nach_neuer_freigabe(umgebung):
+    r, spec_pfad, aufrufe = umgebung
+    _gebauter_lauf_von(r, spec_pfad, "2026-10-03T10:00:00")
+    _freigabe_zeitpunkt(spec_pfad, "2026-10-03T12:00:00")
+    with pytest.raises(_KeinSolidWorks):
+        bauen_modul.bauen(spec_pfad, uebernommen=True)
+    assert aufrufe["protokoll_lauf"] == 2
+
+
+def test_uebernommen_ohne_neue_freigabe_wird_vor_solidworks_verweigert(umgebung):
+    r, spec_pfad, aufrufe = umgebung
+    _gebauter_lauf_von(r, spec_pfad, "2026-10-03T10:00:00")
+    _freigabe_zeitpunkt(spec_pfad, "2026-10-03T09:00:00")
+    with pytest.raises(SwkiFehler, match="Freigabe ist nicht neuer als Lauf 1") as e:
+        bauen_modul.bauen(spec_pfad, uebernommen=True)
+    assert e.value.daten["code"] == "UEBERNAHME_OHNE_NEUE_FREIGABE" and aufrufe["verbinde"] == 0
+
+
+def test_cli_verwerfen_und_uebernommen_schliessen_sich_aus(umgebung, capsys):
+    from swki.cli import main
+
+    _, spec_pfad, aufrufe = umgebung
+    assert main(["bauen", str(spec_pfad), "--verwerfen", "--uebernommen"]) == 1
+    assert "not allowed with argument" in json.loads(capsys.readouterr().out)["fehler"]
+    assert aufrufe["verbinde"] == 0

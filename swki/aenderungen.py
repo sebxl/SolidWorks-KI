@@ -8,6 +8,7 @@ SolidWorks, nur lesend) und vergleicht sie mit der freigegebenen Spezifikation."
 
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
 
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_nummern_dateien, lauf_ordner
@@ -16,19 +17,22 @@ from swki.compiler import sw
 from swki.konfig import Rechner, lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
 from swki.spec.ausdruck import auswerten
-from swki.spec.freigabe import freigegebene_spec
+from swki.spec.freigabe import freigabe_pfad, freigegebene_spec
 from swki.spec.laden import art_der_datei
 from swki.verbindung import verbinde
 
 MANUELL_GEAENDERT = "MANUELL_GEAENDERT"
+# Eigener Code (nicht MANUELL_GEAENDERT): MANUELL_GEAENDERT löst die Rückfrage übernehmen/verwerfen aus, diese
+# Meldung hat eine andere Abhilfe (Spezifikation übernehmen und neu freigeben).
+UEBERNAHME_OHNE_NEUE_FREIGABE = "UEBERNAHME_OHNE_NEUE_FREIGABE"
 _TOL = 1e-6
 _SW_DATEIEN = (".sldprt", ".sldasm")
 
 
 class AenderungFehler(SwkiFehler):
-    def __init__(self, meldung: str, **daten):
+    def __init__(self, meldung: str, code: str = MANUELL_GEAENDERT, **daten):
         super().__init__(meldung)
-        self.daten = {"code": MANUELL_GEAENDERT, **daten}
+        self.daten = {"code": code, **daten}
 
 
 def sha256_datei(pfad: Path) -> str:
@@ -79,16 +83,56 @@ def befund(r: Rechner, auftrag: str, spec_pfad: Path) -> dict | None:
     return {"lauf": n, **a} if a["geaendert"] or a["fehlend"] else None
 
 
-def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bool = False) -> dict | None:
-    """Wirft AenderungFehler, wenn Dateien des letzten durchgebauten Laufs geändert wurden oder fehlen; mit verwerfen
-    wird der Befund nur zurückgegeben (fürs Protokoll)."""
+def _lauf_zeitpunkt(spec_pfad: Path, n: int) -> datetime:
+    """Beginn von Lauf n laut Protokoll (Feld gestartet); fehlt es, die Änderungszeit der Protokolldatei (sie wird am
+    Ende des Laufs geschrieben, ist also nie früher als der Beginn)."""
+    datei = lauf_datei(spec_pfad, n, "protokoll")
+    try:
+        return datetime.fromisoformat(json.loads(datei.read_text(encoding="utf-8"))["gestartet"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return datetime.fromtimestamp(datei.stat().st_mtime)
+
+
+def _freigabe_zeitpunkt(spec_pfad: Path) -> datetime | None:
+    try:
+        eintrag = json.loads(freigabe_pfad(spec_pfad).read_text(encoding="utf-8"))[spec_pfad.name]
+        return datetime.fromisoformat(eintrag["freigegeben"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bool = False,
+                        uebernommen: bool = False) -> dict | None:
+    """Wirft AenderungFehler, wenn Dateien des letzten durchgebauten Laufs geändert wurden oder fehlen.
+
+    verwerfen (ausdrückliche Anweisung des Nutzers) gibt den Befund nur zurück (fürs Protokoll). uebernommen gilt
+    nur, wenn die aktuelle Freigabe NACH Beginn dieses Laufs erteilt wurde (die Änderung also in die Spezifikation
+    übernommen und neu freigegeben ist); sonst UEBERNAHME_OHNE_NEUE_FREIGABE. Ohne Abweichung sind beide wirkungslos."""
+    if verwerfen and uebernommen:
+        raise SwkiFehler("--verwerfen und --uebernommen schließen sich aus: entweder die manuelle Änderung wird "
+                         "verworfen oder in die Spezifikation übernommen")
     b = befund(r, auftrag, spec_pfad)
-    if b is not None and not verwerfen:
+    if b is None or verwerfen:
+        return b
+    genannt = ", ".join(b["geaendert"] + b["fehlend"])
+    if uebernommen:
+        freigabe, lauf = _freigabe_zeitpunkt(spec_pfad), _lauf_zeitpunkt(spec_pfad, b["lauf"])
+        if freigabe is not None and freigabe > lauf:
+            return b
         raise AenderungFehler(
-            f"Lauf {b['lauf']} wurde nach dem Bau verändert ({', '.join(b['geaendert'] + b['fehlend'])}). "
-            "swki aenderungen zeigt die Parameter; Nutzer fragen: übernehmen (Spezifikation ändern, neu freigeben) "
-            "oder verwerfen (swki bauen --verwerfen)", **b)
-    return b
+            f"Freigabe ist nicht neuer als Lauf {b['lauf']} (geändert: {genannt}) – erst die Änderung in die "
+            "Spezifikation übernehmen, validieren, vom Nutzer bestätigen lassen und per swki freigeben neu freigeben, "
+            "dann swki bauen --uebernommen", code=UEBERNAHME_OHNE_NEUE_FREIGABE, **b)
+    raise AenderungFehler(
+        f"Lauf {b['lauf']} wurde nach dem Bau verändert ({genannt}). "
+        "swki aenderungen zeigt die Parameter; Nutzer fragen: übernehmen (Spezifikation ändern, validieren, neu "
+        "freigeben, swki bauen --uebernommen) oder verwerfen (swki bauen --verwerfen)", **b)
+
+
+def vermerke_befund(protokoll, b: dict | None, verwerfen: bool) -> None:
+    """Hält den übergangenen Befund im Bauprotokoll fest: verworfen (--verwerfen) oder uebernommen (--uebernommen)."""
+    protokoll.verworfen = b if verwerfen else None
+    protokoll.uebernommen = None if verwerfen else b
 
 
 def parameter_differenz(soll: dict, ist: dict) -> list[dict]:

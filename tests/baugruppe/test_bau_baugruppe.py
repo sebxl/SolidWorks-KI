@@ -74,11 +74,39 @@ def test_manuelle_aenderung_vor_solidworks(umgebung):
         bau.bauen(pfad, verwerfen=True)
 
 
+def test_uebernommen_nach_neuer_freigabe_vermerkt_das_protokoll(umgebung, monkeypatch):
+    r, pfad, aufrufe = umgebung
+    freigeben_baugruppe(lade_baugruppe(pfad), zeitpunkt="2026-10-03T09:00:00")
+    ordner = lauf_ordner(r, "A", 1)
+    ordner.mkdir(parents=True)
+    (ordner / "A_Probe.sldasm").write_bytes(b"gebaut")
+    from swki.aenderungen import pruefsummen
+
+    protokoll = lauf_datei(pfad, 1, "protokoll")
+    protokoll.parent.mkdir(parents=True, exist_ok=True)
+    protokoll.write_text(json.dumps({"status": "ok", "gestartet": "2026-10-03T10:00:00",
+                                     "sha256": pruefsummen(ordner, [ordner / "A_Probe.sldasm"])}), encoding="utf-8")
+    (ordner / "A_Probe.sldasm").write_bytes(b"von Hand geaendert")
+    with pytest.raises(SwkiFehler) as e:                       # Freigabe (09:00) ist älter als der Lauf (10:00)
+        bau.bauen(pfad, uebernommen=True)
+    assert e.value.daten["code"] == "UEBERNAHME_OHNE_NEUE_FREIGABE" and aufrufe["verbinde"] == 0
+    freigeben_baugruppe(lade_baugruppe(pfad), zeitpunkt="2026-10-03T12:00:00")
+    vermerkt = []
+    echt = bau.vermerke_befund
+    monkeypatch.setattr(bau, "vermerke_befund", lambda p, b, v: (vermerkt.append((b, v)), echt(p, b, v)))
+    with pytest.raises(_KeinSolidWorks):
+        bau.bauen(pfad, uebernommen=True)
+    assert vermerkt[0][0]["geaendert"] == ["A_Probe.sldasm"] and vermerkt[0][1] is False
+
+
 def test_weiche_in_swki_bauen(capsys, umgebung, monkeypatch):
     _, pfad, _ = umgebung
-    monkeypatch.setattr(bau, "bauen", lambda p, lauf, verwerfen: {"art": "baugruppe", "lauf": lauf, "verwerfen": verwerfen})
+    monkeypatch.setattr(bau, "bauen", lambda p, lauf, verwerfen, uebernommen: {
+        "art": "baugruppe", "lauf": lauf, "verwerfen": verwerfen, "uebernommen": uebernommen})
     assert main(["bauen", str(pfad), "--lauf", "3", "--verwerfen"]) == 0
-    assert json.loads(capsys.readouterr().out) == {"art": "baugruppe", "lauf": 3, "verwerfen": True}
+    assert json.loads(capsys.readouterr().out) == {"art": "baugruppe", "lauf": 3, "verwerfen": True, "uebernommen": False}
+    assert main(["bauen", str(pfad), "--uebernommen"]) == 0
+    assert json.loads(capsys.readouterr().out)["uebernommen"] is True
 
 
 def _baulauf(pfad, tmp_path):
