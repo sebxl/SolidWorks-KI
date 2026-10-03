@@ -22,6 +22,11 @@ nach jedem Task, Gesamt-Review am Ende.
   Code, Docstrings, Testlücken ohne Verhaltensrisiko, Commit-Message `b7ef5a6`, Rechner B, Speichergrenze im Compiler),
   **D** Stufe 4.
 - Spec 3b wird nachgezogen (§4.4, §11, §12) – freigegeben.
+- **`auftraege/` kommt ganz ins `.gitignore`** (statt nur der SolidWorks-Dateien darin): Aufträge sind Arbeitsstände,
+  die Referenzen liegen in `tests/referenz/`. Umsetzung in Task 7 (Plan).
+- **Testauftrag `REF-stehlager` wird gelöscht** (Beleg aus 3b steht in `docs/stufe3b/ergebnisse.md`): der Controller löscht
+  vor dem Start `auftraege/REF-stehlager/` und `%USERPROFILE%\.swki\arbeit\REF-stehlager\` (nur diese beiden Ordner;
+  vorher prüfen, dass SolidWorks keine Datei daraus offen hat).
 
 ## Vorgaben des Nutzers
 - Eigener Branch `aufraeumen-3b`, angelegt von `plan-aufraeumen-3b`. Am Ende ein Pull Request; **vor Push und Merge fragen**.
@@ -29,16 +34,9 @@ nach jedem Task, Gesamt-Review am Ende.
 - Kommunikation auf Deutsch. Fragen einzeln stellen, jede mit einer Empfehlung.
 - **SolidWorks-Neustarts übernimmt der Controller selbst** (Ablauf unten).
 
-## Vor dem Start mit dem Nutzer klären (eine Frage je Runde, mit Empfehlung)
-1. **`auftraege/` ins `.gitignore`?** Heute sind dort nur SolidWorks-Dateien ignoriert; Auftragsordner tauchen als
-   untracked auf. Empfehlung: ja, `auftraege/` ganz ignorieren – Aufträge sind Arbeitsstände, die Referenzen liegen in
-   `tests/referenz/`. (Wenn ja: als kleiner Commit in Task 7 mitnehmen.)
-2. **Testauftrag `auftraege/REF-stehlager/` löschen?** Er war der Beleg für das Prüfer-Urteil in 3b (Ergebnis steht in
-   `docs/stufe3b/ergebnisse.md`). Empfehlung: löschen, wie nach 2c die REF-*-Aufträge; die Lauf-Dateien unter
-   `%USERPROFILE%\.swki\arbeit\REF-stehlager\` gleich mit.
-
 ## Vor dem Start prüfen
-- `git status` sauber (bis auf `auftraege/`), `.venv\Scripts\python.exe -m pytest -q` → 607 passed, 108 deselected.
+- `REF-stehlager` löschen (siehe Nutzerentscheidungen), danach `git status` sauber (bis auf `auftraege/`, bis Task 7 es
+  ignoriert), `.venv\Scripts\python.exe -m pytest -q` → 607 passed, 108 deselected.
 - `.superpowers/` ist lokal über `.git/info/exclude` ignoriert. SDD-Workspace über das Skript `sdd-workspace` des Skills.
 - **Mit SolidWorks:** nur Task 6. SOLIDWORKS 2025, **genau eine Instanz** (`tasklist /V /FI "IMAGENAME eq SLDWORKS.exe"`),
   Toggle 10 / Integer 6 = `False 1`.

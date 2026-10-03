@@ -16,6 +16,7 @@
 2. **Nicht in diesem Paket (Topf B, späteres eigenes Paket „Messarten“):** Fasen messen (`c` bei ISO 8734, `p`/Kopffase bei ISO 4762), Volumen bei Gewinde `durch`, Achshöhe der Lagerbohrung im Stehlager.
 3. **Bewusst liegen lassen (Topf C):** doppelter Code (Hüllquader-/Maßlogik, `komponente_von`), Docstrings und Testlücken ohne Verhaltensrisiko, die Commit-Message `b7ef5a6`, Rechner B, eine Speichergrenze im Compiler. Nur mitnehmen, wenn die Stelle ohnehin angefasst wird.
 4. **Spec 3b nachziehen** ist freigegeben (§4.4, §11, §12; §8 ist schon nachgezogen).
+5. **`auftraege/` ganz ignorieren** (`.gitignore`), statt nur der SolidWorks-Dateien darin (Task 7).
 
 ## Global Constraints
 
@@ -46,7 +47,7 @@ tests/test_aenderungen.py, tests/baugruppe/test_bau_baugruppe.py           neue 
 tests/live/test_live_aenderungen.py   + test_uebernahme_am_teil
 tests/live/test_live_stehlager.py     strengere Negativfälle
 docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md   §4.4, §11, §12 nachgezogen
-docs/stufe3b/ergebnisse.md, CLAUDE.md
+docs/stufe3b/ergebnisse.md, CLAUDE.md, .gitignore
 ```
 
 ---
@@ -700,6 +701,7 @@ Im Bericht: je Test OK/Fehler, Private Bytes vorher → nachher, Instanzen und E
 - Modify: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Kopf, §4.4, §11, §12)
 - Modify: `docs/stufe3b/ergebnisse.md`
 - Modify: `CLAUDE.md`
+- Modify: `.gitignore`
 
 **Interfaces:**
 - Consumes: Ergebnisse von Task 1–6 (Commits, Testzahlen, Live-Ergebnisse aus den Berichten).
@@ -758,16 +760,38 @@ Nächster Schritt: Stufe 4 (mechanische Abläufe): Brainstorming → Spec → Pl
 Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse).
 ```
 
-- [ ] **Step 7: Gesamtlauf**
+- [ ] **Step 7: `.gitignore` – Aufträge ganz ignorieren (Nutzerentscheidung 5)**
+
+Den Block
+
+```
+# SolidWorks-Dateien aus Aufträgen und Temporärdateien
+auftraege/**/*.sldprt
+auftraege/**/*.sldasm
+auftraege/**/*.slddrw
+~$*
+```
+
+ersetzen durch
+
+```
+# Aufträge (Arbeitsstände; Referenzen liegen in tests/referenz/) und SolidWorks-Temporärdateien
+auftraege/
+~$*
+```
+
+Prüfen: `git status --short` zeigt `auftraege/` nicht mehr; `git ls-files auftraege` ist leer (es war nie etwas daraus im Git).
+
+- [ ] **Step 8: Gesamtlauf**
 
 Run: `.venv\Scripts\python.exe -m pytest -q` → **618 passed, 109 deselected**.
 Run: `.venv\Scripts\python.exe -m swki api pruefe-code` → keine Befunde.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```powershell
-git add docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md docs/stufe3b/ergebnisse.md CLAUDE.md
-git commit -m "docs: Spec 3b nachgezogen (§4.4, §11, §12), Ergebnisse und CLAUDE.md nach dem Aufräumen" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git add docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md docs/stufe3b/ergebnisse.md CLAUDE.md .gitignore
+git commit -m "docs: Spec 3b nachgezogen (§4.4, §11, §12), Ergebnisse, CLAUDE.md, auftraege/ ignoriert" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -784,3 +808,4 @@ git commit -m "docs: Spec 3b nachgezogen (§4.4, §11, §12), Ergebnisse und CLA
 | A6 schärfere Negativtests | 6 |
 | A7 Kernpfad-Tests `bau.py` | 5 |
 | A8 Spec 3b nachziehen | 7 |
+| `auftraege/` ins `.gitignore` | 7 |
