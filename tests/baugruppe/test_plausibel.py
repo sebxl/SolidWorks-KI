@@ -100,3 +100,20 @@ def test_freiheitsgrade_unbekannt(tmp_path):
     spec = kopie(BAUGRUPPE)
     spec["freiheitsgrade"] = {"rad": "unterbestimmt"}
     assert "freiheitsgrade" in _meldungen(_befunde(tmp_path, spec))
+
+
+@pytest.mark.parametrize("soll", [0, -1.5, "=ABST-35"])
+def test_masse_soll_muss_positiv_sein(tmp_path, soll):
+    """Prozentabweichung teilt durch das Soll: 0 (oder negativ) würde erst nach dem SolidWorks-Teil abstürzen."""
+    spec = kopie(BAUGRUPPE)
+    spec["pruefung"]["masse"] = {"soll": soll}
+    befunde = _befunde(tmp_path, spec)
+    assert [b["pfad"] for b in befunde] == ["pruefung.masse.soll"]
+    assert "größer als 0" in befunde[0]["meldung"]
+
+
+def test_masse_soll_positiv_ist_zulaessig(tmp_path):
+    spec = kopie(BAUGRUPPE)
+    spec["pruefung"]["masse"] = {"soll": "=ABST/10"}
+    assert _befunde(tmp_path, spec) == []
+

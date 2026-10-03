@@ -166,9 +166,12 @@ def _pruefung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
                 werte += [(f"pruefung.masse_pruefen[{i}].{s}.punkt", w) for w in mp[s]["punkt"]]
     for pfad, w in werte:
         try:
-            auswerten(w, p)
+            wert = auswerten(w, p)
         except AusdruckFehler as e:
             befunde.append(_b(pfad, str(e)))
+            continue
+        if pfad == "pruefung.masse.soll" and wert <= 0:  # die Prüfung rechnet die Abweichung in Prozent des Solls
+            befunde.append(_b(pfad, f"Gesamtmasse (soll) muss größer als 0 sein (ist {wert:g} kg)"))
     return befunde
 
 
