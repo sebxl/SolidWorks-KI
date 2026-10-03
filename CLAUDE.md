@@ -1,9 +1,7 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3a (Normteile) umgesetzt – Ergebnisse: docs/stufe3a/ergebnisse.md. Stufe 3b (Baugruppen statisch): Spec und Plan
-fertig (docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md, docs/superpowers/plans/2026-10-03-stufe-3b-baugruppen.md).
-Nächster Schritt: Umsetzung per subagent-driven-development. Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-10-03-stufe3b-umsetzung.md
+Stand: Stufe 3b (Baugruppen statisch) umgesetzt – Ergebnisse: docs/stufe3b/ergebnisse.md. Nächster Schritt: Stufe 4 (mechanische Abläufe): Brainstorming → Spec → Plan.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -37,6 +35,15 @@ Nächster Schritt: Umsetzung per subagent-driven-development. Übergabe zuerst l
 - Genormte Teile immer über `swki normteil hole` (Skill `normteile`), nie als STEP-Download oder freihändig konstruiert. Herstellerdaten nur für nicht genormte Kaufteile.
 - Normtabellen (`swki/wissen/normteile/`) nur mit Abgleich erweitern: ≥ 2 unabhängige recherchierte Quellen je Wert; Widersprüche sperren und den Nutzer fragen.
 - Bauvorlagen nur mit neuem Prüfer-Urteil (`swki normteil muster` → Prüfer → `swki normteil urteil`).
+
+## Baugruppen (Stufe 3b)
+- Baugruppen über den Skill `baugruppe`: Baugruppen-Spec nach `schema/baugruppe.schema.json` und Teil-Specs im selben
+  Auftragsordner; **eine** Freigabe (`swki freigeben <baugruppe.yaml>`) für alles. Verknüpfungen sind Bauweg.
+- Normteile kommen über `swki normteil hole` und werden in den Lauf-Ordner kopiert; die Baugruppe verweist nie auf die
+  Bibliothek.
+- Die Spec ist die Quelle: `MANUELL_GEAENDERT` heißt, jemand hat gebaute Dateien geändert → `swki aenderungen`, Nutzer
+  fragen; `swki bauen --verwerfen` nur auf ausdrückliche Anweisung. Gilt auch für Einzelteile.
+- Regressions-Suite enthält das Stehlager (`tests/referenz/stehlager/`).
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,

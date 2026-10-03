@@ -15,6 +15,16 @@ Herstellerdaten (STEP) nur für nicht genormte Kaufteile.
 - Stand 2026-10-02: Alle vier Normen sind mit Web-Recherche abgeglichen, keine Größe ist gesperrt. Werkstoff ISO 8734
   (Variante St): 1.2210 statt 1.3505 (1.3505 fehlt in der SW-Materialdatenbank).
 
+## Einbaureferenzen (für Baugruppen)
+Achse = Modell-Y, Auflage auf y = 0; Bezugsebenen haben die Normale +y.
+
+| Norm | Körper | Referenzen |
+|---|---|---|
+| ISO 4762 | Kopf y 0…k, Schaft y < 0 | `EINBAU_ACHSE`, `EINBAU_EBENE` (Kopfunterseite) |
+| ISO 4032 | y 0…m | `EINBAU_ACHSE`, `EINBAU_EBENE` (eine Auflagefläche; beide Seiten gleich) |
+| ISO 7089 | y 0…h | `EINBAU_ACHSE`, `EINBAU_EBENE` (y = 0), `EINBAU_EBENE_2` (y = h, Gegenseite: Kopf/Mutter) |
+| ISO 8734 | y 0…l | `EINBAU_ACHSE`, `EINBAU_EBENE_1` (y = 0), `EINBAU_EBENE_2` (y = l) |
+
 ## Fehlercodes
 | Code | Vorgehen |
 |---|---|
