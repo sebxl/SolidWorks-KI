@@ -57,7 +57,8 @@ def test_verfaelschte_vorlage_scheitert():
 
 @pytest.mark.parametrize("groesse", ["M5", "M10", "M16"])
 def test_iso7089(groesse):
-    _ok(_pruefe(_spec("ISO 7089", groesse)), "mass:h", "mass:EINBAU_EBENE", "durchmesser:d1", "durchmesser:d2")
+    _ok(_pruefe(_spec("ISO 7089", groesse)), "mass:h", "mass:EINBAU_EBENE", "mass:EINBAU_EBENE_2", "durchmesser:d1",
+        "durchmesser:d2")
 
 
 @pytest.mark.parametrize(("groesse", "laenge"), [("4", 8), ("8", 30), ("12", 100)])

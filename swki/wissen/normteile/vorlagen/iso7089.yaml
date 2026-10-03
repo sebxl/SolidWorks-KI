@@ -1,5 +1,6 @@
 # Bauvorlage ISO 7089 (Spec 3a §5): Ring Innen-Ø d1, Außen-Ø d2, Dicke h. Lage: Achse = Modell-Y, Auflagefläche in der
-# Ebene oben (y = 0), Dicke in +y.
+# Ebene oben (y = 0), Dicke in +y. EINBAU_EBENE_2 liegt auf der Gegenseite (y = h): darauf sitzen Schraubenkopf bzw.
+# Mutter in einer Baugruppe (Spec 3b §12).
 art: teil
 name: ISO7089_Muster
 parameter: {d1: 5.3, d2: 10, h: 1}
@@ -13,12 +14,14 @@ features:
         - mittellinie: {von: [0, 0], bis: [0, "=h"]}
   - {id: EINBAU_ACHSE, typ: referenz, achse: y}
   - {id: EINBAU_EBENE, typ: referenz, ebene: {basis: oben}}
+  - {id: EINBAU_EBENE_2, typ: referenz, ebene: {basis: oben, abstand: "=h"}}
 pruefung:
   huellquader: ["=d2", "=h", "=d2"]
   volumen: {soll: auto}
   masse_pruefen:
     - {was: h, von: {feature: f1, flaeche: "+y"}, zu: {feature: f1, flaeche: "-y"}, soll: "=h"}
     - {was: EINBAU_EBENE, von: {referenz: EINBAU_EBENE}, zu: {feature: f1, flaeche: "+y"}, soll: "=h"}
+    - {was: EINBAU_EBENE_2, von: {referenz: EINBAU_EBENE_2}, zu: {feature: f1, flaeche: "+y"}, soll: 0}
   durchmesser_pruefen:
     - {was: d1, feature: f1, nahe: ["=d1/2", "=h/2", 0], soll: "=d1", referenz: EINBAU_ACHSE}
     - {was: d2, feature: f1, nahe: ["=d2/2", "=h/2", 0], soll: "=d2", referenz: EINBAU_ACHSE}

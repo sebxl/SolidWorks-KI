@@ -1,6 +1,8 @@
 # Bauvorlage ISO 8734 (Spec 3a §5) – vereinfachte Darstellung: Zylinder Ø d, Länge l, Fase c × 45° an beiden Enden
 # (die Norm sieht an einem Ende eine Kuppe vor). Lage: Achse = Modell-Y, eine Stirnseite in der Ebene oben (y = 0),
 # Länge in +y.
+# `EINBAU_EBENE_2` wird gegen die Stirnfläche +y mit Soll 0 gemessen (Lage, nicht nur Betrag; Spec 3b §12). `c` ist nur über
+# das Volumen belegt (keine Messart für Fasen).
 # Die Mittellinie steht an beiden Enden 1 mm über das Profil über, sonst scheitert der Bau (Spike S11).
 art: teil
 name: ISO8734_Muster
@@ -22,6 +24,6 @@ pruefung:
   masse_pruefen:
     - {was: l, von: {feature: f1, flaeche: "+y"}, zu: {feature: f1, flaeche: "-y"}, soll: "=l"}
     - {was: EINBAU_EBENE_1, von: {referenz: EINBAU_EBENE_1}, zu: {feature: f1, flaeche: "+y"}, soll: "=l"}
-    - {was: EINBAU_EBENE_2, von: {referenz: EINBAU_EBENE_2}, zu: {feature: f1, flaeche: "-y"}, soll: "=l"}
+    - {was: EINBAU_EBENE_2, von: {referenz: EINBAU_EBENE_2}, zu: {feature: f1, flaeche: "+y"}, soll: 0}
   durchmesser_pruefen:
     - {was: d, feature: f1, nahe: ["=d/2", "=l/2", 0], soll: "=d", referenz: EINBAU_ACHSE}
