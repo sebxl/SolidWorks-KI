@@ -205,8 +205,8 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
   (`freigegeben` in `freigabe.json`) strikt neuer ist als der Beginn dieses Laufs (`gestartet` im Protokoll; fehlt es, die Änderungszeit der Protokolldatei, die am Laufende
   geschrieben wird). Sonst Fehler **`UEBERNAHME_OHNE_NEUE_FREIGABE`** („Freigabe ist nicht neuer als Lauf n“) – ein eigener Code, weil `MANUELL_GEAENDERT` die Rückfrage
   übernehmen/verwerfen auslöst, die Abhilfe hier aber „übernehmen und neu freigeben“ lautet. Das Protokoll vermerkt den Befund unter `uebernommen` (analog `verworfen`).
-  Ohne Abweichung ist der Schalter wirkungslos. Skills `baugruppe`/`konstruieren`, `CLAUDE.md` und Spec §8 sind nachgezogen; Unit-Tests ohne SolidWorks, ein Live-Test
-  „übernehmen → neu freigeben → bauen“ steht aus.
+  Ohne Abweichung ist der Schalter wirkungslos. Skills `baugruppe`/`konstruieren`, `CLAUDE.md` und Spec §8 sind nachgezogen; Unit-Tests ohne SolidWorks, ~~ein Live-Test
+  „übernehmen → neu freigeben → bauen“ steht aus~~ (erledigt: Aufräumen nach 3b, Task 6).
 - **Zwei Commits je Live-Task:** Unit-Teil zuerst, Live-Teil nachgeholt, sobald SolidWorks frei war (bewährtes Muster aus 3a).
 
 ## Aufräumen nach 3b (Stand 03.10.2026)
@@ -221,9 +221,10 @@ Branch `aufraeumen-3b` (von `plan-aufraeumen-3b`), Rechner A (SolidWorks 2025), 
 | 4 | `aenderungen`: Hinweis bei aufgeräumtem Lauf, Soll nur bei Änderungen, Normteil-Kopien nicht öffnen (+3) | 0f0eb3c |
 | 5 | `baugruppe`: nicht eingefügte Komponenten als `uebersprungen`, Tests für Reihenfolge und Bibliothek (+3) | fe3e268 |
 | 6 | `live`: Übernahme am Teil belegt, Negativfälle am Stehlager mit vollständiger Mängelmenge (+1 Live-Test) | c665779 |
-| 7 | Doku: Spec 3b nachgezogen (§4.4, §8, §11, §12), Ergebnisse, `CLAUDE.md`, `auftraege/` ignoriert | dieser Commit |
+| 7 | Doku: Spec 3b nachgezogen (§4.4, §8, §11, §12), Ergebnisse, `CLAUDE.md`, `auftraege/` ignoriert | a7e9150 |
+| Fix-Welle | Gesamt-Review: F1 `bauen` vermerkt Komponenten und Verknüpfungen auch nach geworfener Ausnahme als `uebersprungen` (+1); F2 Schließ-/Löschfehler verdecken die Ursache nicht (`baue_teil_dokument` +1, `verknuepfe` +2); F3/F4 Doku und offene Punkte | siehe Git-Log |
 
-Unit-Tests: 607 → 618 bestanden, 108 → 109 abgewählt (+11 Unit-Tests, +1 Live-Test).
+Unit-Tests: 607 → 622 bestanden, 108 → 109 abgewählt (+11 Unit-Tests bis Task 7, +4 in der Fix-Welle, +1 Live-Test).
 
 Live-Ergebnisse (Task 6; je Test einzeln mit `--zeit 600`, SolidWorks 2025; vor und nach den Läufen eine Instanz, `False 1`, 0 offene Dokumente).
 Private Bytes von `SLDWORKS.exe`; der Controller startete SolidWorks fünfmal neu (vor der Stehlager-Referenz und vor jedem der vier
@@ -254,6 +255,10 @@ Endstand: eine Instanz, 0 Dokumente offen, 2306 MB Private Bytes, Einstellungen 
   wäre ein eigenes Paket. (Spec nachgezogen: Aufräumen nach 3b, Task 7; die Messart bleibt offen, siehe „Messarten“.)
 - **Gewinde `durch`:** keine Volumenprüfung (Bohrungslänge nicht in der Spec); Gewinde mit `tiefe` werden geprüft.
 - **Grundplatte:** `volumen` ist `ok: null` (Sollvolumen bei Bohrung `durch` nicht berechenbar); Unterteil und Deckel haben kein Volumenziel.
+- **Live-Negativfälle Stehlager (Teilmenge):** Die Live-Negativfälle prüfen die Knoten der Mängel `kollision`/`bestimmtheit` nur als Teilmenge (`<=`/`in`); ein zusätzlich
+  betroffenes Teil fiele nicht auf. Schärfen bei der nächsten Live-Regression (braucht Live-Läufe).
+- **`verknuepfe`, Gleichung nach `rebuild`-Fehler:** Wirft `sw.rebuild` nach erfolgreichem `Add2`, bleibt die Gleichung `"D1@<id>"` im Diagnosestand des gescheiterten
+  Laufs stehen (der nächste Lauf baut neu).
 - **Rechner B (SW 2026):** nicht gelaufen; die Vorlagen und das Stehlager müssen dort einmal bestehen.
 - **Speicher:** ein Baugruppenlauf kostet 3–4 GB; größere Baugruppen brauchen mehr Neustarts, ein Ablauf mit Speichergrenze im Compiler steht aus.
 - **Aus dem Gesamt-Review, bewusst offen:** ~~Stückliste-Soll und Instanzzahlen der `je_position`-Komponenten folgen dem Bauweg der aktuellen Spec (bei `bohrung` fängt nur
