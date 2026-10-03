@@ -15,6 +15,7 @@ from swki.spec.normen import SW_BEFESTIGUNG
 from swki.verbindung import byref_long, byref_str, in_mm, in_mm3
 
 SW_DOC_PART = 1  # swDocumentTypes_e
+SW_DOC_ASSEMBLY = 2
 SW_OPEN_SILENT = 1  # swOpenDocOptions_e
 SW_WARNUNG_BEREITS_OFFEN = 128  # swFileLoadWarning_AlreadyOpen
 
@@ -24,9 +25,11 @@ class PruefFehler(SwkiFehler):
 
 
 def oeffne(app, pfad: Path):
-    """Öffnet ein gespeichertes Teil. Ist es schon offen (evtl. beim Nutzer), wird abgebrochen statt es zu schließen."""
+    """Öffnet ein gespeichertes Teil oder eine Baugruppe (Typ nach der Endung). Ist das Dokument schon offen (evtl. beim
+    Nutzer), wird abgebrochen statt es zu schließen."""
+    typ = SW_DOC_ASSEMBLY if pfad.suffix.lower() == ".sldasm" else SW_DOC_PART
     fehler, warnungen = byref_long(), byref_long()
-    model = app.OpenDoc6(str(pfad), SW_DOC_PART, SW_OPEN_SILENT, "", fehler, warnungen)
+    model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
     if model is None:
         raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen (Fehler {fehler.value})")
     if warnungen.value & SW_WARNUNG_BEREITS_OFFEN:

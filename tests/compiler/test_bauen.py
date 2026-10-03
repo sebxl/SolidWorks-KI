@@ -1,5 +1,6 @@
 """swki bauen ohne SolidWorks: Laufnummer und Sperre belegter Läufe (verbinde wird nie erreicht bzw. abgefangen)."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -66,4 +67,34 @@ def test_automatische_laufnummer_ueberspringt_alte_pruefdateien(umgebung):
         datei.write_text("{}", encoding="utf-8")
     with pytest.raises(_KeinSolidWorks):
         bauen_modul.bauen(spec_pfad)
+    assert aufrufe["protokoll_lauf"] == 2
+
+
+def _gebauter_lauf(r, spec_pfad, inhalt: bytes) -> Path:
+    from swki.aenderungen import pruefsummen
+
+    ordner = lauf_ordner(r, "A", 1)
+    ordner.mkdir(parents=True)
+    datei = ordner / "A_platte.sldprt"
+    datei.write_bytes(b"gebaut")
+    protokoll = lauf_datei(spec_pfad, 1, "protokoll")
+    protokoll.parent.mkdir(parents=True, exist_ok=True)
+    protokoll.write_text(json.dumps({"status": "ok", "sha256": pruefsummen(ordner, [datei])}), encoding="utf-8")
+    datei.write_bytes(inhalt)
+    return datei
+
+
+def test_manuelle_aenderung_wird_vor_solidworks_verweigert(umgebung):
+    r, spec_pfad, aufrufe = umgebung
+    _gebauter_lauf(r, spec_pfad, b"von Hand geaendert")
+    with pytest.raises(SwkiFehler) as e:
+        bauen_modul.bauen(spec_pfad)
+    assert e.value.daten["code"] == "MANUELL_GEAENDERT" and aufrufe["verbinde"] == 0
+
+
+def test_verwerfen_baut_trotzdem(umgebung):
+    r, spec_pfad, aufrufe = umgebung
+    _gebauter_lauf(r, spec_pfad, b"von Hand geaendert")
+    with pytest.raises(_KeinSolidWorks):
+        bauen_modul.bauen(spec_pfad, verwerfen=True)
     assert aufrufe["protokoll_lauf"] == 2
