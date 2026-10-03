@@ -15,6 +15,7 @@ from swki.spec.normen import SW_BEFESTIGUNG
 from swki.verbindung import byref_long, byref_str, in_mm, in_mm3
 
 SW_DOC_PART = 1  # swDocumentTypes_e
+SW_DOC_ASSEMBLY = 2
 SW_OPEN_SILENT = 1  # swOpenDocOptions_e
 SW_WARNUNG_BEREITS_OFFEN = 128  # swFileLoadWarning_AlreadyOpen
 
@@ -24,9 +25,11 @@ class PruefFehler(SwkiFehler):
 
 
 def oeffne(app, pfad: Path):
-    """Öffnet ein gespeichertes Teil. Ist es schon offen (evtl. beim Nutzer), wird abgebrochen statt es zu schließen."""
+    """Öffnet ein gespeichertes Teil oder eine Baugruppe (Typ nach der Endung). Ist das Dokument schon offen (evtl. beim
+    Nutzer), wird abgebrochen statt es zu schließen."""
+    typ = SW_DOC_ASSEMBLY if pfad.suffix.lower() == ".sldasm" else SW_DOC_PART
     fehler, warnungen = byref_long(), byref_long()
-    model = app.OpenDoc6(str(pfad), SW_DOC_PART, SW_OPEN_SILENT, "", fehler, warnungen)
+    model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
     if model is None:
         raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen (Fehler {fehler.value})")
     if warnungen.value & SW_WARNUNG_BEREITS_OFFEN:
@@ -106,7 +109,7 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
     return ctx
 
 
-def _messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
+def messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
     if "punkt" in mp:
         return Messgeometrie("punkt", tuple(ctx.wert(v) for v in mp["punkt"]))
     if "referenz" in mp:
@@ -136,7 +139,7 @@ def messpunkte(ctx, spec: dict) -> dict[str, Messgeometrie | str]:
     for mp in spec.get("pruefung", {}).get("masse_pruefen", []):
         for punkt in (mp["von"], mp["zu"]):
             try:
-                ergebnis[messpunkt_schluessel(punkt)] = _messgeometrie(ctx, spec, punkt)
+                ergebnis[messpunkt_schluessel(punkt)] = messgeometrie(ctx, spec, punkt)
             except BauFehler as e:
                 ergebnis[messpunkt_schluessel(punkt)] = f"{e.code}: {e}"
     return ergebnis

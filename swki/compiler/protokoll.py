@@ -34,6 +34,12 @@ class Protokoll:
     knoten: list[Knoten] = field(default_factory=list)
     dateien: dict[str, str] = field(default_factory=dict)
     fehler: dict | None = None
+    sha256: dict[str, str] = field(default_factory=dict)  # gespeicherte Dateien (relativ zum Lauf-Ordner) → SHA-256
+    verworfen: dict | None = None  # Befund der Änderungserkennung, den swki bauen --verwerfen übergangen hat
+    uebernommen: dict | None = None  # dito für swki bauen --uebernommen (Änderung steht in der neu freigegebenen Spec)
+    teile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Teil-Spec → Protokoll des Teil-Baus
+    komponenten: list[dict] = field(default_factory=list)  # Baugruppe: [{"id", "sw_name", "datei"}]
+    normteile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Schlüssel → {"bibliothek", "gebaut", "pruefsumme"}
 
     @contextmanager
     def phase(self, name: str):

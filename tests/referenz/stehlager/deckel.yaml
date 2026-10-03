@@ -1,0 +1,25 @@
+# Referenz Stehlager (Spec 3b): Lagerdeckel. Unterseite (Trennebene) y = 0, Oberseite y = HD, Halbschale um die
+# Lagerachse in y = 0. Senkungen für ISO 4762 M8 vor der Halbschale.
+art: teil
+name: Lagerdeckel
+material: "1.0038"
+eigenschaften: {Benennung: Lagerdeckel Stehlager}
+parameter: {LK: 90, TK: 50, HD: 30, AB: 65, DB: 40}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=LK", hoehe: "=TK"}}]}
+    ende: {typ: blind, tiefe: "=HD"}
+  - {id: f2, typ: normbohrung, art: zylinderschraube, groesse: M8, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-AB/2", 0], ["=AB/2", 0]], durch: true}
+  - id: f3
+    typ: schnitt
+    skizze: {ebene: vorne, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=DB"}}]}
+    ende: {typ: mittig, tiefe: "=TK"}
+  - {id: TRENNEBENE, typ: referenz, ebene: {basis: oben}}
+pruefung:
+  huellquader: ["=LK", "=HD", "=TK"]
+  masse_pruefen:
+    - {was: Abstand Schraubenbohrungen, von: {feature: f2, instanz: 1, achse: true}, zu: {feature: f2, instanz: 2, achse: true}, soll: "=AB"}
+  durchmesser_pruefen:
+    - {was: Lagerbohrung, feature: f3, nahe: [0, "=DB/2", 0], soll: "=DB"}

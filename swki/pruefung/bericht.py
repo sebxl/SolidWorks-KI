@@ -39,6 +39,25 @@ def bericht_markdown(
     if baum:
         zeilen += ["", "## Feature-Baum (letzter Lauf)", "", f"- Knoten der Spezifikation: {baum['knoten']}",
                    f"- erzeugte Features (ohne Skizzen, Ebenen, Achsen): {baum['features']}"]
+    letzter = letzter_bericht or {}
+    if letzter.get("stueckliste"):
+        zeilen += ["", "## Stückliste (letzter Lauf)", "", "| Datei | Anzahl |", "|---|---|"]
+        zeilen += [f"| {n} | {c} |" for n, c in sorted(letzter["stueckliste"].items())]
+    if letzter.get("normteile"):
+        zeilen += ["", "## Normteile", "", "| Schlüssel | neu gebaut | Bibliotheksprüfsumme |", "|---|---|---|"]
+        zeilen += [f"| {s} | {'ja' if e.get('gebaut') else 'nein'} | {_zelle(e.get('pruefsumme'))} |"
+                   for s, e in sorted(letzter["normteile"].items())]
+    if letzter.get("gewindepaarungen"):
+        zeilen += ["", "## Gewindepaarungen", "",
+                   "| Schraube | Teil | Bohrung | Einschraublänge (mm) | Gewindetiefe (mm) | Volumen ist / soll (mm³) |",
+                   "|---|---|---|---|---|---|"]
+        zeilen += [f"| {g['schraube']} | {g['teil']} | {g['bohrung']} | {g['einschraublaenge']} | "
+                   f"{_zelle(g.get('gewindetiefe'))} | {g['volumen']} / {_zelle(g.get('soll'))} |"
+                   for g in letzter["gewindepaarungen"]]
+    if letzter.get("teilpruefungen"):
+        zeilen += ["", "## Teilprüfungen (letzter Lauf)", "", "| Komponente | bestanden | Mängel |", "|---|---|---|"]
+        zeilen += [f"| {k} | {'ja' if t['bestanden'] else 'nein'} | {t['maengel']} |"
+                   for k, t in sorted(letzter["teilpruefungen"].items())]
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]

@@ -131,6 +131,8 @@ max_nachbesserungen: 3                         # optional, überschreibt config/
 
 ### Baugruppe
 
+**Stand Stufe 3b (2026-10-03):** Format, Referenzen und `je_position` siehe [2026-10-03-stufe-3b-baugruppen-design.md](2026-10-03-stufe-3b-baugruppen-design.md); `bewegungen`, `treibend` und gezählte `freiheitsgrade` folgen in Stufe 4.
+
 ```yaml
 art: baugruppe
 name: Beispielbaugruppe
@@ -215,7 +217,8 @@ speichern; Bibliotheks-Normteile nur kopieren, nie verändern.
      Soll (Sollvolumen vorab analytisch, wo möglich), Einzelmaße per Messung, Schwerpunktlage
      (Spiegel-/Vorzeichenfehler), Material und Eigenschaften gesetzt.
    - Baugruppe: Verknüpfungen fehlerfrei, Bestimmtheitsstatus je Komponente gegen erwartete
-     Freiheitsgrade, statische Kollisionsprüfung.
+     Freiheitsgrade, statische Kollisionsprüfung (Stand 3b: Gewindepaarungen über das Ringvolumen, Teilprüfung je Eigenteil,
+     Lage über `masse_pruefen`; Änderungserkennung vor jedem Lauf.)
    - Bewegung: treibende Verknüpfung schrittweise verstellen, je Schritt Rebuild und
      Kollisionsprüfung, Endlagen messen.
 2. **Sichtprüfung** – Screenshots Iso/Vorne/Oben/Rechts; bei Bewegungen Anfang/Mitte/Ende.
@@ -316,7 +319,7 @@ Normteil-Vorauswahl, Tool-/Skill-Routing. Vor Einsatz klären, welche Daten an T
 | 2 | Einzelteile: Schema, validieren/freigeben, Compiler (Extrusion, Schnitt/Tasche, Rotation, Bohrung, Verrundung, Fase, lineares/Kreismuster, Spiegeln), Anker, Notausgang, Prüfung 1+2, Prüfer-Agent, Schleife, Bericht, CLAUDE.md, Skills `konstruieren` + `compiler-erweitern` | Referenzen *Formplatte* und *Buchse* bestehen auf SW 2025 **und** SW 2026 |
 | 2c | Normbohrungen (Bohrungsassistent), runde Skizzenkonturen, Endbedingungen „bis Fläche“/„Versatz von Fläche“, kompakter Feature-Baum – Design: [2026-09-29-stufe-2c-design.md](2026-09-29-stufe-2c-design.md) | Referenz *Auswerferhalteplatte* besteht; Buchse und Formplatte bestehen weiter |
 | 3a | Normteile: Normtabellen mit Abgleich, Bauvorlagen, Selbstprüfung, Bibliothek (ISO 4762, 4032, 7089, 8734) – Design: [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md) | Tabellen abgeglichen oder begründet gesperrt, Prüfer-Urteile je Vorlage, Stichprobe 20 Teile besteht |
-| 3b | Baugruppen statisch: Standardverknüpfungen, Bestimmtheit, statische Kollision | allgemeine Referenzbaugruppe besteht (Festlegung in der Spec 3b) |
+| 3b | Baugruppen statisch: Standardverknüpfungen, Bestimmtheit, statische Kollision, Änderungserkennung – Design: [2026-10-03-stufe-3b-baugruppen-design.md](2026-10-03-stufe-3b-baugruppen-design.md) | Referenz *Stehlager* besteht (Code-Prüfungen und Prüfer); Buchse, Formplatte und Auswerferhalteplatte bestehen weiter |
 | 4 | Mechanische Abläufe: Grenz-, Nut-, Scharnier-, Zahnrad-, Kurvenverknüpfung; `bewegungen`; kinematische Prüfung | Referenzen *Auswerferpaket* und *Schieber mit Schrägbolzen* bestehen |
 | 5 | Zeitauswertung + Jev; optional `swki` als MCP; Blech, Schweiß, Flächen, Formschräge, Zeichnungen | je Erweiterung eigene Referenz |
 

@@ -14,7 +14,7 @@ from swki.pruefung.bilder import screenshots
 from swki.pruefung.messen import kontext_aus_datei, messe, oeffne
 from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
 from swki.spec.freigabe import freigegebene_spec, pruefe_freigabe
-from swki.spec.laden import lade_spec
+from swki.spec.laden import art_der_datei, lade_spec
 from swki.verbindung import verbinde
 
 
@@ -36,8 +36,35 @@ def pruefe_lauf_gebaut(protokoll: dict, lauf: int) -> None:
         )
 
 
+def lade_spec_beliebig(spec_pfad: Path) -> dict:
+    """Geprüfte Spezifikation eines Teils oder einer Baugruppe (für status und bericht)."""
+    if art_der_datei(spec_pfad) == "baugruppe":
+        from swki.baugruppe.laden import lade_baugruppe  # spät importiert (Kreisimport)
+
+        return lade_baugruppe(spec_pfad).spec
+    return lade_spec(spec_pfad)
+
+
+def schreibe_pruefbericht(spec_pfad: Path, lauf: int, ordner: Path, bericht: dict) -> None:
+    """Prüfbericht in den Lauf-Ordner und nach protokolle/. Ein Prüfer-Urteil gehört zum vorherigen Bericht dieses Laufs
+    und wird verworfen; sonst könnte status ein veraltetes "bestanden" melden."""
+    pruefer_datei = lauf_datei(spec_pfad, lauf, "pruefer")
+    if pruefer_datei.exists():
+        pruefer_datei.unlink()
+        bericht["pruefer_urteil_verworfen"] = True
+    text = json.dumps(bericht, indent=2, ensure_ascii=False, default=str) + "\n"
+    (ordner / "pruefbericht.json").write_text(text, encoding="utf-8")
+    ziel = lauf_datei(spec_pfad, lauf, "pruefbericht")
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    ziel.write_text(text, encoding="utf-8")
+
+
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
+    if art_der_datei(spec_pfad) == "baugruppe":
+        from swki.baugruppe.pruefen import pruefen as baugruppe_pruefen  # spät importiert (Kreisimport)
+
+        return baugruppe_pruefen(spec_pfad, lauf)
     spec = lade_spec(spec_pfad)
     pruefe_freigabe(spec_pfad, spec)
     r, standard = lade_rechner(), lade_standard()
@@ -66,22 +93,13 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil),
         **bewerte(spec, messwerte, standard, soll), "baum": baum_kennzahl(spec, protokoll), "bilder": bilder,
     }
-    pruefer_datei = lauf_datei(spec_pfad, lauf, "pruefer")
-    if pruefer_datei.exists():
-        # Urteil gehört zum vorherigen Prüfbericht dieses Laufs; sonst könnte "status" ein veraltetes "bestanden" melden.
-        pruefer_datei.unlink()
-        bericht["pruefer_urteil_verworfen"] = True
-    text = json.dumps(bericht, indent=2, ensure_ascii=False) + "\n"
-    (ordner / "pruefbericht.json").write_text(text, encoding="utf-8")
-    ziel = lauf_datei(spec_pfad, lauf, "pruefbericht")
-    ziel.parent.mkdir(parents=True, exist_ok=True)
-    ziel.write_text(text, encoding="utf-8")
+    schreibe_pruefbericht(spec_pfad, lauf, ordner, bericht)
     return bericht
 
 
 def status(spec_pfad: Path, anweisung: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
-    spec = lade_spec(spec_pfad)
+    spec = lade_spec_beliebig(spec_pfad)
     alle = lies_laeufe(spec_pfad)
     maximal = max_laeufe(spec, lade_standard(), anweisung)
     code, text = empfehlung(alle, maximal)
@@ -108,7 +126,7 @@ def _compiler_aenderungen(seit: str) -> list[str]:
 
 def bericht(spec_pfad: Path) -> dict:
     spec_pfad = spec_pfad.resolve()
-    spec = lade_spec(spec_pfad)
+    spec = lade_spec_beliebig(spec_pfad)
     stand = status(spec_pfad)
     alle = stand["laeufe"]
     letzter = alle[-1]["lauf"] if alle else None

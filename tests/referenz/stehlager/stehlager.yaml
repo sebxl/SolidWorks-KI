@@ -1,0 +1,65 @@
+# Referenz Stehlager (Spec 3b §2, §16): Grundplatte, Lagerunterteil, Lagerdeckel; Deckel mit 2 × ISO 4762 M8 × 35 in
+# Gewinde, Unterteil mit 2 Durchsteckverschraubungen ISO 4762 M10 × 55 + 2 × ISO 7089 + ISO 4032, zentriert mit
+# 2 × ISO 8734 8 × 30. Achshöhe H über der Grundplatten-Unterseite.
+art: baugruppe
+name: Stehlager
+eigenschaften: {Benennung: Stehlager}
+parameter: {H: 70}
+komponenten:
+  - {id: grundplatte, quelle: {teil: grundplatte.yaml}, fixiert: true}
+  - {id: unterteil, quelle: {teil: unterteil.yaml}}
+  - {id: deckel, quelle: {teil: deckel.yaml}}
+  - {id: stift, quelle: {normteil: "ISO 8734 8x30"}, je_position: {komponente: grundplatte, feature: f3}}
+  - {id: deckelschraube, quelle: {normteil: "ISO 4762 M8x35"}, je_position: {komponente: deckel, feature: f2}}
+  - {id: scheibe_kopf, quelle: {normteil: "ISO 7089 M10"}, je_position: {komponente: unterteil, feature: f5}}
+  - {id: fussschraube, quelle: {normteil: "ISO 4762 M10x55"}, je_position: {komponente: unterteil, feature: f5}}
+  - {id: scheibe_mutter, quelle: {normteil: "ISO 7089 M10"}, je_position: {komponente: unterteil, feature: f5}}
+  - {id: mutter, quelle: {normteil: "ISO 4032 M10"}, je_position: {komponente: unterteil, feature: f5}}
+verknuepfungen:
+  # Unterteil auf der Grundplatte: Fuß aufliegend, Stiftbohrung 1 über Stiftbohrung 1, Seiten parallel
+  - {id: v1, typ: deckungsgleich, a: {komponente: unterteil, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v2, typ: konzentrisch, a: {komponente: unterteil, feature: f6, instanz: 1, achse: true},
+     b: {komponente: grundplatte, feature: f3, instanz: 1, achse: true}}
+  - {id: v3, typ: parallel, a: {komponente: unterteil, feature: f1, flaeche: "+x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+x"}, ausrichtung: gleich}
+  # Deckel auf der Trennebene, Schraubenbohrung 1 über Gewinde 1, Seiten parallel
+  - {id: v4, typ: deckungsgleich, a: {komponente: deckel, referenz: TRENNEBENE},
+     b: {komponente: unterteil, referenz: TRENNEBENE}, ausrichtung: gleich}
+  - {id: v5, typ: konzentrisch, a: {komponente: deckel, feature: f2, instanz: 1, achse: true},
+     b: {komponente: unterteil, feature: f3, instanz: 1, achse: true}}
+  - {id: v6, typ: parallel, a: {komponente: deckel, feature: f1, flaeche: "+x"},
+     b: {komponente: unterteil, feature: f2, flaeche: "+x"}, ausrichtung: gleich}
+  # Stifte bündig mit der Grundplatten-Unterseite
+  - {id: v10, typ: deckungsgleich, a: {komponente: stift, referenz: EINBAU_EBENE_1},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-y"}, ausrichtung: entgegengesetzt}
+  - {id: v11, typ: konzentrisch, a: {komponente: stift, referenz: EINBAU_ACHSE},
+     b: {komponente: grundplatte, feature: f3, instanz: je, achse: true}}
+  # Deckelschrauben: Kopf auf dem Senkungsgrund
+  - {id: v20, typ: deckungsgleich, a: {komponente: deckelschraube, referenz: EINBAU_EBENE},
+     b: {komponente: deckel, feature: f2, instanz: je, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v21, typ: konzentrisch, a: {komponente: deckelschraube, referenz: EINBAU_ACHSE},
+     b: {komponente: deckel, feature: f2, instanz: je, achse: true}}
+  # Durchsteckverschraubung: Scheibe auf dem Fuß, Kopf auf der Scheibe, Scheibe und Mutter unter der Grundplatte
+  - {id: v30, typ: deckungsgleich, a: {komponente: scheibe_kopf, referenz: EINBAU_EBENE},
+     b: {komponente: unterteil, feature: f1, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v31, typ: konzentrisch, a: {komponente: scheibe_kopf, referenz: EINBAU_ACHSE},
+     b: {komponente: unterteil, feature: f5, instanz: je, achse: true}}
+  - {id: v32, typ: deckungsgleich, a: {komponente: fussschraube, referenz: EINBAU_EBENE},
+     b: {komponente: scheibe_kopf, referenz: EINBAU_EBENE_2}, ausrichtung: gleich}
+  - {id: v33, typ: konzentrisch, a: {komponente: fussschraube, referenz: EINBAU_ACHSE},
+     b: {komponente: unterteil, feature: f5, instanz: je, achse: true}}
+  - {id: v34, typ: deckungsgleich, a: {komponente: scheibe_mutter, referenz: EINBAU_EBENE},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-y"}, ausrichtung: gleich}
+  - {id: v35, typ: konzentrisch, a: {komponente: scheibe_mutter, referenz: EINBAU_ACHSE},
+     b: {komponente: unterteil, feature: f5, instanz: je, achse: true}}
+  - {id: v36, typ: deckungsgleich, a: {komponente: mutter, referenz: EINBAU_EBENE},
+     b: {komponente: scheibe_mutter, referenz: EINBAU_EBENE_2}, ausrichtung: gleich}
+  - {id: v37, typ: konzentrisch, a: {komponente: mutter, referenz: EINBAU_ACHSE},
+     b: {komponente: unterteil, feature: f5, instanz: je, achse: true}}
+pruefung:
+  huellquader: [200, 113, 100]
+  masse_pruefen:
+    - {was: Achshöhe Unterteil, von: {komponente: grundplatte, feature: f1, flaeche: "-y"}, zu: {komponente: unterteil, referenz: TRENNEBENE}, soll: "=H"}
+    - {was: Deckel auf der Trennebene, von: {komponente: deckel, referenz: TRENNEBENE}, zu: {komponente: grundplatte, feature: f1, flaeche: "-y"}, soll: "=H"}
+    - {was: Stift bündig, von: {komponente: stift.1, referenz: EINBAU_EBENE_1}, zu: {komponente: grundplatte, feature: f1, flaeche: "-y"}, soll: 0}
