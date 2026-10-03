@@ -157,3 +157,73 @@ def test_stueckliste_schreibungsunabhaengig(bg):
     assert bericht["bestanden"], bericht["maengel"]
     m.stueckliste["ISO4762_M8x16_8_8.SLDPRT"] = 1
     assert _maengel(_bewerte(bg, m))["stueckliste"]["knoten"] == []
+
+
+def test_fixierte_komponente_ueberbestimmt(bg):
+    m = _messwerte(bg)
+    m.komponenten["platte"]["status"] = 4
+    mangel = _maengel(_bewerte(bg, m))["bestimmtheit"]
+    assert mangel["knoten"] == ["platte"] and "überbestimmt" in mangel["beschreibung"]
+
+
+def test_fixierte_komponente_status_voll_bestimmt_ist_kein_mangel(bg):
+    m = _messwerte(bg)
+    m.komponenten["platte"]["status"] = 3
+    assert _bewerte(bg, m)["bestanden"]
+
+
+def test_huellquader(bg):
+    bg.spec["pruefung"]["huellquader"] = [100, 35, 60]
+    bericht = _bewerte(bg, _messwerte(bg))
+    assert bericht["bestanden"], bericht["maengel"]
+    assert next(p for p in bericht["pruefungen"] if p["id"] == "huellquader")["ist"] == [100.0, 35.0, 60.0]
+
+
+def test_huellquader_abweichend(bg):
+    bg.spec["pruefung"]["huellquader"] = [100, 35, 60]
+    mangel = _maengel(_bewerte(bg, _messwerte(bg, box=[-50.0, 0.0, -30.0, 50.0, 35.5, 30.0])))["huellquader"]
+    assert "ist [100.0, 35.5, 60.0] statt [100.0, 35.0, 60.0]" in mangel["beschreibung"]
+
+
+def test_huellquader_eigene_toleranz(bg):
+    bg.spec["pruefung"]["huellquader"] = [100, 35, 60]
+    bg.spec["pruefung"]["huellquader_tol"] = 1.0
+    assert _bewerte(bg, _messwerte(bg, box=[-50.0, 0.0, -30.0, 50.0, 35.5, 30.0]))["bestanden"]
+
+
+def test_masse_innerhalb_toleranz(bg):
+    bg.spec["pruefung"]["masse"] = {"soll": 1.2, "toleranz_prozent": 2}
+    bericht = _bewerte(bg, _messwerte(bg, masse_kg=1.21))   # 0,83 % Abweichung
+    assert bericht["bestanden"], bericht["maengel"]
+    assert bericht["masse_kg"] == 1.21
+
+
+def test_masse_ausserhalb_toleranz(bg):
+    bg.spec["pruefung"]["masse"] = {"soll": 1.2, "toleranz_prozent": 2}
+    mangel = _maengel(_bewerte(bg, _messwerte(bg, masse_kg=1.3)))["masse"]   # 8,3 % Abweichung
+    assert "ist 1.3 statt 1.2" in mangel["beschreibung"]
+
+
+def test_masse_vorgabetoleranz_aus_standard(bg):
+    bg.spec["pruefung"]["masse"] = {"soll": 1.2}   # Vorgabe 0,5 %
+    assert "masse" in _maengel(_bewerte(bg, _messwerte(bg, masse_kg=1.21)))
+    assert _bewerte(bg, _messwerte(bg, masse_kg=1.203))["bestanden"]
+
+
+def test_masse_ohne_vorgabe_nur_berichtet(bg):
+    bericht = _bewerte(bg, _messwerte(bg, masse_kg=7.77))
+    assert bericht["bestanden"] and bericht["masse_kg"] == 7.77
+    assert "masse" not in {p["id"] for p in bericht["pruefungen"]}
+
+
+def test_gewinde_durch_ohne_volumenpruefung(bg):
+    f2 = next(f for f in bg.quellen["platte"].spec["features"] if f["id"] == "f2")
+    f2["durch"] = True
+    del f2["tiefe"], f2["gewindetiefe"]
+    m = _messwerte(bg)
+    m.interferenzen[0]["volumen"] = 1.0   # beliebiges Volumen: bei durch nicht gegen ein Soll geprüft
+    bericht = _bewerte(bg, m)
+    assert bericht["bestanden"], bericht["maengel"]
+    pruefung = next(p for p in bericht["pruefungen"] if p["id"] == "gewinde:schraube.1")
+    assert pruefung["ok"] is None and "durch" in pruefung["hinweis"] and pruefung["ist"] == 1.0
+    assert [g["einschraublaenge"] for g in bericht["gewindepaarungen"]] == [9.6, 9.6]

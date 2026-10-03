@@ -14,7 +14,7 @@ from swki.spec.normen import norm_von, normmasse
 
 STATUS_TEXT = {1: "unbekannt", 2: "unterbestimmt", 3: "voll bestimmt", 4: "überbestimmt", 5: "keine Lösung",
                6: "ungültige Lösung", 7: "Lösen ausgeschaltet"}  # swConstrainedStatus_e
-VOLL_BESTIMMT, UNTERBESTIMMT = 3, 2
+VOLL_BESTIMMT, UNTERBESTIMMT, UEBERBESTIMMT = 3, 2, 4
 TOL_GEWINDE_PROZENT = 1.0  # Spike S12 Zeile 9
 TOL_LAENGE = 0.01
 _TOL_HUELLQUADER = 0.01
@@ -127,7 +127,9 @@ def _bestimmtheit(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte
         if w is None:
             grund = "fehlt in der Baugruppe"
         elif i.komponente in fix:
-            grund = None if w["fixiert"] else "nicht fixiert"
+            # Status der fixierten Komponente ist sonst beliebig (Spike S12 Zeile 7: 3); überbestimmt ist immer ein Mangel
+            grund = ("nicht fixiert" if not w["fixiert"]
+                     else STATUS_TEXT[UEBERBESTIMMT] if w["status"] == UEBERBESTIMMT else None)
         elif w["fixiert"]:
             grund = "unerwartet fixiert"
         elif w["status"] == VOLL_BESTIMMT or (w["status"] == UNTERBESTIMMT and _erlaubt_unterbestimmt(spec, i.id)):
