@@ -51,24 +51,32 @@ def _baue_und_pruefe(capsys, pfad: Path) -> dict:
 
 
 def _maengel(bericht: dict) -> dict:
+    assert bericht["bestanden"] is False, bericht
     return {m["pruefung"]: m for m in bericht["maengel"]}
 
 
 def test_zu_lange_deckelschraube(capsys, auftrag):
+    # M8 × 40 statt × 35: Einschraublänge 18,6 mm > Gewindetiefe 16 mm, an beiden Deckelschrauben; sonst nichts
     pfad = _aendere(auftrag, lambda s: _komponente(s, "deckelschraube").update(quelle={"normteil": "ISO 4762 M8x40"}))
     maengel = _maengel(_baue_und_pruefe(capsys, pfad))
-    assert "Einschraublänge 18.60" in maengel["gewinde:deckelschraube.1"]["beschreibung"], maengel
+    assert set(maengel) == {"gewinde:deckelschraube.1", "gewinde:deckelschraube.2"}, maengel
+    for i in (1, 2):
+        assert "Einschraublänge 18.60" in maengel[f"gewinde:deckelschraube.{i}"]["beschreibung"], maengel
 
 
 def test_ueberlappung(capsys, auftrag):
+    # Stift 8 × 40 statt × 30: beide Stifte ragen 8 mm über die Stiftbohrungen (Tiefe 12) in den Fuß des Unterteils
     pfad = _aendere(auftrag, lambda s: _komponente(s, "stift").update(quelle={"normteil": "ISO 8734 8x40"}))
     maengel = _maengel(_baue_und_pruefe(capsys, pfad))
-    assert {"stift.1", "unterteil"} <= set(maengel["kollision"]["knoten"]), maengel
+    assert set(maengel) == {"kollision"}, maengel
+    assert {"stift.1", "stift.2", "unterteil"} <= set(maengel["kollision"]["knoten"]), maengel
 
 
 def test_unterbestimmte_komponente(capsys, auftrag):
+    # ohne v3 (parallel) dreht das Unterteil frei um die Stiftachse
     pfad = _aendere(auftrag, lambda s: s.update(verknuepfungen=[v for v in s["verknuepfungen"] if v["id"] != "v3"]))
     maengel = _maengel(_baue_und_pruefe(capsys, pfad))
+    assert set(maengel) == {"bestimmtheit"}, maengel
     assert "unterteil" in maengel["bestimmtheit"]["knoten"], maengel
 
 
@@ -82,5 +90,6 @@ def test_manuelle_aenderung_in_der_baugruppe(capsys, auftrag):
     assert code == 1 and daten["code"] == "MANUELL_GEAENDERT", daten
     code, daten = _lauf(capsys, "aenderungen", str(pfad))
     assert code == 0, daten
-    eintrag = next(e for e in daten["geaendert"] if e["datei"] == f"{AUFTRAG}_Grundplatte.sldprt")
-    assert eintrag["parameter"] == [{"name": "L", "soll": 200, "ist": 210.0}]
+    assert [e["datei"] for e in daten["geaendert"]] == [f"{AUFTRAG}_Grundplatte.sldprt"], daten  # nur die Grundplatte
+    assert daten["geaendert"][0]["parameter"] == [{"name": "L", "soll": 200, "ist": 210.0}]
+    assert daten["fehlend"] == [], daten

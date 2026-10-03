@@ -67,3 +67,31 @@ def test_manuelle_aenderung_am_teil(capsys, tmp_path):
         assert code == 0 and bau["lauf"] == 2, bau
     finally:
         shutil.rmtree(lade_rechner().arbeitsordner / AUFTRAG, ignore_errors=True)
+
+
+def test_uebernahme_am_teil(capsys, tmp_path):
+    """Spec 3b §8 „übernehmen“: Handänderung in die Spec übernehmen, neu freigeben, mit --uebernommen bauen."""
+    spec_pfad = tmp_path / AUFTRAG / "platte.yaml"
+    spec_pfad.parent.mkdir()
+    spec_pfad.write_text(yaml.safe_dump(SPEC, allow_unicode=True), encoding="utf-8")
+    try:
+        assert _lauf(capsys, "freigeben", str(spec_pfad))[0] == 0
+        code, bau = _lauf(capsys, "bauen", str(spec_pfad))
+        assert code == 0, bau
+        _setze_parameter(lauf_ordner(lade_rechner(), AUFTRAG, 1) / f"{AUFTRAG}_Platte.sldprt", "L", 120)
+        code, daten = _lauf(capsys, "bauen", str(spec_pfad), "--uebernommen")  # noch nicht neu freigegeben
+        assert code == 1 and daten["code"] == "UEBERNAHME_OHNE_NEUE_FREIGABE", daten
+        uebernommen = {**SPEC, "parameter": {**SPEC["parameter"], "L": 120}}
+        spec_pfad.write_text(yaml.safe_dump(uebernommen, allow_unicode=True), encoding="utf-8")
+        assert _lauf(capsys, "validieren", str(spec_pfad))[0] == 0
+        assert _lauf(capsys, "freigeben", str(spec_pfad))[0] == 0
+        code, bau = _lauf(capsys, "bauen", str(spec_pfad), "--uebernommen")
+        assert code == 0 and bau["lauf"] == 2, bau
+        protokoll = json.loads((spec_pfad.parent / "protokolle" / "platte.lauf-2.protokoll.json").read_text(encoding="utf-8"))
+        assert protokoll["uebernommen"]["lauf"] == 1 and not protokoll.get("verworfen"), protokoll
+        code, bericht = _lauf(capsys, "pruefen", str(spec_pfad))
+        assert code == 0 and bericht["maengel"] == [], bericht["maengel"]
+        code, bau = _lauf(capsys, "bauen", str(spec_pfad))  # Lauf 2 ist unverändert: ohne Schalter
+        assert code == 0 and bau["lauf"] == 3, bau
+    finally:
+        shutil.rmtree(lade_rechner().arbeitsordner / AUFTRAG, ignore_errors=True)
