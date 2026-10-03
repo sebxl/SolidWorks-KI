@@ -181,3 +181,43 @@ def test_aenderungen_ohne_geaenderte_datei(umgebung, monkeypatch):
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: pytest.fail("ohne Änderung kein SolidWorks"))
     ergebnis = aenderungen.aenderungen(spec_pfad)
     assert (ergebnis["lauf"], ergebnis["geaendert"], ergebnis["fehlend"]) == (1, [], [])
+
+
+def test_aenderungen_bei_aufgeraeumtem_lauf_ordner(umgebung, monkeypatch):
+    import shutil
+
+    r, spec_pfad = umgebung
+    datei = _lauf(r, spec_pfad, 1)
+    shutil.rmtree(datei.parent)
+    monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
+    monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: pytest.fail("ohne Lauf-Ordner nichts vergleichen"))
+    ergebnis = aenderungen.aenderungen(spec_pfad)
+    assert (ergebnis["lauf"], ergebnis["geaendert"], ergebnis["fehlend"]) == (1, [], [])
+    assert "Lauf-Ordner" in ergebnis["text"]
+
+
+def test_aenderungen_ohne_aenderung_braucht_keine_freigabe(umgebung, monkeypatch):
+    r, spec_pfad = umgebung
+    _lauf(r, spec_pfad, 1)  # keine Freigabe abgelegt
+    monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
+    monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: pytest.fail("ohne Änderung kein SolidWorks"))
+    ergebnis = aenderungen.aenderungen(spec_pfad)
+    assert (ergebnis["lauf"], ergebnis["geaendert"], ergebnis["fehlend"]) == (1, [], [])
+
+
+def test_aenderungen_oeffnet_normteil_kopie_nicht(umgebung, monkeypatch):
+    r, spec_pfad = umgebung
+    datei = _lauf(r, spec_pfad, 1)
+    kopie = datei.parent / "ISO4762_M8x30_8_8.sldprt"
+    kopie.write_bytes(b"normteil")
+    protokoll_pfad = lauf_datei(spec_pfad, 1, "protokoll")
+    protokoll = json.loads(protokoll_pfad.read_text(encoding="utf-8"))
+    protokoll["sha256"] |= pruefsummen(datei.parent, [kopie])
+    protokoll_pfad.write_text(json.dumps(protokoll), encoding="utf-8")
+    kopie.write_bytes(b"von Hand geaendert")
+    monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
+    monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100}})
+    monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: pytest.fail("Normteil-Kopie ohne Soll nicht öffnen"))
+    ergebnis = aenderungen.aenderungen(spec_pfad)
+    assert ergebnis["geaendert"] == [{"datei": "ISO4762_M8x30_8_8.sldprt", "parameter": [],
+                                      "hinweis": "keine Spezifikation zu dieser Datei (Normteil-Kopie)"}]

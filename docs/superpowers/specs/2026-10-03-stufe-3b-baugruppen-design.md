@@ -2,7 +2,7 @@
 
 Ergänzung zu [2026-09-26-solidworks-ki-design.md](2026-09-26-solidworks-ki-design.md) (§3 Projektstruktur, §4 Spezifikation,
 §5 Compiler, §6 Prüfung, §9 Skills, §11 Stufen) und [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md)
-(Einbaureferenzen, Bibliothek). Stand 2026-10-03, mit dem Nutzer abgestimmt.
+(Einbaureferenzen, Bibliothek). Stand 2026-10-03, mit dem Nutzer abgestimmt; nach der Umsetzung nachgezogen (Aufräumen nach 3b): §4.4, §8, §11, §12.
 
 ## 1. Ziel
 
@@ -128,9 +128,12 @@ ISO 4032 Körper y ∈ [0, m]; ISO 7089 Körper y ∈ [0, h], **neu `EINBAU_EBEN
 - `id`, `typ`, `a`, `b` und je nach Typ `ausrichtung`, `wert`, `drehung_sperren`.
 - Typen: `deckungsgleich`, `konzentrisch`, `parallel`, `senkrecht`, `abstand` (`wert` in mm), `winkel` (`wert` in Grad).
 - `ausrichtung: gleich | entgegengesetzt` ist Pflicht bei `deckungsgleich`, `parallel`, `abstand` und `winkel`; `validieren`
-  meldet das Fehlen. Bei `konzentrisch` ist sie optional: Ohne Angabe wählt swki die Ausrichtung, die zur schon festgelegten
-  Richtung der Komponente passt (Verfahren im Plan nach Spike S12c); mit Angabe gilt sie. „Nächstliegend“ als Vorgabe gibt
-  es nicht, weil das Ergebnis von der Einfügelage abhinge.
+  meldet das Fehlen. Bei `konzentrisch` ist sie optional: Ohne Angabe legt swki die Verknüpfung mit „nächstliegend“
+  (swMateAlignCLOSEST) an; nach einer vorherigen Ebenen-Verknüpfung mit Ausrichtung ist das die schon festgelegte Richtung der
+  Komponente (Regel „Ebene vor Achse“ im Skill `baugruppe`). Als Wert der Spezifikation gibt es „nächstliegend“ nicht.
+  SolidWorks kehrt die Ausrichtung einer früheren Verknüpfung still um, wenn eine spätere widerspricht (Spike S12 Zeile 5,
+  ohne Status oder Fehlercode); swki liest deshalb nach jeder Verknüpfung die ausdrücklich gesetzten Ausrichtungen zurück und
+  bricht bei einer Umkehr mit `VERKNUEPFUNG_FEHLER` „<id> kehrt die Ausrichtung von <name> um“ ab.
 - `drehung_sperren` (nur `konzentrisch`): Vorgabe `true`, wenn eine Seite ein Normteil ist, sonst `false`.
 - `wert` ist bevorzugt ein Ausdruck über `parameter` (`"=H"`); feste Zahlen meldet `validieren` als Hinweis `feste_zahl`.
 - Reihenfolge: wie in der Spec; eine vervielfältigte Verknüpfung steht mit allen Instanzen an ihrer Stelle
@@ -277,6 +280,8 @@ JSON mit `code`, Exit 1. Neu:
 | `VERKNUEPFUNG_FEHLER` | Verknüpfung nicht angelegt oder mit Fehlerstatus | Knoten-ID, Schritt, SW-Meldung |
 | `REFERENZ_NICHT_GEFUNDEN` / `REFERENZ_MEHRDEUTIG` | wie beim Teil | zusätzlich Komponente |
 | `MANUELL_GEAENDERT` | Änderungserkennung (§8) | Lauf, geänderte bzw. fehlende Dateien |
+| `UEBERNAHME_OHNE_NEUE_FREIGABE` | `swki bauen --uebernommen`, aber die Freigabe ist nicht neuer als der verglichene Lauf (§8) | Lauf, geänderte bzw. fehlende Dateien |
+| `SCHLIESSEN_FEHLER` | ein Dokument ließ sich nach dem Bau nicht schließen (ohne früheren Fehler) | Typ und Meldung der Ausnahme |
 
 `FREIGABE_VERALTET` nennt zusätzlich die betroffene Spec. Normteil-Codes aus 3a werden mit der Komponenten-ID weitergereicht.
 
@@ -284,8 +289,9 @@ JSON mit `code`, Exit 1. Neu:
 
 - **ISO 7089:** neue Vorlagenversion mit `EINBAU_ACHSE`, `EINBAU_EBENE` (y = 0) und **`EINBAU_EBENE_2` (y = h)**, gemessen;
   neues Prüfer-Urteil.
-- **ISO 8734:** neue Vorlagenversion: `EINBAU_EBENE_2` gegen +y mit Soll 0 gemessen (statt nur als Betrag) und `c` direkt
-  gemessen; neues Prüfer-Urteil.
+- **ISO 8734:** neue Vorlagenversion: `EINBAU_EBENE_2` gegen +y mit Soll 0 gemessen (statt nur als Betrag); `c` bleibt über
+  das Volumen belegt, weil es keine Messart für Fasen gibt (Präzisierung 3 der Umsetzung; eine Messart für Fasen ist ein
+  späteres eigenes Paket); neues Prüfer-Urteil.
 - ISO 4762 und ISO 4032 bleiben unverändert. Bibliotheksteile alter Vorlagenversionen werden beim nächsten `hole` neu gebaut
   (Prüfsumme).
 

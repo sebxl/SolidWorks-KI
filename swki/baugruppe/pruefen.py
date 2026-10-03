@@ -9,7 +9,7 @@ from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeuf
 from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import basis, instanzen
 from swki.baugruppe.bewertung import BaugruppenMesswerte, bewerte_baugruppe, stueckliste_soll
-from swki.baugruppe.freigabe import freigegebene_teile, pruefe_freigabe_baugruppe
+from swki.baugruppe.freigabe import freigegebene_quellen, freigegebene_teile, pruefe_freigabe_baugruppe
 from swki.baugruppe.geometrie import transformiere
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, dokument_name
@@ -162,7 +162,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         sw.schliesse(app, asm)
     bericht = {
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(asm_pfad), "art": "baugruppe",
-        **bewerte_baugruppe(bg.spec, bg.quellen, messwerte, standard, stueckliste_soll(bg.spec, bg.quellen, auftrag, standard)),
+        **bewerte_baugruppe(bg.spec, bg.quellen, messwerte, standard, stueckliste_soll(bg.spec, freigegebene_quellen(bg), auftrag, standard)),
         "normteile": protokoll.get("normteile", {}), "bilder": bilder,
     }
     schreibe_pruefbericht(spec_pfad, lauf, ordner, bericht)

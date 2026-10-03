@@ -36,19 +36,28 @@ def vorbereiten(app, model, spec: dict, auftrag: str) -> None:
 
 def baue_teil_dokument(app, r, standard: dict, spec: dict, spec_pfad: Path, auftrag: str, protokoll: Protokoll):
     """Neues Teil aus der Vorlage, Parameter/Werkstoff/Eigenschaften, Features (auch von swki.baugruppe.bau genutzt).
-    Liefert (model, ctx, fehler); das Dokument bleibt offen – der Aufrufer speichert und schließt es."""
+    Liefert (model, ctx, fehler); das Dokument bleibt offen – der Aufrufer speichert und schließt es. Bei einer
+    unerwarteten Ausnahme (nicht als fehler zurückgegeben) wird das eigene Dokument geschlossen und die Ausnahme
+    weitergereicht, damit kein Teil in SolidWorks offen bleibt."""
     with protokoll.phase("vorbereiten"):
         model = sw.neues_teil(app, r.vorlage_teil)
-    ctx = Kontext(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"])
-    fehler = None
     try:
-        with protokoll.phase("vorbereiten"):
-            vorbereiten(app, model, spec, auftrag)
-    except Exception as e:  # z. B. MATERIAL_UNBEKANNT
-        fehler = e
-    if fehler is None:
-        with protokoll.phase("bauen"):
-            fehler = baue_features(ctx, protokoll, alle_handler(), lambda c: sw.rebuild(c.model))
+        ctx = Kontext(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"])
+        fehler = None
+        try:
+            with protokoll.phase("vorbereiten"):
+                vorbereiten(app, model, spec, auftrag)
+        except Exception as e:  # z. B. MATERIAL_UNBEKANNT
+            fehler = e
+        if fehler is None:
+            with protokoll.phase("bauen"):
+                fehler = baue_features(ctx, protokoll, alle_handler(), lambda c: sw.rebuild(c.model))
+    except BaseException:
+        try:
+            sw.schliesse(app, model)
+        except Exception:  # die Ursache geht vor: ein Schließfehler darf sie nicht verdecken
+            pass
+        raise
     return model, ctx, fehler
 
 

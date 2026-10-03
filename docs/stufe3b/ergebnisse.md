@@ -205,23 +205,65 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
   (`freigegeben` in `freigabe.json`) strikt neuer ist als der Beginn dieses Laufs (`gestartet` im Protokoll; fehlt es, die Änderungszeit der Protokolldatei, die am Laufende
   geschrieben wird). Sonst Fehler **`UEBERNAHME_OHNE_NEUE_FREIGABE`** („Freigabe ist nicht neuer als Lauf n“) – ein eigener Code, weil `MANUELL_GEAENDERT` die Rückfrage
   übernehmen/verwerfen auslöst, die Abhilfe hier aber „übernehmen und neu freigeben“ lautet. Das Protokoll vermerkt den Befund unter `uebernommen` (analog `verworfen`).
-  Ohne Abweichung ist der Schalter wirkungslos. Skills `baugruppe`/`konstruieren`, `CLAUDE.md` und Spec §8 sind nachgezogen; Unit-Tests ohne SolidWorks, ein Live-Test
-  „übernehmen → neu freigeben → bauen“ steht aus.
+  Ohne Abweichung ist der Schalter wirkungslos. Skills `baugruppe`/`konstruieren`, `CLAUDE.md` und Spec §8 sind nachgezogen; Unit-Tests ohne SolidWorks, ~~ein Live-Test
+  „übernehmen → neu freigeben → bauen“ steht aus~~ (erledigt: Aufräumen nach 3b, Task 6).
 - **Zwei Commits je Live-Task:** Unit-Teil zuerst, Live-Teil nachgeholt, sobald SolidWorks frei war (bewährtes Muster aus 3a).
+
+## Aufräumen nach 3b (Stand 03.10.2026)
+
+Branch `aufraeumen-3b` (von `plan-aufraeumen-3b`), Rechner A (SolidWorks 2025), ohne Push. Plan: `docs/superpowers/plans/2026-10-03-aufraeumen-nach-3b.md`.
+
+| Task | Inhalt | Commit |
+|---|---|---|
+| 1 | `baugruppe`: Stückliste-Soll aus den Freigabe-Kopien der Teil-Specs (+1 Test) | 3256a1a |
+| 2 | `bauen`: Teil-Dokument bei unerwarteter Ausnahme schließen (+2) | 7397ef3 |
+| 3 | `baugruppe`: `verknuepfe` löscht die Verknüpfung auch bei fremden Ausnahmen, Ausrichtung vor der Gleichung (+2) | 4af1939 |
+| 4 | `aenderungen`: Hinweis bei aufgeräumtem Lauf, Soll nur bei Änderungen, Normteil-Kopien nicht öffnen (+3) | 0f0eb3c |
+| 5 | `baugruppe`: nicht eingefügte Komponenten als `uebersprungen`, Tests für Reihenfolge und Bibliothek (+3) | fe3e268 |
+| 6 | `live`: Übernahme am Teil belegt, Negativfälle am Stehlager mit vollständiger Mängelmenge (+1 Live-Test) | c665779 |
+| 7 | Doku: Spec 3b nachgezogen (§4.4, §8, §11, §12), Ergebnisse, `CLAUDE.md`, `auftraege/` ignoriert | a7e9150 |
+| Fix-Welle | Gesamt-Review: F1 `bauen` vermerkt Komponenten und Verknüpfungen auch nach geworfener Ausnahme als `uebersprungen` (+1); F2 Schließ-/Löschfehler verdecken die Ursache nicht (`baue_teil_dokument` +1, `verknuepfe` +2); F3/F4 Doku und offene Punkte | siehe Git-Log |
+
+Unit-Tests: 607 → 622 bestanden, 108 → 109 abgewählt (+11 Unit-Tests bis Task 7, +4 in der Fix-Welle, +1 Live-Test).
+
+Live-Ergebnisse (Task 6; je Test einzeln mit `--zeit 600`, SolidWorks 2025; vor und nach den Läufen eine Instanz, `False 1`, 0 offene Dokumente).
+Private Bytes von `SLDWORKS.exe`; der Controller startete SolidWorks fünfmal neu (vor der Stehlager-Referenz und vor jedem der vier
+Stehlager-Negativfälle bzw. bei ≥ 3 GB). Alle 11 Live-Tests OK, Mängelmengen der Negativfälle wie erwartet, keine Zusatzmängel:
+
+| Datei / Test | Ergebnis | Laufzeit | Private Bytes vorher → nachher |
+|---|---|---|---|
+| `test_live_aenderungen.py::test_manuelle_aenderung_am_teil` | OK | 18 s | 279 → 871 MB |
+| `test_live_aenderungen.py::test_uebernahme_am_teil` (neu) | OK | 25 s | 871 → 1174 MB |
+| `test_live_bauen.py::test_bauen_ohne_freigabe_verweigert` | OK | 1 s | 1174 → 1174 MB |
+| `test_live_bauen.py::test_freigeben_und_bauen` | OK | 19 s | 1174 → 1254 MB |
+| `test_live_bauen.py::test_bauabbruch_wird_protokolliert` | OK | 10 s | 1254 → 1258 MB |
+| `test_live_baugruppe.py::test_probe_besteht_pruefung` | OK | 58 s | 1259 → 3365 MB |
+| `test_referenzen.py::test_referenz_besteht[stehlager-stehlager.yaml]` | OK | 125 s | 426 → 3656 MB |
+| `test_live_stehlager.py::test_zu_lange_deckelschraube` | OK | 154 s | 425 → 3390 MB |
+| `test_live_stehlager.py::test_ueberlappung` | OK | 174 s | 427 → 3777 MB |
+| `test_live_stehlager.py::test_unterbestimmte_komponente` | OK | 189 s | 427 → 3382 MB |
+| `test_live_stehlager.py::test_manuelle_aenderung_in_der_baugruppe` | OK | 177 s | 424 → 2306 MB |
+
+Endstand: eine Instanz, 0 Dokumente offen, 2306 MB Private Bytes, Einstellungen `False 1`. Kein Prüfwert wurde angepasst.
 
 ## Offene Punkte
 
-- **Spec 3b nicht nachgezogen (Ruling G):** Spec §4.4, §11, §12 weichen von der Umsetzung ab (siehe Präzisierungen); bei Wunsch eine kleine Doku-Änderung. Nachgezogen ist nur §8
-  (`--uebernommen`, Ruling H); `UEBERNAHME_OHNE_NEUE_FREIGABE` fehlt wie `SCHLIESSEN_FEHLER` noch in der Fehlertabelle §11.
+- **Messarten (eigenes Paket, Nutzerentscheidung 2026-10-03):** Fasen (`c` ISO 8734, `p`/Kopffase ISO 4762), Volumen bei Gewinde `durch`, Achshöhe der Lagerbohrung im Stehlager.
+- ~~**Spec 3b nicht nachgezogen (Ruling G):** Spec §4.4, §11, §12 weichen von der Umsetzung ab (siehe Präzisierungen); bei Wunsch eine kleine Doku-Änderung. Nachgezogen ist nur §8
+  (`--uebernommen`, Ruling H); `UEBERNAHME_OHNE_NEUE_FREIGABE` fehlt wie `SCHLIESSEN_FEHLER` noch in der Fehlertabelle §11.~~ (erledigt: Aufräumen nach 3b, Task 7)
 - **`c` bei ISO 8734** nur über das Volumen belegt (Präzisierung 3); gilt auch für `p` und die Kopffase bei ISO 4762 aus 3a. Eine Messart für Fasen
-  wäre ein eigenes Paket.
+  wäre ein eigenes Paket. (Spec nachgezogen: Aufräumen nach 3b, Task 7; die Messart bleibt offen, siehe „Messarten“.)
 - **Gewinde `durch`:** keine Volumenprüfung (Bohrungslänge nicht in der Spec); Gewinde mit `tiefe` werden geprüft.
 - **Grundplatte:** `volumen` ist `ok: null` (Sollvolumen bei Bohrung `durch` nicht berechenbar); Unterteil und Deckel haben kein Volumenziel.
+- **Live-Negativfälle Stehlager (Teilmenge):** Die Live-Negativfälle prüfen die Knoten der Mängel `kollision`/`bestimmtheit` nur als Teilmenge (`<=`/`in`); ein zusätzlich
+  betroffenes Teil fiele nicht auf. Schärfen bei der nächsten Live-Regression (braucht Live-Läufe).
+- **`verknuepfe`, Gleichung nach `rebuild`-Fehler:** Wirft `sw.rebuild` nach erfolgreichem `Add2`, bleibt die Gleichung `"D1@<id>"` im Diagnosestand des gescheiterten
+  Laufs stehen (der nächste Lauf baut neu).
 - **Rechner B (SW 2026):** nicht gelaufen; die Vorlagen und das Stehlager müssen dort einmal bestehen.
 - **Speicher:** ein Baugruppenlauf kostet 3–4 GB; größere Baugruppen brauchen mehr Neustarts, ein Ablauf mit Speichergrenze im Compiler steht aus.
-- **Aus dem Gesamt-Review, bewusst offen:** Stückliste-Soll und Instanzzahlen der `je_position`-Komponenten folgen dem Bauweg der aktuellen Spec (bei `bohrung` fängt nur
-  `masse_pruefen` eine zusätzliche Position, und das nicht sicher; Abhilfe: `stueckliste_soll` aus den Freigabe-Kopien bilden); die eigene Ausrichtung der neuen Verknüpfung wird nicht
-  zurückgelesen (nur frühere Einträge); `aenderungen` öffnet Normteil-Kopien, bevor feststeht, dass es kein Soll gibt (`name not in soll` vorher prüfen); PR-Beschreibung: veraltete
+- **Aus dem Gesamt-Review, bewusst offen:** ~~Stückliste-Soll und Instanzzahlen der `je_position`-Komponenten folgen dem Bauweg der aktuellen Spec (bei `bohrung` fängt nur
+  `masse_pruefen` eine zusätzliche Position, und das nicht sicher; Abhilfe: `stueckliste_soll` aus den Freigabe-Kopien bilden)~~ (erledigt: Aufräumen nach 3b, Task 1); die eigene Ausrichtung der neuen Verknüpfung wird nicht
+  zurückgelesen (nur frühere Einträge); ~~`aenderungen` öffnet Normteil-Kopien, bevor feststeht, dass es kein Soll gibt (`name not in soll` vorher prüfen)~~ (erledigt: Aufräumen nach 3b, Task 4); PR-Beschreibung: veraltete
   Commit-Message b7ef5a6 und die vier mitgenommenen Planungs-Commits nennen.
 - **Stufe 4 (mechanische Abläufe):** `bewegungen`, `treibend`, gezählte `freiheitsgrade`, Unterbaugruppen und Konfigurationen sind nicht in 3b.
 - **Zurückgestellte Kleinbefunde aus den Reviews** (nichts blockierte; vor dem Merge triagieren):
@@ -232,18 +274,18 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
   - **Task 3:** mehrere Plausibilitätszweige ungetestet (doppelte IDs, `fixiert` + `je_position`, `abstand < 0`, `winkel`, Ausdrucksfehler); ISO 7089/4032 passen auch auf `normbohrung`
     `gewinde` (Spec-Wortlaut, fachlich fragwürdig).
   - **Task 4:** kein Golden-Test für die unveränderte Teil-Prüfsumme; die Meldung nennt das Teil nicht, wenn es einzeln neu freigegeben wurde; Teile vor der Baugruppe nicht atomar geschrieben.
-  - **Task 5:** `baue_teil_dokument` schließt das Dokument bei unerwarteten Ausnahmen nicht; `aenderungen` braucht immer eine gültige Freigabe; aufgeräumter Lauf-Ordner → alles
-    „fehlend“ ohne Hinweis; SolidWorks-Zweig von `aenderungen` ohne Unit-Test.
+  - **Task 5:** ~~`baue_teil_dokument` schließt das Dokument bei unerwarteten Ausnahmen nicht~~ (erledigt: Aufräumen nach 3b, Task 2); ~~`aenderungen` braucht immer eine gültige Freigabe~~ (erledigt: Aufräumen nach 3b, Task 4); ~~aufgeräumter Lauf-Ordner → alles
+    „fehlend“ ohne Hinweis~~ (erledigt: Aufräumen nach 3b, Task 4); SolidWorks-Zweig von `aenderungen` ohne Unit-Test.
   - **Task 6:** neuer Vorlagen-Test spiegelt die YAML-Struktur; `EINBAU_EBENE` von ISO 7089 nicht mitgeprüft.
-  - **Task 7:** Ausrichtungsprüfung erst nach `Add2` (die Gleichung bleibt bei Umkehr stehen); nur `BauFehler` gefangen (ein COM-Fehler beim Rücklesen lässt die Verknüpfung stehen);
+  - **Task 7:** ~~Ausrichtungsprüfung erst nach `Add2` (die Gleichung bleibt bei Umkehr stehen)~~ (erledigt: Aufräumen nach 3b, Task 3); ~~nur `BauFehler` gefangen (ein COM-Fehler beim Rücklesen lässt die Verknüpfung stehen)~~ (erledigt: Aufräumen nach 3b, Task 3);
     `GLEICHUNG_FEHLER` wird zu `VERKNUEPFUNG_FEHLER` umgepackt; Testlücken (Gleichungspfad, Mehrfachnamen, `loese_im_teil` für `nahe`/Fläche/Instanzfläche).
-  - **Task 8:** fehlende Unit-Tests für Kernpfade (Schließen, `uebersprungen`, Reihenfolge, Bibliothek unverändert); nicht eingefügte Komponenten nicht als `uebersprungen`;
+  - **Task 8:** ~~fehlende Unit-Tests für Kernpfade (Schließen, `uebersprungen`, Reihenfolge, Bibliothek unverändert)~~ (erledigt: Aufräumen nach 3b, Task 5); ~~nicht eingefügte Komponenten nicht als `uebersprungen`~~ (erledigt: Aufräumen nach 3b, Task 5);
     `NormteilFehler.daten` gehen beim Umwickeln verloren; `test_senkrecht` prüft nur den Exit-Code.
   - **Task 9:** `next(...)` dupliziert `komponente_von` (StopIteration); Hüllquader-/Maßlogik dupliziert aus `pruefung/bewertung.py`; `abs()` in `einschraublaenge` verdeckt das Vorzeichen;
     ~~Division durch 0 bei `masse.soll = 0`~~ (erledigt: Plausibilitätsbefund); doppelte Prüf-IDs `gewinde:<schraube>` bei Mehrfachpaarung.
   - **Task 10:** ~~`soll_verknuepfungswerte` nutzt die Parameter der aktuellen statt der freigegebenen Spec~~ (erledigt); Teilprüfungen im Live-Test nicht assertiert; `KeyError` bei fehlendem
     `protokoll["teile"]`-Eintrag; `default=str` im Prüfbericht.
-  - **Task 11:** Negativtests prüfen nur das Vorkommen des Mangels (nicht, dass keine Zusatzmängel fehlen); nur `deckelschraube.1`; der Test der Änderungserkennung prüft nur die Grundplatte;
+  - **Task 11:** ~~Negativtests prüfen nur das Vorkommen des Mangels (nicht, dass keine Zusatzmängel fehlen)~~ (erledigt: Aufräumen nach 3b, Task 6); ~~nur `deckelschraube.1`~~ (erledigt: Aufräumen nach 3b, Task 6); ~~der Test der Änderungserkennung prüft nur die Grundplatte~~ (erledigt: Aufräumen nach 3b, Task 6);
     Import des privaten Helfers `_setze_parameter`; die Achshöhe ist fast tautologisch gemessen, die Lagerbohrungsachse nicht in der Höhe; die Commit-Message b7ef5a6 („noch nicht live gelaufen“) ist
     veraltet (Tests sind gelaufen).
 

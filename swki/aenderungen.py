@@ -188,7 +188,8 @@ def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, d
 
 def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Geänderte Dateien eines Laufs mit Parameterdifferenz zur Freigabe; öffnet SolidWorks nur bei geänderten
-    .sldprt/.sldasm und speichert nie."""
+    .sldprt/.sldasm und speichert nie. Ohne Lauf-Ordner oder ohne geänderte Datei wird nichts geöffnet und keine
+    Freigabe gebraucht; Normteil-Kopien (ohne Soll) werden nur genannt."""
     spec_pfad = spec_pfad.resolve()
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
@@ -201,10 +202,15 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     else:
         protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
     ordner = lauf_ordner(r, auftrag, lauf)
+    if not ordner.is_dir():
+        return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": [],
+                "text": f"Lauf-Ordner {ordner} fehlt (aufgeräumt) – nichts auszulesen"}
     a = abweichungen(ordner, protokoll.get("sha256", {}))
-    soll = soll_parameter(spec_pfad, auftrag, standard)
+    if not a["geaendert"]:
+        return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": a["fehlend"]}
+    soll = soll_parameter(spec_pfad, auftrag, standard)  # erst jetzt: braucht eine gültige Freigabe
     ergebnis = []
-    sw_dateien = [n for n in a["geaendert"] if n.lower().endswith(_SW_DATEIEN)]
+    sw_dateien = [n for n in a["geaendert"] if n.lower().endswith(_SW_DATEIEN) and n in soll]
     if sw_dateien:
         app = verbinde(r.sw_jahr)
         for name in sw_dateien:
@@ -217,16 +223,17 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
                     ist |= {f"verknuepfung:{n}": w for n, w in sw_baugruppe.verknuepfungswerte(model).items()}
             finally:
                 sw.schliesse(app, model)  # schließt ohne zu speichern (S9b)
-            if name not in soll:
-                ergebnis.append({"datei": name, "parameter": [], "hinweis": "keine Spezifikation zu dieser Datei (Normteil-Kopie)"})
-                continue
             differenz = parameter_differenz(soll[name], ist)
             eintrag = {"datei": name, "parameter": differenz}
             if not differenz:
                 eintrag["hinweis"] = "Datei geändert, Parameter gleich – den Nutzer fragen, was geändert wurde"
             ergebnis.append(eintrag)
-    ergebnis += [{"datei": n, "parameter": [], "hinweis": "Datei geändert (nicht ausgelesen)"}
-                 for n in a["geaendert"] if n not in sw_dateien]
+    for n in a["geaendert"]:
+        if n in sw_dateien:
+            continue
+        hinweis = ("keine Spezifikation zu dieser Datei (Normteil-Kopie)" if n.lower().endswith(_SW_DATEIEN)
+                   else "Datei geändert (nicht ausgelesen)")
+        ergebnis.append({"datei": n, "parameter": [], "hinweis": hinweis})
     return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": ergebnis, "fehlend": a["fehlend"]}
 
 

@@ -8,6 +8,7 @@ import pytest
 from swki.auftrag import lauf_datei, lauf_ordner
 from swki.cli import SwkiFehler
 from swki.compiler import bauen as bauen_modul
+from swki.compiler.protokoll import Protokoll
 from swki.konfig import Rechner
 
 
@@ -139,3 +140,54 @@ def test_cli_verwerfen_und_uebernommen_schliessen_sich_aus(umgebung, capsys):
     assert main(["bauen", str(spec_pfad), "--verwerfen", "--uebernommen"]) == 1
     assert "not allowed with argument" in json.loads(capsys.readouterr().out)["fehler"]
     assert aufrufe["verbinde"] == 0
+
+
+def _teil_bau_attrappen(monkeypatch):
+    from types import SimpleNamespace
+
+    geschlossen = []
+    model = SimpleNamespace(name="neues Teil")
+    monkeypatch.setattr(bauen_modul.sw, "neues_teil", lambda app, vorlage: model)
+    monkeypatch.setattr(bauen_modul.sw, "schliesse", lambda app, m: geschlossen.append(m))
+    r = SimpleNamespace(vorlage_teil=Path("C:/t.prtdot"))
+    return model, geschlossen, r
+
+
+def test_baue_teil_dokument_schliesst_bei_unerwarteter_ausnahme(monkeypatch):
+    model, geschlossen, r = _teil_bau_attrappen(monkeypatch)
+
+    def kaputt(*args, **kwargs):
+        raise RuntimeError("Kontext kaputt")
+
+    monkeypatch.setattr(bauen_modul, "Kontext", kaputt)
+    with pytest.raises(RuntimeError, match="Kontext kaputt"):
+        bauen_modul.baue_teil_dokument(None, r, {"toleranzen": {"anker_mm": 0.01}}, {"name": "x"}, Path("x.yaml"),
+                                       "A", Protokoll("A", "x.yaml", 1, 2025))
+    assert geschlossen == [model]
+
+
+def test_baue_teil_dokument_schliessfehler_verdeckt_die_ursache_nicht(monkeypatch):
+    _, _, r = _teil_bau_attrappen(monkeypatch)
+
+    def kaputt(*args, **kwargs):
+        raise RuntimeError("Kontext kaputt")
+
+    def schliesse_kaputt(app, m):
+        raise OSError("Schließen kaputt")
+
+    monkeypatch.setattr(bauen_modul, "Kontext", kaputt)
+    monkeypatch.setattr(bauen_modul.sw, "schliesse", schliesse_kaputt)
+    with pytest.raises(RuntimeError, match="Kontext kaputt"):
+        bauen_modul.baue_teil_dokument(None, r, {"toleranzen": {"anker_mm": 0.01}}, {"name": "x"}, Path("x.yaml"),
+                                       "A", Protokoll("A", "x.yaml", 1, 2025))
+
+
+def test_baue_teil_dokument_laesst_bei_erwartetem_fehler_offen(monkeypatch):
+    model, geschlossen, r = _teil_bau_attrappen(monkeypatch)
+    monkeypatch.setattr(bauen_modul, "Kontext", lambda *args: object())
+    monkeypatch.setattr(bauen_modul, "vorbereiten", lambda *args: None)
+    erwartet = RuntimeError("Feature f2 gescheitert")
+    monkeypatch.setattr(bauen_modul, "baue_features", lambda *args: erwartet)
+    m, _, fehler = bauen_modul.baue_teil_dokument(None, r, {"toleranzen": {"anker_mm": 0.01}}, {"name": "x"},
+                                                  Path("x.yaml"), "A", Protokoll("A", "x.yaml", 1, 2025))
+    assert (m, fehler, geschlossen) == (model, erwartet, [])  # der Aufrufer speichert und schließt

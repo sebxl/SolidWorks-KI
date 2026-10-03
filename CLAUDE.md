@@ -1,7 +1,9 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3b (Baugruppen statisch) umgesetzt – Ergebnisse: docs/stufe3b/ergebnisse.md. Nächster Schritt: Stufe 4 (mechanische Abläufe): Brainstorming → Spec → Plan.
+Stand: Stufe 3b (Baugruppen statisch) umgesetzt, Aufräumen nach 3b umgesetzt – Ergebnisse: docs/stufe3b/ergebnisse.md.
+Nächster Schritt: Stufe 4 (mechanische Abläufe): Brainstorming → Spec → Plan. Danach (oder vorher, nach Nutzerwunsch):
+Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse).
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
