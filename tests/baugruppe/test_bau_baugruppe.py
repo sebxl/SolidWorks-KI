@@ -271,6 +271,26 @@ def test_abbruch_vor_dem_einfuegen_vermerkt_komponenten_als_uebersprungen(umgebu
     assert len(knoten) == 5 + len(verknuepfungen(bg.spec, bg.quellen))
 
 
+def test_geworfene_ausnahme_vermerkt_komponenten_und_verknuepfungen_als_uebersprungen(umgebung, monkeypatch):
+    _, pfad, _ = umgebung
+    bg = lade_baugruppe(pfad)
+    freigeben_baugruppe(bg)
+    monkeypatch.setattr(bau, "verbinde", lambda jahr: object())
+
+    def wirft(b, r_):
+        raise RuntimeError("COM kaputt")
+
+    monkeypatch.setattr(bau, "_baue_teile", wirft)
+    monkeypatch.setattr(bau.sw, "schliesse", lambda app, model: None)
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(pfad)
+    assert e.value.daten["fehler"]["meldung"] == "COM kaputt"
+    knoten = e.value.daten["knoten"]
+    assert [k["id"] for k in knoten[:5]] == ["platte", "deckel", "schraube.1", "schraube.2", "stift"]
+    assert {k["status"] for k in knoten} == {"uebersprungen"}
+    assert len(knoten) == 5 + len(verknuepfungen(bg.spec, bg.quellen))
+
+
 def test_fixierte_komponente_wird_zuerst_eingefuegt_und_fixiert(tmp_path, monkeypatch):
     from tests.baugruppe.beispiel import BAUGRUPPE, kopie
 

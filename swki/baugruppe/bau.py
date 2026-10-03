@@ -118,6 +118,14 @@ def _ueberspringe_komponenten(b: Baulauf, alle: list[Instanz]) -> None:
             b.protokoll.uebersprungen(i.id, "komponente")
 
 
+def _ueberspringe_verknuepfungen(b: Baulauf, alle: list[Verknuepfung]) -> None:
+    """Verknüpfungen ohne Knoten (Abbruch davor) als übersprungen vermerken."""
+    erfasst = {k.id for k in b.protokoll.knoten}
+    for v in alle:
+        if v.id not in erfasst:
+            b.protokoll.uebersprungen(v.id, v.typ)
+
+
 def _fuege_ein(b: Baulauf, alle: list[Instanz]) -> Exception | None:
     fixiert = {k["id"] for k in b.bg.spec["komponenten"] if k.get("fixiert")}
     for i in _einfuege_reihenfolge(b, alle):
@@ -223,8 +231,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
             if fehler is None:
                 fehler = _verknuepfe(b, alle_verknuepfungen)
             else:
-                for v in alle_verknuepfungen:
-                    protokoll.uebersprungen(v.id, v.typ)
+                _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
         if b.asm is not None:
             with protokoll.phase("speichern"):
                 ziel = ordner / f"{dateiname(bg.spec, auftrag, standard)}.sldasm"
@@ -235,6 +242,9 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
                     fehler = fehler or e
     except Exception as e:  # z. B. Vorlage, Gleichungen oder Eigenschaften der Baugruppe
         fehler = fehler or e
+        # Eine Phase hat geworfen statt zurückzugeben: Komponenten und Verknüpfungen ohne Knoten trotzdem vermerken.
+        _ueberspringe_komponenten(b, alle_instanzen)
+        _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
     finally:
         schliessfehler = _schliesse_alle(b)
     if schliessfehler is not None and fehler is None:
