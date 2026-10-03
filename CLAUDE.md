@@ -1,8 +1,9 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3a (Normteile) umgesetzt – Ergebnisse: docs/stufe3a/ergebnisse.md. Nächster Schritt: Stufe 3b (Baugruppen statisch):
-Brainstorming → Spec → Plan (Pläne: docs/superpowers/plans/). Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-10-03-stufe3b.md
+Stand: Stufe 3a (Normteile) umgesetzt – Ergebnisse: docs/stufe3a/ergebnisse.md. Stufe 3b (Baugruppen statisch): Spec und Plan
+fertig (docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md, docs/superpowers/plans/2026-10-03-stufe-3b-baugruppen.md).
+Nächster Schritt: Umsetzung per subagent-driven-development. Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-10-03-stufe3b-umsetzung.md
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
