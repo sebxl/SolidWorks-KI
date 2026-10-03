@@ -3,7 +3,7 @@
 Fertig-Kriterium Spec 3b §16 für Rechner A (SW 2025): Das Stehlager (Grundplatte, Lagerunterteil, Lagerdeckel, 12 Normteil-Instanzen
 aus 5 Normteilen, 30 Verknüpfungen) besteht im ersten Lauf (Bau 171 s) ohne Code-Mangel und mit Prüfer-Urteil „bestanden“; die vier
 Negativfälle liefern die erwarteten Mängel bzw. Codes; die Änderungserkennung ist live für ein Teil und eine Baugruppe belegt; ISO 7089
-und ISO 8734 haben neue Vorlagenversionen mit bestandenem Prüfer-Urteil; 590 Unit-Tests grün. Die Regression der Bestandsreferenzen
+und ISO 8734 haben neue Vorlagenversionen mit bestandenem Prüfer-Urteil; 607 Unit-Tests grün. Die Regression der Bestandsreferenzen
 steht im Abschnitt „Regression im Gesamtlauf“. Rechner B (SW 2026) offen.
 
 ## Fertig-Kriterium (Spec §16) und Belege
@@ -15,7 +15,7 @@ steht im Abschnitt „Regression im Gesamtlauf“. Rechner B (SW 2026) offen.
 | Negativfälle (§14) liefern die erwarteten Mängel/Codes | `tests/live/test_live_stehlager.py`, 4/4 OK: zu lange Deckelschraube → Mangel `gewinde:deckelschraube.1` (Einschraublänge 18,60 mm); Überlappung → `kollision` mit Knoten `stift.1`, `unterteil`; unterbestimmte Komponente → `bestimmtheit` mit Knoten `unterteil`; manuelle Änderung → `MANUELL_GEAENDERT`, `aenderungen` zeigt `L` soll 200 / ist 210,0 |
 | Änderungserkennung live für Teil und Baugruppe | Teil: `test_live_aenderungen.py::test_manuelle_aenderung_am_teil` (Bau → `L` von Hand auf 120 → `MANUELL_GEAENDERT` → `aenderungen` `{L, soll 100, ist 120.0}` → `bauen --verwerfen` baut Lauf 2). Baugruppe: `test_live_baugruppe.py::test_manuelle_aenderung_an_der_baugruppe` (`S` 5 → 8, Verknüpfungswert `verknuepfung:w1` soll 5,0 / ist 8,0; Prüfsummen vor/nach `aenderungen` identisch) und der Stehlager-Negativfall |
 | ISO 7089 und ISO 8734: neue Vorlagenversionen mit bestandenem Urteil | Vorlagenprüfsummen `4ccce508…` (ISO 7089) und `f0a14a8f…` (ISO 8734), Urteil je `{"bestanden": true, "maengel": []}` (03.10.2026); `mass:EINBAU_EBENE_2` in beiden Musterteilen `ok: true`; `test_live_normteile.py` 13/13 OK |
-| Bestandsreferenzen bestehen weiter; Unit grün; `swki api pruefe-code` ohne Befund | Unit: 590 bestanden, 108 abgewählt; `pruefe-code`: `{"max_jahr": 2025, "befunde": []}`; `tabellen-pruefen`: `"gueltig": true`. Live-Regression: Abschnitt „Regression im Gesamtlauf“ |
+| Bestandsreferenzen bestehen weiter; Unit grün; `swki api pruefe-code` ohne Befund | Unit: 607 bestanden, 108 abgewählt (nach den Fixes aus dem Gesamt-Review; davor 590); `pruefe-code`: `{"max_jahr": 2025, "befunde": []}`; `tabellen-pruefen`: `"gueltig": true`. Live-Regression: Abschnitt „Regression im Gesamtlauf“ |
 
 ## Stand
 
@@ -35,16 +35,16 @@ steht im Abschnitt „Regression im Gesamtlauf“. Rechner B (SW 2026) offen.
 | 9 | Bewertung (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage) | 6f40e8c, e9ad9dc |
 | 10 | `swki pruefen`, `status`, `bericht`, Verknüpfungswerte in `aenderungen` (Unit, Live, Fix) | 74dc3e2, be8e031, a60abfd |
 | 11 | Referenz Stehlager und Negativfälle | f513e28, b7ef5a6 |
-| 12 | Skill `baugruppe`, Prüfer, `CLAUDE.md`, Design §4/§6/§11, Ergebnisse, Regression | Doku-Commit „docs: Skill baugruppe …“, Commit „docs: Regression Stufe 3b“ |
+| 12 | Skill `baugruppe`, Prüfer, `CLAUDE.md`, Design §4/§6/§11, Ergebnisse, Regression | a4b97e3, 5d2c5e7, a0d56d2 |
 
 Jeder Task wurde einzeln reviewt (Spec- und Qualitätsprüfung); Tasks 8, 9 und 10 brauchten je eine Fix-Runde (siehe Entscheidungen).
 
 ## Unit-Tests
 
-`.venv\Scripts\python.exe -m pytest -q`: **590 bestanden, 108 abgewählt** (die `sw`-markierten Live-Tests). Vor dem Plan: 456
+`.venv\Scripts\python.exe -m pytest -q`: **607 bestanden, 108 abgewählt** (die `sw`-markierten Live-Tests). Vor dem Plan: 456
 bestanden, 95 abgewählt. Zuwachs je Task (bestanden): Task 2 +17 (473), Task 3 +33 (506), Task 4 +7 (513), Task 5 +10 (523),
 Task 6 +2 (525), Task 7 +15 (540; 6 mehr als im Plan wegen Ruling A), Task 8 +6 (546) und +5 aus der Fix-Runde (551), Task 9 +22
-(573) und +10 aus der Fix-Runde (583), Task 10 +6 (589), Task 11 +1 (590); Tasks 1 und 12 ohne neue Unit-Tests. Die Planzahl 566
+(573) und +10 aus der Fix-Runde (583), Task 10 +6 (589), Task 11 +1 (590), Fix-Runde nach dem Gesamt-Review +17 (607: `--uebernommen` +11, Verknüpfungswerte +1, Massen-Soll +4, Teilbericht +1); Tasks 1 und 12 ohne neue Unit-Tests. Die Planzahl 566
 wird übertroffen, weil Rulings und Review-Fixes zusätzliche Tests brauchten. Die 13 zusätzlichen abgewählten Tests sind
 Live-Tests: `test_live_aenderungen` 1 (Task 5), `test_live_baugruppe` 4 (Task 8) und 3 (Task 10), Referenzeintrag Stehlager 1 und
 `test_live_stehlager` 4 (Task 11).
@@ -192,27 +192,42 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
   einen ursprünglichen Fehler nie und hält die übrigen Schließvorgänge nicht auf. Er fehlt in Spec §11.
 - **Fehlermeldungen (Review Task 8):** `bauen` nennt Komponente bzw. Verknüpfung in der `meldung` (Spec §11), und jedes selbst geöffnete Dokument wird im
   `finally` fehlerfest geschlossen.
-- **Teilbericht-Pflicht (Task 9/10):** Ein fehlender Teilbericht gilt nicht als bestanden; der Plan-Code war hier fail-open (siehe Offene Punkte).
+- **Teilbericht-Pflicht (Task 9/10, Code nach dem Gesamt-Review):** Ein fehlender Teilbericht einer verwendeten Teil-Spec gilt nicht als bestanden: `bewerte_baugruppe` meldet
+  die Prüfung `<komponente>: teilbericht` mit `ok: false` (fail-closed). Der Plan-Code war hier fail-open; `swki pruefen` erzeugt den Bericht zwar immer, die Bewertung
+  verlässt sich aber nicht mehr darauf.
 - **Live-Test an der Baugruppe (Review Task 10):** `aenderungen` öffnet SolidWorks nur für geänderte Dateien; der Test `test_manuelle_aenderung_an_der_baugruppe`
   belegt den Verknüpfungswert `w1` und das Nicht-Speichern live.
 - **Neustarts:** SolidWorks wurde nach den Tasks 1, 6, 8, 10 und mehrfach in Task 11 neu gestartet (Speicher, siehe oben); der Controller prüfte danach jedes Mal
   eine Instanz, sichtbares Fenster und `False 1`.
+- **Ruling H – Pfad „übernehmen“ (Gesamt-Review I-1):** Nach „übernehmen“ ändert Claude die Spec, validiert, gibt nach Nutzer-OK neu frei und baut dann mit
+  `swki bauen --uebernommen` (Teile und Baugruppen; schließt sich mit `--verwerfen` aus). Ohne den Schalter verweigerte `bauen` weiter mit `MANUELL_GEAENDERT`, und
+  `--verwerfen` ist dem ausdrücklichen Verwerfen vorbehalten. `--uebernommen` erlaubt den Bau trotz geänderter oder fehlender Dateien des letzten Laufs nur, wenn die Freigabe
+  (`freigegeben` in `freigabe.json`) strikt neuer ist als der Beginn dieses Laufs (`gestartet` im Protokoll; fehlt es, die Änderungszeit der Protokolldatei, die am Laufende
+  geschrieben wird). Sonst Fehler **`UEBERNAHME_OHNE_NEUE_FREIGABE`** („Freigabe ist nicht neuer als Lauf n“) – ein eigener Code, weil `MANUELL_GEAENDERT` die Rückfrage
+  übernehmen/verwerfen auslöst, die Abhilfe hier aber „übernehmen und neu freigeben“ lautet. Das Protokoll vermerkt den Befund unter `uebernommen` (analog `verworfen`).
+  Ohne Abweichung ist der Schalter wirkungslos. Skills `baugruppe`/`konstruieren`, `CLAUDE.md` und Spec §8 sind nachgezogen; Unit-Tests ohne SolidWorks, ein Live-Test
+  „übernehmen → neu freigeben → bauen“ steht aus.
 - **Zwei Commits je Live-Task:** Unit-Teil zuerst, Live-Teil nachgeholt, sobald SolidWorks frei war (bewährtes Muster aus 3a).
 
 ## Offene Punkte
 
-- **Spec 3b nicht nachgezogen (Ruling G):** Spec §4.4, §11, §12 weichen von der Umsetzung ab (siehe Präzisierungen); bei Wunsch eine kleine Doku-Änderung.
+- **Spec 3b nicht nachgezogen (Ruling G):** Spec §4.4, §11, §12 weichen von der Umsetzung ab (siehe Präzisierungen); bei Wunsch eine kleine Doku-Änderung. Nachgezogen ist nur §8
+  (`--uebernommen`, Ruling H); `UEBERNAHME_OHNE_NEUE_FREIGABE` fehlt wie `SCHLIESSEN_FEHLER` noch in der Fehlertabelle §11.
 - **`c` bei ISO 8734** nur über das Volumen belegt (Präzisierung 3); gilt auch für `p` und die Kopffase bei ISO 4762 aus 3a. Eine Messart für Fasen
   wäre ein eigenes Paket.
 - **Gewinde `durch`:** keine Volumenprüfung (Bohrungslänge nicht in der Spec); Gewinde mit `tiefe` werden geprüft.
 - **Grundplatte:** `volumen` ist `ok: null` (Sollvolumen bei Bohrung `durch` nicht berechenbar); Unterteil und Deckel haben kein Volumenziel.
 - **Rechner B (SW 2026):** nicht gelaufen; die Vorlagen und das Stehlager müssen dort einmal bestehen.
 - **Speicher:** ein Baugruppenlauf kostet 3–4 GB; größere Baugruppen brauchen mehr Neustarts, ein Ablauf mit Speichergrenze im Compiler steht aus.
+- **Aus dem Gesamt-Review, bewusst offen:** Stückliste-Soll und Instanzzahlen der `je_position`-Komponenten folgen dem Bauweg der aktuellen Spec (bei `bohrung` fängt nur
+  `masse_pruefen` eine zusätzliche Position, und das nicht sicher; Abhilfe: `stueckliste_soll` aus den Freigabe-Kopien bilden); die eigene Ausrichtung der neuen Verknüpfung wird nicht
+  zurückgelesen (nur frühere Einträge); `aenderungen` öffnet Normteil-Kopien, bevor feststeht, dass es kein Soll gibt (`name not in soll` vorher prüfen); PR-Beschreibung: veraltete
+  Commit-Message b7ef5a6 und die vier mitgenommenen Planungs-Commits nennen.
 - **Stufe 4 (mechanische Abläufe):** `bewegungen`, `treibend`, gezählte `freiheitsgrade`, Unterbaugruppen und Konfigurationen sind nicht in 3b.
 - **Zurückgestellte Kleinbefunde aus den Reviews** (nichts blockierte; vor dem Merge triagieren):
   - **Task 1:** Bericht-Deutungen Z1/Z10 ungenau; `EditRebuild3`/`EvaluateAll` im Spike ohne `_FlagAsMethod`; CLOSEST nur für „Ebene vor Achse“ belegt; Zeilenkonvention nur für
     Drehung um y belegt.
-  - **Task 2:** Schema erlaubt `drehung_sperren` bei jedem Typ (Spec nur `konzentrisch`); Schema-Tests prüfen nur „nicht leer“; fehlende Tests (Schemafehler über `lade_baugruppe`,
+  - **Task 2:** ~~Schema erlaubt `drehung_sperren` bei jedem Typ~~ (erledigt: `plausibel.py` meldet „drehung_sperren gilt nur bei konzentrisch“); Schema-Tests prüfen nur „nicht leer“; fehlende Tests (Schemafehler über `lade_baugruppe`,
     `NORMTEIL_UNBEKANNT`/`VARIANTE`/`GESPERRT`, geteilte Teil-Spec); `anzahl_positionen` bei fehlendem Feature ohne Meldung.
   - **Task 3:** mehrere Plausibilitätszweige ungetestet (doppelte IDs, `fixiert` + `je_position`, `abstand < 0`, `winkel`, Ausdrucksfehler); ISO 7089/4032 passen auch auf `normbohrung`
     `gewinde` (Spec-Wortlaut, fachlich fragwürdig).
@@ -225,8 +240,8 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
   - **Task 8:** fehlende Unit-Tests für Kernpfade (Schließen, `uebersprungen`, Reihenfolge, Bibliothek unverändert); nicht eingefügte Komponenten nicht als `uebersprungen`;
     `NormteilFehler.daten` gehen beim Umwickeln verloren; `test_senkrecht` prüft nur den Exit-Code.
   - **Task 9:** `next(...)` dupliziert `komponente_von` (StopIteration); Hüllquader-/Maßlogik dupliziert aus `pruefung/bewertung.py`; `abs()` in `einschraublaenge` verdeckt das Vorzeichen;
-    Division durch 0 bei `masse.soll = 0`; doppelte Prüf-IDs `gewinde:<schraube>` bei Mehrfachpaarung.
-  - **Task 10:** `soll_verknuepfungswerte` nutzt die Parameter der aktuellen statt der freigegebenen Spec; Teilprüfungen im Live-Test nicht assertiert; `KeyError` bei fehlendem
+    ~~Division durch 0 bei `masse.soll = 0`~~ (erledigt: Plausibilitätsbefund); doppelte Prüf-IDs `gewinde:<schraube>` bei Mehrfachpaarung.
+  - **Task 10:** ~~`soll_verknuepfungswerte` nutzt die Parameter der aktuellen statt der freigegebenen Spec~~ (erledigt); Teilprüfungen im Live-Test nicht assertiert; `KeyError` bei fehlendem
     `protokoll["teile"]`-Eintrag; `default=str` im Prüfbericht.
   - **Task 11:** Negativtests prüfen nur das Vorkommen des Mangels (nicht, dass keine Zusatzmängel fehlen); nur `deckelschraube.1`; der Test der Änderungserkennung prüft nur die Grundplatte;
     Import des privaten Helfers `_setze_parameter`; die Achshöhe ist fast tautologisch gemessen, die Lagerbohrungsachse nicht in der Höhe; die Commit-Message b7ef5a6 („noch nicht live gelaufen“) ist
