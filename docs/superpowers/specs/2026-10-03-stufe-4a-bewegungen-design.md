@@ -2,7 +2,8 @@
 
 Ergänzung zu [2026-09-26-solidworks-ki-design.md](2026-09-26-solidworks-ki-design.md) (§4 Spezifikation, §6 Prüfung, §11 Stufen)
 und [2026-10-03-stufe-3b-baugruppen-design.md](2026-10-03-stufe-3b-baugruppen-design.md) (Baugruppen-Format, Bauen, Prüfen,
-Änderungserkennung). Stand 2026-10-03, mit dem Nutzer abgestimmt.
+Änderungserkennung). Stand 2026-10-03, mit dem Nutzer abgestimmt; bei der Planung nachgezogen: §4.2, §11.2, §12
+(Negativfälle 1, 3, 4).
 
 ## 1. Ziel
 
@@ -107,8 +108,9 @@ pruefung:
 - `typ: scharnier` mit `a`, `b` (Achsen: Bohrungsachse oder `EINBAU_ACHSE`) und `anlage_a`, `anlage_b` (ebene Flächen,
   deckungsgleich). Frei bleibt nur die Drehung um die gemeinsame Achse.
 - Optional `ausrichtung` für die Anlage (Vorgabe `entgegengesetzt`, aufeinanderliegende Flächen).
-- Umsetzung als ein `AddMate5`-Scharnier (Spike S13.2); Rückfall: konzentrisch und deckungsgleich als zwei SolidWorks-
-  Verknüpfungen unter einer ID (`s1`, `s1#anlage`), für Protokoll und Prüfung eine Verknüpfung.
+- Umsetzung als zwei SolidWorks-Verknüpfungen: `konzentrisch` ohne Drehsperre (`s1`) und `deckungsgleich` der Anlage
+  (`s1.anlage`); beide Typen sind seit Spike S12 belegt. `swMateHINGE` über `AddMate5` wird nicht verwendet (Planung,
+  Präzisierung 1).
 - Passung wie in 3b §5.7: ISO 8734 *d* als Drehbolzen braucht auf der drehenden Seite eine `bohrung` mit Ø > d.
 
 ### 4.3 `freiheitsgrade`
@@ -246,7 +248,7 @@ Live, mit eigenen Probe-Baugruppen; vor jedem neuen API-Aufruf `swki api methode
 
 1. `AddMate5` mit Abstands- und Winkelgrenzen: anlegen, Grenzen zurücklesen, Grenzwerte per Gleichung an globale Variablen
    binden.
-2. Scharnier über `AddMate5` mit vier Referenzen; Rückfall zwei Verknüpfungen (§4.2).
+2. Maße der Grenzwerte (Namen) und ihre Bindung per Gleichung. (Das Scharnier braucht keinen Spike mehr, §4.2.)
 3. Hilfsverknüpfung neben der Grenze: verstellen innerhalb der Grenze; wie sich ein Schritt über die Grenze zeigt (Status,
    Fehlercode, Lage). Ergebnis legt „scheitert“ in §8.2.4 fest.
 4. `GetConstrainedStatus` ohne und mit Hilfsverknüpfung (gezählter Freiheitsgrad).
@@ -267,14 +269,16 @@ Live, mit eigenen Probe-Baugruppen; vor jedem neuen API-Aufruf `swki api methode
   Negativfälle `tests/live/test_live_schlitten.py`; Regression Buchse, Formplatte, Auswerferhalteplatte, Stehlager.
 - **Negativfälle** (je genau die erwartete Mängelmenge):
   1. Stellungskollision: ein Anschlag am Führungsende trifft den Hebel nur bei Schlitten auf `max` und geschwenktem Hebel →
-     `{bewegung_kollision:Hebelschwenk}` (nur im Paarlauf).
+     `{bewegung_kollision:Hebelschwenk, bewegung_kollision:Schlittenhub}` – beide Paarläufe treffen ihn, die
+     Grundstellungsläufe nicht.
   2. Grenze im Modell zu weit: Der Test baut die Referenz mit verfälschtem Grenzwert im Modell (`max` + 20 mm, per
      monkeypatch im Bau; die Spec bleibt unverändert und gültig) → `{grenze:Schlittenhub}`. Ohne Grenzverknüpfung kann der
      Fall nicht gebaut werden, weil `validieren` eine Bewegung ohne Grenze ablehnt.
-  3. Umgekehrte Richtung: Ausrichtung von `g1` umgekehrt → `{endlage:Schlittenhub:schlitten, endlage:Schlittenhub:hebel}`
-     (fährt der Schlitten dabei gegen ein Bauteil, legt der Plan die Geometrie so fest, dass nur die Endlagen abweichen).
-  4. Zweiter Freiheitsgrad: Hebel nur konzentrisch statt Scharnier → `{freiheitsgrad:hebel}` (und ggf. weitere aus der
-     Bestimmtheit; Menge legt der Plan nach Spike S13.4 fest).
+  3. Umgekehrte Richtung: `g1` an den Flächen +x statt −x (Grundstellung am anderen Ende, der Hub fährt nach −x) →
+     `{endlage:Schlittenhub:schlitten, endlage:Schlittenhub:hebel}`.
+  4. Zweiter Freiheitsgrad: ohne die seitliche Führung des Schlittens (`v21`) ist er auch quer verschiebbar →
+     `{freiheitsgrad:schlitten}` (Menge nach Spike S13.4 bestätigen). „Hebel nur konzentrisch“ ließe die Höhe des Hebels
+     offen (Einfügelage im Ursprung, zusätzliche Kollisionen) und prüfte nicht nur den Freiheitsgrad.
 - Live-Tests einzeln mit Zeitlimit; Speicher nach jedem Test messen; frisches SolidWorks vor jedem Referenz- und Negativlauf.
 
 ## 13. Einbindung
