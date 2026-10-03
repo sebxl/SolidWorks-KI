@@ -179,6 +179,35 @@ def test_verknuepfe_fremde_ausnahme_loescht_die_neue_verknuepfung(asm, monkeypat
     assert asm.geloescht == ["v2"] and [m.Name for m in asm.mates] == ["v1"] and gesetzt == {"v1": 0}
 
 
+def _loesche_wirft(asm_, feature):
+    raise OSError("Löschen kaputt")
+
+
+def test_verknuepfe_loeschfehler_verdeckt_fremde_ursache_nicht(asm, monkeypatch):
+    gesetzt: dict[str, int] = {}
+    sw_baugruppe.verknuepfe(asm, _v("v1", "deckungsgleich", "gleich"), None, None, {}, gesetzt)
+
+    def kaputt(feature):
+        raise RuntimeError("Alignment nicht lesbar")
+
+    monkeypatch.setattr(sw_baugruppe, "ausrichtung_von", kaputt)
+    monkeypatch.setattr(sw_baugruppe, "_loesche", _loesche_wirft)
+    with pytest.raises(BauFehler) as e:
+        sw_baugruppe.verknuepfe(asm, _v("v2", "deckungsgleich", "gleich"), None, None, {}, gesetzt)
+    assert e.value.code == "VERKNUEPFUNG_FEHLER"
+    assert str(e.value) == "v2 (deckungsgleich): RuntimeError: Alignment nicht lesbar"
+
+
+def test_verknuepfe_loeschfehler_verdeckt_die_umkehr_nicht(asm, monkeypatch):
+    gesetzt: dict[str, int] = {}
+    sw_baugruppe.verknuepfe(asm, _v("v1", "deckungsgleich", "gleich"), None, None, {}, gesetzt)
+    asm.mates[0].GetSpecificFeature2.Alignment = 1  # v1 wird beim Anlegen von v2 still umgekehrt
+    monkeypatch.setattr(sw_baugruppe, "_loesche", _loesche_wirft)
+    with pytest.raises(BauFehler, match="v2 kehrt die Ausrichtung von v1 um") as e:
+        sw_baugruppe.verknuepfe(asm, _v("v2", "deckungsgleich", "gleich"), None, None, {}, gesetzt)
+    assert e.value.code == "VERKNUEPFUNG_FEHLER"
+
+
 def test_verknuepfe_prueft_die_ausrichtung_vor_der_gleichung(asm):
     from types import SimpleNamespace
 

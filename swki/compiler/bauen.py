@@ -53,7 +53,10 @@ def baue_teil_dokument(app, r, standard: dict, spec: dict, spec_pfad: Path, auft
             with protokoll.phase("bauen"):
                 fehler = baue_features(ctx, protokoll, alle_handler(), lambda c: sw.rebuild(c.model))
     except BaseException:
-        sw.schliesse(app, model)
+        try:
+            sw.schliesse(app, model)
+        except Exception:  # die Ursache geht vor: ein Schließfehler darf sie nicht verdecken
+            pass
         raise
     return model, ctx, fehler
 

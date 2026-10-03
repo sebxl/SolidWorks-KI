@@ -166,6 +166,22 @@ def test_baue_teil_dokument_schliesst_bei_unerwarteter_ausnahme(monkeypatch):
     assert geschlossen == [model]
 
 
+def test_baue_teil_dokument_schliessfehler_verdeckt_die_ursache_nicht(monkeypatch):
+    _, _, r = _teil_bau_attrappen(monkeypatch)
+
+    def kaputt(*args, **kwargs):
+        raise RuntimeError("Kontext kaputt")
+
+    def schliesse_kaputt(app, m):
+        raise OSError("Schließen kaputt")
+
+    monkeypatch.setattr(bauen_modul, "Kontext", kaputt)
+    monkeypatch.setattr(bauen_modul.sw, "schliesse", schliesse_kaputt)
+    with pytest.raises(RuntimeError, match="Kontext kaputt"):
+        bauen_modul.baue_teil_dokument(None, r, {"toleranzen": {"anker_mm": 0.01}}, {"name": "x"}, Path("x.yaml"),
+                                       "A", Protokoll("A", "x.yaml", 1, 2025))
+
+
 def test_baue_teil_dokument_laesst_bei_erwartetem_fehler_offen(monkeypatch):
     model, geschlossen, r = _teil_bau_attrappen(monkeypatch)
     monkeypatch.setattr(bauen_modul, "Kontext", lambda *args: object())

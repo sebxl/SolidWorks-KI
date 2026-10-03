@@ -118,6 +118,14 @@ def _loesche(asm, feature) -> None:
     sw.auswahl_leeren(asm)
 
 
+def _loesche_still(asm, feature) -> None:
+    """Wie _loesche, aber ohne Ausnahme: in einem Fehlerzweig darf das Aufräumen die Ursache nicht verdecken."""
+    try:
+        _loesche(asm, feature)
+    except Exception:
+        pass
+
+
 def ausrichtung_von(feature) -> int:
     """Ausrichtung einer Verknüpfung (swMateAlign_e) aus IMate2.Alignment."""
     return int(feature.GetSpecificFeature2.Alignment)
@@ -174,11 +182,11 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
                 raise BauFehler(GLEICHUNG_FEHLER, f"Gleichung für {v.id} = {v.wert} abgelehnt", schritt="gleichung")
             sw.rebuild(asm)
     except _Umkehr:
-        _loesche(asm, neu)
+        _loesche_still(asm, neu)
         raise
     except Exception as e:  # auch fremde Ausnahmen (z. B. COM beim Rücklesen): die neue Verknüpfung nicht stehen lassen
         if neu is not None:
-            _loesche(asm, neu)
+            _loesche_still(asm, neu)
         meldung = str(e) if isinstance(e, BauFehler) else f"{type(e).__name__}: {e}"
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"{v.id} ({v.typ}): {meldung}", schritt="verknuepfung") from e
     if gesetzt is not None and v.ausrichtung:
