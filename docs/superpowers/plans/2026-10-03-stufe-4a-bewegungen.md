@@ -856,8 +856,8 @@ def soll_verknuepfungswerte(spec: dict, quellen: dict, parameter: dict | None = 
 
 - [ ] **Step 8: Tests**
 
-Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe/test_bewegung_spec.py -q` → 11 passed.
-Run: `.venv\Scripts\python.exe -m pytest -q` → **633 passed, 109 deselected** (622 + 11).
+Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe/test_bewegung_spec.py -q` → 12 passed.
+Run: `.venv\Scripts\python.exe -m pytest -q` → **634 passed, 109 deselected** (622 + 12).
 
 - [ ] **Step 9: Commit**
 
@@ -922,6 +922,7 @@ def test_bewegungsprobe_ohne_befunde(tmp_path):
     (lambda s: _v(s, "v1").update(min=0), "min/max gelten nur bei grenze_abstand/grenze_winkel"),
     (lambda s: _v(s, "s1").pop("anlage_b"), "anlage_b ist bei scharnier Pflicht"),
     (lambda s: _v(s, "s1")["anlage_a"].update(komponente="schieber"), "anlage_a gehört zur Komponente von a"),
+    (lambda s: _v(s, "s1")["anlage_b"].update(komponente="hebel", flaeche="+y"), "anlage_b gehört zum Gegenstück"),
     (lambda s: _v(s, "s1").update(a={"komponente": "hebel", "feature": "f1", "flaeche": "+y"}), "a und b sind Achsen"),
     (lambda s: _v(s, "v1").update(anlage_a={"komponente": "schieber", "feature": "f1", "flaeche": "+y"}),
      "anlage_a/anlage_b gelten nur bei scharnier"),
@@ -1080,23 +1081,25 @@ def _grenze_befunde(v: dict, pfad: str, p: dict) -> list[dict]:
 
 
 def _scharnier_befunde(v: dict, pfad: str, spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
-    """Scharnier: a und b Achsen, anlage_a/anlage_b ebene Flächen derselben Komponenten (Spec 4a §4.2)."""
+    """Scharnier: a und b Achsen; anlage_a ebene Fläche der drehenden Komponente (a), anlage_b ebene Fläche des
+    Gegenstücks, auf dem sie aufliegt – nicht unbedingt die Komponente von b (b ist oft der Drehbolzen; Spec 4a §4.2)."""
     if v["typ"] != "scharnier":
         return [_b(f"{pfad}.{s}", "anlage_a/anlage_b gelten nur bei scharnier") for s in ("anlage_a", "anlage_b") if s in v]
     befunde = []
     for s in ("a", "b"):
         if not (v[s].get("achse") or "referenz" in v[s]):
             befunde.append(_b(f"{pfad}.{s}", "scharnier: a und b sind Achsen (achse: true oder Achsreferenz wie EINBAU_ACHSE)"))
-    for s, gegen in (("anlage_a", "a"), ("anlage_b", "b")):
+    for s in ("anlage_a", "anlage_b"):
         if s not in v:
             befunde.append(_b(f"{pfad}.{s}", f"{s} ist bei scharnier Pflicht (ebene Anlagefläche)"))
             continue
         befunde += referenz_befunde(v[s], f"{pfad}.{s}", quellen, spec)
         if v[s].get("achse"):
             befunde.append(_b(f"{pfad}.{s}", f"{s} ist eine ebene Fläche, keine Achse"))
-        if v[s]["komponente"] != v[gegen]["komponente"]:
-            befunde.append(_b(f"{pfad}.{s}.komponente",
-                              f"{s} gehört zur Komponente von {gegen} ({v[gegen]['komponente']})"))
+    if "anlage_a" in v and v["anlage_a"]["komponente"] != v["a"]["komponente"]:
+        befunde.append(_b(f"{pfad}.anlage_a.komponente", f"anlage_a gehört zur Komponente von a ({v['a']['komponente']})"))
+    if "anlage_b" in v and v["anlage_b"]["komponente"] == v["a"]["komponente"]:
+        befunde.append(_b(f"{pfad}.anlage_b.komponente", "anlage_b gehört zum Gegenstück, nicht zur Komponente von a"))
     return befunde
 ```
 
@@ -1213,9 +1216,9 @@ Import ergänzen: `from swki.konfig import lade_standard`. Nach den Importen: `P
 
 - [ ] **Step 7: Tests**
 
-Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe/test_bewegung_plausibel.py -q` → 24 passed.
+Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe/test_bewegung_plausibel.py -q` → 26 passed.
 Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe -q` → alle grün (Stehlager- und Probe-Specs ohne neue Befunde).
-Run: `.venv\Scripts\python.exe -m pytest -q` → **657 passed, 109 deselected** (633 + 24).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **660 passed, 109 deselected** (634 + 26).
 
 - [ ] **Step 8: Commit**
 
@@ -1671,7 +1674,7 @@ def ergaenze_bericht(bericht: dict, pruefungen: list[dict], bewegungsbericht: di
 - [ ] **Step 4: Tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe/test_bewegung.py -q` → 17 passed.
-Run: `.venv\Scripts\python.exe -m pytest -q` → **674 passed, 109 deselected** (657 + 17).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **677 passed, 109 deselected** (660 + 17).
 
 - [ ] **Step 5: Commit**
 
@@ -2037,7 +2040,7 @@ def fahre(mech: Mechanik, bws: list[Bewegung], bekannt: set[frozenset], grenze_m
 - [ ] **Step 6: Tests**
 
 Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe/test_bewegungslauf.py -q` → 7 passed.
-Run: `.venv\Scripts\python.exe -m pytest -q` → **681 passed, 109 deselected** (674 + 7).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **684 passed, 109 deselected** (677 + 7).
 
 - [ ] **Step 7: Commit**
 
@@ -2362,7 +2365,7 @@ In `verknuepfe()`:
             sw.rebuild(asm)
 ```
 
-- im Docstring den ersten Satz ergänzen: „Grenzverknüpfungen mit min/max und Gleichungen auf die Grenzwerte (Spec 4a §4.1).“
+- im Docstring den ersten Satz ergänzen: „Grenzverknüpfungen mit min/max und Gleichungen auf die Grenzwerte (Spec 4a §4.1).“ (Zeilen ≤ 120 Zeichen umbrechen)
 
 Nach `verknuepfungswerte()` am Dateiende ergänzen:
 
@@ -2510,7 +2513,7 @@ In `bauen()` direkt nach dem Block `with protokoll.phase("verknuepfen"): …` (g
 Run: `.venv\Scripts\python.exe -m pytest tests/test_speicher.py tests/baugruppe/test_sw_bewegung.py -q` → 7 passed.
 Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe -q` → alle grün (die `verknuepfe`-Tests aus 3b unverändert).
 Run: `$env:PYTHONIOENCODING='utf-8'; .venv\Scripts\python.exe -m swki api pruefe-code` → keine Befunde.
-Run: `.venv\Scripts\python.exe -m pytest -q` → **688 passed, 109 deselected** (681 + 7).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **691 passed, 109 deselected** (684 + 7).
 
 - [ ] **Step 10: Live-Test – `tests/live/test_live_bewegung.py` (neu)**
 
@@ -2564,7 +2567,7 @@ def test_bewegungsprobe_baut_in_grundstellung(capsys, auftrag):
     assert "grundstellung" in _protokoll(pfad)["phasen"]
 ```
 
-Run (einzeln, Vorbedingungen und Speicher wie in den Global Constraints): `.venv\Scripts\python.exe tests\live_einzeln.py tests\live\test_live_bewegung.py::test_bewegungsprobe_baut_in_grundstellung --zeit 600` → OK. Danach `.venv\Scripts\python.exe -m pytest -q` → **688 passed, 110 deselected**.
+Run (einzeln, Vorbedingungen und Speicher wie in den Global Constraints): `.venv\Scripts\python.exe tests\live_einzeln.py tests\live\test_live_bewegung.py::test_bewegungsprobe_baut_in_grundstellung --zeit 600` → OK. Danach `.venv\Scripts\python.exe -m pytest -q` → **691 passed, 110 deselected**.
 
 Scheitert der Live-Test an einer Verknüpfung oder der Grundstellung: Fehlercode und Meldung aus dem Protokoll in den Bericht, anhalten (NEEDS_CONTEXT) – der Controller gleicht mit der Spike-Tabelle ab.
 
@@ -2785,7 +2788,7 @@ def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict,
 
 Run: `.venv\Scripts\python.exe -m pytest tests/baugruppe tests/pruefung -q` → alle grün.
 Run: `$env:PYTHONIOENCODING='utf-8'; .venv\Scripts\python.exe -m swki api pruefe-code` → keine Befunde.
-Run: `.venv\Scripts\python.exe -m pytest -q` → **691 passed, 110 deselected** (688 + 3).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **694 passed, 110 deselected** (691 + 3).
 
 - [ ] **Step 7: Live-Test – an `tests/live/test_live_bewegung.py` anhängen**
 
@@ -2805,7 +2808,7 @@ def test_bewegungsprobe_besteht_pruefung(capsys, auftrag):
     assert abweichungen(pathlib.Path(bau["ordner"]), _protokoll(pfad)["sha256"]) == {"geaendert": [], "fehlend": []}
 ```
 
-Run (einzeln, frisches SolidWorks; vorher bei ≥ 3 GB BLOCKED Speicher): `.venv\Scripts\python.exe tests\live_einzeln.py tests\live\test_live_bewegung.py::test_bewegungsprobe_besteht_pruefung --zeit 600` → OK. Danach `.venv\Scripts\python.exe -m pytest -q` → **691 passed, 111 deselected**.
+Run (einzeln, frisches SolidWorks; vorher bei ≥ 3 GB BLOCKED Speicher): `.venv\Scripts\python.exe tests\live_einzeln.py tests\live\test_live_bewegung.py::test_bewegungsprobe_besteht_pruefung --zeit 600` → OK. Danach `.venv\Scripts\python.exe -m pytest -q` → **694 passed, 111 deselected**.
 
 Meldet der Prüfbericht einen Mangel: nicht die Erwartung ändern, sondern anhalten (NEEDS_CONTEXT) mit Auszug aus `pruefungen` (betroffene IDs, `ist`, `soll`, `hinweis`) und dem Abschnitt `bewegungen` – der Controller gleicht mit den Spike-Zeilen 3, 4, 7 ab.
 
@@ -3061,7 +3064,7 @@ In der Parametrisierung nach `("stehlager", "stehlager.yaml"),` ergänzen:
     ("schlitten", "linearschlitten.yaml"),
 ```
 
-Run: `.venv\Scripts\python.exe -m pytest -q` → **693 passed, 112 deselected** (691 + 2; ein Referenzfall mehr).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **696 passed, 112 deselected** (694 + 2; ein Referenzfall mehr).
 
 - [ ] **Step 9: Live – Referenz**
 
@@ -3233,7 +3236,7 @@ Gilt nach Spike-Zeile 7 der andere Drehsinn (Hebel schwenkt nach +z), legt Fall 
 
 - [ ] **Step 2: Unit-Tests**
 
-Run: `.venv\Scripts\python.exe -m pytest -q` → **693 passed, 116 deselected** (vier neue Live-Tests).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **696 passed, 116 deselected** (vier neue Live-Tests).
 
 - [ ] **Step 3: Live – einzeln, je frisches SolidWorks**
 
@@ -3273,8 +3276,9 @@ Bewegliche Komponenten bekommen eine **Grenzverknüpfung** und `freiheitsgrade: 
 - `grenze_abstand` (mm) / `grenze_winkel` (Grad): `a`, `b` (ebene Flächen), `ausrichtung` (Pflicht), `min`, `max`.
   **Bewegt wird Seite `a`.** `min`/`max` sind `0` oder Parameter (`"=HUB"`); eine feste Zahl ist ein Befund
   (`GRENZE_FESTE_ZAHL`), weil nur Parameter von der Freigabe geschützt werden.
-- `scharnier`: `a`, `b` sind Achsen (Bohrungsachse bzw. `EINBAU_ACHSE` des Drehbolzens), `anlage_a`/`anlage_b` ebene
-  Flächen derselben Komponenten – die Anlage nicht vergessen, sonst ist die Höhe frei. swki legt `konzentrisch` (ohne
+- `scharnier`: `a`, `b` sind Achsen (Bohrungsachse bzw. `EINBAU_ACHSE` des Drehbolzens); `anlage_a` ist eine ebene
+  Fläche der drehenden Komponente (`a`), `anlage_b` die Fläche, auf der sie aufliegt – die Anlage nicht vergessen, sonst
+  ist die Höhe frei. swki legt `konzentrisch` (ohne
   Drehsperre) und `deckungsgleich` (`<id>.anlage`) an. Ein Drehbolzen ISO 8734 braucht auf der drehenden Seite eine
   `bohrung` mit Ø > d.
 - `freiheitsgrade: {<komponente|gruppe>: 1}`; genau eine Bewegung treibt sie.
@@ -3354,7 +3358,7 @@ Gliederung (Inhalte aus Ledger, Berichten und Spike-JSON; Zahlen nicht schätzen
 
 - [ ] **Step 7: Gesamtlauf**
 
-Run: `.venv\Scripts\python.exe -m pytest -q` → **693 passed, 116 deselected** (oder die im Ledger begründete Zahl).
+Run: `.venv\Scripts\python.exe -m pytest -q` → **696 passed, 116 deselected** (oder die im Ledger begründete Zahl).
 Run: `$env:PYTHONIOENCODING='utf-8'; .venv\Scripts\python.exe -m swki api pruefe-code` → keine Befunde.
 
 - [ ] **Step 8: Commit**
