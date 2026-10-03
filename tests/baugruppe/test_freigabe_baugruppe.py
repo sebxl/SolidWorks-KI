@@ -63,3 +63,21 @@ def test_freigeben_befehl(capsys, tmp_path):
     daten = json.loads(capsys.readouterr().out)
     assert code == 0, daten
     assert set(daten["teile"]) == {"platte.yaml", "deckel.yaml"} and daten["art"] == "baugruppe"
+
+
+def test_stueckliste_soll_aus_der_freigabe(tmp_path):
+    """Eine nach der Freigabe zusätzlich eingetragene Senkung (Bauweg) ändert das Soll der Stückliste nicht."""
+    from swki.baugruppe.bewertung import stueckliste_soll
+    from swki.baugruppe.freigabe import freigegebene_quellen
+    from swki.konfig import lade_standard
+    from tests.baugruppe.beispiel import DECKEL, kopie
+
+    pfad = schreibe(tmp_path / "A")
+    freigeben_baugruppe(lade_baugruppe(pfad))
+    deckel = kopie(DECKEL)
+    deckel["features"][1]["positionen"].append([0, 20])  # dritte Senkung nach der Freigabe
+    schreibe(tmp_path / "A", deckel=deckel)
+    bg = lade_baugruppe(pfad)
+    standard = lade_standard()
+    assert stueckliste_soll(bg.spec, bg.quellen, "A", standard)["ISO4762_M8x16_8_8.sldprt"] == 3
+    assert stueckliste_soll(bg.spec, freigegebene_quellen(bg), "A", standard)["ISO4762_M8x16_8_8.sldprt"] == 2
