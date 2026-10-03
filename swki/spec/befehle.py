@@ -33,6 +33,10 @@ def _freigeben(args) -> dict:
         original = pfad.name.removesuffix(_KOPIE_ENDUNG) + ".yaml"
         raise FreigabeFehler("FREIGABE_KOPIE", f"{pfad.name} ist die Freigabe-Kopie; freigegeben wird die "
                                                f"Spezifikation selbst ({original})")
+    if art_der_datei(pfad) == "baugruppe":
+        from swki.baugruppe.befehle import freigeben as freigeben_baugruppe  # spät importiert (Kreisimport)
+
+        return freigeben_baugruppe(pfad)
     spec = lade_spec(pfad)
     return {"spec": str(pfad), "kopie": str(kopie_pfad(pfad)), **freigeben(pfad, spec)}
 

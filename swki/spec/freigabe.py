@@ -4,6 +4,7 @@ Die Prüfsumme deckt nur die Anforderungen ab (Parameter, Material, Eigenschafte
 nicht den Bauweg (Features, Anker, Reihenfolge) – den darf Claude beim Nachbessern ändern.
 Zusätzlich wird die ganze Spezifikation als <spec>.freigegeben.yaml abgelegt: Sie ist das Soll für den
 Prüfer-Agenten und für das analytische Sollvolumen, auch wenn der Bauweg später nachgebessert wird.
+Baugruppen: zusätzlich die Prüfsummen der Teil-Specs (Spec 3b §6).
 Die Kopie ist der Rohtext der Spezifikationsdatei (Kommentare bleiben erhalten); nur wenn die Datei
 fehlt oder inhaltlich nicht mehr zum übergebenen spec passt, dient yaml.safe_dump als Rückfall.
 """
@@ -18,6 +19,7 @@ import yaml
 from swki.cli import SwkiFehler
 
 PRUEF_FELDER = ("art", "name", "parameter", "material", "eigenschaften", "pruefung")
+PRUEF_FELDER_BAUGRUPPE = ("art", "name", "parameter", "eigenschaften", "komponenten", "freiheitsgrade", "pruefung")
 
 
 class FreigabeFehler(SwkiFehler):
@@ -30,8 +32,12 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def pruefsumme(spec: dict) -> str:
-    kern = {feld: spec.get(feld) for feld in PRUEF_FELDER}
+def pruefsumme(spec: dict, teile: dict[str, str] | None = None) -> str:
+    """Prüfsumme der Anforderungen; bei Baugruppen zusätzlich über die Prüfsummen der Teil-Specs (Dateiname → Summe)."""
+    felder = PRUEF_FELDER_BAUGRUPPE if spec.get("art") == "baugruppe" else PRUEF_FELDER
+    kern = {feld: spec.get(feld) for feld in felder}
+    if teile is not None:
+        kern["teile"] = teile
     text = json.dumps(kern, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return _sha256(text)
 
@@ -57,13 +63,13 @@ def _rohtext_oder_dump(spec_pfad: Path, spec: dict) -> str:
     return yaml.safe_dump(spec, allow_unicode=True, sort_keys=False)
 
 
-def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None) -> dict:
+def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None, teile: dict[str, str] | None = None) -> dict:
     pfad = freigabe_pfad(spec_pfad)
     daten = _lies(pfad)
     kopie = _rohtext_oder_dump(spec_pfad, spec)
     kopie_pfad(spec_pfad).write_text(kopie, encoding="utf-8")
     eintrag = {
-        "pruefsumme": pruefsumme(spec),
+        "pruefsumme": pruefsumme(spec, teile),
         "freigegeben": zeitpunkt or datetime.now().isoformat(timespec="seconds"),
         "kopie_sha256": _sha256(kopie),
     }
@@ -72,12 +78,12 @@ def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None) -> dict
     return eintrag
 
 
-def pruefe_freigabe(spec_pfad: Path, spec: dict) -> dict:
+def pruefe_freigabe(spec_pfad: Path, spec: dict, teile: dict[str, str] | None = None) -> dict:
     """Wirft FreigabeFehler, wenn die Spezifikation nicht (mehr) freigegeben ist."""
     eintrag = _lies(freigabe_pfad(spec_pfad)).get(spec_pfad.name)
     if eintrag is None:
         raise FreigabeFehler("FREIGABE_FEHLT", f"{spec_pfad.name} ist nicht freigegeben. Zuerst: swki freigeben")
-    if eintrag["pruefsumme"] != pruefsumme(spec):
+    if eintrag["pruefsumme"] != pruefsumme(spec, teile):
         raise FreigabeFehler(
             "FREIGABE_VERALTET",
             f"Anforderungen in {spec_pfad.name} wurden nach der Freigabe geändert. Nutzer fragen und neu freigeben.",
