@@ -4,11 +4,15 @@ from pathlib import Path
 
 from swki.spec.freigabe import FreigabeFehler, freigeben, kopie_pfad, pruefsumme
 from swki.spec.hinweise import hinweise
-from swki.spec.laden import lade_spec
+from swki.spec.laden import art_der_datei, lade_spec
 
 
 def _validieren(args) -> dict:
     pfad = Path(args.spec)
+    if art_der_datei(pfad) == "baugruppe":
+        from swki.baugruppe.befehle import validieren  # spät importiert: swki.baugruppe nutzt swki.spec
+
+        return validieren(pfad)
     spec = lade_spec(pfad)
     return {
         "gueltig": True,

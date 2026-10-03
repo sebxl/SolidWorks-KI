@@ -1,8 +1,9 @@
-"""Baugruppen-Spezifikation laden (Spec 3b §5): Schema, Teil-Specs, Normteile. Die Plausibilität kommt in Task 3 dazu."""
+"""Baugruppen-Spezifikation laden (Spec 3b §5): Schema, Teil-Specs, Normteile, Plausibilität."""
 
 from pathlib import Path
 
 from swki.baugruppe.modell import Baugruppe, Quelle
+from swki.baugruppe.plausibel import plausibel_befunde
 from swki.normteile.erzeugen import erzeuge_spec, vorlage_text
 from swki.normteile.fehler import NormteilFehler
 from swki.normteile.schluessel import loese_auf
@@ -58,6 +59,8 @@ def lade_baugruppe(pfad: Path) -> Baugruppe:
     quellen, teile = {}, {}
     if not befunde:
         quellen, teile, befunde = lade_quellen(spec, pfad.parent)
+        if not befunde:
+            befunde = plausibel_befunde(spec, quellen)
     if befunde:
         raise SpecFehler(befunde)
     return Baugruppe(pfad, spec, quellen, teile)
