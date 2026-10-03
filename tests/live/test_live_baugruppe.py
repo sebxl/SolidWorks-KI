@@ -6,10 +6,12 @@ import shutil
 
 import pytest
 
-from swki.aenderungen import abweichungen
+from swki.aenderungen import abweichungen, pruefsummen
+from swki.auftrag import lauf_ordner
 from swki.cli import main
 from swki.konfig import lade_rechner
 from tests.baugruppe.beispiel import BAUGRUPPE, kopie, schreibe
+from tests.live.test_live_aenderungen import _setze_parameter
 
 pytestmark = pytest.mark.sw
 AUFTRAG = "SWKI-LIVE-BAUGRUPPE"
@@ -120,3 +122,31 @@ def test_fehlende_referenz_bricht_ab(capsys, auftrag):
     status = {k["id"]: k["status"] for k in bau["knoten"]}
     assert status["v4.1"] == "fehler" and status["v7"] == "uebersprungen"
     assert bau["dateien"]["baugruppe"].endswith(".sldasm")  # Stand zur Diagnose gespeichert
+
+
+def test_manuelle_aenderung_an_der_baugruppe(capsys, auftrag):
+    """Wie ein Anwender: S in der gespeicherten Baugruppe ändern. swki bauen verweigert, swki aenderungen liest globale
+    Variable und Abstandsverknüpfung (verknuepfung:w1) aus – nur lesend: die Prüfsummen bleiben unmittelbar davor/danach
+    gleich (Spec §8, öffnet die .sldasm wirklich, anders als bei unveränderten Läufen)."""
+    spec = kopie(BAUGRUPPE)
+    spec["komponenten"] = spec["komponenten"][:2]
+    spec["parameter"] = {"S": 5, "W": 30}
+    spec["freiheitsgrade"] = {"deckel": "unterbestimmt"}
+    spec["pruefung"] = {}
+    spec["verknuepfungen"] = [
+        {"id": "w1", "typ": "abstand", "a": {"komponente": "deckel", "feature": "f1", "flaeche": "-y"},
+         "b": {"komponente": "platte", "feature": "f1", "flaeche": "+y"}, "ausrichtung": "entgegengesetzt", "wert": "=S"}]
+    pfad, code, bau = _baue(capsys, auftrag, spec)
+    assert code == 0, bau
+    ordner = lauf_ordner(lade_rechner(), AUFTRAG, 1)
+    _setze_parameter(ordner / f"{AUFTRAG}_Probe.sldasm", "S", 8)
+    code, daten = _lauf(capsys, "bauen", str(pfad))
+    assert code == 1 and daten["code"] == "MANUELL_GEAENDERT" and daten["lauf"] == 1, daten
+    vorher = pruefsummen(ordner, ordner.rglob("*"))
+    code, daten = _lauf(capsys, "aenderungen", str(pfad))
+    assert code == 0, daten
+    [eintrag] = [e for e in daten["geaendert"] if e["datei"] == f"{AUFTRAG}_Probe.sldasm"]
+    [s, w1] = eintrag["parameter"]
+    assert s == {"name": "S", "soll": 5, "ist": pytest.approx(8.0)}, eintrag
+    assert w1 == {"name": "verknuepfung:w1", "soll": 5.0, "ist": pytest.approx(8.0)}, eintrag
+    assert pruefsummen(ordner, ordner.rglob("*")) == vorher  # swki aenderungen speichert nie
