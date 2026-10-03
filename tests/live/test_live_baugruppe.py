@@ -1,10 +1,12 @@
 """Live: Baugruppen bauen (Spec 3b §7) – Probe aus tests/baugruppe/beispiel.py, Werte-Verknüpfungen, Fehlerpfad."""
 
 import json
+import pathlib
 import shutil
 
 import pytest
 
+from swki.aenderungen import abweichungen
 from swki.cli import main
 from swki.konfig import lade_rechner
 from tests.baugruppe.beispiel import BAUGRUPPE, kopie, schreibe
@@ -44,21 +46,57 @@ def test_probe_baut(capsys, auftrag):
     assert {k["datei"] for k in protokoll["komponenten"]} <= set(protokoll["sha256"])
 
 
+def _unveraendert(pfad, bau):
+    """Prüfsummen des Laufs (Protokoll sha256) gegen die Dateien: nichts geändert, nichts fehlt (Spec §8: pruefen und
+    aenderungen speichern nie)."""
+    protokoll = json.loads((pfad.parent / "protokolle" / "probe.lauf-1.protokoll.json").read_text(encoding="utf-8"))
+    assert abweichungen(pathlib.Path(bau["ordner"]), protokoll["sha256"]) == {"geaendert": [], "fehlend": []}
+
+
+def test_probe_besteht_pruefung(capsys, auftrag):
+    pfad, code, bau = _baue(capsys, auftrag)
+    assert code == 0, bau
+    _unveraendert(pfad, bau)
+    code, bericht = _lauf(capsys, "pruefen", str(pfad))
+    assert code == 0, bericht
+    assert bericht["maengel"] == [], json.dumps(bericht["pruefungen"], indent=1, ensure_ascii=False)
+    assert [g["einschraublaenge"] for g in bericht["gewindepaarungen"]] == pytest.approx([9.6, 9.6], abs=0.01)
+    assert all(pathlib.Path(p).stat().st_size > 0 for p in bericht["bilder"].values())
+    _unveraendert(pfad, bau)  # swki pruefen speichert nie
+    code, aend = _lauf(capsys, "aenderungen", str(pfad))
+    assert code == 0 and aend["geaendert"] == [] and aend["fehlend"] == [], aend
+    _unveraendert(pfad, bau)  # swki aenderungen speichert nie
+
+
+def test_kollision_wird_gemeldet(capsys, auftrag):
+    spec = kopie(BAUGRUPPE)
+    spec["komponenten"][3]["quelle"] = {"normteil": "ISO 8734 8x30"}   # Stift ragt 10 mm in den Deckel
+    pfad, code, bau = _baue(capsys, auftrag, spec)
+    assert code == 0, bau
+    code, bericht = _lauf(capsys, "pruefen", str(pfad))
+    maengel = {m["pruefung"]: m for m in bericht["maengel"]}
+    assert maengel["kollision"]["knoten"] == ["deckel", "stift"], bericht["maengel"]
+
+
 def test_werte_verknuepfungen(capsys, auftrag):
     spec = kopie(BAUGRUPPE)
     spec["komponenten"] = spec["komponenten"][:2]
     spec["parameter"] = {"S": 5, "W": 30}
     spec["freiheitsgrade"] = {"deckel": "unterbestimmt"}
-    spec["pruefung"] = {}
+    spec["pruefung"] = {"masse_pruefen": [
+        {"was": "Abstand", "von": {"komponente": "platte", "feature": "f1", "flaeche": "+y"},
+         "zu": {"komponente": "deckel", "feature": "f1", "flaeche": "-y"}, "soll": "=S"}]}
     spec["verknuepfungen"] = [
         {"id": "w1", "typ": "abstand", "a": {"komponente": "deckel", "feature": "f1", "flaeche": "-y"},
          "b": {"komponente": "platte", "feature": "f1", "flaeche": "+y"}, "ausrichtung": "entgegengesetzt", "wert": "=S"},
         {"id": "w2", "typ": "winkel", "a": {"komponente": "deckel", "feature": "f1", "flaeche": "+x"},
          "b": {"komponente": "platte", "feature": "f1", "flaeche": "+x"}, "ausrichtung": "gleich", "wert": "=W"},
     ]
-    _, code, bau = _baue(capsys, auftrag, spec)
+    pfad, code, bau = _baue(capsys, auftrag, spec)
     assert code == 0, bau
     assert [k["status"] for k in bau["knoten"]] == ["ok"] * 4
+    code, bericht = _lauf(capsys, "pruefen", str(pfad))
+    assert code == 0 and bericht["maengel"] == [], bericht["maengel"]
 
 
 def test_senkrecht(capsys, auftrag):
