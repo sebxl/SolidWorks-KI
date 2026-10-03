@@ -1,0 +1,3620 @@
+{
+  "ok": true,
+  "baugruppe_1": {
+    "einfuegen_sockel": {
+      "box_mm": [
+        -50.0,
+        -3.469446951953614e-15,
+        -30.0,
+        50.0,
+        20.0,
+        30.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "sockel_fixiert": true,
+    "einfuegen_lasche": {
+      "box_mm": [
+        -40.0,
+        0.0,
+        -30.0,
+        40.0,
+        10.000000000000002,
+        30.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_schraube_mit_bezugsgeometrie": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift_identitaet": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.837169104,
+          0.0,
+          0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          0.546944139,
+          0.0,
+          -0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "ebenen_lage": {
+      "sockel.OBEN": {
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ]
+      },
+      "schraube.EINBAU_EBENE": {
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          -0.0,
+          1.0,
+          0.0
+        ],
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "stift.EINBAU_EBENE_1": {
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          -0.0,
+          1.0,
+          0.0
+        ],
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        22.0,
+        50.0
+      ],
+      "stift": [
+        -16.0,
+        0.0
+      ]
+    },
+    "erwartet": {
+      "lasche_y_mm": 20,
+      "schraube_y_mm": 30,
+      "stift_y_mm": 0,
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v4",
+      "v5",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v4": [
+        1,
+        false
+      ],
+      "v5": [
+        0,
+        false
+      ],
+      "v6": [
+        0,
+        false
+      ],
+      "v7": [
+        0,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Lasche-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 540.387447
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -16.0,
+      -30.0,
+      50.0,
+      50.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_2_werte": {
+    "w1": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "w1",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 5,
+      "imate2_ausrichtung_flipped": [
+        1,
+        false
+      ],
+      "d1_systemwert": 0.015
+    },
+    "w2": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "w2",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 6,
+      "imate2_ausrichtung_flipped": [
+        0,
+        false
+      ],
+      "d1_systemwert": 0.5235987755982988
+    },
+    "lage": {
+      "translation_mm": [
+        -8.636207,
+        35.0,
+        25.759619
+      ],
+      "rotation": [
+        0.866025404,
+        0.0,
+        -0.5,
+        0.0,
+        1.0,
+        0.0,
+        0.5,
+        0.0,
+        0.866025404
+      ],
+      "skalierung": 1.0,
+      "status": 2,
+      "fixiert": false
+    },
+    "erwartet_y_mm": 35,
+    "normale_plus_x_im_baugruppenkontext": [
+      1.0,
+      -0.0,
+      -0.0
+    ],
+    "bild_x_zeilenvektor": [
+      0.866025404,
+      0.0,
+      -0.5
+    ],
+    "bild_x_spaltenvektor": [
+      0.866025404,
+      0.0,
+      0.5
+    ],
+    "bild_z_zeilenvektor": [
+      0.5,
+      0.0,
+      0.866025404
+    ],
+    "bild_z_spaltenvektor": [
+      -0.5,
+      0.0,
+      0.866025404
+    ],
+    "bild_x_multiplytransform": [
+      0.866025404,
+      0.0,
+      -0.5
+    ],
+    "bild_z_multiplytransform": [
+      0.5,
+      0.0,
+      0.866025404
+    ],
+    "add_S": 0,
+    "add_D1": 1,
+    "rebuild_nach_S_25": true,
+    "lage_nach_S_25": {
+      "translation_mm": [
+        -8.636207,
+        45.0,
+        25.759619
+      ],
+      "rotation": [
+        0.866025404,
+        0.0,
+        -0.5,
+        0.0,
+        1.0,
+        0.0,
+        0.5,
+        0.0,
+        0.866025404
+      ],
+      "skalierung": 1.0,
+      "status": 2,
+      "fixiert": false
+    },
+    "erwartet_y_nach_S_25_mm": 45
+  },
+  "baugruppe_3_senkrecht": {
+    "s1": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "s1",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 2,
+      "imate2_ausrichtung_flipped": [
+        2,
+        false
+      ]
+    },
+    "lage": {
+      "translation_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "skalierung": 1.0,
+      "status": 2,
+      "fixiert": false
+    }
+  },
+  "baugruppe_4_zwei_konzentrische": {
+    "k1": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "k1",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 0,
+      "imate2_ausrichtung_flipped": [
+        1,
+        false
+      ]
+    },
+    "k2": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "k2",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 1,
+      "imate2_ausrichtung_flipped": [
+        0,
+        false
+      ]
+    },
+    "k3": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "k3",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 1,
+      "imate2_ausrichtung_flipped": [
+        0,
+        false
+      ]
+    },
+    "lage": {
+      "translation_mm": [
+        0.0,
+        20.0,
+        0.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "skalierung": 1.0,
+      "status": 3,
+      "fixiert": false
+    }
+  },
+  "baugruppe_5a_gegenrichtung": {
+    "ausrichtungen": {
+      "v4": 1,
+      "v5": 0,
+      "v6": 0,
+      "v7": 0
+    },
+    "achse_zuerst": false,
+    "sockel_fixiert": true,
+    "einfuegen_schraube": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          -0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          -0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          -0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        22.0,
+        50.0
+      ],
+      "stift": [
+        -16.0,
+        0.0
+      ]
+    },
+    "erwartet": {
+      "schraube_y_bereich_mm": [
+        10,
+        38
+      ],
+      "stift_y_bereich_mm": [
+        0,
+        16
+      ],
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v4",
+      "v5",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v4": [
+        1,
+        false
+      ],
+      "v5": [
+        0,
+        false
+      ],
+      "v6": [
+        0,
+        false
+      ],
+      "v7": [
+        0,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Lasche-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 540.387447
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -16.0,
+      -30.0,
+      50.0,
+      50.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_5b_gegenrichtung_achse_entgegen": {
+    "ausrichtungen": {
+      "v4": 1,
+      "v5": 1,
+      "v6": 0,
+      "v7": 1
+    },
+    "achse_zuerst": false,
+    "sockel_fixiert": true,
+    "einfuegen_schraube": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          1.0,
+          0.0,
+          0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        10.0,
+        38.0
+      ],
+      "stift": [
+        0.0,
+        16.0
+      ]
+    },
+    "erwartet": {
+      "schraube_y_bereich_mm": [
+        10,
+        38
+      ],
+      "stift_y_bereich_mm": [
+        0,
+        16
+      ],
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v4",
+      "v5",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v4": [
+        0,
+        false
+      ],
+      "v5": [
+        1,
+        false
+      ],
+      "v6": [
+        1,
+        false
+      ],
+      "v7": [
+        1,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Sockel-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 126.122379
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -0.0,
+      -30.0,
+      50.0,
+      38.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_5c_achse_zuerst_ebene_entgegen": {
+    "ausrichtungen": {
+      "v4": 1,
+      "v5": 0,
+      "v6": 0,
+      "v7": 1
+    },
+    "achse_zuerst": true,
+    "sockel_fixiert": true,
+    "einfuegen_schraube": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        22.0,
+        50.0
+      ],
+      "stift": [
+        0.0,
+        16.0
+      ]
+    },
+    "erwartet": {
+      "schraube_y_bereich_mm": [
+        10,
+        38
+      ],
+      "stift_y_bereich_mm": [
+        0,
+        16
+      ],
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v5",
+      "v4",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v5": [
+        0,
+        false
+      ],
+      "v4": [
+        1,
+        false
+      ],
+      "v6": [
+        1,
+        false
+      ],
+      "v7": [
+        1,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Lasche-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 540.387447
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -0.0,
+      -30.0,
+      50.0,
+      50.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_5d_achse_zuerst_ebene_gleich": {
+    "ausrichtungen": {
+      "v4": 0,
+      "v5": 0,
+      "v6": 0,
+      "v7": 1
+    },
+    "achse_zuerst": true,
+    "sockel_fixiert": true,
+    "einfuegen_schraube": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        10.0,
+        38.0
+      ],
+      "stift": [
+        0.0,
+        16.0
+      ]
+    },
+    "erwartet": {
+      "schraube_y_bereich_mm": [
+        10,
+        38
+      ],
+      "stift_y_bereich_mm": [
+        0,
+        16
+      ],
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v5",
+      "v4",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v5": [
+        1,
+        false
+      ],
+      "v4": [
+        0,
+        false
+      ],
+      "v6": [
+        1,
+        false
+      ],
+      "v7": [
+        1,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Sockel-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 126.122379
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -0.0,
+      -30.0,
+      50.0,
+      38.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_5e_ebene_gleich_dann_naechste": {
+    "ausrichtungen": {
+      "v4": 0,
+      "v5": 2,
+      "v6": 0,
+      "v7": 2
+    },
+    "achse_zuerst": false,
+    "sockel_fixiert": true,
+    "einfuegen_schraube": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          -0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        10.0,
+        38.0
+      ],
+      "stift": [
+        -16.0,
+        0.0
+      ]
+    },
+    "erwartet": {
+      "schraube_y_bereich_mm": [
+        10,
+        38
+      ],
+      "stift_y_bereich_mm": [
+        0,
+        16
+      ],
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v4",
+      "v5",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v4": [
+        0,
+        false
+      ],
+      "v5": [
+        1,
+        false
+      ],
+      "v6": [
+        0,
+        false
+      ],
+      "v7": [
+        0,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Sockel-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 126.122379
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -16.0,
+      -30.0,
+      50.0,
+      38.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_5f_ebene_entgegen_dann_naechste": {
+    "ausrichtungen": {
+      "v4": 1,
+      "v5": 2,
+      "v6": 1,
+      "v7": 2
+    },
+    "achse_zuerst": false,
+    "sockel_fixiert": true,
+    "einfuegen_schraube": {
+      "box_mm": [
+        -6.5,
+        -20.0,
+        -6.5,
+        6.5,
+        8.0,
+        6.5
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "einfuegen_stift": {
+      "box_mm": [
+        -4.0,
+        0.0,
+        -4.0,
+        4.0,
+        16.0,
+        4.0
+      ],
+      "transform_nach_einfuegen": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "mates": {
+      "v1.1": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v1.1",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v2": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v2",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v3": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v3",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 3,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v4": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v4",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v5": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v5",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          0,
+          false
+        ]
+      },
+      "v6": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v6",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 0,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      },
+      "v7": {
+        "auswahl": [
+          true,
+          true
+        ],
+        "mate_none": false,
+        "status": 1,
+        "name_gesetzt": "v7",
+        "rebuild": true,
+        "fehlercode": 0,
+        "imate2_typ": 1,
+        "imate2_ausrichtung_flipped": [
+          1,
+          false
+        ]
+      }
+    },
+    "lage": {
+      "sockel": {
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      "lasche": {
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "schraube": {
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          -0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          -0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      "stift": {
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    },
+    "y_bereich_mm": {
+      "schraube": [
+        22.0,
+        50.0
+      ],
+      "stift": [
+        0.0,
+        16.0
+      ]
+    },
+    "erwartet": {
+      "schraube_y_bereich_mm": [
+        10,
+        38
+      ],
+      "stift_y_bereich_mm": [
+        0,
+        16
+      ],
+      "schraube_status": 3,
+      "stift_status": 2
+    },
+    "mate_namen": [
+      "v1.1",
+      "v2",
+      "v3",
+      "v4",
+      "v5",
+      "v6",
+      "v7"
+    ],
+    "mate_ausrichtungen_nachher": {
+      "v1.1": [
+        1,
+        false
+      ],
+      "v2": [
+        0,
+        false
+      ],
+      "v3": [
+        0,
+        false
+      ],
+      "v4": [
+        1,
+        false
+      ],
+      "v5": [
+        0,
+        false
+      ],
+      "v6": [
+        1,
+        false
+      ],
+      "v7": [
+        1,
+        false
+      ]
+    },
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Lasche-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 540.387447
+      }
+    ],
+    "soll_gewinde_mm3": 126.1224,
+    "getbox_mm": [
+      -50.0,
+      -0.0,
+      -30.0,
+      50.0,
+      50.0,
+      30.0
+    ],
+    "soll_box_mm": [
+      -50,
+      0,
+      -30,
+      50,
+      38,
+      30
+    ]
+  },
+  "baugruppe_6_widerspruch": {
+    "k1": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 1,
+      "name_gesetzt": "k1",
+      "rebuild": true,
+      "fehlercode": 0,
+      "imate2_typ": 0,
+      "imate2_ausrichtung_flipped": [
+        1,
+        false
+      ]
+    },
+    "k2": {
+      "auswahl": [
+        true,
+        true
+      ],
+      "mate_none": false,
+      "status": 5,
+      "name_gesetzt": "k2",
+      "rebuild": true,
+      "fehlercode": 47,
+      "imate2_typ": 5,
+      "imate2_ausrichtung_flipped": [
+        1,
+        false
+      ],
+      "d1_systemwert": 0.005
+    },
+    "lage": {
+      "translation_mm": [
+        0.0,
+        20.0,
+        0.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "skalierung": 1.0,
+      "status": 4,
+      "fixiert": false
+    },
+    "mate_namen_und_fehlercodes": [
+      [
+        "k1",
+        1
+      ],
+      [
+        "k2",
+        47
+      ]
+    ]
+  },
+  "wieder_geoeffnet": {
+    "fehler": 0,
+    "warnungen": 0,
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Lasche-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 540.387447
+      }
+    ],
+    "komponenten": [
+      {
+        "name": "ISO4762_M8x20_8_8-1",
+        "datei": "ISO4762_M8x20_8_8.sldprt",
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      {
+        "name": "ISO8734_8x16_St-1",
+        "datei": "ISO8734_8x16_St.sldprt",
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.837169104,
+          0.0,
+          0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          0.546944139,
+          0.0,
+          -0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      },
+      {
+        "name": "S12_Sockel-1",
+        "datei": "S12_Sockel.SLDPRT",
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      {
+        "name": "S12_Lasche-1",
+        "datei": "S12_Lasche.SLDPRT",
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      }
+    ],
+    "mates": [
+      [
+        "v1.1",
+        0
+      ],
+      [
+        "v2",
+        0
+      ],
+      [
+        "v3",
+        0
+      ],
+      [
+        "v4",
+        0
+      ],
+      [
+        "v5",
+        0
+      ],
+      [
+        "v6",
+        0
+      ],
+      [
+        "v7",
+        0
+      ]
+    ],
+    "sha_unveraendert": true
+  },
+  "wieder_geoeffnet_5a": {
+    "fehler": 0,
+    "warnungen": 0,
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Lasche-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 540.387447
+      }
+    ],
+    "komponenten": [
+      {
+        "name": "ISO8734_8x16_St-1",
+        "datei": "ISO8734_8x16_St.sldprt",
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          -0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      },
+      {
+        "name": "S12_Sockel-1",
+        "datei": "S12_Sockel.SLDPRT",
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      {
+        "name": "S12_Lasche-1",
+        "datei": "S12_Lasche.SLDPRT",
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      {
+        "name": "ISO4762_M8x20_8_8-1",
+        "datei": "ISO4762_M8x20_8_8.sldprt",
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          -0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          -1.0,
+          0.0,
+          -0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      }
+    ],
+    "mates": [
+      [
+        "v1.1",
+        0
+      ],
+      [
+        "v2",
+        0
+      ],
+      [
+        "v3",
+        0
+      ],
+      [
+        "v4",
+        0
+      ],
+      [
+        "v5",
+        0
+      ],
+      [
+        "v6",
+        0
+      ],
+      [
+        "v7",
+        0
+      ]
+    ],
+    "sha_unveraendert": true
+  },
+  "wieder_geoeffnet_5b": {
+    "fehler": 0,
+    "warnungen": 0,
+    "interferenzen": [
+      {
+        "komponenten": [
+          "S12_Sockel-1",
+          "ISO4762_M8x20_8_8-1"
+        ],
+        "volumen_mm3": 126.122379
+      }
+    ],
+    "komponenten": [
+      {
+        "name": "S12_Sockel-1",
+        "datei": "S12_Sockel.SLDPRT",
+        "translation_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": true
+      },
+      {
+        "name": "S12_Lasche-1",
+        "datei": "S12_Lasche.SLDPRT",
+        "translation_mm": [
+          0.0,
+          20.0,
+          0.0
+        ],
+        "rotation": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      {
+        "name": "ISO4762_M8x20_8_8-1",
+        "datei": "ISO4762_M8x20_8_8.sldprt",
+        "translation_mm": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "rotation": [
+          0.837169104,
+          0.0,
+          -0.546944139,
+          0.0,
+          1.0,
+          0.0,
+          0.546944139,
+          0.0,
+          0.837169104
+        ],
+        "skalierung": 1.0,
+        "status": 3,
+        "fixiert": false
+      },
+      {
+        "name": "ISO8734_8x16_St-1",
+        "datei": "ISO8734_8x16_St.sldprt",
+        "translation_mm": [
+          30.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "skalierung": 1.0,
+        "status": 2,
+        "fixiert": false
+      }
+    ],
+    "mates": [
+      [
+        "v1.1",
+        0
+      ],
+      [
+        "v2",
+        0
+      ],
+      [
+        "v3",
+        0
+      ],
+      [
+        "v4",
+        0
+      ],
+      [
+        "v5",
+        0
+      ],
+      [
+        "v6",
+        0
+      ],
+      [
+        "v7",
+        0
+      ]
+    ],
+    "sha_unveraendert": true
+  },
+  "ruecklesen_sockel": {
+    "gleichungen": [
+      {
+        "text": "\"L\"= 100",
+        "wert": 100.0,
+        "global": true
+      },
+      {
+        "text": "\"B\"= 60",
+        "wert": 60.0,
+        "global": true
+      },
+      {
+        "text": "\"H\"= 20",
+        "wert": 20.0,
+        "global": true
+      },
+      {
+        "text": "\"D1@f1_skizze\" = \"L\"",
+        "wert": 100.0,
+        "global": false
+      },
+      {
+        "text": "\"D2@f1_skizze\" = \"B\"",
+        "wert": 60.0,
+        "global": false
+      },
+      {
+        "text": "\"D3@f1_skizze\" = -(0 - (\"L\" / 2))",
+        "wert": 50.0,
+        "global": false
+      },
+      {
+        "text": "\"D4@f1_skizze\" = -(0 - (\"B\" / 2))",
+        "wert": 30.0,
+        "global": false
+      },
+      {
+        "text": "\"D1@f1\" = \"H\"",
+        "wert": 20.0,
+        "global": false
+      },
+      {
+        "text": "\"D1@OBEN\" = \"H\"",
+        "wert": 20.0,
+        "global": false
+      }
+    ],
+    "sha_unveraendert": true
+  }
+}
