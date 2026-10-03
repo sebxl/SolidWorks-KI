@@ -235,12 +235,13 @@ Rulings des Controllers, jeweils mit Begründung; „kostet bei Irrtum“ = Aufw
 ## Regression im Gesamtlauf
 
 Task 12, 03.10.2026, SolidWorks 2025, jeder Test in einem eigenen Prozess (`tests\live_einzeln.py … --zeit 600`), genau eine Instanz, 0 offene Dokumente,
-`False 1` vor jedem Lauf. Der Gesamtlauf brauchte vier SolidWorks-Neustarts durch den Controller (Halt bei ca. 3 bis 3,5 GB Private Bytes vor dem
-nächsten Test). **Alle 27 Tests der Regression bestanden, kein Prüfwert angepasst, kein Code geändert.**
+`False 1` vor jedem Lauf. Der Gesamtlauf lief auf vier Instanzen (drei Neustarts durch den Controller); Halts nach 3021 MB (`test_probe_baut`), 4201 MB (Stehlager)
+und 3826 MB (`test_kollision_wird_gemeldet`). **Alle 22 Tests der Regressionsliste bestanden** (`pytest -m sw … --collect-only -q` über die acht
+Dateien bzw. Verzeichnisse zählt 22 Test-IDs; die Tabelle unten führt jede davon einzeln: 4 + 7 + 1 + 3 + 2 + 3 + 1 + 1), kein Prüfwert angepasst, kein Code geändert.
 
 | Instanz | Datei / Test | Ergebnis | Private Bytes vorher → nachher |
 |---|---|---|---|
-| PID 22628 | `testseferenz`: Buchse, Formplatte, Auswerferhalteplatte | 3/3 OK | 425 → 1296 MB |
+| PID 22628 | `tests/referenz`: Buchse, Formplatte, Auswerferhalteplatte | 3/3 OK | 425 → 1296 MB |
 | | `test_live_muster.py` (3) | 3/3 OK | 1100 → 1479 MB |
 | | `test_live_pruefen.py` (2) | 2/2 OK | 1479 → 1795 MB |
 | | `test_live_referenz.py` (1) | 1/1 OK | 1795 → 1890 MB |
@@ -248,7 +249,7 @@ nächsten Test). **Alle 27 Tests der Regression bestanden, kein Prüfwert angepa
 | | `test_live_aenderungen.py` (1) | 1/1 OK | 1940 → 2199 MB |
 | | `test_live_bauen.py` (3) | 3/3 OK | 2199 → 2388 MB |
 | | `test_live_baugruppe.py::test_probe_baut` | OK | 2388 → 3021 MB |
-| PID 21240 | `testseferenz`: Stehlager | OK (erster Lauf) | 424 → 4201 MB |
+| PID 21240 | `tests/referenz`: Stehlager | OK (erster Lauf) | 424 → 4201 MB |
 | PID 9324 | `test_live_baugruppe.py::test_probe_besteht_pruefung` | OK | 424 → 2947 MB |
 | | `test_live_baugruppe.py::test_kollision_wird_gemeldet` | OK | 2947 → 3826 MB |
 | PID 14232 | `test_live_baugruppe.py::test_werte_verknuepfungen` | OK | 429 → 1450 MB |
@@ -257,4 +258,4 @@ nächsten Test). **Alle 27 Tests der Regression bestanden, kein Prüfwert angepa
 | | `test_live_baugruppe.py::test_manuelle_aenderung_an_der_baugruppe` | OK | 2289 → 2761 MB |
 
 Damit bestehen Buchse, Formplatte, Auswerferhalteplatte und das Stehlager (4/4 der Referenz-Suite), alle Live-Dateien aus Spec 3b §16 und die
-Live-Tests der Änderungserkennung. Die vier Stehlager-Negativfälle (`test_live_stehlager.py`) liefen in Task 11 (siehe oben) und wurden hier nicht wiederholt.
+Live-Tests der Änderungserkennung. Die vier Stehlager-Negativfälle (`test_live_stehlager.py`, nicht in der Regressionsliste) liefen in Task 11 (siehe oben) und wurden hier nicht wiederholt.
