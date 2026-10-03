@@ -78,6 +78,7 @@ def test_fehlende_referenz_bricht_ab(capsys, auftrag):
     spec["verknuepfungen"][3]["b"]["flaeche"] = "-y"   # die Senkung hat keine Fläche −y
     pfad, code, bau = _baue(capsys, auftrag, spec)
     assert code == 1 and bau["fehler"]["code"] == "REFERENZ_NICHT_GEFUNDEN", bau
+    assert "v4.1" in bau["fehler"]["meldung"] and "deckel" in bau["fehler"]["meldung"], bau["fehler"]  # Spec §11
     status = {k["id"]: k["status"] for k in bau["knoten"]}
     assert status["v4.1"] == "fehler" and status["v7"] == "uebersprungen"
     assert bau["dateien"]["baugruppe"].endswith(".sldasm")  # Stand zur Diagnose gespeichert

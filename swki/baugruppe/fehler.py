@@ -4,3 +4,4 @@ Teilfehler ins Protokoll gehen."""
 TEIL_BAU = "TEIL_BAU"
 KOMPONENTE_FEHLER = "KOMPONENTE_FEHLER"
 VERKNUEPFUNG_FEHLER = "VERKNUEPFUNG_FEHLER"
+SCHLIESSEN_FEHLER = "SCHLIESSEN_FEHLER"  # ein selbst geöffnetes Dokument ließ sich nach dem Bau nicht schließen

@@ -11,7 +11,7 @@ from swki.aenderungen import pruefe_unveraendert, pruefsummen
 from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
 from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import Instanz, Verknuepfung, basis, instanzen, verknuepfungen
-from swki.baugruppe.fehler import TEIL_BAU
+from swki.baugruppe.fehler import KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU, VERKNUEPFUNG_FEHLER
 from swki.baugruppe.freigabe import pruefe_freigabe_baugruppe
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, Quelle, dokument_name
@@ -96,29 +96,45 @@ def _gespeichert(b: Baulauf, q: Quelle) -> Path:
     return b.dateien[f"teil:{q.datei}" if q.art == "teil" else f"normteil:{q.schluessel}"]
 
 
+def _mit_kontext(e: Exception, code: str, kontext: str, schritt: str) -> BauFehler:
+    """Meldung um den Kontext (Komponente, Knoten, Datei) ergänzen. Ein BauFehler behält Code und Schritt; fremde
+    Ausnahmen (z. B. COM) bekommen `code` statt ihres Typnamens (Spec 3b §11)."""
+    if isinstance(e, BauFehler):
+        return BauFehler(e.code, f"{kontext}: {e}", e.schritt or schritt)
+    return BauFehler(code, f"{kontext}: {type(e).__name__}: {e}", schritt)
+
+
 def _fuege_ein(b: Baulauf, alle: list[Instanz]) -> Exception | None:
     fixiert = {k["id"] for k in b.bg.spec["komponenten"] if k.get("fixiert")}
     for i in sorted(alle, key=lambda x: x.komponente not in fixiert):  # stabil: die fixierte zuerst
+        q = b.bg.quellen[i.komponente]
         try:
             with b.protokoll.knoten_lauf(i.id, "komponente") as knoten:
-                q = b.bg.quellen[i.komponente]
-                model = b.kontexte[q.schluessel_dokument].model
-                pfad = Path(model.GetPathName)
-                komp = sw_baugruppe.fuege_ein(b.app, b.asm, pfad, sw.teilebox_mm(model))
-                if i.komponente in fixiert:
-                    sw_baugruppe.fixiere(b.asm, komp)
-                knoten.sw_name = komp.Name2
-                b.komponenten[i.id] = komp
-                b.protokoll.komponenten.append({"id": i.id, "sw_name": komp.Name2, "datei": _gespeichert(b, q).name})
+                try:
+                    model = b.kontexte[q.schluessel_dokument].model
+                    pfad = Path(model.GetPathName)
+                    komp = sw_baugruppe.fuege_ein(b.app, b.asm, pfad, sw.teilebox_mm(model))
+                    if i.komponente in fixiert:
+                        sw_baugruppe.fixiere(b.asm, komp)
+                    knoten.sw_name = komp.Name2
+                    b.komponenten[i.id] = komp
+                    b.protokoll.komponenten.append({"id": i.id, "sw_name": komp.Name2,
+                                                    "datei": _gespeichert(b, q).name})
+                except Exception as e:
+                    datei = dokument_name(q, b.auftrag, b.standard)
+                    raise _mit_kontext(e, KOMPONENTE_FEHLER, f"Komponente {i.id} ({datei})", "einfuegen") from e
         except Exception as e:
             return e
     return None
 
 
 def _entitaet(b: Baulauf, seite: dict) -> tuple[object, bool]:
-    ctx = b.kontexte[b.bg.quellen[basis(seite["komponente"])].schluessel_dokument]
-    ref = loese_im_teil(ctx, {k: v for k, v in seite.items() if k != "komponente"})
-    return sw_baugruppe.in_baugruppe(b.komponenten[seite["komponente"]], ref)
+    try:
+        ctx = b.kontexte[b.bg.quellen[basis(seite["komponente"])].schluessel_dokument]
+        ref = loese_im_teil(ctx, {k: v for k, v in seite.items() if k != "komponente"})
+        return sw_baugruppe.in_baugruppe(b.komponenten[seite["komponente"]], ref)
+    except Exception as e:  # Komponente nennen: die Referenz-Meldungen kennen sie nicht
+        raise _mit_kontext(e, VERKNUEPFUNG_FEHLER, f"Komponente {seite['komponente']}", "referenz") from e
 
 
 def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
@@ -129,12 +145,30 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
             continue
         try:
             with b.protokoll.knoten_lauf(v.id, v.typ) as knoten:
-                feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
-                                                  b.bg.spec.get("parameter", {}), b.gesetzt)
-                knoten.sw_name = feature.Name
+                try:
+                    feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
+                                                      b.bg.spec.get("parameter", {}), b.gesetzt)
+                    knoten.sw_name = feature.Name
+                except Exception as e:
+                    if isinstance(e, BauFehler) and str(e).startswith(f"{v.id} "):
+                        raise  # schon mit Verknüpfungs-ID (verknuepfe)
+                    raise _mit_kontext(e, VERKNUEPFUNG_FEHLER, f"Verknüpfung {v.id} ({v.typ})", "verknuepfung") from e
         except Exception as e:  # jeder Fehler (auch COM) beendet den Lauf und steht im Protokoll
             fehler = e
     return fehler
+
+
+def _schliesse_alle(b: Baulauf) -> BauFehler | None:
+    """Baugruppe, dann die Teile in umgekehrter Öffnungsreihenfolge; jedes Dokument einzeln, ein Fehler hält die übrigen
+    nicht auf. Liefert den ersten Schließfehler (oder None)."""
+    erster = None
+    for model in ([b.asm] if b.asm is not None else []) + list(reversed(b.offen)):
+        try:
+            sw.schliesse(b.app, model)
+        except Exception as e:
+            erster = erster or BauFehler(SCHLIESSEN_FEHLER, f"Dokument ließ sich nicht schließen: {type(e).__name__}: {e}",
+                                         schritt="schliessen")
+    return erster
 
 
 def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False) -> dict:
@@ -186,10 +220,9 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False) -> 
     except Exception as e:  # z. B. Vorlage, Gleichungen oder Eigenschaften der Baugruppe
         fehler = fehler or e
     finally:
-        if b.asm is not None:
-            sw.schliesse(b.app, b.asm)
-        for model in reversed(b.offen):
-            sw.schliesse(b.app, model)
+        schliessfehler = _schliesse_alle(b)
+    if schliessfehler is not None and fehler is None:
+        fehler = schliessfehler  # ein früherer Fehler bleibt erhalten und wird nicht verdeckt
     protokoll.dateien = {art: str(p) for art, p in b.dateien.items()}
     protokoll.sha256 = pruefsummen(ordner, b.dateien.values())
     protokoll.status = "fehler" if fehler else "ok"

@@ -7,12 +7,15 @@ import pytest
 
 from swki.auftrag import lauf_datei, lauf_ordner
 from swki.baugruppe import bau
+from swki.compiler.anker import AnkerFehler
+from swki.compiler.fehler import REFERENZ_NICHT_GEFUNDEN, fehler_dict
 from swki.baugruppe.aufloesen import instanzen, verknuepfungen
 from swki.baugruppe.freigabe import freigeben_baugruppe
 from swki.baugruppe.laden import lade_baugruppe
 from swki.cli import SwkiFehler, main
+from swki.compiler.bauen import BauAbbruch
 from swki.compiler.protokoll import Protokoll
-from swki.konfig import Rechner
+from swki.konfig import Rechner, lade_standard
 from tests.baugruppe.beispiel import schreibe
 
 
@@ -80,7 +83,7 @@ def test_weiche_in_swki_bauen(capsys, umgebung, monkeypatch):
 
 def _baulauf(pfad, tmp_path):
     bg = lade_baugruppe(pfad)
-    standard = {"toleranzen": {"anker_mm": 0.01}}
+    standard = lade_standard()
     return bau.Baulauf(app=None, bg=bg, auftrag="A", ordner=tmp_path / "lauf", standard=standard,
                        protokoll=Protokoll("A", pfad.name, 1, 2025)), bg
 
@@ -123,3 +126,102 @@ def test_komponenten_datei_ist_die_von_swki_gespeicherte(umgebung, tmp_path, mon
     assert datei["platte"] == "A_Platte.sldprt" and datei["deckel"] == "A_Deckel.sldprt"
     assert datei["schraube.1"] == datei["schraube.2"] == "ISO4762_M8x16_8_8.sldprt"
     assert datei["stift"] == "ISO8734_8x16_St.sldprt" and set(b.komponenten) == set(datei)
+
+
+def _kontexte(b, bg):
+    for q in bg.quellen.values():
+        b.kontexte[q.schluessel_dokument] = SimpleNamespace(model=SimpleNamespace(GetPathName="C:/x/Q.SLDPRT"))
+
+
+def test_referenzfehler_nennt_komponente_und_verknuepfung(umgebung, tmp_path, monkeypatch):
+    _, pfad, _ = umgebung
+    b, bg = _baulauf(pfad, tmp_path)
+    _kontexte(b, bg)
+
+    def loese(ctx, seite):
+        raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, "Feature 'f2' fehlt im Teil")
+
+    monkeypatch.setattr(bau, "loese_im_teil", loese)
+    fehler = bau._verknuepfe(b, verknuepfungen(bg.spec, bg.quellen))
+    d = fehler_dict(fehler)
+    assert d["code"] == REFERENZ_NICHT_GEFUNDEN and d["schritt"] == "referenz"
+    assert "deckel" in d["meldung"] and "v1" in d["meldung"] and "Feature 'f2' fehlt im Teil" in d["meldung"]
+    assert b.protokoll.knoten[0].id == "v1" and b.protokoll.knoten[0].fehler == d
+    assert {k.status for k in b.protokoll.knoten[1:]} == {"uebersprungen"}
+
+
+def test_verknuepfungsfehler_aus_der_auswahl_nennt_knoten_id(umgebung, tmp_path, monkeypatch):
+    _, pfad, _ = umgebung
+    b, bg = _baulauf(pfad, tmp_path)
+    monkeypatch.setattr(bau, "_entitaet", lambda b_, seite: object())
+
+    def verknuepfe(*args, **kwargs):
+        raise bau.BauFehler("VERKNUEPFUNG_FEHLER", "Auswahl für die Verknüpfung fehlgeschlagen", schritt="auswahl")
+
+    monkeypatch.setattr(bau.sw_baugruppe, "verknuepfe", verknuepfe)
+    d = fehler_dict(bau._verknuepfe(b, verknuepfungen(bg.spec, bg.quellen)))
+    assert d["code"] == "VERKNUEPFUNG_FEHLER" and d["schritt"] == "auswahl"
+    assert d["meldung"].startswith("Verknüpfung v1 (deckungsgleich)") and "Auswahl" in d["meldung"]
+
+
+def test_unerwartete_ausnahme_beim_einfuegen_ist_komponente_fehler(umgebung, tmp_path, monkeypatch):
+    _, pfad, _ = umgebung
+    b, bg = _baulauf(pfad, tmp_path)
+    _kontexte(b, bg)
+    monkeypatch.setattr(bau.sw, "teilebox_mm", lambda model: [0] * 6)
+
+    def fuege_ein(app, asm, p, box):
+        raise RuntimeError("COM kaputt")
+
+    monkeypatch.setattr(bau.sw_baugruppe, "fuege_ein", fuege_ein)
+    d = fehler_dict(bau._fuege_ein(b, instanzen(bg.spec, bg.quellen)))
+    assert d["code"] == "KOMPONENTE_FEHLER" and d["schritt"] == "einfuegen"
+    assert "platte" in d["meldung"] and "A_Platte.sldprt" in d["meldung"] and "COM kaputt" in d["meldung"]
+    assert b.protokoll.knoten[0].fehler == d
+
+
+def _bauen_mit_attrappen(umgebung, monkeypatch, verknuepf_fehler=None):
+    r, pfad, _ = umgebung
+    freigeben_baugruppe(lade_baugruppe(pfad))
+    dok = [SimpleNamespace(name="teil1"), SimpleNamespace(name="teil2")]
+    geschlossen = []
+
+    def schliesse(app, model):
+        geschlossen.append(model)
+        if len(geschlossen) == 1:
+            raise RuntimeError("Titel nicht lesbar")
+
+    def teile(b, r_):
+        b.offen.extend(dok)
+
+    monkeypatch.setattr(bau, "verbinde", lambda jahr: object())
+    monkeypatch.setattr(bau, "_baue_teile", teile)
+    monkeypatch.setattr(bau, "_hole_normteile", lambda b, r_, tol: None)
+    monkeypatch.setattr(bau, "_fuege_ein", lambda b, alle: None)
+    monkeypatch.setattr(bau, "_verknuepfe", lambda b, alle: verknuepf_fehler)
+    monkeypatch.setattr(bau.sw_baugruppe, "neue_baugruppe", lambda app, vorlage: SimpleNamespace(name="asm"))
+    monkeypatch.setattr(bau, "globale_variablen", lambda *a: None)
+    monkeypatch.setattr(bau, "setze_eigenschaften", lambda *a: None)
+    monkeypatch.setattr(bau.sw, "speichere", lambda model, ziel: None)
+    monkeypatch.setattr(bau.sw, "schliesse", schliesse)
+    return r, pfad, dok, geschlossen
+
+
+def test_schliessfehler_haelt_die_uebrigen_nicht_auf(umgebung, monkeypatch):
+    r, pfad, dok, geschlossen = _bauen_mit_attrappen(umgebung, monkeypatch)
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(pfad)
+    assert [g.name for g in geschlossen] == ["asm", "teil2", "teil1"]  # Baugruppe zuerst, Teile rückwärts
+    assert e.value.daten["fehler"]["code"] == "SCHLIESSEN_FEHLER" and "Titel nicht lesbar" in e.value.daten["fehler"]["meldung"]
+    assert (lauf_ordner(r, "A", 1) / "protokoll.json").is_file() and lauf_datei(pfad, 1, "protokoll").is_file()
+
+
+def test_schliessfehler_verdeckt_den_urspruenglichen_fehler_nicht(umgebung, monkeypatch):
+    original = bau.BauFehler("VERKNUEPFUNG_FEHLER", "v1: kaputt", schritt="verknuepfung")
+    r, pfad, dok, geschlossen = _bauen_mit_attrappen(umgebung, monkeypatch, original)
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(pfad)
+    assert len(geschlossen) == 3
+    assert e.value.daten["fehler"] == {"code": "VERKNUEPFUNG_FEHLER", "schritt": "verknuepfung", "meldung": "v1: kaputt"}
+    protokoll = json.loads(lauf_datei(pfad, 1, "protokoll").read_text(encoding="utf-8"))
+    assert protokoll["status"] == "fehler" and protokoll["fehler"]["code"] == "VERKNUEPFUNG_FEHLER"
