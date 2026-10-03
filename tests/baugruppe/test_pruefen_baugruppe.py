@@ -1,8 +1,10 @@
 import json
 
-from swki.aenderungen import soll_verknuepfungswerte
+from swki.aenderungen import soll_parameter, soll_verknuepfungswerte
+from swki.baugruppe.freigabe import freigeben_baugruppe
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.pruefen import gewindebohrungen_teil, teil_messpunkte
+from swki.konfig import lade_standard
 from swki.pruefung.befehle import schreibe_pruefbericht, status
 from swki.pruefung.bericht import bericht_markdown
 from tests.baugruppe.beispiel import BAUGRUPPE, PLATTE, kopie, schreibe
@@ -56,3 +58,21 @@ def test_soll_verknuepfungswerte(tmp_path):
     spec["verknuepfungen"][0] = {**spec["verknuepfungen"][0], "typ": "abstand", "wert": "=ABST/7"}
     bg = lade_baugruppe(schreibe(tmp_path / "A", baugruppe=spec))
     assert soll_verknuepfungswerte(bg.spec, bg.quellen) == {"v1": 5.0}
+
+
+def test_soll_verknuepfungswerte_nutzt_die_freigegebenen_parameter(tmp_path):
+    """Spec 3b §8: Differenz zur freigegebenen Spec. Wurde ABST nach der Freigabe schon in der Spec geändert (begonnene
+    Übernahme), muss der Soll-Wert der Verknüpfung trotzdem aus der Freigabe-Kopie (35) stammen, nicht aus der Spec (70)."""
+    spec = kopie(BAUGRUPPE)
+    spec["verknuepfungen"][0] = {**spec["verknuepfungen"][0], "typ": "abstand", "wert": "=ABST/7"}
+    pfad = schreibe(tmp_path / "A", baugruppe=spec)
+    freigeben_baugruppe(lade_baugruppe(pfad))
+    neu = kopie(spec)
+    neu["parameter"]["ABST"] = 70
+    schreibe(tmp_path / "A", baugruppe=neu)
+    standard = lade_standard()
+    soll = soll_parameter(pfad, "A", standard)
+    assert soll["A_Probe.sldasm"]["ABST"] == 35 and soll["A_Probe.sldasm"]["verknuepfung:v1"] == 5.0
+    bg = lade_baugruppe(pfad)
+    assert soll_verknuepfungswerte(bg.spec, bg.quellen) == {"v1": 10.0}      # ohne Parameter: aktuelle Spec
+    assert soll_verknuepfungswerte(bg.spec, bg.quellen, {"ABST": 35}) == {"v1": 5.0}

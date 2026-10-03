@@ -155,11 +155,12 @@ def lies_globale_variablen(model) -> dict[str, float]:
     return werte
 
 
-def soll_verknuepfungswerte(spec: dict, quellen: dict) -> dict[str, float]:
-    """Abstands- und Winkelwerte der aufgelösten Verknüpfungen (mm bzw. Grad) nach Verknüpfungs-ID."""
+def soll_verknuepfungswerte(spec: dict, quellen: dict, parameter: dict | None = None) -> dict[str, float]:
+    """Abstands- und Winkelwerte der aufgelösten Verknüpfungen (mm bzw. Grad) nach Verknüpfungs-ID; die Ausdrücke
+    werden mit parameter ausgewertet (Vorgabe: die Parameter von spec)."""
     from swki.baugruppe.aufloesen import verknuepfungen  # spät importiert (Kreisimport)
 
-    p = spec.get("parameter", {})
+    p = spec.get("parameter", {}) if parameter is None else parameter
     return {v.id: auswerten(v.wert, p) for v in verknuepfungen(spec, quellen) if v.wert is not None}
 
 
@@ -173,9 +174,11 @@ def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, d
         from swki.baugruppe.modell import dokument_name
 
         bg = lade_baugruppe(spec_pfad)
+        # Verknüpfungen sind Bauweg (aktuelle Spec), ihre Ausdrücke gelten aber mit den freigegebenen Parametern (Spec §8)
         ergebnis[f"{dateiname(soll, auftrag, standard)}.sldasm"] = {
             **soll.get("parameter", {}),
-            **{f"verknuepfung:{n}": w for n, w in soll_verknuepfungswerte(bg.spec, bg.quellen).items()}}
+            **{f"verknuepfung:{n}": w
+               for n, w in soll_verknuepfungswerte(bg.spec, bg.quellen, soll.get("parameter", {})).items()}}
         for datei, teil in freigegebene_teile(bg).items():
             ergebnis[dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard)] = teil.get("parameter", {})
     else:
