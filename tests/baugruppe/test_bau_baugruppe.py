@@ -253,3 +253,60 @@ def test_schliessfehler_verdeckt_den_urspruenglichen_fehler_nicht(umgebung, monk
     assert e.value.daten["fehler"] == {"code": "VERKNUEPFUNG_FEHLER", "schritt": "verknuepfung", "meldung": "v1: kaputt"}
     protokoll = json.loads(lauf_datei(pfad, 1, "protokoll").read_text(encoding="utf-8"))
     assert protokoll["status"] == "fehler" and protokoll["fehler"]["code"] == "VERKNUEPFUNG_FEHLER"
+
+
+def test_abbruch_vor_dem_einfuegen_vermerkt_komponenten_als_uebersprungen(umgebung, monkeypatch):
+    _, pfad, _ = umgebung
+    bg = lade_baugruppe(pfad)
+    freigeben_baugruppe(bg)
+    monkeypatch.setattr(bau, "verbinde", lambda jahr: object())
+    monkeypatch.setattr(bau, "_baue_teile",
+                        lambda b, r_: bau.BauFehler("TEIL_BAU", "platte/f2: kaputt", schritt="teil"))
+    monkeypatch.setattr(bau.sw, "schliesse", lambda app, model: None)
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(pfad)
+    knoten = e.value.daten["knoten"]
+    assert [k["id"] for k in knoten[:5]] == ["platte", "deckel", "schraube.1", "schraube.2", "stift"]
+    assert {k["status"] for k in knoten} == {"uebersprungen"}
+    assert len(knoten) == 5 + len(verknuepfungen(bg.spec, bg.quellen))
+
+
+def test_fixierte_komponente_wird_zuerst_eingefuegt_und_fixiert(tmp_path, monkeypatch):
+    from tests.baugruppe.beispiel import BAUGRUPPE, kopie
+
+    spec = kopie(BAUGRUPPE)
+    spec["komponenten"] = spec["komponenten"][1:] + spec["komponenten"][:1]  # fixierte Platte zuletzt in der Spec
+    pfad = schreibe(tmp_path / "A", baugruppe=spec)
+    b, bg = _baulauf(pfad, tmp_path)
+    _kontexte(b, bg)
+    for q in bg.quellen.values():
+        b.dateien[f"teil:{q.datei}" if q.art == "teil" else f"normteil:{q.schluessel}"] = tmp_path / "x.sldprt"
+    zaehler, fixiert = iter(range(1, 100)), []
+    monkeypatch.setattr(bau.sw, "teilebox_mm", lambda model: [0] * 6)
+    monkeypatch.setattr(bau.sw_baugruppe, "fuege_ein", lambda app, asm, p, box: SimpleNamespace(Name2=f"K-{next(zaehler)}"))
+    monkeypatch.setattr(bau.sw_baugruppe, "fixiere", lambda asm, komp: fixiert.append(komp.Name2))
+    assert bau._fuege_ein(b, instanzen(bg.spec, bg.quellen)) is None
+    assert b.protokoll.komponenten[0]["id"] == "platte" and fixiert == ["K-1"]
+
+
+def test_normteile_werden_kopiert_und_die_bibliothek_bleibt_unveraendert(umgebung, tmp_path, monkeypatch):
+    r, pfad, _ = umgebung
+    b, bg = _baulauf(pfad, tmp_path)
+    bibliothek = tmp_path / "bibliothek"
+    bibliothek.mkdir()
+    pfade = {}
+    for q in bg.quellen.values():
+        if q.art == "normteil":
+            pfade[(q.norm, q.hole_groesse)] = bibliothek / f"{q.schluessel}.sldprt"
+            pfade[(q.norm, q.hole_groesse)].write_bytes(q.schluessel.encode())
+    vorher = {p.name: p.read_bytes() for p in bibliothek.iterdir()}
+    monkeypatch.setattr(bau.normteil_befehle, "hole",
+                        lambda norm, groesse, variante: {"pfad": str(pfade[(norm, groesse)]), "gebaut": False})
+    monkeypatch.setattr(bau, "bibliotheksordner", lambda r_: bibliothek)
+    monkeypatch.setattr(bau, "lies_eintrag", lambda ordner, schluessel: {"pruefsumme": "abc"})
+    monkeypatch.setattr(bau, "oeffne", lambda app, p: SimpleNamespace(pfad=Path(p)))
+    monkeypatch.setattr(bau, "kontext_aus_datei", lambda app, model, spec, p, tol, prot: SimpleNamespace(model=model))
+    assert bau._hole_normteile(b, r, 0.01) is None
+    assert {p.name: p.read_bytes() for p in bibliothek.iterdir()} == vorher  # nichts in die Bibliothek geschrieben
+    assert {p.name for p in b.ordner.iterdir()} == set(vorher)               # Kopien im Lauf-Ordner
+    assert all(m.pfad.parent == b.ordner for m in b.offen)                  # geöffnet werden nur die Kopien
