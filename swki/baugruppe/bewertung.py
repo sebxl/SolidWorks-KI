@@ -212,6 +212,12 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
     ergebnisse.append(_pruefung("eigenschaften", not abw_eig, ist=abw_eig, soll=soll_eig, knoten=[]))
 
     teilpruefungen = {}
+    for datei in dict.fromkeys(q.datei for q in quellen.values() if q.art == "teil"):
+        if datei not in m.teilberichte:  # fail-closed: ohne Teilbericht gibt es keine Aussage über das Teil
+            komp = next(k for k, q in quellen.items() if q.datei == datei)
+            ergebnisse.append(_pruefung(f"{komp}: teilbericht", False, knoten=[komp],
+                                        hinweis=f"kein Teilbericht für {datei} (Teilprüfung nicht gelaufen)"))
+            teilpruefungen[komp] = {"bestanden": False, "maengel": 1}
     for datei, tb in m.teilberichte.items():
         komp = next(k for k, q in quellen.items() if q.datei == datei)
         teilpruefungen[komp] = {"bestanden": tb["bestanden"], "maengel": len(tb["maengel"])}

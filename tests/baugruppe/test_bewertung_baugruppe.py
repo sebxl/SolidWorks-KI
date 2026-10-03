@@ -130,6 +130,18 @@ def test_teilbericht_mit_praefix(bg):
     assert mangel["knoten"] == ["platte/f2"] and "ist 59.0 statt 60.0" in mangel["beschreibung"]
 
 
+def test_fehlender_teilbericht_ist_mangel(bg):
+    """fail-closed: eine verwendete Teil-Spec ohne Teilbericht darf die Baugruppe nicht still bestehen lassen."""
+    m = _messwerte(bg)
+    del m.teilberichte["deckel.yaml"]
+    bericht = _bewerte(bg, m)
+    assert not bericht["bestanden"]
+    mangel = _maengel(bericht)["deckel: teilbericht"]
+    assert mangel["knoten"] == ["deckel"] and "kein Teilbericht" in mangel["beschreibung"]
+    assert bericht["teilpruefungen"]["deckel"] == {"bestanden": False, "maengel": 1}
+    assert bericht["teilpruefungen"]["platte"] == {"bestanden": True, "maengel": 0}
+
+
 def test_mass_ausserhalb_toleranz(bg):
     mp = bg.spec["pruefung"]["masse_pruefen"][0]
     m = _messwerte(bg)
