@@ -49,17 +49,26 @@ def lade_yaml(pfad: Path) -> dict:
     return daten
 
 
-def schema_befunde(spec: dict) -> list[dict]:
+def schema_befunde(spec: dict, erwartet: str = "teil") -> list[dict]:
+    """Schemabefunde; die Spezifikation muss die erwartete Art haben (teil bzw. baugruppe)."""
     art = spec.get("art")
     datei = SCHEMA_ORDNER / f"{art}.schema.json"
-    if art != "teil" or not datei.exists():
-        return [{"pfad": "art", "meldung": f"Art {art!r} wird nicht unterstützt (Stufe 2: nur 'teil')"}]
+    if art != erwartet or not datei.exists():
+        return [{"pfad": "art", "meldung": f"Art {art!r} wird hier nicht unterstützt (erwartet {erwartet!r})"}]
     validator = Draft202012Validator(json.loads(datei.read_text(encoding="utf-8")))
     befunde = []
     for fehler in validator.iter_errors(spec):
         genau = best_match(fehler.context) if fehler.context else fehler
         befunde.append({"pfad": _pfad(genau.absolute_path), "meldung": genau.message})
     return sorted(befunde, key=lambda b: b["pfad"])
+
+
+def art_der_datei(pfad: Path) -> str | None:
+    """Wert von "art" einer Spezifikationsdatei (Weiche der Befehle); None, wenn die Datei fehlt oder kein Objekt ist."""
+    try:
+        return lade_yaml(pfad).get("art")
+    except SpecFehler:
+        return None
 
 
 def _werte(obj, pfad: list, eltern: str | None = None):
