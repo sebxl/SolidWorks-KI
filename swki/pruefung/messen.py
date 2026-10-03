@@ -109,7 +109,7 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
     return ctx
 
 
-def _messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
+def messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
     if "punkt" in mp:
         return Messgeometrie("punkt", tuple(ctx.wert(v) for v in mp["punkt"]))
     if "referenz" in mp:
@@ -139,7 +139,7 @@ def messpunkte(ctx, spec: dict) -> dict[str, Messgeometrie | str]:
     for mp in spec.get("pruefung", {}).get("masse_pruefen", []):
         for punkt in (mp["von"], mp["zu"]):
             try:
-                ergebnis[messpunkt_schluessel(punkt)] = _messgeometrie(ctx, spec, punkt)
+                ergebnis[messpunkt_schluessel(punkt)] = messgeometrie(ctx, spec, punkt)
             except BauFehler as e:
                 ergebnis[messpunkt_schluessel(punkt)] = f"{e.code}: {e}"
     return ergebnis

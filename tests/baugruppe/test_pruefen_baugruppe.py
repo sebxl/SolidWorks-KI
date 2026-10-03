@@ -1,0 +1,58 @@
+import json
+
+from swki.aenderungen import soll_verknuepfungswerte
+from swki.baugruppe.laden import lade_baugruppe
+from swki.baugruppe.pruefen import gewindebohrungen_teil, teil_messpunkte
+from swki.pruefung.befehle import schreibe_pruefbericht, status
+from swki.pruefung.bericht import bericht_markdown
+from tests.baugruppe.beispiel import BAUGRUPPE, PLATTE, kopie, schreibe
+
+
+def test_gewindebohrungen_aus_dem_protokoll():
+    protokoll = {"knoten": [{"id": "f1", "punkte": None}, {"id": "f2", "punkte": [[-30, 20, 0], [30, 20, 0]]},
+                            {"id": "f3", "punkte": [[0, 20, -15]]}]}
+    assert gewindebohrungen_teil(PLATTE, protokoll) == [{"feature": "f2", "instanz": 1, "punkt": (-30, 20, 0)},
+                                                        {"feature": "f2", "instanz": 2, "punkt": (30, 20, 0)}]
+
+
+def test_teil_messpunkte(tmp_path):
+    bg = lade_baugruppe(schreibe(tmp_path / "A"))
+    bedarf = teil_messpunkte(bg)
+    assert bedarf["platte.yaml"] == [{"feature": "f1", "flaeche": "-y"}]
+    assert bedarf["deckel.yaml"] == [{"feature": "f1", "flaeche": "+y"}]
+    assert bedarf["ISO4762_M8x16_8_8"] == [{"referenz": "EINBAU_EBENE"}]
+
+
+def test_pruefbericht_verwirft_altes_urteil(tmp_path):
+    spec_pfad = tmp_path / "A" / "probe.yaml"
+    urteil = spec_pfad.parent / "protokolle" / "probe.lauf-1.pruefer.json"
+    urteil.parent.mkdir(parents=True)
+    urteil.write_text("{}", encoding="utf-8")
+    ordner = tmp_path / "lauf-1"
+    ordner.mkdir()
+    schreibe_pruefbericht(spec_pfad, 1, ordner, bericht := {"bestanden": True, "maengel": []})
+    assert not urteil.exists() and bericht["pruefer_urteil_verworfen"] is True
+    assert json.loads((ordner / "pruefbericht.json").read_text(encoding="utf-8"))["bestanden"] is True
+
+
+def test_status_einer_baugruppe(tmp_path):
+    assert status(schreibe(tmp_path / "A"))["empfehlung"] == "bauen"
+
+
+def test_bericht_abschnitte():
+    bericht = {"maengel": [], "bilder": {}, "stueckliste": {"A_Platte.sldprt": 1},
+               "normteile": {"ISO4762_M8x16_8_8": {"gebaut": False, "pruefsumme": "abc"}},
+               "gewindepaarungen": [{"schraube": "schraube.1", "teil": "platte", "bohrung": "f2.1",
+                                     "einschraublaenge": 9.6, "volumen": 133.1, "soll": 133.0, "gewindetiefe": 12}],
+               "teilpruefungen": {"platte": {"bestanden": True, "maengel": 0}}}
+    text = bericht_markdown(BAUGRUPPE, "A", [], ("pruefen", "…"), bericht, None, None, [])
+    for teil in ("## Stückliste", "| A_Platte.sldprt | 1 |", "## Normteile", "## Gewindepaarungen", "| schraube.1 |",
+                 "## Teilprüfungen", "| platte | ja | 0 |"):
+        assert teil in text
+
+
+def test_soll_verknuepfungswerte(tmp_path):
+    spec = kopie(BAUGRUPPE)
+    spec["verknuepfungen"][0] = {**spec["verknuepfungen"][0], "typ": "abstand", "wert": "=ABST/7"}
+    bg = lade_baugruppe(schreibe(tmp_path / "A", baugruppe=spec))
+    assert soll_verknuepfungswerte(bg.spec, bg.quellen) == {"v1": 5.0}

@@ -15,6 +15,7 @@ from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import Rechner, lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
+from swki.spec.ausdruck import auswerten
 from swki.spec.freigabe import freigegebene_spec
 from swki.spec.laden import art_der_datei
 from swki.verbindung import verbinde
@@ -110,6 +111,14 @@ def lies_globale_variablen(model) -> dict[str, float]:
     return werte
 
 
+def soll_verknuepfungswerte(spec: dict, quellen: dict) -> dict[str, float]:
+    """Abstands- und Winkelwerte der aufgelösten Verknüpfungen (mm bzw. Grad) nach Verknüpfungs-ID."""
+    from swki.baugruppe.aufloesen import verknuepfungen  # spät importiert (Kreisimport)
+
+    p = spec.get("parameter", {})
+    return {v.id: auswerten(v.wert, p) for v in verknuepfungen(spec, quellen) if v.wert is not None}
+
+
 def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, dict]:
     """Dateiname im Lauf → Parameter der freigegebenen Spezifikation (Teil bzw. Baugruppe und ihre Teile)."""
     soll = freigegebene_spec(spec_pfad)
@@ -120,7 +129,9 @@ def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, d
         from swki.baugruppe.modell import dokument_name
 
         bg = lade_baugruppe(spec_pfad)
-        ergebnis[f"{dateiname(soll, auftrag, standard)}.sldasm"] = soll.get("parameter", {})
+        ergebnis[f"{dateiname(soll, auftrag, standard)}.sldasm"] = {
+            **soll.get("parameter", {}),
+            **{f"verknuepfung:{n}": w for n, w in soll_verknuepfungswerte(bg.spec, bg.quellen).items()}}
         for datei, teil in freigegebene_teile(bg).items():
             ergebnis[dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard)] = teil.get("parameter", {})
     else:
@@ -153,6 +164,10 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
             model = oeffne(app, ordner / name)
             try:
                 ist = lies_globale_variablen(model)
+                if name.lower().endswith(".sldasm"):
+                    from swki.baugruppe import sw_baugruppe  # spät importiert (Kreisimport)
+
+                    ist |= {f"verknuepfung:{n}": w for n, w in sw_baugruppe.verknuepfungswerte(model).items()}
             finally:
                 sw.schliesse(app, model)  # schließt ohne zu speichern (S9b)
             if name not in soll:
