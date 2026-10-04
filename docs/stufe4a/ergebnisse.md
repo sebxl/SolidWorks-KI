@@ -233,9 +233,19 @@ Präzisierungen und Rulings des Controllers aus dem Ledger der Umsetzung. **Dies
   stürzte SolidWorks nie ab (RAM 31 GB).
 - **Unaufgeklärter Unterschied der Speicherspitzen:** Task-8-Live 4031 MB (2-s-Abtastung) gegenüber 7816 MB (0,5-s-Abtastung) und dem
   Plateau 6,2 GB der Diagnose (Hypothese, ungeprüft: anderer Dokument-/Cache-Zustand oder Öffnungsreihenfolge).
-- **Compiler-Fehler** `REBUILD_FEHLER – Gleichungen: Code 1`: reproduzierbar bei quadratischem Rechteck (`breite: =L`, `hoehe: =B` mit L = B,
-  Task 9), sporadisch bei unveränderter Referenzleiste (2 von 6 Läufen), danach fünf Einzelbauten fehlerfrei; Verdacht auf ein Rennen
-  zwischen `Add2` der Gleichungen und `EditRebuild3`. Eigene Folgeaufgabe außerhalb 4a.
+- **Compiler-Fehler `REBUILD_FEHLER – Gleichungen: Code 1` (Folgeaufgabe erledigt):** Ursache war das Rechteckwerkzeug, kein Rennen.
+  `CreateCornerRectangle` legt trotz `AddToDB` selbst eine Beziehung „gleiche Länge“ (`swConstraintType_SAMELENGTH`, 14) an: beim Quadrat
+  immer (20 × 20), bei Nicht-Quadraten sporadisch. Dabei wird die Skizze quadratisch (gespeicherte Fehlstände: Leiste 4 × 300 mm,
+  Schlitten 4 × 80 mm, D2 getrieben). Das zweite Seitenmaß ist dann überzählig, seine Gleichung scheitert beim Neuaufbau. Belegt durch
+  Beziehungslisten (14 steht vor den Waagrecht-/Senkrecht-Beziehungen des Werkzeugs) und durch Reproduktion: 6 Zyklen
+  „Neustart + 2 Baugruppenbauten“ ergaben in einer Sitzung zwei Fehlbauten (`schlitten/f1`, `leiste_links/f1`). Nicht bestätigt:
+  Rennen nach dem Start; Skalierung der Ansicht (Skala bis 1e-5 erzeugt keine 14). Der genaue Auslöser im Werkzeug bleibt offen; die
+  Sonde vor dem ersten Maß (84 Rechtecke in 21 Baugruppenbauten) traf ihn nicht. Fix: Rechtecke aus vier `CreateLine` mit eigenen
+  Waagrecht-/Senkrecht-Beziehungen (`skizze.py`), Live-Test `test_quadratisches_rechteck_mit_parametern`; danach 8 Zyklen
+  „Neustart + 2 Baugruppenbauten“ fehlerfrei (16 von 16), Live-Suite 112/112, Regressions-Suite 5/5.
+- **Sporadischer Normbohrungsfehler (neu, beim Reproduzieren gesehen):** einmal in 34 Baugruppenbauten
+  `grundplatte/f2: FEATURE_NICHT_ERZEUGT – normbohrung f2: Bohrung an Position 2 fehlt (keine Zylinderfläche mit Achse durch
+  (100.0, 20.0, -40.0))` auf frischem SolidWorks; der zweite Bau derselben Sitzung ging durch. Nicht untersucht.
 - **Deferred minors des Ledgers** (Gesamt-Review soweit nicht erledigt): Task 2: Fall `drehung` in `test_schema_lehnt_ab` kommentieren,
   `test_soll_der_grenze…` prüft nicht den Vorrang von `wert`; Task 3: Tests für `BEWEGUNG_DOPPELT`, „fixiert“, `grenze_abstand min ≥ 0`,
   Gruppenpfad, Scharnier-Achsprüfung akzeptiert jede `referenz` (`plausibel.py:221`), neue Testdateien LF statt CRLF, Zeilen > 120 Zeichen;

@@ -84,3 +84,23 @@ def test_skizze_auf_versetzter_ebene():
     with gebautes_teil(spec) as (ctx, fehler, _):
         assert fehler is None
         assert sw.teilebox_mm(ctx.model) == pytest.approx([-5, -15, -5, 5, -10, 5], abs=1e-6)
+
+
+def test_quadratisches_rechteck_mit_parametern():
+    # Bei einem Quadrat legt CreateCornerRectangle selbst eine Beziehung "gleiche Länge" an (trotz AddToDB); das
+    # Maß der zweiten Seite wäre dann überzählig und seine Gleichung scheiterte ("Gleichungen: Code 1", Befund 4a)
+    spec = {"art": "teil", "name": "T", "parameter": {"L": 20, "B": 20, "H": 20}, "features": [{
+        "id": "f1", "typ": "extrusion",
+        "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": "=B"}}]},
+        "ende": {"typ": "blind", "tiefe": "=H"},
+    }]}
+    with gebautes_teil(spec) as (ctx, fehler, _):
+        assert fehler is None
+        assert sw.teilebox_mm(ctx.model) == pytest.approx([-10, 0, -10, 10, 20, 10], abs=1e-6)
+        # B allein ändern: die Seiten bleiben unabhängig (keine Gleich-Beziehung mehr)
+        gleichungen = ctx.model.GetEquationMgr
+        dispid = gleichungen._oleobj_.GetIDsOfNames("Equation")
+        gleichungen._oleobj_.Invoke(dispid, 0, pythoncom.DISPATCH_PROPERTYPUT, False, 1, '"B" = 30')
+        gleichungen.EvaluateAll
+        sw.rebuild(ctx.model)
+        assert sw.teilebox_mm(ctx.model) == pytest.approx([-10, 0, -15, 10, 20, 15], abs=1e-6)

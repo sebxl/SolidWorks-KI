@@ -17,7 +17,7 @@ AUFTRAG = "SWKI-LIVE-SCHLITTEN"
 REFERENZ = Path(__file__).resolve().parents[1] / "referenz" / "schlitten"
 ANSCHLAG = {
     "art": "teil", "name": "Anschlag", "material": "1.0038", "eigenschaften": {"Benennung": "Anschlag"},
-    "parameter": {"L": 24, "B": 20, "H": 20},  # nicht quadratisch: bei L = B meldet SolidWorks REBUILD_FEHLER (Gleichungen)
+    "parameter": {"L": 24, "B": 20, "H": 20},  # L 24 aus Task 9 (Quadrat scheiterte damals am Rechteckwerkzeug, behoben)
     "features": [{"id": "f1", "typ": "extrusion",
                   "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": "=B"}}]},
                   "ende": {"typ": "blind", "tiefe": "=H"}}],
