@@ -104,7 +104,8 @@ Vorlage: `tests/referenz/schlitten/`.
   oder `drehung: {achse, winkel}` (Grad, Rechte-Hand-Regel) in Baugruppenkoordinaten, Differenz zwischen `min` und
   `max`. Mitfahrende Komponenten als eigene Endlage eintragen (z. B. der Hebel auf dem Schlitten).
 - **Drehsinn** (gemessen, Spike S13 Zeile 7): Beispiel Hebel/Schlitten: Winkelgrenze an den Flächen +z (Hebel) /
-  +z (Schlitten), `gleich`, Drehachse ±y: 0 → 90° dreht den Hebel um [0, −1, 0] (+x → +z). Den Drehsinn einer neuen
+  +z (Schlitten), `gleich`, gemessener Drehsinn −y: 0 → 90° dreht den Hebel um
+  [0, −1, 0] (+x → +z). Den Drehsinn einer neuen
   Anordnung nicht raten, sondern aus der Eingabe ableiten und als Endlage eintragen; scheitert die Endlage, ist das ein
   Befund (Bauweg prüfen), nie die Erwartung nachträglich anpassen.
 - `bauen` legt jede Grenze mit dem Wert `min` an – das ist die Grundstellung; `bauen` prüft sie über das Maß der Grenze
@@ -114,9 +115,12 @@ Vorlage: `tests/referenz/schlitten/`.
   Stellung, „Grenze wirkt“, „Freiheitsgrad belegt“ und die Endlagen; Bewegungen mit sich schneidenden Räumen zusätzlich
   gegeneinander (Paarläufe). Mängel: `freiheitsgrad:<k>`, `bewegung:<name>`, `bewegung_kollision:<name>`,
   `grenze:<name>`, `endlage:<name>:<k>`. Bilder `<Bewegung>-min|mitte|max` und `<Bewegung>-kollision-…`.
-- **Speicher:** Die Bewegungsprüfung braucht auf Rechner A 6–10 GB Private Bytes (Linearschlitten: Spitze 7,8 GB,
-  mit Anschlag 10,2 GB); vor jedem Baugruppenlauf mit Bewegungen frisches SolidWorks; `speicher_grenze_mb` 10000
-  (Nutzerentscheidung 2026-10-04).
+- **Speicher:** Die Bewegungsprüfung braucht auf Rechner A bis ~11 GB Private Bytes (gemessene Spitzen: Stehlager
+  10,8 GB, Schlitten 9,9–10,2 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau); vor jedem Baugruppenlauf mit
+  Bewegungen frisches SolidWorks; `speicher_grenze_mb` 10000 (Nutzerentscheidung 2026-10-04).
+- **Fehler der Bewegungsprüfung sind Mängel:** Rebuild-/Verknüpfungsfehler im Lauf-Dokument (die Bewegungsprüfung läuft
+  dann nicht, `bewegung:<name>` mit `ok=None`) und Fehler in den Läufen (`bewegung:<name>` mit `ok=False`) landen im
+  Prüfbericht; nachbessern wie jeden Mangel. Nur `SPEICHER_KNAPP` bricht ab.
 - **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht): SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen;
   scheitert es auch frisch, dem Nutzer melden.
 - Ab vier Bewegungen meldet `validieren` den Hinweis `pruefaufwand` – mit dem Nutzer klären, ob alle nötig sind.

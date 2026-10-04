@@ -87,7 +87,9 @@ bewegungen:
     grenze: g2
     erwartet:
       endlagen:
-        - {komponente: hebel, drehung: {achse: [0, 1, 0], winkel: "=SCHWENK"}}
+        # Achse [0, -1, 0]: gemessener Drehsinn der Winkelgrenze an den Flächen +z/+z (Spike S13 Zeile 7), nachgezogen bei
+        # der Umsetzung, 2026-10-04 (ursprünglich [0, 1, 0] angenommen)
+        - {komponente: hebel, drehung: {achse: [0, -1, 0], winkel: "=SCHWENK"}}
 pruefung:
   huellquader: [300, 60, 120]
 ```
@@ -183,12 +185,18 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
   (sonst Mangel `freiheitsgrad:<komponente>`).
   *Nachgezogen bei der Umsetzung, 2026-10-04:* `GetConstrainedStatus` zählt eine Grenzverknüpfung als Bindung (mit Grenzen sind alle Komponenten voll bestimmt,
   Spike S13 Zeile 4, S13b A/B). Die statische Bestimmtheit erlaubt deshalb für Komponenten mit `freiheitsgrade: 1` den Status
-  `unterbestimmt`; der Freiheitsgrad wird in der Bewegungsprüfung mit unterdrückten Grenzen gelesen (§8.2.2).
+  `unterbestimmt` bei `freiheitsgrade: 1`; der Freiheitsgrad wird in der Bewegungsprüfung mit unterdrückten Grenzen gelesen (§8.2.2).
+  Begründung: Läse die Statik streng, erschiene ein zusätzlicher Freiheitsgrad (Negativfall 4, Schlitten ohne seitliche
+  Führung: statisch `unterbestimmt`) als Mangel `bestimmtheit` der bewegten Komponente statt als `freiheitsgrad:<komponente>`,
+  der ihn eindeutig benennt. Im Normalfall melden Komponenten mit Grenze statisch voll bestimmt, die Erlaubnis kostet dort
+  nichts.
 
 ### 8.2 Bewegungsprüfung
 
-1. **Festhalten:** Jede bewegte Komponente erhält eine Hilfsverknüpfung (§7.2) mit Wert `min`.
-2. **Freiheitsgrad belegt:** Je Bewegung: mit ihrer Hilfsverknüpfung und allen übrigen festgehalten muss die bewegte
+1. **Festhalten:** Jede bewegte Komponente erhält die treibende Verknüpfung der Prüfung (Abstand bzw. Winkel an den Flächen
+   ihrer Grenze, Wert `min`); sie besteht nur während der Prüfung und wird nie gespeichert.
+   *Nachgezogen bei der Umsetzung, 2026-10-04:* kein Bezug mehr auf §7.2 (der Bau legt keine Hilfsverknüpfung an, Spike S13c).
+2. **Freiheitsgrad belegt:** Je Bewegung: mit ihrer treibenden Verknüpfung und allen übrigen festgehalten muss die bewegte
    Komponente bzw. Gruppe **voll bestimmt** sein (`GetConstrainedStatus`). Bleibt sie unterbestimmt, ist mehr als ein
    Freiheitsgrad offen: Mangel `freiheitsgrad:<komponente>`. Überbestimmt: Mangel `freiheitsgrad:<komponente>` mit Hinweis
    auf Widerspruch zur Grenze.
@@ -199,6 +207,12 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
    (mit Grenzen immer 3), S13b A/B/C.
 3. **Grundstellungslauf** je Bewegung, die übrigen auf `min`: für jede der `schritte + 1` Stellungen
    - Wert setzen, Rebuild. Fehler → Mangel `bewegung:<name>` mit Stellung und SW-Meldung; der Lauf dieser Bewegung endet.
+     *Nachgezogen bei der Umsetzung, 2026-10-04:* Fehler, die die Bewegungsprüfung gar nicht erst zulassen oder mittendrin
+     beenden, sind ebenfalls Mängel `bewegung:<name>`, kein Abbruch ohne Prüfbericht: Hat das Lauf-Dokument schon einen
+     Rebuild- oder Verknüpfungsfehler (statische Mängel `rebuild`/`verknuepfungen`), wird nicht gefahren, `bewegung:<name>` steht
+     mit `ok=None`; scheitert eine Stellung, die gelingen muss (Grundstellung, Gegenstellung eines Paarlaufs, Rückweg auf
+     `min`), ist die betroffene Bewegung `ok=False` (Knoten = bewegte Komponente), die übrigen sind `ok=None`; ein Fehler ohne
+     Bewegungsbezug macht alle Bewegungen zu `ok=False`. Nur `SPEICHER_KNAPP` bricht ab (§8.4).
    - Kollisionsprüfung mit den Regeln aus 3b §9.3 (Gewindepaarungen ausgenommen). Ein Paar, das in der statischen Prüfung
      nicht vorkam, ist ein Mangel `bewegung_kollision:<name>` mit Stellung, Paar und Volumen; je Paar und Lauf wird nur die
      erste Stellung gemeldet.
@@ -208,8 +222,12 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
      *Nachgezogen bei der Umsetzung, 2026-10-04:* Der Hüllquader einer Komponente wird aus ihrer Teilebox (einmal je Komponente gelesen und gecacht) und der
      Lage `Transform2` gerechnet, nicht per `GetBox` je Stellung (Spike S13 Zeile 6: identisch; S13b E: `GetBox` kostet
      ~10 MB und 0,07–1,1 s je Schritt).
-4. **Grenze wirkt:** Stellung `max + Schrittweite/2` und `min − Schrittweite/2` müssen scheitern. Was „scheitern“ genau heißt
-   (Fehlerstatus, nicht lösbar, Lage unverändert), legt Spike S13.3 fest. Geht ein Schritt durch: Mangel `grenze:<name>`.
+4. **Grenze wirkt:** Stellung `max + Schrittweite/2` und `min − Schrittweite/2` müssen scheitern. Geht ein Schritt durch:
+   Mangel `grenze:<name>`.
+   *Nachgezogen bei der Umsetzung, 2026-10-04:* „Durchgehen“ ist das Kriterium aus Präzisierung 4: die treibende Verknüpfung
+   wird ohne Meldung gelöst **und** die bewegte Komponente erreicht den Sollweg (Toleranz `anker_mm` bzw. 0,01°). So hängt das
+   Ergebnis nicht davon ab, wie SolidWorks den Fehlschlag meldet (Spike S13 Zeile 3: Code 47, Lage bleibt). Der Schritt unter
+   `min` entfällt bei `min = 0` (negativer Abstand bzw. Winkel nicht darstellbar).
 5. **Endlagen:** Differenz zwischen erster und letzter Stellung je Eintrag in `erwartet.endlagen` (Verschiebung des
    Komponentenursprungs; Drehwinkel um `achse` aus der Rotationsdifferenz). Toleranz `anker_mm` bzw. 0,01°. Abweichung:
    Mangel `endlage:<name>:<komponente>` mit Soll und Ist. Eine Drehachse, die nicht zur gemessenen Rotation passt, ist
@@ -217,7 +235,7 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
 6. **Paarläufe:** Für jedes Paar (B1, B2) von Bewegungen, deren überstrichene Räume sich schneiden: B1 erneut durchfahren
    mit B2 auf `max`, und B2 mit B1 auf `max` (die übrigen auf `min`). Nur Kollision (wie Punkt 3); Mangel
    `bewegung_kollision:<name>` mit Angabe der Gegenstellung. Der Bericht nennt die Paare und die Schnittmenge der Räume.
-7. **Aufräumen:** Hilfsverknüpfungen löschen (auch bei Ausnahmen, Muster aus dem Aufräumen nach 3b: Aufräumfehler verdecken
+7. **Aufräumen:** treibende Verknüpfungen löschen (auch bei Ausnahmen, Muster aus dem Aufräumen nach 3b: Aufräumfehler verdecken
    die Ursache nicht); Dokument ohne Speichern schließen.
 
 ### 8.3 Bilder

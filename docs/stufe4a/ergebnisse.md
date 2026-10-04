@@ -2,7 +2,7 @@
 
 Fertig-Kriterium Spec 4a §14 für Rechner A (SW 2025): Der Linearschlitten (Grundplatte, zwei Führungsleisten, Schlitten, Hebel,
 Drehbolzen, vier Schrauben; 22 Verknüpfungen, zwei Bewegungen) besteht ohne Code-Mangel mit Prüfer-Urteil „bestanden“; die vier
-Negativfälle liefern genau ihre erwartete Mängelmenge; die Bestandsreferenzen bestehen weiter. 700 Unit-Tests grün. Rechner B
+Negativfälle liefern genau ihre erwartete Mängelmenge; die Bestandsreferenzen bestehen weiter. 708 Unit-Tests grün (700 + 8 der Fix-Welle). Rechner B
 (SW 2026) offen.
 
 ## 1. Kurzfassung
@@ -22,9 +22,9 @@ Was 4a kann:
 - `bauen` legt jede Grenze mit `min` an (Grundstellung, Prüfung über Maß `D1`), Skill `baugruppe` §6, Prüfer-Anweisung,
   Referenz `tests/referenz/schlitten/`.
 
-Testzahlen: Unit-Tests 622 → **700 bestanden**, abgewählt (Live, `sw`-markiert) 109 → **116**. Zuwachs je Task (bestanden): Task 2
+Testzahlen: Unit-Tests 622 → **708 bestanden** (700 nach Task 10, +8 in der Fix-Welle nach dem Gesamt-Review), abgewählt (Live, `sw`-markiert) 109 → **116**. Zuwachs je Task (bestanden): Task 2
 +12 (634), Task 3 +26 (660), Task 4 +17 (677), Task 5 +8 (685), Task 6 +9 (694) und +1 aus der Fix-Runde (695), Task 7 +3 (698),
-Task 8 +2 (700), Task 9 ±0 (700); Tasks 1 und 10 ohne neue Unit-Tests. Abgewählt (Live-Tests): +1 Task 6, +1 Task 7, +1 Task 8 (Referenzeintrag Schlitten),
+Task 8 +2 (700), Task 9 ±0 (700), Fix-Welle +8 (708: `bewegungen_oder_ersatz` 7 Tests, Bericht ohne gefahrene Bewegungen 1); Tasks 1 und 10 ohne neue Unit-Tests. Abgewählt (Live-Tests): +1 Task 6, +1 Task 7, +1 Task 8 (Referenzeintrag Schlitten),
 +4 Task 9 (Negativfälle), zusammen 109 → 116. `swki api pruefe-code`: keine Befunde.
 
 Live-Ergebnisse: Referenz Linearschlitten bestanden (Prüfer-Urteil `{"bestanden": true, "maengel": []}`), vier Negativfälle 4/4 mit genau
@@ -113,47 +113,117 @@ Je Fall einzeln (`tests\live_einzeln.py`, `--zeit 900`, `PYTHONIOENCODING=utf-8`
 
 ## 6. Abweichungen von der Spec
 
-Präzisierungen und Rulings des Ledgers (Quelle: `.superpowers/sdd/2026-10-03-stufe-4a-bewegungen/progress.md`); die Spec 4a ist an den
-Stellen nachgezogen (2026-10-04: §4.1, §7.2, §8.1, §8.2.2, §8.2.3, §8.4, §12).
+Präzisierungen und Rulings des Controllers aus dem Ledger der Umsetzung. **Dieser Abschnitt ist der dauerhafte Nachweis**: der Ledger
+(`.superpowers/sdd/2026-10-03-stufe-4a-bewegungen/progress.md`) ist nicht versioniert. Die Spec 4a ist an den Stellen nachgezogen
+(2026-10-04: §4.1, §7.2, §8.1, §8.2.1–§8.2.4, §8.4, §12 und Beispielachse §4). Je Ruling: Entscheidung, Grund, „wenn falsch“.
+
+**Rulings zu den Spike-Ergebnissen (Task 1, Zeilen der Tabelle S13)**
 
 - **Präzisierung 1 (Scharnier als zwei Verknüpfungen):** `konzentrisch` ohne Drehsperre und `deckungsgleich` (`<id>.anlage`) – ohne
   Anlage bleibt die Höhe frei (Einfügelage); Skill §6 verlangt `anlage_a`/`anlage_b`.
 - **Präzisierung 13 (Negativfälle 1 und 4):** Fall 1 mit Anschlag auf der rechten Leiste (+z) und L 24 statt 20; Fall 4 erwartet
   `{freiheitsgrad:schlitten, freiheitsgrad:hebel, bestimmtheit}` statt `{freiheitsgrad:schlitten}` (Mitfahrer melden wie ihr Träger).
-- **Ruling Z. 1:** bestätigt, keine Kosten.
-- **Ruling Z. 2:** `GRENZ_MASSE = {}` – Grenzwerte lassen sich nicht per Gleichung binden (S13b D), Werte beim Bau aus den Parametern,
-  Schutz über die Freigabe. Folge: eine Änderung von `HUB` im SolidWorks-Modell bewegt die Grenze nicht; die Änderungserkennung sieht sie nicht.
-- **Ruling Z. 3:** bestätigt (über `max` Code 47 und Lage bleibt; zurück auf `max` gelöst); `_zurueck` ohne Neuanlage.
-- **Ruling Z. 4:** `GetConstrainedStatus` zählt eine Grenzverknüpfung als Bindung; „Freiheitsgrad belegt“ mit unterdrückten Grenzen
-  (`Mechanik.unterdruecke`, `fahre` liest `status_frei`/`status_gehalten`); statische 3b-Bestimmtheit bleibt streng, `freiheitsgrade: 1`
-  erlaubt `unterbestimmt`. Risiko: ein Widerspruch Grenze/Antrieb zeigt sich nur über „Grenze wirkt“ und die Endlagen.
-- **Ruling Z. 4 / Negativfall 4:** Mitfahrer melden wie ihr Träger; Fall 4 erwartet `{freiheitsgrad:schlitten, freiheitsgrad:hebel,
-  bestimmtheit}` – vorhergesagt, in Task 9 live bestätigt.
-- **Ruling Z. 5:** bestätigt (Lage 0,0, SHA gleich).
-- **Ruling Z. 6 und 8 (Leistung):** `kiste()` aus Teilebox und `Transform2` statt `GetBox` je Schritt (~10 MB und 0,07–1,1 s je Schritt gespart).
+- **Ruling Z. 1:** bestätigt, Plan-Code bleibt. Keine Kosten.
+- **Ruling Z. 2:** `GRENZ_MASSE = {}` (Spalte „sonst“) – Grenzwerte lassen sich nicht per Gleichung binden (S13b D), Werte kommen beim
+  Bau aus den Parametern, Schutz über die Freigabe. Wenn falsch: eine Änderung von `HUB` im SolidWorks-Modell bewegt die Grenze nicht,
+  die Änderungserkennung sieht sie nicht (so umgesetzt, Abschnitt 7).
+- **Ruling Z. 3:** bestätigt (über `max` Code 47 und Lage bleibt; zurück auf `max` gelöst); Präzisierung 4 bleibt, `_zurueck` ohne
+  Neuanlage. Keine Kosten.
+- **Ruling Z. 4 (Plan-Annahme falsch):** `GetConstrainedStatus` zählt eine Grenzverknüpfung als Bindung. „Freiheitsgrad belegt“ wird mit
+  unterdrückten Grenzen gelesen (`Mechanik.unterdruecke`, `fahre` liest `status_frei`/`status_gehalten`); die statische 3b-Bestimmtheit
+  bleibt streng, `freiheitsgrade: 1` erlaubt `unterbestimmt`. Wenn falsch: die Freiheitsgrad-Prüfung mit unterdrückten Grenzen erkennt
+  einen Fehler nicht, den nur die aktive Grenze zeigen würde; ein Widerspruch Grenze/Antrieb zeigt sich dann nur über „Grenze wirkt“ und
+  die Endlagen.
+- **Ruling Z. 4 / Negativfall 4:** Mitfahrer melden wie ihr Träger (S13b A, C); Fall 4 erwartet `{freiheitsgrad:schlitten,
+  freiheitsgrad:hebel, bestimmtheit}` – vorhergesagt, nicht gemessen, in Task 9 live bestätigt. Wenn falsch: Erwartung nach dem
+  Live-Lauf neu zu entscheiden.
+- **Ruling Z. 5:** bestätigt (Lage 0,0, SHA gleich). Keine Kosten.
+- **Ruling Z. 6 und 8 (Leistung):** `kiste()` aus Teilebox (je Komponente einmal gecacht) und `Transform2` statt `GetBox` je Schritt
+  (spart ~10 MB und 0,07–1,1 s je Schritt). Wenn falsch: der Hüllquader weicht bei Teilen ab, deren Teilebox nicht die Körperbox ist
+  (Räume und Paare ungenau).
 - **Ruling Z. 7:** Drehsinn −y (+x → +z); Endlage der Probe und der Referenz auf Achse `[0, -1, 0]`, Negativfall 1 mit Flächen +z.
-- **Ruling Z. 8:** `bewegung_schritte: 8`; Wachstum ~10–20 MB/Schritt als mäßig gewertet, `speicher_grenze_mb` zunächst 3500.
-- **Ruling Z. 9:** bestätigt.
-- **Kein Task-Review für den Spike (Task 1):** Wegwerf-Messcode ohne Produktionswirkung, Werte vom Controller gegen die Tabelle geprüft.
-- **Task 5:** `Mechanik.unterdruecke`, `fahre` liest Status mit unterdrückten Grenzen, Attrappe zustandsabhängig (+1 Test → 685).
+  Wenn falsch: Endlagen-Mängel live, sofort sichtbar.
+- **Ruling Z. 8:** `bewegung_schritte: 8` (die Annahmen < 0,5 s und < 5 MB je Schritt trafen nicht zu); `speicher_grenze_mb`
+  zunächst 3500, Wachstum ~10–20 MB je Schritt als mäßig gewertet. Wenn falsch: große Baugruppen enden früh mit `SPEICHER_KNAPP`,
+  Kollisionsauflösung 1/8 statt 1/16 des Bereichs.
+- **Ruling Z. 9:** bestätigt. Keine Kosten.
+- **Ruling Task 1 (kein Task-Review für den Spike):** Wegwerf-Messcode ohne Produktionswirkung, Werte vom Controller gegen die Tabelle
+  geprüft. Wenn falsch: ein Messfehler im Spike trägt eine falsche Entscheidung (die Live-Tests der Tasks 6–9 decken das auf).
+
+**Rulings zu den Tasks 5–10**
+
+- **Task 5:** `Mechanik.unterdruecke`, `fahre` liest Status mit unterdrückten Grenzen, Attrappe zustandsabhängig (+1 Test → 685); folgt
+  aus Ruling Z. 4. Wenn falsch: Rückbau einer Methode und zweier Statuslesungen.
 - **Task 6:** `GRENZ_MASSE = {}`, `kiste` aus Teilebox und Transform mit Cache in `SwMechanik`, `sw_baugruppe.unterdruecke` über
-  `SetSuppression2(0/1, 1, None)`, +2 Unit-Tests (694).
-- **Task 7:** `bewerte_bewegungen` ohne `statisch`; Fix der Grundstellung im Rahmen des Tasks (S13c): keine treibenden Verknüpfungen
-  beim Bau, `_grundstellung` prüft Maß `D1` der Grenze gegen `min` (Spec §7.2 verlangte eine Hilfsverknüpfung, die nachweislich die
-  Winkelgrenze in der gespeicherten Datei zerstört; Nutzervorgabe „im gebauten Modell innerhalb der Grenzen ziehbar“).
-- **Speichergrenze:** `speicher_grenze_mb` 3500 → 5000 (Task 7: Grundbedarf von `bauen` und Statik der kleinen Probe 3,6–4,0 GB) → 8000
-  (Task 8, Speicherdiagnose: Grundbedarf von `pruefen` für 4 Teile und Baugruppe 6,2–6,9 GB, Spitze 7015,8 MB beim Abbruch der Diagnose bei
-  Grenze 9000) → **10000 (Nutzerentscheidung 2026-10-04: „Grenze hochsetzen“**, Commit 945bfc5; Ursache des Speicherbedarfs später als
-  eigenes Paket).
-- **Task 8:** Endlage Drehachse [0, −1, 0], Anschlag auf +z/rechte Leiste, 8 Schritte (Unit-Test), Speicherspitze messen.
-- **Task 9:** Fixture Anschlag L 20 → 24 (Anschlag x 80…104): ein quadratisches Rechteck L = B scheitert im Compiler mit
-  `Gleichungen: Code 1` (reproduzierbar), Erwartung unverändert; sporadischer Teilbau-Fehler gleicher Art bei Fall 4, Wiederholung auf
-  frischem SolidWorks.
-- **Task 10:** Speicherlauf-Hinweis im Skill (frisches SolidWorks, 6–10 GB) und in CLAUDE.md; Skill beschreibt die Grundstellung über Maß
-  `D1` statt „speichert in Grundstellung“.
+  `SetSuppression2(0/1, 1, None)`, +2 Unit-Tests (694); folgt aus den Rulings Z. 2/4/6/8. Wenn falsch: `kiste` per `GetBox`
+  zurückbauen (eine Funktion).
+- **Task 7 (`bewerte_bewegungen` ohne `statisch`, Zahlen 698/110 → 111):** Folge der Rulings Z. 4 und des Task-6-Zusatztests, keine
+  Kosten über die Rulings hinaus.
+- **Task 7 (Speicher):** `speicher_grenze_mb` 3500 → 5000 – 3500 liegt unter dem Grundbedarf von `bauen` und Statik der kleinen Probe
+  (3,6–4,0 GB); SolidWorks lief bis 7,2 GB bzw. 4,8 GB ohne Absturz. Wenn falsch: SolidWorks stürzt in `pruefen` bei 5–5,5 GB ab, statt
+  sauber `SPEICHER_KNAPP` zu melden. Haltregel der Implementer für Live-Läufe seither 4,5 GB.
+- **Task 7 (Grundstellung ohne Antrieb):** `bauen` legt keine treibenden Verknüpfungen mehr an; die Grundstellung entsteht beim Anlegen
+  der Grenzen (Wert `min`), `_grundstellung` prüft Maß `D1` der Grenze gegen `min` (`GRUNDSTELLUNG_FEHLER` bei Abweichung); Spec §7.2
+  nachgezogen. Grund: die Hilfsverknüpfung der Spec macht die Winkelgrenze in der gespeicherten Datei nachweislich unbrauchbar (Spike
+  S13c; Nutzervorgabe „im gebauten Modell innerhalb der Grenzen ziehbar“). Wenn falsch: eine spätere Verknüpfung verschiebt die
+  Komponente entlang der Grenze, dann meldet `bauen` `GRUNDSTELLUNG_FEHLER`, statt sie zurückzustellen (Bauweg ändern oder
+  Einzelantrieb nachrüsten).
+- **Task 7 (Fix im Task-7-Review):** der Fix der Grundstellung (Task-6-Code) lief im Rahmen von Task 7 durch denselben Implementer und
+  wurde im Task-7-Review mitgeprüft, weil dort der Kontext lag. Kosten: der Task-6-Review sah diesen Code ohne den Befund.
+- **Task 8:** Endlage Drehachse [0, −1, 0], Anschlag auf +z/rechte Leiste, 8 Schritte, Speicherspitze messen, Zahlen 700/112 – Folge der
+  Spike-Rulings, keine eigenen Kosten.
+- **Speichergrenze 5000 → 8000 (Task 8, Speicherdiagnose):** der Grundbedarf von `pruefen` für 4 Teile und Baugruppe liegt auf Rechner A
+  bei 6,2–6,9 GB (erste Öffnung +2,6 GB, je Teil ~0,9–1,7 GB); RAM 31 GB, SolidWorks lief stabil bis 7,2 GB (S13) bzw. 7,0 GB
+  (Diagnose); die Grenze bleibt ein Schutz gegen Ausufern. Wenn falsch: SolidWorks stürzt bei 7,5–8,5 GB ab, statt
+  `SPEICHER_KNAPP` zu melden; die Ursache des Speicherbedarfs je geöffnetem Teil ist als Folgeaufgabe offen (Abschnitt 7).
+- **Speicher-Fix cfffcb4 per Diff geprüft:** zwei Zeilen (Grenze 8000) vom Controller per Diff geprüft statt per Reviewer-Subagent – reine
+  Wertänderung nach Ruling. Kosten: keine.
+- **Speichergrenze 8000 → 10000 (Nutzerentscheidung 2026-10-04, „Grenze hochsetzen“, Commit 945bfc5):** Lauf 1 von Task 8 auf frischem
+  SolidWorks endete mit `SPEICHER_KNAPP` bei 8122 MB (Grenze 8000); Lauf 2 bestand mit Spitze 7816 MB (0,5-s-Abtastung). Die Ursache des
+  Speicherbedarfs wird später als eigenes Paket untersucht.
+- **Trailer-Amend b159405 → 945bfc5:** der Trailer von b159405 (Claude Haiku 4.5) wurde per `--amend` auf den vorgeschriebenen
+  Opus-5.5-Trailer korrigiert (lokal, ungepusht; Nutzervorgabe exakter Trailer). Keine Kosten.
+- **Task 9 (Fall 1 und 4):** Anschlag auf rechter Leiste (+z), Fall 4 erwartet `{freiheitsgrad:schlitten, freiheitsgrad:hebel,
+  bestimmtheit}` (vorhergesagt), Zahlen 700/116 – Folge der Rulings Z. 4/7. Wenn falsch: Fall 4 liefert eine andere Menge, Task 9
+  hält an (er tat es nicht, 4/4 live bestätigt).
+- **Task 9 (Fixture):** Anschlag L 20 → 24 (Anschlag x 80…104): ein quadratisches Rechteck L = B scheitert im Compiler mit
+  `Gleichungen: Code 1` (reproduzierbar), Erwartung unverändert; der Compilerbefund ist Folgeaufgabe. Wenn falsch: keine Folgen, die
+  Fixture-Geometrie bleibt im Kollisionsbereich.
+- **Task 9 (sporadischer Teilbau-Fehler):** `test_zweiter_freiheitsgrad` Versuch 1 scheiterte mit `TEIL_BAU leiste_links/f1
+  REBUILD_FEHLER Gleichungen Code 1` an der unveränderten Referenzleiste (fünf Einzelbauten danach fehlerfrei). Ruling: Wiederholung auf
+  frischem SolidWorks (bestanden), Compilerbefund als eigene Folgeaufgabe außerhalb 4a. Wenn falsch: Fall 4 scheitert wiederholt am
+  Teilbau, dann Compiler-Fix vorziehen.
+- **Task 10:** Speicherlauf-Hinweis im Skill und in CLAUDE.md; der Skill beschreibt die Grundstellung über Maß `D1` statt „speichert in
+  Grundstellung“.
+
+**Rulings der Fix-Welle nach dem Gesamt-Review (2026-10-04)**
+
+- **Fix-Welle = Important 1 (Fehlerpfade der Bewegungsprüfung) plus alle „ja“-Punkte der Triage:** Bei statischen Rebuild-/
+  Verknüpfungsfehlern wird die Bewegungsprüfung übersprungen (`bewegung:<name>` mit `ok=None`); `StellungFehler`/`BauFehler` aus `fahre`
+  werden nach dessen Aufräumen zu `bewegung:<name>` mit `ok=False`; `SpeicherKnapp` bleibt ein Abbruch. Teil c („`stelle` gegen
+  Ausgangsfehler vergleichen“) entfällt, weil Teil a vorbestehende Fehler schon ausschließt. Dazu Spec-Minor 1 und der Abschnitt 7.
+  Wenn falsch: Teil c fehlt, wenn ein Fehler erst während der Läufe entsteht und bestehen bleibt – er wird dann als `bewegung:`-Mangel
+  gemeldet, nicht verschluckt.
+- **Important 2 (Sollweg je Stellung) als Folgepaket, nicht in der Fix-Welle:** erweitert die Spec um eine neue Prüfung und bräuchte
+  Live-Nachweis an allen Referenzen; die Endlagen decken den Fall ab, wenn sie angegeben sind. Wenn falsch: eine Bewegung ohne
+  `erwartet.endlagen`, deren Antrieb nichts bewegt, besteht scheinbar (Abschnitt 7).
 
 ## 7. Offene Punkte
 
+- **Kein Nachweis des Sollwegs je Stellung (Gesamt-Review Important 2, Folgepaket):** dass die bewegte Komponente in jeder Stellung die
+  befohlene Stellung erreicht, wird nur über `erwartet.endlagen` (Anfang/Ende) und „Grenze wirkt“ belegt; eine Bewegung ohne
+  `erwartet.endlagen`, deren Antrieb nichts bewegt, bestünde scheinbar. Folgepaket: den Sollweg je Stellung prüfen (Weg gegen
+  `soll_weg`, wie schon in „Grenze wirkt“) und im Bericht ausweisen; braucht eine Spec-Ergänzung und Live-Nachweis an allen Referenzen.
+- **Prüfbericht unvollständig gegenüber Spec §8.5/§9:** der Bericht nennt je Lauf keine Grenz-ID und keinen Bereich (`min`/`max`), und
+  `bericht.md` hat keine Endlagen-Spalte (nur die Prüfungen im Prüfbericht).
+- **`plausibel` prüft nicht, dass `a`/`b` einer Grenze ebene Flächen sind** (Spec §4.1); eine falsche Referenzart fällt erst beim Bau auf.
+- **Uneinheitliche Bewertung abgebrochener Läufe:** `endlage` ist bei abgebrochenem Lauf `ok=False`, `grenze` dagegen `ok=None`;
+  angleichen (eine Entscheidung, welche der beiden gilt).
+- **Privater Import:** `swki/baugruppe/bewegung.py` importiert `_pruefung`/`_beschreibung` aus `swki.pruefung.bewertung`; öffentlich machen
+  oder eine gemeinsame Hilfe anbieten.
+- **Fehler der Bewegungsprüfung als Mangel (Fix-Welle erledigt):** Rebuild-/Verknüpfungsfehler im Lauf-Dokument und Fehler in den Läufen
+  enden nicht mehr als Abbruch ohne Prüfbericht, sondern als `bewegung:<name>` (Abschnitt 6, Spec §8.2.3). Die Unit-Tests belegen es mit der
+  Attrappe; der Live-Lauf der Fix-Welle deckt nur den unveränderten Normalpfad ab (die Fehlerpfade sind live nicht eigens provoziert).
 - **Speicherbedarf (eigenes Paket, Nutzerentscheidung):** je geöffnetem Teil ~1 GB (erste Öffnung +2,6 GB, ISO 4762 +1,7 GB; Grundplatte,
   Schlitten und Hebel bleiben für `offen_halten` geöffnet), Kollisionsprüfung ~+0,5 GB je Stellung ohne Bild (`mech.interferenzen`; erst
   das nächste Bild senkt um 370–500 MB). Mögliche Ansätze: offen gehaltene Teile früher schließen, Interferenzprüfung/Bilder in den
@@ -173,7 +243,7 @@ Stellen nachgezogen (2026-10-04: §4.1, §7.2, §8.1, §8.2.2, §8.2.3, §8.4, �
   `zip` ohne Längenprüfung, unbenutzter Import und Testlücken; Task 5: `unterdrueckt.append(b)` nach dem Aufruf, doppeltes `_zurueck`
   bei `min = 0`, `KeyError` statt Meldung bei `lagen[0]`, Testlücken; Task 6: `GetBox`-Rückfall ungetestet, zwei Konstanten für Wert 1,
   Attrappen-Tests für `halte/stelle/loese/zustand`, `SetSystemValue3`-Rückgabe ungeprüft; Task 7: Grundstellungsprüfung liest `D1` (belegt
-  die Lage nur indirekt), Tests nur Winkelzweig, Docstring `loesche`, Schließfehler im `finally` kann die Ursache verdecken, `_grenzen(bg)`
+  die Lage nur indirekt), Tests nur Winkelzweig, Schließfehler im `finally` kann die Ursache verdecken, `_grenzen(bg)`
   doppelt berechnet, `SpeicherKnapp` in `pruefen()` nur per `fahre`-Test belegt; Task 8: Kopfkommentar, Zusammenspiel XB; Task 9:
   Vergleich `[x["kollisionen"] for x in grund] == [0, 0]` reihenfolgeabhängig, Kommentarmaße fest statt aus Parametern.
 - **Kandidaten für 4b:** Zahnrad-, Nut- und Kurvenverknüpfung (Referenz *Schieber mit Schrägbolzen*); Paket „Messarten“ (Fasen,
@@ -193,6 +263,7 @@ Stellen nachgezogen (2026-10-04: §4.1, §7.2, §8.1, §8.2.2, §8.2.3, §8.4, �
 | 5 | Ablauf der Bewegungsprüfung (`fahre`) | 169c832 |
 | 6 | SolidWorks-Schicht (Grenzverknüpfung, Scharnier, Antrieb, `SwMechanik`, Grundstellung) und Fix | dc85d9a, 0344c96 |
 | 7 | `swki pruefen` mit Bewegungen, Bericht, Grundstellung ohne Antrieb (Spike S13c) | c162c1f, 2b5719e |
-| 8 | Referenz Linearschlitten; Speichergrenze 8000 und 10000 | 52d8adf, cfffcb4, 945bfc5 |
+| 8 | Referenz Linearschlitten; Speichergrenze 8000 und 10000 (Lauf 1 von Task 8 auf Grenze 8000: `SPEICHER_KNAPP` 8122 MB, Lauf 2 bestanden, Spitze 7816 MB) | 52d8adf, cfffcb4, 945bfc5 |
 | 9 | Negativfälle am Linearschlitten | e2156bf |
-| 10 | Skill, Prüfer, CLAUDE.md, Design §4/§11, Spec-Nachzug, Ergebnisse, Regression | siehe Git |
+| 10 | Skill, Prüfer, CLAUDE.md, Design §4/§11, Spec-Nachzug, Ergebnisse, Regression | e470dbd |
+| Fix-Welle | Gesamt-Review: Fehler der Bewegungsprüfung als Mangel `bewegung:<name>` (Code 402b318); Doku-Korrekturen (Spec §4/§8.1/§8.2, Skill, CLAUDE.md, Abschnitte 6/7) | 402b318, Doku siehe Git |

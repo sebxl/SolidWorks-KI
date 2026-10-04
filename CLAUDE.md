@@ -53,7 +53,7 @@ Lagerachse).
 - Bewegliche Komponenten: Grenzverknüpfung (`grenze_abstand`/`grenze_winkel`, bewegt wird Seite `a`, `min`/`max` als
   Parameter), `freiheitsgrade: 1`, eine Bewegung je Grenze; Scharnier mit Anlage. Regeln im Skill `baugruppe` (§6).
 - `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` → SolidWorks selbst neu starten und erneut prüfen.
-- Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen bis ~10 GB Private Bytes); `speicher_grenze_mb` 10000.
+- Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen bis ~11 GB Private Bytes: Stehlager 10,8 GB, Schlitten 9,9–10,2 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau); `speicher_grenze_mb` 10000.
 - Regressions-Suite enthält den Linearschlitten (`tests/referenz/schlitten/`).
 
 ## Prüfen und Nachbessern (Stufe 2)
