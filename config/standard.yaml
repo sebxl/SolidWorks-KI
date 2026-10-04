@@ -9,3 +9,6 @@ toleranzen:
   volumen_prozent: 0.5
 api:
   max_jahr_compiler: 2025
+# Bewegungen (Stufe 4a): Schritte je Bewegung (Vorgabe) und Speichergrenze von SolidWorks (Private Bytes) für swki pruefen
+bewegung_schritte: 8
+speicher_grenze_mb: 10000

@@ -1,0 +1,2446 @@
+{
+  "ok": true,
+  "varianten": {
+    "E1": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 2762.9,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr1.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            90.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -90.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "privat_mb_nachher": 3067.1
+    },
+    "E2": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "vorwinkel": 10,
+        "stellungen": [
+          0,
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 3036.5,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr2.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ],
+        "hebel_lage_nach_loeschen": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          10.0
+        ]
+      },
+      "vorwinkel_stellen": {
+        "wert": 10,
+        "rebuild": "ok",
+        "fehlercodes": {},
+        "weg": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          10.0
+        ]
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": -10.0,
+          "MaximumVariation": 80.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 10.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 22.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            90.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -90.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "privat_mb_nachher": 3433.4
+    },
+    "E3": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "flip": true,
+        "stellungen": [
+          22.5,
+          45,
+          90,
+          -22.5
+        ]
+      },
+      "privat_mb_vorher": 3402.8,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": true,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": true,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": true,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": -22.5,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": true,
+          "D1": 0.0
+        }
+      },
+      "privat_mb_nachher": 3728.9
+    },
+    "E4": {
+      "konfiguration": {
+        "flaeche_a": "-x",
+        "unten": 90,
+        "oben": 180,
+        "stellungen": [
+          112.5,
+          135,
+          170
+        ]
+      },
+      "privat_mb_vorher": 3698.3,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr4.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 112.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 135,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 170,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            80.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -80.0,
+          "MaximumVariation": 10.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 170.0
+        }
+      },
+      "privat_mb_nachher": 3978.7
+    },
+    "E5": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "neu_aufbauen": true,
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 3948.0,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr5.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "force_rebuild3": true,
+      "nach_force_rebuild": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "rebuild": "ok"
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            90.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -90.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "privat_mb_nachher": 4187.7
+    },
+    "E6": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "grundstellung": [
+          "g1",
+          "g2"
+        ],
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 2764.0,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr1.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ],
+        "g2_nach_grundstellung": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage_nach_loeschen": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "umkehr": {
+        "vor_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "mit_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g1.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "nach_loeschen": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        }
+      },
+      "grundstellung_stellen": {
+        "g1": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": 0.0
+        },
+        "g2": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "umkehr_nach_oeffnen_mit_antrieb": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g1.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "privat_mb_nachher": 3190.5
+    },
+    "E7": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "grundstellung": [
+          "g2"
+        ],
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 3159.9,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr2.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ],
+        "g2_nach_grundstellung": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage_nach_loeschen": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "umkehr": {
+        "vor_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "mit_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "nach_loeschen": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        }
+      },
+      "grundstellung_stellen": {
+        "g2": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "umkehr_nach_oeffnen_mit_antrieb": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g1.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            90.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -90.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "privat_mb_nachher": 3420.6
+    },
+    "E10": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "grundstellung": [
+          "g1"
+        ],
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 3519.2,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ],
+        "g2_nach_grundstellung": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage_nach_loeschen": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "umkehr": {
+        "vor_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "mit_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g1.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "nach_loeschen": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        }
+      },
+      "grundstellung_stellen": {
+        "g1": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": 0.0
+        }
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "umkehr_nach_oeffnen_mit_antrieb": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g1.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            90.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -90.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "privat_mb_nachher": 3874.5
+    },
+    "E8": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "grundstellung": [
+          "g1",
+          "g2"
+        ],
+        "antrieb_flip": true,
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 3843.9,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr4.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ],
+        "g2_nach_grundstellung": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage_nach_loeschen": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "umkehr": {
+        "vor_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "mit_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g1.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": true,
+            "D1": 0.0
+          }
+        },
+        "nach_loeschen": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        }
+      },
+      "grundstellung_stellen": {
+        "g1": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": 0.0
+        },
+        "g2": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "umkehr_nach_oeffnen_mit_antrieb": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g1.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "g2.antrieb: Code 47",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 47
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "privat_mb_nachher": 4275.0
+    },
+    "E9": {
+      "konfiguration": {
+        "flaeche_a": "+z",
+        "unten": 0,
+        "oben": 90,
+        "grundstellung": [
+          "g1",
+          "g2"
+        ],
+        "antrieb_ausrichtung": "entgegengesetzt",
+        "stellungen": [
+          22.5,
+          45,
+          90
+        ]
+      },
+      "privat_mb_vorher": 4244.9,
+      "g1_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr5.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2_anlegen": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "flip": false,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "vor_speichern": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ],
+        "g2_nach_grundstellung": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "hebel_lage_nach_loeschen": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          0.0
+        ]
+      },
+      "umkehr": {
+        "vor_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "mit_antrieb": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g1.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2.antrieb": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 0.0,
+            "Alignment": 1,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        },
+        "nach_loeschen": {
+          "g1": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 100.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          },
+          "g2": {
+            "MinimumVariation": 0.0,
+            "MaximumVariation": 90.0,
+            "Alignment": 0,
+            "Flipped": false,
+            "D1": 0.0
+          }
+        }
+      },
+      "grundstellung_stellen": {
+        "g1": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": 0.0
+        },
+        "g2": {
+          "wert": 0,
+          "rebuild": "ok",
+          "fehlercodes": {
+            "v1": 1,
+            "s1": 1,
+            "s1.anlage": 1,
+            "g1": 1,
+            "g2": 1,
+            "g1.antrieb": 1,
+            "g2.antrieb": 1
+          },
+          "weg": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            0.0
+          ]
+        }
+      },
+      "nach_oeffnen": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_nach_oeffnen": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "antriebe_angelegt": true,
+      "umkehr_nach_oeffnen_mit_antrieb": {
+        "g1": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 100.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 90.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g1.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        },
+        "g2.antrieb": {
+          "MinimumVariation": 0.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 0.0
+        }
+      },
+      "hebel_lage_mit_antrieb": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        0.0
+      ],
+      "stellungen": [
+        {
+          "wert": 22.5,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            22.5
+          ]
+        },
+        {
+          "wert": 45,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            45.0
+          ]
+        },
+        {
+          "wert": 90,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            90.0
+          ]
+        }
+      ],
+      "nach_stellungen": {
+        "g2": {
+          "MinimumVariation": -90.0,
+          "MaximumVariation": 0.0,
+          "Alignment": 0,
+          "Flipped": false,
+          "D1": 90.0
+        }
+      },
+      "privat_mb_nachher": 4692.5
+    }
+  },
+  "privat_mb_start": 1442.8,
+  "privat_mb_ende": 2948.5,
+  "blockiert_vor": {
+    "variante": "E11",
+    "privat_mb": 4661.9
+  }
+}

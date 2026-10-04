@@ -1,0 +1,636 @@
+{
+  "ok": true,
+  "E": {
+    "privat_mb_start": 418.9,
+    "privat_mb_nach_teilen": 2769.0,
+    "privat_mb_nach_probe": 3045.3,
+    "privat_mb_nach_grenzen_antrieben": 3107.0,
+    "probe": {
+      "schritte": 20,
+      "komponenten": 4,
+      "s_je_schritt": {
+        "0_komponentenliste": 0.0236,
+        "1_stellen_rebuild": 0.0731,
+        "2_interferenzen": 0.4393,
+        "3_transform2": 0.0222,
+        "4_getbox": 0.0692
+      },
+      "privat_mb_summe_je_teilschritt": {
+        "0_komponentenliste": 0.0,
+        "1_stellen_rebuild": 0.0,
+        "2_interferenzen": 139.6,
+        "3_transform2": 57.9,
+        "4_getbox": 193.5
+      },
+      "privat_mb_vorher": 3107.0,
+      "privat_mb_nachher": 3498.0,
+      "privat_mb_verlauf": [
+        3107.0,
+        3151.3,
+        3165.1,
+        3190.6,
+        3228.5,
+        3260.1,
+        3266.9,
+        3285.6,
+        3323.7,
+        3339.5,
+        3362.2,
+        3355.6,
+        3361.7,
+        3380.7,
+        3397.4,
+        3419.8,
+        3419.8,
+        3425.9,
+        3453.1,
+        3475.5,
+        3498.0
+      ]
+    },
+    "privat_mb_ende": 1605.6
+  },
+  "E100": {
+    "privat_mb_start": 1339.9,
+    "privat_mb_nach_teilen": 3419.5,
+    "privat_mb_nach_probe": 3693.4,
+    "privat_mb_nach_100_komponenten": 4716.6,
+    "probe100": {
+      "schritte": 20,
+      "komponenten": 100,
+      "s_je_schritt": {
+        "0_komponentenliste": 0.57,
+        "1_stellen_rebuild": 0.1208,
+        "2_interferenzen": 0.529,
+        "3_transform2": 1.9215,
+        "4_getbox": 1.1166
+      },
+      "privat_mb_summe_je_teilschritt": {
+        "0_komponentenliste": -53.1,
+        "1_stellen_rebuild": -126.5,
+        "2_interferenzen": 228.3,
+        "3_transform2": 599.0,
+        "4_getbox": -275.9
+      },
+      "privat_mb_vorher": 4716.6,
+      "privat_mb_nachher": 5088.4,
+      "privat_mb_verlauf": [
+        4716.6,
+        4740.4,
+        4748.0,
+        4786.7,
+        4795.7,
+        4818.1,
+        4831.6,
+        4858.3,
+        4864.5,
+        4887.4,
+        4909.8,
+        4909.9,
+        4931.8,
+        4954.0,
+        4975.5,
+        4997.6,
+        4998.0,
+        5019.2,
+        5044.6,
+        5066.9,
+        5088.4
+      ]
+    },
+    "privat_mb_ende": 3244.6
+  },
+  "AB": {
+    "privat_mb_start": 2976.0,
+    "privat_mb_nach_teilen": 5045.5,
+    "A": {
+      "0_ohne_grenzen_ohne_antrieb": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "1_nur_antrieb_g1": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 2
+      },
+      "2_beide_antriebe": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 3
+      },
+      "3_beide_antriebe_hub_50_winkel_45": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 3
+      },
+      "4_rebuild_nach_loeschen": "ok",
+      "4_status_nach_loeschen": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      }
+    },
+    "B": {
+      "g1": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g1",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 5,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 0.1,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "g2": {
+        "status": 1,
+        "mate": true,
+        "neu": true,
+        "name": "g2",
+        "rebuild": "ok",
+        "fehlercode": 0,
+        "Type": 6,
+        "MinimumVariation": 0.0,
+        "MaximumVariation": 1.5707963267948966,
+        "Alignment": 0,
+        "masse": [
+          {
+            "name": "D1",
+            "voll": "D1@g2@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ]
+      },
+      "1_grenzen_status": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 3
+      },
+      "2_unterdruecken": [
+        {
+          "name": "g1",
+          "rueckgabe": true
+        },
+        {
+          "name": "g2",
+          "rueckgabe": true
+        }
+      ],
+      "2_ist_unterdrueckt": [
+        true,
+        true
+      ],
+      "2_rebuild": "ok",
+      "2_status_unterdrueckt": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "3_status_unterdrueckt_beide_antriebe": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 3
+      },
+      "3_stellen_ueber_grenze_unterdrueckt": {
+        "hub_120": {
+          "wert": 120,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": 120.0
+        },
+        "winkel_100": {
+          "wert": 100,
+          "rebuild": "ok",
+          "fehlercodes": {},
+          "weg": [
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            100.0
+          ]
+        }
+      },
+      "3_status_nach_ueber_grenze": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 3
+      },
+      "3_lage_zurueck_diff": {
+        "platte": 0.0,
+        "schieber": 0.0,
+        "bolzen": 3.469446951953614e-18,
+        "hebel": 2.0816681711721685e-17
+      },
+      "4_entdruecken": [
+        {
+          "name": "g1",
+          "rueckgabe": true
+        },
+        {
+          "name": "g2",
+          "rueckgabe": true
+        }
+      ],
+      "4_ist_unterdrueckt": [
+        false,
+        false
+      ],
+      "4_rebuild": "ok",
+      "4_fehlercodes": {},
+      "4_status_entdrueckt_mit_antrieben": {
+        "platte": 3,
+        "schieber": 3,
+        "bolzen": 3,
+        "hebel": 3
+      },
+      "4_lage_unveraendert_diff": {
+        "platte": 0.0,
+        "schieber": 0.0,
+        "bolzen": 3.469446951953614e-18,
+        "hebel": 2.0816681711721685e-17
+      },
+      "4_grenze_max": [
+        0.1,
+        1.5707963267948966
+      ],
+      "5_ueber_grenze_nach_entdruecken": {
+        "wert": 120,
+        "rebuild": "g1.antrieb: Code 47",
+        "fehlercodes": {
+          "g1.antrieb": 47
+        },
+        "weg": 0.0
+      }
+    },
+    "privat_mb_ende": 3603.3
+  },
+  "C": {
+    "privat_mb_start": 430.0,
+    "privat_mb_nach_teilen": 2757.6,
+    "C": {
+      "0_rebuild_ohne_v2": "ok",
+      "0_ohne_v2_ohne_grenze": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "g1": {
+        "status": 1,
+        "rebuild": "ok",
+        "fehlercode": 0
+      },
+      "1_nur_grenze": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "2_grenze_und_antrieb": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "3_unterdrueckt": [
+        {
+          "name": "g1",
+          "rueckgabe": true
+        }
+      ],
+      "3_rebuild": "ok",
+      "3_status_unterdrueckte_grenze_antrieb": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "3_lage_diff": {
+        "platte": 0.0,
+        "schieber": 0.0,
+        "bolzen": 0.0,
+        "hebel": 0.0
+      },
+      "4_entdruecken": [
+        {
+          "name": "g1",
+          "rueckgabe": true
+        }
+      ],
+      "4_rebuild": "ok",
+      "4_status": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      },
+      "5_antrieb_geloescht": null,
+      "5_rebuild": "ok",
+      "5_status_grenze_ohne_antrieb": {
+        "platte": 3,
+        "schieber": 2,
+        "bolzen": 2,
+        "hebel": 2
+      }
+    },
+    "privat_mb_ende": 1250.2
+  },
+  "D": {
+    "privat_mb_start": 1209.8,
+    "privat_mb_nach_teilen": 3294.5,
+    "D": {
+      "0_masse_per_name": {
+        "D1": {
+          "voll": "D1@g1@Baugr3.Assembly",
+          "wert": 0.0
+        },
+        "D2": null,
+        "D3": null,
+        "D4": null
+      },
+      "1_add_hub": 0,
+      "1_rebuild": "ok",
+      "D2@g1": {
+        "add": -1,
+        "gleichungen": [
+          "\"HUB\" = 100"
+        ],
+        "rebuild": "ok",
+        "max_min_vorher": [
+          0.1,
+          0.0
+        ],
+        "masse_vorher": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ],
+        "rebuild_hub_120": "ok",
+        "gleichungen_nach_120": [
+          "\"HUB\" = 120"
+        ],
+        "gleichungswerte_nach_120": [
+          120.0
+        ],
+        "max_min_nach_120": [
+          0.1,
+          0.0
+        ],
+        "masse_nach_120": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ],
+        "rebuild_hub_100": "ok",
+        "max_min_nach_100": [
+          0.1,
+          0.0
+        ]
+      },
+      "D3@g1": {
+        "add": -1,
+        "gleichungen": [
+          "\"HUB\" = 100"
+        ],
+        "rebuild": "ok",
+        "max_min_vorher": [
+          0.1,
+          0.0
+        ],
+        "masse_vorher": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ],
+        "rebuild_hub_120": "ok",
+        "gleichungen_nach_120": [
+          "\"HUB\" = 120"
+        ],
+        "gleichungswerte_nach_120": [
+          120.0
+        ],
+        "max_min_nach_120": [
+          0.1,
+          0.0
+        ],
+        "masse_nach_120": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.0
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ],
+        "rebuild_hub_100": "ok",
+        "max_min_nach_100": [
+          0.1,
+          0.0
+        ]
+      },
+      "D1@g1": {
+        "add": 1,
+        "gleichungen": [
+          "\"HUB\" = 100",
+          "\"D1@g1\" = \"HUB\""
+        ],
+        "rebuild": "ok",
+        "max_min_vorher": [
+          0.0,
+          -0.1
+        ],
+        "masse_vorher": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.1
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.1
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ],
+        "rebuild_hub_120": "ok",
+        "gleichungen_nach_120": [
+          "\"HUB\" = 120",
+          "\"D1@g1\" = \"HUB\""
+        ],
+        "gleichungswerte_nach_120": [
+          120.0,
+          120.0
+        ],
+        "max_min_nach_120": [
+          0.0,
+          -0.1
+        ],
+        "masse_nach_120": [
+          {
+            "name": "D1",
+            "voll": "D1@g1@Baugr3.Assembly",
+            "wert": 0.1
+          },
+          {
+            "parameter": "D1",
+            "wert": 0.1
+          },
+          {
+            "parameter": "D2",
+            "wert": null
+          },
+          {
+            "parameter": "D3",
+            "wert": null
+          },
+          {
+            "parameter": "D4",
+            "wert": null
+          }
+        ],
+        "rebuild_hub_100": "ok",
+        "max_min_nach_100": [
+          0.0,
+          -0.1
+        ],
+        "delete": 1,
+        "rebuild_nach_delete": "ok",
+        "max_min_nach_delete": [
+          0.0,
+          -0.1
+        ]
+      }
+    },
+    "privat_mb_ende": 1721.2
+  }
+}

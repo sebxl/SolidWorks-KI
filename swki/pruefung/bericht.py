@@ -5,6 +5,10 @@ def _zelle(wert) -> str:
     return "–" if wert is None else str(wert)
 
 
+def _grenze_text(wert) -> str:
+    return {True: "geht durch", False: "wirkt", None: "–"}[wert]
+
+
 def bericht_markdown(
     spec: dict, auftrag: str, laeufe: list[dict], empfehlung: tuple[str, str],
     letzter_bericht: dict | None, letztes_urteil: dict | None, letztes_protokoll: dict | None,
@@ -58,6 +62,18 @@ def bericht_markdown(
         zeilen += ["", "## Teilprüfungen (letzter Lauf)", "", "| Komponente | bestanden | Mängel |", "|---|---|---|"]
         zeilen += [f"| {k} | {'ja' if t['bestanden'] else 'nein'} | {t['maengel']} |"
                    for k, t in sorted(letzter["teilpruefungen"].items())]
+    bewegungen = letzter.get("bewegungen")
+    if bewegungen and bewegungen.get("laeufe"):
+        zeilen += ["", "## Bewegungen (letzter Lauf)", "",
+                   "| Bewegung | Lauf | Stellungen | bewegt | Kollisionen | Grenze oben / unten | Dauer (s) |",
+                   "|---|---|---|---|---|---|---|"]
+        for lauf in bewegungen["laeufe"]:
+            gegen = ", ".join(f"{n} auf {s}" for n, s in lauf["gegen"].items()) or "Grundstellung"
+            grenze = " / ".join(_grenze_text(lauf["grenze"].get(s)) for s in ("oben", "unten"))
+            zeilen.append(f"| {lauf['bewegung']} | {gegen} | {lauf['stellungen']} | {', '.join(lauf['bewegt']) or '–'} | "
+                          f"{lauf['kollisionen']} | {grenze} | {lauf['dauer_s']} |")
+        if bewegungen.get("paare"):
+            zeilen += ["", "Paarläufe für: " + "; ".join(" × ".join(p["bewegungen"]) for p in bewegungen["paare"])]
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]

@@ -36,6 +36,13 @@ Verknüpfungen (`v11.1`) oder Teil-Knoten (`deckel/f4`).
    über der Gewindetiefe.
 4. `bestimmtheit` und `kollision` ok; jede Teilprüfung (`<komponente>: …`) ok.
 
+## Zusätzlich bei Bewegungen (`bewegungen` in der Spezifikation)
+
+- Je Bewegung gibt es Iso-Bilder `<Bewegung>-min`, `-mitte`, `-max`: Bewegt sich die richtige Komponente um die richtige
+  Achse in die richtige Richtung? Fahren die mitbewegten Komponenten mit? Ist eine Durchdringung zu sehen?
+- Sind die Grenzen fachlich sinnvoll (Bewegungsbereich passt zur Eingabe, Anschlag statt Durchfahren)?
+- Bilder `<Bewegung>-kollision-…` zeigen gemeldete Kollisionen; sie stehen schon als Mängel im Prüfbericht.
+
 ## Antwort (genau dieses JSON, sonst nichts)
 Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach, zum Beispiel:
 

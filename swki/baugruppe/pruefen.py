@@ -7,12 +7,16 @@ from pathlib import Path
 
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeufe
 from swki.baugruppe import sw_baugruppe
-from swki.baugruppe.aufloesen import basis, instanzen
+from swki.baugruppe.aufloesen import GRENZEN, basis, instanzen, verknuepfungen
+from swki.baugruppe.bewegung import bewegungen, ergaenze_bericht
+from swki.baugruppe.bewegungslauf import bewegungen_oder_ersatz
 from swki.baugruppe.bewertung import BaugruppenMesswerte, bewerte_baugruppe, stueckliste_soll
 from swki.baugruppe.freigabe import freigegebene_quellen, freigegebene_teile, pruefe_freigabe_baugruppe
 from swki.baugruppe.geometrie import transformiere
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, dokument_name
+from swki.baugruppe.referenzen import loese_im_teil
+from swki.baugruppe.sw_bewegung import SwMechanik
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.eigenschaften import lies_eigenschaften
@@ -113,6 +117,47 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, teilberichte=teilberichte)
 
 
+def _grenzen(bg: Baugruppe) -> dict:
+    return {v.id: v for v in verknuepfungen(bg.spec, bg.quellen) if v.typ in GRENZEN}
+
+
+def _dokumente_der_grenzen(bg: Baugruppe) -> set[str]:
+    """Quelldokumente, deren Flächen die Grenzverknüpfungen nennen: sie bleiben für die treibenden Verknüpfungen offen."""
+    return {bg.quellen[basis(seite["komponente"])].schluessel_dokument
+            for v in _grenzen(bg).values() for seite in (v.a, v.b)}
+
+
+def _komponenten(asm, protokoll: dict) -> dict:
+    """Instanz-ID → IComponent2 der geöffneten Baugruppe (SolidWorks-Namen aus dem Bauprotokoll)."""
+    namen = {k["sw_name"]: k["id"] for k in protokoll.get("komponenten", [])}
+    return {namen.get(k.Name2, k.Name2): k for k in sw_baugruppe.komponenten(asm)}
+
+
+def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict, messwerte, standard: dict,
+                       ordner: Path) -> tuple[list[dict], dict, dict]:
+    """Bewegungsprüfung am geöffneten Lauf-Dokument (Spec 4a §8.2); liefert Prüfungen, Bewegungsbericht und Bilder.
+    Bei statischen Fehlern oder einem Fehler der Läufe entstehen Mängel bewegung:<name> statt eines Abbruchs (nur
+    SpeicherKnapp bricht ab). Die treibenden Verknüpfungen verschwinden wieder; der Aufrufer schließt ohne Speichern."""
+    komponenten = _komponenten(asm, protokoll)
+
+    def entitaet(seite: dict):
+        ctx = kontexte[bg.quellen[basis(seite["komponente"])].schluessel_dokument]
+        ref = loese_im_teil(ctx, {k: v for k, v in seite.items() if k != "komponente"})
+        return sw_baugruppe.in_baugruppe(komponenten[seite["komponente"]], ref)
+
+    def mechanik() -> SwMechanik:
+        return SwMechanik(app, asm, _grenzen(bg), entitaet, komponenten, ordner / "bilder")
+
+    bws = bewegungen(bg.spec, standard)
+    tol = standard["toleranzen"]["anker_mm"]
+    pruefungen, bericht, laeufe = bewegungen_oder_ersatz(
+        bg.spec, bws, messwerte, mechanik, {frozenset(i["paar"]) for i in messwerte.interferenzen},
+        standard["speicher_grenze_mb"], tol)
+    bilder = {Path(p).stem: p for lauf in laeufe
+              for p in [*lauf.bilder.values(), *(k["bild"] for k in lauf.kollisionen)] if p}
+    return pruefungen, bericht, bilder
+
+
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
     bg = lade_baugruppe(spec_pfad)
@@ -133,37 +178,59 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     pruefe_lauf_gebaut(protokoll, lauf)
     soll_teile = freigegebene_teile(bg)
     bedarf = teil_messpunkte(bg)
+    mit_bewegung = bool(bg.spec.get("bewegungen"))
+    offen_halten = _dokumente_der_grenzen(bg) if mit_bewegung else set()
     app = verbinde(r.sw_jahr)
-    teilberichte, geometrie = {}, {}
-    for datei, teil_spec in bg.teile.items():
-        model = oeffne(app, ordner / dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard))
-        try:
-            ctx = kontext_aus_datei(app, model, teil_spec, bg.pfad.parent / datei, tol, protokoll["teile"][datei])
-            teilberichte[datei] = bewerte(teil_spec, messe(ctx, soll_teile[datei]), standard, soll_teile[datei])
-            geometrie[datei] = _geometrie(ctx, bedarf.get(datei, []))
-        finally:
-            sw.schliesse(app, model)
-    for q in {q.schluessel: q for q in bg.quellen.values() if q.art == "normteil"}.values():
-        if q.schluessel not in bedarf:
-            continue
-        pfad = ordner / dokument_name(q, auftrag, standard)
-        model = oeffne(app, pfad)
-        try:
-            ctx = kontext_aus_datei(app, model, q.spec, pfad.with_suffix(".yaml"), tol, {"knoten": []})
-            geometrie[q.schluessel] = _geometrie(ctx, bedarf[q.schluessel])
-        finally:
-            sw.schliesse(app, model)
-    asm = oeffne(app, asm_pfad)
+    teilberichte, geometrie, kontexte, offen = {}, {}, {}, []
+    bewegung = None
     try:
-        sw_baugruppe.aufloesen(asm)
-        messwerte = _messe_baugruppe(asm, bg, protokoll, geometrie, teilberichte)
-        bilder = screenshots(app, asm, ordner / "bilder")
+        for datei, teil_spec in bg.teile.items():
+            model = oeffne(app, ordner / dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard))
+            behalten = False
+            try:
+                ctx = kontext_aus_datei(app, model, teil_spec, bg.pfad.parent / datei, tol, protokoll["teile"][datei])
+                teilberichte[datei] = bewerte(teil_spec, messe(ctx, soll_teile[datei]), standard, soll_teile[datei])
+                geometrie[datei] = _geometrie(ctx, bedarf.get(datei, []))
+                if datei in offen_halten:
+                    kontexte[datei], behalten = ctx, True
+                    offen.append(model)
+            finally:
+                if not behalten:
+                    sw.schliesse(app, model)
+        for q in {q.schluessel: q for q in bg.quellen.values() if q.art == "normteil"}.values():
+            if q.schluessel not in bedarf and q.schluessel not in offen_halten:
+                continue
+            pfad = ordner / dokument_name(q, auftrag, standard)
+            model = oeffne(app, pfad)
+            behalten = False
+            try:
+                ctx = kontext_aus_datei(app, model, q.spec, pfad.with_suffix(".yaml"), tol, {"knoten": []})
+                geometrie[q.schluessel] = _geometrie(ctx, bedarf.get(q.schluessel, []))
+                if q.schluessel in offen_halten:
+                    kontexte[q.schluessel], behalten = ctx, True
+                    offen.append(model)
+            finally:
+                if not behalten:
+                    sw.schliesse(app, model)
+        asm = oeffne(app, asm_pfad)
+        try:
+            sw_baugruppe.aufloesen(asm)
+            messwerte = _messe_baugruppe(asm, bg, protokoll, geometrie, teilberichte)
+            bilder = screenshots(app, asm, ordner / "bilder")
+            if mit_bewegung:
+                bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner)
+        finally:
+            sw.schliesse(app, asm)  # ohne Speichern: keine treibende Verknüpfung bleibt in der Datei (Spec 4a §8)
     finally:
-        sw.schliesse(app, asm)
+        for model in reversed(offen):
+            sw.schliesse(app, model)
     bericht = {
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(asm_pfad), "art": "baugruppe",
-        **bewerte_baugruppe(bg.spec, bg.quellen, messwerte, standard, stueckliste_soll(bg.spec, freigegebene_quellen(bg), auftrag, standard)),
+        **bewerte_baugruppe(bg.spec, bg.quellen, messwerte, standard,
+                            stueckliste_soll(bg.spec, freigegebene_quellen(bg), auftrag, standard)),
         "normteile": protokoll.get("normteile", {}), "bilder": bilder,
     }
+    if bewegung is not None:
+        bericht = ergaenze_bericht(bericht, *bewegung)
     schreibe_pruefbericht(spec_pfad, lauf, ordner, bericht)
     return bericht

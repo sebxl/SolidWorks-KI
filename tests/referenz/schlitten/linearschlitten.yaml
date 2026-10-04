@@ -1,0 +1,77 @@
+# Referenz Linearschlitten (Spec 4a §2, §14): Grundplatte (fixiert) mit zwei verschraubten Führungsleisten
+# (je 2 × ISO 4762 M8 × 25 in Gewinde), Schlitten zwischen den Leisten mit Abstandsgrenze 0 … HUB, Drehbolzen
+# ISO 8734 8 × 30 im Schlitten, Hebel auf dem Schlitten (Scharnier um den Bolzen) mit Winkelgrenze 0 … SCHWENK.
+# Grundstellung: Schlitten am Ende −x, Hebel entlang +x; geschwenkt zeigt der Hebel nach +z über die rechte Leiste
+# (Drehsinn des Winkelantriebs: um −y, Spike S13 Zeile 7).
+art: baugruppe
+name: Linearschlitten
+eigenschaften: {Benennung: Linearschlitten}
+parameter: {HUB: 220, SCHWENK: 90}
+komponenten:
+  - {id: grundplatte, quelle: {teil: grundplatte.yaml}, fixiert: true}
+  - {id: leiste_links, quelle: {teil: leiste.yaml}}
+  - {id: leiste_rechts, quelle: {teil: leiste.yaml}}
+  - {id: schraube_links, quelle: {normteil: "ISO 4762 M8x25"}, je_position: {komponente: leiste_links, feature: f2}}
+  - {id: schraube_rechts, quelle: {normteil: "ISO 4762 M8x25"}, je_position: {komponente: leiste_rechts, feature: f2}}
+  - {id: schlitten, quelle: {teil: schlitten.yaml}}
+  - {id: drehbolzen, quelle: {normteil: "ISO 8734 8x30"}}
+  - {id: hebel, quelle: {teil: hebel.yaml}}
+verknuepfungen:
+  # Führungsleisten bündig an den Enden und Außenseiten der Grundplatte
+  - {id: v1, typ: deckungsgleich, a: {komponente: leiste_links, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v2, typ: deckungsgleich, a: {komponente: leiste_links, feature: f1, flaeche: "-x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-x"}, ausrichtung: gleich}
+  - {id: v3, typ: deckungsgleich, a: {komponente: leiste_links, feature: f1, flaeche: "-z"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-z"}, ausrichtung: gleich}
+  - {id: v4, typ: deckungsgleich, a: {komponente: leiste_rechts, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v5, typ: deckungsgleich, a: {komponente: leiste_rechts, feature: f1, flaeche: "-x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-x"}, ausrichtung: gleich}
+  - {id: v6, typ: deckungsgleich, a: {komponente: leiste_rechts, feature: f1, flaeche: "+z"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+z"}, ausrichtung: gleich}
+  # Leistenschrauben: Kopf auf dem Senkungsgrund, in der Senkungsachse
+  - {id: v10, typ: deckungsgleich, a: {komponente: schraube_links, referenz: EINBAU_EBENE},
+     b: {komponente: leiste_links, feature: f2, instanz: je, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v11, typ: konzentrisch, a: {komponente: schraube_links, referenz: EINBAU_ACHSE},
+     b: {komponente: leiste_links, feature: f2, instanz: je, achse: true}}
+  - {id: v12, typ: deckungsgleich, a: {komponente: schraube_rechts, referenz: EINBAU_EBENE},
+     b: {komponente: leiste_rechts, feature: f2, instanz: je, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v13, typ: konzentrisch, a: {komponente: schraube_rechts, referenz: EINBAU_ACHSE},
+     b: {komponente: leiste_rechts, feature: f2, instanz: je, achse: true}}
+  # Schlitten: auf der Grundplatte, seitlich an der linken Leiste; Hub über die Grenze g1
+  - {id: v20, typ: deckungsgleich, a: {komponente: schlitten, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v21, typ: deckungsgleich, a: {komponente: schlitten, feature: f1, flaeche: "-z"},
+     b: {komponente: leiste_links, feature: f1, flaeche: "+z"}, ausrichtung: entgegengesetzt}
+  - {id: g1, typ: grenze_abstand, a: {komponente: schlitten, feature: f1, flaeche: "-x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-x"}, ausrichtung: gleich, min: 0, max: "=HUB"}
+  # Drehbolzen im Schlitten, bündig mit der Unterseite
+  - {id: v22, typ: deckungsgleich, a: {komponente: drehbolzen, referenz: EINBAU_EBENE_1},
+     b: {komponente: schlitten, feature: f1, flaeche: "-y"}, ausrichtung: entgegengesetzt}
+  - {id: v23, typ: konzentrisch, a: {komponente: drehbolzen, referenz: EINBAU_ACHSE},
+     b: {komponente: schlitten, feature: f2, instanz: 1, achse: true}}
+  # Hebel: Scharnier um den Bolzen, liegt auf dem Schlitten; Schwenk über die Grenze g2
+  - {id: s1, typ: scharnier, a: {komponente: hebel, feature: f2, instanz: 1, achse: true},
+     b: {komponente: drehbolzen, referenz: EINBAU_ACHSE},
+     anlage_a: {komponente: hebel, feature: f1, flaeche: "-y"}, anlage_b: {komponente: schlitten, feature: f1, flaeche: "+y"}}
+  - {id: g2, typ: grenze_winkel, a: {komponente: hebel, feature: f1, flaeche: "+z"},
+     b: {komponente: schlitten, feature: f1, flaeche: "+z"}, ausrichtung: gleich, min: 0, max: "=SCHWENK"}
+freiheitsgrade: {schlitten: 1, hebel: 1}
+bewegungen:
+  - name: Schlittenhub
+    grenze: g1
+    erwartet:
+      endlagen:
+        - {komponente: schlitten, verschiebung: ["=HUB", 0, 0]}
+        - {komponente: hebel, verschiebung: ["=HUB", 0, 0]}
+  - name: Hebelschwenk
+    grenze: g2
+    erwartet:
+      endlagen:
+        - {komponente: hebel, drehung: {achse: [0, -1, 0], winkel: "=SCHWENK"}}
+pruefung:
+  huellquader: [300, 55, 100]
+  masse_pruefen:
+    - {was: Hebel auf dem Schlitten, von: {komponente: grundplatte, feature: f1, flaeche: "+y"},
+       zu: {komponente: hebel, feature: f1, flaeche: "-y"}, soll: 25}

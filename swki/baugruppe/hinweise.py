@@ -1,7 +1,10 @@
 """Hinweise zu einer gültigen Baugruppen-Spezifikation (Spec 3b §5.8); sie blockieren nie."""
 
 from swki.baugruppe.modell import Baugruppe
+from swki.konfig import lade_standard
 from swki.spec.hinweise import hinweise as teil_hinweise
+
+PRUEFAUFWAND_AB = 4  # Bewegungen; Spec 4a §4.4
 
 
 def hinweise_baugruppe(bg: Baugruppe) -> list[dict]:
@@ -20,4 +23,11 @@ def hinweise_baugruppe(bg: Baugruppe) -> list[dict]:
             ergebnis.append({"art": "feste_zahl", "pfad": f"verknuepfungen[{i}].wert",
                              "meldung": f"feste Zahl {w:g}: als Parameter führen, wenn der Wert eine Anforderung ist "
                                         "(sonst deckt die Freigabe ihn nicht ab)"})
+    bws = bg.spec.get("bewegungen", [])
+    if len(bws) >= PRUEFAUFWAND_AB:
+        vorgabe = lade_standard()["bewegung_schritte"]
+        stellungen = sum(b.get("schritte", vorgabe) + 1 for b in bws)
+        ergebnis.append({"art": "pruefaufwand", "pfad": "bewegungen",
+                         "meldung": f"{len(bws)} Bewegungen: {stellungen} Stellungen in Grundstellung, im ungünstigsten "
+                                    f"Fall {len(bws) * stellungen} mit Paarläufen – Zeit und SolidWorks-Speicher beachten"})
     return ergebnis

@@ -32,6 +32,21 @@ def passt(q: Quelle, f: dict, parameter: dict) -> str | None:
     return None if ok else f"{norm} {groesse}: Bohrung Ø {d:g} zu klein (Schaft-/Innen-Ø {innen:g})"
 
 
+def passt_drehbolzen(q: Quelle, f: dict, parameter: dict) -> str | None:
+    """Scharnier (Spec 4a §4.2): ISO 8734 als Drehbolzen braucht auf der drehenden Seite eine bohrung mit Ø > d; andere
+    Normteile wie bei konzentrisch."""
+    if q.norm != "ISO 8734":
+        return passt(q, f, parameter)
+    d_bolzen = q.masse["d"]
+    if f["typ"] != "bohrung":
+        return f"ISO 8734 {q.groesse} als Drehbolzen braucht eine bohrung mit Ø > {d_bolzen:g} (keine normbohrung)"
+    try:
+        d = auswerten(f["durchmesser"], parameter)
+    except AusdruckFehler:
+        return None  # meldet die Prüfung der Teil-Spec
+    return None if d > d_bolzen else f"ISO 8734 {q.groesse} als Drehbolzen: Bohrung Ø {d:g} nicht größer als {d_bolzen:g}"
+
+
 def _paar(v: dict, quellen: dict[str, Quelle]):
     """(Normteil, Eigenteil, Seite des Eigenteils), wenn v die EINBAU_ACHSE eines Normteils mit einer Bohrungsachse
     verbindet; sonst None."""
@@ -46,12 +61,13 @@ def _paar(v: dict, quellen: dict[str, Quelle]):
 def passung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
     befunde = []
     for i, v in enumerate(spec.get("verknuepfungen", [])):
-        if v["typ"] != "konzentrisch" or (paar := _paar(v, quellen)) is None:
+        if v["typ"] not in ("konzentrisch", "scharnier") or (paar := _paar(v, quellen)) is None:
             continue
         qn, qt, seite = paar
         f = next((x for x in qt.spec["features"] if x["id"] == seite["feature"]), None)
         if f is None or f["typ"] not in ("normbohrung", "bohrung"):
             continue
-        if meldung := passt(qn, f, qt.spec.get("parameter", {})):
+        pruefe = passt_drehbolzen if v["typ"] == "scharnier" else passt
+        if meldung := pruefe(qn, f, qt.spec.get("parameter", {})):
             befunde.append({"pfad": f"verknuepfungen[{i}]", "meldung": f"Passung: {meldung}"})
     return befunde

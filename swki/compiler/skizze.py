@@ -336,23 +336,36 @@ class Skizzierer:
             else:
                 festlegen(roh[i + 1])
 
+    def _linienzug(self, punkte: list[tuple[float, float]]) -> list:
+        """Geschlossener Linienzug durch die Skizzenpunkte (m); benachbarte Linien teilen ihre Endpunkte."""
+        linien = []
+        for (xa, ya), (xb, yb) in zip(punkte, punkte[1:] + punkte[:1]):
+            linie = self.sm.CreateLine(xa, ya, 0.0, xb, yb, 0.0)
+            if linie is None:
+                raise BauFehler(SKIZZE_UNGUELTIG, "CreateLine fehlgeschlagen", schritt="skizze")
+            linien.append(linie)
+        return linien
+
     def element(self, element: dict) -> None:
         w = self.ctx.wert
         if "rechteck" in element:
             r = element["rechteck"]
             mu_, mv = w(r["mitte"][0]), w(r["mitte"][1])
             b, h = w(r["breite"]), w(r["hoehe"])
-            x0, y0 = self.zu_skizze(mu_ - b / 2, mv - h / 2)
-            x1, y1 = self.zu_skizze(mu_ + b / 2, mv + h / 2)
-            # CreateCornerRectangle statt CreateCenterRectangle: der Mittelpunkt des Mittelpunktrechtecks wird je nach
-            # SolidWorks-Zustand nicht angelegt (live beobachtet); die Ecke ist immer ein Skizzenpunkt.
-            seg = self.sm.CreateCornerRectangle(x0, y0, 0.0, x1, y1, 0.0)
-            if not seg:
-                raise BauFehler(SKIZZE_UNGUELTIG, "CreateCornerRectangle fehlgeschlagen", schritt="skizze")
-            # seg[0], seg[1] sind benachbarte Seiten; Breite/Höhe über die Länge zuordnen (Skizzensystem kann gedreht sein)
-            seite_b, seite_h = (seg[0], seg[1]) if abs(seg[0].GetLength - mm(b)) < 1e-9 else (seg[1], seg[0])
-            self.groesse(seite_b, (mu_, mv - h / 2 - _MASS_ABSTAND_MM), r["breite"])
-            self.groesse(seite_h, (mu_ - b / 2 - _MASS_ABSTAND_MM, mv), r["hoehe"])
+            # Vier Linien statt eines Rechteckwerkzeugs: CreateCornerRectangle legt beim Quadrat immer, sonst sporadisch
+            # selbst eine Beziehung "gleiche Länge" an (trotz AddToDB, live belegt nach Stufe 4a) – die Skizze wird
+            # quadratisch, das zweite Seitenmaß überzählig und seine Gleichung scheitert ("Gleichungen: Code 1").
+            # CreateCenterRectangle legte je nach SolidWorks-Zustand keinen Mittelpunkt an.
+            ecken = [(mu_ - b / 2, mv - h / 2), (mu_ + b / 2, mv - h / 2), (mu_ + b / 2, mv + h / 2), (mu_ - b / 2, mv + h / 2)]
+            seg = self._linienzug([self.zu_skizze(*e) for e in ecken])
+            for linie in seg:  # Seiten achsparallel im Skizzensystem: Richtung festlegen wie das Rechteckwerkzeug
+                p, q = linie.GetStartPoint2, linie.GetEndPoint2
+                sw.auswahl_leeren(self.model)
+                sw.waehle(self.model, linie, 0)
+                self.model.SketchAddConstraints("sgHORIZONTAL2D" if abs(p.Y - q.Y) < 1e-9 else "sgVERTICAL2D")
+            sw.auswahl_leeren(self.model)
+            self.groesse(seg[0], (mu_, mv - h / 2 - _MASS_ABSTAND_MM), r["breite"])  # seg[0] läuft in u, seg[1] in v
+            self.groesse(seg[1], (mu_ - b / 2 - _MASS_ABSTAND_MM, mv), r["hoehe"])
             ecke = (_halb_weg(r["mitte"][0], r["breite"]), _halb_weg(r["mitte"][1], r["hoehe"]))
             self.lage(ecke, (mu_ - b / 2 - _MASS_ABSTAND_MM, mv - h / 2 - _MASS_ABSTAND_MM))
             if "radius" in r:
@@ -371,13 +384,7 @@ class Skizzierer:
         elif "polygon" in element:
             p = element["polygon"]
             uv = [(w(q[0]), w(q[1])) for q in p["punkte"]]
-            punkte = [self.zu_skizze(*q) for q in uv]
-            linien = []
-            for (xa, ya), (xb, yb) in zip(punkte, punkte[1:] + punkte[:1]):
-                linie = self.sm.CreateLine(xa, ya, 0.0, xb, yb, 0.0)
-                if linie is None:
-                    raise BauFehler(SKIZZE_UNGUELTIG, "CreateLine fehlgeschlagen", schritt="skizze")
-                linien.append(linie)
+            linien = self._linienzug([self.zu_skizze(*q) for q in uv])
             for q in p["punkte"]:
                 self.lage(q, (w(q[0]) + _MASS_ABSTAND_MM, w(q[1]) + _MASS_ABSTAND_MM))
             if "radien" in p:

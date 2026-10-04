@@ -1,0 +1,17 @@
+# Referenz Linearschlitten (Spec 4a): Schlitten zwischen den Leisten; Stiftbohrung für den Drehbolzen des Hebels bei
+# x = XB.
+art: teil
+name: Schlitten
+material: "1.0038"
+eigenschaften: {Benennung: Schlitten Linearschlitten}
+parameter: {L: 80, B: 60, H: 25, XB: -20}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - {id: f2, typ: normbohrung, art: stift, groesse: 8, flaeche: {feature: f1, flaeche: "+y"}, positionen: [["=XB", 0]],
+     durch: true}
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  volumen: {soll: auto}

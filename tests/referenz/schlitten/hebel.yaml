@@ -1,0 +1,15 @@
+# Referenz Linearschlitten (Spec 4a): Hebel; Bohrung um den Drehbolzen bei x = XB (Ø DB > 8).
+art: teil
+name: Hebel
+material: "1.0038"
+eigenschaften: {Benennung: Hebel Linearschlitten}
+parameter: {L: 60, B: 16, H: 10, XB: -22, DB: 8.5}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [["=XB", 0]], durchmesser: "=DB", durch: true}
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  volumen: {soll: auto}

@@ -11,7 +11,9 @@ from swki.aenderungen import pruefe_unveraendert, pruefsummen, vermerke_befund
 from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
 from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import Instanz, Verknuepfung, basis, instanzen, verknuepfungen
-from swki.baugruppe.fehler import KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU, VERKNUEPFUNG_FEHLER
+from swki.baugruppe.bewegung import TOL_WINKEL_GRAD, bewegungen
+from swki.baugruppe.fehler import (GRUNDSTELLUNG_FEHLER, KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU,
+                                   VERKNUEPFUNG_FEHLER)
 from swki.baugruppe.freigabe import pruefe_freigabe_baugruppe
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, Quelle, dokument_name
@@ -180,6 +182,30 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
     return fehler
 
 
+def _grundstellung(b: Baulauf) -> Exception | None:
+    """Prüft je Bewegung, dass die Grenzverknüpfung in Grundstellung steht (Spec 4a §7.2): ihr Maß D1 muss `min` sein.
+    Die Grenze wird mit dem Wert `min` angelegt, die Grundstellung entsteht also schon dabei. Treibende Verknüpfungen
+    werden beim Bau nicht angelegt: Hub- und Schwenkantrieb zusammen angelegt und wieder gelöscht machen die Winkelgrenze
+    nach dem Speichern und Neuöffnen wirkungslos (Spike S13c, E6)."""
+    tol_mm = b.standard["toleranzen"]["anker_mm"]
+    try:
+        for bw in bewegungen(b.bg.spec, b.standard):
+            with b.protokoll.knoten_lauf(f"grundstellung:{bw.name}", "grundstellung"):
+                try:
+                    grenze = {f.Name.lower(): f for f in sw_baugruppe.verknuepfungen(b.asm)}.get(bw.grenze.lower())
+                    if grenze is None:
+                        raise BauFehler(GRUNDSTELLUNG_FEHLER, f"Grenze {bw.grenze} nicht gefunden", schritt="grundstellung")
+                    ist = sw_baugruppe.grenzwert(grenze, bw.art)
+                    if abs(ist - bw.min) > (tol_mm if bw.art == "abstand" else TOL_WINKEL_GRAD):
+                        einheit = "mm" if bw.art == "abstand" else "°"
+                        raise BauFehler(GRUNDSTELLUNG_FEHLER, f"{ist:g} statt {bw.min:g} {einheit}", schritt="grundstellung")
+                except Exception as e:
+                    raise _mit_kontext(e, GRUNDSTELLUNG_FEHLER, f"Grundstellung {bw.name}", "grundstellung") from e
+    except Exception as e:
+        return e
+    return None
+
+
 def _schliesse_alle(b: Baulauf) -> BauFehler | None:
     """Baugruppe, dann die Teile in umgekehrter Öffnungsreihenfolge; jedes Dokument einzeln, ein Fehler hält die übrigen
     nicht auf. Liefert den ersten Schließfehler (oder None)."""
@@ -232,6 +258,9 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
                 fehler = _verknuepfe(b, alle_verknuepfungen)
             else:
                 _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
+        if fehler is None and b.asm is not None and bg.spec.get("bewegungen"):
+            with protokoll.phase("grundstellung"):
+                fehler = _grundstellung(b)
         if b.asm is not None:
             with protokoll.phase("speichern"):
                 ziel = ordner / f"{dateiname(bg.spec, auftrag, standard)}.sldasm"

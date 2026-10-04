@@ -14,7 +14,9 @@
     "komponenten": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/komponente"}},
     "verknuepfungen": {"type": "array", "items": {"$ref": "#/$defs/verknuepfung"}},
     "freiheitsgrade": {"type": "object", "propertyNames": {"$ref": "#/$defs/instanz_id"},
-                       "additionalProperties": {"const": "unterbestimmt"}},
+                       "additionalProperties": {"oneOf": [{"const": "unterbestimmt"},
+                                                           {"type": "integer", "minimum": 1}]}},
+    "bewegungen": {"type": "array", "items": {"$ref": "#/$defs/bewegung"}},
     "pruefung": {"$ref": "#/$defs/pruefung"},
     "max_nachbesserungen": {"type": "integer", "minimum": 1}
   },
@@ -62,12 +64,17 @@
       "type": "object", "required": ["id", "typ", "a", "b"], "additionalProperties": false,
       "properties": {
         "id": {"$ref": "#/$defs/id"},
-        "typ": {"enum": ["deckungsgleich", "konzentrisch", "parallel", "senkrecht", "abstand", "winkel"]},
+        "typ": {"enum": ["deckungsgleich", "konzentrisch", "parallel", "senkrecht", "abstand", "winkel",
+                         "grenze_abstand", "grenze_winkel", "scharnier"]},
         "a": {"$ref": "#/$defs/referenz"},
         "b": {"$ref": "#/$defs/referenz"},
         "ausrichtung": {"enum": ["gleich", "entgegengesetzt"]},
         "wert": {"$ref": "#/$defs/wert"},
-        "drehung_sperren": {"type": "boolean"}
+        "drehung_sperren": {"type": "boolean"},
+        "min": {"$ref": "#/$defs/wert"},
+        "max": {"$ref": "#/$defs/wert"},
+        "anlage_a": {"$ref": "#/$defs/referenz"},
+        "anlage_b": {"$ref": "#/$defs/referenz"}
       }
     },
     "messpunkt": {"oneOf": [
@@ -97,6 +104,24 @@
         "masse": {"type": "object", "required": ["soll"], "additionalProperties": false,
                   "properties": {"soll": {"$ref": "#/$defs/wert"},
                                  "toleranz_prozent": {"type": "number", "exclusiveMinimum": 0}}}
+      }
+    },
+    "endlage": {"oneOf": [
+      {"type": "object", "required": ["komponente", "verschiebung"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/instanz_id"}, "verschiebung": {"$ref": "#/$defs/punkt3"}}},
+      {"type": "object", "required": ["komponente", "drehung"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/instanz_id"},
+                      "drehung": {"type": "object", "required": ["achse", "winkel"], "additionalProperties": false,
+                                  "properties": {"achse": {"$ref": "#/$defs/punkt3"}, "winkel": {"$ref": "#/$defs/wert"}}}}}
+    ]},
+    "bewegung": {
+      "type": "object", "required": ["name", "grenze"], "additionalProperties": false,
+      "properties": {
+        "name": {"$ref": "#/$defs/id"},
+        "grenze": {"$ref": "#/$defs/id"},
+        "schritte": {"type": "integer", "minimum": 2},
+        "erwartet": {"type": "object", "additionalProperties": false,
+                     "properties": {"endlagen": {"type": "array", "items": {"$ref": "#/$defs/endlage"}}}}
       }
     }
   }
