@@ -26,6 +26,7 @@ def _lauf(capsys, *argv):
     ("formplatte", "formplatte_ds.yaml"),
     ("auswerferhalteplatte", "auswerferhalteplatte.yaml"),
     ("stehlager", "stehlager.yaml"),
+    ("schlitten", "linearschlitten.yaml"),
 ])
 def test_referenz_besteht(capsys, tmp_path, ordner, spec):
     auftrag = tmp_path / f"REF-{ordner}"
