@@ -34,3 +34,13 @@ def screenshots(app, model, ordner: Path) -> dict[str, str]:
             sw.speichere(model, pfad, kopie=True)
             bilder[name] = str(pfad)
         return bilder
+
+
+def iso_bild(app, model, pfad: Path) -> str:
+    """Ein Iso-Bild der aktuellen Stellung (Bewegungsprüfung, Spec 4a §8.3); gleiche Einstellungen wie screenshots()."""
+    model._FlagAsMethod("ViewZoomtofit2")
+    with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
+        model.ShowNamedView2("", ANSICHTEN["iso"])
+        model.ViewZoomtofit2()
+        sw.speichere(model, pfad, kopie=True)
+    return str(pfad)

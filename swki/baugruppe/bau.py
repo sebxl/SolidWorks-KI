@@ -10,12 +10,15 @@ from pathlib import Path
 from swki.aenderungen import pruefe_unveraendert, pruefsummen, vermerke_befund
 from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
 from swki.baugruppe import sw_baugruppe
-from swki.baugruppe.aufloesen import Instanz, Verknuepfung, basis, instanzen, verknuepfungen
-from swki.baugruppe.fehler import KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU, VERKNUEPFUNG_FEHLER
+from swki.baugruppe.aufloesen import GRENZEN, Instanz, Verknuepfung, basis, instanzen, verknuepfungen
+from swki.baugruppe.bewegung import bewegungen
+from swki.baugruppe.fehler import (GRUNDSTELLUNG_FEHLER, KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU,
+                                   VERKNUEPFUNG_FEHLER)
 from swki.baugruppe.freigabe import pruefe_freigabe_baugruppe
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, Quelle, dokument_name
 from swki.baugruppe.referenzen import loese_im_teil
+from swki.baugruppe.sw_bewegung import SwMechanik
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.bauen import BauAbbruch, baue_teil_dokument
@@ -180,6 +183,31 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
     return fehler
 
 
+def _grundstellung(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
+    """Jede bewegte Komponente über eine treibende Verknüpfung auf min stellen, dann alle treibenden wieder löschen
+    (Spec 4a §7.2): gespeichert wird in Grundstellung. Eine treibende Verknüpfung, die sich nicht löschen lässt, ist ein
+    Fehler – sie darf nicht in der gespeicherten Baugruppe bleiben."""
+    bws = bewegungen(b.bg.spec, b.standard)
+    mech = SwMechanik(b.app, b.asm, {v.id: v for v in alle if v.typ in GRENZEN}, lambda seite: _entitaet(b, seite),
+                      b.komponenten)
+    fehler = None
+    try:
+        for bw in bws:
+            with b.protokoll.knoten_lauf(f"grundstellung:{bw.name}", "grundstellung"):
+                try:
+                    mech.halte(bw, bw.min)
+                except Exception as e:
+                    raise _mit_kontext(e, GRUNDSTELLUNG_FEHLER, f"Grundstellung {bw.name}", "grundstellung") from e
+    except Exception as e:
+        fehler = e
+    for bw in reversed(bws):
+        try:
+            mech.loese(bw)
+        except Exception as e:
+            fehler = fehler or _mit_kontext(e, GRUNDSTELLUNG_FEHLER, f"Antrieb {bw.name} löschen", "grundstellung")
+    return fehler
+
+
 def _schliesse_alle(b: Baulauf) -> BauFehler | None:
     """Baugruppe, dann die Teile in umgekehrter Öffnungsreihenfolge; jedes Dokument einzeln, ein Fehler hält die übrigen
     nicht auf. Liefert den ersten Schließfehler (oder None)."""
@@ -232,6 +260,9 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
                 fehler = _verknuepfe(b, alle_verknuepfungen)
             else:
                 _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
+        if fehler is None and b.asm is not None and bg.spec.get("bewegungen"):
+            with protokoll.phase("grundstellung"):
+                fehler = _grundstellung(b, alle_verknuepfungen)
         if b.asm is not None:
             with protokoll.phase("speichern"):
                 ziel = ordner / f"{dateiname(bg.spec, auftrag, standard)}.sldasm"
