@@ -63,7 +63,7 @@ def bericht_markdown(
         zeilen += [f"| {k} | {'ja' if t['bestanden'] else 'nein'} | {t['maengel']} |"
                    for k, t in sorted(letzter["teilpruefungen"].items())]
     bewegungen = letzter.get("bewegungen")
-    if bewegungen:
+    if bewegungen and bewegungen.get("laeufe"):
         zeilen += ["", "## Bewegungen (letzter Lauf)", "",
                    "| Bewegung | Lauf | Stellungen | bewegt | Kollisionen | Grenze oben / unten | Dauer (s) |",
                    "|---|---|---|---|---|---|---|"]

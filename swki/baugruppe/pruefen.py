@@ -8,8 +8,8 @@ from pathlib import Path
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeufe
 from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import GRENZEN, basis, instanzen, verknuepfungen
-from swki.baugruppe.bewegung import bewegungen, bewerte_bewegungen, ergaenze_bericht
-from swki.baugruppe.bewegungslauf import fahre
+from swki.baugruppe.bewegung import bewegungen, ergaenze_bericht
+from swki.baugruppe.bewegungslauf import bewegungen_oder_ersatz
 from swki.baugruppe.bewertung import BaugruppenMesswerte, bewerte_baugruppe, stueckliste_soll
 from swki.baugruppe.freigabe import freigegebene_quellen, freigegebene_teile, pruefe_freigabe_baugruppe
 from swki.baugruppe.geometrie import transformiere
@@ -136,7 +136,8 @@ def _komponenten(asm, protokoll: dict) -> dict:
 def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict, messwerte, standard: dict,
                        ordner: Path) -> tuple[list[dict], dict, dict]:
     """Bewegungsprüfung am geöffneten Lauf-Dokument (Spec 4a §8.2); liefert Prüfungen, Bewegungsbericht und Bilder.
-    Die treibenden Verknüpfungen verschwinden wieder; der Aufrufer schließt ohne Speichern."""
+    Bei statischen Fehlern oder einem Fehler der Läufe entstehen Mängel bewegung:<name> statt eines Abbruchs (nur
+    SpeicherKnapp bricht ab). Die treibenden Verknüpfungen verschwinden wieder; der Aufrufer schließt ohne Speichern."""
     komponenten = _komponenten(asm, protokoll)
 
     def entitaet(seite: dict):
@@ -144,12 +145,15 @@ def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict,
         ref = loese_im_teil(ctx, {k: v for k, v in seite.items() if k != "komponente"})
         return sw_baugruppe.in_baugruppe(komponenten[seite["komponente"]], ref)
 
+    def mechanik() -> SwMechanik:
+        return SwMechanik(app, asm, _grenzen(bg), entitaet, komponenten, ordner / "bilder")
+
     bws = bewegungen(bg.spec, standard)
     tol = standard["toleranzen"]["anker_mm"]
-    mech = SwMechanik(app, asm, _grenzen(bg), entitaet, komponenten, ordner / "bilder")
-    m = fahre(mech, bws, {frozenset(i["paar"]) for i in messwerte.interferenzen}, standard["speicher_grenze_mb"], tol)
-    pruefungen, bericht = bewerte_bewegungen(bg.spec, bws, m, tol)
-    bilder = {Path(p).stem: p for lauf in m.laeufe
+    pruefungen, bericht, laeufe = bewegungen_oder_ersatz(
+        bg.spec, bws, messwerte, mechanik, {frozenset(i["paar"]) for i in messwerte.interferenzen},
+        standard["speicher_grenze_mb"], tol)
+    bilder = {Path(p).stem: p for lauf in laeufe
               for p in [*lauf.bilder.values(), *(k["bild"] for k in lauf.kollisionen)] if p}
     return pruefungen, bericht, bilder
 

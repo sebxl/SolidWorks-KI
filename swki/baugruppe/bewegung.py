@@ -248,6 +248,18 @@ def bewerte_bewegungen(spec: dict, bws: list[Bewegung], m: BewegungsMesswerte, t
     return pruefungen, {"laeufe": [_lauf_bericht(lauf) for lauf in m.laeufe], "paare": m.paare}
 
 
+def ersatz_pruefungen(bws: list[Bewegung], hinweis: str, fehlerhaft: dict[str, str] | None = None) -> tuple[list[dict], dict]:
+    """Ersatz für bewerte_bewegungen, wenn die Bewegungsprüfung nicht (vollständig) lief (Spec 4a §8.2.3): je Bewegung
+    die Prüfung bewegung:<name>. Bewegungen in fehlerhaft (Name → Meldung) sind ein Mangel (ok=False, Knoten = bewegte
+    Komponente); alle übrigen sind nicht geprüft (ok=None, hinweis). Der Bewegungsbericht ist leer."""
+    fehlerhaft = fehlerhaft or {}
+    pruefungen = [_pruefung(f"bewegung:{b.name}", False, ist=[{"gegen": {}, "meldung": fehlerhaft[b.name]}],
+                            hinweis=fehlerhaft[b.name], knoten=[b.komponente]) if b.name in fehlerhaft
+                  else _pruefung(f"bewegung:{b.name}", None, hinweis=hinweis, knoten=[])
+                  for b in bws]
+    return pruefungen, {"laeufe": [], "paare": []}
+
+
 def ergaenze_bericht(bericht: dict, pruefungen: list[dict], bewegungsbericht: dict, bilder: dict[str, str]) -> dict:
     """Prüfbericht der Statik um die Bewegungsprüfung ergänzen (neues Dict; Mängel, bestanden, Bilder)."""
     neu = [{"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": _beschreibung(e)}

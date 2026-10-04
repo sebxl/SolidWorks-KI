@@ -6,10 +6,11 @@ Attrappe."""
 import time
 from typing import Protocol
 
-from swki.baugruppe.bewegung import (TOL_WINKEL_GRAD, Bewegung, BewegungsMesswerte, Lauf, ist_bewegt, paare, soll_weg,
-                                     vereinige, weg)
+from swki.baugruppe.bewegung import (TOL_WINKEL_GRAD, Bewegung, BewegungsMesswerte, Lauf, bewerte_bewegungen,
+                                     ersatz_pruefungen, ist_bewegt, paare, soll_weg, vereinige, weg)
 from swki.baugruppe.fehler import GRUNDSTELLUNG_FEHLER
 from swki.cli import SwkiFehler
+from swki.compiler.fehler import BauFehler
 
 SPEICHER_KNAPP = "SPEICHER_KNAPP"
 
@@ -28,6 +29,7 @@ class StellungFehler(SwkiFehler):
 
     def __init__(self, bewegung: str, wert: float, meldung: str):
         super().__init__(f"Bewegung {bewegung}: Stellung {wert:g} nicht herstellbar ({meldung})")
+        self.bewegung = bewegung
         self.daten = {"code": GRUNDSTELLUNG_FEHLER, "bewegung": bewegung, "stellung": wert}
 
 
@@ -178,3 +180,33 @@ def fahre(mech: Mechanik, bws: list[Bewegung], bekannt: set[frozenset], grenze_m
                 mech.loese(b)
             except Exception:
                 pass  # Aufräumfehler verdecken die Ursache nicht (Muster aus dem Aufräumen nach 3b)
+
+
+def _statisch_fehlerhaft(messwerte) -> bool:
+    """Rebuildfehler oder eine Verknüpfung mit Fehlercode ≠ 0 in den statischen Messwerten (die Felder, aus denen die
+    Mängel rebuild und verknuepfungen entstehen)."""
+    return bool(messwerte.rebuild_fehler) or any(messwerte.verknuepfungen.values())
+
+
+def bewegungen_oder_ersatz(spec: dict, bws: list[Bewegung], messwerte, mech_fabrik, bekannt: set[frozenset],
+                           grenze_mb: float, tol_mm: float) -> tuple[list[dict], dict, list[Lauf]]:
+    """Bewegungsprüfung oder, wo sie nicht laufen kann, Mängel statt Abbruch (Spec 4a §8.2.3). Liefert Prüfungen,
+    Bewegungsbericht und die Läufe (für die Bilder). mech_fabrik erzeugt die Mechanik erst, wenn gefahren wird.
+    - Statische Fehler (rebuild, verknuepfungen): nicht fahren, je Bewegung bewegung:<name> mit ok=None.
+    - StellungFehler/BauFehler aus fahre (nach dessen Aufräumen): bewegung:<name> mit ok=False; bei StellungFehler nur
+      für die betroffene Bewegung (übrige ok=None), bei BauFehler ohne Bewegungsbezug für alle.
+    - SpeicherKnapp bleibt ein Abbruch ohne Prüfbericht (Präzisierung 14)."""
+    if _statisch_fehlerhaft(messwerte):
+        pruefungen, bericht = ersatz_pruefungen(
+            bws, "Bewegungsprüfung nicht gefahren: statische Fehler (siehe rebuild/verknuepfungen)")
+        return pruefungen, bericht, []
+    try:
+        m = fahre(mech_fabrik(), bws, bekannt, grenze_mb, tol_mm)
+    except StellungFehler as e:
+        pruefungen, bericht = ersatz_pruefungen(bws, "nicht geprüft (Bewegungsprüfung abgebrochen)", {e.bewegung: str(e)})
+        return pruefungen, bericht, []
+    except BauFehler as e:
+        pruefungen, bericht = ersatz_pruefungen(bws, "", {b.name: f"Abbruch der Bewegungsprüfung: {e}" for b in bws})
+        return pruefungen, bericht, []
+    pruefungen, bericht = bewerte_bewegungen(spec, bws, m, tol_mm)
+    return pruefungen, bericht, m.laeufe

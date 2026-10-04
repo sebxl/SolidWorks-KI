@@ -105,3 +105,8 @@ def test_bericht_bewegungen():
     for teil in ("## Bewegungen (letzter Lauf)", "| Hub | Grundstellung | 17 | schlitten, hebel | 0 | wirkt / – | 12.5 |",
                  "| Hub | Schwenk auf max | 17 | – | 1 | – / – | 9.0 |", "Paarläufe für: Hub × Schwenk"):
         assert teil in text, text
+
+
+def test_bericht_ohne_gefahrene_bewegungen_hat_keinen_abschnitt():
+    bericht = {"maengel": [], "bilder": {}, "bewegungen": {"laeufe": [], "paare": []}}
+    assert "## Bewegungen" not in bericht_markdown(BAUGRUPPE, "A", [], ("pruefen", "…"), bericht, None, None, [])

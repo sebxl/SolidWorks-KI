@@ -313,9 +313,9 @@ def grenzwert(feature, art: str) -> float:
 
 
 def loesche(asm, feature) -> None:
-    """Verknüpfung löschen (die treibende nach Bau bzw. Prüfung) und neu aufbauen. Steht sie danach noch im Baum, ist
-    sie nicht gelöscht (Select2/EditDelete melden das nicht): BauFehler, damit keine treibende Verknüpfung gespeichert
-    wird (Spec 4a §7)."""
+    """Verknüpfung löschen (die treibende Verknüpfung der Prüfung) und neu aufbauen. Steht sie danach noch im Baum, ist
+    sie nicht gelöscht (Select2/EditDelete melden das nicht): BauFehler. `bauen` legt keine treibende Verknüpfung an
+    (Spike S13c); die Prüfung schließt ohne Speichern (Spec 4a §7, §8)."""
     name = feature.Name
     _loesche(asm, feature)
     sw.rebuild(asm)

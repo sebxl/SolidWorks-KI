@@ -4,6 +4,7 @@ verschiebt in x um den Hub, der Hebel fährt mit und dreht um +y um den Schwenk 
 import math
 
 from swki.baugruppe.bewegung import drehmatrix
+from swki.compiler.fehler import REBUILD_FEHLER, BauFehler
 
 EINS = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
@@ -24,7 +25,7 @@ def _hebelkiste(hub: float, schwenk: float) -> list[float]:
 
 class Attrappe:
     def __init__(self, durchlass=(), kollision=None, fehler_bei=None, speicher=1000.0, loese_wirft=False,
-                 interferenz_wirft=False, halte_wirft=False):
+                 interferenz_wirft=False, halte_wirft=False, unterdruecke_baufehler=False):
         self.werte = {"Hub": 0.0, "Schwenk": 0.0}
         self.grenzen = {"Hub": (0.0, 100.0), "Schwenk": (0.0, 90.0)}
         self.durchlass = set(durchlass)        # Bewegungen, deren Grenze im Modell nicht wirkt
@@ -34,6 +35,7 @@ class Attrappe:
         self.loese_wirft = loese_wirft
         self.interferenz_wirft = interferenz_wirft
         self.halte_wirft = halte_wirft
+        self.unterdruecke_baufehler = unterdruecke_baufehler  # unterdruecke() scheitert wie sw.rebuild mit BauFehler
         self.unterdrueckt: set[str] = set()    # Bewegungen, deren Grenzverknüpfung unterdrückt ist
         self.gehalten: set[str] = set()        # Bewegungen mit angelegtem Antrieb
         self.aufrufe: list[tuple] = []
@@ -64,6 +66,8 @@ class Attrappe:
 
     def unterdruecke(self, b, ja):
         self.aufrufe.append(("unterdruecke", b.name, ja))
+        if self.unterdruecke_baufehler and ja:
+            raise BauFehler(REBUILD_FEHLER, "Rebuild-Fehler: Skizze1", schritt="unterdruecken")
         if ja:
             self.unterdrueckt.add(b.name)
         else:
