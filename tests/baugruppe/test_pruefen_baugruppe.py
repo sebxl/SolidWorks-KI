@@ -76,3 +76,32 @@ def test_soll_verknuepfungswerte_nutzt_die_freigegebenen_parameter(tmp_path):
     bg = lade_baugruppe(pfad)
     assert soll_verknuepfungswerte(bg.spec, bg.quellen) == {"v1": 10.0}      # ohne Parameter: aktuelle Spec
     assert soll_verknuepfungswerte(bg.spec, bg.quellen, {"ABST": 35}) == {"v1": 5.0}
+
+
+def test_freiheitsgrad_1_erlaubt_unterbestimmt():
+    from swki.baugruppe.bewertung import _erlaubt_unterbestimmt
+
+    spec = {"komponenten": [{"id": "schieber"}, {"id": "hebel"}], "freiheitsgrade": {"schieber": 1}}
+    assert _erlaubt_unterbestimmt(spec, "schieber") and not _erlaubt_unterbestimmt(spec, "hebel")
+
+
+def test_dokumente_der_grenzen_bleiben_offen(tmp_path):
+    from swki.baugruppe import pruefen as pruefen_modul
+    from swki.baugruppe.laden import lade_baugruppe
+    from tests.baugruppe.beispiel_bewegung import schreibe as schreibe_bewegung
+
+    bg = lade_baugruppe(schreibe_bewegung(tmp_path / "B"))
+    assert pruefen_modul._dokumente_der_grenzen(bg) == {"schieber.yaml", "grundplatte.yaml", "hebel.yaml"}
+
+
+def test_bericht_bewegungen():
+    laeufe = [{"bewegung": "Hub", "gegen": {}, "stellungen": 17, "bewegt": ["schlitten", "hebel"], "kollisionen": 0,
+               "grenze": {"oben": False, "unten": None}, "dauer_s": 12.5},
+              {"bewegung": "Hub", "gegen": {"Schwenk": "max"}, "stellungen": 17, "bewegt": [], "kollisionen": 1,
+               "grenze": {}, "dauer_s": 9.0}]
+    bericht = {"maengel": [], "bilder": {},
+               "bewegungen": {"laeufe": laeufe, "paare": [{"bewegungen": ["Hub", "Schwenk"], "schnitt": [0] * 6}]}}
+    text = bericht_markdown(BAUGRUPPE, "A", [], ("pruefen", "…"), bericht, None, None, [])
+    for teil in ("## Bewegungen (letzter Lauf)", "| Hub | Grundstellung | 17 | schlitten, hebel | 0 | wirkt / – | 12.5 |",
+                 "| Hub | Schwenk auf max | 17 | – | 1 | – / – | 9.0 |", "Paarläufe für: Hub × Schwenk"):
+        assert teil in text, text

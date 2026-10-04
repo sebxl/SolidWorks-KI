@@ -94,4 +94,4 @@ def test_kein_hinweis_bei_drei_bewegungen():
 
 def test_vorgaben_in_standard():
     standard = lade_standard()
-    assert (standard["bewegung_schritte"], standard["speicher_grenze_mb"]) == (8, 3500)
+    assert (standard["bewegung_schritte"], standard["speicher_grenze_mb"]) == (8, 5000)

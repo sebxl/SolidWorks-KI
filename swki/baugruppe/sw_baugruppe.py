@@ -306,6 +306,12 @@ def stelle(asm, antrieb, art: str, wert: float) -> str | None:
     return f"Verknüpfungsfehler: {', '.join(fehlerhaft)}" if fehlerhaft else None
 
 
+def grenzwert(feature, art: str) -> float:
+    """Aktueller Wert einer Grenz- bzw. treibenden Verknüpfung aus dem Maß D1 in mm bzw. Grad."""
+    wert = feature.Parameter(MASS_NAME).SystemValue
+    return in_mm(wert) if art == "abstand" else math.degrees(wert)
+
+
 def loesche(asm, feature) -> None:
     """Verknüpfung löschen (die treibende nach Bau bzw. Prüfung) und neu aufbauen. Steht sie danach noch im Baum, ist
     sie nicht gelöscht (Select2/EditDelete melden das nicht): BauFehler, damit keine treibende Verknüpfung gespeichert

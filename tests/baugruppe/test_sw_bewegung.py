@@ -7,9 +7,8 @@ from types import SimpleNamespace
 import pytest
 
 from swki.baugruppe import bau, sw_baugruppe
-from swki.baugruppe.aufloesen import Verknuepfung, verknuepfungen
+from swki.baugruppe.aufloesen import Verknuepfung
 from swki.baugruppe.bewegung import Bewegung
-from swki.baugruppe.bewegungslauf import StellungFehler
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.sw_bewegung import SwMechanik
 from swki.compiler.fehler import BauFehler
@@ -148,49 +147,30 @@ def test_unterdruecke_grenze(asm, monkeypatch):
     assert grenze.unterdrueckt == [(0, 1, None)]
 
 
-class _Mech:
-    """Attrappe von SwMechanik für bau._grundstellung; fehler_name: dort scheitert halte()."""
-    letzte = None
-    fehler_name: str | None = None
-
-    def __init__(self, *args):
-        self.args = args
-        self.aufrufe: list[tuple] = []
-        _Mech.letzte = self
-
-    def halte(self, b, wert):
-        self.aufrufe.append(("halte", b.name, wert))
-        if b.name == _Mech.fehler_name:
-            raise StellungFehler(b.name, wert, "Verknüpfungsfehler: g2.antrieb")
-
-    def loese(self, b):
-        self.aufrufe.append(("loese", b.name))
-
-
-def _baulauf(tmp_path):
+def _baulauf(tmp_path, asm):
     bg = lade_baugruppe(schreibe(tmp_path / "A"))
-    b = bau.Baulauf(None, bg, "A", tmp_path, lade_standard(), Protokoll("A", "bewegungsprobe.yaml", 1, 2025),
-                    asm=object())
-    return b, verknuepfungen(bg.spec, bg.quellen)
+    return bau.Baulauf(None, bg, "A", tmp_path, lade_standard(), Protokoll("A", "bewegungsprobe.yaml", 1, 2025), asm=asm)
 
 
-def test_grundstellung_haelt_alle_und_loest_rueckwaerts(tmp_path, monkeypatch):
-    _Mech.fehler_name = None
-    monkeypatch.setattr(bau, "SwMechanik", _Mech)
-    b, alle = _baulauf(tmp_path)
-    assert bau._grundstellung(b, alle) is None
-    assert _Mech.letzte.aufrufe == [("halte", "Hub", 0.0), ("halte", "Schwenk", 0.0), ("loese", "Schwenk"),
-                                    ("loese", "Hub")]
-    assert set(_Mech.letzte.args[2]) == {"g1", "g2"}
+def _grenzmate(name, wert):
+    """Grenzverknüpfung mit Maß D1 (SystemValue in m bzw. rad wie in SolidWorks)."""
+    mate = _Mate(name)
+    mate.masse["D1"] = SimpleNamespace(SystemValue=wert)
+    return mate
+
+
+def test_grundstellung_liest_die_grenzen(tmp_path, asm):
+    asm.mates += [_grenzmate("G1", 0.0), _grenzmate("g2", 0.0)]  # Schreibung egal, Maß D1 = min
+    b = _baulauf(tmp_path, asm)
+    assert bau._grundstellung(b) is None
+    assert asm.aufrufe == []  # keine treibende Verknüpfung beim Bau (Spike S13c E6)
     assert [(k.id, k.typ, k.status) for k in b.protokoll.knoten] == [
         ("grundstellung:Hub", "grundstellung", "ok"), ("grundstellung:Schwenk", "grundstellung", "ok")]
 
 
-def test_grundstellung_fehler(tmp_path, monkeypatch):
-    _Mech.fehler_name = "Schwenk"
-    monkeypatch.setattr(bau, "SwMechanik", _Mech)
-    b, alle = _baulauf(tmp_path)
-    fehler = bau._grundstellung(b, alle)
+def test_grundstellung_fehler(tmp_path, asm):
+    asm.mates += [_grenzmate("g1", 0.0), _grenzmate("g2", math.radians(10))]  # Schwenk steht auf 10° statt 0°
+    b = _baulauf(tmp_path, asm)
+    fehler = bau._grundstellung(b)
     assert fehler.code == "GRUNDSTELLUNG_FEHLER" and "Grundstellung Schwenk" in str(fehler)
-    assert _Mech.letzte.aufrufe[-2:] == [("loese", "Schwenk"), ("loese", "Hub")]
-    assert [k.status for k in b.protokoll.knoten] == ["ok", "fehler"]
+    assert asm.aufrufe == [] and [k.status for k in b.protokoll.knoten] == ["ok", "fehler"]
