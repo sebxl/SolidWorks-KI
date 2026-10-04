@@ -157,11 +157,13 @@ def lies_globale_variablen(model) -> dict[str, float]:
 
 def soll_verknuepfungswerte(spec: dict, quellen: dict, parameter: dict | None = None) -> dict[str, float]:
     """Abstands- und Winkelwerte der aufgelösten Verknüpfungen (mm bzw. Grad) nach Verknüpfungs-ID; die Ausdrücke
-    werden mit parameter ausgewertet (Vorgabe: die Parameter von spec)."""
+    werden mit parameter ausgewertet (Vorgabe: die Parameter von spec). Eine Grenzverknüpfung steht mit ihrem Wert in
+    Grundstellung (min), so speichert swki bauen sie (Spec 4a §7)."""
     from swki.baugruppe.aufloesen import verknuepfungen  # spät importiert (Kreisimport)
 
     p = spec.get("parameter", {}) if parameter is None else parameter
-    return {v.id: auswerten(v.wert, p) for v in verknuepfungen(spec, quellen) if v.wert is not None}
+    return {v.id: auswerten(v.wert if v.wert is not None else v.min, p) for v in verknuepfungen(spec, quellen)
+            if v.wert is not None or v.min is not None}
 
 
 def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, dict]:

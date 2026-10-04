@@ -20,6 +20,7 @@ from swki.cli import SwkiFehler
 
 PRUEF_FELDER = ("art", "name", "parameter", "material", "eigenschaften", "pruefung")
 PRUEF_FELDER_BAUGRUPPE = ("art", "name", "parameter", "eigenschaften", "komponenten", "freiheitsgrade", "pruefung")
+OPTIONAL_BAUGRUPPE = ("bewegungen",)  # nur in der Prüfsumme, wenn vorhanden: Freigaben ohne Bewegungen bleiben gültig
 
 
 class FreigabeFehler(SwkiFehler):
@@ -36,6 +37,8 @@ def pruefsumme(spec: dict, teile: dict[str, str] | None = None) -> str:
     """Prüfsumme der Anforderungen; bei Baugruppen zusätzlich über die Prüfsummen der Teil-Specs (Dateiname → Summe)."""
     felder = PRUEF_FELDER_BAUGRUPPE if spec.get("art") == "baugruppe" else PRUEF_FELDER
     kern = {feld: spec.get(feld) for feld in felder}
+    if spec.get("art") == "baugruppe":
+        kern |= {feld: spec[feld] for feld in OPTIONAL_BAUGRUPPE if feld in spec}
     if teile is not None:
         kern["teile"] = teile
     text = json.dumps(kern, sort_keys=True, ensure_ascii=False, separators=(",", ":"))

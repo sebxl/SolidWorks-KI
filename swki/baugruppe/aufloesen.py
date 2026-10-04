@@ -24,11 +24,17 @@ class Verknuepfung:
     ausrichtung: str | None
     wert: object            # Zahl, "=Ausdruck" oder None
     drehung_sperren: bool
+    min: object = None      # grenze_abstand/grenze_winkel: Zahl oder "=Ausdruck" (mm bzw. Grad)
+    max: object = None
 
 
 def basis(instanz_id: str) -> str:
     """Komponenten-ID einer Instanz: "schraube.2" → "schraube"."""
     return instanz_id.split(".")[0]
+
+
+GRENZEN = ("grenze_abstand", "grenze_winkel")
+ANLAGE = ".anlage"  # Endung der zweiten SolidWorks-Verknüpfung eines Scharniers (Präzisierung 1)
 
 
 def je_position(spec: dict, kid: str) -> dict | None:
@@ -68,16 +74,29 @@ def _setze(seite: dict, je: set[str], i: int) -> dict:
     return neu
 
 
+def _einzeln(v: dict, vid: str, a: dict, b: dict, quellen: dict[str, Quelle], anlage_a: dict | None,
+             anlage_b: dict | None) -> list[Verknuepfung]:
+    """Eine Verknüpfung der Spezifikation als SolidWorks-Verknüpfungen. Ein Scharnier wird zu konzentrisch (ohne
+    Drehsperre, die Drehung bleibt frei) und deckungsgleich der Anlageflächen (Präzisierung 1)."""
+    if v["typ"] == "scharnier":
+        return [Verknuepfung(vid, v["id"], "konzentrisch", a, b, None, None, False),
+                Verknuepfung(f"{vid}{ANLAGE}", v["id"], "deckungsgleich", anlage_a, anlage_b,
+                             v.get("ausrichtung", "entgegengesetzt"), None, False)]
+    return [Verknuepfung(vid, v["id"], v["typ"], a, b, v.get("ausrichtung"), v.get("wert"), _drehung_sperren(v, quellen),
+                         v.get("min"), v.get("max"))]
+
+
 def verknuepfungen(spec: dict, quellen: dict[str, Quelle]) -> list[Verknuepfung]:
+    """Aufgelöste Verknüpfungen in Spec-Reihenfolge; je_position vervielfältigt (Grenzen und Scharniere nennen keine
+    Komponente mit je_position, das prüft swki.baugruppe.plausibel)."""
     ergebnis = []
     for v in spec.get("verknuepfungen", []):
         je = {v[s]["komponente"] for s in ("a", "b") if je_position(spec, v[s]["komponente"])}
-        sperren = _drehung_sperren(v, quellen)
         if not je:
-            ergebnis.append(Verknuepfung(v["id"], v["id"], v["typ"], dict(v["a"]), dict(v["b"]), v.get("ausrichtung"),
-                                         v.get("wert"), sperren))
+            ergebnis += _einzeln(v, v["id"], dict(v["a"]), dict(v["b"]), quellen,
+                                 dict(v["anlage_a"]) if "anlage_a" in v else None,
+                                 dict(v["anlage_b"]) if "anlage_b" in v else None)
             continue
         for i in range(1, anzahl_positionen(spec, quellen, next(iter(je))) + 1):
-            ergebnis.append(Verknuepfung(f"{v['id']}.{i}", v["id"], v["typ"], _setze(v["a"], je, i), _setze(v["b"], je, i),
-                                         v.get("ausrichtung"), v.get("wert"), sperren))
+            ergebnis += _einzeln(v, f"{v['id']}.{i}", _setze(v["a"], je, i), _setze(v["b"], je, i), quellen, None, None)
     return ergebnis
