@@ -1,9 +1,9 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3b und Aufräumen nach 3b umgesetzt (docs/stufe3b/ergebnisse.md). Stufe 4a (Bewegungen): Spec und Plan fertig
-(docs/superpowers/plans/2026-10-03-stufe-4a-bewegungen.md). Nächster Schritt: Umsetzung per subagent-driven-development.
-Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-10-04-stufe4a.md.
+Stand: Stufe 4a (Bewegungen) umgesetzt – Ergebnisse: docs/stufe4a/ergebnisse.md. Nächster Schritt nach Nutzerwahl:
+Stufe 4b (Zahnrad, Nut, Kurve; Referenz Schieber mit Schrägbolzen) oder Paket „Messarten“ (Fasen, Gewinde durch,
+Lagerachse).
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -48,6 +48,13 @@ Stand: Stufe 3b und Aufräumen nach 3b umgesetzt (docs/stufe3b/ergebnisse.md). S
   Freigabe, die neuer als der Lauf ist); verwerfen → `swki bauen --verwerfen` nur auf ausdrückliche Anweisung. Gilt auch
   für Einzelteile.
 - Regressions-Suite enthält das Stehlager (`tests/referenz/stehlager/`).
+
+## Bewegungen (Stufe 4a)
+- Bewegliche Komponenten: Grenzverknüpfung (`grenze_abstand`/`grenze_winkel`, bewegt wird Seite `a`, `min`/`max` als
+  Parameter), `freiheitsgrade: 1`, eine Bewegung je Grenze; Scharnier mit Anlage. Regeln im Skill `baugruppe` (§6).
+- `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` → SolidWorks selbst neu starten und erneut prüfen.
+- Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen bis ~10 GB Private Bytes); `speicher_grenze_mb` 10000.
+- Regressions-Suite enthält den Linearschlitten (`tests/referenz/schlitten/`).
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,

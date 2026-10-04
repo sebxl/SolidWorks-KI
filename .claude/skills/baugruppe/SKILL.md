@@ -1,9 +1,9 @@
 ---
 name: baugruppe
-description: Konstruiert eine statische Baugruppe in SolidWorks aus Eigenteilen und Normteilen – Teil-Specs und Baugruppen-Spec schreiben, validieren, eine Freigabe, bauen, prüfen (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage, Teilprüfungen), Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer mehrere Teile zusammenbauen, verschrauben, verstiften oder eine Baugruppe ändern will.
+description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen) in SolidWorks aus Eigenteilen und Normteilen – Teil-Specs und Baugruppen-Spec schreiben, validieren, eine Freigabe, bauen, prüfen (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage, Teilprüfungen), Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer mehrere Teile zusammenbauen, verschrauben, verstiften oder eine Baugruppe ändern will.
 ---
 
-# Baugruppe (statisch, Stufe 3b)
+# Baugruppe (Stufe 3b, Bewegungen Stufe 4a)
 
 Spec: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Abweichungen der Umsetzung: `docs/stufe3b/ergebnisse.md`).
 Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Vorlage: `tests/referenz/stehlager/`.
@@ -84,3 +84,39 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 ## 5. Schleife und Bericht
 - `swki status <spec>` und `swki bericht <spec>` wie beim Teil (Skill `konstruieren`, Abschnitte 6–7).
 - Nachbessern nur am Bauweg; hält Claude eine Anforderung für falsch (z. B. Schraube zu lang), den Nutzer fragen.
+
+## 6. Bewegungen (Stufe 4a)
+
+Bewegliche Komponenten bekommen eine **Grenzverknüpfung** und `freiheitsgrade: 1`; jede Bewegung nennt ihre Grenze.
+Spec: `docs/superpowers/specs/2026-10-03-stufe-4a-bewegungen-design.md` (Abweichungen der Umsetzung: `docs/stufe4a/ergebnisse.md`).
+Vorlage: `tests/referenz/schlitten/`.
+
+- `grenze_abstand` (mm) / `grenze_winkel` (Grad): `a`, `b` (ebene Flächen), `ausrichtung` (Pflicht), `min`, `max`.
+  **Bewegt wird Seite `a`.** `min`/`max` sind `0` oder Parameter (`"=HUB"`); eine feste Zahl ist ein Befund
+  (`GRENZE_FESTE_ZAHL`), weil nur Parameter von der Freigabe geschützt werden.
+- `scharnier`: `a`, `b` sind Achsen (Bohrungsachse bzw. `EINBAU_ACHSE` des Drehbolzens); `anlage_a` ist eine ebene
+  Fläche der drehenden Komponente (`a`), `anlage_b` die Fläche, auf der sie aufliegt – die Anlage nicht vergessen, sonst
+  ist die Höhe frei. swki legt `konzentrisch` (ohne
+  Drehsperre) und `deckungsgleich` (`<id>.anlage`) an. Ein Drehbolzen ISO 8734 braucht auf der drehenden Seite eine
+  `bohrung` mit Ø > d.
+- `freiheitsgrade: {<komponente|gruppe>: 1}`; genau eine Bewegung treibt sie.
+- `bewegungen`: `{name, grenze, schritte?, erwartet: {endlagen: [...]}}`. Endlagen als `verschiebung: [x, y, z]` (mm)
+  oder `drehung: {achse, winkel}` (Grad, Rechte-Hand-Regel) in Baugruppenkoordinaten, Differenz zwischen `min` und
+  `max`. Mitfahrende Komponenten als eigene Endlage eintragen (z. B. der Hebel auf dem Schlitten).
+- **Drehsinn** (gemessen, Spike S13 Zeile 7): Beispiel Hebel/Schlitten: Winkelgrenze an den Flächen +z (Hebel) /
+  +z (Schlitten), `gleich`, Drehachse ±y: 0 → 90° dreht den Hebel um [0, −1, 0] (+x → +z). Den Drehsinn einer neuen
+  Anordnung nicht raten, sondern aus der Eingabe ableiten und als Endlage eintragen; scheitert die Endlage, ist das ein
+  Befund (Bauweg prüfen), nie die Erwartung nachträglich anpassen.
+- `bauen` legt jede Grenze mit dem Wert `min` an – das ist die Grundstellung; `bauen` prüft sie über das Maß der Grenze
+  (Knoten `grundstellung:<Bewegung>`). Beim Bau keine Hilfsverknüpfungen: zwei treibende Verknüpfungen vor dem Speichern
+  machen eine Winkelgrenze in der Datei unbrauchbar (Spike S13c).
+- `pruefen` fährt jede Bewegung in `schritte + 1` Stellungen ab (Vorgabe `bewegung_schritte` ist 8) und prüft Kollision je
+  Stellung, „Grenze wirkt“, „Freiheitsgrad belegt“ und die Endlagen; Bewegungen mit sich schneidenden Räumen zusätzlich
+  gegeneinander (Paarläufe). Mängel: `freiheitsgrad:<k>`, `bewegung:<name>`, `bewegung_kollision:<name>`,
+  `grenze:<name>`, `endlage:<name>:<k>`. Bilder `<Bewegung>-min|mitte|max` und `<Bewegung>-kollision-…`.
+- **Speicher:** Die Bewegungsprüfung braucht auf Rechner A 6–10 GB Private Bytes (Linearschlitten: Spitze 7,8 GB,
+  mit Anschlag 10,2 GB); vor jedem Baugruppenlauf mit Bewegungen frisches SolidWorks; `speicher_grenze_mb` 10000
+  (Nutzerentscheidung 2026-10-04).
+- **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht): SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen;
+  scheitert es auch frisch, dem Nutzer melden.
+- Ab vier Bewegungen meldet `validieren` den Hinweis `pruefaufwand` – mit dem Nutzer klären, ob alle nötig sind.

@@ -102,6 +102,9 @@ pruefung:
 - Grenzverknüpfungen sind Bauweg wie alle Verknüpfungen. Der Bewegungsbereich ist über die Parameter geschützt.
 - Lassen sich die Grenzwerte in SolidWorks per Gleichung an globale Variablen binden (Spike S13.1), bindet swki sie so;
   sonst setzt `bauen` sie aus dem Parameterwert und `swki aenderungen` liest sie als `verknuepfung:<id>.min|max` zurück.
+  *Nachgezogen bei der Umsetzung, 2026-10-04:* Die Grenzwerte lassen sich nicht per Gleichung binden: Die Grenzverknüpfung hat nur das Maß `D1` (aktueller Wert,
+  Min/MaxVariation relativ dazu); `D2@g1`/`D3@g1` werden von `Add2` abgelehnt (Spike S13 Zeile 2, S13b D). `bauen` setzt die
+  Werte aus den Parametern; geschützt sind sie über die Freigabe (`min`/`max` sind Parameter oder 0).
 
 ### 4.2 Scharnier
 
@@ -161,6 +164,11 @@ Wie Spec 3b §7, zusätzlich:
    vorübergehende Hilfsverknüpfung (Abstand bzw. Winkel an den Flächen ihrer Grenze, Wert `min`) in die Grundstellung
    gebracht; Rebuild; die Hilfsverknüpfung wird gelöscht (Spike S13.5: Lage bleibt erhalten). Erst dann wird gespeichert.
    Fehler: `GRUNDSTELLUNG_FEHLER` mit Bewegung und SW-Meldung.
+   *Nachgezogen bei der Umsetzung, 2026-10-04:* Keine Hilfsverknüpfung beim Bau. Die Grenze wird mit dem Wert `min` angelegt (`AddMate5`, Maß `D1` = aktueller
+   Wert); das ist die Grundstellung. `bauen` prüft sie über das Maß `D1` der Grenze gegen `min` (Knoten
+   `grundstellung:<Bewegung>`, Fehler `GRUNDSTELLUNG_FEHLER` bei Abweichung). Grund: Zwei treibende Verknüpfungen, die vor dem
+   Speichern angelegt und gelöscht werden, machen eine Winkelgrenze in der gespeicherten Datei unbrauchbar (nach dem
+   Neuöffnen faktisch 0…0, Code 47 schon bei 22,5°; Spike S13c E6; mit nur einem oder ohne Antrieb geht sie, E1, E7, E10).
 3. Das Protokoll vermerkt je Bewegung die Grundstellung.
 
 ## 8. Prüfen
@@ -173,6 +181,9 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
 
 - Bestimmtheit wie 3b §9.2; eine Komponente mit `freiheitsgrade: 1` muss in Grundstellung **unterbestimmt** sein
   (sonst Mangel `freiheitsgrad:<komponente>`).
+  *Nachgezogen bei der Umsetzung, 2026-10-04:* `GetConstrainedStatus` zählt eine Grenzverknüpfung als Bindung (mit Grenzen sind alle Komponenten voll bestimmt,
+  Spike S13 Zeile 4, S13b A/B). Die statische Bestimmtheit erlaubt deshalb für Komponenten mit `freiheitsgrade: 1` den Status
+  `unterbestimmt`; der Freiheitsgrad wird in der Bewegungsprüfung mit unterdrückten Grenzen gelesen (§8.2.2).
 
 ### 8.2 Bewegungsprüfung
 
@@ -181,6 +192,11 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
    Komponente bzw. Gruppe **voll bestimmt** sein (`GetConstrainedStatus`). Bleibt sie unterbestimmt, ist mehr als ein
    Freiheitsgrad offen: Mangel `freiheitsgrad:<komponente>`. Überbestimmt: Mangel `freiheitsgrad:<komponente>` mit Hinweis
    auf Widerspruch zur Grenze.
+   *Nachgezogen bei der Umsetzung, 2026-10-04:* Gelesen wird mit **unterdrückten** Grenzen (`IFeature.SetSuppression2`, verlustfrei, Lage unverändert, S13b B):
+   (1) Grenzen unterdrückt, ohne Antrieb muss die bewegte Komponente unterbestimmt sein (2); (2) Grenzen unterdrückt, alle
+   Antriebe auf `min` muss sie voll bestimmt sein (3); danach werden die Grenzen entdrückt und die Läufe gefahren. Mitfahrer
+   melden wie ihr Träger (S13b A, C). Im Bericht je Bewegung `ohne_antrieb`/`mit_antrieb` (Werte 2/3). Gründe: Spike S13 Zeile 4
+   (mit Grenzen immer 3), S13b A/B/C.
 3. **Grundstellungslauf** je Bewegung, die übrigen auf `min`: für jede der `schritte + 1` Stellungen
    - Wert setzen, Rebuild. Fehler → Mangel `bewegung:<name>` mit Stellung und SW-Meldung; der Lauf dieser Bewegung endet.
    - Kollisionsprüfung mit den Regeln aus 3b §9.3 (Gewindepaarungen ausgenommen). Ein Paar, das in der statischen Prüfung
@@ -189,6 +205,9 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
    - Lage jeder Komponente (`Transform2`). Komponenten, deren Lage sich gegenüber der ersten Stellung ändert, bilden die
      **bewegte Menge**; ihre Hüllquader in Baugruppenkoordinaten werden über alle Stellungen zum **überstrichenen Raum**
      vereinigt.
+     *Nachgezogen bei der Umsetzung, 2026-10-04:* Der Hüllquader einer Komponente wird aus ihrer Teilebox (einmal je Komponente gelesen und gecacht) und der
+     Lage `Transform2` gerechnet, nicht per `GetBox` je Stellung (Spike S13 Zeile 6: identisch; S13b E: `GetBox` kostet
+     ~10 MB und 0,07–1,1 s je Schritt).
 4. **Grenze wirkt:** Stellung `max + Schrittweite/2` und `min − Schrittweite/2` müssen scheitern. Was „scheitern“ genau heißt
    (Fehlerstatus, nicht lösbar, Lage unverändert), legt Spike S13.3 fest. Geht ein Schritt durch: Mangel `grenze:<name>`.
 5. **Endlagen:** Differenz zwischen erster und letzter Stellung je Eintrag in `erwartet.endlagen` (Verschiebung des
@@ -215,6 +234,12 @@ und schreibt **einen** `pruefbericht.json`. Das Dokument wird ohne Speichern ges
 - Der Controller startet SolidWorks neu (Ablauf wie in der Übergabe 3b) und ruft `pruefen` erneut auf. Scheitert auch der
   Lauf auf frischem SolidWorks an der Grenze, hält Claude an und meldet sich.
 - Vorgaben für `speicher_grenze_mb` und `bewegung_schritte` legt der Plan nach Spike S13.7 fest.
+  *Nachgezogen bei der Umsetzung, 2026-10-04:* `bewegung_schritte: 8` (Spike S13 Zeile 8: Probe 0,69 s und 12,3 MB je Schritt, ~100 Komponenten 4,36 s und
+  8,9 MB; S13b E: 0,60 s und 19,6 MB bzw. 3,69 s und 18,6 MB, die Annahmen < 0,5 s und < 5 MB wurden verfehlt).
+  `speicher_grenze_mb: 10000` (Nutzerentscheidung 2026-10-04; Verlauf 3500 → 5000 → 8000 → 10000): Die Prüfung des
+  Linearschlittens braucht auf frischem SolidWorks 6,2–6,9 GB als Dauerniveau (je geöffnetem Teil ~1 GB, erste Öffnung
+  +2,6 GB, ISO 4762 +1,7 GB; Kollision ~+0,5 GB je Stellung ohne Bild), Spitze 7,8 GB (0,5-s-Abtastung), mit Anschlag
+  (Negativfall 1) 10,2 GB. Die Abfrage misst das Dauerniveau; die Spitze folgt zwischen den Abfragen (speicher-diagnose.md).
 
 ### 8.5 Prüfbericht
 
@@ -268,7 +293,9 @@ Live, mit eigenen Probe-Baugruppen; vor jedem neuen API-Aufruf `swki api methode
 - **Mit SolidWorks:** je neuer Verknüpfungstyp eine Minimalprobe (`tests/live/`); Referenz `tests/referenz/schlitten/`;
   Negativfälle `tests/live/test_live_schlitten.py`; Regression Buchse, Formplatte, Auswerferhalteplatte, Stehlager.
 - **Negativfälle** (je genau die erwartete Mängelmenge):
-  1. Stellungskollision: ein Anschlag am Führungsende trifft den Hebel nur bei Schlitten auf `max` und geschwenktem Hebel →
+  1. Stellungskollision: ein Anschlag am Führungsende trifft den Hebel nur bei Schlitten auf `max` und geschwenktem Hebel
+     (*Nachgezogen bei der Umsetzung, 2026-10-04:* Anschlag auf der rechten Leiste, +z, weil der Hebel nach +z schwenkt – Drehsinn −y, Spike S13 Zeile 7; Länge 24
+     statt 20, weil ein quadratisches Rechteck L = B im Compiler `Gleichungen: Code 1` liefert) →
      `{bewegung_kollision:Hebelschwenk, bewegung_kollision:Schlittenhub}` – beide Paarläufe treffen ihn, die
      Grundstellungsläufe nicht.
   2. Grenze im Modell zu weit: Der Test baut die Referenz mit verfälschtem Grenzwert im Modell (`max` + 20 mm, per
@@ -277,7 +304,9 @@ Live, mit eigenen Probe-Baugruppen; vor jedem neuen API-Aufruf `swki api methode
   3. Umgekehrte Richtung: `g1` an den Flächen +x statt −x (Grundstellung am anderen Ende, der Hub fährt nach −x) →
      `{endlage:Schlittenhub:schlitten, endlage:Schlittenhub:hebel}`.
   4. Zweiter Freiheitsgrad: ohne die seitliche Führung des Schlittens (`v21`) ist er auch quer verschiebbar →
-     `{freiheitsgrad:schlitten}` (Menge nach Spike S13.4 bestätigen). „Hebel nur konzentrisch“ ließe die Höhe des Hebels
+     `{freiheitsgrad:schlitten}` (Menge nach Spike S13.4 bestätigen; **gemessen, Task 9:** `{freiheitsgrad:schlitten,
+     freiheitsgrad:hebel, bestimmtheit}` – der Hebel fährt als Mitfahrer mit dem Träger und meldet wie er, die statische
+     Bestimmtheit meldet den als Mitfahrer unterbestimmten Drehbolzen). „Hebel nur konzentrisch“ ließe die Höhe des Hebels
      offen (Einfügelage im Ursprung, zusätzliche Kollisionen) und prüfte nicht nur den Freiheitsgrad.
 - Live-Tests einzeln mit Zeitlimit; Speicher nach jedem Test messen; frisches SolidWorks vor jedem Referenz- und Negativlauf.
 
