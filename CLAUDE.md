@@ -1,9 +1,9 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3b (Baugruppen statisch) umgesetzt, Aufräumen nach 3b umgesetzt – Ergebnisse: docs/stufe3b/ergebnisse.md.
-Nächster Schritt: Stufe 4 (mechanische Abläufe): Brainstorming → Spec → Plan. Danach (oder vorher, nach Nutzerwunsch):
-Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse).
+Stand: Stufe 3b und Aufräumen nach 3b umgesetzt (docs/stufe3b/ergebnisse.md). Stufe 4a (Bewegungen): Spec und Plan fertig
+(docs/superpowers/plans/2026-10-03-stufe-4a-bewegungen.md). Nächster Schritt: Umsetzung per subagent-driven-development.
+Übergabe zuerst lesen: docs/superpowers/uebergabe-2026-10-04-stufe4a.md.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
