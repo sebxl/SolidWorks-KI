@@ -112,6 +112,16 @@ def test_stelle(asm, monkeypatch):
     assert sw_baugruppe.stelle(asm, feature, "winkel", 100.0) == "Verknüpfungsfehler: g2.antrieb"
 
 
+def test_loesche_prueft_das_verschwinden(asm, monkeypatch):
+    feature = sw_baugruppe.treibe(asm, _grenze(), None, None, 25.0)
+    monkeypatch.setattr(sw_baugruppe, "_loesche", lambda a, f: None)  # Select2/EditDelete ins Leere
+    with pytest.raises(BauFehler, match="Verknüpfung g1.antrieb nicht gelöscht"):
+        sw_baugruppe.loesche(asm, feature)
+    monkeypatch.setattr(sw_baugruppe, "_loesche", lambda a, f: a.mates.remove(f))
+    sw_baugruppe.loesche(asm, feature)
+    assert asm.mates == []
+
+
 def test_kiste_aus_teilebox_und_lage():
     # Drehung 90° um +z (x → y, y → −x), Verschiebung (100, 0, 0) mm = 0,1 m; Teilebox 10 × 20 × 30 mm
     t = [0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]

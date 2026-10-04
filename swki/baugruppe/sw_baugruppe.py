@@ -307,9 +307,14 @@ def stelle(asm, antrieb, art: str, wert: float) -> str | None:
 
 
 def loesche(asm, feature) -> None:
-    """Verknüpfung löschen (die treibende nach Bau bzw. Prüfung) und neu aufbauen."""
+    """Verknüpfung löschen (die treibende nach Bau bzw. Prüfung) und neu aufbauen. Steht sie danach noch im Baum, ist
+    sie nicht gelöscht (Select2/EditDelete melden das nicht): BauFehler, damit keine treibende Verknüpfung gespeichert
+    wird (Spec 4a §7)."""
+    name = feature.Name
     _loesche(asm, feature)
     sw.rebuild(asm)
+    if name.lower() in {f.Name.lower() for f in verknuepfungen(asm)}:
+        raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name} nicht gelöscht", schritt="loeschen")
 
 
 def unterdruecke(asm, feature, ja: bool) -> None:
