@@ -1,0 +1,186 @@
+{
+  "ok": true,
+  "privat_mb_start": 2118.3,
+  "1_spline_z20": {
+    "segmente_none": 0,
+    "segmente": 160,
+    "punkte": 521,
+    "status": 3,
+    "s_skizze": 62.777,
+    "aufsatz": true,
+    "rebuild": "ok",
+    "s_aufsatz": 0.217,
+    "flaechen": 162,
+    "koerper": 1,
+    "privat_mb": [
+      3564.1,
+      3857.9
+    ],
+    "abweichung": {
+      "max_mm": 0.000114,
+      "mittel_mm": 1.9e-05,
+      "flankenflaechen": 80
+    },
+    "messung": {
+      "radien": [
+        17.5,
+        22.0
+      ],
+      "anzahl_je_radius": {
+        "17.5": 20,
+        "22.0": 20
+      },
+      "arten": {
+        "ebene": 42,
+        "zylinder": 80,
+        "sonstige": 40
+      },
+      "calculate": true,
+      "zahnweite_ist": 14.85701,
+      "zahnweite_soll": 15.273894,
+      "k": 3,
+      "achse_zylinder_radius": 17.5
+    }
+  },
+  "1_polylinie_z20": {
+    "segmente_none": 0,
+    "segmente": 480,
+    "punkte": 521,
+    "status": 3,
+    "s_skizze": 109.478,
+    "aufsatz": true,
+    "rebuild": "ok",
+    "s_aufsatz": 0.326,
+    "flaechen": 482,
+    "koerper": 1,
+    "privat_mb": [
+      3692.5,
+      4033.8
+    ],
+    "abweichung": {
+      "max_mm": 0.006084,
+      "mittel_mm": 0.00285,
+      "flankenflaechen": 400
+    },
+    "messung": {
+      "radien": [
+        17.5,
+        22.0
+      ],
+      "anzahl_je_radius": {
+        "17.5": 20,
+        "22.0": 20
+      },
+      "arten": {
+        "ebene": 402,
+        "zylinder": 80,
+        "sonstige": 0
+      },
+      "calculate": true,
+      "zahnweite_ist": 15.26506,
+      "zahnweite_soll": 15.273894,
+      "k": 3,
+      "achse_zylinder_radius": 17.5
+    }
+  },
+  "2_ganzes_profil": {
+    "17": {
+      "segmente_none": 0,
+      "segmente": 136,
+      "punkte": 443,
+      "status": 3,
+      "s_skizze": 55.537,
+      "aufsatz": true,
+      "rebuild": "ok",
+      "s_aufsatz": 0.222,
+      "flaechen": 138,
+      "koerper": 1,
+      "privat_mb": [
+        3755.9,
+        4133.6
+      ]
+    },
+    "25": {
+      "segmente_none": 0,
+      "segmente": 200,
+      "punkte": 651,
+      "status": 3,
+      "s_skizze": 83.421,
+      "aufsatz": true,
+      "rebuild": "ok",
+      "s_aufsatz": 0.258,
+      "flaechen": 202,
+      "koerper": 1,
+      "privat_mb": [
+        3864.3,
+        4227.3
+      ]
+    },
+    "50": {
+      "segmente_none": 0,
+      "segmente": 300,
+      "punkte": 1201,
+      "status": 3,
+      "s_skizze": 111.994,
+      "aufsatz": true,
+      "rebuild": "ok",
+      "s_aufsatz": 0.363,
+      "flaechen": 302,
+      "koerper": 1,
+      "privat_mb": [
+        3967.9,
+        4350.2
+      ]
+    },
+    "80": {
+      "segmente_none": 0,
+      "segmente": 480,
+      "punkte": 1921,
+      "status": 3,
+      "s_skizze": 107.981,
+      "aufsatz": true,
+      "rebuild": "ok",
+      "s_aufsatz": 0.498,
+      "flaechen": 482,
+      "koerper": 1,
+      "privat_mb": [
+        3913.4,
+        4509.9
+      ]
+    }
+  },
+  "5_zahnstange": {
+    "segmente_none": 0,
+    "segmente": 30,
+    "punkte": 40,
+    "status": 3,
+    "s_skizze": 8.348,
+    "aufsatz": true,
+    "rebuild": "ok",
+    "s_aufsatz": 0.259,
+    "flaechen": 27,
+    "koerper": 1,
+    "messung": {
+      "kopfflaechen": 5,
+      "kopf_y": [
+        2.0
+      ],
+      "teilung": [
+        6.28319,
+        6.28319,
+        6.28319,
+        6.28319
+      ],
+      "teilung_soll": 6.28319,
+      "zahndicke": [
+        3.09159,
+        3.09159,
+        3.09159,
+        3.09159,
+        3.09159
+      ],
+      "zahndicke_soll": 3.09159
+    }
+  },
+  "privat_mb_ende": 3114.3
+}
