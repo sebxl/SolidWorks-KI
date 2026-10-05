@@ -5,7 +5,9 @@ import pytest
 
 from swki.compiler.anker import zylinder_zu_punkten
 from swki.compiler.topologie import flaechen, koerper
+from swki.pruefung.bewertung import verzahnung_abweichungen
 from swki.pruefung.geometrie import volumen_auto
+from swki.pruefung.messen import verzahnungen
 
 from .bauhilfe import gebautes_teil, volumen_mm3
 
@@ -31,6 +33,7 @@ STANGE = {
          "zaehne": "=Z", "breite": "=B", "zahndickenabmass": "=AS"},
     ],
 }
+TOL = 0.005  # toleranzen.verzahnung_mm (config/standard.yaml)
 
 
 def test_stirnrad_auf_welle():
@@ -60,3 +63,12 @@ def test_stirnrad_oben_mit_winkel_und_umkehren():
     with gebautes_teil(spec) as (ctx, fehler, protokoll):
         assert fehler is None, fehler
         assert ctx.ergebnis("z1").richtung == (0.0, -1.0, 0.0) and len(koerper(ctx.model)) == 1
+
+
+@pytest.mark.parametrize("spec", [RAD, STANGE], ids=["stirnrad", "zahnstange"])
+def test_messung_der_verzahnung(spec):
+    with gebautes_teil(spec) as (ctx, fehler, protokoll):
+        assert fehler is None, fehler
+        ist = verzahnungen(ctx.model, spec, 0.1, ctx.app)["z1"]
+        assert isinstance(ist, dict), ist
+        assert verzahnung_abweichungen(spec["features"][1], ist, spec["parameter"], TOL) == [], ist

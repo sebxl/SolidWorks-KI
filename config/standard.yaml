@@ -7,6 +7,7 @@ namensschema:
 toleranzen:
   anker_mm: 0.1
   volumen_prozent: 0.5
+  verzahnung_mm: 0.005  # Kreise, Zahnweite, Teilung, Zahndicke (Spec 4b §4.5; Wert nach Spike S14a Zeile 3)
 api:
   max_jahr_compiler: 2025
 # Bewegungen (Stufe 4a): Schritte je Bewegung (Vorgabe) und Speichergrenze von SolidWorks (Private Bytes) für swki pruefen

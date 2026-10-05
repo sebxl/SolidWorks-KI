@@ -9,6 +9,7 @@ from swki.spec.normen import (
     SW_BEFESTIGUNG, SW_BEFESTIGUNG_STIFT_DURCH, SW_END_BLIND, SW_END_DURCH_ALLES, SW_LOCH_DURCH, SW_NORM, groesse_text,
     norm_von, normmasse,
 )
+from swki.verzahnung import KOPFHOEHE, Stirnrad, aus_feature
 
 SKIZZE_VOLL_BESTIMMT = 3  # swConstrainedStatus_e.swFullyConstrained
 _TOL_HUELLQUADER = 0.01
@@ -30,6 +31,7 @@ class Messwerte:
     normbohrungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Bohrungsassistent-Daten oder Fehlertext
     koerper: int = 1  # Anzahl Volumenkörper im Teil (Soll: genau 1)
     durchmesser: dict[str, dict | str] = field(default_factory=dict)  # was → {"durchmesser", "achse", "referenz"?} oder Fehlertext
+    verzahnungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Messwerte der Verzahnung oder Fehlertext
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -73,6 +75,33 @@ def normbohrung_abweichungen(f: dict, ist: dict, parameter: dict) -> list[str]:
     return abweichungen
 
 
+def verzahnung_abweichungen(f: dict, ist: dict, parameter: dict, tol_mm: float) -> list[str]:
+    """Spec 4b §4.5: verzahnung-Knoten (freigegebene Kopie) gegen die Messwerte des gleichnamigen Features
+    (swki.pruefung.messen.verzahnungen, mm). Leere Liste = passt."""
+    geo = aus_feature(f, parameter)
+    abweichungen = [ist["fehler"]] if "fehler" in ist else []
+    if ist.get("zaehne") != geo.z:
+        abweichungen.append(f"zaehne: ist {ist.get('zaehne')} statt {geo.z}")
+
+    def vergleiche(name: str, wert, soll: float) -> None:
+        werte = wert if isinstance(wert, list) else [wert]
+        falsch = [w for w in werte if w is None or abs(w - soll) > tol_mm]
+        if falsch or not werte:
+            abweichungen.append(f"{name}: ist {wert} statt {round(soll, 6)}")
+
+    if isinstance(geo, Stirnrad):
+        vergleiche("kopfkreis", ist.get("kopfkreis"), 2 * geo.ra)
+        vergleiche("fusskreis", ist.get("fusskreis"), 2 * geo.rf)
+        if "zahnweite" in ist:
+            vergleiche(f"zahnweite W{geo.messzaehnezahl()}", ist["zahnweite"], geo.zahnweite())
+    else:
+        vergleiche("kopflinie", ist.get("kopflinie"), KOPFHOEHE * geo.m)
+        vergleiche("teilung", ist.get("teilung"), geo.p)
+        if "zahndicke" in ist:
+            vergleiche("zahndicke", ist["zahndicke"], geo.s)
+    return abweichungen
+
+
 def baum_kennzahl(spec: dict, protokoll: dict | None) -> dict:
     """Spec 2c §6.3: Knoten der Spezifikation und vom Bau erzeugte Features (Namen aus dem Bauprotokoll; Skizzen,
     Ebenen und Achsen legt der Compiler nebenbei an und zählen nicht)."""
@@ -107,6 +136,18 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
             elif fehler := normbohrung_abweichungen(f, ist, p_soll):
                 abweichend[f["id"]] = fehler
         ergebnisse.append(_pruefung("normbohrungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+
+    soll_verzahnungen = [f for f in soll_spec["features"] if f["typ"] == "verzahnung"]
+    if soll_verzahnungen:
+        p_soll, tol = soll_spec.get("parameter", {}), standard["toleranzen"]["verzahnung_mm"]
+        abweichend = {}
+        for f in soll_verzahnungen:
+            ist = m.verzahnungen.get(f["id"])
+            if not isinstance(ist, dict):
+                abweichend[f["id"]] = [ist or f"Feature {f['id']} fehlt im Teil"]
+            elif fehler := verzahnung_abweichungen(f, ist, p_soll, tol):
+                abweichend[f["id"]] = fehler
+        ergebnisse.append(_pruefung("verzahnungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
 
     # Allgemeine Prüfung: ein Teil ist ein Volumenkörper. Ein Aufsatz mit Abstand zum Körper (z. B. versatz_von_flaeche
     # bei abgesetzter Skizze) besteht sonst alle anderen Prüfungen, obwohl er getrennt im Teil steht.

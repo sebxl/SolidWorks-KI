@@ -1,10 +1,12 @@
 """Messwerte eines gespeicherten Laufs aus SolidWorks lesen (Spike S9b, Bausteine 19 und 23)."""
 
+import math
 from pathlib import Path
 
 from swki.cli import SwkiFehler
 from swki.compiler import sw
-from swki.compiler.anker import AnkerFehler, flaeche_in_richtung, laenge, zylinder_durch_punkt, zylinder_zu_punkten
+from swki.compiler.anker import (AnkerFehler, Flaeche, flaeche_in_richtung, laenge, punkt_achse_abstand, skalar,
+                                 zylinder_durch_punkt, zylinder_zu_punkten)
 from swki.compiler.eigenschaften import lies_eigenschaften
 from swki.compiler.fehler import BauFehler
 from swki.compiler.kontext import FeatureErgebnis, Kontext
@@ -12,7 +14,8 @@ from swki.compiler.topologie import flaechen, koerper, referenz_geometrie
 from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.normen import SW_BEFESTIGUNG
-from swki.verbindung import byref_long, byref_str, in_mm, in_mm3
+from swki.verbindung import byref_long, byref_str, in_mm, in_mm3, mm, r8_array
+from swki.verzahnung import ALPHA, Stirnrad, Verzahnung, verzahnung_im_teil
 
 SW_DOC_PART = 1  # swDocumentTypes_e
 SW_DOC_ASSEMBLY = 2
@@ -95,6 +98,140 @@ def normbohrungen(model, soll_spec: dict) -> dict[str, dict | str]:
     return ergebnis
 
 
+_PARALLEL = 1.0 - 1e-6
+
+
+def _in_ebene(d, normale) -> float:
+    """Länge des Anteils von d senkrecht zu normale."""
+    t = skalar(d, normale)
+    return laenge(tuple(d[i] - t * normale[i] for i in range(3)))
+
+
+def waehle_flanke(kandidaten: list[Flaeche], erwartet, normale, tol_mm: float) -> Flaeche:
+    """Die Fläche, deren Mittelpunkt (Flaeche.punkt, Mitte der Box) senkrecht zur Radachse dem erwarteten Flankenpunkt
+    am nächsten liegt; AnkerFehler, wenn keine innerhalb tol_mm liegt (Spike S14a Zeile 3)."""
+    if not kandidaten:
+        raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", "keine Flankenflächen")
+    beste = min(kandidaten, key=lambda f: _in_ebene(tuple(f.punkt[i] - erwartet[i] for i in range(3)), normale))
+    abstand = _in_ebene(tuple(beste.punkt[i] - erwartet[i] for i in range(3)), normale)
+    if abstand > tol_mm:
+        raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"keine Flanke innerhalb {tol_mm:g} mm (nächste {abstand:.3f} mm)")
+    return beste
+
+
+def _projiziere(mu, flaeche: Flaeche, start, richtung):
+    """Punkt start (mm) entlang richtung (Einheitsvektor) auf die Fläche projizieren (IFace2.GetProjectedPointOn);
+    mm-Tupel oder None, wenn die Fläche nicht getroffen wird."""
+    p = mu.CreatePoint(r8_array([mm(c) for c in start]))
+    v = mu.CreateVector(r8_array(richtung))
+    try:
+        flaeche.objekt._FlagAsMethod("GetProjectedPointOn")
+    except AttributeError:
+        pass
+    treffer = flaeche.objekt.GetProjectedPointOn(p, v)
+    if treffer is None:
+        return None
+    werte = getattr(treffer, "ArrayData", treffer)
+    return tuple(in_mm(c) for c in werte[:3])
+
+
+def _zahnweite(mu, vz: Verzahnung, rechts: Flaeche, links: Flaeche) -> float:
+    """Zahnweite W_k (mm): Abstand der Treffpunkte eines Strahls entlang der Grundkreistangente auf der rechten
+    Außenflanke von Zahn 1 und der linken von Zahn k, in der Radebene auf halber Zahnbreite (Spike S14a Nachtrag B;
+    IMeasure zwischen den Flanken liefert dagegen nur den Mindestabstand an den Flankenenden)."""
+    rad: Stirnrad = vz.geo
+    k = rad.messzaehnezahl()
+    phi = math.radians(vz.winkel + (k - 1) * 180.0 / rad.z)  # Spannmitte
+    em, ep = (math.cos(phi), math.sin(phi)), (-math.sin(phi), math.cos(phi))
+    hoehe = (vz.breite[0] + vz.breite[1]) / 2 - skalar(vz.ursprung, vz.normale)  # Radebene auf halber Zahnbreite
+    weit = rad.ra + 5.0
+
+    def treffer(flaeche: Flaeche, name: str) -> tuple:
+        for seite in (1, -1):  # Startpunkt außerhalb bei t = seite·(r_a + 5), Strahl zur Tangente hin
+            q = (vz.mitte[0] + rad.rb * em[0] + seite * weit * ep[0], vz.mitte[1] + rad.rb * em[1] + seite * weit * ep[1])
+            start = tuple(vz.modell(q)[i] + hoehe * vz.normale[i] for i in range(3))
+            p = _projiziere(mu, flaeche, start, vz.richtung((-seite * ep[0], -seite * ep[1])))
+            if p is not None:
+                return p
+        raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Strahl entlang der Grundkreistangente trifft die {name} nicht")
+
+    a, b = treffer(rechts, "rechte Flanke von Zahn 1"), treffer(links, f"linke Flanke von Zahn {k}")
+    return round(math.dist(a, b), 6)
+
+
+def _stirnrad(mu, vz: Verzahnung, faces: list[Flaeche], tol_mm: float) -> dict:
+    rad: Stirnrad = vz.geo
+    achse = vz.bezugspunkt
+    koaxial = [f for f in faces if f.art == "zylinder" and abs(skalar(f.achse, vz.normale)) / laenge(f.achse) > _PARALLEL
+               and punkt_achse_abstand(achse, f.punkt, tuple(c / laenge(f.achse) for c in f.achse)) <= tol_mm]
+    if not koaxial:
+        return {"art": "stirnrad", "fehler": "keine koaxialen Zylinderflächen (Kopf-/Fußkreis)"}
+    ra = max(f.radius for f in koaxial)
+    ergebnis = {"art": "stirnrad", "kopfkreis": round(2 * ra, 6), "fusskreis": round(2 * min(f.radius for f in koaxial), 6),
+                "zaehne": sum(1 for f in koaxial if abs(f.radius - ra) <= tol_mm), "k": rad.messzaehnezahl()}
+    flanken = [f for f in faces if f.art == "sonstige"]
+    rho = (rad.r_start + rad.ra) / 2
+    try:
+        rechts = waehle_flanke(flanken, vz.modell(rad.flankenpunkt(1, "rechts", rho, vz.mitte, vz.winkel)), vz.normale,
+                               0.25 * rad.m)
+        links = waehle_flanke(flanken, vz.modell(rad.flankenpunkt(ergebnis["k"], "links", rho, vz.mitte, vz.winkel)),
+                              vz.normale, 0.25 * rad.m)
+        ergebnis["zahnweite"] = _zahnweite(mu, vz, rechts, links)
+    except BauFehler as e:
+        ergebnis["fehler"] = f"Zahnweite nicht messbar: {e}"
+    return ergebnis
+
+
+def _zahnstange(vz: Verzahnung, faces: list[Flaeche]) -> dict:
+    kopf, t = vz.kopfrichtung, vz.u
+    q = vz.bezugspunkt
+    koepfe = [f for f in faces if f.art == "ebene" and skalar(f.normale, kopf) > _PARALLEL]
+    n_links = tuple(-math.cos(ALPHA) * t[i] + math.sin(ALPHA) * kopf[i] for i in range(3))
+    n_rechts = tuple(math.cos(ALPHA) * t[i] + math.sin(ALPHA) * kopf[i] for i in range(3))
+
+    def schnitt(f: Flaeche) -> float:
+        """u des Schnitts der Flankenebene mit der Profilmittellinie (durch q in Richtung t)."""
+        return skalar(tuple(f.punkt[i] - q[i] for i in range(3)), f.normale) / skalar(t, f.normale)
+
+    links = sorted(schnitt(f) for f in faces if f.art == "ebene" and skalar(f.normale, n_links) > _PARALLEL)
+    rechts = sorted(schnitt(f) for f in faces if f.art == "ebene" and skalar(f.normale, n_rechts) > _PARALLEL)
+    ergebnis = {"art": "zahnstange", "zaehne": len(koepfe),
+                "kopflinie": sorted({round(skalar(tuple(f.punkt[i] - q[i] for i in range(3)), kopf), 6) for f in koepfe}),
+                "teilung": [round(b - a, 6) for a, b in zip(links, links[1:])]}
+    if len(links) == len(rechts):
+        ergebnis["zahndicke"] = [round(b - a, 6) for a, b in zip(links, rechts)]
+    else:
+        ergebnis["fehler"] = f"{len(links)} linke und {len(rechts)} rechte Flanken"
+    return ergebnis
+
+
+def verzahnungen(model, soll_spec: dict, tol_mm: float, app) -> dict[str, dict | str]:
+    """Für jedes verzahnung-Feature der Soll-Spezifikation die Messwerte des gleichnamigen Features (Spec 4b §4.5)
+    oder einen Fehlertext. Lage aus der Soll-Spezifikation (swki.verzahnung.verzahnung_im_teil); app für die
+    MathUtility der Zahnweitenmessung."""
+    ergebnis: dict[str, dict | str] = {}
+    p = soll_spec.get("parameter", {})
+    mu = None
+    for f in soll_spec["features"]:
+        if f["typ"] != "verzahnung":
+            continue
+        feature = model.FeatureByName(f["id"])
+        if feature is None:
+            ergebnis[f["id"]] = f"Feature {f['id']} fehlt im Teil"
+            continue
+        try:
+            vz = verzahnung_im_teil(f, p)
+            faces = flaechen(feature)
+            if isinstance(vz.geo, Stirnrad):
+                mu = mu or sw.mathutil(app)
+                ergebnis[f["id"]] = _stirnrad(mu, vz, faces, tol_mm)
+            else:
+                ergebnis[f["id"]] = _zahnstange(vz, faces)
+        except Exception as e:  # COM-Fehler beim Lesen → Mangel statt Abbruch der Prüfung
+            ergebnis[f["id"]] = f"Verzahnung {f['id']} nicht messbar: {e}"
+    return ergebnis
+
+
 def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, protokoll: dict) -> Kontext:
     """Kontext für ein geöffnetes Teil: Features über ihre Namen (= Feature-IDs), Bohrungspunkte aus dem Bauprotokoll.
 
@@ -168,7 +305,8 @@ def durchmesser(ctx, spec: dict) -> dict[str, dict | str]:
 
 
 def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
-    """freigegeben: Spezifikation im Stand der Freigabe (Soll der Prüfung normbohrungen); ohne Angabe ctx.spec."""
+    """freigegeben: Spezifikation im Stand der Freigabe (Soll der Prüfungen normbohrungen und verzahnungen); ohne Angabe
+    ctx.spec."""
     model = ctx.model
     mp = model.Extension.CreateMassProperty2
     mp.UseSystemUnits = True
@@ -184,4 +322,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         normbohrungen=normbohrungen(model, freigegeben or ctx.spec),
         koerper=len(koerper(model)),
         durchmesser=durchmesser(ctx, ctx.spec),
+        verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app),
     )
