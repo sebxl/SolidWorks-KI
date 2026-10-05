@@ -1,8 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 4a (Bewegungen) umgesetzt – Ergebnisse: docs/stufe4a/ergebnisse.md. Nächster Schritt: Stufe 4b (Verzahnung und
-Kopplungen) umsetzen – Übergabe docs/superpowers/uebergabe-2026-10-05-stufe4b-umsetzung.md (Spec und Plan liegen vor).
+Stand: Stufe 4b (Verzahnung und Kopplungen) umgesetzt – Ergebnisse: docs/stufe4b/ergebnisse.md. Nächster Schritt nach
+Nutzerwahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse) oder Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -54,6 +54,16 @@ Kopplungen) umsetzen – Übergabe docs/superpowers/uebergabe-2026-10-05-stufe4b
 - `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` → SolidWorks selbst neu starten und erneut prüfen.
 - Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen bis ~11 GB Private Bytes: Stehlager 10,8 GB, Schlitten 9,9–10,2 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau); `speicher_grenze_mb` 10000.
 - Regressions-Suite enthält den Linearschlitten (`tests/referenz/schlitten/`).
+
+## Verzahnung und Kopplungen (Stufe 4b)
+- Zahnräder und Zahnstangen nur als `typ: verzahnung` (Evolvente, Bezugsprofil DIN 867, Modul DIN 780 Reihe 1,
+  `zahndickenabmass` < 0); Regeln im Skill `konstruieren`. Die Modultabelle (`swki/wissen/module_din780.yaml`) nur mit
+  Abgleich (≥ 2 Quellen) erweitern.
+- Kopplungen `zahnrad`/`zahnstange` über den Skill `baugruppe` §7: Seite a `gekoppelt`, Kopplungen zuletzt, Endlagen der
+  gekoppelten Wellen mit `pi`, Drehsinn aus der Geometrie.
+- Regressions-Suite enthält den Zahnstangentrieb und seine Teile (`tests/referenz/zahnstangentrieb/`); Live-Läufe mit
+  Kopplungen wie Bewegungen je Test auf frischem SolidWorks. Speicher: Zahnstangentrieb Spitzen ~10,1–10,3 GB (über
+  `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht).
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,

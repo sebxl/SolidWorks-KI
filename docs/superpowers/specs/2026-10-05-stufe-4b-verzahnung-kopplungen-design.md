@@ -110,6 +110,8 @@ Zahnstange:
 ### 4.2 Geometrie
 
 Rein in Python (`swki/wissen/verzahnung.py`), ohne SolidWorks testbar. Bezugsprofil DIN 867, α = 20°, ohne Profilverschiebung.
+*Nachgezogen bei der Umsetzung, 2026-10-05:* Das Modul heißt `swki/verzahnung.py` (nicht `swki/wissen/`: dort liegen nur Daten); es enthält auch das Lagemodell
+`Verzahnung`/`verzahnung_im_teil` (Teilkoordinaten aus der Spec). Die Kopplungsrechnung steht in `swki/baugruppe/kopplung.py`.
 
 **Stirnrad:**
 - Teilkreis d = m·z, Grundkreis d_b = d·cos α, Kopfkreis d_a = d + 2m, Fußkreis d_f = d − 2,5m, Fußrundung ρ_f = 0,38m.
@@ -157,6 +159,12 @@ enthält Reihe 1 von 0,05 bis 20 mm (zwei Quellen); 25 … 50 sind bis zu einem 
 - Der Handler berechnet das Profil beim Bau und zeichnet es als Skizze mit **fixierten Punkten** (ohne Gleichungen), extrudiert
   um `breite` und verschmilzt mit vorhandenen Körpern. Er legt eine Bezugsachse für die Radachse an. Spike S14a legt fest:
   Evolvente als Spline durch berechnete Punkte oder als Polylinie, ganzes Profil in einer Skizze oder eine Lücke + Kreismuster.
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Keine Bezugsachse: die Radachse ist die koaxiale Fußkreis-Zylinderfläche des Features (S14a Zeile 4, r 17,5 bei m 2,
+  z 20), angesprochen wie `{feature, instanz: 1, achse: true}`. Evolvente als Spline (`CreateSpline2`, alle Segmente `sgFIXED`,
+  Abweichung 0,000114 mm, S14a Zeile 1), ganzes Profil in einer Skizze. Der COM-Overhead je Punkt macht die Skizze langsam
+  (S14a Zeile 2/5); der Handler rechnet deshalb die Skizzenkoordinaten per affiner Abbildung (drei `zu_skizze`-Aufrufe
+  kalibriert, vierter Punkt als Gegenprobe, Abweichung > 1e-9 m → `BauFehler`) und wählt alle Segmente in einem
+  `MultiSelect2`-Aufruf zum Fixieren aus (Ruling T4-1).
 - **Schutz:** Die Verzahnungswerte stehen in Features (Bauweg). Wie bei der Normbohrung misst `swki pruefen` gegen die
   **freigegebene Kopie** (§4.5); eine nachträgliche Änderung von `zaehne`, `modul` oder `zahndickenabmass` fällt dort auf.
   Anforderungswerte gehören in `parameter` (von der Prüfsumme geschützt).
@@ -179,6 +187,10 @@ Abweichungen im Klartext.
 - **Toleranz** `toleranzen.verzahnung_mm` (`config/standard.yaml`); der Wert kommt aus Spike S14a (erreichbare Genauigkeit von
   Spline bzw. Polylinie), deutlich unter |A_s|.
 - Der Messweg (IMeasure zwischen Flankenflächen oder Rechnung aus den Flächendefinitionen) folgt aus Spike S14a.
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Die Zahnweite wird nicht per `IMeasure` zwischen den ganzen Flanken gemessen (das liefert den Mindestabstand an den
+  Flankenenden, −0,417 mm, S14a Zeile 3), sondern per Strahl entlang der Grundkreistangente (`IFace2.GetProjectedPointOn`,
+  Spannmitte φ_m = `winkel` + (k − 1)·180°/z, Messgerade auf halber Zahnbreite); Genauigkeit ≤ 0,00001 mm, `verzahnung_mm`
+  bleibt 0,005 (Ruling S14a-Z3, T5-1). Kein Treffer → `REFERENZ_NICHT_GEFUNDEN` („Zahnweite nicht messbar“).
 - **`volumen: {soll: auto}`:** Die Verzahnung trägt Profilfläche × Breite bei. Es gilt die bestehende Regel, dass sich Features
   nicht überlappen; ein Rad auf einer Welle wird so modelliert, dass die Welle den Radbereich ausspart.
 
@@ -253,6 +265,12 @@ Zusätzlich zu Spec 3b §5 und 4a §5:
 
 Die Richtung (Vorzeichen) prüft `validieren` nicht; sie hängt von der Geometrie ab und wird live über Sollweg und Endlage belegt.
 
+*Nachgezogen bei der Umsetzung, 2026-10-05:* `KOPPLUNG_REIHENFOLGE` gilt wie umgesetzt (Ruling P4): Komponenten ohne Eintrag in `freiheitsgrade` sind statisch
+voll bestimmt (fest), Komponenten mit `1` sind Grenze bzw. Gruppe; nur `gekoppelt` kann „noch nicht fest“ sein. Der Befund tritt
+auf, wenn (1) Seite `a` nicht `gekoppelt` ist (sie wird beim Bau in Phase gedreht), (2) Seite `a` schon Seite `a` einer anderen
+Kopplung ist, (3) Seite `b` `gekoppelt` und nicht Seite `a` einer früheren Kopplung ist oder (4) nach der Kopplung noch eine
+andere Verknüpfung ihrer Komponenten folgt. Die Bedingung „Seite `a` muss gekoppelt sein“ folgt damit aus dem Drehen in Phase.
+
 ### 5.3 Freigabe
 
 - Kopplungen sind Bauweg wie alle Verknüpfungen. `freiheitsgrade` (mit `gekoppelt`) und `bewegungen` stehen schon in der
@@ -281,6 +299,10 @@ Wie Spec 3b §7 und 4a §7, zusätzlich:
    Sollweg und Kollision sofort.
    *Nachgezogen bei der Planung, 2026-10-05:* Annahme: `Reverse = False` ergibt die physikalisch richtige Richtung (SolidWorks wertet die Geometrie
    aus); swki führt je Typ eine Konstante, die der Spike bestätigt oder umstellt.
+   *Nachgezogen bei der Umsetzung, 2026-10-05:* `Reverse = False` ist bestätigt (S14b Zeile 6, Ruling S14b-Z6): die Bewegung ist physikalisch richtig (Ritzel +171,89°,
+   Antriebswelle −85,94° bei Hub 60 mm). Das Rücklesen weicht ab: SolidWorks liefert Zähler und Nenner vertauscht (gesetzt 100/50,
+   gelesen 50/100) und meldet an `k1` `Reverse` als `true`; deshalb vergleicht `eingriff` die Übersetzung als ungeordnetes Paar
+   (§5.5) und prüft `Reverse` nie.
 5. **Keine treibenden Hilfsverknüpfungen beim Bau** (Spike S13c). Die Grundstellung bleibt „Grenze mit `min`“ (4a §7.2).
 
 ### 5.5 Prüfen – statisch
@@ -294,6 +316,10 @@ Zusätzlich zu 3b §9 und 4a §8.1:
   `verknuepfungen`, damit die Bewegungsprüfung bei einer verfälschten Übersetzung läuft (Negativfall 4).
   *Nachgezogen bei der Planung, 2026-10-05:* Fehlt die Kopplung im Modell, prüft `eingriff` nur die Geometrie (die fehlende Kopplung meldet
   `verknuepfungen`, Negativfall 3).
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Die Übersetzung wird als **ungeordnetes Paar** verglichen (min/max der gelesenen Werte gegen min/max der Teilkreise,
+  relativ 1e-6; Ruling T12-1, wegen S14b Zeile 6); der Meldetext bleibt „Übersetzung 110:50 statt 100:50“. Eine in der Spec
+  erwartete, im Modell **fehlende** Verknüpfung zählt wie eine fehlerhafte oder unterdrückte als statischer Fehler: die
+  Bewegungsprüfung läuft dann nicht, `bewegung:<name>` hat `ok=None` (Ruling T12-2/P1).
 - **`verknuepfungen`:** meldet zusätzlich **unterdrückte** Verknüpfungen als fehlerhaft (Lücke aus dem Brainstorming, Negativfall 3).
 - **Kollision streng:** Zahnpaare werden wie alle Paare geprüft (keine Ausnahme wie bei Gewindepaarungen).
 
@@ -316,17 +342,25 @@ Wie 4a §8.2, zusätzlich bzw. geändert:
    auch für die Endlage `drehung`. Voraussetzung: jede Teildrehung < 180° (`SCHRITTE_ZU_GROB`, §5.2).
 4. **Kollision je Stellung:** wie 4a, Zahnpaare eingeschlossen.
 5. **Grenze wirkt, Paarläufe, Speicherabbruch `SPEICHER_KNAPP`, Aufräumen:** unverändert.
+   *Nachgezogen bei der Umsetzung, 2026-10-05:* Der Status der Komponenten (`GetConstrainedStatus`) wird nach `ForceRebuild3(False)` gelesen (Ruling T13-1): ohne den
+   Neuaufbau liest SolidWorks mit Antrieb die Antriebswelle über die Kopplungskette veraltet als 2 (statt 3), auch nach
+   `EditRebuild3`; ohne Antrieb bleibt 2. Das wirkt auf alle Bewegungsprüfungen (Regression in `docs/stufe4b/ergebnisse.md`).
 
 ### 5.7 Bilder
 
 - Wie 4a §8.3, zusätzlich je Kopplung eine Ansicht entlang der Radachse in Grundstellung (`<kopplung>-eingriff.png`), damit der
   Prüfer den Eingriff sieht. Ob auf die Kopplung gezoomt werden kann, klärt Spike S14b; sonst die ganze Baugruppe in dieser
   Richtung.
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Zoom auf die Auswahl der beiden Komponenten ist bestätigt (S14b Zeile 12). Das Bild blendet während der Aufnahme alle
+  übrigen Komponenten aus (der Lagerbock verdeckte sonst die Eingriffsstellen; Task 12b), blendet sie danach wieder ein (die
+  Prüfung speichert nie) und fällt ohne gültige Auswahl auf `ViewZoomtofit2` zurück.
 
 ### 5.8 Prüfbericht
 
 - Je Kopplung: Typ, Verzahnungen, Übersetzung soll/ist, Achsabstand soll/ist, Breitenüberdeckung.
 - Je Bewegung zusätzlich zu 4a §8.5: Sollweg je Komponente (erste Abweichung, größte Abweichung), aufsummierte Drehungen.
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Die größte Abweichung steht im Feld `groesste_abweichung` der Prüfung `sollweg:` (Ruling P5); aufsummierte Drehungen
+  stehen in `endlage.ist.aufsummiert`.
 
 ## 6. Reste aus 4a
 
@@ -387,6 +421,12 @@ Live, mit eigenen Probe-Teilen bzw. -Baugruppen; vor jedem neuen API-Aufruf `swk
 12. Bild entlang der Radachse, Zoom auf die Kopplung.
 13. Speichern und Neuöffnen: Kopplungen und Grenze wirken weiter, das Modell bleibt ziehbar (Lehre aus S13c).
 
+*Nachgezogen bei der Umsetzung, 2026-10-05:* **Ergebnisse S14a und S14b** (Einzelheiten und Rulings je Zeile in `docs/stufe4b/ergebnisse.md`):
+S14a: Zeilen 1, 4 und 6 bestätigt; Zeile 2/5 abweichend (Skizzenzeit 56–112 s, im COM-Overhead je Punkt; Beschleunigungen im
+Handler), Zeile 3 nur für die Zahnweite abweichend (Strahl statt `IMeasure`). S14b: Zeilen 7, 8, 9 (Kollision, Zeit), 10, 11, 12
+und 13 bestätigt; Zeile 6 abweichend im Rücklesen (Zähler/Nenner vertauscht, `Reverse` gelesen `true`), Bewegung richtig;
+Zeile 9 Speicher abweichend (+364/+123 MB in den ersten zwei Schritten, danach flach; Nutzer: „Annehmen, weiter“).
+
 ## 10. Tests
 
 - **Ohne SolidWorks:**
@@ -414,12 +454,20 @@ Live, mit eigenen Probe-Teilen bzw. -Baugruppen; vor jedem neuen API-Aufruf `swk
 | 3 Kopplung fehlt | `k2` wird nicht angelegt | `{verknuepfungen}` (Knoten `k2`; die Bewegungsprüfung läuft dann nicht, `bewegung:Schlittenhub` mit `ok=None`) |
 | 4 Übersetzung verfälscht | Zähler/Nenner von `k2` verfälscht | `{eingriff:k2, sollweg:Schlittenhub:antriebswelle, endlage:Schlittenhub:antriebswelle, bewegung_kollision:Schlittenhub}`; der Plan wählt die Verfälschung so groß, dass die Zähne innerhalb des Hubs aufeinanderlaufen |
 
+*Nachgezogen bei der Umsetzung, 2026-10-05:* Fall 3 liefert live `{verknuepfungen, kollision}` (Ruling T14-1): ohne `k2` fehlt auch die Zahnphase der Antriebswelle (der
+Bau legt für `k2` weder Phase noch Kopplung an), sie steht in der Einbaulage, und ihre Zähne liegen auf denen der Ritzelwelle;
+die strenge Kollisionsprüfung meldet das zu Recht (Paar Antriebswelle/Ritzelwelle, vier Volumina 69,22/61,38/18,99/3,51 mm³).
+Die Erwartung wurde damit erweitert (strenger), nicht abgeschwächt; die übrigen Aussagen bleiben (`k2` einziger Knoten von
+`verknuepfungen`, `bewegung:Schlittenhub` mit `ok=None`). Die Einbaulage ist deterministisch. Alternative: nur das `CreateMate` von
+`k2` unterlassen und die Phase behalten (Menge `{verknuepfungen}`).
+
 ## 11. Einbindung
 
 - Skill `konstruieren`: Feature `verzahnung` (Format, Bezug Zahn 1, Welle spart den Radbereich aus, Anforderungswerte als
   Parameter, `zahndickenabmass` < 0).
 - Skill `baugruppe` §6: Kopplungen (`zahnrad`, `zahnstange`, Seite `a` wird in Phase gedreht, Kopplungen zuletzt),
   `gekoppelt`, Endlagen gekoppelter Komponenten mit `pi`, Drehsinn aus der Eingabe ableiten, Sollweg.
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Die Kopplungen stehen im Skill `baugruppe` als §7 (§6 sind die Bewegungen aus 4a).
 - `config/standard.yaml`: `toleranzen.verzahnung_mm`.
 - CLAUDE.md: Abschnitt „Verzahnung und Kopplungen (Stufe 4b)“ (Kurzregeln).
 - Gesamtdesign §11: Zeile 4b neu (Verzahnung, Zahnrad- und Zahnstangenkopplung, Referenz *Zahnstangentrieb*); neue Zeile 4c
@@ -433,6 +481,9 @@ Live, mit eigenen Probe-Teilen bzw. -Baugruppen; vor jedem neuen API-Aufruf `swk
   Mängelmenge; Buchse, Formplatte, Auswerferhalteplatte, Stehlager und Linearschlitten (mit Sollweg und seinen Negativfällen)
   bestehen weiter.
 - Zeit und Private Bytes je Radbau und je Bewegungsschritt mit Verzahnung sind in `docs/stufe4b/ergebnisse.md` dokumentiert.
+  *Nachgezogen bei der Umsetzung, 2026-10-05:* Zeit und Speicher: Rad z 50 ca. 20 s, Teil mit Rad ca. +1,4–1,8 GB Private Bytes (Ziel < 15 s und < 300 MB nicht
+  erreicht, Hinweis im Skill `konstruieren`). Die Speicherspitzen der Referenz *Zahnstangentrieb* und der Negativfälle liegen bei
+  ~10,1–10,3 GB, also über `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht.
 
 ## 13. Reihenfolge der Umsetzung
 

@@ -39,6 +39,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   nicht). Radachse: `{feature: <id>, instanz: 1, achse: true}`. In Ausdrücken ist `pi` erlaubt (Zahnstangenlänge
   `=Z*pi*M`). `swki pruefen` prüft Kopf-/Fußkreis, Zähnezahl und Zahnweite bzw. Teilung und Zahndicke selbst
   (`verzahnungen`); `huellquader` bei Rädern weglassen (die Box hängt von der Lage der Zähne ab).
+  Bauzeit und Speicher: ein Rad z 50 braucht ca. 20 s (rund 0,4 s je Zahn), ein Teil mit Rad ca. +1,4–1,8 GB Private
+  Bytes; in Live-Serien nach jedem Teil mit Rädern SolidWorks neu starten. Zähnezahlen weit über 50 dauern entsprechend
+  länger.
 - Skizzenelemente: `rechteck` (optional `radius`), `polygon` (optional `radien`: ein Wert oder je Ecke, 0 = scharf,
   Radius < halbe kürzere Nachbarkante), `langloch` (`mitte`, `laenge` = Mittenabstand der Bögen, `breite`, `winkel`
   zu u in [0, 180)), `kontur` (`start`, `segmente` aus `{linie: [u, v]}` und `{bogen: [u, v], mitte: [u, v]}`, Bögen
