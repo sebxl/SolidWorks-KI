@@ -109,8 +109,8 @@ def test_bewertung_bestanden():
     pruefungen, bericht = bewerte_bewegungen(kopie(BAUGRUPPE), _bws(), _messwerte(), 0.1)
     assert [p["id"] for p in pruefungen] == [
         "freiheitsgrad:schieber", "bewegung:Hub", "bewegung_kollision:Hub", "grenze:Hub", "endlage:Hub:schieber",
-        "endlage:Hub:hebel", "freiheitsgrad:hebel", "bewegung:Schwenk", "bewegung_kollision:Schwenk", "grenze:Schwenk",
-        "endlage:Schwenk:hebel"]
+        "endlage:Hub:hebel", "sollweg:Hub:schieber", "sollweg:Hub:hebel", "freiheitsgrad:hebel", "bewegung:Schwenk",
+        "bewegung_kollision:Schwenk", "grenze:Schwenk", "endlage:Schwenk:hebel", "sollweg:Schwenk:hebel"]
     assert all(p["ok"] is True for p in pruefungen), pruefungen
     assert [(x["bewegung"], x["gegen"], x["stellungen"]) for x in bericht["laeufe"]] == [
         ("Hub", {}, 2), ("Schwenk", {}, 2), ("Schwenk", {"Hub": "max"}, 2)]
@@ -145,7 +145,9 @@ def test_kollision_und_lauffehler():
     p = _pruefungen(_messwerte(kollisionen=[kollision], fehler={"stellung": 50.0, "meldung": "Rebuild-Fehler"}))
     assert p["bewegung_kollision:Schwenk"]["ok"] is False and p["bewegung_kollision:Schwenk"]["knoten"] == ["anschlag", "hebel"]
     assert p["bewegung:Hub"]["ok"] is False and p["grenze:Hub"]["ok"] is None
-    assert p["endlage:Hub:schieber"]["ok"] is False and "abgebrochen" in p["endlage:Hub:schieber"]["hinweis"]
+    # 4a-Rest (Spec 4b §6.2): abgebrochene Läufe einheitlich nicht geprüft
+    assert p["endlage:Hub:schieber"]["ok"] is None and "abgebrochen" in p["endlage:Hub:schieber"]["hinweis"]
+    assert p["sollweg:Hub:schieber"]["ok"] is None
 
 
 def test_ergaenze_bericht():

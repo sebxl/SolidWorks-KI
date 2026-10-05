@@ -95,15 +95,23 @@ def test_dokumente_der_grenzen_bleiben_offen(tmp_path):
 
 
 def test_bericht_bewegungen():
-    laeufe = [{"bewegung": "Hub", "gegen": {}, "stellungen": 17, "bewegt": ["schlitten", "hebel"], "kollisionen": 0,
-               "grenze": {"oben": False, "unten": None}, "dauer_s": 12.5},
+    laeufe = [{"bewegung": "Hub", "grenz_id": "g1", "bereich": [0.0, 220.0], "gegen": {}, "stellungen": 17,
+               "bewegt": ["schlitten", "hebel"], "kollisionen": 0, "grenze": {"oben": False, "unten": None}, "dauer_s": 12.5},
               {"bewegung": "Hub", "gegen": {"Schwenk": "max"}, "stellungen": 17, "bewegt": [], "kollisionen": 1,
                "grenze": {}, "dauer_s": 9.0}]
-    bericht = {"maengel": [], "bilder": {},
+    pruefungen = [{"id": "endlage:Hub:schlitten", "ok": True, "knoten": []},
+                  {"id": "sollweg:Hub:schlitten", "ok": False, "ist": {"erste_abweichung": {"stellung": 55.0}},
+                   "hinweis": "weg bei 55", "knoten": ["schlitten"]},
+                  {"id": "sollweg:Hub:hebel", "ok": None, "hinweis": "Lauf abgebrochen", "knoten": []}]
+    bericht = {"maengel": [], "bilder": {}, "pruefungen": pruefungen,
                "bewegungen": {"laeufe": laeufe, "paare": [{"bewegungen": ["Hub", "Schwenk"], "schnitt": [0] * 6}]}}
     text = bericht_markdown(BAUGRUPPE, "A", [], ("pruefen", "…"), bericht, None, None, [])
-    for teil in ("## Bewegungen (letzter Lauf)", "| Hub | Grundstellung | 17 | schlitten, hebel | 0 | wirkt / – | 12.5 |",
-                 "| Hub | Schwenk auf max | 17 | – | 1 | – / – | 9.0 |", "Paarläufe für: Hub × Schwenk"):
+    for teil in ("## Bewegungen (letzter Lauf)",
+                 "| Hub | g1 | 0 … 220 | Grundstellung | 17 | schlitten, hebel | 0 | wirkt / – | 12.5 |",
+                 "| Hub | – | – | Schwenk auf max | 17 | – | 1 | – / – | 9.0 |", "Paarläufe für: Hub × Schwenk",
+                 "## Endlagen und Sollweg (letzter Lauf)", "| endlage:Hub:schlitten | bestanden | – |",
+                 "| sollweg:Hub:schlitten | Mangel | sollweg:Hub:schlitten: weg bei 55 |",
+                 "| sollweg:Hub:hebel | nicht geprüft | sollweg:Hub:hebel: Lauf abgebrochen |"):
         assert teil in text, text
 
 

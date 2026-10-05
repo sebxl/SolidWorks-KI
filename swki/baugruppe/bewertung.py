@@ -7,7 +7,7 @@ from swki.baugruppe.aufloesen import basis, instanzen, verknuepfungen
 from swki.baugruppe.geometrie import einschraublaenge, ueberlappung_soll
 from swki.baugruppe.modell import Quelle, dokument_name
 from swki.compiler.anker import punkt_achse_abstand
-from swki.pruefung.bewertung import _beschreibung, _pruefung, messpunkt_schluessel
+from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
 from swki.spec.ausdruck import auswerten
 from swki.spec.normen import norm_von, normmasse
@@ -95,7 +95,7 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
     bericht = {"schraube": g.schraube, "teil": g.teil, "bohrung": f"{g.feature}.{g.instanz}",
                "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
     if f.get("durch"):
-        return _pruefung(pid, None, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
+        return eintrag(pid, None, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
                          hinweis="Gewinde durch: Volumen nicht geprüft (Präzisierung 2)"), bericht
     tp = qt.spec.get("parameter", {})
     tiefe, gewindetiefe = auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp)
@@ -109,7 +109,7 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
         ok = False
         daten["hinweis"] = (f"Einschraublänge {laenge:.2f} mm größer als Gewindetiefe {gewindetiefe:g} bzw. "
                             f"Bohrtiefe {tiefe:g} mm")
-    return _pruefung(pid, ok, **daten), bericht
+    return eintrag(pid, ok, **daten), bericht
 
 
 def _erlaubt_unterbestimmt(spec: dict, instanz_id: str) -> bool:
@@ -138,7 +138,7 @@ def _bestimmtheit(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte
             grund = STATUS_TEXT.get(w["status"], str(w["status"]))
         if grund:
             offen[i.id] = grund
-    return _pruefung("bestimmtheit", not offen, ist=offen, knoten=sorted(offen))
+    return eintrag("bestimmtheit", not offen, ist=offen, knoten=sorted(offen))
 
 
 def _verknuepfungen(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> dict:
@@ -147,7 +147,7 @@ def _verknuepfungen(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswer
     fehlerhaft = {n: c for n, c in m.verknuepfungen.items() if c}
     fremd = [n for n in m.verknuepfungen if n not in soll]
     knoten = sorted({*fehlend, *fehlerhaft, *fremd})
-    return _pruefung("verknuepfungen", not knoten, ist={"fehlend": fehlend, "fehlerhaft": fehlerhaft, "fremd": fremd},
+    return eintrag("verknuepfungen", not knoten, ist={"fehlend": fehlend, "fehlerhaft": fehlerhaft, "fremd": fremd},
                      soll=len(soll), knoten=knoten)
 
 
@@ -160,14 +160,14 @@ def _masse_pruefen(pr: dict, p: dict, m: BaugruppenMesswerte) -> list[dict]:
         soll, tol = auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS)
         if not isinstance(von, Messgeometrie) or not isinstance(zu, Messgeometrie):
             hinweis = next((x for x in (von, zu) if isinstance(x, str)), "Messpunkt fehlt")
-            ergebnisse.append(_pruefung(pid, False, soll=soll, hinweis=hinweis, knoten=knoten))
+            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=hinweis, knoten=knoten))
             continue
         try:
             ist = round(abstand(von, zu), 6)
         except NichtMessbar as e:
-            ergebnisse.append(_pruefung(pid, False, soll=soll, hinweis=str(e), knoten=knoten))
+            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=str(e), knoten=knoten))
             continue
-        ergebnisse.append(_pruefung(pid, abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
+        ergebnisse.append(eintrag(pid, abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
     return ergebnisse
 
 
@@ -175,47 +175,47 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
                       soll_stueckliste: dict[str, int]) -> dict:
     p = spec.get("parameter", {})
     pr = spec.get("pruefung", {})
-    ergebnisse = [_pruefung("rebuild", not m.rebuild_fehler, ist=m.rebuild_fehler, knoten=[]),
+    ergebnisse = [eintrag("rebuild", not m.rebuild_fehler, ist=m.rebuild_fehler, knoten=[]),
                   _verknuepfungen(spec, quellen, m), _bestimmtheit(spec, quellen, m)]
 
     abweichend = _stueckliste_abweichungen(m.stueckliste, soll_stueckliste)
-    ergebnisse.append(_pruefung("stueckliste", not abweichend, ist=abweichend, knoten=[]))
+    ergebnisse.append(eintrag("stueckliste", not abweichend, ist=abweichend, knoten=[]))
 
     gewinde_bericht, gepaart = [], set()
     for sid, ebene in m.schrauben.items():
         if isinstance(ebene, str):
-            ergebnisse.append(_pruefung(f"gewinde:{sid}", False, hinweis=ebene, knoten=[sid]))
+            ergebnisse.append(eintrag(f"gewinde:{sid}", False, hinweis=ebene, knoten=[sid]))
     for g in gewindepaarungen(m.schrauben, m.gewindebohrungen, standard["toleranzen"]["anker_mm"]):
         if (e := _gewinde(g, quellen, m)) is not None:
             ergebnisse.append(e[0])
             gewinde_bericht.append(e[1])
             gepaart.add(_paar(g.schraube, g.teil))
     kollisionen = [i for i in m.interferenzen if frozenset(i["paar"]) not in gepaart]
-    ergebnisse.append(_pruefung("kollision", not kollisionen, ist=kollisionen,
+    ergebnisse.append(eintrag("kollision", not kollisionen, ist=kollisionen,
                                 knoten=sorted({k for i in kollisionen for k in i["paar"]})))
 
     if "huellquader" in pr:
         soll = [auswerten(v, p) for v in pr["huellquader"]]
         ist = [round(m.box[i + 3] - m.box[i], 6) for i in range(3)]
         tol = pr.get("huellquader_tol", _TOL_HUELLQUADER)
-        ergebnisse.append(_pruefung("huellquader", all(abs(a - b) <= tol for a, b in zip(ist, soll)), ist=ist,
+        ergebnisse.append(eintrag("huellquader", all(abs(a - b) <= tol for a, b in zip(ist, soll)), ist=ist,
                                     soll=soll, tol=tol, knoten=[]))
     if "masse" in pr:
         soll = auswerten(pr["masse"]["soll"], p)
         prozent = pr["masse"].get("toleranz_prozent", standard["toleranzen"]["volumen_prozent"])
         abw = abs(m.masse_kg - soll) / soll * 100
-        ergebnisse.append(_pruefung("masse", abw <= prozent, ist=round(m.masse_kg, 4), soll=soll,
+        ergebnisse.append(eintrag("masse", abw <= prozent, ist=round(m.masse_kg, 4), soll=soll,
                                     abweichung_prozent=round(abw, 4), tol_prozent=prozent, knoten=[]))
     ergebnisse += _masse_pruefen(pr, p, m)
     soll_eig = spec.get("eigenschaften", {})
     abw_eig = {k: m.eigenschaften.get(k) for k, v in soll_eig.items() if m.eigenschaften.get(k) != v}
-    ergebnisse.append(_pruefung("eigenschaften", not abw_eig, ist=abw_eig, soll=soll_eig, knoten=[]))
+    ergebnisse.append(eintrag("eigenschaften", not abw_eig, ist=abw_eig, soll=soll_eig, knoten=[]))
 
     teilpruefungen = {}
     for datei in dict.fromkeys(q.datei for q in quellen.values() if q.art == "teil"):
         if datei not in m.teilberichte:  # fail-closed: ohne Teilbericht gibt es keine Aussage über das Teil
             komp = next(k for k, q in quellen.items() if q.datei == datei)
-            ergebnisse.append(_pruefung(f"{komp}: teilbericht", False, knoten=[komp],
+            ergebnisse.append(eintrag(f"{komp}: teilbericht", False, knoten=[komp],
                                         hinweis=f"kein Teilbericht für {datei} (Teilprüfung nicht gelaufen)"))
             teilpruefungen[komp] = {"bestanden": False, "maengel": 1}
     for datei, tb in m.teilberichte.items():
@@ -224,7 +224,7 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
         ergebnisse += [{**e, "id": f"{komp}: {e['id']}", "knoten": [f"{komp}/{k}" for k in e["knoten"]] or [komp]}
                        for e in tb["pruefungen"]]
 
-    maengel = [{"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": _beschreibung(e)}
+    maengel = [{"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": beschreibung(e)}
                for e in ergebnisse if e["ok"] is False]
     return {"bestanden": not maengel, "pruefungen": ergebnisse, "maengel": maengel, "stueckliste": m.stueckliste,
             "gewindepaarungen": gewinde_bericht, "teilpruefungen": teilpruefungen, "masse_kg": round(m.masse_kg, 4)}

@@ -45,7 +45,7 @@ def _knoten_aus(text: str, ids: list[str]) -> str:
     return max(passend, key=len) if passend else name
 
 
-def _pruefung(pid: str, ok: bool | None, **daten) -> dict:
+def eintrag(pid: str, ok: bool | None, **daten) -> dict:
     return {"id": pid, "ok": ok, **daten}
 
 
@@ -119,10 +119,10 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
 
     ids = [f["id"] for f in spec["features"]]
     knoten = sorted({_knoten_aus(t, ids) for t in m.rebuild_fehler})
-    ergebnisse.append(_pruefung("rebuild", not m.rebuild_fehler, ist=m.rebuild_fehler, knoten=knoten))
+    ergebnisse.append(eintrag("rebuild", not m.rebuild_fehler, ist=m.rebuild_fehler, knoten=knoten))
 
     offen = {n: s for n, s in m.skizzen.items() if s != SKIZZE_VOLL_BESTIMMT}
-    ergebnisse.append(_pruefung("skizzen", not offen, ist=offen, knoten=sorted({_knoten_aus(n, ids) for n in offen})))
+    ergebnisse.append(eintrag("skizzen", not offen, ist=offen, knoten=sorted({_knoten_aus(n, ids) for n in offen})))
 
     soll_spec = freigegeben or spec
     soll_normbohrungen = [f for f in soll_spec["features"] if f["typ"] == "normbohrung"]
@@ -135,7 +135,7 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
                 abweichend[f["id"]] = [ist or f"Feature {f['id']} fehlt im Teil"]
             elif fehler := normbohrung_abweichungen(f, ist, p_soll):
                 abweichend[f["id"]] = fehler
-        ergebnisse.append(_pruefung("normbohrungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+        ergebnisse.append(eintrag("normbohrungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
 
     soll_verzahnungen = [f for f in soll_spec["features"] if f["typ"] == "verzahnung"]
     if soll_verzahnungen:
@@ -147,14 +147,14 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
                 abweichend[f["id"]] = [ist or f"Feature {f['id']} fehlt im Teil"]
             elif fehler := verzahnung_abweichungen(f, ist, p_soll, tol):
                 abweichend[f["id"]] = fehler
-        ergebnisse.append(_pruefung("verzahnungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+        ergebnisse.append(eintrag("verzahnungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
 
     # Allgemeine Prüfung: ein Teil ist ein Volumenkörper. Ein Aufsatz mit Abstand zum Körper (z. B. versatz_von_flaeche
     # bei abgesetzter Skizze) besteht sonst alle anderen Prüfungen, obwohl er getrennt im Teil steht.
     if m.koerper == 1:
-        ergebnisse.append(_pruefung("koerper", True, ist=1, soll=1, knoten=[]))
+        ergebnisse.append(eintrag("koerper", True, ist=1, soll=1, knoten=[]))
     else:
-        ergebnisse.append(_pruefung("koerper", False, ist=m.koerper, soll=1, knoten=[],
+        ergebnisse.append(eintrag("koerper", False, ist=m.koerper, soll=1, knoten=[],
                                     hinweis=f"{m.koerper} Volumenkörper statt 1"))
 
     if "huellquader" in pr:
@@ -162,18 +162,18 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
         ist = [round(m.box[i + 3] - m.box[i], 6) for i in range(3)]
         tol = pr.get("huellquader_tol", _TOL_HUELLQUADER)
         ok = all(abs(a - b) <= tol for a, b in zip(ist, soll))
-        ergebnisse.append(_pruefung("huellquader", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
+        ergebnisse.append(eintrag("huellquader", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
 
     if "volumen" in pr:
         roh = pr["volumen"]["soll"]
         soll, grund = volumen_auto(freigegeben or spec) if roh == "auto" else (auswerten(roh, p), "vorgegeben")
         prozent = pr["volumen"].get("toleranz_prozent", standard["toleranzen"]["volumen_prozent"])
         if soll is None:
-            ergebnisse.append(_pruefung("volumen", None, ist=m.volumen, hinweis=f"Sollvolumen nicht berechenbar ({grund})",
+            ergebnisse.append(eintrag("volumen", None, ist=m.volumen, hinweis=f"Sollvolumen nicht berechenbar ({grund})",
                                         knoten=[]))
         else:
             abweichung = abs(m.volumen - soll) / soll * 100
-            ergebnisse.append(_pruefung("volumen", abweichung <= prozent, ist=round(m.volumen, 3), soll=round(soll, 3),
+            ergebnisse.append(eintrag("volumen", abweichung <= prozent, ist=round(m.volumen, 3), soll=round(soll, 3),
                                         abweichung_prozent=round(abweichung, 4), tol_prozent=prozent, knoten=[]))
 
     for mp in pr.get("masse_pruefen", []):
@@ -182,21 +182,21 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
         soll, tol = auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS)
         if isinstance(von, str) or isinstance(zu, str) or von is None or zu is None:
             fehler = next(x for x in (von, zu, "Messpunkt fehlt") if isinstance(x, str))
-            ergebnisse.append(_pruefung(f"mass:{mp['was']}", False, soll=soll, hinweis=fehler, knoten=knoten))
+            ergebnisse.append(eintrag(f"mass:{mp['was']}", False, soll=soll, hinweis=fehler, knoten=knoten))
             continue
         try:
             ist = round(abstand(von, zu), 6)
         except NichtMessbar as e:
-            ergebnisse.append(_pruefung(f"mass:{mp['was']}", False, soll=soll, hinweis=str(e), knoten=knoten))
+            ergebnisse.append(eintrag(f"mass:{mp['was']}", False, soll=soll, hinweis=str(e), knoten=knoten))
             continue
-        ergebnisse.append(_pruefung(f"mass:{mp['was']}", abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
+        ergebnisse.append(eintrag(f"mass:{mp['was']}", abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
 
     for dp in pr.get("durchmesser_pruefen", []):
         pid, knoten = f"durchmesser:{dp['was']}", [dp["feature"]]
         soll, tol = auswerten(dp["soll"], p), dp.get("tol", _TOL_MASS)
         ist = m.durchmesser.get(dp["was"], "Messung fehlt")
         if isinstance(ist, str):
-            ergebnisse.append(_pruefung(pid, False, soll=soll, hinweis=ist, knoten=knoten))
+            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=ist, knoten=knoten))
             continue
         ok = abs(ist["durchmesser"] - soll) <= tol
         daten = {"ist": ist["durchmesser"], "soll": soll, "tol": tol}
@@ -206,31 +206,31 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
                 ok = ok and daten["achsversatz"] <= tol
             except NichtMessbar as e:
                 ok, daten["hinweis"] = False, f"nicht koaxial zu {dp['referenz']}: {e}"
-        ergebnisse.append(_pruefung(pid, ok, **daten, knoten=knoten))
+        ergebnisse.append(eintrag(pid, ok, **daten, knoten=knoten))
 
     if "schwerpunkt" in pr:
         soll = [None if v is None else auswerten(v, p) for v in pr["schwerpunkt"]["soll"]]
         tol = pr["schwerpunkt"].get("tol", _TOL_SCHWERPUNKT)
         ist = [round(v, 6) for v in m.schwerpunkt]
         ok = all(s is None or abs(i - s) <= tol for i, s in zip(ist, soll))
-        ergebnisse.append(_pruefung("schwerpunkt", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
+        ergebnisse.append(eintrag("schwerpunkt", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
 
     if "material" in spec:
-        ergebnisse.append(_pruefung("material", material_passt(m.material, spec["material"]), ist=m.material, soll=spec["material"],
+        ergebnisse.append(eintrag("material", material_passt(m.material, spec["material"]), ist=m.material, soll=spec["material"],
                                     knoten=[]))
 
     soll_eig = spec.get("eigenschaften", {})
     abweichend = {k: m.eigenschaften.get(k) for k, v in soll_eig.items() if m.eigenschaften.get(k) != v}
-    ergebnisse.append(_pruefung("eigenschaften", not abweichend, ist=abweichend, soll=soll_eig, knoten=[]))
+    ergebnisse.append(eintrag("eigenschaften", not abweichend, ist=abweichend, soll=soll_eig, knoten=[]))
 
     maengel = [
-        {"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": _beschreibung(e)}
+        {"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": beschreibung(e)}
         for e in ergebnisse if e["ok"] is False
     ]
     return {"bestanden": not maengel, "pruefungen": ergebnisse, "maengel": maengel}
 
 
-def _beschreibung(e: dict) -> str:
+def beschreibung(e: dict) -> str:
     if "hinweis" in e:
         return f"{e['id']}: {e['hinweis']}"
     if "soll" in e:
