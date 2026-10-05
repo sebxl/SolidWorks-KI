@@ -1,0 +1,232 @@
+{
+  "ok": true,
+  "privat_mb_start": 1907.8,
+  "7_phase_k1": {
+    "fehler_vorher": 0.084506,
+    "winkel": 1.521102,
+    "set_transform": true,
+    "rebuild": "ok",
+    "fehler_nachher": 0.0
+  },
+  "6_kopplung_k1": {
+    "mate_data": true,
+    "angelegt": true,
+    "rebuild": "ok",
+    "fehlercode": 0,
+    "typ": 13,
+    "gelesen": {
+      "durchmesser": 40.0,
+      "art": 0,
+      "reverse": true
+    }
+  },
+  "7_phase_k2": {
+    "fehler_vorher": 0.144368,
+    "winkel": 1.039449,
+    "set_transform": true,
+    "rebuild": "ok",
+    "fehler_nachher": -0.0
+  },
+  "6_kopplung_k2": {
+    "mate_data": true,
+    "angelegt": true,
+    "rebuild": "ok",
+    "fehlercode": 0,
+    "typ": 10,
+    "gelesen": {
+      "zaehler": 50.0,
+      "nenner": 100.0,
+      "reverse": false
+    }
+  },
+  "8_status_ohne_antrieb": {
+    "platte": 3,
+    "zahnstange": 2,
+    "lagerbock": 3,
+    "ritzelwelle": 2,
+    "antriebswelle": 2
+  },
+  "8_status_mit_antrieb": {
+    "platte": 3,
+    "zahnstange": 3,
+    "lagerbock": 3,
+    "ritzelwelle": 3,
+    "antriebswelle": 3
+  },
+  "9_11_schritte": [
+    {
+      "wert": 0.0,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 0.718,
+      "s_kollision": 0.596,
+      "drehung_z": {
+        "ritzelwelle": 0.0,
+        "antriebswelle": 0.0
+      },
+      "privat_mb": 3684.9
+    },
+    {
+      "wert": 7.5,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 0.735,
+      "s_kollision": 0.89,
+      "drehung_z": {
+        "ritzelwelle": 21.4859,
+        "antriebswelle": -10.743
+      },
+      "privat_mb": 4049.4
+    },
+    {
+      "wert": 15.0,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.048,
+      "s_kollision": 0.89,
+      "drehung_z": {
+        "ritzelwelle": 42.9718,
+        "antriebswelle": -21.4859
+      },
+      "privat_mb": 4172.1
+    },
+    {
+      "wert": 22.5,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.053,
+      "s_kollision": 0.876,
+      "drehung_z": {
+        "ritzelwelle": 64.4578,
+        "antriebswelle": -32.2289
+      },
+      "privat_mb": 4168.0
+    },
+    {
+      "wert": 30.0,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.036,
+      "s_kollision": 0.868,
+      "drehung_z": {
+        "ritzelwelle": 85.9437,
+        "antriebswelle": -42.9718
+      },
+      "privat_mb": 4154.3
+    },
+    {
+      "wert": 37.5,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.052,
+      "s_kollision": 0.88,
+      "drehung_z": {
+        "ritzelwelle": 107.4296,
+        "antriebswelle": -53.7148
+      },
+      "privat_mb": 4154.2
+    },
+    {
+      "wert": 45.0,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.069,
+      "s_kollision": 0.871,
+      "drehung_z": {
+        "ritzelwelle": 128.9155,
+        "antriebswelle": -64.4578
+      },
+      "privat_mb": 4154.7
+    },
+    {
+      "wert": 52.5,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.131,
+      "s_kollision": 0.943,
+      "drehung_z": {
+        "ritzelwelle": 150.4014,
+        "antriebswelle": -75.2007
+      },
+      "privat_mb": 4154.8
+    },
+    {
+      "wert": 60.0,
+      "meldung": null,
+      "paare": [],
+      "s_stellen": 1.168,
+      "s_kollision": 0.568,
+      "drehung_z": {
+        "ritzelwelle": 171.8873,
+        "antriebswelle": -85.9437
+      },
+      "privat_mb": 4079.3
+    }
+  ],
+  "11_soll": {
+    "ritzelwelle": 171.8873,
+    "antriebswelle": -85.9437
+  },
+  "10_grenze": {
+    "meldung": "g1.antrieb: Code 47",
+    "x_zahnstange_mm": -36.8584
+  },
+  "10_zurueck": null,
+  "12_bild_bytes": 278769,
+  "9_halbe_teilung_paare": [
+    [
+      [
+        "Antriebswelle-1",
+        "Ritzelwelle-1"
+      ],
+      109.9504
+    ],
+    [
+      [
+        "Antriebswelle-1",
+        "Ritzelwelle-1"
+      ],
+      80.5356
+    ],
+    [
+      [
+        "Antriebswelle-1",
+        "Ritzelwelle-1"
+      ],
+      58.451
+    ],
+    [
+      [
+        "Antriebswelle-1",
+        "Ritzelwelle-1"
+      ],
+      0.3404
+    ]
+  ],
+  "13_verknuepfungen": [
+    "v1",
+    "v2",
+    "g1",
+    "v3",
+    "v4",
+    "v5",
+    "s1",
+    "s1.anlage",
+    "s2",
+    "s2.anlage",
+    "k1",
+    "k2"
+  ],
+  "13_komponenten": [
+    "Antriebswelle",
+    "Lagerbock",
+    "Probeplatte",
+    "Ritzelwelle",
+    "Zahnstange"
+  ],
+  "13_rebuild": "ok",
+  "13_ritzel_drehung_z": -85.9437,
+  "13_soll": 85.9437,
+  "13_grenze_fehlercode": 0,
+  "privat_mb_ende": 2479.9
+}
