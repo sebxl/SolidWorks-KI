@@ -10,6 +10,8 @@ Sonderfall Stiftloch "durch alles": HoleWizard5 liefert dafür nie ein Feature (
 FeatureManager.CreateDefinition(swFmHoleWzd) → InitializeHole → Vorselektion → CreateFeature.
 """
 
+import time
+
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler, zylinder_zu_punkten
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, BauFehler
@@ -31,6 +33,8 @@ SW_SEL_FACES = 2  # swSelectType_e.swSelFACES
 SW_OBJEKT_GLEICH = 1  # swObjectEquality_e.swObjectSame (ISldWorks.IsSame)
 _STRAHL_MM = 1.0  # Start des Auswahlstrahls über der Fläche
 _STRAHL_RADIUS_M = 0.0005
+_PAUSE_S = 0.5  # zwischen zwei Neuaufbauten, bis die weiteren Bohrungen da sind
+_FRIST_S = 10.0
 
 
 def hole_werte(art: str, gewindetiefe_m: float | None) -> list[float]:
@@ -69,6 +73,28 @@ def _bohrungen_pruefen(ctx, feature, fid: str, punkte: list) -> None:
         except AnkerFehler as e:
             raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {fid}: Bohrung an Position {k} fehlt "
                                                    f"(keine Zylinderfläche mit Achse durch {punkt})", schritt="feature") from e
+
+
+def _neu_aufbauen_bis_vollstaendig(ctx, feature, fid: str, punkte: list, schlafe=time.sleep, uhr=time.monotonic) -> int:
+    """Baut erzwungen neu auf, bis jede Position ihre Bohrung hat; Rückgabe: Zahl der Neuaufbauten.
+
+    Nach dem Schließen der Positionsskizze hat das Feature nur die erste Bohrung; EditRebuild3 erzeugt die weiteren nicht
+    immer, ForceRebuild3 meist. SolidWorks übernimmt die neuen Punkte aber verzögert: ein Neuaufbau davor liefert trotz
+    Rückgabe True nur die erste Bohrung (~1 % der Bauten, unter CPU-Last häufiger; ein späterer Neuaufbau erzeugt alle,
+    live belegt nach Stufe 4a). Deshalb bis _FRIST_S wiederholen, dazwischen _PAUSE_S warten."""
+    beginn, versuche = uhr(), 0
+    while True:
+        ctx.model.ForceRebuild3(True)
+        sw.rebuild(ctx.model)  # ein echter Neuaufbaufehler bricht sofort ab (REBUILD_FEHLER), ohne Wiederholung
+        versuche += 1
+        try:
+            _bohrungen_pruefen(ctx, feature, fid, punkte)
+            return versuche
+        except BauFehler as e:
+            dauer = uhr() - beginn
+            if dauer >= _FRIST_S:
+                raise BauFehler(e.code, f"{e} – nach {versuche} Neuaufbauten in {dauer:.1f} s", schritt=e.schritt) from e
+        schlafe(_PAUSE_S)
 
 
 @handler("normbohrung")
@@ -111,10 +137,5 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
     positionen_festlegen(ctx, feature, se, f["positionen"], f"{f['id']}_positionen")
-    # EditRebuild3 allein erzeugt die Instanzen der weiteren Positionen nicht immer (live belegt: zwei Positionen mit
-    # gleichem v ≠ 0 und ohne u = 0 ergaben nur eine Bohrung, GetSketchPointCount lag trotzdem bei 2); erst das
-    # erzwungene Neuaufbauen aller Features nimmt sie mit.
-    ctx.model.ForceRebuild3(True)
-    sw.rebuild(ctx.model)
-    _bohrungen_pruefen(ctx, feature, f["id"], punkte)
+    _neu_aufbauen_bis_vollstaendig(ctx, feature, f["id"], punkte)
     return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)

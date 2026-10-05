@@ -243,9 +243,20 @@ Präzisierungen und Rulings des Controllers aus dem Ledger der Umsetzung. **Dies
   Sonde vor dem ersten Maß (84 Rechtecke in 21 Baugruppenbauten) traf ihn nicht. Fix: Rechtecke aus vier `CreateLine` mit eigenen
   Waagrecht-/Senkrecht-Beziehungen (`skizze.py`), Live-Test `test_quadratisches_rechteck_mit_parametern`; danach 8 Zyklen
   „Neustart + 2 Baugruppenbauten“ fehlerfrei (16 von 16), Live-Suite 112/112, Regressions-Suite 5/5.
-- **Sporadischer Normbohrungsfehler (neu, beim Reproduzieren gesehen):** einmal in 34 Baugruppenbauten
+- **Sporadischer Normbohrungsfehler (Folgeaufgabe erledigt):** einmal in 34 Baugruppenbauten
   `grundplatte/f2: FEATURE_NICHT_ERZEUGT – normbohrung f2: Bohrung an Position 2 fehlt (keine Zylinderfläche mit Achse durch
-  (100.0, 20.0, -40.0))` auf frischem SolidWorks; der zweite Bau derselben Sitzung ging durch. Nicht untersucht.
+  (100.0, 20.0, -40.0))` auf frischem SolidWorks. Ursache: Zeitrennen nach dem Schließen der Positionsskizze. Das
+  HoleWzd-Feature hat danach immer nur die erste Bohrung; erst `ForceRebuild3` erzeugt die übrigen. SolidWorks übernimmt
+  die neuen Punkte aber verzögert, ein Neuaufbau davor liefert trotz Rückgabe `True` nur eine Bohrung. Belegt durch
+  Reproduktion („Neustart + n × `swki bauen` Grundplatte“): 2 Fehlbauten in ~360 ohne Last, ein weiterer unter CPU-Last.
+  Im Fehlstand ist die Positionsskizze vollständig (4 Punkte, voll bestimmt, alle Gleichungen, `GetSketchPointCount` 4);
+  die gespeicherte Datei baut nach Öffnen + `ForceRebuild3` alle 4 Bohrungen. In einem Fehlfall half der zweite
+  Neuaufbau, in einem anderen scheiterten vier Neuaufbauten direkt hintereinander (Sekundenbruchteile). Fix: Neuaufbau
+  mit Prüfung je Position wiederholen (Pause 0,5 s, Frist 10 s), erst dann `FEATURE_NICHT_ERZEUGT` mit Versuchszahl
+  (`normbohrung._neu_aufbauen_bis_vollstaendig`, Unit-Tests mit Attrappe). Offen: dass die Wiederholung den Fall „vier
+  Neuaufbauten scheitern“ heilt, ist nur für den zweiten Fehlfall live belegt; tritt der Fehler trotz Frist auf, nennt
+  die Meldung die Zahl der Neuaufbauten. Abgesichert: pytest 711, Live-Suite 112/112 (die vier Schlitten-Negativfälle
+  je mit frischem SolidWorks; zwei davon nacheinander in einer Sitzung scheiterten), Regressions-Suite 5/5.
 - **Deferred minors des Ledgers** (Gesamt-Review soweit nicht erledigt): Task 2: Fall `drehung` in `test_schema_lehnt_ab` kommentieren,
   `test_soll_der_grenze…` prüft nicht den Vorrang von `wert`; Task 3: Tests für `BEWEGUNG_DOPPELT`, „fixiert“, `grenze_abstand min ≥ 0`,
   Gruppenpfad, Scharnier-Achsprüfung akzeptiert jede `referenz` (`plausibel.py:221`), neue Testdateien LF statt CRLF, Zeilen > 120 Zeichen;
