@@ -116,7 +116,7 @@ def _erlaubt_unterbestimmt(spec: dict, instanz_id: str) -> bool:
     fg = spec.get("freiheitsgrade", {})
     k = basis(instanz_id)
     gruppe = next((x.get("gruppe") for x in spec["komponenten"] if x["id"] == k), None)
-    return any(fg.get(s) in ("unterbestimmt", 1) for s in (instanz_id, k, gruppe) if s)  # 1: Spec 4a §8.1
+    return any(fg.get(s) in ("unterbestimmt", 1, "gekoppelt") for s in (instanz_id, k, gruppe) if s)  # Spec 4a §8.1, 4b §5.5
 
 
 def _bestimmtheit(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> dict:
