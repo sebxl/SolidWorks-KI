@@ -13,11 +13,13 @@ from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import Instanz, Verknuepfung, basis, instanzen, verknuepfungen
 from swki.baugruppe.bewegung import TOL_WINKEL_GRAD, bewegungen
 from swki.baugruppe.fehler import (GRUNDSTELLUNG_FEHLER, KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU,
-                                   VERKNUEPFUNG_FEHLER)
+                                   VERKNUEPFUNG_FEHLER, ZAHNPHASE_FEHLER)
 from swki.baugruppe.freigabe import pruefe_freigabe_baugruppe
+from swki.baugruppe.kopplung import (KOPPLUNGEN, drehe, in_baugruppe, phasenfehler, phasenwinkel, teilkreise,
+                                     verzahnung_der_seite)
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, Quelle, dokument_name
-from swki.baugruppe.referenzen import loese_im_teil
+from swki.baugruppe.referenzen import kopplung_referenz, loese_im_teil
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.bauen import BauAbbruch, baue_teil_dokument
@@ -30,6 +32,8 @@ from swki.normteile.bibliothek import bibliotheksordner, lies_eintrag
 from swki.normteile.fehler import NormteilFehler
 from swki.pruefung.messen import kontext_aus_datei, oeffne
 from swki.verbindung import verbinde
+
+TOL_PHASE = 1e-3  # Phasenfehler nach dem Drehen, Anteil der Teilung (Spec 4b §5.4.2)
 
 
 @dataclass
@@ -161,6 +165,44 @@ def _entitaet(b: Baulauf, seite: dict) -> tuple[object, bool]:
         raise _mit_kontext(e, VERKNUEPFUNG_FEHLER, f"Komponente {seite['komponente']}", "referenz") from e
 
 
+def _verzahnungen(b: Baulauf, v: Verknuepfung):
+    """Beide Verzahnungen einer Kopplung in Baugruppenkoordinaten (aktuelle Lage der Komponenten)."""
+    return tuple(in_baugruppe(verzahnung_der_seite(b.bg.quellen, s), sw_baugruppe.transform(b.komponenten[s["komponente"]]))
+                 for s in (v.a, v.b))
+
+
+def _zahnphase(b: Baulauf, v: Verknuepfung) -> None:
+    """Seite a um ihre Achse drehen, bis Zahn in Lücke steht, und nachrechnen (Spec 4b §5.4.2, Knoten zahnphase:<id>)."""
+    with b.protokoll.knoten_lauf(f"zahnphase:{v.id}", "zahnphase"):
+        try:
+            a, gegen = _verzahnungen(b, v)
+            winkel = phasenwinkel(a, gegen)
+            if abs(winkel) > 1e-9:
+                komp = b.komponenten[v.a["komponente"]]
+                sw_baugruppe.setze_lage(b.app, b.asm, komp, drehe(sw_baugruppe.transform(komp), a.punkt, a.achse, winkel))
+                a, gegen = _verzahnungen(b, v)
+            if abs(rest := phasenfehler(a, gegen)) > TOL_PHASE:
+                raise BauFehler(ZAHNPHASE_FEHLER, f"Phase {rest * 360 / a.geo.z:+.4f}° statt 0 nach Drehung um "
+                                                  f"{winkel:.4f}°", schritt="zahnphase")
+        except Exception as e:
+            raise _mit_kontext(e, ZAHNPHASE_FEHLER, f"Zahnphase {v.id}", "zahnphase") from e
+
+
+def _entitaet_kopplung(b: Baulauf, seite: dict) -> tuple[object, bool]:
+    try:
+        ctx = b.kontexte[b.bg.quellen[basis(seite["komponente"])].schluessel_dokument]
+        return sw_baugruppe.in_baugruppe(b.komponenten[seite["komponente"]], kopplung_referenz(ctx, seite["feature"]))
+    except Exception as e:
+        raise _mit_kontext(e, VERKNUEPFUNG_FEHLER, f"Komponente {seite['komponente']}", "referenz") from e
+
+
+def _kopple(b: Baulauf, v: Verknuepfung):
+    """Kopplung anlegen (Spec 4b §5.4.3): Übersetzung aus den Teilkreisen, Richtung nach sw_baugruppe.REVERSE."""
+    a, gegen = (verzahnung_der_seite(b.bg.quellen, s).geo for s in (v.a, v.b))
+    return sw_baugruppe.kopple(b.asm, v, _entitaet_kopplung(b, v.a), _entitaet_kopplung(b, v.b), *teilkreise(a, gegen),
+                               sw_baugruppe.REVERSE[v.typ])
+
+
 def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
     fehler = None
     for v in alle:
@@ -168,10 +210,19 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
             b.protokoll.uebersprungen(v.id, v.typ)
             continue
         try:
+            if v.typ in KOPPLUNGEN:
+                try:
+                    _zahnphase(b, v)
+                except Exception:
+                    b.protokoll.uebersprungen(v.id, v.typ)
+                    raise
             with b.protokoll.knoten_lauf(v.id, v.typ) as knoten:
                 try:
-                    feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
-                                                      b.bg.spec.get("parameter", {}), b.gesetzt)
+                    if v.typ in KOPPLUNGEN:
+                        feature = _kopple(b, v)
+                    else:
+                        feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
+                                                          b.bg.spec.get("parameter", {}), b.gesetzt)
                     knoten.sw_name = feature.Name
                 except Exception as e:
                     if isinstance(e, BauFehler) and str(e).startswith(f"{v.id} "):
