@@ -14,6 +14,7 @@ Aufruf: .venv\\Scripts\\python.exe -m spikes.s14a_verzahnung
 
 import math
 import time
+import traceback
 
 from spikes._gemeinsam import lauf
 from swki.compiler import sw
@@ -266,6 +267,231 @@ def _nachmessung() -> dict:
         sw.schliesse(app, model)
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Nachtrag A: Wo entsteht die Skizzenzeit?  Aufruf: -m spikes.s14a_verzahnung zeit
+# Varianten (kumulativ): 1 wie bisher; 2 + DisplayWhenAdded aus; 3 + Grafik- und Feature-Baum-Aktualisierung aus;
+# 4 wie 3, aber Mehrfachauswahl in einem Aufruf (MultiSelect2) statt Schleife.
+# ---------------------------------------------------------------------------------------------------------------
+
+SPEICHER_GRENZE_MB = 5500  # Schutz: darüber werden weitere Räder ausgelassen (Neustart nötig)
+
+
+def _dispatch_array(objekte):
+    import pythoncom
+    import win32com.client
+    return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_DISPATCH, list(objekte))
+
+
+def _verzahnung_zeit(ctx, ebene, konturen, breite: float, name: str, variante: int):
+    """Wie _verzahnung (Spline), aber mit Zeit je Teilschritt und den Varianten 1–4."""
+    e, t = {"variante": variante}, {}
+    se = ebene_aufloesen(ctx, ebene)
+    model, sm = ctx.model, ctx.model.SketchManager
+    gesamt = time.perf_counter()
+    sw.auswahl_leeren(model)
+    sw.waehle(model, se.objekt, 0)
+    beginn = time.perf_counter()
+    sm.InsertSketch(True)
+    t["oeffnen"] = time.perf_counter() - beginn
+    wiederherstellen = []
+    try:
+        sk = Skizzierer(ctx, se, sm.ActiveSketch)
+        if variante >= 2:
+            alt = sm.DisplayWhenAdded
+            sm.DisplayWhenAdded = False
+            wiederherstellen.append(lambda a=alt: setattr(sm, "DisplayWhenAdded", a))
+        if variante >= 3:
+            ansicht = model.ActiveView
+            alt = ansicht.EnableGraphicsUpdate
+            ansicht.EnableGraphicsUpdate = False
+            wiederherstellen.append(lambda a=alt: setattr(ansicht, "EnableGraphicsUpdate", a))
+            fm = model.FeatureManager
+            alt = fm.EnableFeatureTree
+            fm.EnableFeatureTree = False
+            wiederherstellen.append(lambda a=alt: setattr(fm, "EnableFeatureTree", a))
+        with sw.einstellung(ctx.app, sw.SW_INPUT_DIM_VAL_ON_CREATE, False), sw.ohne_inferenz(sm):
+            beginn = time.perf_counter()
+            erzeugt = [s for k in konturen for seg in k for s in _zeichne(sk, seg, False)]
+            t["zeichnen"] = time.perf_counter() - beginn
+            e["segmente_none"] = sum(1 for s in erzeugt if s is None)
+            beginn = time.perf_counter()
+            segmente = list(sm.ActiveSketch.GetSketchSegments or ())
+            t["segmente_lesen"] = time.perf_counter() - beginn
+            e["segmente"] = len(segmente)
+            sw.auswahl_leeren(model)
+            beginn = time.perf_counter()
+            if variante >= 4:
+                e["multiselect_anzahl"] = model.Extension.MultiSelect2(_dispatch_array(segmente), False, callout_leer())
+            else:
+                for s in segmente:
+                    sw.waehle(model, s, 0, anhaengen=True)
+            t["auswaehlen"] = time.perf_counter() - beginn
+            beginn = time.perf_counter()
+            model.SketchAddConstraints("sgFIXED")
+            t["sgFIXED"] = time.perf_counter() - beginn
+            sw.auswahl_leeren(model)
+        e["status"] = sm.ActiveSketch.GetConstrainedStatus
+    finally:
+        beginn = time.perf_counter()
+        sm.InsertSketch(True)
+        t["schliessen"] = time.perf_counter() - beginn
+        for f in reversed(wiederherstellen):
+            f()
+    e["s_skizze_gesamt"] = round(time.perf_counter() - gesamt, 3)
+    skizze = sw.letztes_feature(model)
+    skizze.Name = f"{name}_skizze"
+    sw.auswahl_leeren(model)
+    skizze.Select2(False, 0)
+    beginn = time.perf_counter()
+    feature = aufsatz(model, ENDE["blind"], mm(breite), False)
+    e["aufsatz"] = feature is not None
+    try:
+        sw.rebuild(model)
+        e["rebuild"] = "ok"
+    except BauFehler as ex:
+        e["rebuild"] = str(ex)
+    e["s_aufsatz"] = round(time.perf_counter() - beginn, 3)
+    if feature is not None:
+        feature.Name = name
+        e["flaechen"] = len(flaechen(feature))
+        e["koerper"] = len(koerper(model))
+    e["teilschritte_s"] = {k: round(v, 3) for k, v in t.items()}
+    return e
+
+
+def _rad_zeit(app, r, standard, z: int, variante: int) -> dict:
+    vor_dokument = _privat_mb(app)
+    if vor_dokument > SPEICHER_GRENZE_MB:
+        return {"ausgelassen": f"Private Bytes {vor_dokument} > {SPEICHER_GRENZE_MB}", "privat_mb_vor_dokument": vor_dokument}
+    spec = _welle(f"S14a_zeit_z{z}_v{variante}", 10)
+    model, ctx, fehler = baue_teil_dokument(app, r, standard, spec, r.arbeitsordner / AUFTRAG / "w.yaml", AUFTRAG,
+                                            Protokoll(AUFTRAG, "w.yaml", 0, r.sw_jahr))
+    try:
+        if fehler is not None:
+            raise fehler
+        rad = Stirnrad(2.0, z, -0.05)
+        vor_rad = _privat_mb(app)
+        ebene = {"versatz": {"ebene": "vorne", "abstand": 10}}
+        e = _verzahnung_zeit(ctx, ebene, rad.profil(), 16, "z1", variante)
+        e["privat_mb"] = {"vor_dokument": vor_dokument, "vor_rad": vor_rad, "nach_rad": _privat_mb(app)}
+    finally:
+        sw.schliesse(app, model)
+    e["privat_mb"]["nach_schliessen"] = _privat_mb(app)
+    return e
+
+
+def _zeit() -> dict:
+    r, standard = lade_rechner(), lade_standard()
+    app = verbinde(r.sw_jahr)
+    ergebnis = {"privat_mb_start": _privat_mb(app)}
+    for z in (20, 80):
+        for variante in (1, 2, 3, 4):
+            try:
+                ergebnis[f"z{z}_v{variante}"] = _rad_zeit(app, r, standard, z, variante)
+            except Exception as ex:  # eine Variante darf ausfallen, die übrigen laufen weiter
+                ergebnis[f"z{z}_v{variante}"] = {"fehler": repr(ex), "trace": traceback.format_exc()}
+    ergebnis["privat_mb_ende"] = _privat_mb(app)
+    return ergebnis
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Nachtrag B: Zahnweite W_k über Strahl entlang der Grundkreistangente.  Aufruf: -m spikes.s14a_verzahnung zahnweite
+# ---------------------------------------------------------------------------------------------------------------
+
+def _projiziere(mu, face, start, richtung):
+    """Punkt start (mm) entlang richtung (Einheitsvektor) auf die Fläche projizieren; liefert mm-Tupel oder None."""
+    p = mu.CreatePoint(r8_array([mm(c) for c in start]))
+    v = mu.CreateVector(r8_array(richtung))
+    try:
+        face._FlagAsMethod("GetProjectedPointOn")
+    except AttributeError:
+        pass
+    treffer = face.GetProjectedPointOn(p, v)
+    if treffer is None:
+        return None
+    werte = getattr(treffer, "ArrayData", treffer)
+    return tuple(in_mm(c) for c in werte[:3])
+
+
+def _zahnweite_messen(app, r, standard, z: int, abmass: float) -> dict:
+    vor = _privat_mb(app)
+    if vor > SPEICHER_GRENZE_MB:
+        return {"ausgelassen": f"Private Bytes {vor} > {SPEICHER_GRENZE_MB}"}
+    spec = _welle(f"S14a_w_z{z}", 10)
+    model, ctx, fehler = baue_teil_dokument(app, r, standard, spec, r.arbeitsordner / AUFTRAG / "w.yaml", AUFTRAG,
+                                            Protokoll(AUFTRAG, "w.yaml", 0, r.sw_jahr))
+    try:
+        if fehler is not None:
+            raise fehler
+        rad = Stirnrad(2.0, z, abmass)
+        lage_z = 18.0
+        ebene = {"versatz": {"ebene": "vorne", "abstand": 10}}
+        mess, feature, se = _verzahnung(ctx, ebene, rad.profil(), 16, "z1")
+        e = {"z": z, "abmass": abmass, "status": mess["status"], "koerper": mess["koerper"], "s_skizze": mess["s_skizze"]}
+        k, rho = rad.messzaehnezahl(), (rad.r_start + rad.ra) / 2
+        flanken = _flanken(flaechen(feature))
+        flaeche_a, d_a = _naechste_flaeche(flanken, modellpunkt(se.orientierung, *rad.flankenpunkt(1, "rechts", rho), lage_z))
+        flaeche_b, d_b = _naechste_flaeche(flanken, modellpunkt(se.orientierung, *rad.flankenpunkt(k, "links", rho), lage_z))
+        e["flankenwahl_abstand_mm"] = [round(d_a, 6), round(d_b, 6)]
+        phi = math.radians((k - 1) * 180.0 / z)
+        em, ep = (math.cos(phi), math.sin(phi)), (-math.sin(phi), math.cos(phi))
+        mu = sw.mathutil(app)
+        weit = rad.ra + 5.0
+        treffer = {}
+        for vorz in (1, -1):  # Gerade an +r_b·e_m (Spannmitte) bzw. auf der Gegenseite
+            for name, flaeche in (("zahn1_rechts", flaeche_a), ("zahnk_links", flaeche_b)):
+                for seite in (-1, 1):  # Startpunkt bei t = seite·(r_a + 5), Richtung zur Geraden hin
+                    u = vorz * rad.rb * em[0] + seite * weit * ep[0]
+                    v = vorz * rad.rb * em[1] + seite * weit * ep[1]
+                    start = modellpunkt(se.orientierung, u, v, lage_z)
+                    richtung = modellpunkt(se.orientierung, -seite * ep[0], -seite * ep[1], 0.0)
+                    p = _projiziere(mu, flaeche.objekt, start, richtung)  # Korrektur: COM-Objekt der Flaeche
+                    eintrag = {"treffer": p is not None}
+                    if p is not None:
+                        eintrag["punkt_mm"] = [round(c, 5) for c in p]
+                        eintrag["radius_mm"] = round(math.hypot(p[0], p[1]), 5)
+                    treffer[f"gerade{'+' if vorz > 0 else '-'}_{name}_start{'+' if seite > 0 else '-'}"] = eintrag
+        e["treffer"] = treffer
+        soll = rad.zahnweite()
+        e["zahnweite_soll"] = round(soll, 6)
+        e["k"] = k
+        wahl = None
+        for vorz in ("+", "-"):
+            a = [treffer[f"gerade{vorz}_zahn1_rechts_start{s}"] for s in ("-", "+")]
+            b = [treffer[f"gerade{vorz}_zahnk_links_start{s}"] for s in ("-", "+")]
+            ta, tb = next((x for x in a if x["treffer"]), None), next((x for x in b if x["treffer"]), None)
+            if ta and tb:
+                wahl = (vorz, ta, tb)
+                break
+        if wahl is None:
+            e["zahnweite_ist"] = None
+            e["verwendet"] = "kein Treffer an beiden Flanken"
+        else:
+            ist = math.dist(wahl[1]["punkt_mm"], wahl[2]["punkt_mm"])
+            e["verwendet"] = f"gerade{wahl[0]}"
+            e["zahnweite_ist"] = round(ist, 6)
+            e["differenz_mm"] = round(ist - soll, 6)
+            e["trefferradien_mm"] = [wahl[1]["radius_mm"], wahl[2]["radius_mm"]]
+            e["aktiver_bereich_radius_mm"] = [round(rad.r_start, 4), round(rad.ra, 4)]
+        e["privat_mb"] = [vor, _privat_mb(app)]
+    finally:
+        sw.schliesse(app, model)
+    return e
+
+
+def _zahnweite() -> dict:
+    r, standard = lade_rechner(), lade_standard()
+    app = verbinde(r.sw_jahr)
+    ergebnis = {"privat_mb_start": _privat_mb(app)}
+    for z, abmass in ((20, -0.05), (25, -0.05), (50, -0.05), (50, -0.10)):
+        try:
+            ergebnis[f"z{z}_as{abmass}"] = _zahnweite_messen(app, r, standard, z, abmass)
+        except Exception as ex:
+            ergebnis[f"z{z}_as{abmass}"] = {"fehler": repr(ex), "trace": traceback.format_exc()}
+    ergebnis["privat_mb_ende"] = _privat_mb(app)
+    return ergebnis
+
+
 def _untersuche() -> dict:
     r, standard = lade_rechner(), lade_standard()
     app = verbinde(r.sw_jahr)
@@ -282,5 +508,9 @@ if __name__ == "__main__":
     import sys
     if "nachmessung" in sys.argv[1:]:
         lauf("s14a_verzahnung_nachmessung", _nachmessung)
+    elif "zeit" in sys.argv[1:]:
+        lauf("s14a_verzahnung_zeit", _zeit)
+    elif "zahnweite" in sys.argv[1:]:
+        lauf("s14a_verzahnung_zahnweite", _zahnweite)
     else:
         lauf("s14a_verzahnung", _untersuche)

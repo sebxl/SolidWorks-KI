@@ -1,0 +1,317 @@
+{
+  "ok": true,
+  "privat_mb_start": 2943.5,
+  "z20_as-0.05": {
+    "z": 20,
+    "abmass": -0.05,
+    "status": 3,
+    "koerper": 1,
+    "s_skizze": 62.988,
+    "flankenwahl_abstand_mm": [
+      0.0,
+      0.0
+    ],
+    "treffer": {
+      "gerade+_zahn1_rechts_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          20.23396,
+          -1.45555,
+          18.0
+        ],
+        "radius_mm": 20.28625
+      },
+      "gerade+_zahn1_rechts_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          20.23396,
+          -1.45555,
+          18.0
+        ],
+        "radius_mm": 20.28625
+      },
+      "gerade+_zahnk_links_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          15.51407,
+          13.07079,
+          18.0
+        ],
+        "radius_mm": 20.28625
+      },
+      "gerade+_zahnk_links_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          15.51407,
+          13.07079,
+          18.0
+        ],
+        "radius_mm": 20.28625
+      },
+      "gerade-_zahn1_rechts_start-": {
+        "treffer": false
+      },
+      "gerade-_zahn1_rechts_start+": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start-": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start+": {
+        "treffer": false
+      }
+    },
+    "zahnweite_soll": 15.273894,
+    "k": 3,
+    "verwendet": "gerade+",
+    "zahnweite_ist": 15.273897,
+    "differenz_mm": 2e-06,
+    "trefferradien_mm": [
+      20.28625,
+      20.28625
+    ],
+    "aktiver_bereich_radius_mm": [
+      18.7939,
+      22.0
+    ],
+    "privat_mb": [
+      2943.5,
+      4739.6
+    ]
+  },
+  "z25_as-0.05": {
+    "z": 25,
+    "abmass": -0.05,
+    "status": 3,
+    "koerper": 1,
+    "s_skizze": 80.104,
+    "flankenwahl_abstand_mm": [
+      0.0,
+      0.0
+    ],
+    "treffer": {
+      "gerade+_zahn1_rechts_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          24.67091,
+          -1.62255,
+          18.0
+        ],
+        "radius_mm": 24.72421
+      },
+      "gerade+_zahn1_rechts_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          24.67091,
+          -1.62255,
+          18.0
+        ],
+        "radius_mm": 24.72421
+      },
+      "gerade+_zahnk_links_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          20.83761,
+          13.30715,
+          18.0
+        ],
+        "radius_mm": 24.72421
+      },
+      "gerade+_zahnk_links_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          20.83761,
+          13.30715,
+          18.0
+        ],
+        "radius_mm": 24.72421
+      },
+      "gerade-_zahn1_rechts_start-": {
+        "treffer": false
+      },
+      "gerade-_zahn1_rechts_start+": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start-": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start+": {
+        "treffer": false
+      }
+    },
+    "zahnweite_soll": 15.41395,
+    "k": 3,
+    "verwendet": "gerade+",
+    "zahnweite_ist": 15.413959,
+    "differenz_mm": 9e-06,
+    "trefferradien_mm": [
+      24.72421,
+      24.72421
+    ],
+    "aktiver_bereich_radius_mm": [
+      23.4923,
+      27.0
+    ],
+    "privat_mb": [
+      3287.0,
+      4877.9
+    ]
+  },
+  "z50_as-0.05": {
+    "z": 50,
+    "abmass": -0.05,
+    "status": 3,
+    "koerper": 1,
+    "s_skizze": 141.699,
+    "flankenwahl_abstand_mm": [
+      0.0,
+      0.0
+    ],
+    "treffer": {
+      "gerade+_zahn1_rechts_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          49.9116,
+          -1.56665,
+          18.0
+        ],
+        "radius_mm": 49.93618
+      },
+      "gerade+_zahn1_rechts_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          49.9116,
+          -1.56665,
+          18.0
+        ],
+        "radius_mm": 49.93618
+      },
+      "gerade+_zahnk_links_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          39.45848,
+          30.60475,
+          18.0
+        ],
+        "radius_mm": 49.93618
+      },
+      "gerade+_zahnk_links_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          39.45848,
+          30.60475,
+          18.0
+        ],
+        "radius_mm": 49.93618
+      },
+      "gerade-_zahn1_rechts_start-": {
+        "treffer": false
+      },
+      "gerade-_zahn1_rechts_start+": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start-": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start+": {
+        "treffer": false
+      }
+    },
+    "zahnweite_soll": 33.827015,
+    "k": 6,
+    "verwendet": "gerade+",
+    "zahnweite_ist": 33.827011,
+    "differenz_mm": -4e-06,
+    "trefferradien_mm": [
+      49.93618,
+      49.93618
+    ],
+    "aktiver_bereich_radius_mm": [
+      48.254,
+      52.0
+    ],
+    "privat_mb": [
+      3403.1,
+      4955.3
+    ]
+  },
+  "z50_as-0.1": {
+    "z": 50,
+    "abmass": -0.1,
+    "status": 3,
+    "koerper": 1,
+    "s_skizze": 142.007,
+    "flankenwahl_abstand_mm": [
+      0.0,
+      0.0
+    ],
+    "treffer": {
+      "gerade+_zahn1_rechts_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          49.90434,
+          -1.54431,
+          18.0
+        ],
+        "radius_mm": 49.92823
+      },
+      "gerade+_zahn1_rechts_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          49.90434,
+          -1.54431,
+          18.0
+        ],
+        "radius_mm": 49.92823
+      },
+      "gerade+_zahnk_links_start-": {
+        "treffer": true,
+        "punkt_mm": [
+          39.46574,
+          30.58241,
+          18.0
+        ],
+        "radius_mm": 49.92823
+      },
+      "gerade+_zahnk_links_start+": {
+        "treffer": true,
+        "punkt_mm": [
+          39.46574,
+          30.58241,
+          18.0
+        ],
+        "radius_mm": 49.92823
+      },
+      "gerade-_zahn1_rechts_start-": {
+        "treffer": false
+      },
+      "gerade-_zahn1_rechts_start+": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start-": {
+        "treffer": false
+      },
+      "gerade-_zahnk_links_start+": {
+        "treffer": false
+      }
+    },
+    "zahnweite_soll": 33.78003,
+    "k": 6,
+    "verwendet": "gerade+",
+    "zahnweite_ist": 33.780031,
+    "differenz_mm": 1e-06,
+    "trefferradien_mm": [
+      49.92823,
+      49.92823
+    ],
+    "aktiver_bereich_radius_mm": [
+      48.254,
+      52.0
+    ],
+    "privat_mb": [
+      3500.8,
+      5059.4
+    ]
+  },
+  "privat_mb_ende": 3580.3
+}
