@@ -1,0 +1,23 @@
+# Referenz Zahnstangentrieb (Spec 4b): Zahnstange m = M, Z Zähne, Breite B. Ursprung = Mitte von Zahn 1 auf der
+# Profilmittellinie; die Zähne reihen sich entlang +x, Kopf nach +y. Rücken (Höhe H) bis zur Fußlinie y = −1,25·M,
+# darunter zwei Gewinde M5 von unten im Abstand AB (Verschraubung mit dem Schlitten).
+art: teil
+name: Zahnstange
+material: "1.0503"
+eigenschaften: {Benennung: Zahnstange m2 Zahnstangentrieb}
+parameter: {M: 2, Z: 30, AS: -0.05, H: 10, B: 20, XS: 10, AB: 50, TG: 8, GT: 6}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: vorne, elemente: [{rechteck: {mitte: ["=(Z-1)*pi*M/2", "=-1.25*M-H/2"], breite: "=Z*pi*M",
+                                                  hoehe: "=H"}}]}
+    ende: {typ: blind, tiefe: "=B"}
+  - {id: z1, typ: verzahnung, art: zahnstange, ebene: vorne, mitte: [0, 0], modul: "=M", zaehne: "=Z", breite: "=B",
+     zahndickenabmass: "=AS", kopf: "+v"}
+  - {id: f2, typ: normbohrung, art: gewinde, groesse: M5, flaeche: {feature: f1, flaeche: "-y"},
+     positionen: [["=XS", "=-B/2"], ["=XS+AB", "=-B/2"]], tiefe: "=TG", gewindetiefe: "=GT"}
+pruefung:
+  huellquader: ["=Z*pi*M", "=H+2.25*M", "=B"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: Abstand Gewinde, von: {feature: f2, instanz: 1, achse: true}, zu: {feature: f2, instanz: 2, achse: true}, soll: "=AB"}

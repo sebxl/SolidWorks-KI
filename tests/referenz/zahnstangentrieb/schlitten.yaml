@@ -1,0 +1,18 @@
+# Referenz Zahnstangentrieb (Spec 4b): Schlitten zwischen den Leisten (wie 4a, ohne Drehbolzen). Ursprung Mitte
+# Unterseite. Zwei Senkungen von unten für ISO 4762 M5, mit denen die Zahnstange auf dem Schlitten verschraubt ist.
+art: teil
+name: Schlitten
+material: "1.0038"
+eigenschaften: {Benennung: Schlitten Zahnstangentrieb}
+parameter: {L: 80, B: 60, H: 25, XS: 25}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - {id: f2, typ: normbohrung, art: zylinderschraube, groesse: M5, flaeche: {feature: f1, flaeche: "-y"},
+     positionen: [["=-XS", 0], ["=XS", 0]], durch: true}
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  masse_pruefen:
+    - {was: Abstand Senkungen, von: {feature: f2, instanz: 1, achse: true}, zu: {feature: f2, instanz: 2, achse: true}, soll: "=2*XS"}

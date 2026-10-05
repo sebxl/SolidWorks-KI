@@ -28,6 +28,17 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   bei Gewinde mit `tiefe` ist `gewindetiefe` ≤ `tiefe` Pflicht, bei Gewinde mit `durch` ist sie erlaubt).
   Nur Größen aus `swki/wissen/bohrungsnormen.yaml`; `validieren` nennt die verfügbaren. Gewinde werden kosmetisch gebaut. `bohrung` bleibt für freie Durchmesser. Die erste Position
   muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch).
+- Zahnräder und Zahnstangen als `typ: verzahnung` (Spec 4b, Vorlage `tests/referenz/zahnstangentrieb/`): `art:
+  stirnrad | zahnstange`, `ebene` (Standardebene oder `versatz`, keine Fläche), `mitte` (Stirnrad: Radachse;
+  Zahnstange: Mitte von Zahn 1 auf der Profilmittellinie), `modul` (DIN 780 Reihe 1), `zaehne` (Stirnrad ≥ 17),
+  `breite`, `zahndickenabmass` (< 0 für Flankenspiel, z. B. −0,05 bei m 2); Stirnrad optional `winkel` (Zahn 1 gegen
+  +u), Zahnstange optional `kopf: "-v"`; Anforderungswerte als Parameter. Das Feature baut das ganze Rad bzw. nur das
+  Zahnband der Zahnstange: den Rücken als eigene Extrusion genau bis an die Fußlinie (1,25·m unter der
+  Profilmittellinie), sonst entstehen zwei Körper. Wellen mit Rädern: Räder als `verzahnung`, die Wellenabschnitte
+  zwischen ihnen als Kreis-Extrusionen ohne Überlappung (Ausnahme von Modellierregel 1, sonst stimmt `volumen: auto`
+  nicht). Radachse: `{feature: <id>, instanz: 1, achse: true}`. In Ausdrücken ist `pi` erlaubt (Zahnstangenlänge
+  `=Z*pi*M`). `swki pruefen` prüft Kopf-/Fußkreis, Zähnezahl und Zahnweite bzw. Teilung und Zahndicke selbst
+  (`verzahnungen`); `huellquader` bei Rädern weglassen (die Box hängt von der Lage der Zähne ab).
 - Skizzenelemente: `rechteck` (optional `radius`), `polygon` (optional `radien`: ein Wert oder je Ecke, 0 = scharf,
   Radius < halbe kürzere Nachbarkante), `langloch` (`mitte`, `laenge` = Mittenabstand der Bögen, `breite`, `winkel`
   zu u in [0, 180)), `kontur` (`start`, `segmente` aus `{linie: [u, v]}` und `{bogen: [u, v], mitte: [u, v]}`, Bögen

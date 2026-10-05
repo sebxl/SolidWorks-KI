@@ -1,0 +1,31 @@
+# Referenz Zahnstangentrieb (Spec 4b): Ritzelwelle – Welle Ø D entlang z (Länge 2·LW, mittig), Ritzel ZR Zähne
+# (Breite BR, mittig) und Rad Z2 Zähne (Breite B2, ab z = ZA), beide m = M. Die Wellenabschnitte sparen die Räder aus
+# (volumen auto). Achse = Bezugsachse ACHSE (z).
+art: teil
+name: Ritzelwelle
+material: "1.0503"
+eigenschaften: {Benennung: Ritzelwelle Zahnstangentrieb}
+parameter: {M: 2, ZR: 20, Z2: 25, AS: -0.05, D: 12, LW: 60, BR: 20, ZA: 18, B2: 12}
+features:
+  - {id: z1, typ: verzahnung, art: stirnrad, ebene: {versatz: {ebene: vorne, abstand: "=-BR/2"}}, mitte: [0, 0],
+     modul: "=M", zaehne: "=ZR", breite: "=BR", zahndickenabmass: "=AS"}
+  - {id: z2, typ: verzahnung, art: stirnrad, ebene: {versatz: {ebene: vorne, abstand: "=ZA"}}, mitte: [0, 0],
+     modul: "=M", zaehne: "=Z2", breite: "=B2", zahndickenabmass: "=AS"}
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: {versatz: {ebene: vorne, abstand: "=-LW"}}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}
+    ende: {typ: blind, tiefe: "=LW-BR/2"}
+  - id: f2
+    typ: extrusion
+    skizze: {ebene: {versatz: {ebene: vorne, abstand: "=BR/2"}}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}
+    ende: {typ: blind, tiefe: "=ZA-BR/2"}
+  - id: f3
+    typ: extrusion
+    skizze: {ebene: {versatz: {ebene: vorne, abstand: "=ZA+B2"}}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}
+    ende: {typ: blind, tiefe: "=LW-ZA-B2"}
+  - {id: ACHSE, typ: referenz, achse: z}
+pruefung:
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: Ritzel koaxial zur Achse, von: {feature: z1, instanz: 1, achse: true}, zu: {referenz: ACHSE}, soll: 0}
+    - {was: Rad koaxial zur Achse, von: {feature: z2, instanz: 1, achse: true}, zu: {referenz: ACHSE}, soll: 0}

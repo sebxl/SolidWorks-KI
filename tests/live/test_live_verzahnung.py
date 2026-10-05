@@ -1,10 +1,18 @@
 """Live: Feature verzahnung (Spec 4b §4) – Stirnrad auf einer Welle, Zahnstange auf einem Rücken, Achse als Referenz,
 Messung der Verzahnung und Negativfall Zahnweite (SolidWorks muss laufen)."""
 
+import json
+import shutil
+from dataclasses import replace
+from pathlib import Path
+
 import pytest
 
+from swki.cli import main
 from swki.compiler.anker import zylinder_zu_punkten
+from swki.compiler.handler import verzahnung as handler_verzahnung
 from swki.compiler.topologie import flaechen, koerper
+from swki.konfig import lade_rechner
 from swki.pruefung.bewertung import verzahnung_abweichungen
 from swki.pruefung.geometrie import volumen_auto
 from swki.pruefung.messen import verzahnungen
@@ -12,6 +20,7 @@ from swki.pruefung.messen import verzahnungen
 from .bauhilfe import gebautes_teil, volumen_mm3
 
 pytestmark = pytest.mark.sw
+REFERENZ = Path(__file__).resolve().parents[1] / "referenz" / "zahnstangentrieb"
 RAD = {
     "art": "teil", "name": "Rad", "parameter": {"M": 2, "Z": 20, "B": 16, "AS": -0.05, "L": 20},
     "features": [
@@ -72,3 +81,32 @@ def test_messung_der_verzahnung(spec):
         ist = verzahnungen(ctx.model, spec, 0.1, ctx.app)["z1"]
         assert isinstance(ist, dict), ist
         assert verzahnung_abweichungen(spec["features"][1], ist, spec["parameter"], TOL) == [], ist
+
+
+def _lauf(capsys, *argv):
+    code = main(list(argv))
+    return code, json.loads(capsys.readouterr().out)
+
+
+def test_negativ_zahnweite(capsys, tmp_path, monkeypatch):
+    # Negativfall E1 (Spec 4b §4.6): der Bau verfälscht das Zahndickenabmaß um −0,05 mm (die Spec bleibt gültig und
+    # unverändert) → genau der Mangel verzahnungen (Zahnweite); das Volumen bleibt in der Toleranz (−0,13 %)
+    original = handler_verzahnung.aus_feature
+    monkeypatch.setattr(handler_verzahnung, "aus_feature",
+                        lambda f, p: replace(original(f, p), abmass=original(f, p).abmass - 0.05))
+    auftrag = tmp_path / "SWKI-LIVE-ZAHNWEITE"
+    shutil.copytree(REFERENZ, auftrag)
+    spec = auftrag / "antriebswelle.yaml"
+    try:
+        assert _lauf(capsys, "validieren", str(spec))[0] == 0
+        assert _lauf(capsys, "freigeben", str(spec))[0] == 0
+        code, bau = _lauf(capsys, "bauen", str(spec))
+        assert code == 0, bau
+        code, bericht = _lauf(capsys, "pruefen", str(spec))
+        maengel = {m["pruefung"]: m for m in bericht["maengel"]}
+        assert set(maengel) == {"verzahnungen"}, maengel
+        assert maengel["verzahnungen"]["knoten"] == ["z1"]
+        pruefung = next(p for p in bericht["pruefungen"] if p["id"] == "verzahnungen")
+        assert any(t.startswith("zahnweite W6") for t in pruefung["ist"]["z1"]), pruefung
+    finally:
+        shutil.rmtree(lade_rechner().arbeitsordner / "SWKI-LIVE-ZAHNWEITE", ignore_errors=True)

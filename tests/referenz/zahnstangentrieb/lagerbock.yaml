@@ -1,0 +1,19 @@
+# Referenz Zahnstangentrieb (Spec 4b): Lagerbock (zweimal verwendet, je einer auf jeder Führungsleiste). Ursprung Mitte
+# Unterseite, Höhe HL in y, Dicke T in z. Zwei Lagerbohrungen DL für Ritzelwelle (YR) und Antriebswelle (YA); ihr
+# Abstand ist der Achsabstand der Stirnradstufe m·(z1 + z2)/2 = 75.
+art: teil
+name: Lagerbock
+material: "1.0038"
+eigenschaften: {Benennung: Lagerbock Zahnstangentrieb}
+parameter: {B: 40, HL: 165, T: 20, YR: 32.5, YA: 107.5, DL: 12.5}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: vorne, elemente: [{rechteck: {mitte: [0, "=HL/2"], breite: "=B", hoehe: "=HL"}}]}
+    ende: {typ: blind, tiefe: "=T"}
+  - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+z"}, positionen: [[0, "=YR"], [0, "=YA"]],
+     durchmesser: "=DL", durch: true}
+pruefung:
+  huellquader: ["=B", "=HL", "=T"]
+  masse_pruefen:
+    - {was: Achsabstand Lagerbohrungen, von: {feature: f2, instanz: 1, achse: true}, zu: {feature: f2, instanz: 2, achse: true}, soll: "=YA-YR"}
