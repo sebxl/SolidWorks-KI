@@ -13,10 +13,17 @@
 13 Speichern, Schließen, Öffnen: Kopplungen vorhanden, Antrieb auf 30 dreht die Ritzelwelle um 30/20 rad.
 
 Aufruf: .venv\\Scripts\\python.exe -m spikes.s14b_kopplung
+
+Nachtrag Zeile 13 (nur messen): .venv\\Scripts\\python.exe -m spikes.s14b_kopplung neuoeffnen
+  Öffnet die gespeicherte S14B\\Getriebeprobe.sldasm wie `swki pruefen` (Teile der Grenze mit Kontext aus der Datei, dann
+  die Baugruppe, aufloesen), treibt g1 über sw_baugruppe.treibe/stelle auf 0, 30, 60 (Lage und aufsummierte Drehung je
+  Stellung), löscht die treibende Verknüpfung, liest Status und k1/k2 zurück und schließt ohne Speichern.
+  Ergebnis: docs/stufe0/ergebnisse/s14b_kopplung_neuoeffnen.json (setzt einen früheren Lauf des Spikes voraus).
 """
 
 import math
 import shutil
+import sys
 import time
 from pathlib import Path
 
@@ -34,7 +41,7 @@ from swki.compiler.protokoll import Protokoll
 from swki.compiler.topologie import flaechen
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
 from swki.pruefung.bilder import ANSICHTEN, SW_TIFF_SCREEN_OR_PRINT_CAPTURE
-from swki.pruefung.messen import oeffne
+from swki.pruefung.messen import kontext_aus_datei, oeffne
 from swki.spec.laden import lade_spec, lade_yaml
 from swki.speicher import privat_mb
 from swki.verbindung import dispatch_array, in_mm, mm, r8_array, verbinde
@@ -285,5 +292,93 @@ def _untersuche() -> dict:
     return ergebnis
 
 
+def _lesen(f) -> dict:
+    """Typ, Fehlercode und GetDefinition einer Kopplung (wie im Lauf, Zeile 6)."""
+    d = f.GetDefinition
+    typ = int(f.GetSpecificFeature2.Type)
+    e = {"typ": typ, "fehlercode": sw_baugruppe.fehlercode(f), "reverse": bool(d.Reverse)}
+    if typ == TYP["zahnrad"]:
+        e.update(zaehler=in_mm(d.GearRatioNumerator), nenner=in_mm(d.GearRatioDenominator))
+    else:
+        e.update(durchmesser=in_mm(d.DiameterVal), art=d.DiameterType)
+    return e
+
+
+def _neuoeffnen() -> dict:
+    """Nachtrag Zeile 13: den Antriebsweg von `swki pruefen` an der gespeicherten Getriebeprobe messen."""
+    r, standard = lade_rechner(), lade_standard()
+    app = verbinde(r.sw_jahr)
+    ordner = r.arbeitsordner / AUFTRAG
+    bg = _Probe(ordner)
+    pid = int(app.GetProcessID)
+    ergebnis = {"privat_mb_vorher": privat_mb(pid)}
+    tol = standard["toleranzen"]["anker_mm"]
+    offen, kontexte, asm = [], {}, None
+    try:
+        for datei in ("platte.yaml", "zahnstange.yaml"):  # die Dokumente der Grenze g1 (wie pruefen: offen_halten)
+            spec = bg.teile[datei]
+            model = oeffne(app, ordner / f"{spec['name']}.sldprt")
+            offen.append(model)
+            kontexte[datei] = kontext_aus_datei(app, model, spec, ordner / datei, tol, {"knoten": []})
+        asm = oeffne(app, ordner / "Getriebeprobe.sldasm")
+        sw_baugruppe.aufloesen(asm)
+        namen = {bg.teile[k["quelle"]["teil"]]["name"]: k["id"] for k in bg.spec["komponenten"]}
+        komponenten = {namen[k.Name2.rsplit("-", 1)[0]]: k for k in sw_baugruppe.komponenten(asm)}
+        ergebnis["komponenten"] = sorted(komponenten)
+
+        def ent(seite):
+            ctx = kontexte[bg.quellen[basis(seite["komponente"])].datei]
+            ref = loese_im_teil(ctx, {k: w for k, w in seite.items() if k != "komponente"})
+            return sw_baugruppe.in_baugruppe(komponenten[seite["komponente"]], ref)
+
+        ergebnis["verknuepfungen"] = [f.Name for f in sw_baugruppe.verknuepfungen(asm)]
+        ergebnis["status_beim_oeffnen"] = _status(komponenten)
+        g1 = next(v for v in verknuepfungen(bg.spec, bg.quellen) if v.id == "g1")
+        grenze = next(f for f in sw_baugruppe.verknuepfungen(asm) if f.Name == "g1")
+        sw_baugruppe.unterdruecke(asm, grenze, True)
+        ergebnis["status_grenze_unterdrueckt"] = _status(komponenten)
+        antrieb = sw_baugruppe.treibe(asm, g1, ent(g1.a), ent(g1.b), 0.0)
+        ergebnis["status_mit_antrieb"] = _status(komponenten)
+        wellen = ("ritzelwelle", "antriebswelle")
+        lagen, summe = {}, {k: 0.0 for k in wellen}
+        stellungen = []
+        for wert in (0.0, 30.0, 60.0):
+            t0 = time.perf_counter()
+            meldung = sw_baugruppe.stelle(asm, antrieb, "abstand", wert)
+            dauer = time.perf_counter() - t0
+            jetzt = {k: sw_baugruppe.transform(komponenten[k]) for k in ("zahnstange", *wellen)}
+            if not lagen:
+                x0 = in_mm(jetzt["zahnstange"][9])
+            else:
+                for k in wellen:
+                    summe[k] += _drehwinkel_z(lagen[k], jetzt[k])
+            lagen = jetzt
+            stellungen.append({
+                "wert": wert, "meldung": meldung, "s": round(dauer, 3), "privat_mb": privat_mb(pid),
+                "x_zahnstange_mm": round(in_mm(jetzt["zahnstange"][9]), 4),
+                "verschiebung_zahnstange_mm": round(in_mm(jetzt["zahnstange"][9]) - x0, 4),
+                "drehung_z_aufsummiert": {k: round(w, 4) for k, w in summe.items()},
+                "lage_transform2": {k: [round(v, 6) for v in t] for k, t in jetzt.items()}})
+        ergebnis["stellungen"] = stellungen
+        ergebnis["soll"] = {"zahnstange_mm": [30, 60], "ritzelwelle_grad": [85.9437, 171.8873],
+                            "antriebswelle_grad": [-42.9718, -85.9437]}
+        sw_baugruppe.loesche(asm, antrieb)
+        sw_baugruppe.unterdruecke(asm, grenze, False)
+        ergebnis["status_danach"] = _status(komponenten)
+        ergebnis["verknuepfungen_danach"] = [f.Name for f in sw_baugruppe.verknuepfungen(asm)]
+        ergebnis["ruecklesen"] = {n: _lesen(next(f for f in sw_baugruppe.verknuepfungen(asm) if f.Name == n))
+                                  for n in ("k1", "k2")}
+    finally:
+        if asm is not None:
+            sw.schliesse(app, asm)  # ohne Speichern (wie swki pruefen)
+        for model in reversed(offen):
+            sw.schliesse(app, model)
+    ergebnis["privat_mb_nachher"] = privat_mb(pid)
+    return ergebnis
+
+
 if __name__ == "__main__":
-    lauf("s14b_kopplung", _untersuche)
+    if sys.argv[1:] == ["neuoeffnen"]:
+        lauf("s14b_kopplung_neuoeffnen", _neuoeffnen)
+    else:
+        lauf("s14b_kopplung", _untersuche)
