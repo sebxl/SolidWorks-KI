@@ -306,10 +306,13 @@ def bewerte_bewegungen(spec: dict, bws: list[Bewegung], m: BewegungsMesswerte, t
     p = spec.get("parameter", {})
     erwartet = {b["name"]: b.get("erwartet", {}) for b in spec.get("bewegungen", [])}
     pruefungen = []
+    freiheitsgrade: set[str] = set()  # Komponenten mit schon erzeugtem freiheitsgrad:<k>; die erste Bewegung gewinnt
     for b in bws:
         laeufe = [lauf for lauf in m.laeufe if lauf.bewegung == b.name]
         grund = next((lauf for lauf in laeufe if not lauf.gegen), None)
-        pruefungen += [_freiheitsgrad(k, m.status_frei, m.status_gehalten) for k in (b.komponente, *b.gekoppelt)]
+        neu = [k for k in dict.fromkeys((b.komponente, *b.gekoppelt)) if k not in freiheitsgrade]
+        freiheitsgrade.update(neu)
+        pruefungen += [_freiheitsgrad(k, m.status_frei, m.status_gehalten) for k in neu]
         fehler = [{"gegen": lauf.gegen, **lauf.fehler} for lauf in laeufe if lauf.fehler]
         pruefungen.append(eintrag(f"bewegung:{b.name}", not fehler, ist=fehler, knoten=[b.komponente] if fehler else []))
         kollisionen = [k for lauf in laeufe for k in lauf.kollisionen]

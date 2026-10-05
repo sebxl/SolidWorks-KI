@@ -124,3 +124,12 @@ def test_pi_ist_kein_parametername():
 def test_gekoppelt_darf_unterbestimmt_sein():
     assert _erlaubt_unterbestimmt(spec(), "ritzelwelle") is True
     assert _erlaubt_unterbestimmt(spec(), "lagerbock") is False
+
+
+@pytest.mark.parametrize("seite", ["anlage_a", "anlage_b"])
+def test_nur_feature_auch_in_anlage(seite):
+    s = spec()
+    v(s, "s1")[seite] = {"komponente": "ritzelwelle", "feature": "z1"}
+    pfade = [b["pfad"] for b in plausibel_befunde(s, quellen())
+             if b["meldung"].startswith("{komponente, feature} nur bei zahnrad/zahnstange")]
+    assert pfade == [f"verknuepfungen[{[x['id'] for x in s['verknuepfungen']].index('s1')}].{seite}"]

@@ -350,7 +350,7 @@ def _kopplung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
         pfad = f"verknuepfungen[{i}]"
         if v["typ"] not in KOPPLUNGEN:
             befunde += [_b(f"{pfad}.{s}", "{komponente, feature} nur bei zahnrad/zahnstange; sonst flaeche, achse oder "
-                                          "referenz angeben") for s in ("a", "b") if _nur_feature(v[s])]
+                                          "referenz angeben") for s in ("a", "b", "anlage_a", "anlage_b") if s in v and _nur_feature(v[s])]
             continue
         arten = {"a": "stirnrad", "b": "stirnrad" if v["typ"] == "zahnrad" else "zahnstange"}
         moduln = {}

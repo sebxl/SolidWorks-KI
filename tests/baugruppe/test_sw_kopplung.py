@@ -156,3 +156,12 @@ def test_kopple_mit_teilkreisen_und_richtung(baulauf, monkeypatch):
     bau._kopple(baulauf, _kopplung(baulauf, "k1"))
     assert [a[1:] for a in aufrufe] == [("antriebswelle", "ritzelwelle", 100.0, 50.0, False),
                                        ("ritzelwelle", "zahnstange", 40.0, 0.0, False)]
+
+
+def test_setze_lage_scheitert_mit_zahnphase_fehler(monkeypatch):
+    monkeypatch.setattr(sw_baugruppe.sw, "mathutil", lambda app: SimpleNamespace(CreateTransform=lambda t: t))
+    monkeypatch.setattr(sw_baugruppe, "r8_array", list)
+    komp = SimpleNamespace(Name2="welle-1", SetTransformAndSolve2=lambda t: False)
+    with pytest.raises(BauFehler) as e:
+        sw_baugruppe.setze_lage(None, object(), komp, [0.0] * 16)
+    assert e.value.code == ZAHNPHASE_FEHLER and "welle-1" in str(e.value) and e.value.schritt == "zahnphase"

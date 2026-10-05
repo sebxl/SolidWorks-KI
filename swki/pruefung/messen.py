@@ -1,6 +1,7 @@
 """Messwerte eines gespeicherten Laufs aus SolidWorks lesen (Spike S9b, Bausteine 19 und 23)."""
 
 import math
+from dataclasses import replace
 from pathlib import Path
 
 from swki.cli import SwkiFehler
@@ -205,10 +206,27 @@ def _zahnstange(vz: Verzahnung, faces: list[Flaeche]) -> dict:
     return ergebnis
 
 
-def verzahnungen(model, soll_spec: dict, tol_mm: float, app) -> dict[str, dict | str]:
+def _verzahnung_messlage(f_soll: dict, p_soll: dict, aktuell: dict | None) -> Verzahnung | str:
+    """Verzahnung für die Messung: Geometrie (Modul, Zähnezahl, Abmaß) aus dem Feature der freigegebenen Kopie, Lage
+    (Ebene, Mitte, Winkel, Breite, umkehren) aus dem gleichnamigen Feature der aktuellen Spezifikation – die Lage ist
+    Bauweg und darf sich nach der Freigabe ändern. Ohne aktuelle Spezifikation gilt die Soll-Spezifikation; fehlt das
+    Feature in der aktuellen oder hat es eine andere Art, kommt ein Fehlertext."""
+    soll = verzahnung_im_teil(f_soll, p_soll)
+    if aktuell is None:
+        return soll
+    f_akt = next((f for f in aktuell["features"] if f["id"] == f_soll["id"] and f["typ"] == "verzahnung"), None)
+    if f_akt is None:
+        return f"Verzahnung {f_soll['id']} fehlt in der aktuellen Spezifikation"
+    if f_akt["art"] != f_soll["art"]:
+        return (f"Verzahnung {f_soll['id']}: art {f_akt['art']} in der aktuellen Spezifikation statt {f_soll['art']} "
+                "in der Freigabe")
+    return replace(verzahnung_im_teil(f_akt, aktuell.get("parameter", {})), geo=soll.geo)
+
+
+def verzahnungen(model, soll_spec: dict, tol_mm: float, app, aktuell_spec: dict | None = None) -> dict[str, dict | str]:
     """Für jedes verzahnung-Feature der Soll-Spezifikation die Messwerte des gleichnamigen Features (Spec 4b §4.5)
-    oder einen Fehlertext. Lage aus der Soll-Spezifikation (swki.verzahnung.verzahnung_im_teil); app für die
-    MathUtility der Zahnweitenmessung."""
+    oder einen Fehlertext. Sollwerte (Modul, Zähnezahl, Abmaß) aus der Soll-Spezifikation, Lage aus aktuell_spec
+    (Standard: Soll-Spezifikation; swki.verzahnung.verzahnung_im_teil); app für die MathUtility der Zahnweitenmessung."""
     ergebnis: dict[str, dict | str] = {}
     p = soll_spec.get("parameter", {})
     mu = None
@@ -220,7 +238,10 @@ def verzahnungen(model, soll_spec: dict, tol_mm: float, app) -> dict[str, dict |
             ergebnis[f["id"]] = f"Feature {f['id']} fehlt im Teil"
             continue
         try:
-            vz = verzahnung_im_teil(f, p)
+            vz = _verzahnung_messlage(f, p, aktuell_spec)
+            if isinstance(vz, str):
+                ergebnis[f["id"]] = vz
+                continue
             faces = flaechen(feature)
             if isinstance(vz.geo, Stirnrad):
                 mu = mu or sw.mathutil(app)
@@ -322,5 +343,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         normbohrungen=normbohrungen(model, freigegeben or ctx.spec),
         koerper=len(koerper(model)),
         durchmesser=durchmesser(ctx, ctx.spec),
-        verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app),
+        verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app, ctx.spec),
     )

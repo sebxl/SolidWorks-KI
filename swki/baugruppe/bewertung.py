@@ -185,8 +185,10 @@ def _eingriff(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte, to
         elif isinstance(gelesen, dict) and v["typ"] == "zahnrad":
             # lagenunabhängig: SolidWorks liefert Zähler und Nenner vertauscht zurück (Spike S14b Zeile 6)
             soll_u = min(zaehler, nenner) / max(zaehler, nenner)
-            ist_u = min(gelesen["zaehler"], gelesen["nenner"]) / max(gelesen["zaehler"], gelesen["nenner"])
-            if abs(ist_u - soll_u) > TOL_UEBERSETZUNG * soll_u:
+            klein, gross = sorted((gelesen["zaehler"], gelesen["nenner"]))
+            if klein <= 0:
+                gruende.append(f"Übersetzung nicht lesbar ({gelesen['zaehler']:g}:{gelesen['nenner']:g})")
+            elif abs(klein / gross - soll_u) > TOL_UEBERSETZUNG * soll_u:
                 gruende.append(f"Übersetzung {gelesen['zaehler']:g}:{gelesen['nenner']:g} statt {zaehler:g}:{nenner:g}")
         elif isinstance(gelesen, dict) and abs(gelesen["durchmesser"] - zaehler) > tol_mm:
             gruende.append(f"Teilkreis {gelesen['durchmesser']:g} statt {zaehler:g} mm")

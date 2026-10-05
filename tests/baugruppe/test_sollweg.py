@@ -113,3 +113,15 @@ def test_laufbericht_mit_grenze_und_bereich():
     m = BewegungsMesswerte({"schlitten": 2, "rad": 2}, {"schlitten": 3, "rad": 3}, [_lauf(*LINEAR)], [])
     _, bericht = bewerte_bewegungen(_spec([]), [HUB], m, 0.1)
     assert bericht["laeufe"][0]["grenz_id"] == "g1" and bericht["laeufe"][0]["bereich"] == [0.0, 200.0]
+
+
+def test_freiheitsgrad_je_komponente_nur_einmal():
+    # zwei Bewegungen erreichen dieselbe gekoppelte Komponente: freiheitsgrad:rad entsteht nur einmal (erste behalten)
+    hub2 = Bewegung("Hub2", "g2", "abstand", "schlitten2", 0.0, 200.0, 4, ("rad",))
+    spec = {"parameter": {}, "bewegungen": [{"name": "Hub", "grenze": "g1"}, {"name": "Hub2", "grenze": "g2"}]}
+    frei = {"schlitten": 2, "schlitten2": 2, "rad": 2}
+    gehalten = {"schlitten": 3, "schlitten2": 3, "rad": 3}
+    laeufe = [_lauf(*LINEAR), Lauf("Hub2", stellungen=[0.0], lagen=[{}], grenze={"oben": False, "unten": None})]
+    pruefungen, _ = bewerte_bewegungen(spec, [HUB, hub2], BewegungsMesswerte(frei, gehalten, laeufe, []), 0.1)
+    ids = [p["id"] for p in pruefungen if p["id"].startswith("freiheitsgrad:")]
+    assert sorted(ids) == ["freiheitsgrad:rad", "freiheitsgrad:schlitten", "freiheitsgrad:schlitten2"]

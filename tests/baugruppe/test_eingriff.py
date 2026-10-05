@@ -93,3 +93,12 @@ def test_bericht_kopplungen():
     assert "## Kopplungen (letzter Lauf)" in text
     assert "| k1 | zahnstange | ritzelwelle → zahnstange | Ø 40 | Ø 40 | 20 / 20 | 10 |" in text
     assert "| k2 | zahnrad | antriebswelle → ritzelwelle | 100:50 | Kopplung k2 nicht lesbar: x | 75 / 75 | 10 |" in text
+
+
+@pytest.mark.parametrize("gelesen", [{"zaehler": 0.0, "nenner": 50.0}, {"zaehler": 100.0, "nenner": 0.0},
+                                     {"zaehler": 0.0, "nenner": 0.0}])
+def test_uebersetzung_null_ist_nicht_lesbar(gelesen):
+    # SolidWorks liefert Zähler oder Nenner 0: kein ZeroDivisionError, sondern ein Mangel an dieser Kopplung
+    p, _ = _pruefe(_messwerte(gelesen={"k1": GELESEN["k1"], "k2": gelesen | {"umkehren": False}}))
+    assert p["eingriff:k2"]["ok"] is False and "Übersetzung nicht lesbar" in p["eingriff:k2"]["hinweis"]
+    assert p["eingriff:k2"]["knoten"] == ["k2"] and p["eingriff:k1"]["ok"] is True

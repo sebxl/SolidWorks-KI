@@ -8,7 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from swki.baugruppe.aufloesen import GRENZEN
-from swki.baugruppe.fehler import KOMPONENTE_FEHLER, VERKNUEPFUNG_FEHLER
+from swki.baugruppe.fehler import KOMPONENTE_FEHLER, VERKNUEPFUNG_FEHLER, ZAHNPHASE_FEHLER
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler
 from swki.compiler.fehler import (FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, REBUILD_FEHLER, REFERENZ_NICHT_GEFUNDEN,
@@ -293,7 +293,7 @@ def ist_unterdrueckt(feature) -> bool:
 def setze_lage(app, asm, komp, t: list[float]) -> None:
     """Lage einer Komponente setzen (SetTransformAndSolve2; die Verknüpfungen bleiben erfüllt) und neu aufbauen."""
     if not komp.SetTransformAndSolve2(sw.mathutil(app).CreateTransform(r8_array(t))):
-        raise BauFehler(VERKNUEPFUNG_FEHLER, f"{komp.Name2}: Lage ließ sich nicht setzen", schritt="zahnphase")
+        raise BauFehler(ZAHNPHASE_FEHLER, f"{komp.Name2}: Lage ließ sich nicht setzen", schritt="zahnphase")
     sw.rebuild(asm)
 
 
