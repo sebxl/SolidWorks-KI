@@ -174,3 +174,28 @@ def test_grundstellung_fehler(tmp_path, asm):
     fehler = bau._grundstellung(b)
     assert fehler.code == "GRUNDSTELLUNG_FEHLER" and "Grundstellung Schwenk" in str(fehler)
     assert asm.aufrufe == [] and [k.status for k in b.protokoll.knoten] == ["ok", "fehler"]
+
+def test_status_baut_vor_dem_lesen_voll_neu_auf():
+    """Diagnose 4b (Task 13): GetConstrainedStatus liest über die Kopplungskette veraltet, erst nach ForceRebuild3
+    stimmt der Status – status() muss vor dem Lesen vollständig neu aufbauen (Reihenfolge)."""
+    ereignisse: list = []
+
+    class Komp:
+        def __init__(self, iid):
+            self.iid = iid
+            self.Name2 = iid
+
+        @property
+        def GetConstrainedStatus(self):  # noqa: N802 (SolidWorks-Name)
+            ereignisse.append(("status", self.iid))
+            return 3
+
+    class Asm:
+        def ForceRebuild3(self, nur_oben):  # noqa: N802 (SolidWorks-Name)
+            ereignisse.append(("ForceRebuild3", nur_oben))
+            return True
+
+    mech = SwMechanik(None, Asm(), {}, None, {"a": Komp("a"), "b": Komp("b")})
+    assert mech.status() == {"a": 3, "b": 3}
+    assert ereignisse == [("ForceRebuild3", False), ("status", "a"), ("status", "b")]
+
