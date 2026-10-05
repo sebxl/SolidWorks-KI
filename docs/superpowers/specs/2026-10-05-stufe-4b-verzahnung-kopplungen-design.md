@@ -3,7 +3,9 @@
 Ergänzung zu [2026-09-26-solidworks-ki-design.md](2026-09-26-solidworks-ki-design.md) (§4 Spezifikation, §6 Prüfung, §11 Stufen),
 [2026-10-03-stufe-3b-baugruppen-design.md](2026-10-03-stufe-3b-baugruppen-design.md) (Baugruppen-Format, Bauen, Prüfen) und
 [2026-10-03-stufe-4a-bewegungen-design.md](2026-10-03-stufe-4a-bewegungen-design.md) (Grenzen, `freiheitsgrade`, `bewegungen`,
-Bewegungsprüfung; Abweichungen der Umsetzung in `docs/stufe4a/ergebnisse.md`). Stand 2026-10-05, mit dem Nutzer abgestimmt.
+Bewegungsprüfung; Abweichungen der Umsetzung in `docs/stufe4a/ergebnisse.md`). Stand 2026-10-05, mit dem Nutzer abgestimmt;
+bei der Planung nachgezogen (Plan `docs/superpowers/plans/2026-10-05-stufe-4b-verzahnung-kopplungen.md`): §3, §4.2, §4.3,
+§4.5, §4.6, §5.4, §5.5, §8.
 
 ## 1. Ziel
 
@@ -37,7 +39,9 @@ Etappe 1 live besteht.
 ## 3. Bausteine
 
 ```
-swki/wissen/verzahnung.py             neu: Bezugsprofil, Kreise, Evolventenpunkte, Profil, Zahnweite, Profilfläche (rein Python)
+swki/verzahnung.py                    neu: Bezugsprofil, Kreise, Evolventenpunkte, Profil, Zahnweite, Profilfläche, Lage im
+                                      Teil (rein Python; nachgezogen bei der Planung: nicht unter wissen/, das nur Daten hält)
+swki/baugruppe/kopplung.py            neu: Kopplungsgraph, Übersetzung, Zahnphase, Eingriff (rein Python)
 swki/wissen/module_din780.yaml        neu: Modulreihe 1 (Abgleich ≥ 2 Quellen)
 swki/compiler/handler/verzahnung.py   neu: Handler (Skizze aus berechneten Punkten, Extrusion, Bezugsachse)
 schema/teil.schema.json               + typ verzahnung
@@ -112,6 +116,8 @@ Rein in Python (`swki/wissen/verzahnung.py`), ohne SolidWorks testbar. Bezugspro
 - Flanken: Evolventen vom Grundkreis bis zum Kopfkreis. Liegt der Grundkreis über dem Fußkreis (z < 42), geht die Flanke radial
   bis zur Fußrundung weiter; die Fußrundung schließt tangential an Flanke bzw. radiale Verlängerung und Fußkreis an. Die Trochoide
   des Wälzfräsers wird **vereinfacht** nicht erzeugt; ob das kollisionsfrei kämmt, belegt die Eingriffsprüfung (§5.6).
+  *Nachgezogen bei der Planung, 2026-10-05:* Die Evolvente beginnt bei `r_start = max(r_b, √(r_f² + 2·r_f·ρ_f))`; die Fußrundung berührt die radiale
+  Linie (nicht die Evolvente). Liegt `r_start` über `r_b`, entsteht dort ein flacher Knick unter dem aktiven Profil.
 - Zahndicke am Teilkreis (Bogen) s = π·m/2 + A_s, die Flanken symmetrisch zur Zahnmitte.
 - **Bezug:** Die Mitte von Zahn 1 liegt auf +u (Skizzenkoordinaten), gedreht um `winkel`.
 
@@ -120,6 +126,10 @@ Rein in Python (`swki/wissen/verzahnung.py`), ohne SolidWorks testbar. Bezugspro
   Fußhöhe 1,25m, Fußrundung 0,38m.
 - Das Feature erzeugt nur das **Zahnband** von der Fuß- bis zur Kopflinie, Länge z·p, an beiden Enden in Lückenmitte. Den Rücken
   baut ein eigenes Feature (Extrusion), mit dem das Zahnband verschmilzt.
+  *Nachgezogen bei der Planung, 2026-10-05:* Das Zahnband besteht aus einer geschlossenen Kontur **je Zahn** (Fußlinie unter dem Zahn, Fußrundungen,
+  Flanken, Kopflinie); eine einzige Kontur entartet, weil die Fußlinien zwischen den Zähnen auf der Schlusslinie lägen. Diese
+  Fußlinien sind Flächen des Rückens, der deshalb genau bis an die Fußlinie reichen muss (sonst zwei Körper, Prüfung
+  `koerper`).
 - **Bezug:** Die Mitte von Zahn 1 liegt bei u = `mitte[0]` auf der Profilmittellinie v = `mitte[1]`.
 
 **Weitere Größen:** Zahnweite W_k mit Messzähnezahl k (§4.5), Profilfläche (für `volumen: auto`).
@@ -137,6 +147,10 @@ Zusätzlich zu den bestehenden Prüfungen:
 
 Hinweis `art: abmass_gross`, wenn |A_s| > 0,1·m. Die Modultabelle wird nur mit Abgleich erweitert (≥ 2 unabhängige Quellen, wie
 die Normtabellen).
+
+*Nachgezogen bei der Planung, 2026-10-05:* zusätzlich `VERZAHNUNG_GEOMETRIE`, wenn das vereinfachte Profil nicht konstruierbar ist (Zahn spitz, Lücke
+zu eng); `winkel` nur beim Stirnrad und in [0, 360), `kopf` nur bei der Zahnstange; `pi` ist kein Parametername. Die Tabelle
+enthält Reihe 1 von 0,05 bis 20 mm (zwei Quellen); 25 … 50 sind bis zu einem weiteren Abgleich gesperrt.
 
 ### 4.4 Bauen und Freigabe
 
@@ -159,6 +173,9 @@ Abweichungen im Klartext.
   Abstand der beiden äußeren Flanken über k Zähne (die gemeinsame Normale tangiert den Grundkreis).
 - **Zahnstange:** Zahnhöhe 2,25m, Teilung als Normalabstand gleichgerichteter Flanken π·m·cos α, Zahndicke auf der
   Profilmittellinie π·m/2 + A_s (aus den Flankenebenen gerechnet), Zähnezahl.
+  *Nachgezogen bei der Planung, 2026-10-05:* statt der Zahnhöhe die **Kopflinie** (Abstand der Kopfflächen von der Profilmittellinie = m), weil die
+  Fußlinie zum Rücken gehört; die Teilung als Abstand der Schnittpunkte gleichgerichteter Flanken mit der Profilmittellinie
+  (= π·m).
 - **Toleranz** `toleranzen.verzahnung_mm` (`config/standard.yaml`); der Wert kommt aus Spike S14a (erreichbare Genauigkeit von
   Spline bzw. Polylinie), deutlich unter |A_s|.
 - Der Messweg (IMeasure zwischen Flankenflächen oder Rechnung aus den Flächendefinitionen) folgt aus Spike S14a.
@@ -171,8 +188,10 @@ Abweichungen im Klartext.
   `antriebswelle.yaml` (Welle mit Rad z1), `zahnstange.yaml` (Rücken, Zahnband, zwei Gewinde für ISO 4762). Die Referenzliste der
   Regression nimmt die drei Teile als Einzelteil-Referenzen auf.
 - Beispielwerte (der Plan legt sie fest): m = 2, Ritzel z = 20, Rad z2 = 25, Rad z1 = 50, Achsabstand 75 mm.
+  *Nachgezogen bei der Planung, 2026-10-05:* Zahnstange z = 30; die Referenz enthält außerdem Grundplatte, Leiste, Schlitten und Lagerbock.
 - **Negativfall E1 (Zahnweite):** Zahndickenabmaß im Modell verfälscht (monkeypatch im Bau, Spec unverändert und gültig) →
   genau `{verzahnungen}` mit dem Knoten des Features und Zahnweite ist ≠ soll.
+  *Nachgezogen bei der Planung, 2026-10-05:* an der Antriebswelle um −0,05 mm; das Volumen ändert sich nur um −0,13 % (unter der Toleranz 0,5 %).
 
 ## 5. Etappe 2 – Kopplungen in der Baugruppe
 
@@ -252,12 +271,16 @@ Wie Spec 3b §7 und 4a §7, zusätzlich:
    Komponenten. Kandidat für die Drehung: `AddMate5` mit `ForPositioningOnly` (positioniert, legt keine Verknüpfung an);
    Alternativen klärt Spike S14b. Danach rechnet `bauen` die Phase nach (Knoten `zahnphase:<id>`, Fehler `ZAHNPHASE_FEHLER`
    mit Soll/Ist-Winkel).
+   *Nachgezogen bei der Planung, 2026-10-05:* gedreht wird über `SetTransformAndSolve2` mit der gerechneten Lage (`AddMate5 … ForPositioningOnly` ist
+   die Alternative, falls Spike S14b Zeile 7 abweicht); Toleranz 1e-3 Teilung.
 3. **Kopplung anlegen:** `CreateMate` mit `IGearMateFeatureData` (Zähler/Nenner aus den Zähnezahlen) bzw.
    `IRackPinionMateFeatureData` (`DiameterVal` = m·z_a, `DiameterType` laut Spike). Name = ID, Rebuild, Fehlerstatus wie bei
    allen Verknüpfungen; Rücklesen von Übersetzung bzw. Durchmesser.
 4. **Richtung:** `Reverse` setzt swki aus der Geometrie (Außenräder drehen gegensinnig; Zahnstange: v = ω × r am Wälzpunkt) nach
    der in Spike S14b gemessenen SolidWorks-Konvention. Die Spec hat dafür keinen Schalter; liegt die Konvention falsch, zeigen es
    Sollweg und Kollision sofort.
+   *Nachgezogen bei der Planung, 2026-10-05:* Annahme: `Reverse = False` ergibt die physikalisch richtige Richtung (SolidWorks wertet die Geometrie
+   aus); swki führt je Typ eine Konstante, die der Spike bestätigt oder umstellt.
 5. **Keine treibenden Hilfsverknüpfungen beim Bau** (Spike S13c). Die Grundstellung bleibt „Grenze mit `min`“ (4a §7.2).
 
 ### 5.5 Prüfen – statisch
@@ -269,6 +292,8 @@ Zusätzlich zu 3b §9 und 4a §8.1:
   m·z_a/2 (`zahnstange`); die Zahnbreiten überdecken sich (Überdeckung > 0); zurückgelesene Übersetzung bzw. Teilkreis-Ø gleich
   der Ableitung. Toleranz `verzahnung_mm` bzw. relativ 1e-6 für die Übersetzung. Der Rückleseteil steht hier und nicht in
   `verknuepfungen`, damit die Bewegungsprüfung bei einer verfälschten Übersetzung läuft (Negativfall 4).
+  *Nachgezogen bei der Planung, 2026-10-05:* Fehlt die Kopplung im Modell, prüft `eingriff` nur die Geometrie (die fehlende Kopplung meldet
+  `verknuepfungen`, Negativfall 3).
 - **`verknuepfungen`:** meldet zusätzlich **unterdrückte** Verknüpfungen als fehlerhaft (Lücke aus dem Brainstorming, Negativfall 3).
 - **Kollision streng:** Zahnpaare werden wie alle Paare geprüft (keine Ausnahme wie bei Gewindepaarungen).
 
@@ -330,6 +355,7 @@ Wie 4a §8.2, zusätzlich bzw. geändert:
 | `MODUL_NICHT_GENORMT`, `UNTERSCHNITT`, `ZAEHNE_UNGANZ`, `FLANKENSPIEL_FEHLT` | `validieren` (Teil), §4.3 | Feature, Wert |
 | `KOPPLUNG_ART`, `MODUL_UNGLEICH`, `GEKOPPELT_OHNE_ANTRIEB`, `KOPPLUNG_REIHENFOLGE`, `ENDLAGE_FEHLT`, `UEBERSETZUNG_WIDERSPRUCH`, `SCHRITTE_ZU_GROB`, `GRENZE_REFERENZ` | `validieren` (Baugruppe), §5.2 | Verknüpfung bzw. Komponente, Werte |
 | `ZAHNPHASE_FEHLER` | `bauen`: Phase nach dem Drehen nicht erreicht | Kopplung, Soll/Ist-Winkel |
+| `VERZAHNUNG_GEOMETRIE` | `validieren` (Teil): Profil nicht konstruierbar (nachgezogen bei der Planung) | Feature, Grund |
 
 Mängel im Prüfbericht (keine Fehlercodes): `verzahnungen` (Teil), `eingriff:<kopplung>`, `sollweg:<Bewegung>:<komponente>`;
 weiter alle aus 4a.

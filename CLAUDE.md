@@ -1,8 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 4a (Bewegungen) umgesetzt – Ergebnisse: docs/stufe4a/ergebnisse.md. Nächster Schritt (Nutzerwahl
-2026-10-05): Stufe 4b mechanische Kopplungen – Spec und Plan nach docs/superpowers/uebergabe-2026-10-05-stufe4b.md.
+Stand: Stufe 4a (Bewegungen) umgesetzt – Ergebnisse: docs/stufe4a/ergebnisse.md. Nächster Schritt: Stufe 4b (Verzahnung und
+Kopplungen) umsetzen – Übergabe docs/superpowers/uebergabe-2026-10-05-stufe4b-umsetzung.md (Spec und Plan liegen vor).
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
