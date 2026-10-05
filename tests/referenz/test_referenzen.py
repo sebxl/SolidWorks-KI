@@ -30,6 +30,7 @@ def _lauf(capsys, *argv):
     ("zahnstangentrieb", "zahnstange.yaml"),
     ("zahnstangentrieb", "ritzelwelle.yaml"),
     ("zahnstangentrieb", "antriebswelle.yaml"),
+    ("zahnstangentrieb", "zahnstangentrieb.yaml"),
 ])
 def test_referenz_besteht(capsys, tmp_path, ordner, spec):
     auftrag = tmp_path / f"REF-{ordner}"

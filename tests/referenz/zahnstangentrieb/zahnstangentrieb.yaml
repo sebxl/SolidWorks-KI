@@ -1,0 +1,106 @@
+# Referenz Zahnstangentrieb (Spec 4b §2, §12): Linearschlitten aus 4a ohne Hebel. Grundplatte (fixiert), zwei verschraubte
+# Führungsleisten, Schlitten mit Abstandsgrenze 0 … HUB. Auf dem Schlitten die Zahnstange (m 2, 30 Zähne), von unten mit
+# 2 × ISO 4762 M5 × 25 verschraubt (Gruppe schieber). Auf jeder Leiste ein Lagerbock; darin die Ritzelwelle (Ritzel
+# z = 20 über der Zahnstange, Rad z = 25) und darüber die Antriebswelle (Rad z = 50), Achsabstand 75.
+# Grundstellung: Schlitten am Ende −x. Fährt der Schlitten nach +x, dreht das Ritzel um +z und die Antriebswelle um −z.
+art: baugruppe
+name: Zahnstangentrieb
+eigenschaften: {Benennung: Zahnstangentrieb}
+parameter: {HUB: 120}
+komponenten:
+  - {id: grundplatte, quelle: {teil: grundplatte.yaml}, fixiert: true}
+  - {id: leiste_links, quelle: {teil: leiste.yaml}}
+  - {id: leiste_rechts, quelle: {teil: leiste.yaml}}
+  - {id: schraube_links, quelle: {normteil: "ISO 4762 M8x25"}, je_position: {komponente: leiste_links, feature: f2}}
+  - {id: schraube_rechts, quelle: {normteil: "ISO 4762 M8x25"}, je_position: {komponente: leiste_rechts, feature: f2}}
+  - {id: schlitten, quelle: {teil: schlitten.yaml}, gruppe: schieber}
+  - {id: zahnstange, quelle: {teil: zahnstange.yaml}, gruppe: schieber}
+  - {id: stangenschraube, quelle: {normteil: "ISO 4762 M5x25"}, je_position: {komponente: schlitten, feature: f2}}
+  - {id: lagerbock_links, quelle: {teil: lagerbock.yaml}}
+  - {id: lagerbock_rechts, quelle: {teil: lagerbock.yaml}}
+  - {id: ritzelwelle, quelle: {teil: ritzelwelle.yaml}}
+  - {id: antriebswelle, quelle: {teil: antriebswelle.yaml}}
+verknuepfungen:
+  # Führungsleisten bündig an den Enden und Außenseiten der Grundplatte, verschraubt (wie 4a)
+  - {id: v1, typ: deckungsgleich, a: {komponente: leiste_links, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v2, typ: deckungsgleich, a: {komponente: leiste_links, feature: f1, flaeche: "-x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-x"}, ausrichtung: gleich}
+  - {id: v3, typ: deckungsgleich, a: {komponente: leiste_links, feature: f1, flaeche: "-z"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-z"}, ausrichtung: gleich}
+  - {id: v4, typ: deckungsgleich, a: {komponente: leiste_rechts, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v5, typ: deckungsgleich, a: {komponente: leiste_rechts, feature: f1, flaeche: "-x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-x"}, ausrichtung: gleich}
+  - {id: v6, typ: deckungsgleich, a: {komponente: leiste_rechts, feature: f1, flaeche: "+z"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+z"}, ausrichtung: gleich}
+  - {id: v10, typ: deckungsgleich, a: {komponente: schraube_links, referenz: EINBAU_EBENE},
+     b: {komponente: leiste_links, feature: f2, instanz: je, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v11, typ: konzentrisch, a: {komponente: schraube_links, referenz: EINBAU_ACHSE},
+     b: {komponente: leiste_links, feature: f2, instanz: je, achse: true}}
+  - {id: v12, typ: deckungsgleich, a: {komponente: schraube_rechts, referenz: EINBAU_EBENE},
+     b: {komponente: leiste_rechts, feature: f2, instanz: je, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v13, typ: konzentrisch, a: {komponente: schraube_rechts, referenz: EINBAU_ACHSE},
+     b: {komponente: leiste_rechts, feature: f2, instanz: je, achse: true}}
+  # Schlitten: auf der Grundplatte, seitlich an der linken Leiste; Hub über die Grenze g1
+  - {id: v20, typ: deckungsgleich, a: {komponente: schlitten, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v21, typ: deckungsgleich, a: {komponente: schlitten, feature: f1, flaeche: "-z"},
+     b: {komponente: leiste_links, feature: f1, flaeche: "+z"}, ausrichtung: entgegengesetzt}
+  - {id: g1, typ: grenze_abstand, a: {komponente: schlitten, feature: f1, flaeche: "-x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "-x"}, ausrichtung: gleich, min: 0, max: "=HUB"}
+  # Zahnstange auf dem Schlitten: Rücken auf der Oberseite, Gewinde 1 über Senkung 1, Seiten parallel; Schrauben von unten
+  - {id: v30, typ: deckungsgleich, a: {komponente: zahnstange, feature: f1, flaeche: "-y"},
+     b: {komponente: schlitten, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v31, typ: konzentrisch, a: {komponente: zahnstange, feature: f2, instanz: 1, achse: true},
+     b: {komponente: schlitten, feature: f2, instanz: 1, achse: true}}
+  - {id: v32, typ: parallel, a: {komponente: zahnstange, feature: f1, flaeche: "-z"},
+     b: {komponente: schlitten, feature: f1, flaeche: "-z"}, ausrichtung: gleich}
+  - {id: v33, typ: deckungsgleich, a: {komponente: stangenschraube, referenz: EINBAU_EBENE},
+     b: {komponente: schlitten, feature: f2, instanz: je, flaeche: "-y"}, ausrichtung: gleich}
+  - {id: v34, typ: konzentrisch, a: {komponente: stangenschraube, referenz: EINBAU_ACHSE},
+     b: {komponente: schlitten, feature: f2, instanz: je, achse: true}}
+  # Lagerböcke auf den Leisten, in der Mitte der Grundplatte (x = 0), bündig mit den Außenseiten der Leisten
+  - {id: v40, typ: deckungsgleich, a: {komponente: lagerbock_links, feature: f1, flaeche: "-y"},
+     b: {komponente: leiste_links, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v41, typ: deckungsgleich, a: {komponente: lagerbock_links, ebene: rechts},
+     b: {komponente: grundplatte, ebene: rechts}, ausrichtung: gleich}
+  - {id: v42, typ: deckungsgleich, a: {komponente: lagerbock_links, feature: f1, flaeche: "-z"},
+     b: {komponente: leiste_links, feature: f1, flaeche: "-z"}, ausrichtung: gleich}
+  - {id: v43, typ: deckungsgleich, a: {komponente: lagerbock_rechts, feature: f1, flaeche: "-y"},
+     b: {komponente: leiste_rechts, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v44, typ: deckungsgleich, a: {komponente: lagerbock_rechts, ebene: rechts},
+     b: {komponente: grundplatte, ebene: rechts}, ausrichtung: gleich}
+  - {id: v45, typ: deckungsgleich, a: {komponente: lagerbock_rechts, feature: f1, flaeche: "+z"},
+     b: {komponente: leiste_rechts, feature: f1, flaeche: "+z"}, ausrichtung: gleich}
+  # Wellen drehbar in den Lagerbohrungen des rechten Lagerbocks; die Räder liegen an dessen Innenseite an
+  - {id: s1, typ: scharnier, a: {komponente: ritzelwelle, referenz: ACHSE},
+     b: {komponente: lagerbock_rechts, feature: f2, instanz: 1, achse: true},
+     anlage_a: {komponente: ritzelwelle, feature: z2, flaeche: "+z"},
+     anlage_b: {komponente: lagerbock_rechts, feature: f1, flaeche: "-z"}}
+  - {id: s2, typ: scharnier, a: {komponente: antriebswelle, referenz: ACHSE},
+     b: {komponente: lagerbock_rechts, feature: f2, instanz: 2, achse: true},
+     anlage_a: {komponente: antriebswelle, feature: z1, flaeche: "+z"},
+     anlage_b: {komponente: lagerbock_rechts, feature: f1, flaeche: "-z"}}
+  # Kopplungen zuletzt: Ritzel ↔ Zahnstange, dann Antriebsrad ↔ Rad der Ritzelwelle (Seite a wird in Phase gedreht)
+  - {id: k1, typ: zahnstange, a: {komponente: ritzelwelle, feature: z1}, b: {komponente: zahnstange, feature: z1}}
+  - {id: k2, typ: zahnrad, a: {komponente: antriebswelle, feature: z1}, b: {komponente: ritzelwelle, feature: z2}}
+freiheitsgrade: {schieber: 1, ritzelwelle: gekoppelt, antriebswelle: gekoppelt}
+bewegungen:
+  - name: Schlittenhub
+    grenze: g1
+    erwartet:
+      endlagen:
+        - {komponente: schlitten, verschiebung: ["=HUB", 0, 0]}
+        - {komponente: zahnstange, verschiebung: ["=HUB", 0, 0]}
+        # Ritzel: Teilkreis-Ø m·z = 40, die Zahnstange (Wälzpunkt unter der Achse) fährt nach +x → Drehung um +z
+        - {komponente: ritzelwelle, drehung: {achse: [0, 0, 1], winkel: "=HUB*360/(pi*40)"}}
+        # Antriebswelle: gegensinnig, Übersetzung z2/z1 = 25/50
+        - {komponente: antriebswelle, drehung: {achse: [0, 0, -1], winkel: "=HUB*360/(pi*40)*25/50"}}
+pruefung:
+  huellquader: [300, 210, 120]
+  masse_pruefen:
+    - {was: Achsabstand der Wellen, von: {komponente: ritzelwelle, referenz: ACHSE},
+       zu: {komponente: antriebswelle, referenz: ACHSE}, soll: 75}
+    - {was: Ritzelachse über der Grundplatte, von: {komponente: grundplatte, feature: f1, flaeche: "-y"},
+       zu: {komponente: ritzelwelle, referenz: ACHSE}, soll: 77.5}

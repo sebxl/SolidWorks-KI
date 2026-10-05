@@ -52,6 +52,16 @@ Verknüpfungen (`v11.1`) oder Teil-Knoten (`deckel/f4`).
 - `verzahnungen` im Prüfbericht ist ok (Kopf-/Fußkreis, Zähnezahl, Zahnweite bzw. Kopflinie, Teilung, Zahndicke). Der
   Zahnfuß ist vereinfacht (radiale Verlängerung und Fußrundung statt Trochoide) – das ist kein Mangel.
 
+## Zusätzlich bei Kopplungen (`zahnrad`, `zahnstange` in der Baugruppe)
+
+- Bilder `<kopplung>-eingriff` (Blick entlang der Radachse): Zahn steht in Lücke, keine sichtbare Durchdringung; das
+  Ritzel greift in die Zahnstange, die Räder greifen ineinander.
+- Drehrichtungen plausibel (Bilder `<Bewegung>-min|mitte|max`): Außenräder drehen gegensinnig; das Ritzel rollt auf der
+  Zahnstange ab (Fahrrichtung und Drehsinn passen zusammen).
+- Die Zahnstange überdeckt das Ritzel über den ganzen Hub (Bilder `min` und `max`).
+- `eingriff:*` (Achsabstand, Überdeckung, Übersetzung), `sollweg:*` und `freiheitsgrad:*` (auch der gekoppelten
+  Wellen) sind ok; sie stehen sonst schon als Mängel im Prüfbericht.
+
 ## Antwort (genau dieses JSON, sonst nichts)
 Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach, zum Beispiel:
 
