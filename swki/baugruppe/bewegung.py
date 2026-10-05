@@ -9,6 +9,7 @@ import math
 from dataclasses import dataclass, field
 
 from swki.baugruppe.bewertung import STATUS_TEXT, UNTERBESTIMMT, VOLL_BESTIMMT
+from swki.baugruppe.geometrie import drehmatrix
 from swki.pruefung.bewertung import _beschreibung, _pruefung
 from swki.spec.ausdruck import auswerten
 from swki.verbindung import in_mm
@@ -86,18 +87,6 @@ def achse_winkel(q) -> tuple[tuple[float, float, float] | None, float]:
     if n < 1e-12:
         return None, w
     return tuple(c / n for c in v), w
-
-
-def drehmatrix(achse, winkel: float) -> list[list[float]]:
-    """Drehung um achse (wird normiert) um winkel Grad nach der Rechte-Hand-Regel, Spaltenform (Rodrigues)."""
-    n = math.sqrt(sum(c * c for c in achse))
-    x, y, z = (c / n for c in achse)
-    a = math.radians(winkel)
-    c, s = math.cos(a), math.sin(a)
-    k = 1 - c
-    return [[c + x * x * k, x * y * k - z * s, x * z * k + y * s],
-            [y * x * k + z * s, c + y * y * k, y * z * k - x * s],
-            [z * x * k - y * s, z * y * k + x * s, c + z * z * k]]
 
 
 def ist_bewegt(t0, t1) -> bool:
