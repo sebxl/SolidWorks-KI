@@ -1,9 +1,10 @@
 """Sichere Auswertung von Ausdrücken wie "=L/2-20" in Spezifikationen.
 
-Erlaubt sind Zahlen, Parameternamen, + - * / ** und Klammern. Alles andere wird abgewiesen.
+Erlaubt sind Zahlen, Parameternamen, die Konstante pi, + - * / ** und Klammern. Alles andere wird abgewiesen.
 """
 
 import ast
+import math
 import operator
 
 from swki.cli import SwkiFehler
@@ -17,6 +18,7 @@ _OPS = {
 }
 _SW_OPS = {ast.Add: "+", ast.Sub: "-", ast.Mult: "*", ast.Div: "/", ast.Pow: "^"}
 _ERLAUBT = (ast.BinOp, ast.UnaryOp, ast.Name, ast.Load, ast.USub, ast.UAdd, *_OPS)
+PI = "pi"  # Kreiszahl (Spec 4b §5.1), in SolidWorks-Gleichungen ebenfalls pi; kein Parametername
 
 
 class AusdruckFehler(SwkiFehler):
@@ -43,13 +45,16 @@ def _baum(ausdruck: str) -> ast.expr:
 
 
 def namen(ausdruck: str) -> set[str]:
-    return {k.id for k in ast.walk(_baum(ausdruck)) if isinstance(k, ast.Name)}
+    """Parameternamen eines Ausdrucks (ohne die Konstante pi)."""
+    return {k.id for k in ast.walk(_baum(ausdruck)) if isinstance(k, ast.Name) and k.id != PI}
 
 
 def _rechne(k: ast.expr, parameter: dict, ausdruck: str) -> float:
     if isinstance(k, ast.Constant):
         return float(k.value)
     if isinstance(k, ast.Name):
+        if k.id == PI:
+            return math.pi
         if k.id not in parameter:
             raise AusdruckFehler(f"Ausdruck {ausdruck!r}: unbekannter Parameter {k.id!r}")
         return float(parameter[k.id])
@@ -78,7 +83,7 @@ def _sw(k: ast.expr, oben: bool) -> str:
     if isinstance(k, ast.Constant):
         return repr(k.value)
     if isinstance(k, ast.Name):
-        return f'"{k.id}"'
+        return PI if k.id == PI else f'"{k.id}"'
     if isinstance(k, ast.UnaryOp):
         innen = _sw(k.operand, False)
         return f"-{innen}" if isinstance(k.op, ast.USub) else innen

@@ -10,6 +10,7 @@ from swki.compiler.anker import Vektor, differenz, laenge, punkt_achse_abstand, 
 from swki.spec.ausdruck import auswerten
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import bohrspitze_grad, norm_von, normmasse
+from swki.verzahnung import aus_feature
 
 _PARALLEL = 1.0 - 1e-6
 
@@ -218,6 +219,8 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             beitrag[f["id"]] = sum(beitrag[q] for q in f["features"])
         elif typ == "referenz":
             beitrag[f["id"]] = 0.0  # Bezugsgeometrie hat kein Volumen
+        elif typ == "verzahnung":
+            beitrag[f["id"]] = aus_feature(f, p).flaeche() * auswerten(f["breite"], p)
         else:
             return None, f"{f['id']}: {typ} nicht analytisch berechenbar"
     return sum(beitrag.values()), "analytisch"
