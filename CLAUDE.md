@@ -1,9 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 4a (Bewegungen) umgesetzt – Ergebnisse: docs/stufe4a/ergebnisse.md. Nächster Schritt nach Nutzerwahl:
-Stufe 4b (Zahnrad, Nut, Kurve; Referenz Schieber mit Schrägbolzen) oder Paket „Messarten“ (Fasen, Gewinde durch,
-Lagerachse).
+Stand: Stufe 4a (Bewegungen) umgesetzt – Ergebnisse: docs/stufe4a/ergebnisse.md. Nächster Schritt (Nutzerwahl
+2026-10-05): Stufe 4b mechanische Kopplungen – Spec und Plan nach docs/superpowers/uebergabe-2026-10-05-stufe4b.md.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
