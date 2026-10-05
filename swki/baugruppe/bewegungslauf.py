@@ -4,6 +4,7 @@ Speichergrenze, Aufräumen. Die SolidWorks-Umsetzung ist swki.baugruppe.sw_beweg
 Attrappe."""
 
 import time
+from collections.abc import Collection
 from typing import Protocol
 
 from swki.baugruppe.bewegung import (TOL_WINKEL_GRAD, Bewegung, BewegungsMesswerte, Lauf, bewerte_bewegungen,
@@ -182,21 +183,25 @@ def fahre(mech: Mechanik, bws: list[Bewegung], bekannt: set[frozenset], grenze_m
                 pass  # Aufräumfehler verdecken die Ursache nicht (Muster aus dem Aufräumen nach 3b)
 
 
-def _statisch_fehlerhaft(messwerte) -> bool:
-    """Rebuildfehler oder eine Verknüpfung mit Fehlercode ≠ 0 in den statischen Messwerten (die Felder, aus denen die
-    Mängel rebuild und verknuepfungen entstehen)."""
-    return bool(messwerte.rebuild_fehler) or any(messwerte.verknuepfungen.values())
+def _statisch_fehlerhaft(messwerte, soll_verknuepfungen: Collection[str]) -> bool:
+    """Rebuildfehler, eine Verknüpfung mit Fehlercode ≠ 0, eine unterdrückte oder eine erwartete, im Modell fehlende
+    Verknüpfung in den statischen Messwerten (die Felder, aus denen die Mängel rebuild und verknuepfungen entstehen;
+    Spec 4b §10 Fall 3). Eine fremde Verknüpfung zählt nicht."""
+    return (bool(messwerte.rebuild_fehler) or any(messwerte.verknuepfungen.values()) or bool(messwerte.unterdrueckt)
+            or any(n not in messwerte.verknuepfungen for n in soll_verknuepfungen))
 
 
 def bewegungen_oder_ersatz(spec: dict, bws: list[Bewegung], messwerte, mech_fabrik, bekannt: set[frozenset],
-                           grenze_mb: float, tol_mm: float) -> tuple[list[dict], dict, list[Lauf]]:
+                           grenze_mb: float, tol_mm: float,
+                           soll_verknuepfungen: Collection[str]) -> tuple[list[dict], dict, list[Lauf]]:
     """Bewegungsprüfung oder, wo sie nicht laufen kann, Mängel statt Abbruch (Spec 4a §8.2.3). Liefert Prüfungen,
     Bewegungsbericht und die Läufe (für die Bilder). mech_fabrik erzeugt die Mechanik erst, wenn gefahren wird.
-    - Statische Fehler (rebuild, verknuepfungen): nicht fahren, je Bewegung bewegung:<name> mit ok=None.
+    - Statische Fehler (rebuild, verknuepfungen; auch unterdrückte oder fehlende Verknüpfungen, soll_verknuepfungen sind
+      die erwarteten IDs): nicht fahren, je Bewegung bewegung:<name> mit ok=None.
     - StellungFehler/BauFehler aus fahre (nach dessen Aufräumen): bewegung:<name> mit ok=False; bei StellungFehler nur
       für die betroffene Bewegung (übrige ok=None), bei BauFehler ohne Bewegungsbezug für alle.
     - SpeicherKnapp bleibt ein Abbruch ohne Prüfbericht (Präzisierung 14)."""
-    if _statisch_fehlerhaft(messwerte):
+    if _statisch_fehlerhaft(messwerte, soll_verknuepfungen):
         pruefungen, bericht = ersatz_pruefungen(
             bws, "Bewegungsprüfung nicht gefahren: statische Fehler (siehe rebuild/verknuepfungen)")
         return pruefungen, bericht, []

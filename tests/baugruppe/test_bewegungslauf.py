@@ -86,10 +86,10 @@ def test_aufraeumen_aktiviert_die_grenzen():
 
 # --- Fehlerpfade (Fix-Welle nach dem Gesamt-Review, Spec 4a §8.2.3): Mangel statt Abbruch -------------------------------
 
-def _oder_ersatz(mech, statisch=None, grenze_mb=3500):
+def _oder_ersatz(mech, statisch=None, grenze_mb=3500, soll=("g1", "g2")):
     from types import SimpleNamespace
 
-    messwerte = statisch or SimpleNamespace(rebuild_fehler=[], verknuepfungen={"g1": 0, "g2": 0})
+    messwerte = statisch or SimpleNamespace(rebuild_fehler=[], verknuepfungen={"g1": 0, "g2": 0}, unterdrueckt=[])
     gebaut = []
 
     def fabrik():
@@ -97,7 +97,7 @@ def _oder_ersatz(mech, statisch=None, grenze_mb=3500):
         return mech
 
     ergebnis = bewegungen_oder_ersatz(BAUGRUPPE, bewegungen(BAUGRUPPE, lade_standard()), messwerte, fabrik, BEKANNT,
-                                      grenze_mb, 0.1)
+                                      grenze_mb, 0.1, soll)
     return ergebnis, gebaut
 
 
@@ -111,8 +111,9 @@ def test_ohne_statische_fehler_wird_gefahren():
     assert _nach_id(pruefungen)["bewegung:Hub"]["ok"] is True
 
 
-@pytest.mark.parametrize("statisch", [{"rebuild_fehler": ["Skizze1: Fehler"], "verknuepfungen": {"g1": 0}},
-                                      {"rebuild_fehler": [], "verknuepfungen": {"g1": 0, "g2": 3}}])
+@pytest.mark.parametrize("statisch", [{"rebuild_fehler": ["Skizze1: Fehler"], "verknuepfungen": {"g1": 0}, "unterdrueckt": []},
+                                      {"rebuild_fehler": [], "verknuepfungen": {"g1": 0, "g2": 3}, "unterdrueckt": []},
+                                      {"rebuild_fehler": [], "verknuepfungen": {"g1": 0, "g2": 0}, "unterdrueckt": ["g2"]}])
 def test_statische_fehler_verhindern_die_bewegungspruefung(statisch):
     from types import SimpleNamespace
 
@@ -123,6 +124,23 @@ def test_statische_fehler_verhindern_die_bewegungspruefung(statisch):
     assert sorted(p) == ["bewegung:Hub", "bewegung:Schwenk"]
     for e in p.values():
         assert e["ok"] is None and "statische Fehler (siehe rebuild/verknuepfungen)" in e["hinweis"] and e["knoten"] == []
+
+
+def test_fehlende_verknuepfung_verhindert_die_bewegungspruefung():
+    # Spec 4b §10 Fall 3: eine erwartete, im Modell fehlende Verknüpfung (z. B. eine Kopplung) ist ein statischer Fehler;
+    # eine fremde Verknüpfung zählt nicht (sie meldet nur verknuepfungen)
+    from types import SimpleNamespace
+
+    mech = Attrappe()
+    fremd = SimpleNamespace(rebuild_fehler=[], verknuepfungen={"g1": 0, "g2": 0, "fremd": 0}, unterdrueckt=[])
+    (_, _, laeufe), gebaut = _oder_ersatz(Attrappe(), fremd)
+    assert gebaut and len(laeufe) == 4
+    fehlt = SimpleNamespace(rebuild_fehler=[], verknuepfungen={"g1": 0}, unterdrueckt=[])
+    (pruefungen, bericht, laeufe), gebaut = _oder_ersatz(mech, fehlt)
+    assert not gebaut and mech.aufrufe == [] and laeufe == [] and bericht == {"laeufe": [], "paare": []}
+    p = _nach_id(pruefungen)
+    assert sorted(p) == ["bewegung:Hub", "bewegung:Schwenk"]
+    assert all(e["ok"] is None and e["knoten"] == [] for e in p.values())
 
 
 def test_stellungfehler_wird_zum_mangel_der_bewegung():

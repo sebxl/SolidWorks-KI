@@ -36,6 +36,24 @@ def screenshots(app, model, ordner: Path) -> dict[str, str]:
         return bilder
 
 
+ANSICHT_DER_ACHSE = {0: "rechts", 1: "oben", 2: "vorne"}  # Blick entlang x, y bzw. z
+
+
+def kopplungsbild(app, model, pfad: Path, achse, komponenten: list) -> str:
+    """Bild entlang einer Radachse (Standardansicht der größten Achskomponente), gezoomt auf die gekoppelten Komponenten
+    (Spec 4b §5.7, Spike S14b Zeile 12); sonst wie screenshots()."""
+    model._FlagAsMethod("ViewZoomToSelection")
+    with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
+        model.ShowNamedView2("", ANSICHTEN[ANSICHT_DER_ACHSE[max(range(3), key=lambda i: abs(achse[i]))]])
+        sw.auswahl_leeren(model)
+        for komp in komponenten:
+            komp.Select4(True, model.SelectionManager.CreateSelectData, False)
+        model.ViewZoomToSelection()
+        sw.auswahl_leeren(model)
+        sw.speichere(model, pfad, kopie=True)
+    return str(pfad)
+
+
 def iso_bild(app, model, pfad: Path) -> str:
     """Ein Iso-Bild der aktuellen Stellung (Bewegungsprüfung, Spec 4a §8.3); gleiche Einstellungen wie screenshots()."""
     model._FlagAsMethod("ViewZoomtofit2")

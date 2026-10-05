@@ -45,3 +45,18 @@ def test_getriebeprobe_bauen(capsys, probe):
     knoten = {k["id"]: k["status"] for k in bau["knoten"]}
     assert [k for k in knoten if k.startswith("zahnphase:")] == ["zahnphase:k1", "zahnphase:k2"]
     assert all(knoten[k] == "ok" for k in ("zahnphase:k1", "k1", "zahnphase:k2", "k2", "grundstellung:Hub")), knoten
+
+
+def test_getriebeprobe_besteht_pruefung(capsys, probe):
+    _baue(capsys, probe)
+    code, bericht = _lauf(capsys, "pruefen", str(probe))
+    assert code == 0 and bericht["maengel"] == [], json.dumps(bericht["maengel"], indent=1, ensure_ascii=False)
+    p = {x["id"]: x for x in bericht["pruefungen"]}
+    for pid in ("eingriff:k1", "eingriff:k2", "freiheitsgrad:zahnstange", "freiheitsgrad:ritzelwelle",
+                "freiheitsgrad:antriebswelle", "sollweg:Hub:zahnstange", "sollweg:Hub:ritzelwelle",
+                "sollweg:Hub:antriebswelle", "endlage:Hub:ritzelwelle", "endlage:Hub:antriebswelle", "kollision"):
+        assert p[pid]["ok"] is True, p[pid]
+    assert p["endlage:Hub:ritzelwelle"]["ist"]["aufsummiert"] == pytest.approx(60 * 360 / (3.141592653589793 * 40), abs=0.01)
+    assert {"k1-eingriff", "k2-eingriff"} <= set(bericht["bilder"])
+    assert all(Path(x).stat().st_size > 0 for x in bericht["bilder"].values())
+    assert [k["kopplung"] for k in bericht["kopplungen"]] == ["k1", "k2"]

@@ -66,6 +66,16 @@ def bericht_markdown(
         zeilen += ["", "## Teilprüfungen (letzter Lauf)", "", "| Komponente | bestanden | Mängel |", "|---|---|---|"]
         zeilen += [f"| {k} | {'ja' if t['bestanden'] else 'nein'} | {t['maengel']} |"
                    for k, t in sorted(letzter["teilpruefungen"].items())]
+    if letzter.get("kopplungen"):
+        zeilen += ["", "## Kopplungen (letzter Lauf)", "",
+                   "| Kopplung | Typ | a → b | Übersetzung soll | gelesen | Achsabstand ist / soll (mm) | Überdeckung (mm) |",
+                   "|---|---|---|---|---|---|---|"]
+        for k in letzter["kopplungen"]:
+            g = k["gelesen"]
+            gelesen = (f"{g['zaehler']:g}:{g['nenner']:g}" if "zaehler" in g else f"Ø {g['durchmesser']:g}"
+                       ) if isinstance(g, dict) else _zelle(g)
+            zeilen.append(f"| {k['kopplung']} | {k['typ']} | {k['a']} → {k['b']} | {k['soll']} | {gelesen} | "
+                          f"{k['achsabstand']:g} / {k['achsabstand_soll']:g} | {k['ueberdeckung']:g} |")
     bewegungen = letzter.get("bewegungen")
     if bewegungen and bewegungen.get("laeufe"):
         zeilen += ["", "## Bewegungen (letzter Lauf)", "",

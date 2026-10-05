@@ -13,6 +13,7 @@ from swki.baugruppe.bewegungslauf import bewegungen_oder_ersatz
 from swki.baugruppe.bewertung import BaugruppenMesswerte, bewerte_baugruppe, stueckliste_soll
 from swki.baugruppe.freigabe import freigegebene_quellen, freigegebene_teile, pruefe_freigabe_baugruppe
 from swki.baugruppe.geometrie import transformiere
+from swki.baugruppe.kopplung import in_baugruppe, kopplungen, verzahnung_der_seite
 from swki.baugruppe.laden import lade_baugruppe
 from swki.baugruppe.modell import Baugruppe, dokument_name
 from swki.baugruppe.referenzen import loese_im_teil
@@ -24,7 +25,7 @@ from swki.compiler.fehler import BauFehler
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.befehle import pruefe_lauf_gebaut, schreibe_pruefbericht
 from swki.pruefung.bewertung import bewerte, messpunkt_schluessel
-from swki.pruefung.bilder import screenshots
+from swki.pruefung.bilder import kopplungsbild, screenshots
 from swki.pruefung.geometrie import Messgeometrie
 from swki.pruefung.messen import kontext_aus_datei, messe, messgeometrie, oeffne, rebuild_fehler
 from swki.spec.ausdruck import auswerten
@@ -109,12 +110,36 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
                                   "eintritt": transformiere(Messgeometrie("punkt", b["punkt"]), transformationen[i.id])})
     interferenzen = [{"paar": sorted(namen.get(n, n) for n in paar), "volumen": volumen}
                      for paar, volumen in sw_baugruppe.interferenzen(asm)]
+    mates = sw_baugruppe.verknuepfungen(asm)
+    ids = {v["id"] for v in kopplungen(bg.spec)}
+    gelesen: dict[str, dict | str] = {}
+    for f in mates:
+        if f.Name in ids:
+            try:
+                gelesen[f.Name] = sw_baugruppe.lies_kopplung(f)
+            except Exception as e:  # COM-Fehler beim Lesen → Mangel statt Abbruch der Prüfung
+                gelesen[f.Name] = f"Kopplung {f.Name} nicht lesbar: {e}"
     return BaugruppenMesswerte(
         rebuild_fehler=rebuild_fehler(asm),
-        verknuepfungen={f.Name: sw_baugruppe.fehlercode(f) for f in sw_baugruppe.verknuepfungen(asm)},
+        verknuepfungen={f.Name: sw_baugruppe.fehlercode(f) for f in mates},
         komponenten=zustand, stueckliste=stueckliste, interferenzen=interferenzen,
         box=sw_baugruppe.huellquader(asm), masse_kg=sw_baugruppe.masse_kg(asm), eigenschaften=lies_eigenschaften(asm),
-        messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, teilberichte=teilberichte)
+        messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, teilberichte=teilberichte,
+        lagen=transformationen, kopplungen=gelesen, unterdrueckt=[f.Name for f in mates if sw_baugruppe.ist_unterdrueckt(f)])
+
+
+def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: BaugruppenMesswerte, ordner: Path) -> dict:
+    """Je Kopplung ein Bild entlang der Radachse von Seite a, gezoomt auf beide Komponenten (Spec 4b §5.7)."""
+    komponenten = _komponenten(asm, protokoll)
+    bilder = {}
+    for v in kopplungen(bg.spec):
+        ka, kb = v["a"]["komponente"], v["b"]["komponente"]
+        if ka not in komponenten or kb not in komponenten:
+            continue
+        achse = in_baugruppe(verzahnung_der_seite(bg.quellen, v["a"]), messwerte.lagen[ka]).achse
+        name = f"{v['id']}-eingriff"
+        bilder[name] = kopplungsbild(app, asm, ordner / f"{name}.png", achse, [komponenten[ka], komponenten[kb]])
+    return bilder
 
 
 def _grenzen(bg: Baugruppe) -> dict:
@@ -152,7 +177,7 @@ def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict,
     tol = standard["toleranzen"]["anker_mm"]
     pruefungen, bericht, laeufe = bewegungen_oder_ersatz(
         bg.spec, bws, messwerte, mechanik, {frozenset(i["paar"]) for i in messwerte.interferenzen},
-        standard["speicher_grenze_mb"], tol)
+        standard["speicher_grenze_mb"], tol, [v.id for v in verknuepfungen(bg.spec, bg.quellen)])
     bilder = {Path(p).stem: p for lauf in laeufe
               for p in [*lauf.bilder.values(), *(k["bild"] for k in lauf.kollisionen)] if p}
     return pruefungen, bericht, bilder
@@ -217,6 +242,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             sw_baugruppe.aufloesen(asm)
             messwerte = _messe_baugruppe(asm, bg, protokoll, geometrie, teilberichte)
             bilder = screenshots(app, asm, ordner / "bilder")
+            bilder |= _kopplungsbilder(app, asm, bg, protokoll, messwerte, ordner / "bilder")
             if mit_bewegung:
                 bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner)
         finally:

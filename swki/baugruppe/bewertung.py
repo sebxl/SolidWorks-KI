@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from swki.baugruppe.aufloesen import basis, instanzen, verknuepfungen
 from swki.baugruppe.geometrie import einschraublaenge, ueberlappung_soll
+from swki.baugruppe.kopplung import eingriff, in_baugruppe, kopplungen, teilkreise, verzahnung_der_seite
 from swki.baugruppe.modell import Quelle, dokument_name
 from swki.compiler.anker import punkt_achse_abstand
 from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
@@ -17,6 +18,7 @@ STATUS_TEXT = {1: "unbekannt", 2: "unterbestimmt", 3: "voll bestimmt", 4: "über
 VOLL_BESTIMMT, UNTERBESTIMMT, UEBERBESTIMMT = 3, 2, 4
 TOL_GEWINDE_PROZENT = 1.0  # Spike S12 Zeile 9
 TOL_LAENGE = 0.01
+TOL_UEBERSETZUNG = 1e-6  # relativ, zurückgelesene Übersetzung (Spec 4b §5.5)
 _TOL_HUELLQUADER = 0.01
 _TOL_MASS = 0.01
 
@@ -35,6 +37,9 @@ class BaugruppenMesswerte:
     schrauben: dict[str, Messgeometrie | str] = field(default_factory=dict)
     gewindebohrungen: list[dict] = field(default_factory=list)
     teilberichte: dict[str, dict] = field(default_factory=dict)
+    lagen: dict[str, list[float]] = field(default_factory=dict)       # Instanz-ID → Transform2.ArrayData (Spec 4b §5.5)
+    kopplungen: dict[str, dict | str] = field(default_factory=dict)   # Kopplungs-ID → gelesene Werte oder Fehlertext
+    unterdrueckt: list[str] = field(default_factory=list)             # unterdrückte Verknüpfungen (Spec 4b §5.5)
 
 
 @dataclass
@@ -144,11 +149,54 @@ def _bestimmtheit(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte
 def _verknuepfungen(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> dict:
     soll = [v.id for v in verknuepfungen(spec, quellen)]
     fehlend = [n for n in soll if n not in m.verknuepfungen]
-    fehlerhaft = {n: c for n, c in m.verknuepfungen.items() if c}
+    fehlerhaft = {n: c for n, c in m.verknuepfungen.items() if c} | {n: "unterdrückt" for n in m.unterdrueckt}
     fremd = [n for n in m.verknuepfungen if n not in soll]
     knoten = sorted({*fehlend, *fehlerhaft, *fremd})
     return eintrag("verknuepfungen", not knoten, ist={"fehlend": fehlend, "fehlerhaft": fehlerhaft, "fremd": fremd},
                      soll=len(soll), knoten=knoten)
+
+
+def _eingriff(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte, tol_mm: float) -> tuple[list[dict], list[dict]]:
+    """Spec 4b §5.5: je Kopplung eingriff:<id> – Achslage, Achsabstand, Breitenüberdeckung, Wälzpunkt auf der Zahnstange
+    und die zurückgelesene Übersetzung bzw. der Teilkreis. Fehlt die Kopplung im Modell, meldet das verknuepfungen;
+    hier zählt dann nur die Geometrie. Dazu je Kopplung eine Zeile für den Prüfbericht."""
+    pruefungen, bericht = [], []
+    for v in kopplungen(spec):
+        pid, ka, kb = f"eingriff:{v['id']}", v["a"]["komponente"], v["b"]["komponente"]
+        if ka not in m.lagen or kb not in m.lagen:
+            pruefungen.append(eintrag(pid, False, hinweis="Komponente fehlt in der Baugruppe", knoten=[v["id"]]))
+            continue
+        a = in_baugruppe(verzahnung_der_seite(quellen, v["a"]), m.lagen[ka])
+        b = in_baugruppe(verzahnung_der_seite(quellen, v["b"]), m.lagen[kb])
+        ist = eingriff(a, b)
+        gruende = []
+        if not ist["achsen_parallel"]:
+            gruende.append("Achsen nicht parallel" if v["typ"] == "zahnrad" else "Radachse nicht senkrecht zur Zahnstange")
+        if abs(ist["achsabstand"] - ist["soll"]) > tol_mm:
+            gruende.append(f"Achsabstand {ist['achsabstand']:g} statt {ist['soll']:g} mm")
+        if ist["ueberdeckung"] <= 0:
+            gruende.append("Zahnbreiten überdecken sich nicht")
+        if not ist["im_bereich"]:
+            gruende.append("Wälzpunkt außerhalb der Zahnstange")
+        zaehler, nenner = teilkreise(a.geo, b.geo)
+        gelesen = m.kopplungen.get(v["id"])
+        if isinstance(gelesen, str):
+            gruende.append(gelesen)
+        elif isinstance(gelesen, dict) and v["typ"] == "zahnrad":
+            # lagenunabhängig: SolidWorks liefert Zähler und Nenner vertauscht zurück (Spike S14b Zeile 6)
+            soll_u = min(zaehler, nenner) / max(zaehler, nenner)
+            ist_u = min(gelesen["zaehler"], gelesen["nenner"]) / max(gelesen["zaehler"], gelesen["nenner"])
+            if abs(ist_u - soll_u) > TOL_UEBERSETZUNG * soll_u:
+                gruende.append(f"Übersetzung {gelesen['zaehler']:g}:{gelesen['nenner']:g} statt {zaehler:g}:{nenner:g}")
+        elif isinstance(gelesen, dict) and abs(gelesen["durchmesser"] - zaehler) > tol_mm:
+            gruende.append(f"Teilkreis {gelesen['durchmesser']:g} statt {zaehler:g} mm")
+        pruefungen.append(eintrag(pid, not gruende, ist={**ist, "kopplung": gelesen}, knoten=[v["id"]] if gruende else [],
+                                  **({"hinweis": "; ".join(gruende)} if gruende else {})))
+        bericht.append({"kopplung": v["id"], "typ": v["typ"], "a": ka, "b": kb,
+                        "soll": f"{zaehler:g}:{nenner:g}" if v["typ"] == "zahnrad" else f"Ø {zaehler:g}",
+                        "gelesen": gelesen, "achsabstand": ist["achsabstand"], "achsabstand_soll": ist["soll"],
+                        "ueberdeckung": ist["ueberdeckung"]})
+    return pruefungen, bericht
 
 
 def _masse_pruefen(pr: dict, p: dict, m: BaugruppenMesswerte) -> list[dict]:
@@ -193,6 +241,9 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
     kollisionen = [i for i in m.interferenzen if frozenset(i["paar"]) not in gepaart]
     ergebnisse.append(eintrag("kollision", not kollisionen, ist=kollisionen,
                                 knoten=sorted({k for i in kollisionen for k in i["paar"]})))
+    eingriffe, kopplungsbericht = (_eingriff(spec, quellen, m, standard["toleranzen"]["verzahnung_mm"])
+                                   if kopplungen(spec) else ([], []))
+    ergebnisse += eingriffe
 
     if "huellquader" in pr:
         soll = [auswerten(v, p) for v in pr["huellquader"]]
@@ -227,4 +278,5 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
     maengel = [{"pruefung": e["id"], "knoten": e["knoten"], "beschreibung": beschreibung(e)}
                for e in ergebnisse if e["ok"] is False]
     return {"bestanden": not maengel, "pruefungen": ergebnisse, "maengel": maengel, "stueckliste": m.stueckliste,
-            "gewindepaarungen": gewinde_bericht, "teilpruefungen": teilpruefungen, "masse_kg": round(m.masse_kg, 4)}
+            "gewindepaarungen": gewinde_bericht, "teilpruefungen": teilpruefungen, "masse_kg": round(m.masse_kg, 4),
+            **({"kopplungen": kopplungsbericht} if kopplungsbericht else {})}
