@@ -82,6 +82,17 @@ def test_zahnstange_phase_herstellen():
     assert phasenfehler(a, st) == pytest.approx(0.0, abs=1e-9)
 
 
+def test_zahnstange_abrollsinn_negativ():
+    """Zahnstange mit umgekehrtem kopf (σ = −1): Ritzel unten, Stange rollt +x → Ritzel dreht gegensinnig."""
+    st = Stange((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0), Z, Zahnstange(2.0, 20, -0.05), (0.0, 20.0))
+    a = _rad(20, punkt=(0.0, -20.0, 0.0), zahn_grad=-90 + 9)  # Lücke zeigt zu Stange, σ = −1
+    assert phasenfehler(a, st) == pytest.approx(0.0, abs=1e-12)
+    for s in (5.0, 30.0):  # Zahnstange um s nach +x, Ritzel dreht um -s/r (σ = −1)
+        st2 = Stange((s, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0), Z, Zahnstange(2.0, 20, -0.05), (0.0, 20.0))
+        a2 = Rad(a.punkt, a.achse, _dreh(a.zahn, math.degrees(-s / 20)), a.geo, a.breite)
+        assert abs(phasenfehler(a2, st2)) == pytest.approx(0.0, abs=1e-9)
+
+
 def test_drehe_um_achse_durch_punkt():
     t = drehe(EINS, (10.0, 0.0, 0.0), Z, 90)
     assert t[0:3] == pytest.approx([0, 1, 0])        # Bild der x-Achse

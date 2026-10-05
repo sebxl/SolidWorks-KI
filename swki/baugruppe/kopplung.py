@@ -8,6 +8,7 @@ import math
 from dataclasses import dataclass
 
 from swki.baugruppe.geometrie import drehmatrix
+from swki.compiler.anker import differenz, skalar
 from swki.spec.ausdruck import auswerten
 from swki.verbindung import in_mm, mm
 from swki.verzahnung import Stirnrad, Verzahnung, Zahnstange, verzahnung_im_teil
@@ -19,33 +20,25 @@ _PARALLEL = 1.0 - 1e-6
 Vektor = tuple[float, float, float]
 
 
-def _sk(a: Vektor, b: Vektor) -> float:
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-
-
 def _kreuz(a: Vektor, b: Vektor) -> Vektor:
     return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
-def _diff(a: Vektor, b: Vektor) -> Vektor:
-    return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
-
-
 def _einheit(a: Vektor) -> Vektor:
-    n = math.sqrt(_sk(a, a))
+    n = math.sqrt(skalar(a, a))
     return (a[0] / n, a[1] / n, a[2] / n)
 
 
 def _senkrecht(a: Vektor, n: Vektor) -> Vektor:
     """Anteil von a senkrecht zur Einheitsrichtung n."""
-    t = _sk(a, n)
+    t = skalar(a, n)
     return (a[0] - t * n[0], a[1] - t * n[1], a[2] - t * n[2])
 
 
 def winkel_um(a: Vektor, b: Vektor, n: Vektor) -> float:
     """Vorzeichenbehafteter Winkel (rad) von a nach b um die Einheitsachse n (Rechte-Hand-Regel)."""
     a, b = _senkrecht(a, n), _senkrecht(b, n)
-    return math.atan2(_sk(n, _kreuz(a, b)), _sk(a, b))
+    return math.atan2(skalar(n, _kreuz(a, b)), skalar(a, b))
 
 
 def _bruch(x: float) -> float:
@@ -94,7 +87,7 @@ def _richtung(v: Vektor, t) -> Vektor:
 def in_baugruppe(vz: Verzahnung, t) -> Rad | Stange:
     """Verzahnung (Teilkoordinaten) mit der Lage t der Komponente in Baugruppenkoordinaten."""
     achse = _richtung(vz.normale, t)
-    versatz = _sk(tuple(in_mm(t[9 + i]) for i in range(3)), achse)  # Drehung erhält Skalarprodukte, die Verschiebung nicht
+    versatz = skalar(tuple(in_mm(t[9 + i]) for i in range(3)), achse)  # Drehung erhält Skalarprodukte, die Verschiebung nicht
     breite = (vz.breite[0] + versatz, vz.breite[1] + versatz)
     if isinstance(vz.geo, Stirnrad):
         return Rad(_punkt(vz.bezugspunkt, t), achse, _richtung(vz.zahnrichtung, t), vz.geo, breite)
@@ -131,14 +124,14 @@ def phasenfehler(a: Rad, b: Rad | Stange) -> float:
     σ = (achse × e)·reihe (Abrollsinn); e zeigt von der Radachse zum Wälzpunkt."""
     n, tau_a = a.achse, 2 * math.pi / a.geo.z
     if isinstance(b, Rad):
-        e = _einheit(_senkrecht(_diff(b.punkt, a.punkt), n))
+        e = _einheit(_senkrecht(differenz(b.punkt, a.punkt), n))
         fa = _bruch(winkel_um(a.zahn, e, n) / tau_a)
         fb = _bruch(winkel_um(b.zahn, (-e[0], -e[1], -e[2]), n) / (2 * math.pi / b.geo.z))
         return _gefaltet(fa - (0.5 - fb))
-    w = tuple(b.punkt[i] + b.reihe[i] * _sk(_diff(a.punkt, b.punkt), b.reihe) for i in range(3))
-    e = _einheit(_senkrecht(_diff(w, a.punkt), n))
-    fr = _bruch(_sk(_diff(w, b.punkt), b.reihe) / b.geo.p)
-    sigma = 1.0 if _sk(_kreuz(n, e), b.reihe) > 0 else -1.0
+    w = tuple(b.punkt[i] + b.reihe[i] * skalar(differenz(a.punkt, b.punkt), b.reihe) for i in range(3))
+    e = _einheit(_senkrecht(differenz(w, a.punkt), n))
+    fr = _bruch(skalar(differenz(w, b.punkt), b.reihe) / b.geo.p)
+    sigma = 1.0 if skalar(_kreuz(n, e), b.reihe) > 0 else -1.0
     fa = _bruch(winkel_um(a.zahn, e, n) / tau_a)
     return _gefaltet(fa - (0.5 + sigma * fr))
 
@@ -168,18 +161,18 @@ def _ueberdeckung(a: tuple[float, float], b: tuple[float, float], gleichsinnig: 
 
 
 def eingriff(a: Rad, b: Rad | Stange) -> dict:
-    """Ist-Werte des Eingriffs (Spec 4b §5.5): parallel/senkrecht, Abstand, Soll, Breitenüberdeckung, Wälzpunkt."""
+    """Ist-Werte des Eingriffs (Spec 4b §5.5): parallel/senkrecht, Abstand, Soll, Breitenüberdeckung, im_bereich."""
     if isinstance(b, Rad):
-        cos = _sk(a.achse, b.achse)
-        d = _senkrecht(_diff(b.punkt, a.punkt), a.achse)
-        abstand = math.sqrt(_sk(d, d))
+        cos = skalar(a.achse, b.achse)
+        d = _senkrecht(differenz(b.punkt, a.punkt), a.achse)
+        abstand = math.sqrt(skalar(d, d))
         return {"achsen_parallel": abs(cos) > _PARALLEL, "achsabstand": round(abstand, 6),
                 "soll": round(a.geo.m * (a.geo.z + b.geo.z) / 2, 6),
                 "ueberdeckung": round(_ueberdeckung(a.breite, b.breite, cos > 0), 6), "im_bereich": True}
-    senkrecht = abs(_sk(a.achse, b.reihe)) < 1e-6 and abs(_sk(a.achse, b.kopf)) < 1e-6
-    lage = _sk(_diff(a.punkt, b.punkt), b.reihe)
-    return {"achsen_parallel": senkrecht, "achsabstand": round(_sk(_diff(a.punkt, b.punkt), b.kopf), 6),
-            "soll": round(a.geo.r, 6), "ueberdeckung": round(_ueberdeckung(a.breite, b.breite, _sk(a.achse, b.achse) > 0), 6),
+    senkrecht = abs(skalar(a.achse, b.reihe)) < 1e-6 and abs(skalar(a.achse, b.kopf)) < 1e-6
+    lage = skalar(differenz(a.punkt, b.punkt), b.reihe)
+    return {"achsen_parallel": senkrecht, "achsabstand": round(skalar(differenz(a.punkt, b.punkt), b.kopf), 6),
+            "soll": round(a.geo.r, 6), "ueberdeckung": round(_ueberdeckung(a.breite, b.breite, skalar(a.achse, b.achse) > 0), 6),
             "im_bereich": -b.geo.p / 2 <= lage <= (b.geo.z - 0.5) * b.geo.p}
 
 
