@@ -191,6 +191,10 @@ Abweichungen im Klartext.
   Flankenenden, −0,417 mm, S14a Zeile 3), sondern per Strahl entlang der Grundkreistangente (`IFace2.GetProjectedPointOn`,
   Spannmitte φ_m = `winkel` + (k − 1)·180°/z, Messgerade auf halber Zahnbreite); Genauigkeit ≤ 0,00001 mm, `verzahnung_mm`
   bleibt 0,005 (Ruling S14a-Z3, T5-1). Kein Treffer → `REFERENZ_NICHT_GEFUNDEN` („Zahnweite nicht messbar“).
+  *Nachgezogen bei der Umsetzung, 2026-10-05 (Fix-Welle nach dem Gesamt-Review):* Soll und Messlage kommen aus zwei Quellen: Die **Geometrie** (Modul, Zähnezahl, Abmaß – die Sollwerte) stammt aus dem
+  Feature der **freigegebenen Kopie**, die **Lage** (`ebene`, `mitte`, `winkel`, `breite`, `umkehren`/`kopf`) aus dem gleichnamigen
+  Feature der **aktuellen Spec**: Der Bauweg darf nach der Freigabe korrigiert werden (Lage ist Bauweg), die Zahnmaße nicht.
+  Fehlt das Feature in der aktuellen Spec oder hat es eine andere `art`, meldet `verzahnungen` einen Mangel (kein Absturz).
 - **`volumen: {soll: auto}`:** Die Verzahnung trägt Profilfläche × Breite bei. Es gilt die bestehende Regel, dass sich Features
   nicht überlappen; ein Rad auf einer Welle wird so modelliert, dass die Welle den Radbereich ausspart.
 
@@ -270,6 +274,8 @@ voll bestimmt (fest), Komponenten mit `1` sind Grenze bzw. Gruppe; nur `gekoppel
 auf, wenn (1) Seite `a` nicht `gekoppelt` ist (sie wird beim Bau in Phase gedreht), (2) Seite `a` schon Seite `a` einer anderen
 Kopplung ist, (3) Seite `b` `gekoppelt` und nicht Seite `a` einer früheren Kopplung ist oder (4) nach der Kopplung noch eine
 andere Verknüpfung ihrer Komponenten folgt. Die Bedingung „Seite `a` muss gekoppelt sein“ folgt damit aus dem Drehen in Phase.
+*Nachgezogen bei der Umsetzung, 2026-10-05 (Fix-Welle nach dem Gesamt-Review):* Die Referenzform `{komponente, feature}` wird auch in `anlage_a`/`anlage_b` eines Scharniers abgelehnt (nur bei
+`zahnrad`/`zahnstange` erlaubt).
 
 ### 5.3 Freigabe
 
@@ -303,6 +309,7 @@ Wie Spec 3b §7 und 4a §7, zusätzlich:
    Antriebswelle −85,94° bei Hub 60 mm). Das Rücklesen weicht ab: SolidWorks liefert Zähler und Nenner vertauscht (gesetzt 100/50,
    gelesen 50/100) und meldet an `k1` `Reverse` als `true`; deshalb vergleicht `eingriff` die Übersetzung als ungeordnetes Paar
    (§5.5) und prüft `Reverse` nie.
+   *Nachgezogen bei der Umsetzung, 2026-10-05 (Fix-Welle nach dem Gesamt-Review):* Scheitert das Setzen der Lage (`setze_lage`), meldet `bauen` `ZAHNPHASE_FEHLER` (nicht `VERKNUEPFUNG_FEHLER`).
 5. **Keine treibenden Hilfsverknüpfungen beim Bau** (Spike S13c). Die Grundstellung bleibt „Grenze mit `min`“ (4a §7.2).
 
 ### 5.5 Prüfen – statisch
@@ -320,6 +327,9 @@ Zusätzlich zu 3b §9 und 4a §8.1:
   relativ 1e-6; Ruling T12-1, wegen S14b Zeile 6); der Meldetext bleibt „Übersetzung 110:50 statt 100:50“. Eine in der Spec
   erwartete, im Modell **fehlende** Verknüpfung zählt wie eine fehlerhafte oder unterdrückte als statischer Fehler: die
   Bewegungsprüfung läuft dann nicht, `bewegung:<name>` hat `ok=None` (Ruling T12-2/P1).
+  *Nachgezogen bei der Umsetzung, 2026-10-05 (Fix-Welle nach dem Gesamt-Review):* Liest SolidWorks eine Übersetzung mit Zähler oder Nenner ≤ 0, meldet `eingriff` „Übersetzung nicht lesbar (z:n)“
+  (kein Absturz durch Division durch 0). `freiheitsgrad:<komponente>` entsteht je Komponente nur einmal, auch wenn mehrere
+  Bewegungen sie über Kopplungen erreichen (die erste Bewegung gewinnt).
 - **`verknuepfungen`:** meldet zusätzlich **unterdrückte** Verknüpfungen als fehlerhaft (Lücke aus dem Brainstorming, Negativfall 3).
 - **Kollision streng:** Zahnpaare werden wie alle Paare geprüft (keine Ausnahme wie bei Gewindepaarungen).
 
