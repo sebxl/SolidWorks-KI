@@ -21,7 +21,7 @@ Was 4b kann:
 - **Kopplungen** `zahnrad` und `zahnstange` (`{komponente, feature}`), `freiheitsgrade: gekoppelt`; `bauen` dreht Seite `a` in
   Phase (`zahnphase:<id>`, `SetTransformAndSolve2`), legt die Kopplung per `CreateMate` an und liest sie zurück; Endlagen mit `pi`,
   Befunde `KOPPLUNG_ART`, `MODUL_UNGLEICH`, `GEKOPPELT_OHNE_ANTRIEB`, `KOPPLUNG_REIHENFOLGE`, `ENDLAGE_FEHLT`,
-  `UEBERSETZUNG_WIDERSPRUCH`, `SCHRITTE_ZU_GROB`, `ZAHNPHASE_FEHLER`.
+  `UEBERSETZUNG_WIDERSPRUCH`, `SCHRITTE_ZU_GROB`; Fehlercode des Baus `ZAHNPHASE_FEHLER` (kein Prüfbefund).
 - **Prüfen:** `eingriff:<id>` (Achslage, Achsabstand, Überdeckung, Übersetzung), unterdrückte und fehlende Verknüpfungen,
   strenge Kollision im Eingriff, **Sollweg je Stellung** (`sollweg:<Bewegung>:<k>`, für alle Bewegungen) mit aufsummierter
   Drehung, Bilder `<id>-eingriff` (übrige Komponenten ausgeblendet), Bericht mit Grenze, Bereich, Endlagen, Sollweg und Kopplungen.
@@ -164,8 +164,10 @@ OK). E1 (Abschnitt 4.2) kommt als fünfter Negativfall dazu.
 
 Je Test einzeln (`pytest -m sw <Test-ID>`), SolidWorks vor jedem Baugruppen-Test neu gestartet, vor Teil-Tests bei > 3000 MB;
 `PYTHONIOENCODING=utf-8`; Private Bytes von `SLDWORKS.exe` vorher → Spitze (Abtastung alle 0,5 s) → nachher. Rohwerte aller Läufe:
-`.superpowers/sdd/2026-10-05-stufe-4b-verzahnung-kopplungen/regression-ergebnis.md` (nicht versioniert). Code-Stand: Block 1 auf
-`60c0873`, danach auf `27507cd` (nach der Fix-Welle, Abschnitt 8). Ergebnis: **129 von 129 verschiedenen Live-Tests im letzten
+`.superpowers/sdd/2026-10-05-stufe-4b-verzahnung-kopplungen/regression-ergebnis.md` (nicht versioniert). Code-Stand: Blöcke 1–2
+(Tests Nr. 1–26 der Rohdatei) liefen auf `60c0873`; auf dem Endstand `27507cd` (nach der Fix-Welle, Abschnitt 8) liefen die
+Stehlager-Tests, `test_umgekehrte_richtung`, die Getriebeprobe (bauen, prüfen), der Zahnstangentrieb samt Teilen sowie alle
+Teil-Tests (Block 4 und Nachlauf; Ruling T15-3, Abschnitt 9). Ergebnis: **129 von 129 verschiedenen Live-Tests im letzten
 Lauf OK**; dazu die 4 Zahnstangentrieb-Negativfälle aus Task 14 (Abschnitt 6) = Live-Suite 133 Tests. Gesamtdauer der Läufe 120 min.
 
 | Gruppe | Ergebnis | Dauer | Private Bytes Spitze (MB) | Bemerkung |
@@ -174,12 +176,12 @@ Lauf OK**; dazu die 4 Zahnstangentrieb-Negativfälle aus Task 14 (Abschnitt 6) =
 | Stehlager (Referenz) | OK | 206 s | 11183 | über `speicher_grenze_mb` 10000, kein `SPEICHER_KNAPP` |
 | Stehlager-Tests (Deckelschraube zu lang, Überlappung, unterbestimmte Komponente, manuelle Änderung) | 4/4 OK | 181–201 s | 10839–11195 | je frisch |
 | Linearschlitten (Referenz) | OK | 280 s | 8012 | frisch |
-| Schlitten-Negativfälle (4) | 4/4 OK | 259–309 s | 8465–10015 | `test_umgekehrte_richtung`: siehe Hinweis |
+| Schlitten-Negativfälle (4) | 4/4 OK | 259–309 s | 9887–10015 | `test_umgekehrte_richtung`: siehe Hinweis (der FEHLER-Lauf in Block 1: 268 s, Spitze 8465 MB) |
 | Zahnstangentrieb-Teile (Zahnstange, Ritzelwelle, Antriebswelle) | 3/3 OK | 35 s, 69 s, 65 s | 5192, 5977, 3999 | Neustart vor der Antriebswelle |
 | Zahnstangentrieb (Referenz) | OK | 496 s | 9777 | frisch; erster Lauf 527 s, Spitze 10178 |
 | Getriebeprobe (bauen, prüfen) | 2/2 OK | 205 s, 315 s | 4993, 6828 | je frisch |
 | Bewegungsprobe (baut in Grundstellung, besteht Prüfung) | 2/2 OK | 51 s, 128 s | 5633, 7951 | je frisch |
-| Baugruppen-Proben und Änderungen (`test_live_baugruppe`, `test_live_aenderungen`; 8 Tests) | 8/8 OK | 20–78 s | 3429–6940 | je frisch |
+| Baugruppen-Proben und Änderungen (`test_live_baugruppe`, `test_live_aenderungen`; 9 Tests) | 9/9 OK | 20–78 s | 3429–6940 | je frisch |
 | Teil-Live-Tests (API, Bauen, Extrusion, Konturen, Muster, Normbohrung, Normteile, Prüfen, Rotation, Skript, Verbindung, Verzahnung inkl. E1) | 99/99 OK | 0,4–59 s | bis 5515 (Verzahnung 3,4–4,8 GB) | eine Sitzung bis ca. 4,5 GB, danach Neustart |
 
 Hinweise:
@@ -190,12 +192,15 @@ Hinweise:
   §10 „Erwartung nach Live-Lauf“, strenger, nicht abgeschwächt), danach OK (262 s, Spitze 9924 MB). Die anderen drei
   Schlitten-Negativfälle bestanden unverändert, obwohl der ForceRebuild3-Fix (T13-1) jetzt wirkt.
 - **Zahnstangentrieb-Negativfälle** wurden **nicht erneut** gefahren: Task 14 (Code-Stand vor der Fix-Welle) alle OK; Entscheidung
-  des Controllers, vom Nutzer freigestellt. Die Fix-Welle ändert `setze_lage` (Fehlercode) und die Messlage der Teilprüfung, nicht
-  die Mängelmengen der vier Fälle.
+  des Controllers, vom Nutzer freigestellt. Die Fix-Welle ändert aber auch `_eingriff` (Übersetzung ≤ 0, wird von Fall 4 durchlaufen) und das
+  Entdoppeln von `freiheitsgrad:<k>` in `bewerte_bewegungen` (alle vier Fälle durchlaufen es), dazu `setze_lage` (Fehlercode)
+  und die Messlage der Teilprüfung. Diese Änderungen sind für die Negativfälle **nur per Unit-Test, nicht live belegt**; die
+  Referenz Zahnstangentrieb lief nach der Fix-Welle live grün (Nr. 37, 496 s, Spitze 9777 MB).
 - **Runner-Nachlauf:** 25 Normteil-Tests (`test_live_normteil_hole`, `test_live_normteile_stichprobe`) wurden wegen eines
   Runner-Fehlers (Leerzeichen in den Test-IDs) nachgefahren; alle OK.
 - **Speicher:** Spitzen Stehlager 10,8–11,2 GB, Zahnstangentrieb 9,8–10,2 GB, Schlitten 8,0–10,0 GB; das Dauerniveau nach den
-  Tests (2,6–4,7 GB) fällt nach dem Schließen auf ca. 0,4 GB. Kein `SPEICHER_KNAPP`, kein Absturz (Plane SWKI-2).
+  Tests (Spalte „nachher“, 1,2–4,7 GB) wird durch den Neustart vor dem nächsten Baugruppen-Test auf den Startwert von ca. 0,42 GB
+  zurückgesetzt. Kein `SPEICHER_KNAPP`, kein Absturz (Plane SWKI-2).
 - **Unit-Suite:** **847 passed, 133 deselected** (Plan 827 + 20 zusätzliche Unit-Tests).
 
 ## 8. Gesamt-Review und Fix-Welle
@@ -210,8 +215,8 @@ mit `winkel` ≠ 0 und `umkehren`.
 Fix-Welle `27507cd` (+12 Unit-Tests, 835 → 847, `swki api pruefe-code` ohne Befunde): Important 1, Minor 1–4 und Minor 6 im Code
 bzw. mit Tests behoben (Important 2 und Minor 5 mit diesem Dokument). Die sechs Code-Befunde sind behoben; **Re-Review: alle sechs
 behoben, keine neue Breakage.** Die Spec ist nachgezogen (§4.5, §5.2, §5.4, §5.5). Der Live-Test `test_live_verzahnung` ruft
-`verzahnungen` weiter mit vier Argumenten auf (Verhalten ohne aktuelle Spec unverändert); die Regression (Abschnitt 7) lief auf
-dem Stand nach der Fix-Welle.
+`verzahnungen` weiter mit vier Argumenten auf (Verhalten ohne aktuelle Spec unverändert); die Regression (Abschnitt 7) lief teils auf
+dem Stand nach der Fix-Welle (T15-3).
 
 Triage: Die übrigen Kleinbefunde (Abschnitt 10, „Deferred Minors 4b“) dürfen bleiben; keine Ruling wurde als falsch befunden.
 Anmerkungen: Die Alternative zu T14-1 (nur das `CreateMate` von `k2` unterlassen und die Phase behalten) für 4c vormerken; das
@@ -263,19 +268,39 @@ Entscheidung, Grund, „wenn falsch“. Die Spike-Rulings stehen in den Abschnit
 - **T13-1:** `SwMechanik.status()` ruft vor dem Lesen `ForceRebuild3(False)` (API nachgeschlagen: 1 Parameter, seit 2001), Test
   zuerst (+1 Unit-Test). Wirkt auf **alle** Bewegungsprüfungen. Wenn falsch: zusätzlicher Rebuild je Statusablesung (2 × je Bewegung)
   kostet Zeit und Speicher; die Ablesung könnte trotzdem stale sein → Fall erneut vorlegen. Die 4a-Referenzen (Stehlager, Schlitten)
-  liefen nach dem Fix in der Regression (Abschnitt 7, T13-3) ohne Zeit- oder Speicheranstieg gegenüber 4a (Stehlager 206 s /
-  11183 MB, Schlitten 280 s / 8012 MB) mit OK; bei einem Anstieg wäre `ForceRebuild3` auf Bewegungen mit Kopplungen zu beschränken.
+  liefen nach dem Fix in der Regression (Abschnitt 7, T13-3) OK, aber **nicht ohne Mehraufwand** gegenüber 4a
+  (`docs/stufe4a/ergebnisse.md`, Abschnitt 5): Stehlager 193 s / Spitze 10827 MB → 206 s / 11183 MB (+7 % Zeit, +0,36 GB),
+  Linearschlitten 248 s / 9900 MB → 280 s / 8012 MB (+13 % Zeit, Spitze −1,9 GB). Entscheidung dazu: T15-2.
+- **T15-1 (Schlitten-Negativfall `test_umgekehrte_richtung`, vorab als P3 vermerkt):** Die Erwartung wird um
+  `sollweg:Schlittenhub:schlitten` und `sollweg:Schlittenhub:hebel` erweitert (strenger, nicht abgeschwächt; Muster 4a, Spec §10
+  „Erwartung nach Live-Lauf“); die Assertion auf `ist` (−220 mm) bleibt. Grund: seit 4b prüft `sollweg:` die falsche Richtung
+  in jeder Stellung (8 Stellungen abweichend). Wenn falsch: der Fall meldet bei anderem Verhalten weniger oder mehr Mängel (Test rot).
+- **T15-2 (ForceRebuild3 bleibt für alle Bewegungen, T13-3):** Die Mehrkosten gegenüber 4a (+7 % / +0,36 GB Stehlager, +13 %
+  Schlitten, siehe T13-1) liegen im Rahmen der beobachteten Streuung (Stehlager-Tests desselben Laufs 181–201 s und
+  10,8–11,2 GB; Spike-Zeiten streuten bis Faktor 2,5), es gab kein `SPEICHER_KNAPP`. Laufzeit und Speicher sind die Pakete
+  SWKI-1 und SWKI-2. Wenn falsch: ~10 % längere 4a-Bewegungsprüfungen → `ForceRebuild3` auf Bewegungen mit Kopplungen
+  beschränken.
+- **T15-3 (Blöcke 1–2 der Regression nicht auf dem Endstand wiederholt):** Die Fix-Welle berührt dort nur Pfade ohne Wirkung
+  auf Specs ohne Verzahnung und Kopplung: die Messlage nur bei `verzahnung`, die Anlage-Prüfung nur bei `{komponente, feature}`
+  ohne `flaeche`, das Entdoppeln nur bei gekoppelten Komponenten, `setze_lage` und Übersetzung ≤ 0 nur in Fehlerpfaden; alle
+  Fix-Pfade sind per Unit-Test belegt. Wenn falsch: eine unentdeckte Regression in einem 4a-Test; Abhilfe: Blöcke 1–2 erneut
+  (~70 min).
+- **FR-1 (Fix-Welle `27507cd`, Gesamt-Review „With fixes“):** eine Fix-Welle mit Important 1 (Messlage aus der aktuellen Spec,
+  Sollwerte aus der freigegebenen Kopie) und den Minors 1–4 und 6 (Abschnitt 8); Important 2 und Minor 5 erledigt dieses
+  Dokument. Die Review-Triage ließ die übrigen Kleinbefunde stehen. Wenn falsch: Die Messlage-Änderung kann bei einer
+  geänderten Lage mit einer unveränderten freigegebenen Kopie anders messen als vorher; sie ist per Unit-Test belegt, live
+  nur durch die Teilprüfungen der Regression (`test_live_verzahnung`, Zahnstangentrieb-Teile).
 - **T13-2 / Task 12b:** Das Eingriffsbild verfehlte Spec §5.7; `kopplungsbild` blendet übrige Komponenten aus. Wenn falsch: der
   Prüfer sieht den Eingriff nicht und prüft über den Prüfbericht.
 - **T14-1 (Fall 3):** Erwartung auf `{verknuepfungen, kollision}` erweitert (Abschnitt 6, Spec §10). Wenn falsch: Fall 3 könnte bei
   anderer Einbaulage ohne `kollision` laufen (Test rot); Alternative: nur das `CreateMate` von `k2` unterlassen und die Phase
   behalten.
 - **Speicher (S14b-Z9, Nutzer):** strenge Kollision bleibt, Anstieg ~0,5 GB je Bewegungsprüfung dokumentiert. Die Referenz-Spitzen
-  liegen bei 10,1–10,3 GB (Abschnitte 5, 6 und 7). Wenn falsch: `SPEICHER_KNAPP` auf frischem SolidWorks → Nutzer erneut fragen.
+  liegen bei 9,8–10,3 GB (Abschnitte 5, 6 und 7). Wenn falsch: `SPEICHER_KNAPP` auf frischem SolidWorks → Nutzer erneut fragen.
 
 ## 10. Offene Punkte
 
-- **Speicher an der Grenze:** Zahnstangentrieb und Negativfälle Spitzen ~10,1–10,3 GB bei `speicher_grenze_mb` 10000, ohne
+- **Speicher an der Grenze:** Zahnstangentrieb und Negativfälle Spitzen ~9,8–10,3 GB bei `speicher_grenze_mb` 10000, ohne
   `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht (wie 4a). Das Speicherpaket (Ergebnisse 4a, Abschnitt 7) ist
   weiterhin offen und wird wichtiger (Gesamt-Review: Speicherpaket priorisieren; Plane SWKI-2: Speicherspitzen über
   `speicher_grenze_mb`).
@@ -303,7 +328,7 @@ Entscheidung, Grund, „wenn falsch“. Die Spike-Rulings stehen in den Abschnit
 
 ## Stand
 
-- Datum: 05.10.2026, Rechner A (SOLIDWORKS 2025), Branch `stufe-4b` (von `plan-stufe-4b` @ 295213d). Ohne Push. Commits seit `main`
+- Datum: 05./06.10.2026, Rechner A (SOLIDWORKS 2025), Branch `stufe-4b` (von `plan-stufe-4b` @ 295213d). Ohne Push. Commits seit `main`
   (`git log --oneline main..HEAD`). 847 Unit-Tests grün.
 
 | Task | Inhalt | Commits |
@@ -324,5 +349,5 @@ Entscheidung, Grund, „wenn falsch“. Die Spike-Rulings stehen in den Abschnit
 | 13 | Referenz Zahnstangentrieb, Prüfer-Checkliste; Fix T13-1 | 6cc810c, 759eb14 |
 | 12b | Kopplungsbild blendet übrige Komponenten aus | b78fa42 |
 | 14 | Negativfälle am Zahnstangentrieb | e73084f |
-| 15 | Skill, CLAUDE.md, Design §11, Spec-Nachzug, Ergebnisse; Schlitten-Negativfall mit Sollweg (T15-1); Regressionstabelle, Gesamt-Review (dieser Commit) | 60c0873, dieser Commit |
+| 15 | Skill, CLAUDE.md, Design §11, Spec-Nachzug, Ergebnisse; Schlitten-Negativfall mit Sollweg (T15-1); Regressionstabelle, Gesamt-Review; Fix-Runde 1 (Review-Befunde zu diesem Dokument) | 60c0873, 6f843ad, Fix-Runde 1 (Commit nach 6f843ad, `git log`) |
 | Fix-Welle | Gesamt-Review: Messlage aus aktueller Spec, `ZAHNPHASE_FEHLER`, Anlage-Plausibilität, Übersetzung 0, doppelte Freiheitsgrade, Zahnweiten-Test | 27507cd |

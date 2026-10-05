@@ -62,7 +62,7 @@ Nutzerwahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket „Messarten“ (Fasen
 - Kopplungen `zahnrad`/`zahnstange` über den Skill `baugruppe` §7: Seite a `gekoppelt`, Kopplungen zuletzt, Endlagen der
   gekoppelten Wellen mit `pi`, Drehsinn aus der Geometrie.
 - Regressions-Suite enthält den Zahnstangentrieb und seine Teile (`tests/referenz/zahnstangentrieb/`); Live-Läufe mit
-  Kopplungen wie Bewegungen je Test auf frischem SolidWorks. Speicher: Zahnstangentrieb Spitzen ~10,1–10,3 GB (über
+  Kopplungen wie Bewegungen je Test auf frischem SolidWorks. Speicher: Zahnstangentrieb Spitzen ~9,8–10,3 GB (über
   `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht).
 
 ## Prüfen und Nachbessern (Stufe 2)

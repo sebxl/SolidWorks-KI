@@ -493,7 +493,7 @@ Die Erwartung wurde damit erweitert (strenger), nicht abgeschwächt; die übrige
 - Zeit und Private Bytes je Radbau und je Bewegungsschritt mit Verzahnung sind in `docs/stufe4b/ergebnisse.md` dokumentiert.
   *Nachgezogen bei der Umsetzung, 2026-10-05:* Zeit und Speicher: Rad z 50 ca. 20 s, Teil mit Rad ca. +1,4–1,8 GB Private Bytes (Ziel < 15 s und < 300 MB nicht
   erreicht, Hinweis im Skill `konstruieren`). Die Speicherspitzen der Referenz *Zahnstangentrieb* und der Negativfälle liegen bei
-  ~10,1–10,3 GB, also über `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht.
+  ~9,8–10,3 GB, also über `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht.
 
 ## 13. Reihenfolge der Umsetzung
 
