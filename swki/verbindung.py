@@ -89,6 +89,14 @@ def byref_str():
     return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_BSTR, "")
 
 
+def dispatch_array(objekte) -> object:
+    """Array von COM-Objekten (z. B. IGearMateFeatureData.EntitiesToMate)."""
+    import pythoncom
+    import win32com.client
+
+    return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_DISPATCH, list(objekte))
+
+
 def r8_array(werte) -> object:
     """double-Array für COM. Eine rohe Python-Liste liefert bei IMathUtility.CreatePoint still falsche Werte."""
     import pythoncom
