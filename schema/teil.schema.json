@@ -286,6 +286,37 @@
       },
       "oneOf": [{"required": ["achse"]}, {"required": ["ebene"]}]
     },
+    "ebene_fest": {
+      "oneOf": [
+        {"$ref": "#/$defs/standardebene"},
+        {
+          "type": "object", "required": ["versatz"], "additionalProperties": false,
+          "properties": {
+            "versatz": {
+              "type": "object", "required": ["ebene", "abstand"], "additionalProperties": false,
+              "properties": {"ebene": {"$ref": "#/$defs/standardebene"}, "abstand": {"$ref": "#/$defs/wert"}}
+            }
+          }
+        }
+      ]
+    },
+    "f_verzahnung": {
+      "required": ["art", "ebene", "mitte", "modul", "zaehne", "breite", "zahndickenabmass"],
+      "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "art": {"enum": ["stirnrad", "zahnstange"]},
+        "ebene": {"$ref": "#/$defs/ebene_fest"},
+        "mitte": {"$ref": "#/$defs/punkt2"},
+        "modul": {"$ref": "#/$defs/wert"},
+        "zaehne": {"$ref": "#/$defs/wert"},
+        "breite": {"$ref": "#/$defs/wert"},
+        "zahndickenabmass": {"$ref": "#/$defs/wert"},
+        "umkehren": {"type": "boolean"},
+        "winkel": {"$ref": "#/$defs/wert"},
+        "kopf": {"enum": ["+v", "-v"]}
+      }
+    },
     "f_skript": {
       "required": ["datei", "luecke"], "additionalProperties": false,
       "properties": {
@@ -300,7 +331,7 @@
       "properties": {
         "id": {"$ref": "#/$defs/id"},
         "typ": {"enum": ["extrusion", "schnitt", "rotation", "bohrung", "normbohrung", "verrundung", "fase",
-                         "muster_linear", "muster_kreis", "spiegeln", "skript", "referenz"]}
+                         "muster_linear", "muster_kreis", "spiegeln", "skript", "referenz", "verzahnung"]}
       },
       "allOf": [
         {"if": {"properties": {"typ": {"enum": ["extrusion", "schnitt"]}}}, "then": {"$ref": "#/$defs/f_extrusion"}},
@@ -313,7 +344,8 @@
         {"if": {"properties": {"typ": {"const": "muster_kreis"}}}, "then": {"$ref": "#/$defs/f_muster_kreis"}},
         {"if": {"properties": {"typ": {"const": "spiegeln"}}}, "then": {"$ref": "#/$defs/f_spiegeln"}},
         {"if": {"properties": {"typ": {"const": "skript"}}}, "then": {"$ref": "#/$defs/f_skript"}},
-        {"if": {"properties": {"typ": {"const": "referenz"}}}, "then": {"$ref": "#/$defs/f_referenz"}}
+        {"if": {"properties": {"typ": {"const": "referenz"}}}, "then": {"$ref": "#/$defs/f_referenz"}},
+        {"if": {"properties": {"typ": {"const": "verzahnung"}}}, "then": {"$ref": "#/$defs/f_verzahnung"}}
       ]
     },
     "messpunkt": {

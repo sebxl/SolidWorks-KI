@@ -116,7 +116,10 @@ def test_umgekehrte_richtung(capsys, auftrag):
 
     bericht = _baue_und_pruefe(capsys, _aendere(auftrag, aendern))
     maengel = _maengel(bericht)
-    assert set(maengel) == {"endlage:Schlittenhub:schlitten", "endlage:Schlittenhub:hebel"}, maengel
+    # Seit 4b prüft `sollweg:` die falsche Richtung in jeder Stellung; die Erwartung ist nach dem Live-Lauf erweitert
+    # (Ruling T15-1, Spec 4b §10): zusätzlich `sollweg:` für Schlitten und Hebel (8 Stellungen abweichend).
+    assert set(maengel) == {"endlage:Schlittenhub:schlitten", "endlage:Schlittenhub:hebel",
+                            "sollweg:Schlittenhub:schlitten", "sollweg:Schlittenhub:hebel"}, maengel
     ist = next(p["ist"] for p in bericht["pruefungen"] if p["id"] == "endlage:Schlittenhub:schlitten")
     assert ist == pytest.approx([-220.0, 0.0, 0.0], abs=0.1), ist
 

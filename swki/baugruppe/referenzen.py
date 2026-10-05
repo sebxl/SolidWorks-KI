@@ -7,8 +7,9 @@ from swki.compiler import sw
 from swki.compiler.anker import RICHTUNGEN, AnkerFehler, Flaeche, laenge, skalar, zylinder_zu_punkten
 from swki.compiler.fehler import REFERENZ_MEHRDEUTIG, REFERENZ_NICHT_GEFUNDEN
 from swki.compiler.skizze import STANDARD
-from swki.compiler.topologie import flaechen, loese_flaeche, mit_abstand, referenz_geometrie
+from swki.compiler.topologie import flaechen, kante_aus, loese_flaeche, mit_abstand, referenz_geometrie
 from swki.pruefung.geometrie import Messgeometrie
+from swki.verzahnung import verzahnung_im_teil
 
 _PARALLEL = 1.0 - 1e-6
 _GLEICH_MM = 1e-4
@@ -55,6 +56,26 @@ def _bohrung(ctx, fid: str, instanz: int):
     if instanz > len(ergebnis.punkte):
         raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"Bohrung {fid} hat nur {len(ergebnis.punkte)} Instanzen")
     return ergebnis.features[0], ergebnis.punkte[instanz - 1]
+
+
+def kopplung_referenz(ctx, fid: str) -> TeilReferenz:
+    """Entität einer Kopplungsseite im Teil (Spec 4b §5.4.3; Spike S14b Zeile 6): Stirnrad – koaxiale Zylinderfläche
+    (wie die Radachse {feature, instanz: 1, achse: true}); Zahnstange – gerade Kante einer Kopffläche entlang der
+    Zahnreihe."""
+    f = next(x for x in ctx.spec["features"] if x["id"] == fid)
+    if f["art"] == "stirnrad":
+        return loese_im_teil(ctx, {"feature": fid, "instanz": 1, "achse": True})
+    if fid not in ctx.ergebnisse:
+        raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"Feature {fid!r} fehlt im Teil")
+    vz = verzahnung_im_teil(f, ctx.spec.get("parameter", {}))
+    for kopf in flaechen(ctx.ergebnis(fid).features[0]):
+        if kopf.art != "ebene" or skalar(kopf.normale, vz.kopfrichtung) <= _PARALLEL:
+            continue
+        for e in kopf.objekt.GetEdges or ():
+            k = kante_aus(e)
+            if k.art == "linie" and abs(skalar(k.richtung, vz.u)) > _PARALLEL:
+                return TeilReferenz(e, Messgeometrie("achse", k.start, vz.u), False)
+    raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"{fid}: keine Kante entlang der Zahnreihe")
 
 
 def loese_im_teil(ctx, seite: dict) -> TeilReferenz:

@@ -1,0 +1,23 @@
+# Referenz Zahnstangentrieb (Spec 4b): Antriebswelle – Welle Ø D entlang z (Länge 2·LW, mittig) mit Rad Z1 Zähne
+# (Breite B1, ab z = ZA), m = M. Die Wellenabschnitte sparen das Rad aus (volumen auto). Achse = Bezugsachse ACHSE (z).
+art: teil
+name: Antriebswelle
+material: "1.0503"
+eigenschaften: {Benennung: Antriebswelle Zahnstangentrieb}
+parameter: {M: 2, Z1: 50, AS: -0.05, D: 12, LW: 60, ZA: 18, B1: 12}
+features:
+  - {id: z1, typ: verzahnung, art: stirnrad, ebene: {versatz: {ebene: vorne, abstand: "=ZA"}}, mitte: [0, 0],
+     modul: "=M", zaehne: "=Z1", breite: "=B1", zahndickenabmass: "=AS"}
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: {versatz: {ebene: vorne, abstand: "=-LW"}}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}
+    ende: {typ: blind, tiefe: "=LW+ZA"}
+  - id: f2
+    typ: extrusion
+    skizze: {ebene: {versatz: {ebene: vorne, abstand: "=ZA+B1"}}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}
+    ende: {typ: blind, tiefe: "=LW-ZA-B1"}
+  - {id: ACHSE, typ: referenz, achse: z}
+pruefung:
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: Rad koaxial zur Achse, von: {feature: z1, instanz: 1, achse: true}, zu: {referenz: ACHSE}, soll: 0}

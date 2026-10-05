@@ -1,9 +1,14 @@
-"""Plausibilität einer Baugruppen-Spezifikation (Spec 3b §5), ohne SolidWorks."""
+"""Plausibilität einer Baugruppen-Spezifikation (Spec 3b §5, 4a §5, 4b §5.2), ohne SolidWorks."""
+
+import math
 
 from swki.baugruppe.aufloesen import GRENZEN, anzahl_positionen, basis, je_position
+from swki.baugruppe.kopplung import (GEKOPPELT, KOPPLUNGEN, antriebsmenge, endlagen_wege, gekoppelte, soll_drehungen,
+                                     verzahnung_der_seite)
 from swki.baugruppe.modell import Quelle
 from swki.baugruppe.passung import passung_befunde
-from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
+from swki.konfig import lade_standard
+from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 
 MIT_AUSRICHTUNG = ("deckungsgleich", "parallel", "abstand", "winkel", *GRENZEN)
 MIT_WERT = ("abstand", "winkel")
@@ -55,6 +60,10 @@ def referenz_befunde(seite: dict, pfad: str, quellen: dict[str, Quelle], spec: d
         f = features.get(seite["feature"])
         if f is None:
             befunde.append(_b(f"{pfad}.feature", f"{q.datei} hat kein Feature {seite['feature']!r}"))
+        elif "instanz" in seite and f["typ"] == "verzahnung":
+            if f["art"] != "stirnrad" or seite["instanz"] != 1 or not seite.get("achse"):
+                befunde.append(_b(f"{pfad}.instanz", f"{seite['feature']}: nur die Radachse eines Stirnrads "
+                                                     "({feature, instanz: 1, achse: true})"))
         elif "instanz" in seite:
             if f["typ"] not in BOHRUNGEN:
                 befunde.append(_b(f"{pfad}.instanz", f"instanz nur bei normbohrung/bohrung ({seite['feature']} ist {f['typ']})"))
@@ -89,11 +98,30 @@ def _komponenten_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
     return befunde
 
 
-def _grenze_befunde(v: dict, pfad: str, p: dict) -> list[dict]:
-    """min/max einer Grenzverknüpfung: Pflicht, 0 oder Parameter-Ausdruck (GRENZE_FESTE_ZAHL), min < max, Bereich."""
+def _ist_eben(seite: dict, quellen: dict[str, Quelle]) -> bool:
+    """Referenz einer Grenze ist eine ebene Fläche bzw. Ebene (Spec 4a §4.1, 4b §6.3): Fläche, Standardebene oder
+    referenz-Ebene; nicht Achse, nicht Punktanker."""
+    if "flaeche" in seite or "ebene" in seite:
+        return True
+    if "referenz" in seite:
+        q = quellen[basis(seite["komponente"])]
+        if q.art == "normteil":
+            return "ACHSE" not in seite["referenz"]
+        f = next((x for x in q.spec["features"] if x["id"] == seite["referenz"]), None)
+        return f is not None and "ebene" in f
+    return False
+
+
+def _grenze_befunde(v: dict, pfad: str, p: dict, quellen: dict[str, Quelle]) -> list[dict]:
+    """min/max einer Grenzverknüpfung: Pflicht, 0 oder Parameter-Ausdruck (GRENZE_FESTE_ZAHL), min < max, Bereich;
+    a und b ebene Flächen (GRENZE_REFERENZ)."""
     if v["typ"] not in GRENZEN:
         return [_b(f"{pfad}.{s}", "min/max gelten nur bei grenze_abstand/grenze_winkel") for s in ("min", "max") if s in v]
     befunde, werte = [], {}
+    for s in ("a", "b"):
+        if basis(v[s]["komponente"]) in quellen and not _ist_eben(v[s], quellen):
+            befunde.append(_b(f"{pfad}.{s}", f"GRENZE_REFERENZ: {s} einer {v['typ']} ist eine ebene Fläche (flaeche, ebene "
+                                             "oder referenz-Ebene), keine Achse und kein Punktanker"))
     for s in ("min", "max"):
         if s not in v:
             befunde.append(_b(f"{pfad}.{s}", f"{s} ist bei {v['typ']} Pflicht"))
@@ -189,8 +217,8 @@ def _verknuepfung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
             except AusdruckFehler as e:
                 befunde.append(_b(f"{pfad}.wert", str(e)))
         befunde += _je_befunde(v, pfad, spec)
-        befunde += _grenze_befunde(v, pfad, p) + _scharnier_befunde(v, pfad, spec, quellen)
-        if v["typ"] in (*GRENZEN, "scharnier") and any(je_position(spec, v[s]["komponente"]) for s in ("a", "b")):
+        befunde += _grenze_befunde(v, pfad, p, quellen) + _scharnier_befunde(v, pfad, spec, quellen)
+        if v["typ"] in (*GRENZEN, "scharnier", *KOPPLUNGEN) and any(je_position(spec, v[s]["komponente"]) for s in ("a", "b")):
             befunde.append(_b(pfad, f"{v['typ']} nicht mit Komponenten mit je_position"))
     genannt = {v[s]["komponente"] for v in vs for s in ("a", "b")}
     for k in spec["komponenten"]:
@@ -298,11 +326,121 @@ def _pruefung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
     return befunde
 
 
+def _nur_feature(seite: dict) -> bool:
+    """Referenzform {komponente, feature} (Verzahnung einer Kopplung)."""
+    return set(seite) == {"komponente", "feature"}
+
+
+def _verzahnung(seite: dict, quellen: dict[str, Quelle]) -> dict | None:
+    q = quellen.get(basis(seite["komponente"]))
+    if q is None or q.art != "teil" or not _nur_feature(seite):
+        return None
+    f = next((x for x in q.spec["features"] if x["id"] == seite["feature"]), None)
+    return f if f is not None and f["typ"] == "verzahnung" else None
+
+
+def _kopplung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
+    """Spec 4b §5.2: Art der Seiten (KOPPLUNG_ART), gleiche Module (MODUL_UNGLEICH), Reihenfolge und feste Seite b
+    (KOPPLUNG_REIHENFOLGE); {komponente, feature} nur bei Kopplungen."""
+    befunde = []
+    vs = spec.get("verknuepfungen", [])
+    fg = spec.get("freiheitsgrade", {})
+    seite_a: dict[str, int] = {}  # Komponente → Index der Kopplung, in der sie Seite a ist
+    for i, v in enumerate(vs):
+        pfad = f"verknuepfungen[{i}]"
+        if v["typ"] not in KOPPLUNGEN:
+            befunde += [_b(f"{pfad}.{s}", "{komponente, feature} nur bei zahnrad/zahnstange; sonst flaeche, achse oder "
+                                          "referenz angeben") for s in ("a", "b", "anlage_a", "anlage_b") if s in v and _nur_feature(v[s])]
+            continue
+        arten = {"a": "stirnrad", "b": "stirnrad" if v["typ"] == "zahnrad" else "zahnstange"}
+        moduln = {}
+        for s, art in arten.items():
+            f = _verzahnung(v[s], quellen)
+            if f is None or f["art"] != art:
+                befunde.append(_b(f"{pfad}.{s}", f"KOPPLUNG_ART: {v['typ']}: {s} ist eine Verzahnung art: {art} "
+                                                 "({komponente, feature})"))
+            else:
+                moduln[s] = verzahnung_der_seite(quellen, v[s]).geo.m
+        if len(moduln) == 2 and abs(moduln["a"] - moduln["b"]) > 1e-9:
+            befunde.append(_b(pfad, f"MODUL_UNGLEICH: Modul {moduln['a']:g} (a) und {moduln['b']:g} (b)"))
+        ka, kb = v["a"]["komponente"], v["b"]["komponente"]
+        if fg.get(ka) != GEKOPPELT:
+            befunde.append(_b(f"{pfad}.a", f"KOPPLUNG_REIHENFOLGE: {ka} wird beim Bau in Phase gedreht und braucht "
+                                           "freiheitsgrade: gekoppelt"))
+        if ka in seite_a:
+            befunde.append(_b(f"{pfad}.a", f"KOPPLUNG_REIHENFOLGE: {ka} ist schon Seite a von {vs[seite_a[ka]]['id']}"))
+        seite_a.setdefault(ka, i)
+        if fg.get(kb) == GEKOPPELT and seite_a.get(kb, i) >= i:
+            befunde.append(_b(f"{pfad}.b", f"KOPPLUNG_REIHENFOLGE: {kb} steht beim Anlegen noch nicht fest (gekoppelt, "
+                                           "aber nicht Seite a einer früheren Kopplung)"))
+        spaeter = [w["id"] for w in vs[i + 1:] if w["typ"] not in KOPPLUNGEN
+                   and {ka, kb} & {w[s]["komponente"] for s in ("a", "b", "anlage_a", "anlage_b") if s in w}]
+        if spaeter:
+            befunde.append(_b(pfad, f"KOPPLUNG_REIHENFOLGE: Kopplungen nach den übrigen Verknüpfungen von {ka} und {kb} "
+                                    f"(danach noch: {', '.join(spaeter)})"))
+    return befunde
+
+
+def _kopplung_bewegung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
+    """Spec 4b §5.2: GEKOPPELT_OHNE_ANTRIEB, ENDLAGE_FEHLT, UEBERSETZUNG_WIDERSPRUCH, SCHRITTE_ZU_GROB."""
+    befunde = []
+    p = spec.get("parameter", {})
+    vorgabe = lade_standard()["bewegung_schritte"]
+    getrieben: set[str] = set()
+    grenzen = {v["id"]: v for v in spec.get("verknuepfungen", []) if v["typ"] in GRENZEN}
+    for i, b in enumerate(spec.get("bewegungen", [])):
+        pfad = f"bewegungen[{i}]"
+        kid = bewegte_komponente(spec, b)
+        if kid is None:
+            continue
+        menge = antriebsmenge(spec, kid)
+        treibt = gekoppelte(spec, menge)
+        getrieben |= set(treibt)
+        endlagen = b.get("erwartet", {}).get("endlagen", [])
+        drehungen = {e["komponente"] for e in endlagen if "drehung" in e}
+        for k in treibt:
+            if k not in drehungen:
+                befunde.append(_b(f"{pfad}.erwartet.endlagen", f"ENDLAGE_FEHLT: {k} ist gekoppelt und braucht in "
+                                                               f"{b['name']} eine Endlage drehung"))
+        g = grenzen[b["grenze"]]
+        if "min" not in g or "max" not in g:
+            continue  # bereits bei den Grenzen gemeldet
+        try:
+            bereich = auswerten(g["max"], p) - auswerten(g["min"], p)
+            soll = soll_drehungen(spec, quellen, menge, "abstand" if g["typ"] == "grenze_abstand" else "winkel", bereich,
+                                  endlagen_wege(b, p))
+            schritte = b.get("schritte", vorgabe)
+            for j, e in enumerate(endlagen):
+                if "drehung" not in e:
+                    continue
+                winkel = abs(auswerten(e["drehung"]["winkel"], p))
+                epfad = f"{pfad}.erwartet.endlagen[{j}]"
+                if e["komponente"] in soll and abs(winkel - soll[e["komponente"]]) > 0.01:
+                    befunde.append(_b(epfad, f"UEBERSETZUNG_WIDERSPRUCH: {e['komponente']} dreht laut Übersetzung "
+                                             f"{soll[e['komponente']]:.4f}°, erwartet sind {winkel:g}°"))
+                if winkel / schritte >= 180:
+                    befunde.append(_b(epfad, f"SCHRITTE_ZU_GROB: {winkel:g}° in {schritte} Schritten – mindestens "
+                                             f"{math.floor(winkel / 180) + 1} Schritte"))
+        except AusdruckFehler:
+            continue  # bereits bei den Bewegungen gemeldet
+    for n, w in spec.get("freiheitsgrade", {}).items():
+        if w == GEKOPPELT and n not in getrieben:
+            befunde.append(_b(f"freiheitsgrade.{n}", f"GEKOPPELT_OHNE_ANTRIEB: {n} erreicht über Kopplungen keine "
+                                                     "Komponente oder Gruppe mit freiheitsgrade: 1 und Bewegung"))
+    return befunde
+
+
 def plausibel_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
     """Alle Plausibilitätsbefunde; Komponentenfehler zuerst (sonst lassen sich Instanzen nicht zählen)."""
     befunde = _komponenten_befunde(spec, quellen)
+    if PI in spec.get("parameter", {}):
+        befunde.append(_b(f"parameter.{PI}", f"{PI} ist die Kreiszahl und kein Parametername"))
     if befunde:
         return befunde
     befunde = (_verknuepfung_befunde(spec, quellen) + _freiheitsgrade_befunde(spec) + _pruefung_befunde(spec, quellen)
                + _bewegungen_befunde(spec, quellen))
+    kopplung = _kopplung_befunde(spec, quellen)
+    befunde += kopplung
+    if not kopplung:
+        befunde += _kopplung_bewegung_befunde(spec, quellen)
     return befunde + passung_befunde(spec, quellen)

@@ -43,6 +43,9 @@ class SwMechanik:
         sw_baugruppe.unterdruecke(self.asm, namen[b.grenze.lower()], ja)
 
     def status(self) -> dict[str, int]:
+        # Spike/Diagnose 4b (Task 13): GetConstrainedStatus liest über die Kopplungskette veraltet (EditRebuild3
+        # genügt nicht), erst nach ForceRebuild3 stimmt der Status der entfernten Komponenten.
+        self.asm.ForceRebuild3(False)
         return {iid: sw_baugruppe.status(k) for iid, k in self.komponenten.items()}
 
     def _teilebox(self, iid: str, komp) -> list[float] | None:

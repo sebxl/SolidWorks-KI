@@ -3,7 +3,7 @@ name: baugruppe
 description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen) in SolidWorks aus Eigenteilen und Normteilen – Teil-Specs und Baugruppen-Spec schreiben, validieren, eine Freigabe, bauen, prüfen (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage, Teilprüfungen), Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer mehrere Teile zusammenbauen, verschrauben, verstiften oder eine Baugruppe ändern will.
 ---
 
-# Baugruppe (Stufe 3b, Bewegungen Stufe 4a)
+# Baugruppe (Stufe 3b, Bewegungen Stufe 4a, Kopplungen Stufe 4b)
 
 Spec: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Abweichungen der Umsetzung: `docs/stufe3b/ergebnisse.md`).
 Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Vorlage: `tests/referenz/stehlager/`.
@@ -124,3 +124,30 @@ Vorlage: `tests/referenz/schlitten/`.
 - **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht): SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen;
   scheitert es auch frisch, dem Nutzer melden.
 - Ab vier Bewegungen meldet `validieren` den Hinweis `pruefaufwand` – mit dem Nutzer klären, ob alle nötig sind.
+
+## 7. Kopplungen (Stufe 4b)
+
+Zahnrad- und Zahnstangenverknüpfung koppeln die Drehung von Wellen an eine Bewegung.
+Spec: `docs/superpowers/specs/2026-10-05-stufe-4b-verzahnung-kopplungen-design.md` (Abweichungen der Umsetzung:
+`docs/stufe4b/ergebnisse.md`). Vorlage: `tests/referenz/zahnstangentrieb/`.
+
+- `zahnrad` (a und b Stirnräder) und `zahnstange` (a Ritzel, b Zahnstange); beide Seiten als `{komponente, feature}` auf
+  ein Verzahnungs-Feature, gleiche Module. Keine Übersetzung angeben: swki leitet sie aus den Zähnezahlen ab.
+- Seite `a` wird beim Bau um ihre Achse gedreht, bis Zahn in Lücke steht: `a` braucht `freiheitsgrade: gekoppelt` und
+  ist Seite a nur einer Kopplung; `b` steht fest (fixiert, Teil der bewegten Gruppe oder Seite a einer früheren
+  Kopplung). Kopplungen stehen nach allen anderen Verknüpfungen ihrer Komponenten (`KOPPLUNG_REIHENFOLGE`).
+- Gekoppelte Wellen: Scharnier (Achse + Anlage) im Lager und `freiheitsgrade: {<welle>: gekoppelt}`; eine Zahnstange, die
+  mit dem Schlitten fährt, kommt mit ihm in eine Gruppe mit `1`.
+- Endlagen: jede gekoppelte Komponente braucht in der treibenden Bewegung eine Endlage `drehung` (`ENDLAGE_FEHLT`), Winkel
+  als Ausdruck mit `pi` – Zahnstange: Weg·360/(π·m·z), Zahnrad: Winkel·z_a/z_b. `validieren` vergleicht die Beträge mit der
+  Übersetzung (`UEBERSETZUNG_WIDERSPRUCH`). Den Drehsinn aus der Geometrie ableiten (Außenräder gegensinnig; Ritzel:
+  Rechte-Hand-Regel mit der Fahrrichtung am Wälzpunkt) und nie nachträglich an eine Messung anpassen. Je Schritt weniger als
+  180° Drehung (`SCHRITTE_ZU_GROB` nennt die nötige Schrittzahl).
+- `bauen`: Knoten `zahnphase:<id>` vor jeder Kopplung, Fehler `ZAHNPHASE_FEHLER` (Phase nicht herstellbar – Lage der
+  Komponenten bzw. Achsen prüfen).
+- `pruefen`: `eingriff:<id>` (Achslage, Achsabstand, Überdeckung der Zahnbreiten, Wälzpunkt auf der Zahnstange,
+  zurückgelesene Übersetzung), Kollision im Eingriff streng (Flankenspiel kommt aus `zahndickenabmass`),
+  `freiheitsgrad:<welle>`, `sollweg:<Bewegung>:<k>` je Stellung (für alle Bewegungen, auch ohne Kopplung), Bilder
+  `<id>-eingriff`; das Eingriffsbild blendet die übrigen Komponenten aus, damit der Eingriff nicht verdeckt ist.
+  Unterdrückte Verknüpfungen meldet `verknuepfungen` als fehlerhaft.
+- Speicher und Neustart wie §6: Live-Läufe mit Kopplungen je Test auf frischem SolidWorks.

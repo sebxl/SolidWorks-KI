@@ -1,0 +1,304 @@
+{
+  "ok": true,
+  "privat_mb_vorher": 426.3,
+  "komponenten": [
+    "antriebswelle",
+    "lagerbock",
+    "platte",
+    "ritzelwelle",
+    "zahnstange"
+  ],
+  "verknuepfungen": [
+    "v1",
+    "v2",
+    "g1",
+    "v3",
+    "v4",
+    "v5",
+    "s1",
+    "s1.anlage",
+    "s2",
+    "s2.anlage",
+    "k1",
+    "k2"
+  ],
+  "status_beim_oeffnen": {
+    "platte": 3,
+    "ritzelwelle": 3,
+    "antriebswelle": 3,
+    "lagerbock": 3,
+    "zahnstange": 3
+  },
+  "status_grenze_unterdrueckt": {
+    "platte": 3,
+    "ritzelwelle": 2,
+    "antriebswelle": 2,
+    "lagerbock": 3,
+    "zahnstange": 2
+  },
+  "status_mit_antrieb": {
+    "platte": 3,
+    "ritzelwelle": 3,
+    "antriebswelle": 3,
+    "lagerbock": 3,
+    "zahnstange": 3
+  },
+  "stellungen": [
+    {
+      "wert": 0.0,
+      "meldung": null,
+      "s": 0.877,
+      "privat_mb": 4883.9,
+      "x_zahnstange_mm": -96.8584,
+      "verschiebung_zahnstange_mm": 0.0,
+      "drehung_z_aufsummiert": {
+        "ritzelwelle": 0.0,
+        "antriebswelle": 0.0
+      },
+      "lage_transform2": {
+        "zahnstange": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          -0.096858,
+          0.0325,
+          -0.03,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ritzelwelle": [
+          0.999648,
+          0.026545,
+          0.0,
+          -0.026545,
+          0.999648,
+          0.0,
+          -0.0,
+          -0.0,
+          1.0,
+          -0.0,
+          0.0525,
+          -0.02,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "antriebswelle": [
+          0.999835,
+          0.018141,
+          0.0,
+          -0.018141,
+          0.999835,
+          -0.0,
+          -0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.1275,
+          -0.02,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "wert": 30.0,
+      "meldung": null,
+      "s": 0.761,
+      "privat_mb": 4884.3,
+      "x_zahnstange_mm": -66.8584,
+      "verschiebung_zahnstange_mm": 30.0,
+      "drehung_z_aufsummiert": {
+        "ritzelwelle": 85.9437,
+        "antriebswelle": -42.9718
+      },
+      "lage_transform2": {
+        "zahnstange": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          -0.066858,
+          0.0325,
+          -0.03,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ritzelwelle": [
+          0.044234,
+          0.999021,
+          0.0,
+          -0.999021,
+          0.044234,
+          -0.0,
+          -0.0,
+          -0.0,
+          1.0,
+          -0.0,
+          0.0525,
+          -0.02,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "antriebswelle": [
+          0.743934,
+          -0.668253,
+          0.0,
+          0.668253,
+          0.743934,
+          -0.0,
+          -0.0,
+          0.0,
+          1.0,
+          -0.0,
+          0.1275,
+          -0.02,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "wert": 60.0,
+      "meldung": null,
+      "s": 0.762,
+      "privat_mb": 4884.4,
+      "x_zahnstange_mm": -36.8584,
+      "verschiebung_zahnstange_mm": 60.0,
+      "drehung_z_aufsummiert": {
+        "ritzelwelle": 171.8873,
+        "antriebswelle": -85.9437
+      },
+      "lage_transform2": {
+        "zahnstange": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          -0.036858,
+          0.0325,
+          -0.03,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ritzelwelle": [
+          -0.99339,
+          0.114791,
+          -0.0,
+          -0.114791,
+          -0.99339,
+          -0.0,
+          -0.0,
+          -0.0,
+          1.0,
+          0.0,
+          0.0525,
+          -0.02,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "antriebswelle": [
+          0.088821,
+          -0.996048,
+          0.0,
+          0.996048,
+          0.088821,
+          0.0,
+          -0.0,
+          0.0,
+          1.0,
+          -0.0,
+          0.1275,
+          -0.02,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  ],
+  "soll": {
+    "zahnstange_mm": [
+      30,
+      60
+    ],
+    "ritzelwelle_grad": [
+      85.9437,
+      171.8873
+    ],
+    "antriebswelle_grad": [
+      -42.9718,
+      -85.9437
+    ]
+  },
+  "status_danach": {
+    "platte": 3,
+    "ritzelwelle": 3,
+    "antriebswelle": 3,
+    "lagerbock": 3,
+    "zahnstange": 3
+  },
+  "verknuepfungen_danach": [
+    "v1",
+    "v2",
+    "g1",
+    "v3",
+    "v4",
+    "v5",
+    "s1",
+    "s1.anlage",
+    "s2",
+    "s2.anlage",
+    "k1",
+    "k2"
+  ],
+  "ruecklesen": {
+    "k1": {
+      "typ": 13,
+      "fehlercode": 0,
+      "reverse": true,
+      "durchmesser": 40.0,
+      "art": 0
+    },
+    "k2": {
+      "typ": 10,
+      "fehlercode": 0,
+      "reverse": false,
+      "zaehler": 50.0,
+      "nenner": 100.0
+    }
+  },
+  "privat_mb_nachher": 1147.5
+}

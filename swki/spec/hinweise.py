@@ -13,7 +13,7 @@ from swki.spec.normen import lade_tabelle
 
 MASS_FELDER = frozenset({
     "tiefe", "durchmesser", "radius", "abstand", "winkel", "breite", "hoehe", "mitte", "punkte", "positionen", "von", "bis",
-    "gewindetiefe", "laenge", "radien", "start", "linie", "bogen",
+    "gewindetiefe", "laenge", "radien", "start", "linie", "bogen", "modul", "zaehne", "zahndickenabmass",
 })
 _ANKER = frozenset({"nahe", "kanten", "flaeche"})  # Anker wählen Geometrie aus, sie sind keine Maße
 _TOL_NORM_MM = 0.01
@@ -132,6 +132,28 @@ def zusammenfassen(spec: dict) -> list[dict]:
     return ergebnis
 
 
+ABMASS_GROSS = 0.1  # × Modul (Spec 4b §4.3)
+
+
+def verzahnung_hinweise(spec: dict) -> list[dict]:
+    """Spec 4b §4.3: auffällig großes Zahndickenabmaß (|A_s| > 0,1·m) als Hinweis art "abmass_gross"."""
+    ergebnis = []
+    p = spec.get("parameter", {})
+    for i, f in enumerate(spec.get("features", [])):
+        if f.get("typ") != "verzahnung":
+            continue
+        try:
+            m, a = auswerten(f["modul"], p), auswerten(f["zahndickenabmass"], p)
+        except AusdruckFehler:
+            continue
+        if abs(a) > ABMASS_GROSS * m:
+            ergebnis.append({"art": "abmass_gross", "pfad": f"features[{i}].zahndickenabmass",
+                             "meldung": f"Zahndickenabmaß {a:g} mm ist größer als {ABMASS_GROSS:g}·m ({ABMASS_GROSS * m:g} "
+                                        "mm) – Flankenspiel prüfen"})
+    return ergebnis
+
+
 def hinweise(spec: dict) -> list[dict]:
-    """Alle Hinweise für swki validieren: erst feste Zahlen, dann Zusammenfassbares. Hinweise blockieren nie."""
-    return feste_masse(spec) + zusammenfassen(spec)
+    """Alle Hinweise für swki validieren: erst feste Zahlen, dann Zusammenfassbares, dann Verzahnung. Hinweise
+    blockieren nie."""
+    return feste_masse(spec) + zusammenfassen(spec) + verzahnung_hinweise(spec)

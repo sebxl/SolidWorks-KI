@@ -1,5 +1,9 @@
 """bericht.md eines Auftrags: Status, Läufe, offene Punkte, Screenshots, Phasenzeiten, Compiler-Änderungen."""
 
+from swki.pruefung.bewertung import beschreibung
+
+_ERGEBNIS = {True: "bestanden", False: "Mangel", None: "nicht geprüft"}
+
 
 def _zelle(wert) -> str:
     return "–" if wert is None else str(wert)
@@ -62,18 +66,34 @@ def bericht_markdown(
         zeilen += ["", "## Teilprüfungen (letzter Lauf)", "", "| Komponente | bestanden | Mängel |", "|---|---|---|"]
         zeilen += [f"| {k} | {'ja' if t['bestanden'] else 'nein'} | {t['maengel']} |"
                    for k, t in sorted(letzter["teilpruefungen"].items())]
+    if letzter.get("kopplungen"):
+        zeilen += ["", "## Kopplungen (letzter Lauf)", "",
+                   "| Kopplung | Typ | a → b | Übersetzung soll | gelesen | Achsabstand ist / soll (mm) | Überdeckung (mm) |",
+                   "|---|---|---|---|---|---|---|"]
+        for k in letzter["kopplungen"]:
+            g = k["gelesen"]
+            gelesen = (f"{g['zaehler']:g}:{g['nenner']:g}" if "zaehler" in g else f"Ø {g['durchmesser']:g}"
+                       ) if isinstance(g, dict) else _zelle(g)
+            zeilen.append(f"| {k['kopplung']} | {k['typ']} | {k['a']} → {k['b']} | {k['soll']} | {gelesen} | "
+                          f"{k['achsabstand']:g} / {k['achsabstand_soll']:g} | {k['ueberdeckung']:g} |")
     bewegungen = letzter.get("bewegungen")
     if bewegungen and bewegungen.get("laeufe"):
         zeilen += ["", "## Bewegungen (letzter Lauf)", "",
-                   "| Bewegung | Lauf | Stellungen | bewegt | Kollisionen | Grenze oben / unten | Dauer (s) |",
-                   "|---|---|---|---|---|---|---|"]
+                   "| Bewegung | Grenze | Bereich | Lauf | Stellungen | bewegt | Kollisionen | Grenze oben / unten | "
+                   "Dauer (s) |",
+                   "|---|---|---|---|---|---|---|---|---|"]
         for lauf in bewegungen["laeufe"]:
             gegen = ", ".join(f"{n} auf {s}" for n, s in lauf["gegen"].items()) or "Grundstellung"
             grenze = " / ".join(_grenze_text(lauf["grenze"].get(s)) for s in ("oben", "unten"))
-            zeilen.append(f"| {lauf['bewegung']} | {gegen} | {lauf['stellungen']} | {', '.join(lauf['bewegt']) or '–'} | "
-                          f"{lauf['kollisionen']} | {grenze} | {lauf['dauer_s']} |")
+            bereich = " … ".join(f"{w:g}" for w in lauf["bereich"]) if lauf.get("bereich") else "–"
+            zeilen.append(f"| {lauf['bewegung']} | {lauf.get('grenz_id', '–')} | {bereich} | {gegen} | {lauf['stellungen']} | "
+                          f"{', '.join(lauf['bewegt']) or '–'} | {lauf['kollisionen']} | {grenze} | {lauf['dauer_s']} |")
         if bewegungen.get("paare"):
             zeilen += ["", "Paarläufe für: " + "; ".join(" × ".join(p["bewegungen"]) for p in bewegungen["paare"])]
+        wege = [e for e in letzter.get("pruefungen", []) if e["id"].startswith(("endlage:", "sollweg:"))]
+        if wege:
+            zeilen += ["", "## Endlagen und Sollweg (letzter Lauf)", "", "| Prüfung | Ergebnis | Befund |", "|---|---|---|"]
+            zeilen += [f"| {e['id']} | {_ERGEBNIS[e['ok']]} | {'–' if e['ok'] else beschreibung(e)} |" for e in wege]
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]

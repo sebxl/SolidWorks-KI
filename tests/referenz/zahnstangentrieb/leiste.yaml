@@ -1,0 +1,19 @@
+# Referenz Zahnstangentrieb (Spec 4b): Führungsleiste (zweimal verwendet) – wie im Linearschlitten (4a). Ursprung Mitte
+# Unterseite; Senkungen für ISO 4762 M8 auf der Mittellinie.
+art: teil
+name: Leiste
+material: "1.0038"
+eigenschaften: {Benennung: Führungsleiste Zahnstangentrieb}
+parameter: {L: 300, B: 20, H: 25, AL: 200}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - {id: f2, typ: normbohrung, art: zylinderschraube, groesse: M8, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-AL/2", 0], ["=AL/2", 0]], durch: true}
+pruefung:
+  huellquader: ["=L", "=H", "=B"]
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: Abstand Senkungen, von: {feature: f2, instanz: 1, achse: true}, zu: {feature: f2, instanz: 2, achse: true}, soll: "=AL"}

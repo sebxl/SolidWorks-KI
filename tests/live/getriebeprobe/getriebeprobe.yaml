@@ -1,0 +1,48 @@
+# Getriebeprobe (Spec 4b §10, Minimalprobe beider Kopplungstypen): Platte (fixiert); die Zahnstange der Referenz gleitet
+# auf ihr (Abstandsgrenze 0 … HUB); ein Lagerbock der Referenz steht in der Mitte; darin Ritzelwelle (Ritzel über der
+# Zahnstange) und Antriebswelle wie im Zahnstangentrieb. Teile außer der Platte aus tests/referenz/zahnstangentrieb/.
+art: baugruppe
+name: Getriebeprobe
+eigenschaften: {Benennung: Getriebeprobe}
+parameter: {HUB: 60, ZL: 40}
+komponenten:
+  - {id: platte, quelle: {teil: platte.yaml}, fixiert: true}
+  - {id: zahnstange, quelle: {teil: zahnstange.yaml}}
+  - {id: lagerbock, quelle: {teil: lagerbock.yaml}}
+  - {id: ritzelwelle, quelle: {teil: ritzelwelle.yaml}}
+  - {id: antriebswelle, quelle: {teil: antriebswelle.yaml}}
+verknuepfungen:
+  - {id: v1, typ: deckungsgleich, a: {komponente: zahnstange, feature: f1, flaeche: "-y"},
+     b: {komponente: platte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v2, typ: deckungsgleich, a: {komponente: zahnstange, feature: f1, flaeche: "-z"},
+     b: {komponente: platte, feature: f1, flaeche: "-z"}, ausrichtung: gleich}
+  - {id: g1, typ: grenze_abstand, a: {komponente: zahnstange, feature: f1, flaeche: "-x"},
+     b: {komponente: platte, feature: f1, flaeche: "-x"}, ausrichtung: gleich, min: 0, max: "=HUB"}
+  - {id: v3, typ: deckungsgleich, a: {komponente: lagerbock, feature: f1, flaeche: "-y"},
+     b: {komponente: platte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v4, typ: deckungsgleich, a: {komponente: lagerbock, ebene: rechts}, b: {komponente: platte, ebene: rechts},
+     ausrichtung: gleich}
+  - {id: v5, typ: abstand, a: {komponente: lagerbock, feature: f1, flaeche: "-z"},
+     b: {komponente: platte, feature: f1, flaeche: "-z"}, ausrichtung: gleich, wert: "=ZL"}
+  - {id: s1, typ: scharnier, a: {komponente: ritzelwelle, referenz: ACHSE},
+     b: {komponente: lagerbock, feature: f2, instanz: 1, achse: true},
+     anlage_a: {komponente: ritzelwelle, feature: z2, flaeche: "+z"}, anlage_b: {komponente: lagerbock, feature: f1, flaeche: "-z"}}
+  - {id: s2, typ: scharnier, a: {komponente: antriebswelle, referenz: ACHSE},
+     b: {komponente: lagerbock, feature: f2, instanz: 2, achse: true},
+     anlage_a: {komponente: antriebswelle, feature: z1, flaeche: "+z"}, anlage_b: {komponente: lagerbock, feature: f1, flaeche: "-z"}}
+  - {id: k1, typ: zahnstange, a: {komponente: ritzelwelle, feature: z1}, b: {komponente: zahnstange, feature: z1}}
+  - {id: k2, typ: zahnrad, a: {komponente: antriebswelle, feature: z1}, b: {komponente: ritzelwelle, feature: z2}}
+freiheitsgrade: {zahnstange: 1, ritzelwelle: gekoppelt, antriebswelle: gekoppelt}
+bewegungen:
+  - name: Hub
+    grenze: g1
+    erwartet:
+      endlagen:
+        - {komponente: zahnstange, verschiebung: ["=HUB", 0, 0]}
+        - {komponente: ritzelwelle, drehung: {achse: [0, 0, 1], winkel: "=HUB*360/(pi*40)"}}
+        - {komponente: antriebswelle, drehung: {achse: [0, 0, -1], winkel: "=HUB*360/(pi*40)*25/50"}}
+pruefung:
+  huellquader: [200, 185, 120]
+  masse_pruefen:
+    - {was: Achsabstand der Wellen, von: {komponente: ritzelwelle, referenz: ACHSE},
+       zu: {komponente: antriebswelle, referenz: ACHSE}, soll: 75}

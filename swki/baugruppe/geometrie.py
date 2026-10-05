@@ -27,6 +27,18 @@ def transformiere(g: Messgeometrie, t) -> Messgeometrie:
     return Messgeometrie(g.art, punkt, richtung)
 
 
+def drehmatrix(achse, winkel: float) -> list[list[float]]:
+    """Drehung um achse (wird normiert) um winkel Grad nach der Rechte-Hand-Regel, Spaltenform (Rodrigues)."""
+    n = math.sqrt(sum(c * c for c in achse))
+    x, y, z = (c / n for c in achse)
+    a = math.radians(winkel)
+    c, s = math.cos(a), math.sin(a)
+    k = 1 - c
+    return [[c + x * x * k, x * y * k - z * s, x * z * k + y * s],
+            [y * x * k + z * s, c + y * y * k, y * z * k - x * s],
+            [z * x * k - y * s, z * y * k + x * s, c + z * z * k]]
+
+
 def einschraublaenge(laenge_schraube: float, kopfauflage: Messgeometrie, eintritt: Messgeometrie) -> float:
     """Schaftlänge hinter dem Eintrittspunkt der Gewindebohrung: l − Abstand Kopfauflage–Eintritt entlang der Achse."""
     return laenge_schraube - abs(skalar(differenz(eintritt.punkt, kopfauflage.punkt), kopfauflage.richtung))

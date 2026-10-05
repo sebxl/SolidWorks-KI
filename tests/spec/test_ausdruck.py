@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck, namen, sw_ausdruck
@@ -57,3 +59,9 @@ def test_sw_ausdruck():
     assert sw_ausdruck("=L/2-20") == '("L" / 2) - 20'
     assert sw_ausdruck("=L") == '"L"'
     assert sw_ausdruck("=-L*2**2") == '-"L" * (2 ^ 2)'
+
+
+def test_konstante_pi():
+    assert auswerten("=pi*M", {"M": 2}) == pytest.approx(2 * math.pi)
+    assert sw_ausdruck("=HUB*360/(pi*40)") == '("HUB" * 360) / (pi * 40)'
+    assert namen("=pi*M/Z") == {"M", "Z"}

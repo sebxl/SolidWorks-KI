@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "privat_mb_vorher": 4180.6,
+  "status": 3,
+  "koerper": 1,
+  "s_skizze": 70.677,
+  "s_aufsatz": 0.232,
+  "k": 3,
+  "flankenabstand_mm": {
+    "1rechts": 0.0,
+    "3links": 0.0,
+    "1links": 0.0,
+    "3rechts": 0.0
+  },
+  "aussen_1rechts_klinks": {
+    "calculate": true,
+    "abstand_mm": 14.85701
+  },
+  "innen_1links_krechts": {
+    "calculate": true,
+    "abstand_mm": 8.27482
+  },
+  "zahnweite_soll": 15.273894,
+  "privat_mb_nachher": 4721.8
+}

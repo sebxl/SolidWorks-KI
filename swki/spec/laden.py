@@ -12,12 +12,13 @@ from jsonschema.exceptions import best_match
 from swki.cli import SwkiFehler
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.konfig import PROJEKT
-from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
+from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import groesse_text, norm_von, normmasse, verfuegbare_groessen
+from swki.verzahnung import Z_MIN, VerzahnungFehler, aus_feature, ist_genormt
 
 SCHEMA_ORDNER = PROJEKT / "schema"
-_POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "laenge", "gewindetiefe"}
+_POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "laenge", "gewindetiefe", "modul", "zaehne"}
 _WINKEL = {"winkel"}
 _TOL_KONTUR_MM = 1e-6
 _RESERVIERT = re.compile(r"^achse_[xyz]$")  # Referenzachsen der Muster (handler/muster.py)
@@ -216,10 +217,51 @@ def _normbohrung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
     return befunde
 
 
+def _in_verzahnung(spec: dict, pfad: list) -> bool:
+    """Liegt der Wert (Pfad aus _werte) in einem verzahnung-Feature?"""
+    return (len(pfad) > 1 and pfad[0] == "features" and isinstance(pfad[1], int)
+            and spec["features"][pfad[1]].get("typ") == "verzahnung")
+
+
+def _verzahnung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
+    """Spec 4b §4.3: Modul DIN 780 Reihe 1, ganze Zähnezahl, unterschnittfrei, Flankenspiel, konstruierbares Profil;
+    winkel nur beim Stirnrad, kopf nur bei der Zahnstange."""
+    befunde = []
+    if f["art"] == "zahnstange" and "winkel" in f:
+        befunde.append({"pfad": f"{pfad}.winkel", "meldung": "winkel gilt nur bei art: stirnrad"})
+    if f["art"] == "stirnrad" and "kopf" in f:
+        befunde.append({"pfad": f"{pfad}.kopf", "meldung": "kopf gilt nur bei art: zahnstange"})
+    try:
+        m, z = auswerten(f["modul"], p), auswerten(f["zaehne"], p)
+        abmass = auswerten(f["zahndickenabmass"], p)
+    except AusdruckFehler:
+        return befunde  # bereits oben gemeldet
+    if m > 0 and not ist_genormt(m):
+        befunde.append({"pfad": f"{pfad}.modul", "meldung": f"MODUL_NICHT_GENORMT: Modul {m:g} ist nicht in DIN 780 "
+                                                            "Reihe 1 (swki/wissen/module_din780.yaml)"})
+    if abs(z - round(z)) > 1e-9 or z < 1:
+        befunde.append({"pfad": f"{pfad}.zaehne", "meldung": f"ZAEHNE_UNGANZ: zaehne = {z:g} ist keine ganze Zahl ≥ 1"})
+        return befunde
+    if f["art"] == "stirnrad" and z < Z_MIN:
+        befunde.append({"pfad": f"{pfad}.zaehne", "meldung": f"UNTERSCHNITT: z = {z:g} < {Z_MIN} – ohne "
+                                                             "Profilverschiebung unterschnitten"})
+    if abmass >= 0:
+        befunde.append({"pfad": f"{pfad}.zahndickenabmass",
+                        "meldung": f"FLANKENSPIEL_FEHLT: zahndickenabmass = {abmass:g} muss < 0 sein (Flankenspiel)"})
+    if m > 0 and not befunde:
+        try:
+            aus_feature(f, p).pruefe()
+        except VerzahnungFehler as e:
+            befunde.append({"pfad": pfad, "meldung": f"VERZAHNUNG_GEOMETRIE: {e}"})
+    return befunde
+
+
 def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
     befunde = []
     parameter = spec.get("parameter", {})
     features = spec["features"]
+    if PI in parameter:
+        befunde.append({"pfad": f"parameter.{PI}", "meldung": f"{PI} ist die Kreiszahl und kein Parametername"})
 
     ids = [f["id"] for f in features]
     for i, fid in enumerate(ids):
@@ -252,6 +294,9 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
         if schluessel in _WINKEL and "langloch" in pfad:
             if not 0 <= wert < 180:
                 befunde.append({"pfad": _pfad(pfad), "meldung": f"langloch.winkel muss in [0, 180) liegen (ist {wert:g})"})
+        elif schluessel in _WINKEL and _in_verzahnung(spec, pfad):
+            if not 0 <= wert < 360:
+                befunde.append({"pfad": _pfad(pfad), "meldung": f"verzahnung.winkel muss in [0, 360) liegen (ist {wert:g})"})
         elif schluessel in _WINKEL and not 0 < wert <= 360:
             befunde.append({"pfad": _pfad(pfad), "meldung": f"winkel muss in (0, 360] liegen (ist {wert:g})"})
 
@@ -282,6 +327,8 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde += _ende_befunde(f["ende"], f"features[{i}].ende")
         if f["typ"] == "normbohrung":
             befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
+        if f["typ"] == "verzahnung":
+            befunde += _verzahnung_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "referenz" and "umkehren" in f.get("ebene", {}) and "abstand" not in f["ebene"]:
             befunde.append({"pfad": f"features[{i}].ebene.umkehren",
                             "meldung": "umkehren wirkt nur zusammen mit abstand (ohne Abstand ist die Ebene "

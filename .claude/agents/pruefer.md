@@ -43,6 +43,25 @@ Verknüpfungen (`v11.1`) oder Teil-Knoten (`deckel/f4`).
 - Sind die Grenzen fachlich sinnvoll (Bewegungsbereich passt zur Eingabe, Anschlag statt Durchfahren)?
 - Bilder `<Bewegung>-kollision-…` zeigen gemeldete Kollisionen; sie stehen schon als Mängel im Prüfbericht.
 
+## Zusätzlich bei Verzahnungen (`typ: verzahnung` in einer Teil-Spec)
+
+- Die Verzahnung ist vollständig: Zähnezahl wie in der Spezifikation, keine fehlenden, verschmolzenen oder spitzen Zähne
+  (Bild senkrecht zur Radebene, meist `vorne`).
+- Die Zahnform ist symmetrisch, Kopf- und Fußkreis sind erkennbar; das Rad sitzt an der richtigen Stelle der Welle
+  (Abstände entlang der Achse wie in der Spezifikation).
+- `verzahnungen` im Prüfbericht ist ok (Kopf-/Fußkreis, Zähnezahl, Zahnweite bzw. Kopflinie, Teilung, Zahndicke). Der
+  Zahnfuß ist vereinfacht (radiale Verlängerung und Fußrundung statt Trochoide) – das ist kein Mangel.
+
+## Zusätzlich bei Kopplungen (`zahnrad`, `zahnstange` in der Baugruppe)
+
+- Bilder `<kopplung>-eingriff` (Blick entlang der Radachse): Zahn steht in Lücke, keine sichtbare Durchdringung; das
+  Ritzel greift in die Zahnstange, die Räder greifen ineinander.
+- Drehrichtungen plausibel (Bilder `<Bewegung>-min|mitte|max`): Außenräder drehen gegensinnig; das Ritzel rollt auf der
+  Zahnstange ab (Fahrrichtung und Drehsinn passen zusammen).
+- Die Zahnstange überdeckt das Ritzel über den ganzen Hub (Bilder `min` und `max`).
+- `eingriff:*` (Achsabstand, Überdeckung, Übersetzung), `sollweg:*` und `freiheitsgrad:*` (auch der gekoppelten
+  Wellen) sind ok; sie stehen sonst schon als Mängel im Prüfbericht.
+
 ## Antwort (genau dieses JSON, sonst nichts)
 Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach, zum Beispiel:
 

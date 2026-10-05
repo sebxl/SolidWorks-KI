@@ -8,13 +8,13 @@ from dataclasses import replace
 from pathlib import Path
 
 from swki.baugruppe.aufloesen import GRENZEN
-from swki.baugruppe.fehler import KOMPONENTE_FEHLER, VERKNUEPFUNG_FEHLER
+from swki.baugruppe.fehler import KOMPONENTE_FEHLER, VERKNUEPFUNG_FEHLER, ZAHNPHASE_FEHLER
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler
 from swki.compiler.fehler import (FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, REBUILD_FEHLER, REFERENZ_NICHT_GEFUNDEN,
                                   BauFehler)
 from swki.spec.ausdruck import auswerten, ist_ausdruck, sw_ausdruck
-from swki.verbindung import byref_bool, byref_long, grad, in_mm, in_mm3, mm, r8_array
+from swki.verbindung import byref_bool, byref_long, dispatch_array, grad, in_mm, in_mm3, mm, r8_array
 
 MATE_TYP = {"deckungsgleich": 0, "konzentrisch": 1, "senkrecht": 2, "parallel": 3, "abstand": 5, "winkel": 6,
             "grenze_abstand": 5, "grenze_winkel": 6}  # swMateType_e; Grenze = Abstand/Winkel mit Grenzen (Spike S13 Zeile 1)
@@ -30,6 +30,10 @@ SW_WERT_DIESE_KONFIGURATION = 1  # swSetValueInConfiguration_e.swSetValue_InThis
 SW_UNTERDRUECKEN, SW_AKTIVIEREN = 0, 1  # swFeatureSuppressionAction_e swSuppressFeature / swUnSuppressFeature
 SW_DIESE_KONFIGURATION = 1  # swInConfigurationOpts_e.swThisConfiguration
 IDENTITAET = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+MATE_KOPPLUNG = {"zahnrad": 10, "zahnstange": 13}  # swMateType_e swMateGEAR / swMateRACKPINION (Spec 4b §5.4.3)
+REVERSE = {"zahnrad": False, "zahnstange": False}  # IGear-/IRackPinionMateFeatureData.Reverse (Spike S14b Zeile 6)
+MARKE_ZAHNSTANGE, MARKE_RITZEL = 64, 128  # Vorauswahl der Zahnstangenverknüpfung (API-Hilfe EntitiesToMate)
+SW_RITZEL_TEILKREIS = 0  # swRackPinionMateDistanceOptions_e.swPinionPitchDiameter
 _TOL_LAGE = 1e-9
 
 
@@ -93,13 +97,13 @@ def in_baugruppe(komp, ref) -> tuple[object, bool]:
     return objekt, ref.ist_feature
 
 
-def waehle(asm, entitaet: tuple[object, bool], anhaengen: bool) -> None:
+def waehle(asm, entitaet: tuple[object, bool], anhaengen: bool, marke: int = MARKE) -> None:
     objekt, ist_feature = entitaet
     if ist_feature:
-        ok = objekt.Select2(anhaengen, MARKE)
+        ok = objekt.Select2(anhaengen, marke)
     else:
         daten = asm.SelectionManager.CreateSelectData
-        daten.Mark = MARKE
+        daten.Mark = marke
         ok = objekt.Select4(anhaengen, daten)
     if not ok:
         raise BauFehler(VERKNUEPFUNG_FEHLER, "Auswahl für die Verknüpfung fehlgeschlagen", schritt="auswahl")
@@ -231,6 +235,66 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
     if gesetzt is not None and v.ausrichtung:
         gesetzt[v.id] = AUSRICHTUNG[v.ausrichtung]
     return neu
+
+
+def kopple(asm, v, a: tuple[object, bool], b: tuple[object, bool], zaehler_mm: float, nenner_mm: float,
+           umkehren: bool):
+    """Zahnrad- bzw. Zahnstangenverknüpfung über CreateMate (Spec 4b §5.4.3), als v.id benannt und neu aufgebaut.
+    Zahnrad: EntitiesToMate = [a, b], Übersetzung als Teilkreis-Ø zaehler : nenner; Zahnstange: Vorauswahl Zahnstange
+    (Marke 64) und Ritzel (Marke 128), DiameterVal = Teilkreis-Ø des Ritzels. Jede Ausnahme nach dem Anlegen löscht die
+    neue Verknüpfung wieder."""
+    vorher = len(verknuepfungen(asm))
+    sw.auswahl_leeren(asm)
+    daten = asm.CreateMateData(MATE_KOPPLUNG[v.typ])
+    if daten is None:
+        raise BauFehler(VERKNUEPFUNG_FEHLER, f"{v.id} ({v.typ}): CreateMateData liefert nichts", schritt="verknuepfung")
+    if v.typ == "zahnrad":
+        daten.EntitiesToMate = dispatch_array([a[0], b[0]])
+        daten.GearRatioNumerator = mm(zaehler_mm)
+        daten.GearRatioDenominator = mm(nenner_mm)
+    else:
+        waehle(asm, b, False, MARKE_ZAHNSTANGE)
+        waehle(asm, a, True, MARKE_RITZEL)
+        daten.DiameterType = SW_RITZEL_TEILKREIS
+        daten.DiameterVal = mm(zaehler_mm)
+    daten.Reverse = umkehren
+    mate = asm.CreateMate(daten)
+    sw.auswahl_leeren(asm)
+    alle = verknuepfungen(asm)
+    neu = alle[-1] if mate is not None and len(alle) > vorher else None
+    try:
+        if neu is None:
+            raise BauFehler(VERKNUEPFUNG_FEHLER, "CreateMate legt keine Verknüpfung an", schritt="verknuepfung")
+        neu.Name = v.id
+        sw.rebuild(asm)
+        if fc := fehlercode(neu):
+            raise BauFehler(VERKNUEPFUNG_FEHLER, f"Fehlercode {fc}", schritt="verknuepfung")
+    except Exception as e:
+        if neu is not None:
+            _loesche_still(asm, neu)
+        meldung = str(e) if isinstance(e, BauFehler) else f"{type(e).__name__}: {e}"
+        raise BauFehler(VERKNUEPFUNG_FEHLER, f"{v.id} ({v.typ}): {meldung}", schritt="verknuepfung") from e
+    return neu
+
+
+def lies_kopplung(feature) -> dict:
+    """Werte einer Zahnrad- bzw. Zahnstangenverknüpfung (IFeature.GetDefinition, mm; Spike S14b Zeile 6)."""
+    d = feature.GetDefinition
+    if int(feature.GetSpecificFeature2.Type) == MATE_KOPPLUNG["zahnrad"]:
+        return {"zaehler": round(in_mm(d.GearRatioNumerator), 6), "nenner": round(in_mm(d.GearRatioDenominator), 6),
+                "umkehren": bool(d.Reverse)}
+    return {"durchmesser": round(in_mm(d.DiameterVal), 6), "art": int(d.DiameterType), "umkehren": bool(d.Reverse)}
+
+
+def ist_unterdrueckt(feature) -> bool:
+    return bool(feature.IsSuppressed)
+
+
+def setze_lage(app, asm, komp, t: list[float]) -> None:
+    """Lage einer Komponente setzen (SetTransformAndSolve2; die Verknüpfungen bleiben erfüllt) und neu aufbauen."""
+    if not komp.SetTransformAndSolve2(sw.mathutil(app).CreateTransform(r8_array(t))):
+        raise BauFehler(ZAHNPHASE_FEHLER, f"{komp.Name2}: Lage ließ sich nicht setzen", schritt="zahnphase")
+    sw.rebuild(asm)
 
 
 def komponenten(asm) -> list:

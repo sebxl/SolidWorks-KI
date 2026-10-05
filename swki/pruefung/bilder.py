@@ -18,6 +18,7 @@ from swki.compiler import sw
 
 ANSICHTEN = {"iso": 7, "vorne": 1, "oben": 5, "rechts": 4}  # swStandardViews_e
 SW_TIFF_SCREEN_OR_PRINT_CAPTURE = 6  # swUserPreferenceIntegerValue_e; 0 = Screen capture, 1 = Print capture
+SW_COMPONENT_HIDDEN, SW_COMPONENT_VISIBLE = 0, 1  # swComponentVisibilityState_e
 
 
 def screenshots(app, model, ordner: Path) -> dict[str, str]:
@@ -34,6 +35,38 @@ def screenshots(app, model, ordner: Path) -> dict[str, str]:
             sw.speichere(model, pfad, kopie=True)
             bilder[name] = str(pfad)
         return bilder
+
+
+ANSICHT_DER_ACHSE = {0: "rechts", 1: "oben", 2: "vorne"}  # Blick entlang x, y bzw. z
+
+
+def kopplungsbild(app, model, pfad: Path, achse, komponenten: list, uebrige=()) -> str:
+    """Bild entlang einer Radachse (Standardansicht der größten Achskomponente) der gekoppelten Komponenten
+    (Spec 4b §5.7, Spike S14b Zeile 12); sonst wie screenshots(). Die übrigen Komponenten sind während der Aufnahme
+    verborgen (sie verdecken sonst den Eingriff) und danach wieder im vorherigen Zustand. Gezoomt wird auf die Auswahl
+    der gekoppelten Komponenten; lässt sich eine nicht auswählen, auf die ganze (dann nur noch sichtbare) Baugruppe."""
+    model._FlagAsMethod("ViewZoomToSelection")
+    model._FlagAsMethod("ViewZoomtofit2")
+    vorher = [(komp, komp.Visible) for komp in uebrige]
+    try:
+        for komp, zustand in vorher:
+            if zustand == SW_COMPONENT_VISIBLE:
+                komp.Visible = SW_COMPONENT_HIDDEN
+        with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
+            model.ShowNamedView2("", ANSICHTEN[ANSICHT_DER_ACHSE[max(range(3), key=lambda i: abs(achse[i]))]])
+            sw.auswahl_leeren(model)
+            gewaehlt = [komp.Select4(True, model.SelectionManager.CreateSelectData, False) for komp in komponenten]
+            if all(gewaehlt):
+                model.ViewZoomToSelection()
+            else:
+                model.ViewZoomtofit2()
+            sw.auswahl_leeren(model)
+            sw.speichere(model, pfad, kopie=True)
+    finally:
+        for komp, zustand in vorher:
+            if zustand == SW_COMPONENT_VISIBLE:
+                komp.Visible = SW_COMPONENT_VISIBLE
+    return str(pfad)
 
 
 def iso_bild(app, model, pfad: Path) -> str:
