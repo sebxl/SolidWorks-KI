@@ -77,10 +77,13 @@ class Stange:
 
 
 def _punkt(p: Vektor, t) -> Vektor:
+    """Teil- → Baugruppenkoordinaten wie geometrie.transformiere, aber ohne Maßstab: swki fügt Komponenten
+    nie skaliert ein (Maßstab t[12] = 1); breite und versatz von in_baugruppe sind deshalb unskaliert gültig."""
     return tuple(p[0] * t[i] + p[1] * t[3 + i] + p[2] * t[6 + i] + in_mm(t[9 + i]) for i in range(3))
 
 
 def _richtung(v: Vektor, t) -> Vektor:
+    """Richtung wie geometrie.transformiere ohne Maßstab (s. _punkt)."""
     return _einheit(tuple(v[0] * t[i] + v[1] * t[3 + i] + v[2] * t[6 + i] for i in range(3)))
 
 

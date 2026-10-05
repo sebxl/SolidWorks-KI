@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from swki.baugruppe.bewegung import drehmatrix
+from swki.baugruppe.geometrie import drehmatrix
 from swki.baugruppe.kopplung import (Rad, Stange, drehe, eingriff, endlagen_wege, gekoppelte, in_baugruppe,
                                      phasenfehler, phasenwinkel, soll_drehungen, teilkreise, winkel_um)
 from swki.baugruppe.modell import Quelle
