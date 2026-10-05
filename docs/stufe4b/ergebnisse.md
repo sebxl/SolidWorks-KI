@@ -45,8 +45,7 @@ Regressionstest `test_referenz_besteht` je Teil einzeln (`--zeit 600`), Private 
 | Ritzelwelle (Ritzel z 20, Rad z 25) | OK | 68 s | 889 → 4281 → 2527 |
 | Antriebswelle (Rad z 50) | OK | 64 s | 426 → 4002 → 2246 |
 
-Prüfer-Läufe (`swki bauen` + `swki pruefen`, je Lauf 1, Urteil durch den Prüfer-Agenten): `maengel: []`, alle Prüfungen ok
-(darunter `verzahnungen`, `koerper`, `volumen`, Radachsen koaxial).
+Prüfer-Läufe (`swki bauen` + `swki pruefen`, je Lauf 1, Urteil durch den Prüfer-Agenten): `bestanden: true`, 0 Mängel.
 
 | Teil | Bauen | Bauen + Prüfen | Private Bytes (MB) vor → nach Bauen → nach Prüfen | Prüfer-Urteil |
 |---|---|---|---|---|
@@ -57,15 +56,16 @@ Prüfer-Läufe (`swki bauen` + `swki pruefen`, je Lauf 1, Urteil durch den Prüf
 `swki status` je Teil: Lauf 1 `pruefer: bestanden`, Empfehlung „bestanden“. Prüfer-Urteile je
 `{"bestanden": true, "maengel": []}`. Aufträge und Arbeitsordner danach gelöscht.
 
-Speicher: Ein Teil mit Rad hat Spitzen von 3,4–4,3 GB und lässt 1,0–1,5 GB Dauerniveau zurück; nach zwei Teilen mit Rad
-ist ein Neustart nötig (> 2000 MB vor einem Lauf → SolidWorks neu starten).
+Speicher: Die Spitzen der Teile mit Rad liegen bei 3,4–4,3 GB. Das Niveau nach Bauen und Prüfen steigt bei der Zahnstange
+um 0,6 GB (426 → 1042), bei den Teilen mit Rädern um 1,6 GB (Ritzelwelle, 892 → 2482) bzw. 1,8 GB (Antriebswelle,
+429 → 2239). Nach jedem Teil mit Rädern ist vor dem nächsten Lauf ein Neustart nötig (Grenze 2000 MB Private Bytes).
 
 ### 1.4 Negativfall E1 (Zahnweite)
 
 `tests/live/test_live_verzahnung.py::test_negativ_zahnweite`: der Bau verfälscht das Zahndickenabmaß der Antriebswelle um
 −0,05 mm (Spec bleibt unverändert); erwartet genau `{verzahnungen}`, Knoten `z1`, Abweichung „zahnweite W6“. **OK**, 67 s,
-Private Bytes 431 → 4015 → 2222 MB. Mängelmenge exakt wie erwartet, Erwartung nicht angepasst; das Volumen bleibt in der
-Toleranz (−0,13 %).
+Private Bytes 431 → 4015 → 2222 MB. Mängelmenge exakt wie erwartet, Erwartung nicht angepasst; das Volumen ändert sich laut Plan nur um
+−0,13 % (nicht gemessen); im Lauf gab es keinen `volumen`-Mangel.
 
 ### 1.5 Regression Buchse, Formplatte, Auswerferhalteplatte
 
@@ -82,7 +82,24 @@ Einzeln (`--zeit 600`), SolidWorks frisch gestartet, Grenze vor einem Lauf 3000 
 - Zahnweite nicht per `IMeasure` zwischen ganzen Flanken, sondern per Strahl entlang der Grundkreistangente (Ruling S14a-Z3,
   Spec §4.5 überlässt den Messweg dem Spike); `verzahnung_mm` 0,005 unverändert.
 - Radbau: ganzes Profil in einer Skizze mit affiner Abbildung und `MultiSelect2` (Ruling S14a-Z2/Z5, T4-1); Zeit je Rad nach
-  der Umsetzung 14–24 s statt ~65 s Skizzenzeit im Spike, das Ziel < 15 s ist nicht in jedem Lauf erreicht.
+  der Umsetzung 14–24 s (z 20) bzw. 19,7 s (z 50) statt ~65 s Skizzenzeit im Spike; das Ziel < 15 s ist nicht erreicht (1.7).
 - Radachse über die Fußkreis-Zylinderfläche (Ruling S14a-Z4): Spec-Nachzug §4.4 in Task 15.
-- Offen: Streuung der Skizzenzeit (Faktor 2,5 zwischen Läufen) ungeklärt; Spitzen bis 4,3 GB Private Bytes je Rad-Teil, ein
-  Neustart nach zwei Teilen mit Rad; Etappe 2 (Kopplungen, Tasks 7–15) und Rechner B (SW 2026) offen.
+- Zeit und Speicher je Radbau (Spec §12, siehe 1.7): Das Ziel „Rad z ≤ 50 < 15 s“ ist **nicht erreicht**: z 20 (ganzes Teil) 14,3 s (warm)
+  bzw. 22,9–23,5 s (mit Kaltstart), z 50 (Feature z1) 19,7 s, ganzes Teil 29,6 s. Der Speicher je Radbau liegt deutlich über der Annahme < 300 MB: Bauen der
+  Antriebswelle (Dokument und Rad z 50) +1,4 GB Private Bytes (1169 → 2596 MB), Spitzen 3,4–4,3 GB. Ob ein Hinweis im Skill
+  zu großen Zähnezahlen nötig ist, entscheidet der Controller.
+- Die Versatzebenen der Verzahnungs-Features sind in den Prüfbildern sichtbar (nicht ausgeblendet).
+- Offen: Streuung der Skizzenzeit (Faktor 2,5 zwischen Läufen) ungeklärt; Etappe 2 (Kopplungen, Tasks 7–15) und Rechner B
+  (SW 2026) offen.
+
+### 1.7 Zeit und Private Bytes je Radbau
+
+Zeit je Feature `verzahnung` aus dem Bauprotokoll (`knoten[].dauer_s`), Private Bytes vor/nach `swki bauen` des ganzen Teils. Die z-20-Werte aus Task 4 sind Testdauern des ganzen Bauteils (Welle und Rad), nicht die Zeit des Features allein:
+
+| Rad | Zeit Feature | Quelle | Private Bytes (MB) |
+|---|---|---|---|
+| z 20 (Task 4, Teil mit Rad) | Testdauer 14,3 s warm, 22,9–23,5 s mit Kaltstart | Live-Test Task 4 (Bericht Task 4) | Spitze 3,5–3,8 GB (Task 4) |
+| z 50 (Antriebswelle, Wegwerf-Auftrag `MESS-4B-RAD`) | **19,7 s** (z1; ganzes `bauen` 29,6 s, davon Vorbereiten 1,5 s, Bauen 27,0 s, Speichern 1,0 s; die beiden Wellenabschnitte je ≈ 3 s) | `protokoll.json` Lauf 1 | 1169 → 2596 (+1427, Dokument und Rad zusammen; Spitze nicht abgetastet) |
+| z 20 + z 25 (Ritzelwelle) | nicht gemessen: Private Bytes nach dem z-50-Bau 2596 MB (> 2000 MB) | | |
+
+Der Auftrag und der Arbeitsordner sind danach gelöscht.
