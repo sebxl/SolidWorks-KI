@@ -129,7 +129,8 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
 
 
 def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: BaugruppenMesswerte, ordner: Path) -> dict:
-    """Je Kopplung ein Bild entlang der Radachse von Seite a, gezoomt auf beide Komponenten (Spec 4b §5.7)."""
+    """Je Kopplung ein Bild entlang der Radachse von Seite a, gezoomt auf beide Komponenten, die übrigen Komponenten
+    während der Aufnahme verborgen (Spec 4b §5.7)."""
     komponenten = _komponenten(asm, protokoll)
     bilder = {}
     for v in kopplungen(bg.spec):
@@ -138,7 +139,8 @@ def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: Baugru
             continue
         achse = in_baugruppe(verzahnung_der_seite(bg.quellen, v["a"]), messwerte.lagen[ka]).achse
         name = f"{v['id']}-eingriff"
-        bilder[name] = kopplungsbild(app, asm, ordner / f"{name}.png", achse, [komponenten[ka], komponenten[kb]])
+        uebrige = [k for iid, k in komponenten.items() if iid not in (ka, kb)]
+        bilder[name] = kopplungsbild(app, asm, ordner / f"{name}.png", achse, [komponenten[ka], komponenten[kb]], uebrige)
     return bilder
 
 
