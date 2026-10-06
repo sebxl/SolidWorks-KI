@@ -3,7 +3,7 @@ name: baugruppe
 description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen) in SolidWorks aus Eigenteilen und Normteilen – Teil-Specs und Baugruppen-Spec schreiben, validieren, eine Freigabe, bauen, prüfen (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage, Teilprüfungen), Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer mehrere Teile zusammenbauen, verschrauben, verstiften oder eine Baugruppe ändern will.
 ---
 
-# Baugruppe (Stufe 3b, Bewegungen Stufe 4a, Kopplungen Stufe 4b)
+# Baugruppe (Stufe 3b, Kaufteile Stufe 3c, Bewegungen Stufe 4a, Kopplungen Stufe 4b)
 
 Spec: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Abweichungen der Umsetzung: `docs/stufe3b/ergebnisse.md`).
 Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Vorlage: `tests/referenz/stehlager/`.
@@ -12,6 +12,8 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - `auftraege/<auftrag>/` mit `eingabe/`, einer Baugruppen-Spec und den Teil-Specs der Eigenteile (Teil-Format,
   Regeln aus dem Skill `konstruieren`, Abschnitt 2).
 - Normteile nie als Teil-Spec: in der Baugruppe als `quelle: {normteil: "<Norm> <Größe>"}` (Skill `normteile`).
+- Nicht genormte Kaufteile nie als Teil-Spec: `quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}` aus dem Katalog
+  (Skill `kaufteile`; Regeln für Baugruppen in Abschnitt 8 dieses Skills).
 
 ## 2. Baugruppen-Spec
 - `komponenten`: `id`, `quelle` (`{teil: <datei.yaml>}` | `{normteil: "ISO 4762 M8x30", variante?}`), genau eine
@@ -151,3 +153,22 @@ Spec: `docs/superpowers/specs/2026-10-05-stufe-4b-verzahnung-kopplungen-design.m
   `<id>-eingriff`; das Eingriffsbild blendet die übrigen Komponenten aus, damit der Eingriff nicht verdeckt ist.
   Unterdrückte Verknüpfungen meldet `verknuepfungen` als fehlerhaft.
 - Speicher und Neustart wie §6: Live-Läufe mit Kopplungen je Test auf frischem SolidWorks.
+
+## 8. Kaufteile (Stufe 3c)
+
+Nicht genormte Kaufteile kommen aus dem Katalog (Skill `kaufteile`). Spec:
+`docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md`. Vorlage: `tests/referenz/motorhalter/`.
+
+- `quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}`; der Eintrag muss freigegeben sein und ein bestandenes
+  Prüfer-Urteil haben (`KAUFTEIL_NICHT_FREIGEGEBEN`, `KAUFTEIL_UNGEPRUEFT` als Befunde von `validieren`).
+- Referenzen nur `{komponente, referenz: EINBAU_*}` (Namen aus dem Eintrag) und `{komponente, gewinde, instanz, achse: true}`
+  (Achse einer Gewindeposition); nie `feature`, `ebene` oder `nahe` in fremder Geometrie. `je_position: {komponente,
+  gewinde}` erzeugt eine Instanz je Gewindeposition; meist genügt aber `je_position` auf die Bohrungen des Gegenstücks.
+- Reihenfolge wie bei Normteilen: Anlagefläche (`deckungsgleich` mit `ausrichtung`), dann Achse (`konzentrisch`), dann die
+  Drehlage (`parallel`/`winkel` auf die `ebene_durch_achse`). Mit Drehlage `drehung_sperren: false` an der Achse.
+- Passung: ISO 4762 nur in Kaufteil-Gewinde gleicher Größe (`validieren`). `pruefen` rechnet die Gewindepaarung mit der
+  Gewindetiefe des Eintrags und dem gemessenen Gewinde-Ø (Bericht: Spalte „Gewindemodell“); Kaufteile bekommen keine
+  Teilprüfung (sie wurden bei der Aufnahme geprüft), der Bericht nennt Cache-Prüfsumme, Masse (Datenblatt oder Material)
+  und Belegstand.
+- Ändert sich ein Eintrag nach der Baugruppen-Freigabe: `FREIGABE_VERALTET` mit dem Kaufteil – Nutzer fragen, neu freigeben.
+- Speicher: der Motorhalter (mit Kaufteil-Import) hat Spitzen ~9,1–9,3 GB; Live-Läufe wie §6 auf frischem SolidWorks.

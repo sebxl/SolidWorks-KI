@@ -1,10 +1,9 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 4b (Verzahnung und Kopplungen) umgesetzt – Ergebnisse: docs/stufe4b/ergebnisse.md. Nächster Schritt
-(Nutzerwahl): Stufe 3c Kaufteile (STEP-Import) umsetzen – Plan docs/superpowers/plans/2026-10-06-kaufteile-step-import.md,
-Übergabe docs/superpowers/uebergabe-2026-10-06-kaufteile-umsetzung.md. Danach zur Wahl: Formschräge, Stufe 4c (Nut- und
-Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
+Stand: Stufe 3c (Kaufteile, STEP-Import) umgesetzt – Ergebnisse: docs/stufe3c/ergebnisse.md (davor 4b:
+docs/stufe4b/ergebnisse.md). Nächste Schritte zur Wahl: Formschräge, Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+„Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -38,6 +37,24 @@ Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), P
 - Genormte Teile immer über `swki normteil hole` (Skill `normteile`), nie als STEP-Download oder freihändig konstruiert. Herstellerdaten nur für nicht genormte Kaufteile.
 - Normtabellen (`swki/wissen/normteile/`) nur mit Abgleich erweitern: ≥ 2 unabhängige recherchierte Quellen je Wert; Widersprüche sperren und den Nutzer fragen.
 - Bauvorlagen nur mit neuem Prüfer-Urteil (`swki normteil muster` → Prüfer → `swki normteil urteil`).
+
+## Kaufteile (Stufe 3c)
+- Nicht genormte Kaufteile über den Skill `kaufteile`: nur STEP, die Datei des Nutzers nur lesen (swki kopiert sie
+  unverändert in den Quellordner der `kaufteilbibliothek`); keine Konten bei Herstellerportalen, keine Anmeldung.
+  Downloads von Herstellerdateien nur öffentliche Direktlinks ohne Konto und nur mit ausdrücklichem OK des Nutzers je Datei
+  (Name, Quelle, Größe nennen).
+- Katalogeintrag `swki/wissen/kaufteile/<hersteller>/<bestellnummer>.yaml` (`art: kaufteil`): Kennmaße mit Beleg
+  (Herstellerquelle oder Nutzer allein, Händler nur mit ≥ 2 Domains; Werte aus der STEP sind nie Kennmaße);
+  `swki validieren` → Nutzer-OK → `swki freigeben` → `swki kaufteil muster` → Prüfer → `swki kaufteil urteil` →
+  `swki kaufteil hole`.
+- In die `kaufteilbibliothek` schreibt nur `swki kaufteil` (Quellordner nur Kopien, Cache je SW-Jahr). Importierte Geometrie
+  nie reparieren, vereinfachen oder verschieben.
+- Baugruppen: `quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}`, Referenzen nur `EINBAU_*` und Gewindepositionen; die
+  Baugruppen-Freigabe schützt den Eintrag mit (`FREIGABE_VERALTET` nennt das Kaufteil).
+- Regressions-Suite enthält den Motorhalter mit Nanotec GPLE60-2S-32 (`tests/referenz/motorhalter/`). Die
+  Herstellerdatei liegt nur im Quellordner der `kaufteilbibliothek`; fehlt sie, meldet die Regression
+  `KAUFTEIL_QUELLE_FEHLT` mit der Download-URL (Nutzer fragen, dann `swki kaufteil untersuchen`). Speicher: Motorhalter
+  Spitzen ~9,1–9,3 GB; Live-Läufe mit Kaufteilen wie Baugruppen je Test auf frischem SolidWorks.
 
 ## Baugruppen (Stufe 3b)
 - Baugruppen über den Skill `baugruppe`: Baugruppen-Spec nach `schema/baugruppe.schema.json` und Teil-Specs im selben
@@ -77,7 +94,8 @@ Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), P
 
 ## Git
 - Kein `git push` ohne Rückfrage.
-- Erzeugte SolidWorks-Dateien kommen nicht ins Git.
+- Erzeugte SolidWorks-Dateien kommen nicht ins Git (einzige Ausnahme: Test-STEP
+  `tests/referenz/motorhalter/muster/gm42-10.step`, interne Testdatei). Herstellerdateien (STEP, Datenblätter) nie ins Git.
 
 ## Tests
 - `.venv\Scripts\python.exe -m pytest` (ohne SolidWorks), `… -m sw` (mit geöffnetem SolidWorks).

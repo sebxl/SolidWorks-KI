@@ -6,7 +6,8 @@ description: Genormte Verbindungselemente (Schrauben, Muttern, Scheiben, Stifte)
 # Normteile
 
 Genormte Teile kommen **immer** aus `swki normteil` (Spec `docs/superpowers/specs/2026-10-02-stufe-3a-normteile-design.md`).
-Herstellerdaten (STEP) nur für nicht genormte Kaufteile.
+Herstellerdaten (STEP) nur für nicht genormte Kaufteile (Skill `kaufteile`); fehlt eine Normgröße, die Normtabelle
+erweitern (unten), nie eine STEP holen.
 
 ## Abrufen
 `.venv\Scripts\python.exe -m swki normteil hole "<Norm>" <Größe>[x<Länge>] [--variante <v>]`

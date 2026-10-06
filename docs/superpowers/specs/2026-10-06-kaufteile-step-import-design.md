@@ -24,7 +24,7 @@ Einbaureferenzen). Genormte Verbindungselemente bleiben ausnahmslos bei `swki no
 |---|---|
 | Formate | **nur STEP** (AP203/AP214/AP242, `.step`/`.stp`); Parasolid später nachrüstbar; kein natives SLDPRT/SLDASM des Herstellers (Versionsregel, fremde Bäume), kein IGES (oft nur Flächen) |
 | Mehrteilige STEP | **immer ein Teil**: Baugruppen-STEP wird als **Mehrkörperteil** importiert, die erwartete Körperzahl steht im Eintrag und wird geprüft. Bewegliche Baueinheiten (Schiene + Wagen, Zylinder + Kolbenstange) liefert der Nutzer als **getrennte** STEP-Dateien; Aufteilen importierter Geometrie ist nicht Umfang |
-| Herkunft der Datei | Der Nutzer nennt einen Pfad; swki **liest nur** und legt eine unveränderte Kopie des Originals in der Kaufteil-Bibliothek ab (nicht im Git). Claude legt keine Konten an und meldet sich nirgends an |
+| Herkunft der Datei | Der Nutzer nennt einen Pfad; swki **liest nur** und legt eine unveränderte Kopie des Originals in der Kaufteil-Bibliothek ab (nicht im Git). Claude legt keine Konten an und meldet sich nirgends an. *Nachgezogen bei der Umsetzung (Nutzerentscheidung):* Downloads von Herstellerdateien nur über öffentliche Direktlinks ohne Konto und nur mit ausdrücklichem OK des Nutzers je Datei (Name, Quelle, Größe nennen) |
 | Quelle und Cache | wie 3a: **Katalogeintrag (Git) + Original sind die Quelle**, die `.sldprt` je SW-Jahr ist ein Cache und jederzeit neu erzeugbar |
 | Aufnahme und Freigabe | `untersuchen` → Claude schreibt den Eintrag → **Nutzerfreigabe des Eintrags** → Prüfer-Urteil je Eintragsversion → `hole` |
 | Einbaureferenzen | **Punktanker plus Gegenprobe** (Zylinder: Punkt + Ø; Ebene: Punkt + Normale), daraus benannte Bezugsachsen/-ebenen; Namen frei mit Präfix `EINBAU_`; Drehlage als dritte Referenz (Bauweise im Spike) |
@@ -34,7 +34,7 @@ Einbaureferenzen). Genormte Verbindungselemente bleiben ausnahmslos bei `swki no
 | Baugruppe | `quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}`, Kopie in den Lauf-Ordner, Verknüpfung nur über `EINBAU_*`; **die Baugruppen-Freigabe enthält die Freigabe-Prüfsumme des Eintrags** |
 | Überlappung | **streng**; Gewindebohrungen des Kaufteils als `gewinde`-Gruppen im Eintrag, die Gewindepaarung aus 3b gilt mit; `je_position` auch auf Kaufteil-Gewinde; jede andere Überlappung ist ein Mangel |
 | Große Modelle | **nur messen und berichten** (Dateigröße, Flächen, Körper, Importzeit, Speicherspitze); keine Grenze |
-| Referenz | **Motorhalter** (statisch) mit Muster-Getriebemotor aus eigener Baugruppe; Negativfälle; zusätzlich eine **echte Herstellerdatei** des Nutzers als einmalige Abnahme |
+| Referenz | **Motorhalter** (statisch) mit Muster-Getriebemotor aus eigener Baugruppe; Negativfälle; zusätzlich eine **echte Herstellerdatei** des Nutzers als einmalige Abnahme. *Nachgezogen bei der Umsetzung (Nutzerentscheidung 2026-10-06):* Katalogeintrag und Motorhalter verwenden die echte Herstellerdatei Nanotec GPLE60-2S-32 (Planetengetriebe); das Muster bleibt interne Testdatei |
 | Befehle | eigene Gruppe **`swki kaufteil`**, Paket `swki/kaufteile/`, Skill `kaufteile`; `normteil aufnehmen` entfällt im Design |
 | Schutzregel | `validieren` des Eintrags weist Kaufteile ab, deren Benennung oder Bestellnummer eine Norm der Normtabellen nennt (`KAUFTEIL_GENORMT`) |
 | Einordnung | **Stufe 3c** in Design §11; §8 bekommt einen Stand-Absatz |
@@ -139,6 +139,12 @@ Gegenprobe sind **Mängel der Prüfung** `einbau:<name>` mit Ist- und Sollwert, 
 einmal); `hole` meldet sie als `KAUFTEIL_PRUEFUNG`. Ein eigener Code `KAUFTEIL_EINBAU` entfällt. Die Bezugsgeometrie heißt im
 Teil wie im Eintrag (`EINBAU_ACHSE` …), damit Baugruppen sie wie bei Normteilen per Name auswählen (Spike S12b). Mindestens
 eine Einbaureferenz ist Pflicht.
+
+*Nachgezogen bei der Umsetzung (Nutzerentscheidung):* Die Richtung einer Bezugsachse aus einer Zylinderfläche legt SolidWorks
+fest und ist kein Kriterium (Gegenprobe: Lage und Ø); `konzentrisch` ohne Angabe nutzt die nächste Ausrichtung. Ebenso ist die
+Normale einer `ebene_durch_achse` kein Kriterium. Maßgeblich sind die Normalen der `ebene`-Referenzen (`bezug.richtung`).
+Die Drehlage (`ebene_durch_achse`) des GPLE60 ist die Symmetrieebene des Lochbilds (Mitte einer □-60-Seite), nicht die
+Diagonale durch eine Gewindeposition.
 
 ### 4.3 Gewindegruppen
 
@@ -392,7 +398,10 @@ Richtung von Normalen und Achsen plausibel (Flanschnormale zeigt vom Gehäuse we
 vereinbar, Masse plausibel, Körperzahl plausibel, kein genormtes Verbindungselement. Eingabe: freigegebener Eintrag,
 Datenblatt (falls vorhanden), Prüfbericht, Bilder; keine Protokolle, keine Diagnose-Rohdaten außer im Prüfbericht. Urteilsform
 unverändert; Mängel nennen `einbau:<name>`, `gewinde:<gruppe>` oder die Prüfungs-ID. In Baugruppen gilt die Checkliste aus 3b;
-Kaufteile werden dort nur auf Lage und Verbindung beurteilt.
+Kaufteile werden dort nur auf Lage und Verbindung beurteilt. *Nachgezogen bei der Umsetzung:* Punkt 1 der Checkliste
+prüft die Lage der Referenzen (Drehlage durch Gewindeposition oder Symmetrieebene des Lochbilds) und die Orientierung der
+**Ebenennormalen** (`bezug.richtung`); die Achsrichtung einer Zylinder-Bezugsachse und die Normale einer
+`ebene_durch_achse` sind kein Kriterium. Hinzu kommt Punkt 5: Gewindegruppen (`modell`/`durchmesser`, D1 bis Bohrer-Ø).
 
 ## 10. Fehlerfälle
 
@@ -426,8 +435,11 @@ aus `untersuchen` stammt – und auch das nur vor der Freigabe).
   damit SHA-256 im Eintrag und Prüfer-Urteil fest bleiben; eine bei jedem Lauf neu erzeugte Datei hätte wegen des
   Zeitstempels im STEP-Kopf jedes Mal eine andere Prüfsumme. Ausnahme von „erzeugte SolidWorks-Dateien nicht ins Git“; die
   Specs und das Erzeugungsskript bleiben die Quelle.
-- **Katalogeintrag** `swki/wissen/kaufteile/swki-muster/gm42-10.yaml` (Beleg: das Muster-Datenblatt `muster/datenblatt.md`,
-  aus den Specs abgeleitet), Freigabe, Prüfer-Urteil im Git.
+- **Katalogeintrag** `swki/wissen/kaufteile/nanotec/gple60-2s-32.yaml` (*nachgezogen bei der Umsetzung, Nutzerentscheidung
+  2026-10-06*): echtes Herstellerteil Nanotec GPLE60-2S-32, Belege aus dem Hersteller-Datenblatt (Baureihenübersicht,
+  Seiten 248/249), Freigabe und Prüfer-Urteil im Git. STEP und Datenblatt liegen **nicht im Git**, nur im Quellordner der
+  Kaufteil-Bibliothek; der Eintrag nennt `original.bezug: {art: url, url, datum}` und die SHA-256. Der Muster-Getriebemotor
+  wird kein Katalogeintrag; `muster/` bleibt interne Testdatei (Spike S15, Live-Tests der Aufnahme, Unit-Test-Beispiele).
 - **Baugruppe** `motorhalter.yaml`: Grundplatte (fixiert), Motorbock (Winkel: Fuß und Wand mit Zentrierbohrung und
   4 × Durchgang M5), Motor (Kaufteil), 4 × ISO 4762 M5 durch die Wand in die Flanschgewinde (`je_position` auf die Bohrung der
   Wand), 2 × ISO 4762 M6 vom Fuß in Gewinde der Grundplatte. Statisch; Lage über `masse_pruefen` (Achshöhe).
@@ -439,7 +451,9 @@ aus `untersuchen` stammt – und auch das nur vor der Freigabe).
 - **Abnahme mit echter Herstellerdatei:** Der Nutzer gibt eine STEP-Datei eines realen Kaufteils (seine Wahl, z. B. Motor oder
   Lager) und ggf. das Datenblatt; Claude nimmt sie mit dem vollen Ablauf auf (untersuchen, Eintrag, Freigabe durch den Nutzer,
   Prüfer, hole) und dokumentiert Diagnose-Kennzahlen, Zeiten, Speicher und Befunde in den Ergebnissen. Datei und Eintrag kommen
-  nicht ins Git (Eintrag nur, wenn der Nutzer es will), nicht in die Regression.
+  nicht ins Git (Eintrag nur, wenn der Nutzer es will), nicht in die Regression. *Nachgezogen bei der Umsetzung:* Die
+  Aufnahme des Nanotec GPLE60-2S-32 erfüllt diese Abnahme (Nutzerwahl, voller Ablauf); Eintrag im Git und in der Regression
+  (Nutzerentscheidung), die Herstellerdatei nicht.
 
 ## 12. Offene Technik (Spike S15 vor dem Plan-Code)
 
@@ -496,7 +510,7 @@ Negativfälle §11; Referenz Motorhalter (Teil der Regressions-Suite).
 
 ## 15. Fertig, wenn
 
-- Der Muster-Getriebemotor ist aufgenommen (Freigabe, Prüfer-Urteil „bestanden“, Cache) und die Referenz *Motorhalter* besteht
+- Das Kaufteil Nanotec GPLE60-2S-32 ist aufgenommen (Freigabe, Prüfer-Urteil „bestanden“, Cache) und die Referenz *Motorhalter* besteht
   auf SW 2025: Code-Prüfungen ohne Mangel und Prüfer-Urteil „bestanden“.
 - Die Negativfälle liefern die erwarteten Codes bzw. Mängel.
 - Die Abnahme mit der echten Herstellerdatei ist dokumentiert (bestanden oder mit begründeten Befunden).

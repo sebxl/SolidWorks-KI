@@ -35,6 +35,23 @@ Verknüpfungen (`v11.1`) oder Teil-Knoten (`deckel/f4`).
 3. `gewinde:*`: Einschraublänge fachlich ausreichend (Stahl etwa ≥ 1·d, Grauguss ≥ 1,25·d, Aluminium ≥ 2·d) und nicht
    über der Gewindetiefe.
 4. `bestimmtheit` und `kollision` ok; jede Teilprüfung (`<komponente>: …`) ok.
+Kaufteile werden in Baugruppen wie Normteile nur auf Lage und Verbindung beurteilt (nicht auf Einzelmaße).
+
+## Zusätzlich bei Kaufteilen (`art: kaufteil`, Aufnahme eines Katalogeintrags)
+Du bekommst den freigegebenen Eintrag (`<datei>.freigegeben.yaml`), das Datenblatt (falls vorhanden), den Prüfbericht
+und die Bilder des Musterteils (Bezugsachsen und -ebenen eingeblendet). Knoten sind `einbau:<name>`, `gewinde:<gruppe>`
+oder die Prüfungs-ID.
+1. Jede Einbaureferenz sitzt auf der Fläche, die der Eintrag meint (Wellenachse auf der Welle, Flanschebene auf der
+   Anlagefläche hinter dem Zentrierbund, Drehlage durch das Lochbild: Gewindeposition oder Symmetrieebene des Lochbilds).
+   Ebenennormalen (`ebene`) sind fachlich sinnvoll orientiert (`einbau:*` → `bezug.richtung`). Die Richtung einer
+   Bezugsachse aus einer Zylinderfläche legt SolidWorks fest und ist kein Kriterium (Spec §4.2: Lage und Ø; konzentrisch
+   ohne Angabe nutzt die nächste Ausrichtung), ebenso die Normale einer `ebene_durch_achse`.
+2. Kennmaße passen zum Datenblatt (Wert und Beleg); „nicht belegt“ ist kein Mangel, wenn der Eintrag es so ausweist.
+3. Masse plausibel (Datenblatt bzw. Material), Körperzahl plausibel, Hüllquader wie im Datenblatt.
+4. Kein genormtes Verbindungselement (Schraube, Mutter, Scheibe, Stift) – das gehört zu den Normteilen.
+5. Gewindegruppen: `gewinde:<gruppe>` nennt `modell` und `durchmesser`; `kernloch` mit Ø zwischen D1 nach ISO 724 und dem
+   Bohrer-Ø (M5: 4,134…4,2) bzw. `nenn` mit dem Nenn-Ø ist in Ordnung. Eine Gewindetiefe aus der STEP ohne Beleg ist kein
+   Mangel, wenn der Eintrag sie als „nicht belegt“ ausweist.
 
 ## Zusätzlich bei Bewegungen (`bewegungen` in der Spezifikation)
 
