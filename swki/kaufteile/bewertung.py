@@ -188,8 +188,11 @@ def bewerte_kaufteil(spec: dict, m: KaufteilMesswerte) -> dict:
     ergebnisse.append(eintrag("material", material_passt(m.material, spec["material"]), ist=m.material,
                                 soll=spec["material"], knoten=[]))
     soll_eig = eigenschaften(spec)
-    abweichend = {k: m.eigenschaften.get(k) for k, v in soll_eig.items() if m.eigenschaften.get(k) != v}
-    ergebnisse.append(eintrag("eigenschaften", not abweichend, ist=abweichend, soll=soll_eig, knoten=[]))
+    ist_eig = {k: m.eigenschaften.get(k) for k in soll_eig}   # alle gelesenen Werte: der Prüfer sieht nur den Bericht
+    abweichend = [k for k, v in soll_eig.items() if ist_eig[k] != v]
+    daten = {"hinweis": "abweichend: " + "; ".join(f"{k} ist {ist_eig[k]!r} statt {soll_eig[k]!r}" for k in abweichend)} \
+        if abweichend else {}
+    ergebnisse.append(eintrag("eigenschaften", not abweichend, ist=ist_eig, soll=soll_eig, **daten, knoten=[]))
     if "masse" in spec:
         kg = spec["masse"]["kg"]
         ok = m.masse_ueberschrieben and math.isclose(m.masse_kg, kg, rel_tol=TOL_MASSE_RELATIV)

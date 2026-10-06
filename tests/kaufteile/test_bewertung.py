@@ -112,6 +112,25 @@ def test_messpunkt_fehlt_und_eigenschaften():
     assert {"mass:Wellenüberstand", "eigenschaften"} <= set(_ids(bewerte_kaufteil(EINTRAG, m), False))
 
 
+def test_eigenschaften_ist_nennt_gelesene_werte_bei_uebereinstimmung():
+    soll = eigenschaften(EINTRAG)
+    e = next(x for x in bewerte_kaufteil(EINTRAG, _messwerte())["pruefungen"] if x["id"] == "eigenschaften")
+    assert e["ok"] is True and e["ist"] == soll and e["soll"] == soll and "hinweis" not in e
+
+
+def test_eigenschaften_abweichung_nennt_schluessel_im_mangel():
+    m = _messwerte()
+    m.eigenschaften = {**m.eigenschaften, "Hersteller": "anders"}
+    b = bewerte_kaufteil(EINTRAG, m)
+    e = next(x for x in b["pruefungen"] if x["id"] == "eigenschaften")
+    assert e["ok"] is False
+    assert e["ist"] == {k: m.eigenschaften.get(k) for k in eigenschaften(EINTRAG)}
+    mangel = next(x for x in b["maengel"] if x["pruefung"] == "eigenschaften")
+    assert "Hersteller" in mangel["beschreibung"] and "anders" in mangel["beschreibung"]
+    gleiche = [k for k in eigenschaften(EINTRAG) if k != "Hersteller"]
+    assert not any(k in mangel["beschreibung"] for k in gleiche)
+
+
 def test_gewinde_modell_und_uneinheitlich():
     gewinde = next(e for e in bewerte_kaufteil(EINTRAG, _messwerte())["pruefungen"] if e["id"] == "gewinde:flansch")
     assert gewinde["ok"] is True and (gewinde["modell"], gewinde["durchmesser"]) == ("kernloch", 4.2)
