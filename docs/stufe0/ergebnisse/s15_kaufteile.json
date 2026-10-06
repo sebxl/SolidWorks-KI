@@ -1,0 +1,320 @@
+{
+  "ok": true,
+  "privat_mb_start": 278.4,
+  "e_testdaten": {
+    "privat_mb_vorher": 278.4,
+    "cli": [
+      0,
+      0,
+      0
+    ],
+    "zeilen": 1238,
+    "unterschiede": 1221,
+    "beispiele": [
+      [
+        4,
+        "FILE_NAME ('gm42-10_1.step',",
+        "FILE_NAME ('gm42-10_2.step',"
+      ],
+      [
+        5,
+        "    '2026-10-06T16:33:36',",
+        "    '2026-10-06T16:33:38',"
+      ],
+      [
+        15,
+        "#1 = ORIENTED_EDGE ( 'NONE', *, *, #350, .F. ) ;",
+        "#1 = DIRECTION ( 'NONE',  ( 0.000000000000000000, 0.000000000000000000, -1.000000000000000000 ) ) ;"
+      ],
+      [
+        16,
+        "#2 = DIRECTION ( 'NONE',  ( 0.000000000000000000, -0.000000000000000000, 1.000000000000000000 ) ) ;",
+        "#2 = CALENDAR_DATE ( 2026, 6, 10 ) ;"
+      ],
+      [
+        17,
+        "#3 = PERSON_AND_ORGANIZATION ( #204, #144 ) ;",
+        "#3 = DIRECTION ( 'NONE',  ( -1.000000000000000000, 0.000000000000000000, -0.000000000000000000 ) ) ;"
+      ]
+    ],
+    "datei": "C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\tests\\referenz\\motorhalter\\muster\\gm42-10.step",
+    "groesse_kb": 83.5,
+    "sha256": "40d8f4fd955fdb1291480d509502d826b415b23f77e98cf3a7de384929dc5716",
+    "privat_mb_nachher": 1099.3
+  },
+  "a_import": {
+    "vorher": {
+      "3d_interconnect": true,
+      "importdiagnose": true,
+      "strukturabbildung": 0
+    },
+    "privat_mb_vorher": 1099.3,
+    "waehrend": {
+      "3d_interconnect": false,
+      "importdiagnose": false,
+      "strukturabbildung": 2
+    },
+    "importdaten": true,
+    "loadfile4": {
+      "dokument": true,
+      "fehler": 0,
+      "s": 1.191
+    },
+    "nachher": {
+      "3d_interconnect": true,
+      "importdiagnose": true,
+      "strukturabbildung": 0
+    },
+    "privat_mb_nachher": 2942.2
+  },
+  "b_diagnose": {
+    "koerper": 2,
+    "flaechenkoerper": 0,
+    "check3": [
+      0,
+      0
+    ],
+    "features": [
+      [
+        "Kommentare",
+        "CommentsFolder",
+        false
+      ],
+      [
+        "Favoriten",
+        "FavoriteFolder",
+        false
+      ],
+      [
+        "Historie",
+        "HistoryFolder",
+        false
+      ],
+      [
+        "Auswahlsätze",
+        "SelectionSetFolder",
+        false
+      ],
+      [
+        "Sensoren",
+        "SensorFolder",
+        false
+      ],
+      [
+        "Konstruktionsordner",
+        "DocsFolder",
+        false
+      ],
+      [
+        "Beschriftungen",
+        "DetailCabinet",
+        false
+      ],
+      [
+        "Oberflächenkörper",
+        "SurfaceBodyFolder",
+        false
+      ],
+      [
+        "Volumenkörper",
+        "SolidBodyFolder",
+        false
+      ],
+      [
+        "Beleuchtung und Kameras",
+        "EnvFolder",
+        false
+      ],
+      [
+        "Markierungen",
+        "InkMarkupFolder",
+        false
+      ],
+      [
+        "Gleichungen",
+        "EqnFolder",
+        false
+      ],
+      [
+        "Material <nicht festgelegt>",
+        "MaterialFolder",
+        false
+      ],
+      [
+        "Ebene vorne",
+        "RefPlane",
+        false
+      ],
+      [
+        "Ebene oben",
+        "RefPlane",
+        false
+      ],
+      [
+        "Ebene rechts",
+        "RefPlane",
+        false
+      ],
+      [
+        "Ursprung",
+        "OriginProfileFeature",
+        false
+      ],
+      [
+        "Importiert1",
+        "BaseBody",
+        false
+      ],
+      [
+        "Importiert2",
+        "BaseBody",
+        false
+      ]
+    ],
+    "box": [
+      -30.0,
+      -25.0,
+      -30.0,
+      30.0,
+      82.0,
+      30.0
+    ],
+    "volumen": 220530.906,
+    "masse_kg": 0.22053090621157925,
+    "flaechen": 23,
+    "s_je_flaeche": 0.0297,
+    "zylinder_d": [
+      4.2,
+      10.0,
+      40.0,
+      56.0
+    ]
+  },
+  "c_bezuege": {
+    "wellenflaechen": 2,
+    "insertaxis2": true,
+    "achse": {
+      "typ": "RefAxis",
+      "geometrie": [
+        "achse",
+        [
+          0.0,
+          4.999999999999997,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ]
+    },
+    "flanschflaechen": [
+      {
+        "punkt": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "normale": [
+          -0.0,
+          -1.0,
+          -0.0
+        ]
+      }
+    ],
+    "ebene": {
+      "erzeugt": true,
+      "geometrie": [
+        "ebene",
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          -0.0,
+          -1.0,
+          -0.0
+        ]
+      ]
+    },
+    "drehlage": {
+      "punkt": true,
+      "punkt_gewaehlt": true,
+      "erzeugt": true,
+      "geometrie": [
+        "ebene",
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    "rebuild": "ok",
+    "namen": {
+      "EINBAU_ACHSE": true,
+      "EINBAU_FLANSCH": true,
+      "EINBAU_DREHLAGE": true
+    },
+    "gewinde_d": [
+      4.2
+    ]
+  },
+  "d_masse": {
+    "masse_kg": 0.22053090621157925,
+    "override": false,
+    "override_wert": 0.22053090621157925
+  },
+  "h_bilder": {
+    "vorher": {
+      "4": true,
+      "5": true
+    },
+    "bilder": {
+      "iso": 247727,
+      "vorne": 151692,
+      "oben": 172573,
+      "rechts": 165042
+    },
+    "pfade": {
+      "iso": "C:\\Users\\User\\.swki\\arbeit\\S15\\bilder\\iso.png",
+      "vorne": "C:\\Users\\User\\.swki\\arbeit\\S15\\bilder\\vorne.png",
+      "oben": "C:\\Users\\User\\.swki\\arbeit\\S15\\bilder\\oben.png",
+      "rechts": "C:\\Users\\User\\.swki\\arbeit\\S15\\bilder\\rechts.png"
+    }
+  },
+  "d_neu_geoeffnet": {
+    "koerper": 2,
+    "masse_kg": 0.22053090621157925,
+    "override": false,
+    "namen": {
+      "EINBAU_ACHSE": true,
+      "EINBAU_FLANSCH": true,
+      "EINBAU_DREHLAGE": true
+    },
+    "interconnect": []
+  },
+  "f_baugruppe": {
+    "komponente": true,
+    "feature_by_name": {
+      "EINBAU_ACHSE": true,
+      "EINBAU_FLANSCH": true,
+      "EINBAU_DREHLAGE": true
+    },
+    "gewinde_entitaet": true,
+    "masse_baugruppe_kg": 0.22053090621157925
+  },
+  "g_privat_mb_ende": 2794.0,
+  "optionen_ende": {
+    "3d_interconnect": true,
+    "importdiagnose": true,
+    "strukturabbildung": 0
+  }
+}
