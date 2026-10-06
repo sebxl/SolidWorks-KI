@@ -40,6 +40,7 @@ class Protokoll:
     teile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Teil-Spec → Protokoll des Teil-Baus
     komponenten: list[dict] = field(default_factory=list)  # Baugruppe: [{"id", "sw_name", "datei"}]
     normteile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Schlüssel → {"bibliothek", "gebaut", "pruefsumme"}
+    kaufteile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Schlüssel → {"kaufteil", "cache", "gebaut", …}
 
     @contextmanager
     def phase(self, name: str):

@@ -55,6 +55,11 @@ def bericht_markdown(
         zeilen += ["", "## Normteile", "", "| Schlüssel | neu gebaut | Bibliotheksprüfsumme |", "|---|---|---|"]
         zeilen += [f"| {s} | {'ja' if e.get('gebaut') else 'nein'} | {_zelle(e.get('pruefsumme'))} |"
                    for s, e in sorted(letzter["normteile"].items())]
+    if letzter.get("kaufteile"):
+        zeilen += ["", "## Kaufteile", "", "| Kaufteil | neu aufgenommen | Cache-Prüfsumme | Masse | Kennmaße |",
+                   "|---|---|---|---|---|"]
+        zeilen += [f"| {e.get('kaufteil', s)} | {'ja' if e.get('gebaut') else 'nein'} | {_zelle(e.get('pruefsumme'))} | "
+                   f"{_zelle(e.get('masse'))} | {_zelle(e.get('kennmasse'))} |" for s, e in sorted(letzter["kaufteile"].items())]
     if letzter.get("gewindepaarungen"):
         zeilen += ["", "## Gewindepaarungen", "",
                    "| Schraube | Teil | Bohrung | Einschraublänge (mm) | Gewindetiefe (mm) | Volumen ist / soll (mm³) |",

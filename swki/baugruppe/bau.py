@@ -26,6 +26,9 @@ from swki.compiler.bauen import BauAbbruch, baue_teil_dokument
 from swki.compiler.eigenschaften import eigenschaften_fuer, globale_variablen, setze_eigenschaften
 from swki.compiler.fehler import BauFehler, fehler_dict
 from swki.compiler.protokoll import Protokoll
+from swki.kaufteile import befehle as kaufteil_befehle
+from swki.kaufteile.eintrag import angaben_fuer_bericht
+from swki.kaufteile.fehler import KaufteilFehler
 from swki.konfig import lade_rechner, lade_standard
 from swki.normteile import befehle as normteil_befehle
 from swki.normteile.bibliothek import bibliotheksordner, lies_eintrag
@@ -45,9 +48,9 @@ class Baulauf:
     standard: dict
     protokoll: Protokoll
     asm: object = None
-    kontexte: dict = field(default_factory=dict)     # Quelldokument (Teil-Spec bzw. Normteil-Schlüssel) → Kontext
+    kontexte: dict = field(default_factory=dict)     # Quelldokument (Teil-Spec bzw. Norm-/Kaufteil-Schlüssel) → Kontext
     offen: list = field(default_factory=list)        # selbst geöffnete Teildokumente, am Ende schließen
-    dateien: dict = field(default_factory=dict)      # "teil:<datei>" | "normteil:<schluessel>" | "baugruppe" → Pfad
+    dateien: dict = field(default_factory=dict)      # "teil:<datei>" | "normteil:…" | "kaufteil:…" | "baugruppe" → Pfad
     komponenten: dict = field(default_factory=dict)  # Instanz-ID → IComponent2 (aus AddComponent5, nie über GetComponents)
     gesetzt: dict = field(default_factory=dict)      # Verknüpfungs-ID → ausdrücklich gesetzte Ausrichtung, ein Dict je Lauf
 
@@ -97,9 +100,30 @@ def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
     return None
 
 
+def _hole_kaufteile(b: Baulauf, tol_mm: float) -> Exception | None:
+    """Je Kaufteil swki kaufteil hole (Cache oder Neuaufnahme) und Kopie in den Lauf-Ordner (Spec 3c §8.4); die
+    Baugruppe verweist nie auf Cache oder Quellordner."""
+    for kid, q in {q.schluessel: (k, q) for k, q in b.bg.quellen.items() if q.art == "kaufteil"}.values():
+        try:
+            ergebnis = kaufteil_befehle.hole(q.kaufteil)
+        except KaufteilFehler as e:
+            return BauFehler(e.daten["code"], f"{kid}: {e}", schritt="kaufteil")
+        ziel = b.ordner / dokument_name(q, b.auftrag, b.standard)
+        ziel.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ergebnis["pfad"], ziel)
+        b.protokoll.kaufteile[q.schluessel] = {"kaufteil": q.kaufteil, "cache": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
+                                               "pruefsumme": ergebnis["pruefsumme"],
+                                               "gewinde_modell": ergebnis["gewinde_modell"], **angaben_fuer_bericht(q.eintrag)}
+        b.dateien[f"kaufteil:{q.schluessel}"] = ziel
+        model = oeffne(b.app, ziel)
+        b.offen.append(model)
+        b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
+    return None
+
+
 def _gespeichert(b: Baulauf, q: Quelle) -> Path:
     """Pfad, unter dem swki die Quelldatei im Lauf-Ordner gespeichert hat (GetPathName schreibt .SLDPRT groß, Spike S12)."""
-    return b.dateien[f"teil:{q.datei}" if q.art == "teil" else f"normteil:{q.schluessel}"]
+    return b.dateien[f"teil:{q.datei}" if q.art == "teil" else f"{q.art}:{q.schluessel}"]
 
 
 def _mit_kontext(e: Exception, code: str, kontext: str, schritt: str) -> BauFehler:
@@ -296,6 +320,9 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
         if fehler is None:
             with protokoll.phase("normteile"):
                 fehler = _hole_normteile(b, r, standard["toleranzen"]["anker_mm"])
+        if fehler is None:
+            with protokoll.phase("kaufteile"):
+                fehler = _hole_kaufteile(b, standard["toleranzen"]["anker_mm"])
         if fehler is None:
             with protokoll.phase("einfuegen"):
                 b.asm = sw_baugruppe.neue_baugruppe(b.app, r.vorlage_baugruppe)

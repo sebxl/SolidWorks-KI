@@ -40,6 +40,7 @@ class BaugruppenMesswerte:
     lagen: dict[str, list[float]] = field(default_factory=dict)       # Instanz-ID → Transform2.ArrayData (Spec 4b §5.5)
     kopplungen: dict[str, dict | str] = field(default_factory=dict)   # Kopplungs-ID → gelesene Werte oder Fehlertext
     unterdrueckt: list[str] = field(default_factory=list)             # unterdrückte Verknüpfungen (Spec 4b §5.5)
+    gewinde_modelle: dict[str, dict] = field(default_factory=dict)    # Kaufteil-Schlüssel → {Gruppe: kernloch | nenn}
 
 
 @dataclass
@@ -89,9 +90,28 @@ def _paar(a: str, b: str) -> frozenset:
     return frozenset((a, b))
 
 
+def _gewinde_soll(g: Gewindepaarung, qs: Quelle, qt: Quelle, m: BaugruppenMesswerte, laenge: float) \
+        -> tuple[float, float, float | None, str | None]:
+    """(tiefe, gewindetiefe, Soll des Überlappungsvolumens, Hinweis): Eigenteil aus der normbohrung, Kaufteil aus der
+    Gewindegruppe des Eintrags mit dem Modell aus der Aufnahme (Spec 3c §6.4: kernloch → Ring, nenn → 0)."""
+    if qt.art == "kaufteil":
+        w = qt.spec["gewinde"][g.feature]
+        modell = m.gewinde_modelle.get(qt.schluessel, {}).get(g.feature)
+        if modell == "nenn":
+            return w["tiefe"], w["gewindetiefe"], 0.0, None
+        if modell != "kernloch":
+            return w["tiefe"], w["gewindetiefe"], None, f"Gewindemodell von {qt.kaufteil}.{g.feature} unbekannt"
+        kernloch = normmasse("gewinde", w["groesse"], "ISO")["kernloch"]
+        return w["tiefe"], w["gewindetiefe"], ueberlappung_soll(qs.masse["d"], qs.masse["p"], kernloch, laenge), None
+    f = next(x for x in qt.spec["features"] if x["id"] == g.feature)
+    tp = qt.spec.get("parameter", {})
+    kernloch = normmasse("gewinde", f["groesse"], norm_von(f))["kernloch"]
+    return (auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp),
+            ueberlappung_soll(qs.masse["d"], qs.masse["p"], kernloch, laenge), None)
+
+
 def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> tuple[dict, dict] | None:
     qs, qt = quellen[basis(g.schraube)], quellen[basis(g.teil)]
-    f = next(x for x in qt.spec["features"] if x["id"] == g.feature)
     laenge = einschraublaenge(qs.laenge, g.kopfauflage, g.eintritt)
     ist = sum(i["volumen"] for i in m.interferenzen if frozenset(i["paar"]) == _paar(g.schraube, g.teil))
     if laenge <= 0 and ist == 0:
@@ -99,17 +119,14 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
     pid, knoten = f"gewinde:{g.schraube}", [g.schraube, g.teil]
     bericht = {"schraube": g.schraube, "teil": g.teil, "bohrung": f"{g.feature}.{g.instanz}",
                "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
-    if f.get("durch"):
+    if qt.art == "teil" and next(x for x in qt.spec["features"] if x["id"] == g.feature).get("durch"):
         return eintrag(pid, None, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
                          hinweis="Gewinde durch: Volumen nicht geprüft (Präzisierung 2)"), bericht
-    tp = qt.spec.get("parameter", {})
-    tiefe, gewindetiefe = auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp)
-    kernloch = normmasse("gewinde", f["groesse"], norm_von(f))["kernloch"]
-    soll = ueberlappung_soll(qs.masse["d"], qs.masse["p"], kernloch, laenge)
-    bericht |= {"soll": round(soll, 3), "gewindetiefe": gewindetiefe, "tiefe": tiefe}
-    daten = {"ist": round(ist, 3), "soll": round(soll, 3), "einschraublaenge": round(laenge, 3),
-             "gewindetiefe": gewindetiefe, "tiefe": tiefe, "knoten": knoten}
-    ok = abs(ist - soll) <= soll * TOL_GEWINDE_PROZENT / 100
+    tiefe, gewindetiefe, soll, hinweis = _gewinde_soll(g, qs, qt, m, laenge)
+    bericht |= {"soll": None if soll is None else round(soll, 3), "gewindetiefe": gewindetiefe, "tiefe": tiefe}
+    daten = {"ist": round(ist, 3), "soll": None if soll is None else round(soll, 3), "einschraublaenge": round(laenge, 3),
+             "gewindetiefe": gewindetiefe, "tiefe": tiefe, "knoten": knoten, **({"hinweis": hinweis} if hinweis else {})}
+    ok = None if soll is None else abs(ist - soll) <= soll * TOL_GEWINDE_PROZENT / 100
     if laenge > min(gewindetiefe, tiefe) + TOL_LAENGE:
         ok = False
         daten["hinweis"] = (f"Einschraublänge {laenge:.2f} mm größer als Gewindetiefe {gewindetiefe:g} bzw. "
