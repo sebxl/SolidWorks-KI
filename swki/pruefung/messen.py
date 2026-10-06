@@ -263,7 +263,12 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
     for f in spec["features"]:
         feature = model.FeatureByName(f["id"])
         if feature is not None:
-            ctx.ergebnisse[f["id"]] = FeatureErgebnis([feature], punkte=[tuple(p) for p in punkte.get(f["id"], [])])
+            features = [feature]
+            if f["typ"] == "bohrung" and "senkung" in f:  # der Handler legt die Senkung als zweites Feature an
+                senkung = model.FeatureByName(f"{f['id']}_senkung")
+                if senkung is not None:
+                    features.append(senkung)
+            ctx.ergebnisse[f["id"]] = FeatureErgebnis(features, punkte=[tuple(p) for p in punkte.get(f["id"], [])])
     return ctx
 
 
