@@ -6,3 +6,4 @@ vorlage_baugruppe: 'C:\ProgramData\SolidWorks\SOLIDWORKS 2025\templates\Baugrupp
 materialdatenbank: 'C:\ProgramData\SolidWorks\SOLIDWORKS 2024\Benutzerdefinierte Materialien'
 arbeitsordner: 'C:\Users\<Benutzer>\.swki\arbeit'
 normteilbibliothek: 'C:\Users\<Benutzer>\.swki\normteile'
+kaufteilbibliothek: 'C:\Users\<Benutzer>\.swki\kaufteile'
