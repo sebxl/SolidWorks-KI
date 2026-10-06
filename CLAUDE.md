@@ -2,9 +2,9 @@
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
 Stand: Stufe 4b (Verzahnung und Kopplungen) umgesetzt – Ergebnisse: docs/stufe4b/ergebnisse.md. Nächster Schritt
-(Nutzerwahl): Paket Kaufteile (STEP-Import) – Spec und Plan schreiben, Übergabe
-docs/superpowers/uebergabe-2026-10-06-kaufteile.md. Danach zur Wahl: Formschräge, Stufe 4c (Nut- und Kurvenverknüpfung),
-Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
+(Nutzerwahl): Stufe 3c Kaufteile (STEP-Import) umsetzen – Plan docs/superpowers/plans/2026-10-06-kaufteile-step-import.md,
+Übergabe docs/superpowers/uebergabe-2026-10-06-kaufteile-umsetzung.md. Danach zur Wahl: Formschräge, Stufe 4c (Nut- und
+Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).

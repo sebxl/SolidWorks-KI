@@ -4,7 +4,9 @@ Ergänzung zu [2026-09-26-solidworks-ki-design.md](2026-09-26-solidworks-ki-desi
 §6 Prüfung, §8 Normteile, §11 Stufen), [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md)
 (Bibliothek als Cache, Einbaureferenzen, Prüfer je Vorlage) und
 [2026-10-03-stufe-3b-baugruppen-design.md](2026-10-03-stufe-3b-baugruppen-design.md) (Komponentenquellen, Kopie in den
-Lauf-Ordner, Referenzen, Gewindepaarung, Freigabe, Änderungserkennung). Stand 2026-10-06, mit dem Nutzer abgestimmt.
+Lauf-Ordner, Referenzen, Gewindepaarung, Freigabe, Änderungserkennung). Stand 2026-10-06, mit dem Nutzer abgestimmt;
+bei der Planung nachgezogen (Plan `docs/superpowers/plans/2026-10-06-kaufteile-step-import.md`): §4.1, §4.2, §4.3, §4.5,
+§5.1, §5.3, §6.1, §8.1, §10, §11, §12.
 
 ## 1. Ziel
 
@@ -108,8 +110,11 @@ pruefung:
 ### 4.1 Felder
 
 - `hersteller`, `bestellnummer`, `benennung` Pflicht. **Schlüssel** `"<hersteller> <bestellnummer>"` (Leerzeichen trennt am
-  ersten Leerzeichen; Hersteller ohne Leerzeichen). Dateiname im Katalog und Bibliotheksschlüssel aus beiden, auf
-  `[A-Za-z0-9_-]` abgebildet; `validieren` meldet eine Kollision zweier Einträge auf denselben Dateinamen.
+  ersten Leerzeichen; Hersteller ohne Leerzeichen). Katalogordner und Dateiname klein geschrieben (Hersteller:
+  `[a-z0-9-]`, Bestellnummer: `[a-z0-9_-]`, andere Zeichen ersetzt), Bibliotheksschlüssel `<Hersteller>_<Bestellnummer>`
+  auf `[A-Za-z0-9-]` abgebildet. *Nachgezogen bei der Planung:* statt einer Kollisionsprüfung meldet `validieren`, wenn
+  die Datei nicht an dem Platz liegt, der aus Hersteller und Bestellnummer folgt (zwei Einträge können so nie dieselbe
+  Datei belegen).
 - `original` Pflicht: Dateiname im Quellordner, SHA-256, `bezug` (wie die Datei zum Nutzer kam: `nutzer` | `url` mit Datum).
 - `koerper` (≥ 1), `material` Pflicht; `masse` optional.
 - `belege`: benannte Quellen mit `art` ∈ `hersteller` | `datenblatt` | `haendler` | `nutzer`; `url` oder `datei` (+ `seite`),
@@ -129,9 +134,11 @@ Je Name genau eine der Bauformen; Punkte in STEP-Koordinaten (mm), Toleranz der 
 | `ebene: {nahe, normale}` | Bezugsebene deckungsgleich zur ebenen Fläche durch `nahe` | Normale (Winkel ≤ 0,01°, Vorzeichen zählt) |
 | `ebene_durch_achse: {achse, nahe}` | Bezugsebene, die die Bezugsachse `achse` enthält und durch `nahe` geht (z. B. Mitte eines Gewindelochs) | `nahe` nicht auf der Achse (Abstand > 1 mm) |
 
-Kein Treffer → `REFERENZ_NICHT_GEFUNDEN`, mehrere → `REFERENZ_MEHRDEUTIG`, Gegenprobe verfehlt → `KAUFTEIL_EINBAU` (mit Ist-
-und Sollwert). Die Bezugsgeometrie heißt im Teil wie im Eintrag (`EINBAU_ACHSE` …), damit Baugruppen sie wie bei Normteilen
-per Name auswählen (Spike S12b). Mindestens eine Einbaureferenz ist Pflicht.
+*Nachgezogen bei der Planung:* Kein Treffer (`REFERENZ_NICHT_GEFUNDEN`), mehrere (`REFERENZ_MEHRDEUTIG`) und eine verfehlte
+Gegenprobe sind **Mängel der Prüfung** `einbau:<name>` mit Ist- und Sollwert, kein Abbruch (alle Mängel eines Eintrags auf
+einmal); `hole` meldet sie als `KAUFTEIL_PRUEFUNG`. Ein eigener Code `KAUFTEIL_EINBAU` entfällt. Die Bezugsgeometrie heißt im
+Teil wie im Eintrag (`EINBAU_ACHSE` …), damit Baugruppen sie wie bei Normteilen per Name auswählen (Spike S12b). Mindestens
+eine Einbaureferenz ist Pflicht.
 
 ### 4.3 Gewindegruppen
 
@@ -140,7 +147,7 @@ per Name auswählen (Spike S12b). Mindestens eine Einbaureferenz ist Pflicht.
 - `groesse` aus `swki/wissen/bohrungsnormen.yaml` (Gewinde), `gewindetiefe`/`tiefe` in mm, `normale` zeigt aus dem Material
   (Eintrittsseite), `positionen`: Eintrittspunkte in STEP-Koordinaten.
 - Gegenprobe je Position: eine Zylinderfläche mit Achse durch den Punkt parallel zu `normale`; ihr Ø ist der **Kernloch-Ø**
-  (Gewindepaarung mit Ringvolumen, §6.4) oder der **Nenn-Ø** (Soll der Überlappung 0); sonst `KAUFTEIL_EINBAU`. Welcher Ø
+  (Gewindepaarung mit Ringvolumen, §6.4) oder der **Nenn-Ø** (Soll der Überlappung 0); sonst Mangel `gewinde:<gruppe>`. Welcher Ø
   vorliegt, schreibt `hole` in den Cache-Eintrag (`modell: kernloch | nenn` je Gruppe).
 - Ohne `beleg` stammen `gewindetiefe`/`tiefe` nur aus der STEP: zulässig (sie werden für die Gewindepaarung gebraucht), aber
   „nicht belegt“ im Bericht.
@@ -170,7 +177,8 @@ per Name auswählen (Spike S12b). Mindestens eine Einbaureferenz ist Pflicht.
    „ISO 4762“, „DIN 912“; Schreibweisen wie in `swki normteil hole`), Befund `KAUFTEIL_GENORMT` mit Verweis auf `normteil hole`.
 4. `material` nicht leer; `einbau` mit ≥ 1 Eintrag; `ebene_durch_achse.achse` nennt eine `zylinder`-Referenz desselben Eintrags;
    Gewindegrößen in `bohrungsnormen.yaml`; Messpunkte nennen vorhandene Referenzen/Gruppen/Instanzen.
-5. Hinweise: Kennmaße ohne `beleg` (`art: nicht_belegt`), keine `masse` (`art: masse_aus_material`), Datei-Kollision.
+5. Hinweise: Kennmaße ohne `beleg` (`art: nicht_belegt`), gar kein belegtes Kennmaß (`art: kennmasse_nicht_belegt`), keine
+   `masse` (`art: masse_aus_material`). *Nachgezogen bei der Planung:* statt „Datei-Kollision“ der Befund zur Lage (§4.1).
 
 Ausgabe wie bei Teilen (`gueltig`, `befunde`, `hinweise`, `pruefsumme`).
 
@@ -202,7 +210,8 @@ swki kaufteil liste [--veraltet]
    Datenblatt. Existiert schon ein Katalogeintrag, muss die SHA-256 zu `original.sha256` passen (sonst
    `KAUFTEIL_QUELLE_ABWEICHEND`); so stellt ein anderer Rechner das Original wieder her.
 3. Import der **Kopie** (§6.1) in ein neues Dokument; nichts wird in die Bibliothek gespeichert. Ordner
-   `<arbeitsordner>/KAUFTEILE/<schluessel>/untersuchung-<n>/`.
+   `<arbeitsordner>/KAUFTEILE/<schluessel>/lauf-<n>/` (*nachgezogen bei der Planung:* gleiche Laufzählung wie `muster` und
+   `hole`, statt `untersuchung-<n>`); die Diagnose steht dort als `diagnose.json`.
 4. Diagnose (JSON): Dateigröße, Importzeit, Private Bytes vorher/Spitze/nachher, Körper (Anzahl, Art Volumen/Fläche),
    Ergebnis der Importdiagnose, Flächenzahl, Hüllquader, Volumen, Schwerpunkt, **zylindrische Flächen** (Ø, Achspunkt,
    Richtung, Länge, ein Punkt auf dem Mantel; gleiche Achse und Ø zusammengefasst), **ebene Flächen** (Normale, Punkt, Fläche;
@@ -230,9 +239,11 @@ swki kaufteil liste [--veraltet]
    und bestandener Prüfung → Pfad zurückgeben (`gebaut: false`).
 3. Original im Quellordner: fehlt → `KAUFTEIL_QUELLE_FEHLT` (Nutzer gibt die Datei erneut, `untersuchen`); SHA-256 ≠
    `original.sha256` → `KAUFTEIL_QUELLE_ABWEICHEND`.
-4. Import (§6.1) in den Arbeitsordner (Auftrag `KAUFTEILE`, Laufnummer wie bei Normteilen); Importfehler → `KAUFTEIL_IMPORT`.
+4. Import (§6.1) in den Arbeitsordner (Auftrag `KAUFTEILE`, Laufnummer wie bei Normteilen); liefert SolidWorks kein Dokument
+   → `KAUFTEIL_IMPORT`.
 5. Einbaureferenzen und Gewindegruppen orten, Gegenproben, Bezugsgeometrie anlegen (§6.2); Material, Massenüberschreibung,
-   Eigenschaften (`Benennung`, `Hersteller`, `Bestellnummer`, `Ersteller`).
+   Eigenschaften (`Benennung`, `Hersteller`, `Bestellnummer`, `Ersteller`). Ein Fehler beim Einrichten (z. B.
+   `MATERIAL_UNBEKANNT`, Bezugsgeometrie nicht erzeugt) bricht mit seinem Code ab.
 6. Prüfung (§6.3), Bilder; Speichern im Laufordner.
 7. Bestanden → `.sldprt` in den Cache kopieren, `<schluessel>.json` schreiben (Schlüssel, Cache-Prüfsumme, Prüfergebnis,
    Gewindemodell je Gruppe, Kennzahlen der Diagnose, Datum, SW-Version). Nicht bestanden → `KAUFTEIL_PRUEFUNG` (Mängel,
@@ -252,9 +263,11 @@ abweichender Prüfsumme. Gelöscht wird nichts automatisch.
   Lauf-Ordner wäre nicht mehr in sich geschlossen. Spike S15a belegt, dass das gespeicherte Teil keine externe Referenz hat.
 - Alle verstellten SolidWorks-Optionen (3D Interconnect, Strukturabbildung, ggf. Einheit, Importdiagnose) liest swki vorher,
   setzt sie nur für den Import und stellt sie in `finally` wieder her. Die Werte stehen im Protokoll.
-- **Importdiagnose nur lesen, nicht reparieren** (`ImportDiagnosis` ohne Reparatur bzw. `IBody2.Check3`, Spike S15b):
-  fehlerhafte Flächen, Lücken oder Flächenkörper → `KAUFTEIL_IMPORT` mit Anzahl. Reparieren wäre ein Eingriff in die
-  Herstellergeometrie; der Nutzer holt dann ein anderes Format/Modell beim Hersteller.
+- **Importdiagnose nur lesen, nicht reparieren.** *Nachgezogen bei der Planung:* `IPartDoc.ImportDiagnosis` repariert laut
+  API-Hilfe und wird nie aufgerufen; die automatische Importdiagnose ist während des Imports aus. Gelesen werden
+  `IBody2.Check3` je Volumenkörper (Fehlerzahl) und die Zahl der Flächenkörper; beides ist die Prüfung `import` (Mangel mit
+  Anzahl, §6.3), die Diagnose von `untersuchen` nennt sie. Reparieren wäre ein Eingriff in die Herstellergeometrie; der
+  Nutzer holt dann ein anderes Format/Modell beim Hersteller.
 - Die importierten Features bleiben unverändert; Name im Baum wie von SolidWorks vergeben (deutsche Oberfläche, nicht
   angefasst).
 
@@ -333,6 +346,8 @@ verknuepfungen:
 - `drehung_sperren`: Vorgabe `true`, wenn eine Seite ein Normteil **oder Kaufteil** ist. Verknüpft eine spätere Verknüpfung die
   Drehlage desselben Kaufteils (`EINBAU_DREHLAGE` o. ä.), muss `drehung_sperren: false` stehen; sonst Hinweis
   `art: drehlage_doppelt` (wäre überbestimmt).
+- *Nachgezogen bei der Planung:* Gewindepositionen gibt es nur in Verknüpfungen und `je_position`, nicht als Messpunkte von
+  `pruefung.masse_pruefen` der Baugruppe (das Schema der Messpunkte bleibt unverändert).
 
 ### 8.2 Validieren
 
@@ -377,11 +392,12 @@ JSON mit `code`, Exit 1. Neu:
 | `KAUFTEIL_UNBEKANNT` | Schlüssel ohne Eintrag | vorhandene Einträge des Herstellers bzw. Hersteller |
 | `KAUFTEIL_QUELLE_FEHLT` | Original nicht im Quellordner | erwarteter Pfad, Hinweis `untersuchen` |
 | `KAUFTEIL_QUELLE_ABWEICHEND` | SHA-256 weicht ab | beide Prüfsummen, Pfade |
-| `KAUFTEIL_IMPORT` | Import gescheitert, Diagnosebefund, Flächenkörper | Fehlercode, Anzahl Befunde |
-| `KAUFTEIL_EINBAU` | Gegenprobe einer Einbaureferenz/Gewindeposition verfehlt | Name, Ist, Soll |
+| `KAUFTEIL_IMPORT` | SolidWorks liefert beim Import kein Dokument | Fehlercode (`swFileLoadError_e`) |
 | `KAUFTEIL_UNGEPRUEFT` | kein bestandenes Prüfer-Urteil zur Freigabe | Schlüssel, Freigabe-Prüfsumme |
-| `KAUFTEIL_PRUEFUNG` | Prüfung nicht bestanden | Mängel, Laufordner |
-| Befunde `validieren` | `KAUFTEIL_GENORMT`, `BELEG_UNZUREICHEND`, `KAUFTEIL_NICHT_FREIGEGEBEN` | Norm, Wert, Komponente |
+| `KAUFTEIL_PRUEFUNG` | Prüfung nicht bestanden (auch Gegenproben `einbau:*`/`gewinde:*`, Körperfehler `import`) | Mängel, Laufordner |
+| Befunde `validieren` | `KAUFTEIL_GENORMT`, `BELEG_UNZUREICHEND`, `KAUFTEIL_NICHT_FREIGEGEBEN`, `KAUFTEIL_UNGEPRUEFT` | Norm, Wert, Komponente |
+
+*Nachgezogen bei der Planung:* `KAUFTEIL_EINBAU` entfällt (§4.2); Diagnosebefunde und Flächenkörper sind der Mangel `import`.
 
 `REFERENZ_NICHT_GEFUNDEN`/`REFERENZ_MEHRDEUTIG`, `FREIGABE_FEHLT`/`FREIGABE_VERALTET` wie bisher. Ein Prüffehler ist ein Fehler im
 Eintrag oder im Importweg: Claude meldet ihn und passt keine Sollwerte an Messwerte an (Ausnahme: `volumen`, das per Definition
@@ -403,10 +419,11 @@ aus `untersuchen` stammt – und auch das nur vor der Freigabe).
 - **Baugruppe** `motorhalter.yaml`: Grundplatte (fixiert), Motorbock (Winkel: Fuß und Wand mit Zentrierbohrung und
   4 × Durchgang M5), Motor (Kaufteil), 4 × ISO 4762 M5 durch die Wand in die Flanschgewinde (`je_position` auf die Bohrung der
   Wand), 2 × ISO 4762 M6 vom Fuß in Gewinde der Grundplatte. Statisch; Lage über `masse_pruefen` (Achshöhe).
-- **Negativfälle** (live, je einzeln): falscher Ø in der Gegenprobe von `EINBAU_ACHSE` (`KAUFTEIL_EINBAU`); Original geändert
-  (Kopie mit angehängtem Kommentar, `KAUFTEIL_QUELLE_ABWEICHEND`); Körperzahl 1 statt 2 (Mangel `koerper`); zu lange
-  Flanschschraube (Mangel `gewinde:flanschschraube.<i>`). Ohne SolidWorks: geänderter Eintrag nach der Baugruppen-Freigabe
-  (`FREIGABE_VERALTET` mit Kaufteil), Schutzregel, Belegregel.
+- **Negativfälle** (live, je einzeln): falscher Ø in der Gegenprobe von `EINBAU_ACHSE` (Mangel `einbau:EINBAU_ACHSE`);
+  Körperzahl 1 statt 2 (Mangel `koerper`); zu lange Flanschschraube (Mangel `gewinde:flanschschraube.<i>`). Ohne SolidWorks
+  (*nachgezogen bei der Planung*, die SHA-256-Prüfung läuft vor dem Import): Original geändert
+  (`KAUFTEIL_QUELLE_ABWEICHEND`), geänderter Eintrag nach der Baugruppen-Freigabe (`FREIGABE_VERALTET` mit Kaufteil),
+  Schutzregel, Belegregel.
 - **Abnahme mit echter Herstellerdatei:** Der Nutzer gibt eine STEP-Datei eines realen Kaufteils (seine Wahl, z. B. Motor oder
   Lager) und ggf. das Datenblatt; Claude nimmt sie mit dem vollen Ablauf auf (untersuchen, Eintrag, Freigabe durch den Nutzer,
   Prüfer, hole) und dokumentiert Diagnose-Kennzahlen, Zeiten, Speicher und Befunde in den Ergebnissen. Datei und Eintrag kommen
@@ -419,8 +436,9 @@ Vor jedem neuen API-Aufruf `swki api methode` / `swki api enum`; nur Aufrufe aus
 - **S15a Import:** `GetImportFileData` + `LoadFile4` (4 Parameter) gegen `OpenDoc6` für `.step`; Optionen
   `swImportNeutralAssemblyStructureMapping` (2 = Mehrkörperteil), 3D Interconnect aus; Optionen lesen/setzen/wiederherstellen;
   gespeichertes Teil ohne externe Referenz (Neuöffnen ohne Original); Zoll-STEP (Maßstab).
-- **S15b Diagnose:** `IPartDoc.ImportDiagnosis` (4 Parameter) ohne Reparatur – Rückgabewert, Wirkung; `IBody2.Check3`;
-  Flächenkörper erkennen; Typname der Importfeatures; Hüllquader eines Mehrkörperteils (`sw.teilebox_mm`).
+- **S15b Diagnose:** `IBody2.Check3` (Fehlerzahl je Körper; *nachgezogen bei der Planung:* `IPartDoc.ImportDiagnosis`
+  repariert und entfällt); Flächenkörper erkennen; Typname der Importfeatures; Hüllquader eines Mehrkörperteils
+  (`sw.teilebox_mm`).
 - **S15c Bezugsgeometrie an Importflächen:** Achse aus Zylinderfläche, Ebene deckungsgleich zu ebener Fläche, Ebene durch Achse und
   Punkt (Bauweise), Umbenennen, Auswahl per Name in einer Baugruppe.
 - **S15d Masse:** `IMassProperty2.GetOverrideOptions` → `OverrideMass`, `SetOverrideMassValue` (seit 2020); Wirkung nach Speichern
