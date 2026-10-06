@@ -77,16 +77,26 @@ def alle_flaechen(model) -> list[Flaeche]:
 
 
 def koerperfehler(model) -> dict[str, int]:
-    """Fehlerzahl je Volumenkörper laut IBody2.Check3 (ohne Reparatur)."""
+    """Fehlerzahl je Körper laut IBody2.Check3 (ohne Reparatur): Volumenkörper "1" …, Flächenkörper "F1" …"""
     ergebnis = {}
-    for i, b in enumerate(koerper(model), start=1):
-        fehler = b.Check3
-        ergebnis[str(i)] = 0 if fehler is None else int(fehler.Count)
+    for kennung, gruppe in (("", koerper(model)), ("F", model.GetBodies2(SW_SHEET_BODY, False) or ())):
+        for i, b in enumerate(gruppe, start=1):
+            fehler = b.Check3
+            ergebnis[f"{kennung}{i}"] = 0 if fehler is None else int(fehler.Count)
     return ergebnis
 
 
 def flaechenkoerper(model) -> int:
     return len(model.GetBodies2(SW_SHEET_BODY, False) or ())
+
+
+def masseneigenschaften(model):
+    """IMassProperty2 in Systemeinheiten – None, wenn das Teil keinen Volumenkörper hat (reines Flächenmodell: SolidWorks
+    liefert dann Null). Der Aufrufer behandelt None als Befund (Mangel import), nicht als Fehler."""
+    mp = model.Extension.CreateMassProperty2
+    if mp is not None:
+        mp.UseSystemUnits = True
+    return mp
 
 
 def _datensatz(f: Flaeche) -> dict:
@@ -100,11 +110,12 @@ def _datensatz(f: Flaeche) -> dict:
 
 def diagnose(model, flaechen: list[Flaeche]) -> dict:
     """Kennzahlen des importierten Teils (Spec 3c §5.1) ohne die Flächenübersicht."""
-    mp = model.Extension.CreateMassProperty2
-    mp.UseSystemUnits = True
+    mp = masseneigenschaften(model)
     return {"koerper": len(koerper(model)), "flaechenkoerper": flaechenkoerper(model), "koerperfehler": koerperfehler(model),
-            "flaechen": len(flaechen), "huellquader": sw.teilebox_mm(model), "volumen": round(in_mm3(mp.Volume), 3),
-            "schwerpunkt": [round(in_mm(c), 4) for c in mp.CenterOfMass], "interconnect": interconnect_features(model)}
+            "flaechen": len(flaechen), "huellquader": sw.teilebox_mm(model),
+            "volumen": None if mp is None else round(in_mm3(mp.Volume), 3),
+            "schwerpunkt": None if mp is None else [round(in_mm(c), 4) for c in mp.CenterOfMass],
+            "interconnect": interconnect_features(model)}
 
 
 def datensaetze(flaechen: list[Flaeche]) -> list[dict]:
@@ -211,11 +222,13 @@ def setze_masse(model, kg: float) -> None:
     Überschreibung wirkt nur, wenn alle Volumenkörper ausgewählt sind und die Optionen mit
     IMassProperty2.SetOverrideOptions(Optionen, swThisConfiguration, leer) zurückgeschrieben werden; GetOverrideOptions
     und SetOverrideMassValue allein lassen die Masse aus dem Material stehen."""
+    if not koerper(model):
+        return   # reines Flächenmodell: nichts zu überschreiben; die Prüfung masse meldet den Mangel
     sw.auswahl_leeren(model)
     try:
         for i, b in enumerate(koerper(model)):
             b.Select2(i > 0, None)
-        mp = model.Extension.CreateMassProperty2
+        mp = masseneigenschaften(model)
         optionen_masse = mp.GetOverrideOptions
         optionen_masse.OverrideMass = True
         optionen_masse.SetOverrideMassValue(kg)
@@ -273,15 +286,15 @@ def _durchmesser(spec: dict, einbau: dict, flaechen: list[Flaeche], tol_mm: floa
 
 
 def messe(model, spec: dict, flaechen: list[Flaeche], einbau: dict, gewinde: dict, tol_mm: float) -> KaufteilMesswerte:
-    mp = model.Extension.CreateMassProperty2
-    mp.UseSystemUnits = True
+    mp = masseneigenschaften(model)   # None ohne Volumenkörper: Volumen 0, Masse 0, nicht überschrieben
     pr = spec.get("pruefung", {})
     punkte = {messpunkt_schluessel(p): _messpunkt(p, einbau, gewinde, flaechen, tol_mm)
               for m in pr.get("masse_pruefen", []) for p in (m["von"], m["zu"])}
     return KaufteilMesswerte(
         rebuild_fehler=rebuild_fehler(model), koerper=len(koerper(model)), flaechenkoerper=flaechenkoerper(model),
-        koerperfehler=koerperfehler(model), box=sw.teilebox_mm(model), volumen=in_mm3(mp.Volume), masse_kg=mp.Mass,
-        masse_ueberschrieben=bool(mp.GetOverrideOptions.OverrideMass),
+        koerperfehler=koerperfehler(model), box=sw.teilebox_mm(model), volumen=0.0 if mp is None else in_mm3(mp.Volume),
+        masse_kg=0.0 if mp is None else mp.Mass,
+        masse_ueberschrieben=False if mp is None else bool(mp.GetOverrideOptions.OverrideMass),
         material=model.GetMaterialPropertyName2("", byref_str()) or "", eigenschaften=lies_eigenschaften(model),
         einbau=einbau, gewinde=gewinde, messpunkte=punkte, durchmesser=_durchmesser(spec, einbau, flaechen, tol_mm))
 
