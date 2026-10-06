@@ -1,27 +1,43 @@
 """Eine Freigabe für Baugruppe und Teil-Specs (Spec 3b §6). Jede Teil-Spec bekommt ihren Eintrag in freigabe.json und
-ihre Freigabe-Kopie; die Baugruppe zusätzlich eine Prüfsumme über die Prüfsummen der Teile."""
+ihre Freigabe-Kopie; die Baugruppe zusätzlich eine Prüfsumme über die Prüfsummen der Teile und der Katalogeinträge ihrer
+Kaufteile (Spec 3c §8.3; die Einträge selbst gibt der Nutzer je Kaufteil frei)."""
 
 from dataclasses import replace
 
 import yaml
 
 from swki.baugruppe.modell import Baugruppe, Quelle
-from swki.spec.freigabe import freigeben, kopie_pfad, pruefe_freigabe, pruefsumme
+from swki.spec.freigabe import FreigabeFehler, freigabe_eintrag, freigeben, kopie_pfad, pruefe_freigabe, pruefsumme
+
+
+def kaufteil_summen(bg: Baugruppe) -> dict[str, str]:
+    """"kaufteil:<Hersteller> <Bestellnummer>" → Freigabe-Prüfsumme des Katalogeintrags."""
+    return {f"kaufteil:{q.kaufteil}": pruefsumme(q.eintrag) for q in bg.quellen.values() if q.art == "kaufteil"}
 
 
 def teil_summen(bg: Baugruppe) -> dict[str, str]:
-    return {datei: pruefsumme(spec) for datei, spec in bg.teile.items()}
+    return {datei: pruefsumme(spec) for datei, spec in bg.teile.items()} | kaufteil_summen(bg)
 
 
 def freigeben_baugruppe(bg: Baugruppe, zeitpunkt: str | None = None) -> dict:
     teile = {datei: freigeben(bg.pfad.parent / datei, spec, zeitpunkt) for datei, spec in bg.teile.items()}
-    return {**freigeben(bg.pfad, bg.spec, zeitpunkt, teile=teil_summen(bg)), "teile": teile}
+    zusatz = {"kaufteile": kaufteil_summen(bg)} if kaufteil_summen(bg) else None
+    return {**freigeben(bg.pfad, bg.spec, zeitpunkt, teile=teil_summen(bg), zusatz=zusatz), "teile": teile}
 
 
 def pruefe_freigabe_baugruppe(bg: Baugruppe) -> dict:
-    """Erst jede Teil-Spec (die Meldung nennt das Teil), dann die Baugruppe; wirft FreigabeFehler."""
+    """Erst jede Teil-Spec und jeden Kaufteil-Eintrag (die Meldung nennt das Teil), dann die Baugruppe; wirft
+    FreigabeFehler."""
     for datei, spec in bg.teile.items():
         pruefe_freigabe(bg.pfad.parent / datei, spec)
+    for q in {q.kaufteil: q for q in bg.quellen.values() if q.art == "kaufteil"}.values():
+        pruefe_freigabe(q.eintrag_pfad, q.eintrag)
+    frueher = (freigabe_eintrag(bg.pfad) or {}).get("kaufteile", {})
+    for name, summe in kaufteil_summen(bg).items():
+        if name in frueher and frueher[name] != summe:
+            raise FreigabeFehler("FREIGABE_VERALTET", f"{name.removeprefix('kaufteil:')}: Katalogeintrag nach der "
+                                                      f"Freigabe von {bg.pfad.name} geändert. Nutzer fragen und die "
+                                                      "Baugruppe neu freigeben.")
     return pruefe_freigabe(bg.pfad, bg.spec, teile=teil_summen(bg))
 
 

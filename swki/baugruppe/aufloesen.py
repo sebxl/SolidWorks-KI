@@ -42,7 +42,10 @@ def je_position(spec: dict, kid: str) -> dict | None:
 
 
 def anzahl_positionen(spec: dict, quellen: dict[str, Quelle], kid: str) -> int:
+    """Positionen des je_position: Bohrungs-Feature eines Eigenteils oder Gewindegruppe eines Kaufteils (Spec 3c §8.1)."""
     je = je_position(spec, kid)
+    if "gewinde" in je:
+        return len(quellen[je["komponente"]].spec["gewinde"][je["gewinde"]]["positionen"])
     feature = next(f for f in quellen[je["komponente"]].spec["features"] if f["id"] == je["feature"])
     return len(feature["positionen"])
 
@@ -59,10 +62,12 @@ def instanzen(spec: dict, quellen: dict[str, Quelle]) -> list[Instanz]:
 
 
 def _drehung_sperren(v: dict, quellen: dict[str, Quelle]) -> bool:
-    """Vorgabe true bei konzentrisch mit einem Normteil (Spec 3b §4.4), sonst false; ausdrücklich angegeben gilt."""
+    """Vorgabe true bei konzentrisch mit einem Norm- oder Kaufteil (Spec 3b §4.4, 3c §8.1), sonst false; ausdrücklich
+    angegeben gilt."""
     if "drehung_sperren" in v:
         return v["drehung_sperren"]
-    return v["typ"] == "konzentrisch" and any(quellen[v[s]["komponente"]].art == "normteil" for s in ("a", "b"))
+    return v["typ"] == "konzentrisch" and any(quellen[basis(v[s]["komponente"])].art in ("normteil", "kaufteil")
+                                              for s in ("a", "b"))
 
 
 def _setze(seite: dict, je: set[str], i: int) -> dict:

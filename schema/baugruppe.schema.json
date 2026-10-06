@@ -33,7 +33,9 @@
        "properties": {"teil": {"type": "string", "pattern": "^[^/\\\\]+\\.yaml$"}}},
       {"type": "object", "required": ["normteil"], "additionalProperties": false,
        "properties": {"normteil": {"type": "string", "pattern": "^\\S.*\\s\\S+$"},
-                      "variante": {"type": "string", "minLength": 1}}}
+                      "variante": {"type": "string", "minLength": 1}}},
+      {"type": "object", "required": ["kaufteil"], "additionalProperties": false,
+       "properties": {"kaufteil": {"type": "string", "pattern": "^\\S+\\s+\\S(.*\\S)?$"}}}
     ]},
     "komponente": {
       "type": "object", "required": ["id", "quelle"], "additionalProperties": false,
@@ -41,8 +43,12 @@
         "id": {"$ref": "#/$defs/id"},
         "quelle": {"$ref": "#/$defs/quelle"},
         "fixiert": {"type": "boolean"},
-        "je_position": {"type": "object", "required": ["komponente", "feature"], "additionalProperties": false,
-                        "properties": {"komponente": {"$ref": "#/$defs/id"}, "feature": {"$ref": "#/$defs/id"}}},
+        "je_position": {"oneOf": [
+          {"type": "object", "required": ["komponente", "feature"], "additionalProperties": false,
+           "properties": {"komponente": {"$ref": "#/$defs/id"}, "feature": {"$ref": "#/$defs/id"}}},
+          {"type": "object", "required": ["komponente", "gewinde"], "additionalProperties": false,
+           "properties": {"komponente": {"$ref": "#/$defs/id"}, "gewinde": {"$ref": "#/$defs/id"}}}
+        ]},
         "gruppe": {"$ref": "#/$defs/id"}
       }
     },
@@ -56,6 +62,9 @@
                       "instanz": {"$ref": "#/$defs/instanz"}, "flaeche": {"$ref": "#/$defs/richtung"}}},
       {"type": "object", "required": ["komponente", "feature", "instanz", "achse"], "additionalProperties": false,
        "properties": {"komponente": {"$ref": "#/$defs/id"}, "feature": {"$ref": "#/$defs/id"},
+                      "instanz": {"$ref": "#/$defs/instanz"}, "achse": {"const": true}}},
+      {"type": "object", "required": ["komponente", "gewinde", "instanz", "achse"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/id"}, "gewinde": {"$ref": "#/$defs/id"},
                       "instanz": {"$ref": "#/$defs/instanz"}, "achse": {"const": true}}},
       {"type": "object", "required": ["komponente", "ebene"], "additionalProperties": false,
        "properties": {"komponente": {"$ref": "#/$defs/id"}, "ebene": {"$ref": "#/$defs/standardebene"}}},
