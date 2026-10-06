@@ -101,6 +101,27 @@ def test_hinweis_drehlage_doppelt(tmp_path, monkeypatch):
     assert (h["art"], h["pfad"]) == ("drehlage_doppelt", "verknuepfungen[1].drehung_sperren")
 
 
+def _drehlage(tmp_path, spec: dict) -> list[dict]:
+    return [h for h in hinweise_baugruppe(lade_baugruppe(schreibe(tmp_path / "A", spec)))
+            if h["art"] == "drehlage_doppelt"]
+
+
+def test_drehlage_hinweis_nicht_bei_schraube_im_gewinde(tmp_path, monkeypatch):
+    katalog(tmp_path / "kat", monkeypatch)
+    spec = _ins_gewinde(kopie())  # v2 sperrt nicht, v3 verknüpft die Drehlage, v5 ist Schraube ↔ Gewindeposition
+    assert _drehlage(tmp_path, spec) == []
+
+
+def test_drehlage_hinweis_nicht_ohne_sperre_oder_drehlage(tmp_path, monkeypatch):
+    katalog(tmp_path / "kat", monkeypatch)
+    spec = kopie()
+    assert spec["verknuepfungen"][1]["drehung_sperren"] is False
+    assert _drehlage(tmp_path, spec) == []  # (b) Sperre ausdrücklich aus
+    del spec["verknuepfungen"][1]["drehung_sperren"]
+    del spec["verknuepfungen"][2]  # v3: keine Drehlage-Verknüpfung
+    assert _drehlage(tmp_path / "B", spec) == []  # (c)
+
+
 def test_freigabe_schuetzt_den_eintrag(tmp_path, monkeypatch):
     eintrag_pfad = katalog(tmp_path / "kat", monkeypatch)
     pfad = schreibe(tmp_path / "A")

@@ -10,7 +10,8 @@ PRUEFAUFWAND_AB = 4  # Bewegungen; Spec 4a §4.4
 
 def _drehlage_hinweise(bg: Baugruppe) -> list[dict]:
     """Konzentrisch mit Drehsperre (Vorgabe bei Kaufteilen) und dazu eine Verknüpfung der Drehlage desselben Kaufteils
-    (Einbaureferenz ebene_durch_achse) wäre überbestimmt (Spec 3c §8.1)."""
+    (Einbaureferenz ebene_durch_achse) wäre überbestimmt (Spec 3c §8.1). Gilt nur für Verknüpfungen auf eine Einbaureferenz,
+    nicht für Gewindepositionen."""
     vs = bg.spec.get("verknuepfungen", [])
     drehlage = {}
     for v in vs:
@@ -25,7 +26,8 @@ def _drehlage_hinweise(bg: Baugruppe) -> list[dict]:
             continue
         for s in ("a", "b"):
             k = basis(v[s]["komponente"])
-            if k in drehlage:
+            # nur Einbaureferenzen des Kaufteils; eine Schraube in der Gewindeposition (gewinde) sperrt nur ihre eigene Drehung
+            if k in drehlage and "referenz" in v[s]:
                 ergebnis.append({"art": "drehlage_doppelt", "pfad": f"verknuepfungen[{i}].drehung_sperren",
                                  "meldung": f"{k}: Drehlage über {drehlage[k]} verknüpft – hier drehung_sperren: false "
                                             "setzen, sonst überbestimmt"})
