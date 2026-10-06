@@ -10,15 +10,27 @@ from pathlib import Path
 import pytest
 
 from swki.cli import main
+from swki.kaufteile import quelle
+from swki.kaufteile.eintrag import lade_eintrag
+from swki.kaufteile.katalog import finde
 from swki.konfig import lade_rechner
 
 pytestmark = pytest.mark.sw
 REFERENZEN = Path(__file__).parent
+KAUFTEILE = {"motorhalter": ["Nanotec GPLE60-2S-32"]}  # Referenz → Kaufteile, deren Original im Quellordner liegen muss
 
 
 def _lauf(capsys, *argv):
     code = main(list(argv))
     return code, json.loads(capsys.readouterr().out)
+
+
+def bereite_vor(ordner: str) -> None:
+    """Vorbereitung ohne SolidWorks: Referenzen mit Kaufteilen brauchen das Original des Herstellers im Quellordner der
+    Kaufteil-Bibliothek – es liegt nicht im Git (Nutzerentscheidung 2026-10-06). Fehlt es, scheitert der Test hier mit
+    KAUFTEIL_QUELLE_FEHLT samt Download-URL aus dem Eintrag; weicht es ab, mit KAUFTEIL_QUELLE_ABWEICHEND."""
+    for schluessel in KAUFTEILE.get(ordner, []):
+        quelle.original(lade_rechner(), lade_eintrag(finde(schluessel)))
 
 
 @pytest.mark.parametrize(("ordner", "spec"), [
@@ -31,11 +43,13 @@ def _lauf(capsys, *argv):
     ("zahnstangentrieb", "ritzelwelle.yaml"),
     ("zahnstangentrieb", "antriebswelle.yaml"),
     ("zahnstangentrieb", "zahnstangentrieb.yaml"),
+    ("motorhalter", "motorhalter.yaml"),
 ])
 def test_referenz_besteht(capsys, tmp_path, ordner, spec):
     auftrag = tmp_path / f"REF-{ordner}"
     shutil.copytree(REFERENZEN / ordner, auftrag)
     spec_pfad = auftrag / spec
+    bereite_vor(ordner)
     try:
         assert _lauf(capsys, "validieren", str(spec_pfad))[0] == 0
         assert _lauf(capsys, "freigeben", str(spec_pfad))[0] == 0

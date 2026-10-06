@@ -1,0 +1,35 @@
+# Referenz Motorhalter (Spec 3c §11, Plan-Nachtrag GPLE60): Motorbock als Winkel für das Planetengetriebe Nanotec
+# GPLE60-2S-32. Fuß x 0…LF, y 0…HF; Wand x 0…DW, y 0…HW; Getriebeachse parallel zu x in Höhe AH. Zentrierbohrung DZ
+# (Tiefe TZ) für den Zentrierbund Ø 40 h7 (Höhe 3) von der Anlageseite x = DW, Wellendurchgang DD durch die Wand,
+# 4 Senkungen M5 auf Lochkreis LK unter 45° auf der Rückseite (x = 0) für die Flanschschrauben, 2 Senkungen M6 im Fuß.
+art: teil
+name: Motorbock
+material: "1.0038"
+eigenschaften: {Benennung: Motorbock}
+parameter: {LF: 75, BF: 60, HF: 10, DW: 10, HW: 90, AH: 50, DZ: 40, TZ: 5, DD: 20, LK: 52, XS: 45, ZS: 20}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: ["=LF/2", 0], breite: "=LF", hoehe: "=BF"}}]}
+    ende: {typ: blind, tiefe: "=HF"}
+  - id: f2
+    typ: extrusion
+    skizze: {ebene: rechts, elemente: [{rechteck: {mitte: [0, "=HW/2"], breite: "=BF", hoehe: "=HW"}}]}
+    ende: {typ: blind, tiefe: "=DW"}
+  - {id: f3, typ: bohrung, flaeche: {feature: f2, flaeche: "+x"}, positionen: [[0, "=AH"]], durchmesser: "=DD",
+     durch: true, senkung: {durchmesser: "=DZ", tiefe: "=TZ"}}
+  - {id: f4, typ: normbohrung, art: zylinderschraube, groesse: M5, flaeche: {nahe: [0, "=HW-5", 0]},
+     positionen: [["=LK/8**0.5", "=AH+LK/8**0.5"], ["=-LK/8**0.5", "=AH+LK/8**0.5"], ["=-LK/8**0.5", "=AH-LK/8**0.5"],
+                  ["=LK/8**0.5", "=AH-LK/8**0.5"]],
+     durch: true}
+  - {id: f5, typ: normbohrung, art: zylinderschraube, groesse: M6, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=XS", "=ZS"], ["=XS", "=-ZS"]], durch: true}
+pruefung:
+  huellquader: ["=LF", "=HW", "=BF"]
+  masse_pruefen:
+    - {was: Achshöhe Zentrierbohrung, von: {feature: f1, flaeche: "-y"}, zu: {feature: f3, instanz: 1, achse: true},
+       soll: "=AH"}
+    - {was: Lochkreis Flanschschrauben, von: {feature: f4, instanz: 1, achse: true},
+       zu: {feature: f4, instanz: 3, achse: true}, soll: "=LK"}
+  durchmesser_pruefen:
+    - {was: Zentrierbohrung, feature: f3, nahe: ["=DW-TZ/2", "=AH+DZ/2", 0], soll: "=DZ"}

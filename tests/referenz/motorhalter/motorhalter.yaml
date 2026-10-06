@@ -1,0 +1,46 @@
+# Referenz Motorhalter (Spec 3c §11, Plan-Nachtrag GPLE60): Grundplatte (fixiert), Motorbock, Planetengetriebe
+# Nanotec GPLE60-2S-32 als Kaufteil aus dem Katalog (swki/wissen/kaufteile/nanotec/gple60-2s-32.yaml), 4 × ISO 4762
+# M5 × 12 durch die Wand in die Flanschgewinde M5 des Getriebes, 2 × ISO 4762 M6 × 10 vom Fuß in die Grundplatte.
+# Statisch; Getriebeachse ACHSHOEHE über der Grundplatten-Unterseite, Wellenende bündig mit der Plattenkante x = −80.
+art: baugruppe
+name: Motorhalter
+eigenschaften: {Benennung: Motorhalter}
+parameter: {ACHSHOEHE: 62}
+komponenten:
+  - {id: grundplatte, quelle: {teil: grundplatte.yaml}, fixiert: true}
+  - {id: bock, quelle: {teil: motorbock.yaml}}
+  - {id: getriebe, quelle: {kaufteil: "Nanotec GPLE60-2S-32"}}
+  - {id: flanschschraube, quelle: {normteil: "ISO 4762 M5x12"}, je_position: {komponente: bock, feature: f4}}
+  - {id: fussschraube, quelle: {normteil: "ISO 4762 M6x10"}, je_position: {komponente: bock, feature: f5}}
+verknuepfungen:
+  # Bock auf der Grundplatte: Fuß aufliegend, Senkung 1 über Gewinde 1, Seiten parallel
+  - {id: v1, typ: deckungsgleich, a: {komponente: bock, feature: f1, flaeche: "-y"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}
+  - {id: v2, typ: konzentrisch, a: {komponente: bock, feature: f5, instanz: 1, achse: true},
+     b: {komponente: grundplatte, feature: f2, instanz: 1, achse: true}}
+  - {id: v3, typ: parallel, a: {komponente: bock, feature: f1, flaeche: "+x"},
+     b: {komponente: grundplatte, feature: f1, flaeche: "+x"}, ausrichtung: gleich}
+  # Getriebe: Abtriebsflansch an der Wand (Ebene vor Achse), Zentrierbund in der Zentrierbohrung, Drehlage parallel
+  - {id: v4, typ: deckungsgleich, a: {komponente: getriebe, referenz: EINBAU_FLANSCH},
+     b: {komponente: bock, feature: f2, flaeche: "+x"}, ausrichtung: entgegengesetzt}
+  - {id: v5, typ: konzentrisch, a: {komponente: getriebe, referenz: EINBAU_ACHSE},
+     b: {komponente: bock, feature: f3, instanz: 1, achse: true}, drehung_sperren: false}
+  - {id: v6, typ: parallel, a: {komponente: getriebe, referenz: EINBAU_DREHLAGE}, b: {komponente: bock, ebene: vorne},
+     ausrichtung: gleich}
+  # Flanschschrauben: Kopf auf dem Senkungsgrund der Wand
+  - {id: v7, typ: deckungsgleich, a: {komponente: flanschschraube, referenz: EINBAU_EBENE},
+     b: {komponente: bock, feature: f4, instanz: je, flaeche: "-x"}, ausrichtung: gleich}
+  - {id: v8, typ: konzentrisch, a: {komponente: flanschschraube, referenz: EINBAU_ACHSE},
+     b: {komponente: bock, feature: f4, instanz: je, achse: true}}
+  # Fußschrauben: Kopf auf dem Senkungsgrund des Fußes
+  - {id: v9, typ: deckungsgleich, a: {komponente: fussschraube, referenz: EINBAU_EBENE},
+     b: {komponente: bock, feature: f5, instanz: je, flaeche: "+y"}, ausrichtung: gleich}
+  - {id: v10, typ: konzentrisch, a: {komponente: fussschraube, referenz: EINBAU_ACHSE},
+     b: {komponente: bock, feature: f5, instanz: je, achse: true}}
+pruefung:
+  huellquader: [160, 102, 100]
+  masse_pruefen:
+    - {was: Achshöhe, von: {komponente: grundplatte, feature: f1, flaeche: "-y"},
+       zu: {komponente: getriebe, referenz: EINBAU_ACHSE}, soll: "=ACHSHOEHE"}
+    - {was: Getriebeflansch an der Wand, von: {komponente: getriebe, referenz: EINBAU_FLANSCH},
+       zu: {komponente: bock, feature: f2, flaeche: "+x"}, soll: 0}
