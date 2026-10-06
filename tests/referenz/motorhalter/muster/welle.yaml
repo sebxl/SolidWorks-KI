@@ -1,0 +1,14 @@
+# Muster-Getriebemotor GM42-10 (Spec 3c §11), Abtriebswelle Ø DW × LW, Achse = Modell-Y (Bezugsachse ACHSE).
+art: teil
+name: GM42_Welle
+material: "1.0503"
+eigenschaften: {Benennung: Muster-Getriebemotor GM42 Welle}
+parameter: {DW: 10, LW: 30}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=DW"}}]}
+    ende: {typ: blind, tiefe: "=LW"}
+  - {id: ACHSE, typ: referenz, achse: y}
+pruefung:
+  huellquader: ["=DW", "=LW", "=DW"]
