@@ -16,6 +16,8 @@ from tests.baugruppe.beispiel_kaufteil import L, katalog, kopie, schreibe
 
 STANDARD = {"toleranzen": {"anker_mm": 0.1, "volumen_prozent": 0.5}, "namensschema": {"datei": "{auftrag}_{name}"}}
 Y = (0.0, 1.0, 0.0)
+KERN = {"modell": "kernloch", "durchmesser": 4.2}
+NENN = {"modell": "nenn", "durchmesser": 5.0}
 
 
 def _ins_gewinde(spec: dict) -> dict:
@@ -42,7 +44,7 @@ def test_kaufteile_werden_kopiert(tmp_path, monkeypatch):
 
     def hole(text):
         aufrufe.append(text)
-        return {"pfad": str(cache), "gebaut": False, "pruefsumme": "abc", "gewinde_modell": {"flansch": "kernloch"}}
+        return {"pfad": str(cache), "gebaut": False, "pruefsumme": "abc", "gewinde_modell": {"flansch": KERN}}
 
     monkeypatch.setattr(bau.kaufteil_befehle, "hole", hole)
     monkeypatch.setattr(bau, "oeffne", lambda app, p: SimpleNamespace(pfad=Path(p)))
@@ -53,7 +55,7 @@ def test_kaufteile_werden_kopiert(tmp_path, monkeypatch):
     assert b.dateien == {"kaufteil:SWKI-MUSTER_GM42-10": kopie_datei} and b.offen[0].pfad == kopie_datei
     assert b.protokoll.kaufteile["SWKI-MUSTER_GM42-10"] == {
         "kaufteil": "SWKI-MUSTER GM42-10", "cache": str(cache), "gebaut": False, "pruefsumme": "abc",
-        "gewinde_modell": {"flansch": "kernloch"}, "masse": "1.2 kg (Datenblatt)", "kennmasse": "belegt"}
+        "gewinde_modell": {"flansch": KERN}, "masse": "1.2 kg (Datenblatt)", "kennmasse": "belegt"}
     assert b.kontexte["SWKI-MUSTER_GM42-10"].spec["gewinde"]["flansch"]["groesse"] == "M5"
 
 
@@ -77,7 +79,7 @@ def test_gewindebohrungen_des_kaufteils(tmp_path, monkeypatch):
     assert liste[1]["punkt"] == (-L, 0, L)
 
 
-def _messwerte(bg, laenge_im_gewinde: float, volumen: float, modell: str | None = "kernloch") -> BaugruppenMesswerte:
+def _messwerte(bg, laenge_im_gewinde: float, volumen: float, modell: dict | str | None = KERN) -> BaugruppenMesswerte:
     """Schraube.1 sitzt mit der Kopfauflage 12 − laenge vor dem Eintritt (Flansch y = 0, Normale −y) der Position 1."""
     vs = verknuepfungen(bg.spec, bg.quellen)
     ids = [i.id for i in instanzen(bg.spec, bg.quellen)]
@@ -107,16 +109,37 @@ def test_gewindepaarung_im_kaufteil(tmp_path, monkeypatch):
     assert ok["ok"] is True and ok["soll"] == round(soll, 3) and ok["gewindetiefe"] == 8 and ok["tiefe"] == 10
     zu_lang = _gewinde(bg, _messwerte(bg, 9.0, ueberlappung_soll(5, 0.8, 4.2, 9.0)))
     assert zu_lang["ok"] is False and "Einschraublänge 9.00 mm größer als Gewindetiefe 8" in zu_lang["hinweis"]
-    nenn = _gewinde(bg, _messwerte(bg, 7.4, 0.0, "nenn"))
+    nenn = _gewinde(bg, _messwerte(bg, 7.4, 0.0, NENN))
     assert nenn["ok"] is True and nenn["soll"] == 0.0
-    assert _gewinde(bg, _messwerte(bg, 7.4, 3.0, "nenn"))["ok"] is False
+    assert _gewinde(bg, _messwerte(bg, 7.4, 3.0, NENN))["ok"] is False
     unbekannt = _gewinde(bg, _messwerte(bg, 7.4, soll, None))
     assert unbekannt["ok"] is None and "Gewindemodell" in unbekannt["hinweis"]
+
+
+def test_gewindepaarung_mit_gemessenem_kernloch(tmp_path, monkeypatch):
+    """Spec 3c §6.4 (Nutzerentscheidung 2026-10-06): Ring Nenn-Ø/gemessener Ø – D1 4,134 statt Tabellen-Kernloch 4,2."""
+    katalog(tmp_path / "kat", monkeypatch)
+    bg = lade_baugruppe(schreibe(tmp_path / "A", _ins_gewinde(kopie())))
+    d1 = {"modell": "kernloch", "durchmesser": 4.134}
+    soll = ueberlappung_soll(5, 0.8, 4.134, 7.4)
+    ok = _gewinde(bg, _messwerte(bg, 7.4, soll, d1))
+    assert ok["ok"] is True and ok["soll"] == round(soll, 3) == 42.305
+    assert _gewinde(bg, _messwerte(bg, 7.4, ueberlappung_soll(5, 0.8, 4.2, 7.4), d1))["ok"] is False
+    alt = _gewinde(bg, _messwerte(bg, 7.4, soll, "kernloch"))  # alte Form (nur Text) gilt als unbekannt
+    assert alt["ok"] is None and "Gewindemodell" in alt["hinweis"]
+
+
+def test_gewindepaarung_nenn_mit_untergrenze(tmp_path, monkeypatch):
+    """Modell nenn (Soll 0): Rechenrauschen bis TOL_GEWINDE_MIN_MM3 (0,01 mm³) ist kein Mangel, mehr schon."""
+    katalog(tmp_path / "kat", monkeypatch)
+    bg = lade_baugruppe(schreibe(tmp_path / "A", _ins_gewinde(kopie())))
+    assert _gewinde(bg, _messwerte(bg, 7.4, 0.004, NENN))["ok"] is True
+    assert _gewinde(bg, _messwerte(bg, 7.4, 0.02, NENN))["ok"] is False
 
 
 def test_bericht_nennt_kaufteile():
     pruefbericht = {"maengel": [], "kaufteile": {"SWKI-MUSTER_GM42-10": {
         "kaufteil": "SWKI-MUSTER GM42-10", "gebaut": True, "pruefsumme": "abc", "masse": "1.2 kg (Datenblatt)",
-        "kennmasse": "nicht belegt"}}}
+        "kennmasse": "nicht belegt", "gewinde_modell": {"flansch": {"modell": "kernloch", "durchmesser": 4.134}}}}}
     text = bericht_markdown({"name": "Motorprobe"}, "A", [], ("WEITER", "x"), pruefbericht, None, None, [])
-    assert "| SWKI-MUSTER GM42-10 | ja | abc | 1.2 kg (Datenblatt) | nicht belegt |" in text
+    assert "| SWKI-MUSTER GM42-10 | ja | abc | 1.2 kg (Datenblatt) | nicht belegt | flansch: kernloch Ø 4.134 |" in text

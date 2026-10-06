@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from swki.compiler.anker import punkt_achse_abstand
 from swki.compiler.eigenschaften import material_passt
 from swki.kaufteile.eintrag import eigenschaften
-from swki.kaufteile.ortung import TOL_WINKEL_GRAD, winkel_grad
+from swki.kaufteile.ortung import TOL_WINKEL_GRAD, gewinde_modelle, winkel_grad
 from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
 
@@ -103,16 +103,23 @@ def _einbau(name: str, w: dict, m: KaufteilMesswerte) -> dict:
 
 
 def _gewinde(gruppe: str, w: dict, m: KaufteilMesswerte) -> dict:
+    """Gegenprobe je Position; das Modell (kernloch | nenn) und der gemessene Ø müssen in der Gruppe einheitlich sein
+    (Spec 3c §4.3) – sie gehen als ein Wert je Gruppe in Cache und Gewindepaarung."""
     ist, fehler = {}, []
-    for i in range(1, len(w["positionen"]) + 1):
-        messung = m.gewinde.get(f"{gruppe}.{i}", "Position nicht geortet")
+    namen = [f"{gruppe}.{i}" for i in range(1, len(w["positionen"]) + 1)]
+    for i, name in enumerate(namen, start=1):
+        messung = m.gewinde.get(name, "Position nicht geortet")
         if isinstance(messung, str):
             fehler.append(f"{i}: {messung}")
             continue
         ist[str(i)] = {k: v for k, v in messung["ist"].items() if k in ("durchmesser", "modell")}
         if messung.get("abweichung"):
             fehler.append(f"{i}: {messung['abweichung']}")
-    daten = {"ist": ist, "beleg": _beleg(w)}
+    modell = gewinde_modelle({n: m.gewinde.get(n, "") for n in namen}).get(gruppe)
+    if not fehler and modell is None:
+        fehler.append("Positionen uneinheitlich (Modell oder Ø): " +
+                      ", ".join(f"{i}: {v['modell']} Ø {v['durchmesser']:g}" for i, v in ist.items()))
+    daten = {"ist": ist, **(modell or {}), "beleg": _beleg(w)}
     if fehler:
         daten["hinweis"] = "; ".join(fehler)
     return eintrag(f"gewinde:{gruppe}", not fehler, **daten, knoten=[gruppe])

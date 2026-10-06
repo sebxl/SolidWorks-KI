@@ -12,6 +12,7 @@ from swki.spec.freigabe import FreigabeFehler, pruefsumme
 from tests.kaufteile.beispiel import kopie, schreibe
 
 SCHLUESSEL = "SWKI-MUSTER GM42-10"
+MODELL = {"flansch": {"modell": "kernloch", "durchmesser": 4.2}}
 
 
 @pytest.fixture
@@ -41,7 +42,7 @@ def sw(monkeypatch):
         teil.write_bytes(b"teil")
         return {"bestanden": True, "pruefungen": [{"id": "rebuild", "ok": True}], "maengel": [], "teil": str(teil),
                 "bilder": {"iso": "iso.png"} if mit_bildern else {}, "fehler": None,
-                "gewinde_modell": {"flansch": "kernloch"}, "kennzahlen": {"flaechen": 40}}
+                "gewinde_modell": MODELL, "kennzahlen": {"flaechen": 40}}
 
     monkeypatch.setattr(befehle.aufnahme, "untersuche", untersuche)
     monkeypatch.setattr(befehle.aufnahme, "baue_und_pruefe", baue_und_pruefe)
@@ -135,11 +136,12 @@ def test_hole_legt_ab_und_trifft_den_cache(umgebung, sw, tmp_path):
     _urteil(pfad, tmp_path, katalog)
     erst = befehle.hole(SCHLUESSEL, katalog)
     ziel = r.kaufteilbibliothek / "2025" / "SWKI-MUSTER_GM42-10.sldprt"
-    assert erst["gebaut"] is True and Path(erst["pfad"]) == ziel and erst["gewinde_modell"] == {"flansch": "kernloch"}
+    assert erst["gebaut"] is True and Path(erst["pfad"]) == ziel and erst["gewinde_modell"] == MODELL
     eintrag = json.loads(ziel.with_suffix(".json").read_text(encoding="utf-8"))
     assert eintrag["sldprt_sha256"] == sha256_datei(ziel) and eintrag["pruefsumme"] == erst["pruefsumme"]
+    assert eintrag["gewinde_modell"] == MODELL
     zweit = befehle.hole(SCHLUESSEL, katalog)
-    assert zweit["gebaut"] is False and zweit["gewinde_modell"] == {"flansch": "kernloch"}
+    assert zweit["gebaut"] is False and zweit["gewinde_modell"] == MODELL
     ziel.write_bytes(b"von Hand geaendert")
     assert befehle.hole(SCHLUESSEL, katalog)["gebaut"] is True
     assert [a for a in sw if a[0] == "bau"] == [("bau", False), ("bau", False)]
@@ -200,3 +202,24 @@ def test_liste_markiert_veralteten_cache(umgebung, sw, tmp_path, monkeypatch, ca
     monkeypatch.setattr(kat, "ORDNER", katalog)
     capsys.readouterr()
     assert main(["kaufteil", "liste"]) == 0 and json.loads(capsys.readouterr().out)["teile"][0]["cache"] is False
+
+
+def test_quelle_fehlt_nennt_download_url(umgebung, sw, tmp_path):
+    _, katalog, step, _ = umgebung
+    spec = kopie()
+    url = "https://example.com/cad/gm42-10.step"
+    spec["original"] = {"datei": "gm42-10.step", "sha256": sha256_datei(step),
+                        "bezug": {"art": "url", "url": url, "datum": "2026-10-06"}}
+    pfad = schreibe(katalog, spec)
+    main(["freigeben", str(pfad)])
+    _urteil(pfad, tmp_path, katalog)
+    with pytest.raises(KaufteilFehler) as e:
+        befehle.hole(SCHLUESSEL, katalog)
+    assert e.value.daten["code"] == "KAUFTEIL_QUELLE_FEHLT" and e.value.daten["url"] == url
+    assert f"Download: {url} (Stand 2026-10-06)" in str(e.value) and "--bestellnummer GM42-10" in str(e.value)
+    assert sw == []
+
+
+def test_importweg_version_2():
+    """Gewinde-Ø-Bereich und gemessener Ø im Gewindemodell (2026-10-06) ändern den Importweg: alter Cache veraltet."""
+    assert cache.IMPORTWEG_VERSION == 2

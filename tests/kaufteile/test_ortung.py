@@ -1,8 +1,8 @@
 import pytest
 
 from swki.compiler.anker import AnkerFehler, Flaeche
-from swki.kaufteile.ortung import (ebene_durch_achse, kandidaten, nenn_durchmesser, orte_ebene, orte_gewinde,
-                                   orte_zylinder)
+from swki.kaufteile.ortung import (ebene_durch_achse, gewinde_modelle, kandidaten, kernloch_bereich, nenn_durchmesser,
+                                   orte_ebene, orte_gewinde, orte_zylinder, steigung)
 
 Y = (0.0, 1.0, 0.0)
 
@@ -57,17 +57,35 @@ def test_ebene_durch_achse():
     assert ebene_durch_achse("E", (0, 0, 0), Y, (0, 7, 0.5)).abweichung.startswith("nahe liegt 0.500 mm von der Achse")
 
 
-def test_gewinde_kernloch_nenn_und_falsch():
-    w = {"groesse": "M5", "normale": [0, -1, 0], "positionen": [[21, 0, 21], [-21, 0, 21], [0, 0, 30]]}
-    flaechen = [_zyl((21, 3, 21), Y, 2.1), _zyl((21, 3, 21), Y, 5.0), _zyl((-21, 5, 21), (0, -1, 0), 2.5),
-                _zyl((0, 0, 30), Y, 3.0)]
-    a, b, c = orte_gewinde(flaechen, "flansch", w, 0.1)
-    assert (a.name, a.ist["modell"], a.abweichung) == ("flansch.1", "kernloch", None)
-    assert b.ist["modell"] == "nenn" and c.ist["modell"] is None
-    assert c.abweichung == "Ø 6.0000: weder Kernloch 4.2 noch Nenn-Ø 5 (M5)"
+def test_gewinde_kernloch_bereich_nenn_und_falsch():
+    """M5: Kernloch gilt von D1 nach ISO 724 (4,134) bis zum Bohrer der Tabelle (4,2), je ± 0,01 (Spec 3c §4.3)."""
+    durchmesser = [4.134, 4.16, 4.2, 5.0, 4.12, 6.0]
+    w = {"groesse": "M5", "normale": [0, -1, 0], "positionen": [[10 * i, 0, 0] for i in range(len(durchmesser))]}
+    flaechen = [_zyl((10 * i, 3, 0), Y, d / 2) for i, d in enumerate(durchmesser)] + [_zyl((0, 3, 0), Y, 5.0)]
+    ergebnis = orte_gewinde(flaechen, "flansch", w, 0.1)
+    assert [o.ist["modell"] for o in ergebnis] == ["kernloch", "kernloch", "kernloch", "nenn", None, None]
+    assert [o.ist["durchmesser"] for o in ergebnis] == durchmesser
+    assert (ergebnis[0].name, ergebnis[0].abweichung) == ("flansch.1", None)
+    assert ergebnis[4].abweichung == "Ø 4.1200: weder Kernloch 4.134…4.2 noch Nenn-Ø 5 (M5)"
     with pytest.raises(AnkerFehler):
-        orte_gewinde(flaechen, "flansch", {**w, "positionen": [[50, 0, 0]]}, 0.1)
+        orte_gewinde(flaechen, "flansch", {**w, "positionen": [[55, 0, 0]]}, 0.1)
     assert nenn_durchmesser("M10x1") == 10.0
+
+
+def test_kernloch_bereich_und_steigung():
+    assert [steigung(g) for g in ("M5", "M6", "M10x1", "M12x1.5", "M3")] == [0.8, 1.0, 1.0, 1.5, None]
+    assert kernloch_bereich("M5") == (4.134, 4.2) and kernloch_bereich("M6") == (4.9175, 5.0)
+    assert kernloch_bereich("M8x1") == (6.9175, 7.0) and kernloch_bereich("M16") == (13.835, 14.0)
+
+
+def test_gewinde_modelle_je_gruppe():
+    def m(d, modell="kernloch"):
+        return {"ist": {"durchmesser": d, "modell": modell}, "abweichung": None}
+
+    gemessen = {"flansch.1": m(4.134), "flansch.2": m(4.13398), "fuss.1": m(5.0, "nenn"), "deckel.1": m(4.134),
+                "deckel.2": m(4.2), "seite.1": m(4.2), "seite.2": "REFERENZ_NICHT_GEFUNDEN: keine Zylinderfläche"}
+    assert gewinde_modelle(gemessen) == {"flansch": {"modell": "kernloch", "durchmesser": 4.134},
+                                         "fuss": {"modell": "nenn", "durchmesser": 5.0}}
 
 
 def test_kandidaten_vorauswahl():

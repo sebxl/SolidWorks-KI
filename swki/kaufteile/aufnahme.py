@@ -11,6 +11,7 @@ from swki.kaufteile import sw_kaufteil
 from swki.kaufteile.bewertung import bewerte_kaufteil
 from swki.kaufteile.diagnose import uebersicht
 from swki.kaufteile.katalog import bibliotheksschluessel
+from swki.kaufteile.ortung import gewinde_modelle
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.bilder import screenshots
 from swki.speicher import Spitzenmessung
@@ -74,11 +75,7 @@ def baue_und_pruefe(spec: dict, original: Path, ordner: Path, mit_bildern: bool 
         finally:
             sw.schliesse(app, model)
     kennzahlen |= {"dauer_s": round(time.perf_counter() - beginn, 3), "privat_mb": speicher.als_dict()}
-    modelle = {}
-    for name, g in gewinde.items():
-        if isinstance(g, dict) and g["ist"].get("modell"):
-            modelle.setdefault(name.rsplit(".", 1)[0], g["ist"]["modell"])
-    return {**bericht, "teil": str(teil), "bilder": bilder, "fehler": None, "gewinde_modell": modelle,
+    return {**bericht, "teil": str(teil), "bilder": bilder, "fehler": None, "gewinde_modell": gewinde_modelle(gewinde),
             "kennzahlen": kennzahlen}
 
 

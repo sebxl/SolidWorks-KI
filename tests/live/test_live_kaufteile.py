@@ -62,7 +62,7 @@ def test_baue_und_pruefe_muster(ordner):
     volumen = aufnahme.untersuche(STEP, ordner / "untersuchung")["volumen"]
     e = aufnahme.baue_und_pruefe(_eintrag(volumen), STEP, ordner / "lauf", mit_bildern=True)
     assert e["fehler"] is None and e["maengel"] == [], e["maengel"]
-    assert e["gewinde_modell"] == {"flansch": "kernloch"} and Path(e["teil"]).is_file()
+    assert e["gewinde_modell"] == {"flansch": {"modell": "kernloch", "durchmesser": 4.2}} and Path(e["teil"]).is_file()
     assert all(Path(p).stat().st_size > 0 for p in e["bilder"].values())
 
 

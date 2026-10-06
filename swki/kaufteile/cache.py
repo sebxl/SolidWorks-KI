@@ -13,7 +13,8 @@ from swki.kaufteile.quelle import bibliothek
 from swki.konfig import Rechner
 from swki.spec.freigabe import pruefsumme
 
-IMPORTWEG_VERSION = 1  # bei jeder Änderung an Import, Ortung oder Bezugsgeometrie erhöhen (Spec 3c §5.3)
+IMPORTWEG_VERSION = 2  # bei jeder Änderung an Import, Ortung oder Bezugsgeometrie erhöhen (Spec 3c §5.3);
+#                        2: Gewinde-Ø-Bereich D1…Kernloch, Gewindemodell mit gemessenem Ø (2026-10-06)
 
 
 def cacheordner(r: Rechner) -> Path:

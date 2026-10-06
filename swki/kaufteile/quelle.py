@@ -78,8 +78,13 @@ def original(r: Rechner, spec: dict) -> Path:
     """Original eines Eintrags im Quellordner; fehlt es oder weicht es ab, Fehler mit Code."""
     pfad = quellordner(r, spec["hersteller"]) / spec["original"]["datei"]
     if not pfad.is_file():
-        raise KaufteilFehler(KAUFTEIL_QUELLE_FEHLT, f"{pfad} fehlt – Nutzer gibt die Datei erneut: swki kaufteil "
-                                                    "untersuchen <step> --hersteller … --bestellnummer …", pfad=str(pfad))
+        bezug = spec["original"]["bezug"]
+        woher = (f"Download: {bezug['url']} (Stand {bezug['datum']}), dann" if bezug.get("url")
+                 else "Nutzer gibt die Datei erneut:")
+        raise KaufteilFehler(KAUFTEIL_QUELLE_FEHLT,
+                             f"{pfad} fehlt – {woher} swki kaufteil untersuchen <step> --hersteller "
+                             f"{spec['hersteller']} --bestellnummer {spec['bestellnummer']} (SHA-256 muss passen)",
+                             pfad=str(pfad), **({"url": bezug["url"]} if bezug.get("url") else {}))
     if (sha := sha256_datei(pfad)) != spec["original"]["sha256"]:
         raise KaufteilFehler(KAUFTEIL_QUELLE_ABWEICHEND, f"{pfad.name} im Quellordner weicht vom Eintrag ab",
                              pfad=str(pfad), eintrag=spec["original"]["sha256"], vorhanden=sha)

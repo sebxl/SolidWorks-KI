@@ -110,3 +110,12 @@ def test_messpunkt_fehlt_und_eigenschaften():
     m.messpunkte.pop(next(iter(m.messpunkte)))
     m.eigenschaften = {**m.eigenschaften, "Hersteller": "anders"}
     assert {"mass:Wellenüberstand", "eigenschaften"} <= set(_ids(bewerte_kaufteil(EINTRAG, m), False))
+
+
+def test_gewinde_modell_und_uneinheitlich():
+    gewinde = next(e for e in bewerte_kaufteil(EINTRAG, _messwerte())["pruefungen"] if e["id"] == "gewinde:flansch")
+    assert gewinde["ok"] is True and (gewinde["modell"], gewinde["durchmesser"]) == ("kernloch", 4.2)
+    m = _messwerte()
+    m.gewinde["flansch.2"] = {"ist": {"durchmesser": 4.134, "modell": "kernloch"}, "abweichung": None}
+    mangel = next(x for x in bewerte_kaufteil(EINTRAG, m)["maengel"] if x["pruefung"] == "gewinde:flansch")
+    assert "Positionen uneinheitlich" in mangel["beschreibung"]

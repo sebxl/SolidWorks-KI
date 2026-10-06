@@ -146,9 +146,16 @@ eine Einbaureferenz ist Pflicht.
 
 - `groesse` aus `swki/wissen/bohrungsnormen.yaml` (Gewinde), `gewindetiefe`/`tiefe` in mm, `normale` zeigt aus dem Material
   (Eintrittsseite), `positionen`: Eintrittspunkte in STEP-Koordinaten.
-- Gegenprobe je Position: eine Zylinderfläche mit Achse durch den Punkt parallel zu `normale`; ihr Ø ist der **Kernloch-Ø**
-  (Gewindepaarung mit Ringvolumen, §6.4) oder der **Nenn-Ø** (Soll der Überlappung 0); sonst Mangel `gewinde:<gruppe>`. Welcher Ø
-  vorliegt, schreibt `hole` in den Cache-Eintrag (`modell: kernloch | nenn` je Gruppe).
+- Gegenprobe je Position: eine Zylinderfläche mit Achse durch den Punkt parallel zu `normale`; ihr Ø liegt im
+  **Kernloch-Bereich** – von D1 nach ISO 724 (D − 1,0825·P; M5: 4,134) bis zum Kernloch der Tabelle (Bohrer-Ø aus
+  `bohrungsnormen.yaml`; M5: 4,2), je ± 0,01 mm – (Modell `kernloch`, Gewindepaarung mit Ringvolumen, §6.4) oder ist der
+  **Nenn-Ø** ± 0,01 mm (Modell `nenn`, Soll der Überlappung 0); sonst Mangel `gewinde:<gruppe>`. Die Steigung P kommt bei
+  Feingewinde aus der Größe (`M10x1`), bei Regelgewinde aus der abgeglichenen Normtabelle ISO 4762 (Spalte `p`); ohne
+  Steigung gilt nur das Tabellen-Kernloch. Modell und gemessener Ø müssen in der Gruppe einheitlich sein (sonst Mangel
+  `gewinde:<gruppe>`, „Positionen uneinheitlich“). `hole` schreibt je Gruppe `{modell: kernloch | nenn, durchmesser:
+  <gemessener Ø>}` in den Cache-Eintrag, der Bau übernimmt es ins Bauprotokoll (`kaufteile.<schluessel>.gewinde_modell`).
+  *Nachgezogen bei der Umsetzung (Nutzerentscheidung 2026-10-06):* Hersteller modellieren Gewindelöcher oft mit D1 statt
+  mit dem Bohrer-Ø (Nanotec GPLE60-2S-32: Ø 4,134).
 - Ohne `beleg` stammen `gewindetiefe`/`tiefe` nur aus der STEP: zulässig (sie werden für die Gewindepaarung gebraucht), aber
   „nicht belegt“ im Bericht.
 
@@ -237,8 +244,9 @@ swki kaufteil liste [--veraltet]
 2. **Cache-Prüfsumme** über Freigabe-Prüfsumme, `original.sha256` und `IMPORTWEG_VERSION` (Konstante im Code, wird bei jeder
    Änderung am Import- oder Referenzweg erhöht). Liegt in `<kaufteilbibliothek>/<sw_jahr>/` eine Datei mit gleicher Prüfsumme
    und bestandener Prüfung → Pfad zurückgeben (`gebaut: false`).
-3. Original im Quellordner: fehlt → `KAUFTEIL_QUELLE_FEHLT` (Nutzer gibt die Datei erneut, `untersuchen`); SHA-256 ≠
-   `original.sha256` → `KAUFTEIL_QUELLE_ABWEICHEND`.
+3. Original im Quellordner: fehlt → `KAUFTEIL_QUELLE_FEHLT` (Nutzer gibt die Datei erneut, `untersuchen`; bei
+   `original.bezug.art: url` nennt die Meldung die Download-URL mit Datum – *nachgezogen bei der Umsetzung*: Herstellerdateien
+   liegen nicht im Git); SHA-256 ≠ `original.sha256` → `KAUFTEIL_QUELLE_ABWEICHEND`.
 4. Import (§6.1) in den Arbeitsordner (Auftrag `KAUFTEILE`, Laufnummer wie bei Normteilen); liefert SolidWorks kein Dokument
    → `KAUFTEIL_IMPORT`.
 5. Einbaureferenzen und Gewindegruppen orten, Gegenproben, Bezugsgeometrie anlegen (§6.2); Material, Massenüberschreibung,
@@ -246,7 +254,8 @@ swki kaufteil liste [--veraltet]
    `MATERIAL_UNBEKANNT`, Bezugsgeometrie nicht erzeugt) bricht mit seinem Code ab.
 6. Prüfung (§6.3), Bilder; Speichern im Laufordner.
 7. Bestanden → `.sldprt` in den Cache kopieren, `<schluessel>.json` schreiben (Schlüssel, Cache-Prüfsumme, Prüfergebnis,
-   Gewindemodell je Gruppe, Kennzahlen der Diagnose, Datum, SW-Version). Nicht bestanden → `KAUFTEIL_PRUEFUNG` (Mängel,
+   Gewindemodell je Gruppe mit gemessenem Ø (§4.3), Kennzahlen der Diagnose, Datum, SW-Version). Nicht bestanden →
+   `KAUFTEIL_PRUEFUNG` (Mängel,
    Laufordner), nichts im Cache.
 8. Ausgabe `{schluessel, pfad, gebaut, pruefung}`.
 
@@ -305,8 +314,11 @@ den Beleg oder „nicht belegt“.
 
 Die Gewindepaarung aus 3b (Spec 3b §9.3) gilt auch für Gewindegruppen von Kaufteilen: Eintrittsebene = Position mit `normale`;
 Einschraublänge wie bisher; Mangel, wenn sie `gewindetiefe` oder `tiefe` überschreitet; Soll des Volumens = Ring zwischen Nenn-
-und Kernloch-Ø über die Einschraublänge (Modell `kernloch`, Toleranz wie bisher 1 %) bzw. **keine Überlappung** (Modell `nenn`:
-Schraube und Gewindeloch berühren sich nur; jede gemeldete Überlappung ist ein Mangel). Jede andere Überlappung mit einem Kaufteil ist ein Mangel; Überlappungen zwischen
+und **gemessenem** Ø (Gewindemodell der Aufnahme, §4.3) über die Einschraublänge (Modell `kernloch`, Toleranz wie bisher 1 %,
+mindestens 0,01 mm³) bzw. **keine Überlappung** (Modell `nenn`: Schraube und Gewindeloch berühren sich nur; jede Überlappung
+über 0,01 mm³ ist ein Mangel); Gewindemodell unbekannt → `ok: null` mit Hinweis. *Nachgezogen bei der Umsetzung
+(2026-10-06):* gemessener Ø statt Tabellen-Kernloch; absolute Untergrenze 0,01 mm³, damit Rechenrauschen bei Soll 0 kein
+Mangel ist. Jede andere Überlappung mit einem Kaufteil ist ein Mangel; Überlappungen zwischen
 Körpern **eines** Kaufteils prüft die Baugruppe nicht (eine Komponente).
 
 ## 7. Neue Herstellerversion, Änderungen
@@ -390,7 +402,7 @@ JSON mit `code`, Exit 1. Neu:
 |---|---|---|
 | `KAUFTEIL_FORMAT` | Endung nicht `.step`/`.stp` | erlaubte Endungen |
 | `KAUFTEIL_UNBEKANNT` | Schlüssel ohne Eintrag | vorhandene Einträge des Herstellers bzw. Hersteller |
-| `KAUFTEIL_QUELLE_FEHLT` | Original nicht im Quellordner | erwarteter Pfad, Hinweis `untersuchen` |
+| `KAUFTEIL_QUELLE_FEHLT` | Original nicht im Quellordner | erwarteter Pfad, Hinweis `untersuchen`; bei `original.bezug.art: url` Download-URL und Datum |
 | `KAUFTEIL_QUELLE_ABWEICHEND` | SHA-256 weicht ab | beide Prüfsummen, Pfade |
 | `KAUFTEIL_IMPORT` | SolidWorks liefert beim Import kein Dokument | Fehlercode (`swFileLoadError_e`) |
 | `KAUFTEIL_UNGEPRUEFT` | kein bestandenes Prüfer-Urteil zur Freigabe | Schlüssel, Freigabe-Prüfsumme |

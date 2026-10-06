@@ -17,6 +17,7 @@ STATUS_TEXT = {1: "unbekannt", 2: "unterbestimmt", 3: "voll bestimmt", 4: "über
                6: "ungültige Lösung", 7: "Lösen ausgeschaltet"}  # swConstrainedStatus_e
 VOLL_BESTIMMT, UNTERBESTIMMT, UEBERBESTIMMT = 3, 2, 4
 TOL_GEWINDE_PROZENT = 1.0  # Spike S12 Zeile 9
+TOL_GEWINDE_MIN_MM3 = 0.01  # absolute Untergrenze (Soll 0 bei Modell nenn): Rechenrauschen, keine echte Überlappung
 TOL_LAENGE = 0.01
 TOL_UEBERSETZUNG = 1e-6  # relativ, zurückgelesene Übersetzung (Spec 4b §5.5)
 _TOL_HUELLQUADER = 0.01
@@ -40,7 +41,7 @@ class BaugruppenMesswerte:
     lagen: dict[str, list[float]] = field(default_factory=dict)       # Instanz-ID → Transform2.ArrayData (Spec 4b §5.5)
     kopplungen: dict[str, dict | str] = field(default_factory=dict)   # Kopplungs-ID → gelesene Werte oder Fehlertext
     unterdrueckt: list[str] = field(default_factory=list)             # unterdrückte Verknüpfungen (Spec 4b §5.5)
-    gewinde_modelle: dict[str, dict] = field(default_factory=dict)    # Kaufteil-Schlüssel → {Gruppe: kernloch | nenn}
+    gewinde_modelle: dict[str, dict] = field(default_factory=dict)    # Kaufteil-Schlüssel → {Gruppe: {modell, durchmesser}}
 
 
 @dataclass
@@ -93,16 +94,18 @@ def _paar(a: str, b: str) -> frozenset:
 def _gewinde_soll(g: Gewindepaarung, qs: Quelle, qt: Quelle, m: BaugruppenMesswerte, laenge: float) \
         -> tuple[float, float, float | None, str | None]:
     """(tiefe, gewindetiefe, Soll des Überlappungsvolumens, Hinweis): Eigenteil aus der normbohrung, Kaufteil aus der
-    Gewindegruppe des Eintrags mit dem Modell aus der Aufnahme (Spec 3c §6.4: kernloch → Ring, nenn → 0)."""
+    Gewindegruppe des Eintrags mit dem Modell aus der Aufnahme (Spec 3c §6.4: kernloch → Ring bis zum gemessenen Ø,
+    nenn → 0); die alte Form (nur Text) gilt als unbekannt."""
     if qt.art == "kaufteil":
         w = qt.spec["gewinde"][g.feature]
         modell = m.gewinde_modelle.get(qt.schluessel, {}).get(g.feature)
-        if modell == "nenn":
+        art = modell.get("modell") if isinstance(modell, dict) else None
+        if art == "nenn":
             return w["tiefe"], w["gewindetiefe"], 0.0, None
-        if modell != "kernloch":
+        if art != "kernloch" or not modell.get("durchmesser"):
             return w["tiefe"], w["gewindetiefe"], None, f"Gewindemodell von {qt.kaufteil}.{g.feature} unbekannt"
-        kernloch = normmasse("gewinde", w["groesse"], "ISO")["kernloch"]
-        return w["tiefe"], w["gewindetiefe"], ueberlappung_soll(qs.masse["d"], qs.masse["p"], kernloch, laenge), None
+        return (w["tiefe"], w["gewindetiefe"],
+                ueberlappung_soll(qs.masse["d"], qs.masse["p"], modell["durchmesser"], laenge), None)
     f = next(x for x in qt.spec["features"] if x["id"] == g.feature)
     tp = qt.spec.get("parameter", {})
     kernloch = normmasse("gewinde", f["groesse"], norm_von(f))["kernloch"]
@@ -126,7 +129,7 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
     bericht |= {"soll": None if soll is None else round(soll, 3), "gewindetiefe": gewindetiefe, "tiefe": tiefe}
     daten = {"ist": round(ist, 3), "soll": None if soll is None else round(soll, 3), "einschraublaenge": round(laenge, 3),
              "gewindetiefe": gewindetiefe, "tiefe": tiefe, "knoten": knoten, **({"hinweis": hinweis} if hinweis else {})}
-    ok = None if soll is None else abs(ist - soll) <= soll * TOL_GEWINDE_PROZENT / 100
+    ok = None if soll is None else abs(ist - soll) <= max(soll * TOL_GEWINDE_PROZENT / 100, TOL_GEWINDE_MIN_MM3)
     if laenge > min(gewindetiefe, tiefe) + TOL_LAENGE:
         ok = False
         daten["hinweis"] = (f"Einschraublänge {laenge:.2f} mm größer als Gewindetiefe {gewindetiefe:g} bzw. "

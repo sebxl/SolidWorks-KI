@@ -5,16 +5,19 @@ SolidWorks-Schicht vorher .abstand jeder Fläche zum Punkt `nahe` (swki.compiler
 zur begrenzten Fläche); Gewindepositionen brauchen nur die Achslage."""
 
 import math
+import re
 from dataclasses import dataclass, field
 
 from swki.compiler.anker import AnkerFehler, Flaeche, Vektor, differenz, laenge, punkt_achse_abstand, skalar
 from swki.compiler.fehler import REFERENZ_MEHRDEUTIG, REFERENZ_NICHT_GEFUNDEN
+from swki.normteile.tabelle import lade_normtabelle
 from swki.spec.normen import normmasse
 
 TOL_DURCHMESSER = 0.01   # mm, Gegenprobe Ø (Spec 3c §4.2)
 TOL_WINKEL_GRAD = 0.01   # Gegenprobe Normale, Lage der Referenzen zueinander
 ABSTAND_ACHSE_MIN = 1.0  # mm: ebene_durch_achse braucht einen Punkt neben der Achse
 _GLEICH_MM = 1e-4
+ISO724_FAKTOR = 1.0825   # Kerndurchmesser des Muttergewindes D1 = D − 1,0825·P (ISO 724)
 
 
 @dataclass
@@ -110,12 +113,33 @@ def nenn_durchmesser(groesse: str) -> float:
     return float(groesse[1:].lower().split("x")[0])
 
 
+def steigung(groesse: str) -> float | None:
+    """Steigung P (mm): Feingewinde aus der Größe ("M10x1" → 1.0), Regelgewinde aus der abgeglichenen Normtabelle
+    ISO 4762 (Spalte p, ISO 261); None, wenn die Größe dort fehlt."""
+    treffer = re.fullmatch(r"M\d+(?:\.\d+)?[xX](\d+(?:\.\d+)?)", groesse)
+    if treffer:
+        return float(treffer.group(1))
+    zeile = lade_normtabelle("ISO 4762").get("groessen", {}).get(groesse)
+    return float(zeile["masse"]["p"]) if zeile else None
+
+
+def kernloch_bereich(groesse: str) -> tuple[float, float]:
+    """(kleinster, größter) Ø, der als Kernloch gilt (Spec 3c §4.3, Nutzerentscheidung 2026-10-06): von D1 nach ISO 724
+    bis zum Kernloch der Tabelle (Bohrer-Ø, bohrungsnormen.yaml); ohne bekannte Steigung nur das Tabellen-Kernloch."""
+    kern = normmasse("gewinde", groesse, "ISO")["kernloch"]
+    p = steigung(groesse)
+    if p is None:
+        return kern, kern
+    d1 = round(nenn_durchmesser(groesse) - ISO724_FAKTOR * p, 4)
+    return min(d1, kern), max(d1, kern)
+
+
 def orte_gewinde(flaechen: list[Flaeche], gruppe: str, w: dict, tol_mm: float) -> list[Ortung]:
     """Je Position die Zylinderfläche, deren Achse durch den Eintrittspunkt läuft und parallel zu `normale` ist
-    (der kleinste Radius gewinnt, wie bei Bohrungen mit Senkung); Gegenprobe Ø = Kernloch (modell kernloch) oder
-    Nenn-Ø (modell nenn)."""
+    (der kleinste Radius gewinnt, wie bei Bohrungen mit Senkung); Gegenprobe Ø: von D1 bis zum Tabellen-Kernloch
+    (modell kernloch) oder Nenn-Ø (modell nenn), je ± TOL_DURCHMESSER; der gemessene Ø steht in ist.durchmesser."""
     n = einheit(tuple(w["normale"]))
-    kern = normmasse("gewinde", w["groesse"], "ISO")["kernloch"]
+    unten, oben = kernloch_bereich(w["groesse"])
     nenn = nenn_durchmesser(w["groesse"])
     ergebnis = []
     for i, p in enumerate(w["positionen"], start=1):
@@ -126,8 +150,30 @@ def orte_gewinde(flaechen: list[Flaeche], gruppe: str, w: dict, tol_mm: float) -
             raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"Gewinde {name}: keine Zylinderfläche mit Achse durch {list(p)}")
         f = min(passend, key=lambda x: x.radius)
         d = 2 * f.radius
-        modell = "kernloch" if abs(d - kern) <= TOL_DURCHMESSER else "nenn" if abs(d - nenn) <= TOL_DURCHMESSER else None
-        abweichung = None if modell else f"Ø {d:.4f}: weder Kernloch {kern:g} noch Nenn-Ø {nenn:g} ({w['groesse']})"
+        modell = ("kernloch" if unten - TOL_DURCHMESSER <= d <= oben + TOL_DURCHMESSER
+                  else "nenn" if abs(d - nenn) <= TOL_DURCHMESSER else None)
+        abweichung = None if modell else (f"Ø {d:.4f}: weder Kernloch {unten:g}…{oben:g} noch Nenn-Ø {nenn:g} "
+                                          f"({w['groesse']})")
         ergebnis.append(Ortung(name, "gewinde", f, {"durchmesser": round(d, 6), "modell": modell,
                                                     "achse": einheit(f.achse), "punkt": f.punkt}, abweichung))
+    return ergebnis
+
+
+def gewinde_modelle(gewinde: dict) -> dict[str, dict]:
+    """Gewindemodell je Gruppe aus den Messungen der Positionen ("<gruppe>.<i>" → {"ist", "abweichung"} oder
+    Fehlertext): {gruppe: {"modell": "kernloch" | "nenn", "durchmesser": gemessener Ø in mm}} – nur Gruppen, deren
+    Positionen alle geortet sind und dasselbe Modell mit Ø innerhalb TOL_DURCHMESSER haben (Spec 3c §4.3, §5.3)."""
+    gruppen: dict[str, list] = {}
+    for name, messung in gewinde.items():
+        gruppen.setdefault(name.rsplit(".", 1)[0], []).append(messung)
+    ergebnis = {}
+    for gruppe, messungen in gruppen.items():
+        ist = [m["ist"] for m in messungen if isinstance(m, dict)]
+        if len(ist) < len(messungen):
+            continue
+        durchmesser = [i["durchmesser"] for i in ist]
+        if (len({i.get("modell") for i in ist}) != 1 or ist[0].get("modell") is None
+                or max(durchmesser) - min(durchmesser) > TOL_DURCHMESSER):
+            continue
+        ergebnis[gruppe] = {"modell": ist[0]["modell"], "durchmesser": round(durchmesser[0], 4)}
     return ergebnis
