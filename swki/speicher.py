@@ -61,7 +61,10 @@ class Spitzenmessung:
     def __exit__(self, *_):
         self._halt.set()
         self._faden.join()
-        self.nachher = self.messen(self.pid)
+        try:
+            self.nachher = self.messen(self.pid)
+        except OSError:
+            self.nachher = self.spitze  # Prozess weg: die Messung darf den Fehler des Blocks nicht überdecken
         self.spitze = max(self.spitze, self.nachher)
         return False
 
