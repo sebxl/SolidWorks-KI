@@ -50,7 +50,19 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   `abstand`; der Versatz geht zur Skizze hin – z. B. Restwandstärke über der Unterseite). Bekannte Einschränkung: ein
   Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt einen getrennten Körper
   – dafür `bis_flaeche` oder `blind` verwenden. `swki pruefen` meldet mehrere Volumenkörper als Mangel (Prüfung
-  `koerper`: „2 Volumenkörper statt 1“).
+  `koerper`: „2 Volumenkörper statt 1”).
+- Schräge Wände eines extrudierten Elements (konischer Zapfen, Einführschräge, Trichter, verjüngter Steg) als
+  `formschraege` im `ende` von `extrusion`/`schnitt` (Paket Formschräge, Vorlage `tests/referenz/zentrieraufnahme/`):
+  `formschraege: {winkel: “=W”, querschnitt: kleiner | groesser}`. Der Winkel (Grad, 0 < winkel < 90) zählt gegen die
+  Extrusionsrichtung und ist ein Parameter. `querschnitt` gilt von der Skizze weg für den extrudierten Bereich
+  (Material beim Aufsatz, Aussparung beim Schnitt): `kleiner` = Zapfen verjüngt sich, Tasche wird zum Boden enger;
+  `groesser` = wird weiter. Bei `mittig` gilt das zu beiden Seiten. Ein Trichter wird von der Seite skizziert, deren
+  Durchmesser Anforderung ist (enge Seite → `groesser`, weite Seite → `kleiner`). Seitenflächen eines schrägen
+  Features sind nicht achsparallel: nicht mit `{feature, flaeche: “+x”}`/`kanten_an` quer zur Extrusion und nicht
+  mit `senkrechte_kanten` ansprechen (`validieren` lehnt das ab), sondern mit `nahe`; Ecken als Eckradius in der
+  Skizze (wird mitgeschrägt). `validieren` meldet, wenn das Profil bei `kleiner` zusammenfällt (Kreis, Rechteck,
+  Eckradius, Langloch). `swki pruefen` misst Winkel und Richtung jeder Seitenfläche selbst (`formschraegen`);
+  `volumen: auto` rechnet Kreis, Rechteck (auch mit Eckradius), Langloch und konvexe Polygone bei `blind`/`mittig`.
 - Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `<skript-id>_<n>`) nicht als Feature-IDs
   verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
 - Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.
@@ -70,6 +82,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 5. Tiefen, die sich auf eine andere Fläche beziehen (Restwandstärke, bis zum Boden), mit `versatz_von_flaeche` /
    `bis_flaeche`, nicht als gerechnete Zahl.
 6. Kantenverrundungen und Fasen gleichen Maßes in einem Knoten, am Ende des Baums.
+7. Schräge Wände als `formschraege` an der Extrusion, die das Element erzeugt – nicht als eigenes Feature, nicht als
+   Rotation eines Trapezes und nicht als Schnitt mit schräger Skizze.
 
 ## 3. Validieren und Rückfragen
 - `swki validieren <spec>` bis `"gueltig": true`.

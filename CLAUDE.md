@@ -1,10 +1,9 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3c (Kaufteile, STEP-Import) umgesetzt – Ergebnisse: docs/stufe3c/ergebnisse.md. Nächster Schritt
-(Nutzerwahl): Paket Formschräge umsetzen – Plan docs/superpowers/plans/2026-10-07-formschraege.md, Übergabe
-docs/superpowers/uebergabe-2026-10-08-formschraege-umsetzung.md. Danach zur Wahl: Stufe 4c (Nut- und
-Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
+Stand: Paket Formschräge (Option an Extrusion und Schnitt) umgesetzt – Ergebnisse: docs/formschraege/ergebnisse.md
+(davor 3c: docs/stufe3c/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+„Messarten” (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
@@ -84,6 +83,13 @@ Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), P
 - Regressions-Suite enthält den Zahnstangentrieb und seine Teile (`tests/referenz/zahnstangentrieb/`); Live-Läufe mit
   Kopplungen wie Bewegungen je Test auf frischem SolidWorks. Speicher: Zahnstangentrieb Spitzen ~9,8–10,3 GB (über
   `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht).
+
+## Formschräge (Paket Formschräge)
+- Schräge Wände nur als `formschraege` im `ende` von `extrusion`/`schnitt` (Regeln im Skill `konstruieren`): Winkel als
+  Parameter, Richtung `kleiner`/`groesser` aus Sicht der Skizze. `swki pruefen` misst sie gegen die freigegebene Kopie.
+- Ein eigenes Feature für Formschrägen an beliebigen Flächen (`InsertMultiFaceDraft`) gibt es nicht; erst bei Bedarf über
+  den Skill `compiler-erweitern`.
+- Regressions-Suite enthält die Zentrieraufnahme (`tests/referenz/zentrieraufnahme/`).
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,

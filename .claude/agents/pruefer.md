@@ -79,6 +79,16 @@ oder die Prüfungs-ID.
 - `eingriff:*` (Achsabstand, Überdeckung, Übersetzung), `sollweg:*` und `freiheitsgrad:*` (auch der gekoppelten
   Wellen) sind ok; sie stehen sonst schon als Mängel im Prüfbericht.
 
+## Zusätzlich bei Formschrägen (`formschraege` an `extrusion`/`schnitt`)
+
+- Die Richtung passt zu `querschnitt` (Bilder `vorne`/`rechts`, Blick quer zur Extrusion): `kleiner` – der Zapfen
+  verjüngt sich von der Skizze weg, die Tasche wird zum Boden hin enger; `groesser` – der Bereich wird weiter (Trichter
+  von der engen Seite aus). Bei `mittig` verjüngt sich das Element zu beiden Seiten.
+- Das schräge Element sitzt richtig an: ein Zapfen steht auf der Fläche, ein Steg geht ohne Spalt in die Platte über, eine
+  Tasche hat keinen Hinterschnitt.
+- `formschraegen` im Prüfbericht ist ok (Winkel je Seitenfläche unter `gemessen`); sonst steht es schon als Mangel im
+  Prüfbericht.
+
 ## Antwort (genau dieses JSON, sonst nichts)
 Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach, zum Beispiel:
 
