@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 
 from swki.compiler.eigenschaften import material_passt
+from swki.formschraege import schraege, soll_vorzeichen
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
 from swki.spec.ausdruck import auswerten
 from swki.spec.normen import (
@@ -32,6 +33,7 @@ class Messwerte:
     koerper: int = 1  # Anzahl Volumenkörper im Teil (Soll: genau 1)
     durchmesser: dict[str, dict | str] = field(default_factory=dict)  # was → {"durchmesser", "achse", "referenz"?} oder Fehlertext
     verzahnungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Messwerte der Verzahnung oder Fehlertext
+    formschraegen: dict[str, dict | str] = field(default_factory=dict)  # ID → {"flaechen": [...]} oder Fehlertext
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -102,6 +104,25 @@ def verzahnung_abweichungen(f: dict, ist: dict, parameter: dict, tol_mm: float) 
     return abweichungen
 
 
+def formschraege_abweichungen(f: dict, ist: dict, parameter: dict, tol_grad: float) -> list[str]:
+    """Spec Formschräge §6.1: Seitenflächen des Features (swki.pruefung.messen.formschraegen) gegen Winkel und Richtung des
+    Knotens der freigegebenen Kopie. Leere Liste = passt."""
+    s = schraege(f)
+    flaechen = ist["flaechen"]
+    if not flaechen:
+        return ["keine geschrägte Seitenfläche gefunden"]
+    winkel, vorzeichen = auswerten(s["winkel"], parameter), soll_vorzeichen(f["typ"], s["querschnitt"])
+    fehler = []
+    falsch = [x["winkel"] for x in flaechen if abs(x["winkel"] - winkel) > tol_grad]
+    if falsch:
+        werte = ", ".join(f"{w:g}" for w in sorted({round(w, 3) for w in falsch}))
+        fehler.append(f"Winkel {werte}° statt {winkel:g}° ({len(falsch)} von {len(flaechen)} Seitenflächen)")
+    gegen = sum(1 for x in flaechen if x["vorzeichen"] != vorzeichen)
+    if gegen:
+        fehler.append(f"Querschnitt nicht {s['querschnitt']} ({gegen} von {len(flaechen)} Seitenflächen)")
+    return fehler
+
+
 def baum_kennzahl(spec: dict, protokoll: dict | None) -> dict:
     """Spec 2c §6.3: Knoten der Spezifikation und vom Bau erzeugte Features (Namen aus dem Bauprotokoll; Skizzen,
     Ebenen und Achsen legt der Compiler nebenbei an und zählen nicht)."""
@@ -111,8 +132,8 @@ def baum_kennzahl(spec: dict, protokoll: dict | None) -> dict:
 
 def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None = None) -> dict:
     """freigegeben: Spezifikation im Stand der Freigabe; das Sollvolumen "auto" wird aus ihr berechnet,
-    damit ein nachgebesserter Bauweg das Soll nicht mitverschiebt. Normbohrungen werden gegen die freigegebene Kopie
-    geprüft (Größen sind Text, die Prüfsumme schützt sie nicht)."""
+    damit ein nachgebesserter Bauweg das Soll nicht mitverschiebt. Normbohrungen und Formschrägen werden gegen die
+    freigegebene Kopie geprüft (Größen und Richtungen sind Text, die Prüfsumme schützt sie nicht)."""
     p = spec.get("parameter", {})
     pr = spec.get("pruefung", {})
     ergebnisse = []
@@ -148,6 +169,21 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
             elif fehler := verzahnung_abweichungen(f, ist, p_soll, tol):
                 abweichend[f["id"]] = fehler
         ergebnisse.append(eintrag("verzahnungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+
+    soll_schraegen = [f for f in soll_spec["features"] if schraege(f) is not None]
+    if soll_schraegen:
+        p_soll, tol = soll_spec.get("parameter", {}), standard["toleranzen"]["winkel_grad"]
+        abweichend, gemessen = {}, {}
+        for f in soll_schraegen:
+            ist = m.formschraegen.get(f["id"])
+            if not isinstance(ist, dict):
+                abweichend[f["id"]] = [ist or f"Feature {f['id']} fehlt im Teil"]
+                continue
+            gemessen[f["id"]] = sorted({round(x["winkel"], 3) for x in ist["flaechen"]})
+            if fehler := formschraege_abweichungen(f, ist, p_soll, tol):
+                abweichend[f["id"]] = fehler
+        ergebnisse.append(eintrag("formschraegen", not abweichend, ist=abweichend, gemessen=gemessen,
+                                  knoten=sorted(abweichend)))
 
     # Allgemeine Prüfung: ein Teil ist ein Volumenkörper. Ein Aufsatz mit Abstand zum Körper (z. B. versatz_von_flaeche
     # bei abgesetzter Skizze) besteht sonst alle anderen Prüfungen, obwohl er getrennt im Teil steht.

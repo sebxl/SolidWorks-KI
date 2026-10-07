@@ -11,7 +11,8 @@ from swki.compiler.anker import (AnkerFehler, Flaeche, flaeche_in_richtung, laen
 from swki.compiler.eigenschaften import lies_eigenschaften
 from swki.compiler.fehler import BauFehler
 from swki.compiler.kontext import FeatureErgebnis, Kontext
-from swki.compiler.topologie import flaechen, koerper, referenz_geometrie
+from swki.compiler.topologie import flaechen, koerper, loese_flaeche, referenz_geometrie
+from swki.formschraege import TYPEN, extrusionsrichtung, schraege, seitenflaechen, skizzennormale
 from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.normen import SW_BEFESTIGUNG
@@ -253,6 +254,67 @@ def verzahnungen(model, soll_spec: dict, tol_mm: float, app, aktuell_spec: dict 
     return ergebnis
 
 
+def punkt_und_normale(face) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+    """Punkt (mm) und äußere Einheitsnormale einer Fläche nahe der Mitte ihrer Box (Spike S16, Frage 5):
+    ISurface.EvaluateAtPoint liefert zuerst die Normale der Trägerfläche; FaceInSurfaceSense True = die Fläche zeigt
+    entgegen. Gilt für Ebenen und Kegel gleich."""
+    box = face.GetBox
+    q = face.GetClosestPointOn((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2)
+    werte = face.GetSurface.EvaluateAtPoint(q[0], q[1], q[2])
+    n = (werte[0], werte[1], werte[2])
+    if face.FaceInSurfaceSense:
+        n = (-n[0], -n[1], -n[2])
+    betrag = laenge(n)
+    return (in_mm(q[0]), in_mm(q[1]), in_mm(q[2])), (n[0] / betrag, n[1] / betrag, n[2] / betrag)
+
+
+def _skizzenebene(ctx, ebene, mit_punkt: bool) -> tuple[tuple, tuple | None]:
+    """(Normale, Punkt in mm oder None) der Skizzenebene eines Knotens im fertigen Teil; den Punkt braucht nur mittig."""
+    normale = skizzennormale(ebene)
+    if normale is None:  # {nahe}: Normale und Punkt aus dem Modell
+        flaeche = loese_flaeche(ctx, ebene)
+        if flaeche.art != "ebene":
+            raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", "Skizzenfläche ist nicht eben")
+        return flaeche.normale, flaeche.punkt
+    if not mit_punkt or isinstance(ebene, str):
+        return normale, (0.0, 0.0, 0.0)
+    if "versatz" in ebene:
+        abstand_ = ctx.wert(ebene["versatz"]["abstand"])
+        return normale, tuple(abstand_ * c for c in normale)
+    if ebene["feature"] not in ctx.ergebnisse:
+        raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Feature {ebene['feature']!r} fehlt im Teil")
+    flaeche = flaeche_in_richtung(flaechen(ctx.ergebnis(ebene["feature"]).features[0]), ebene["flaeche"])
+    return normale, flaeche.punkt
+
+
+def formschraegen(ctx, soll_spec: dict, aktuell_spec: dict | None = None) -> dict[str, dict | str]:
+    """Spec Formschräge §6.1: je extrusion-/schnitt-Knoten mit formschraege (Soll: freigegebene Kopie) die Seitenflächen
+    des gleichnamigen Features als {"flaechen": [{"winkel", "vorzeichen"}]} oder einen Fehlertext. Skizzenebene,
+    umkehren und Endbedingung sind Bauweg und kommen aus der aktuellen Spezifikation."""
+    aktuell = {f["id"]: f for f in (aktuell_spec or soll_spec)["features"]}
+    ergebnis = {}
+    for f in soll_spec["features"]:
+        if schraege(f) is None:
+            continue
+        g = aktuell.get(f["id"])
+        g = g if g is not None and g["typ"] in TYPEN else f
+        feature = ctx.model.FeatureByName(f["id"])
+        if feature is None:
+            ergebnis[f["id"]] = f"Feature {f['id']} fehlt im Teil"
+            continue
+        try:
+            mittig = g["ende"]["typ"] == "mittig"
+            normale, punkt = _skizzenebene(ctx, g["skizze"]["ebene"], mittig)
+            r = extrusionsrichtung(normale, g["typ"], g["ende"].get("umkehren", False))
+            messungen = [punkt_und_normale(face) for face in (feature.GetFaces or ())]
+            ergebnis[f["id"]] = {"flaechen": seitenflaechen(messungen, r, punkt if mittig else None)}
+        except BauFehler as e:
+            ergebnis[f["id"]] = f"{e.code}: {e}"
+        except Exception as e:  # COM-Fehler beim Lesen → Mangel statt Abbruch der Prüfung
+            ergebnis[f["id"]] = f"Formschräge {f['id']} nicht messbar: {e}"
+    return ergebnis
+
+
 def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, protokoll: dict) -> Kontext:
     """Kontext für ein geöffnetes Teil: Features über ihre Namen (= Feature-IDs), Bohrungspunkte aus dem Bauprotokoll.
 
@@ -351,4 +413,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         koerper=len(koerper(model)),
         durchmesser=durchmesser(ctx, ctx.spec),
         verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app, ctx.spec),
+        formschraegen=formschraegen(ctx, freigegeben or ctx.spec, ctx.spec),
     )
