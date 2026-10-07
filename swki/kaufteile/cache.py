@@ -35,9 +35,10 @@ def lies(ordner: Path, schluessel: str) -> dict | None:
     if not pfad.is_file():
         return None
     try:
-        return json.loads(pfad.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        daten = json.loads(pfad.read_text(encoding="utf-8"))
+    except (OSError, ValueError):  # ValueError: JSONDecodeError und UnicodeDecodeError
         return None  # defekter Eintrag gilt als fehlend: neu aufnehmen
+    return daten if isinstance(daten, dict) else None
 
 
 def ist_aktuell(ordner: Path, schluessel: str, summe: str) -> bool:
