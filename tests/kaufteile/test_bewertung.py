@@ -73,6 +73,27 @@ def test_gegenprobe_und_lage_der_referenzen():
     assert "enthält EINBAU_ACHSE nicht" in texte[1]
 
 
+def test_ebene_gleichsinnig_zur_soll_normale():
+    """Die Bezugsebene muss in Richtung der Soll-Normale zeigen, nicht nur parallel liegen (Spec 3c §4.2)."""
+    m = _messwerte()
+    m.einbau["EINBAU_FLANSCH"]["bezug"] = Messgeometrie("ebene", (0.0, 0.0, 0.0), (0.0, 1.0, 0.0))  # gegensinnig
+    b = bewerte_kaufteil(EINTRAG, m)
+    assert "einbau:EINBAU_FLANSCH" in _ids(b, False)
+    text = next(x for x in b["maengel"] if x["pruefung"] == "einbau:EINBAU_FLANSCH")["beschreibung"]
+    assert "gegen die Soll-Normale" in text
+    gleich = _messwerte()  # gleichsinnig (0, -1, 0) besteht
+    assert "einbau:EINBAU_FLANSCH" in _ids(bewerte_kaufteil(EINTRAG, gleich), True)
+
+
+def test_ebene_durch_achse_und_zylinderachse_ohne_richtungsforderung():
+    """Nutzerentscheidung: nur Ebenennormalen der Art `ebene` werden auf Orientierung geprüft."""
+    m = _messwerte()
+    m.einbau["EINBAU_ACHSE"]["bezug"] = Messgeometrie("achse", (0.0, 0.0, 0.0), (0.0, -1.0, 0.0))  # umgekehrt
+    m.einbau["EINBAU_DREHLAGE"]["bezug"] = Messgeometrie("ebene", (0.0, 0.0, 0.0), (-1.0, 0.0, 0.0))  # umgekehrt
+    b = bewerte_kaufteil(EINTRAG, m)
+    assert "einbau:EINBAU_ACHSE" in _ids(b, True) and "einbau:EINBAU_DREHLAGE" in _ids(b, True)
+
+
 def test_senkrecht_zu():
     m = _messwerte()
     m.einbau["EINBAU_FLANSCH"]["bezug"] = Messgeometrie("ebene", (0.0, 0.0, 0.0), (0.0, -0.9998, 0.02))

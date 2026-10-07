@@ -6,10 +6,10 @@ mass:<was>, material, eigenschaften, masse. Kennmaße tragen ihren Beleg (Liste 
 import math
 from dataclasses import dataclass, field
 
-from swki.compiler.anker import punkt_achse_abstand
+from swki.compiler.anker import punkt_achse_abstand, skalar
 from swki.compiler.eigenschaften import material_passt
 from swki.kaufteile.eintrag import eigenschaften
-from swki.kaufteile.ortung import TOL_WINKEL_GRAD, gewinde_modelle, winkel_grad
+from swki.kaufteile.ortung import TOL_WINKEL_GRAD, einheit, gewinde_modelle, winkel_grad
 from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
 
@@ -69,6 +69,8 @@ def _einbau_fehler(art: str, soll: dict, messung: dict, bezug: Messgeometrie, al
     elif art == "ebene":
         if _parallel(bezug.richtung, ist["normale"]) > TOL_WINKEL_GRAD or _punkt_ebene(ist["punkt"], bezug) > TOL_LAGE_MM:
             fehler.append("Bezugsebene liegt nicht auf der Fläche")
+        elif skalar(einheit(bezug.richtung), einheit(tuple(soll["normale"]))) <= 0:
+            fehler.append("Bezugsebene zeigt gegen die Soll-Normale (nicht gleichsinnig zur Flächennormale)")
     else:
         achse = alle.get(soll["achse"])
         if not isinstance(achse, dict) or not isinstance(achse.get("bezug"), Messgeometrie):
