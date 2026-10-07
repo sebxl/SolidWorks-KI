@@ -80,13 +80,22 @@ def kopplung_referenz(ctx, fid: str) -> TeilReferenz:
     raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"{fid}: keine Kante entlang der Zahnreihe")
 
 
+def _alle_flaechen(ctx) -> list[Flaeche]:
+    """Flächen aller Körper des Teildokuments; je Kontext einmal gesammelt (ein COM-Aufruf je Fläche), denn das Dokument
+    ändert sich in diesem Kontext nicht mehr (Kaufteil: aus der Datei)."""
+    zwischen = getattr(ctx, "_alle_flaechen", None)
+    if zwischen is None:
+        zwischen = [flaeche_aus(f) for b in koerper(ctx.model) for f in (b.GetFaces() or ())]
+        ctx._alle_flaechen = zwischen
+    return zwischen
+
+
 def gewinde_referenz(ctx, gruppe: str, instanz: int) -> TeilReferenz:
     """Zylinderfläche der Gewindeposition eines Kaufteils (Spec 3c §8.1): Achse durch den Eintrittspunkt der Gruppe aus
     der Teilansicht (ctx.spec["gewinde"]), gesucht über die Flächen aller Körper."""
     g = ctx.spec["gewinde"][gruppe]
     w = {**g, "positionen": [g["positionen"][instanz - 1]]}
-    alle = [flaeche_aus(f) for b in koerper(ctx.model) for f in (b.GetFaces() or ())]
-    [o] = orte_gewinde(alle, gruppe, w, ctx.tol_mm)
+    [o] = orte_gewinde(_alle_flaechen(ctx), gruppe, w, ctx.tol_mm)
     return TeilReferenz(o.flaeche.objekt, _geometrie(o.flaeche), False)
 
 
