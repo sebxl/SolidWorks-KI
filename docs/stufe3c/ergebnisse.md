@@ -350,8 +350,10 @@ Flanschebene mit `bezug.richtung` [0, 0, −1] = Soll hat und die schärfere Pr�
 | Minor 5, 6, 11, `pruefer.md`, Codetabelle, Ergebnisse | Dokumentationscommit (Spec §4.3/§6.3, Skills `baugruppe` und `kaufteile`, `pruefer.md`, dieses Dokument) | siehe `git log` |
 
 Unit-Suite nach der Welle: **960 bestanden**, 141 abgewählt (+23 gegenüber 937: Ebenenorientierung 2, `gewinde_referenz` 3, Schutzregel 6, URL 3,
-Cache 7, Speicher 2). `swki api pruefe-code swki spikes tests/live` ohne Befund. Die Live-Nachweise nach der Welle (`test_live_kaufteile`,
-`test_live_kaufteil_hole`, Referenzen Motorhalter und Stehlager wegen `referenzen.py`) folgen auf frischem SolidWorks durch den Controller.
+Cache 7, Speicher 2). `swki api pruefe-code swki spikes tests/live` ohne Befund. Live-Nachweis nach der Welle (je Test frisches
+SolidWorks, 2026-10-07): `test_live_kaufteile` 5/5 OK (39,6 s, Spitze 4 643 MB), `test_live_kaufteil_hole` OK (11,3 s, 3 650 MB),
+Referenz Motorhalter OK (108,8 s, 9 020 MB), Negativfall Motorhalter OK (134,5 s, 9 097 MB), Referenz Stehlager OK (212,2 s,
+11 181 MB, wegen `referenzen.py`). Optionen danach unverändert, keine offenen Dokumente.
 
 **Offen gelassen** (Triage des Reviews, Details in Abschnitt 13): Minor 3 (`pruefung.volumen` Pflicht – die Live-Negativfälle hängen daran),
 Minor 8 (Datenblatt-Dateiname kann kollidieren), Minor 9 (`liste` nur für das aktuelle SW-Jahr), Minor 10 (G1-Bereich: ISO 965-1 lässt für
