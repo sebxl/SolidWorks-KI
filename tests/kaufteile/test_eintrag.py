@@ -126,7 +126,13 @@ def test_beleg_fehlt_unter_belege():
     ("benennung", "Zylinderschraube DIN 912 M5", True),
     ("bestellnummer", "ISO4762-M5x12", True),
     ("benennung", "Scheibe DIN 125-1 A", True),
+    ("benennung", "Zylinderschraube DIN 912-12", True),
+    ("benennung", "Schraube DIN912-10", True),
+    ("bestellnummer", "ISO 4762-10", True),
+    ("benennung", "Scheibe ISO 7089-8", True),
+    ("benennung", "Scheibe DIN 125-8,4", True),
     ("benennung", "Rillenkugellager DIN 625 6001-2RS", False),
+    ("benennung", "Rillenkugellager DIN 625-1", False),
 ])
 def test_schutzregel(feld, text, genormt):
     spec = kopie()

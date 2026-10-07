@@ -87,8 +87,11 @@ def genormt_befunde(spec: dict, wissen: Path = NORMTABELLEN) -> list[dict]:
     befunde = []
     for feld in ("benennung", "bestellnummer"):
         for treffer in _NORM.finditer(spec[feld]):
-            norm = norm_datei(f"{treffer.group(1)} {treffer.group(2)}")
-            if norm in bekannt:
+            # "DIN 912-12": 12 ist oft die Größe, nicht die Teilnummer – beide Lesarten prüfen
+            lesarten = {treffer.group(2), treffer.group(2).split("-")[0]}
+            norm = next((n for n in (norm_datei(f"{treffer.group(1)} {x}") for x in sorted(lesarten, reverse=True))
+                         if n in bekannt), None)
+            if norm:
                 befunde.append(_b(feld, f"KAUFTEIL_GENORMT: {treffer.group(0)} ist ein Normteil ({bekannt[norm]}) – "
                                         "genormte Teile über swki normteil hole, nie als STEP"))
     return befunde
