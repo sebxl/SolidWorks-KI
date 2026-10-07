@@ -27,8 +27,8 @@ MARKE_ZIELFLAECHE = 1  # Endbedingungs-Referenz (Spike S10, Frage 6)
 VERSATZ_WEG_VON_SKIZZE = False  # OffsetReverse1: False = Versatz zur Skizze hin (Spike S10, Frage 6)
 VERSATZ_MASS = "D1"  # Maß des Versatzes am Feature (Spike S10, Frage 6)
 DDIR_KLEINER = {"extrusion": True, "schnitt": True}  # Ddir1 (True = nach innen) für querschnitt "kleiner" (Spike S16, Frage 1)
-# Maß des Formschrägenwinkels am Feature je Endbedingung: ohne Tiefenmaß ist er das erste Maß (Spike S16, Frage 4)
-WINKEL_MASS = {"blind": "D2", "mittig": "D2", "versatz_von_flaeche": "D2", "durch_alles": "D1", "bis_flaeche": "D1"}
+# Maß des Formschrägenwinkels am Feature je Endbedingung: bei allen D3 (Spike S16, Frage 4; D2 gibt es nicht)
+WINKEL_MASS = {"blind": "D3", "mittig": "D3", "versatz_von_flaeche": "D3", "durch_alles": "D3", "bis_flaeche": "D3"}
 OHNE_SCHRAEGE = (False, False, 0.0)  # (Dchk1, Ddir1, Dang1 in rad)
 
 

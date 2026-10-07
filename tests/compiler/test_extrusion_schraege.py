@@ -66,4 +66,5 @@ def test_schraege_sw():
 
 
 def test_winkelmass_fuer_jede_endbedingung():
-    assert set(WINKEL_MASS) == set(ENDE)
+    # Spike S16, Frage 4: der Winkel ist bei allen Endbedingungen das Maß D3
+    assert WINKEL_MASS == {typ: "D3" for typ in ENDE}

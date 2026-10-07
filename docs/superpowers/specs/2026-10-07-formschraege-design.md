@@ -70,9 +70,8 @@ Bedeutung:
 11; laut API-Index). Kein neuer API-Aufruf für den Bau; die Zuordnung `querschnitt` → `Ddir1` getrennt für Aufsatz und
 Schnitt kommt aus dem Spike (Konstante mit Spike-Verweis, wie `VERSATZ_WEG_VON_SKIZZE`).
 
-Der Winkel wird wie die Tiefe mit dem Parameter verknüpft (`ctx.verknuepfe("<Maß>@<id>", winkel)`). Der Name des
-Winkelmaßes hängt von der Endbedingung ab (ohne Tiefenmaß ist der Winkel das erste Maß): Annahme `D2` bei `blind`,
-`mittig`, `versatz_von_flaeche` und `D1` bei `durch_alles`, `bis_flaeche`; der Spike belegt es. Ohne `formschraege` bleibt der Aufruf unverändert (`Dchk1 = False`, Winkel 0).
+Der Winkel wird wie die Tiefe mit dem Parameter verknüpft (`ctx.verknuepfe("<Maß>@<id>", winkel)`). Das
+Winkelmaß heißt bei allen Endbedingungen `D3` (Spike S16, Frage 4; die Planungsannahme `D2`/`D1` traf nicht zu). Ohne `formschraege` bleibt der Aufruf unverändert (`Dchk1 = False`, Winkel 0).
 
 Fehler: Erzeugt SolidWorks kein Feature (z. B. Profil fällt zusammen bei Polygonen, die `validieren` nicht vorab prüft),
 meldet der Handler wie bisher `FEATURE_NICHT_ERZEUGT`, mit dem Zusatz „Formschräge zu groß für das Profil?“.
