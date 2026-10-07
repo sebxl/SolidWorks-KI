@@ -2,7 +2,8 @@
 
 Ergänzung zu [2026-09-26-solidworks-ki-design.md](2026-09-26-solidworks-ki-design.md) (§4 Spezifikation, §6 Prüfung,
 §11 Stufen) und [2026-09-29-stufe-2c-design.md](2026-09-29-stufe-2c-design.md) (Endbedingungen, Sollvolumen, kompakter
-Baum). Stand 2026-10-07, mit dem Nutzer abgestimmt.
+Baum). Stand 2026-10-07, mit dem Nutzer abgestimmt; bei der Planung nachgezogen (Plan
+`docs/superpowers/plans/2026-10-07-formschraege.md`): §4, §6.1, §6.3.
 
 ## 1. Ziel
 
@@ -69,8 +70,9 @@ Bedeutung:
 11; laut API-Index). Kein neuer API-Aufruf für den Bau; die Zuordnung `querschnitt` → `Ddir1` getrennt für Aufsatz und
 Schnitt kommt aus dem Spike (Konstante mit Spike-Verweis, wie `VERSATZ_WEG_VON_SKIZZE`).
 
-Der Winkel wird wie die Tiefe mit dem Parameter verknüpft (`ctx.verknuepfe("<Maß>@<id>", winkel)`); den Namen des
-Winkelmaßes am Feature misst der Spike. Ohne `formschraege` bleibt der Aufruf unverändert (`Dchk1 = False`, Winkel 0).
+Der Winkel wird wie die Tiefe mit dem Parameter verknüpft (`ctx.verknuepfe("<Maß>@<id>", winkel)`). Der Name des
+Winkelmaßes hängt von der Endbedingung ab (ohne Tiefenmaß ist der Winkel das erste Maß): Annahme `D2` bei `blind`,
+`mittig`, `versatz_von_flaeche` und `D1` bei `durch_alles`, `bis_flaeche`; der Spike belegt es. Ohne `formschraege` bleibt der Aufruf unverändert (`Dchk1 = False`, Winkel 0).
 
 Fehler: Erzeugt SolidWorks kein Feature (z. B. Profil fällt zusammen bei Polygonen, die `validieren` nicht vorab prüft),
 meldet der Handler wie bisher `FEATURE_NICHT_ERZEUGT`, mit dem Zusatz „Formschräge zu groß für das Profil?“.
@@ -98,16 +100,16 @@ geprüft und bei Bedarf ergänzt, damit `formschraege.winkel` erfasst wird.
 ### 6.1 Formschrägen messen (`formschraegen`)
 Für jeden `extrusion`/`schnitt`-Knoten der **freigegebenen Kopie** mit `formschraege` (die Richtung ist Text und von der
 Freigabe-Prüfsumme nicht geschützt, wie Normbohrungsgrößen) liest `swki/pruefung/messen.py` das gleichnamige Feature und
-misst seine **Seitenflächen** (alle Flächen des Features, deren Normale nicht parallel zu r ist):
-- ebene Fläche mit äußerer Normale n: Ist-Winkel = asin(|n·r|); Vorzeichen s = sign(n·r)
-- Kegelfläche: Ist-Winkel = halber Öffnungswinkel (`ISurface.ConeParams`); Vorzeichen aus der Normale an einem Punkt der
-  Fläche (Auswertung im Spike)
+misst seine **Seitenflächen** (alle Flächen des Features, deren Normale nicht parallel zu r ist). Jede Fläche wird gleich
+gemessen, ob Ebene, Kegel oder andere Art: Punkt nahe der Mitte ihrer Box (`IFace2.GetClosestPointOn`), dort die äußere
+Normale n (`ISurface.EvaluateAtPoint`, umgedreht wenn `IFace2.FaceInSurfaceSense`):
+- Ist-Winkel = asin(|n·r|); Vorzeichen s = sign(n·r) (0 bei einer Wand ohne Schräge)
 - Soll-Vorzeichen: Aufsatz `kleiner` → +1, Aufsatz `groesser` → −1, Schnitt `kleiner` → −1, Schnitt `groesser` → +1
   (bei `mittig` r je Seite der Skizzenebene)
-- andere Flächenarten: nicht messbar (Hinweis, kein Mangel); ohne eine einzige gemessene Seitenfläche: Mangel
+- scheitert das Lesen einer Fläche, wird der Knoten ein Fehlertext (Mangel); ohne eine einzige Seitenfläche: Mangel
 
 `swki/pruefung/bewertung.py` bewertet wie `normbohrungen`: ein Eintrag `formschraegen` mit `ok`, abweichenden Knoten
-(`knoten`) und je Knoten der Abweichung (Winkel Soll/Ist, Richtung). Toleranz `toleranzen.winkel_grad` in
+(`knoten`), je Knoten der Abweichung (`ist`: Winkel Soll/Ist, Richtung) und den gemessenen Winkeln (`gemessen`). Toleranz `toleranzen.winkel_grad` in
 `config/standard.yaml` (neu, Wert nach Spike). Feature fehlt im Modell → Mangel.
 
 ### 6.2 Sollvolumen
@@ -120,7 +122,8 @@ K je Profil: Kreis und Langloch π, Rechteck 4, Rechteck mit Eckradius π, konve
 (θᵢ Außenwinkel). Andere Profile, mehrere Profile und Endbedingungen ohne bekannte Tiefe → `None` mit Grund (wie bisher).
 
 ### 6.3 Bericht und Prüfer
-- Prüfbericht und `bericht.md`: Abschnitt Formschrägen (Knoten, Soll-/Ist-Winkel, Richtung).
+- Prüfbericht und `bericht.md`: kein eigener Abschnitt – `formschraegen` steht wie `normbohrungen` unter den Prüfungen
+  (mit `gemessen`), Mängel mit Knoten in der Mängelliste.
 - Prüfer-Agent (`.claude/agents/pruefer.md`): Abschnitt „Zusätzlich bei Formschrägen“ – Richtung im Bild gegen
   `querschnitt` plausibel, Ergebnis `formschraegen` im Prüfbericht, Anschlüsse (Zapfen auf Fläche, Tasche ohne Hinterschnitt).
 
@@ -143,8 +146,8 @@ Skript `spikes/s16_formschraege.py`:
    `versatz_von_flaeche`.
 3. Mehrere Profile (Ring): Richtung des Innenrands.
 4. Name des Winkelmaßes am Feature und Verknüpfung über Gleichung (wie `D1`).
-5. Messung: `IFace2.Normal` der ebenen Seitenflächen, `ISurface.ConeParams` und Vorzeichen bei Kegelflächen; Toleranz für
-   `winkel_grad`.
+5. Messung: Normale aus `EvaluateAtPoint`/`FaceInSurfaceSense` gegen `IFace2.Normal` (Ebenen) und `ISurface.ConeParams2`
+   (Kegel); Toleranz für `winkel_grad`.
 6. Rechteck mit Eckradius bei `kleiner`, wenn T·tan α den Radius erreicht (bestätigt oder lockert Regel §5.2).
 7. Volumen gegen §6.2 (Kreis, Rechteck, Rechteck mit Eckradius, Polygon, `mittig`).
 
