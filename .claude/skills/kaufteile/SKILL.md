@@ -72,7 +72,8 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
   Diagonale.
 - Die Richtung einer Bezugsachse aus einer Zylinderfläche legt SolidWorks fest und ist kein Kriterium (Spec §4.2: Lage und
   Ø; `konzentrisch` ohne Angabe nutzt die nächste Ausrichtung), ebenso die Normale einer `ebene_durch_achse`. Maßgeblich
-  sind die Normalen der `ebene`-Referenzen (`bezug.richtung`) und die Lage.
+  sind die Normalen der `ebene`-Referenzen (`bezug.richtung`) und die Lage: die Ebenennormale der Bezugsebene muss
+  gleichsinnig zur Flächennormale sein, sonst Mangel `einbau:<name>`.
 - `pruefung`: `huellquader {soll, tol, beleg}`, `volumen` aus dem Gerüst, `durchmesser_pruefen`, `masse_pruefen` (Messpunkte
   `referenz`, `gewinde`+`instanz`, `flaeche {nahe, normale}`, `punkt`).
 - Datumsangaben in Anführungszeichen (`"2026-10-07"`).
@@ -97,12 +98,18 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
 | `KAUFTEIL_IMPORT` | Modell defekt oder nicht importierbar (auch reines Flächenmodell) – Nutzer fragen, anderes Modell |
 | `KAUFTEIL_UNGEPRUEFT` | Prüfer-Ablauf oben |
 | `KAUFTEIL_PRUEFUNG` | Mängel lesen: `einbau:<name>` / `gewinde:<gruppe>` (Punkt falsch oder Gegenprobe verfehlt), `koerper`, `huellquader`, `mass:*` – Eintrag nach Rücksprache korrigieren (Nutzer-OK, neue Freigabe); Sollwerte nie an Messwerte anpassen |
+| `KAUFTEIL_GENORMT` | Befund von `validieren`: Benennung oder Bestellnummer nennen eine Norm einer Normtabelle (auch `DIN 912-12`) – Normteil über `swki normteil hole` (Skill `normteile`), nie als STEP |
+| `KAUFTEIL_NICHT_FREIGEGEBEN` | Befund von `validieren` (Baugruppe verweist auf einen Eintrag ohne Freigabe): Eintrag freigeben lassen (Abschnitt 5) |
 | `FREIGABE_FEHLT` / `FREIGABE_VERALTET` | Nutzer fragen, neu freigeben |
 
 ## 6. In Baugruppen
 - `quelle: {kaufteil: "<H> <B>"}`; Referenzen nur `{komponente, referenz: EINBAU_*}` und
   `{komponente, gewinde, instanz, achse: true}`; `je_position: {komponente, gewinde}` für Schrauben je Gewindeposition.
+  Die Instanzen entstehen in der Reihenfolge der `positionen` des Eintrags. **Noch nicht live erprobt:** `{gewinde,
+  instanz}` und `je_position: {gewinde}` sind unit-getestet (Attrappen), der Motorhalter nutzt sie nicht – erster Einsatz
+  mit Prüfer und Sichtprobe.
 - Ausrichtung: Flächen- und Bezugsebenen-Normalen wie im Prüfbericht des Kaufteils (`einbau:<name>` → `bezug.richtung`).
+  Bei `konzentrisch` auf `EINBAU_ACHSE` eines Kaufteils keine `ausrichtung` angeben (die Achsrichtung legt SolidWorks fest).
 - `drehung_sperren` ist bei Kaufteilen Vorgabe; wer die Drehlage über eine `ebene_durch_achse` verknüpft, setzt an der
   konzentrischen Verknüpfung `drehung_sperren: false` (Hinweis `drehlage_doppelt`).
 - Die Baugruppen-Freigabe schützt den Eintrag mit: Ändert sich ein Eintrag, meldet `bauen` `FREIGABE_VERALTET` mit dem

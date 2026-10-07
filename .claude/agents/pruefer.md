@@ -44,7 +44,7 @@ oder die Prüfungs-ID.
 1. Jede Einbaureferenz sitzt auf der Fläche, die der Eintrag meint (Wellenachse auf der Welle, Flanschebene auf der
    Anlagefläche hinter dem Zentrierbund, Drehlage durch das Lochbild: Gewindeposition oder Symmetrieebene des Lochbilds).
    Ebenennormalen (`ebene`) sind fachlich sinnvoll orientiert (`einbau:*` → `bezug.richtung`). Die Richtung einer
-   Bezugsachse aus einer Zylinderfläche legt SolidWorks fest und ist kein Kriterium (Spec §4.2: Lage und Ø; konzentrisch
+   Bezugsachse aus einer Zylinderfläche legt SolidWorks fest und ist kein Kriterium (Lage und Ø; konzentrisch
    ohne Angabe nutzt die nächste Ausrichtung), ebenso die Normale einer `ebene_durch_achse`.
 2. Kennmaße passen zum Datenblatt (Wert und Beleg); „nicht belegt“ ist kein Mangel, wenn der Eintrag es so ausweist.
 3. Masse plausibel (Datenblatt bzw. Material), Körperzahl plausibel, Hüllquader wie im Datenblatt.

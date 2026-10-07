@@ -142,7 +142,7 @@ eine Einbaureferenz ist Pflicht.
 
 *Nachgezogen bei der Umsetzung (Nutzerentscheidung):* Die Richtung einer Bezugsachse aus einer Zylinderfläche legt SolidWorks
 fest und ist kein Kriterium (Gegenprobe: Lage und Ø); `konzentrisch` ohne Angabe nutzt die nächste Ausrichtung. Ebenso ist die
-Normale einer `ebene_durch_achse` kein Kriterium. Maßgeblich sind die Normalen der `ebene`-Referenzen (`bezug.richtung`).
+Normale einer `ebene_durch_achse` kein Kriterium. Maßgeblich sind die Normalen der `ebene`-Referenzen (`bezug.richtung`): die Ebenennormale der Bezugsebene muss gleichsinnig zur Flächennormale (Soll-Normale) sein, sonst Mangel `einbau:<name>` (Gesamt-Review, Important 1).
 Die Drehlage (`ebene_durch_achse`) des GPLE60 ist die Symmetrieebene des Lochbilds (Mitte einer □-60-Seite), nicht die
 Diagonale durch eine Gewindeposition.
 
@@ -155,9 +155,9 @@ Diagonale durch eine Gewindeposition.
 - Gegenprobe je Position: eine Zylinderfläche mit Achse durch den Punkt parallel zu `normale`; ihr Ø liegt im
   **Kernloch-Bereich** – von D1 nach ISO 724 (D − 1,0825·P; M5: 4,134) bis zum Kernloch der Tabelle (Bohrer-Ø aus
   `bohrungsnormen.yaml`; M5: 4,2), je ± 0,01 mm – (Modell `kernloch`, Gewindepaarung mit Ringvolumen, §6.4) oder ist der
-  **Nenn-Ø** ± 0,01 mm (Modell `nenn`, Soll der Überlappung 0); sonst Mangel `gewinde:<gruppe>`. Die Steigung P kommt bei
-  Feingewinde aus der Größe (`M10x1`), bei Regelgewinde aus der abgeglichenen Normtabelle ISO 4762 (Spalte `p`); ohne
-  Steigung gilt nur das Tabellen-Kernloch. Modell und gemessener Ø müssen in der Gruppe einheitlich sein (sonst Mangel
+  **Nenn-Ø** ± 0,01 mm (Modell `nenn`, Soll der Überlappung 0); sonst Mangel `gewinde:<gruppe>`. Die Steigung P kommt aus der
+  abgeglichenen Normtabelle ISO 4762 (Spalte `p`); ohne Steigung gilt nur das Tabellen-Kernloch. Gewindegrößen sind
+  nur Regelgewinde (`M5`, `M10` …; das Schema erlaubt kein Feingewinde `M10x1`). Modell und gemessener Ø müssen in der Gruppe einheitlich sein (sonst Mangel
   `gewinde:<gruppe>`, „Positionen uneinheitlich“). `hole` schreibt je Gruppe `{modell: kernloch | nenn, durchmesser:
   <gemessener Ø>}` in den Cache-Eintrag, der Bau übernimmt es ins Bauprotokoll (`kaufteile.<schluessel>.gewinde_modell`).
   *Nachgezogen bei der Umsetzung (Nutzerentscheidung 2026-10-06):* Hersteller modellieren Gewindelöcher oft mit D1 statt
@@ -282,7 +282,10 @@ abweichender Prüfsumme. Gelöscht wird nichts automatisch.
   API-Hilfe und wird nie aufgerufen; die automatische Importdiagnose ist während des Imports aus. Gelesen werden
   `IBody2.Check3` je Volumenkörper (Fehlerzahl) und die Zahl der Flächenkörper; beides ist die Prüfung `import` (Mangel mit
   Anzahl, §6.3), die Diagnose von `untersuchen` nennt sie. Reparieren wäre ein Eingriff in die Herstellergeometrie; der
-  Nutzer holt dann ein anderes Format/Modell beim Hersteller.
+  Nutzer holt dann ein anderes Format/Modell beim Hersteller. *Nachgezogen bei der Umsetzung (Fix-N):* Ein reines Flächenmodell
+  (STEP nur mit `OPEN_SHELL`/`SHELL_BASED_SURFACE_MODEL`, 0 Volumenkörper; Beispiel Nanotec ST4118M1804-A: 8 Flächenkörper) hat
+  keine Masseneigenschaften (`CreateMassProperty2` liefert `None`). Das ist der Mangel `import` (und `koerper`/`masse`), kein
+  Absturz: `untersuchen` meldet `koerper 0` und die Zahl der Flächenkörper; `Check3` läuft auch über die Flächenkörper.
 - Die importierten Features bleiben unverändert; Name im Baum wie von SolidWorks vergeben (deutsche Oberfläche, nicht
   angefasst).
 
@@ -308,9 +311,18 @@ Code-Prüfungen über die vorhandene Teil-Bewertung (Bewertung mit einer aus dem
 | `volumen` | Fingerabdruck ± `toleranz_prozent` |
 | `durchmesser:<was>`, `mass:<was>` | Soll ± `tol` (Vorgabe 0,01 mm) |
 | `einbau:<name>` | Gegenprobe (Ø, Normale, Achse in Ebene) und – bei `senkrecht_zu` – Lage zueinander |
-| `gewinde:<gruppe>.<i>` | Zylinder gefunden, Ø = Kernloch oder Nenn-Ø |
-| `material`, `eigenschaften` | gesetzt |
+| `gewinde:<gruppe>` | je Position Zylinder gefunden, Ø = Kernloch oder Nenn-Ø; Modell und Ø der Positionen einheitlich |
+| `material`, `eigenschaften` | gesetzt; der Prüfbericht nennt unter `ist` die gelesenen Werte **aller** Soll-Eigenschaften (nicht nur Abweichungen) |
 | `masse` | mit Überschreibung: gelesene Masse = `masse.kg` (relativ 1e-6); ohne: berichtet „aus Material geschätzt“ (`ok: None`) |
+
+*Nachgezogen bei der Umsetzung:* (1) **Masse-Weg (Spike S15-9):** `GetOverrideOptions` allein wirkt nicht; die Überschreibung greift
+nur, wenn alle Volumenkörper ausgewählt sind: `IBody2.Select2` je Körper, `CreateMassProperty2`, `GetOverrideOptions`,
+`OverrideMass = True`, `SetOverrideMassValue(kg)`, `SetOverrideOptions(opts, swThisConfiguration, Empty)`, Auswahl leeren; sie bleibt nach
+Speichern, Neuöffnen und in der Baugruppe erhalten (live: Muster 1,2 kg, GPLE60 1,1 kg bei drei Körpern). (2) **Eigenschaften im
+Prüfbericht (Fix-E):** zuvor enthielt `ist` nur Abweichungen, ein bestandener Bericht zeigte `ist: {}`; der Prüfer meldete dies zu
+Recht als Mangel `eigenschaften`. (3) **`durchmesser_pruefen`** sucht die Zylinderfläche über **alle** Features des Ergebnisses
+(z. B. `<id>` und `<id>_senkung` einer Bohrung mit Senkung), im Kontext aus der Datei ebenfalls (Motorhalter, Zentrierbohrung
+Ø 40 als Senkung einer Bohrung Ø 20).
 
 Skizzen gibt es nicht (keine Bestimmtheitsprüfung). Bilder Iso/Vorne/Oben/Rechts mit eingeblendeten Bezugsachsen/-ebenen
 (Spike S15h); der Prüfbericht nennt die Diagnose-Kennzahlen (Dateigröße, Flächen, Importzeit, Speicherspitze) und je Kennmaß
@@ -442,7 +454,10 @@ aus `untersuchen` stammt – und auch das nur vor der Freigabe).
   wird kein Katalogeintrag; `muster/` bleibt interne Testdatei (Spike S15, Live-Tests der Aufnahme, Unit-Test-Beispiele).
 - **Baugruppe** `motorhalter.yaml`: Grundplatte (fixiert), Motorbock (Winkel: Fuß und Wand mit Zentrierbohrung und
   4 × Durchgang M5), Motor (Kaufteil), 4 × ISO 4762 M5 durch die Wand in die Flanschgewinde (`je_position` auf die Bohrung der
-  Wand), 2 × ISO 4762 M6 vom Fuß in Gewinde der Grundplatte. Statisch; Lage über `masse_pruefen` (Achshöhe).
+  Wand), 2 × ISO 4762 M6 vom Fuß in Gewinde der Grundplatte. Statisch; Lage über `masse_pruefen` (Achshöhe). *Nachgezogen bei der
+  Umsetzung:* Motor ist der GPLE60-2S-32 (Lochkreis Ø 52 unter 45°, Gewindetiefe 10); die Zentrierbohrung Ø 40 × 5 ist die Senkung
+  einer Bohrung Ø 20 durch (die Durchmesserprüfung findet sie über alle Features, §6.3); Achshöhe 62, Hüllquader [160, 102, 100];
+  die Schrauben folgen den Bock-Bohrungen (`je_position`), die Gewindepaarung wird im Kaufteil geprüft.
 - **Negativfälle** (live, je einzeln): falscher Ø in der Gegenprobe von `EINBAU_ACHSE` (Mangel `einbau:EINBAU_ACHSE`);
   Körperzahl 1 statt 2 (Mangel `koerper`); zu lange Flanschschraube (Mangel `gewinde:flanschschraube.<i>`). Ohne SolidWorks
   (*nachgezogen bei der Planung*, die SHA-256-Prüfung läuft vor dem Import): Original geändert
@@ -468,13 +483,17 @@ Vor jedem neuen API-Aufruf `swki api methode` / `swki api enum`; nur Aufrufe aus
 - **S15c Bezugsgeometrie an Importflächen:** Achse aus Zylinderfläche, Ebene deckungsgleich zu ebener Fläche, Ebene durch Achse und
   Punkt (Bauweise), Umbenennen, Auswahl per Name in einer Baugruppe.
 - **S15d Masse:** `IMassProperty2.GetOverrideOptions` → `OverrideMass`, `SetOverrideMassValue` (seit 2020); Wirkung nach Speichern
-  und Neuöffnen; Gesamtmasse einer Baugruppe mit dem Teil.
+  und Neuöffnen; Gesamtmasse einer Baugruppe mit dem Teil. *Nachgezogen bei der Umsetzung:* Der Spike wich ab (die Überschreibung
+  wirkt nur mit ausgewählten Körpern, §6.3); der Weg ist gemessen.
 - **S15e Testdaten:** Baugruppe als STEP per `SaveAs3`; Re-Import als Mehrkörperteil mit 2 Körpern; Kernloch sichtbar; Unterschied
   zweier Exporte (nur Kopfzeile?).
 - **S15f Baugruppe:** Komponente aus dem Kaufteil, Verknüpfungen auf `EINBAU_*`, Gewindeachse; Kollision Schraube ↔ Kaufteil
   (Ringvolumen gegen Soll); keine Paare innerhalb des Kaufteils.
 - **S15g Speicher und Zeit:** Import, Referenzen, Prüfung des Musters; dazu ein größeres Modell (die Abnahmedatei, wenn der
-  Nutzer sie schon gegeben hat, sonst ein erzeugtes Modell mit vielen Flächen); Private Bytes mit 0,5-s-Abtastung.
+  Nutzer sie schon gegeben hat, sonst ein erzeugtes Modell mit vielen Flächen); Private Bytes mit 0,5-s-Abtastung. *Nachgezogen
+  bei der Umsetzung:* Der erste STEP-Import einer SolidWorks-Sitzung kostete +1843 MB Private Bytes (Spitze 3,2–4,4 GB bei kleinen
+  Dateien, Aufnahme mit Bildern bis ~5,4 GB), die Importzeit wird von der Erstladung bestimmt (Muster 4,9 s kalt, 0,75 s warm;
+  GPLE60 5,3 s bei 55 Flächen); Hinweis im Skill `kaufteile`. Das „größere Modell“ ist der GPLE60 (klein, 0,082 MB).
 - **S15h Bilder:** Bezugsachsen/-ebenen in Screenshots sichtbar (Anzeigeoptionen nur für das eigene Dokument).
 
 ## 13. Tests

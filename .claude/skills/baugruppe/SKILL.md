@@ -16,7 +16,8 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   (Skill `kaufteile`; Regeln für Baugruppen in Abschnitt 8 dieses Skills).
 
 ## 2. Baugruppen-Spec
-- `komponenten`: `id`, `quelle` (`{teil: <datei.yaml>}` | `{normteil: "ISO 4762 M8x30", variante?}`), genau eine
+- `komponenten`: `id`, `quelle` (`{teil: <datei.yaml>}` | `{normteil: "ISO 4762 M8x30", variante?}` | `{kaufteil: "<Hersteller> <Bestellnummer>"}`
+  Skill `kaufteile`, Abschnitt 8), genau eine
   `fixiert: true` (ihr Ursprung = Baugruppenursprung), `je_position: {komponente, feature}` für eine Instanz je
   Position einer `normbohrung`/`bohrung` (Instanzen `<id>.1 …`).
 - `verknuepfungen`: `deckungsgleich`, `konzentrisch`, `parallel`, `senkrecht`, `abstand` (`wert`), `winkel` (`wert`).
@@ -65,12 +66,13 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
     Ausrichtung oder Reihenfolge nachbessern; „kehrt die Ausrichtung von … um“ siehe Abschnitt 2.
   - `SCHLIESSEN_FEHLER`: Schließen eines Dokuments nach dem Bau scheitert (ohne früheren Fehler); SolidWorks prüfen
     (offene Dokumente, Speicher), neu bauen.
-  - Normteil-Codes wie im Skill `normteile`.
+  - Normteil-Codes wie im Skill `normteile`, Kaufteil-Codes (`KAUFTEIL_*`) wie im Skill `kaufteile`, Abschnitt 5.
 - **`MANUELL_GEAENDERT`:** jemand hat Dateien des letzten Laufs geändert. `swki aenderungen <spec>` zeigt die
   Parameterdifferenz. Dem Nutzer zeigen und fragen (eine Frage, Empfehlung „übernehmen“): übernehmen → Spec ändern,
   validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen` (verweigert mit
   `UEBERNAHME_OHNE_NEUE_FREIGABE`, solange die Freigabe nicht neuer als der Lauf ist); verwerfen → nur auf
-  ausdrückliche Anweisung `swki bauen --verwerfen`. Beide Schalter nie zugleich.
+  ausdrückliche Anweisung `swki bauen --verwerfen`. Beide Schalter nie zugleich. An der Kopie eines **Kaufteils**
+  (Herstellergeometrie, importiert) gibt es kein „übernehmen“: nur verwerfen, und zwar erst nach Nutzer-OK.
 - `swki pruefen <baugruppe.yaml>` → Prüfbericht mit `verknuepfungen`, `bestimmtheit`, `stueckliste`, `kollision`,
   `gewinde:<schraube>` (Einschraublänge, Volumen ist/soll), `mass:*`, `huellquader`, Teilprüfungen
   `<komponente>: <prüfung>`.
@@ -163,7 +165,11 @@ Nicht genormte Kaufteile kommen aus dem Katalog (Skill `kaufteile`). Spec:
   Prüfer-Urteil haben (`KAUFTEIL_NICHT_FREIGEGEBEN`, `KAUFTEIL_UNGEPRUEFT` als Befunde von `validieren`).
 - Referenzen nur `{komponente, referenz: EINBAU_*}` (Namen aus dem Eintrag) und `{komponente, gewinde, instanz, achse: true}`
   (Achse einer Gewindeposition); nie `feature`, `ebene` oder `nahe` in fremder Geometrie. `je_position: {komponente,
-  gewinde}` erzeugt eine Instanz je Gewindeposition; meist genügt aber `je_position` auf die Bohrungen des Gegenstücks.
+  gewinde}` erzeugt eine Instanz je Gewindeposition (in der Reihenfolge der `positionen` des Eintrags); meist genügt aber
+  `je_position` auf die Bohrungen des Gegenstücks. `{gewinde, instanz}` und `je_position: {gewinde}` sind unit-getestet,
+  aber noch nicht live erprobt – erster Einsatz mit Prüfer und Sichtprobe.
+- Bei `konzentrisch` auf `EINBAU_ACHSE` eines Kaufteils keine `ausrichtung` angeben (die Achsrichtung legt SolidWorks fest,
+  Spec 3c §4.2); die Orientierung legt die Anlagefläche (`ebene`) fest.
 - Reihenfolge wie bei Normteilen: Anlagefläche (`deckungsgleich` mit `ausrichtung`), dann Achse (`konzentrisch`), dann die
   Drehlage (`parallel`/`winkel` auf die `ebene_durch_achse`). Mit Drehlage `drehung_sperren: false` an der Achse.
 - Passung: ISO 4762 nur in Kaufteil-Gewinde gleicher Größe (`validieren`). `pruefen` rechnet die Gewindepaarung mit der
