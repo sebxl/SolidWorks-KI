@@ -2321,9 +2321,10 @@ durch:
 In `CLAUDE.md` ersetzen:
 
 ```markdown
-Stand: Stufe 3c (Kaufteile, STEP-Import) umgesetzt – Ergebnisse: docs/stufe3c/ergebnisse.md (davor 4b:
-docs/stufe4b/ergebnisse.md). Nächste Schritte zur Wahl: Formschräge, Stufe 4c (Nut- und Kurvenverknüpfung), Paket
-„Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
+Stand: Stufe 3c (Kaufteile, STEP-Import) umgesetzt – Ergebnisse: docs/stufe3c/ergebnisse.md. Nächster Schritt
+(Nutzerwahl): Paket Formschräge umsetzen – Plan docs/superpowers/plans/2026-10-07-formschraege.md, Übergabe
+docs/superpowers/uebergabe-2026-10-08-formschraege-umsetzung.md. Danach zur Wahl: Stufe 4c (Nut- und
+Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 ```
 
 durch:

@@ -1,9 +1,10 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Stufe 3c (Kaufteile, STEP-Import) umgesetzt – Ergebnisse: docs/stufe3c/ergebnisse.md (davor 4b:
-docs/stufe4b/ergebnisse.md). Nächste Schritte zur Wahl: Formschräge, Stufe 4c (Nut- und Kurvenverknüpfung), Paket
-„Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
+Stand: Stufe 3c (Kaufteile, STEP-Import) umgesetzt – Ergebnisse: docs/stufe3c/ergebnisse.md. Nächster Schritt
+(Nutzerwahl): Paket Formschräge umsetzen – Plan docs/superpowers/plans/2026-10-07-formschraege.md, Übergabe
+docs/superpowers/uebergabe-2026-10-08-formschraege-umsetzung.md. Danach zur Wahl: Stufe 4c (Nut- und
+Kurvenverknüpfung), Paket „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
