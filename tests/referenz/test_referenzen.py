@@ -44,6 +44,7 @@ def bereite_vor(ordner: str) -> None:
     ("zahnstangentrieb", "antriebswelle.yaml"),
     ("zahnstangentrieb", "zahnstangentrieb.yaml"),
     ("motorhalter", "motorhalter.yaml"),
+    ("zentrieraufnahme", "zentrieraufnahme.yaml"),
 ])
 def test_referenz_besteht(capsys, tmp_path, ordner, spec):
     auftrag = tmp_path / f"REF-{ordner}"
