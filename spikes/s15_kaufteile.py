@@ -2,7 +2,8 @@
 Baugruppe, Zeit und Speicher, Bilder (Spec 3c §12). Kein Produktionscode; die Aufrufe sind im API-Index nachgeschlagen.
 
 e Testdaten: Muster-Baugruppe tests/referenz/motorhalter/muster/gm42.yaml in einer Kopie validieren, freigeben, bauen;
-  zweimal per SaveAs3 als STEP exportieren und vergleichen; erste Datei → muster/gm42-10.step (wird committet).
+  zweimal per SaveAs3 als STEP exportieren und vergleichen; erste Datei → muster/gm42-10.step (wird committet; eine
+  vorhandene Datei bleibt unangetastet, überschrieben wird sie nur mit --step-neu).
 a Import: GetImportFileData + LoadFile4 (4 Parameter), 3D Interconnect aus, Strukturabbildung Mehrkörperteil (2),
   keine automatische Importdiagnose; Optionen vorher/während/nachher; Rückfall OpenDoc6.
 b Diagnose: Körper, IBody2.Check3, Flächenkörper, Features (Typ, Is3DInterconnectFeature), GetPartBox, Volumen, Zeit je
@@ -16,10 +17,11 @@ f Baugruppe: Komponente aus dem gespeicherten Teil, FeatureByName der Bezugsgeom
 g Speicher (Private Bytes) je Schritt.
 h Bilder mit eingeblendeten Bezugsachsen/-ebenen (swDisplayAxes 4, swDisplayPlanes 5 am eigenen Dokument).
 
-Aufruf: .venv\\Scripts\\python.exe -m spikes.s15_kaufteile
+Aufruf: .venv\\Scripts\\python.exe -m spikes.s15_kaufteile [--step-neu]
 """
 
 import shutil
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -75,7 +77,10 @@ def _testdaten(app, r) -> dict:
     a, b = (p.read_text(encoding="latin-1").splitlines() for p in exporte)
     unterschiede = [(i, x, y) for i, (x, y) in enumerate(zip(a, b)) if x != y]
     ziel = MUSTER / "gm42-10.step"
-    shutil.copy2(exporte[0], ziel)
+    if ziel.exists() and "--step-neu" not in sys.argv:
+        e["step_nicht_ueberschrieben"] = True  # committete Test-STEP (B4) schützen
+    else:
+        shutil.copy2(exporte[0], ziel)
     e |= {"zeilen": len(a), "unterschiede": len(unterschiede) + abs(len(a) - len(b)), "beispiele": unterschiede[:5],
           "datei": str(ziel), "groesse_kb": round(ziel.stat().st_size / 1024, 1), "sha256": sha256_datei(ziel),
           "privat_mb_nachher": _mb(app)}
