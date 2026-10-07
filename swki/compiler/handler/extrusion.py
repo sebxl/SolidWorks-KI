@@ -26,7 +26,9 @@ ENDE = {"blind": 0, "durch_alles": 1, "bis_flaeche": 4, "versatz_von_flaeche": 5
 MARKE_ZIELFLAECHE = 1  # Endbedingungs-Referenz (Spike S10, Frage 6)
 VERSATZ_WEG_VON_SKIZZE = False  # OffsetReverse1: False = Versatz zur Skizze hin (Spike S10, Frage 6)
 VERSATZ_MASS = "D1"  # Maß des Versatzes am Feature (Spike S10, Frage 6)
-DDIR_KLEINER = {"extrusion": True, "schnitt": True}  # Ddir1 (True = nach innen) für querschnitt "kleiner" (Spike S16, Frage 1)
+# Ddir1 für querschnitt "kleiner": False bei Aufsatz und Schnitt, unabhängig von umkehren (Spike S16, Frage 1 – True baut
+# den Querschnitt "groesser", entgegen der API-Beschreibung "inward")
+DDIR_KLEINER = {"extrusion": False, "schnitt": False}
 # Maß des Formschrägenwinkels am Feature je Endbedingung: bei allen D3 (Spike S16, Frage 4; D2 gibt es nicht)
 WINKEL_MASS = {"blind": "D3", "mittig": "D3", "versatz_von_flaeche": "D3", "durch_alles": "D3", "bis_flaeche": "D3"}
 OHNE_SCHRAEGE = (False, False, 0.0)  # (Dchk1, Ddir1, Dang1 in rad)

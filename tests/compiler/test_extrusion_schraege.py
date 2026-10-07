@@ -57,6 +57,11 @@ def test_ohne_schraege_unveraendert(aufruf):
     assert (args[2], args[7], args[9], args[11]) == (True, False, False, 0.0)
 
 
+def test_ddir_kleiner_aus_spike():
+    # Spike S16, Frage 1: Ddir1 True baut bei Aufsatz und Schnitt (auch mit umkehren) den Querschnitt "groesser"
+    assert DDIR_KLEINER == {"extrusion": False, "schnitt": False}
+
+
 def test_schraege_sw():
     ctx = _ctx(W=15)
     assert schraege_sw(ctx, _f("extrusion", None)) == OHNE_SCHRAEGE
