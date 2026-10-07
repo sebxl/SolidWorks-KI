@@ -233,7 +233,7 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     for n in a["geaendert"]:
         if n in sw_dateien:
             continue
-        hinweis = ("keine Spezifikation zu dieser Datei (Normteil-Kopie)" if n.lower().endswith(_SW_DATEIEN)
+        hinweis = ("keine Spezifikation zu dieser Datei (Normteil- oder Kaufteil-Kopie)" if n.lower().endswith(_SW_DATEIEN)
                    else "Datei geändert (nicht ausgelesen)")
         ergebnis.append({"datei": n, "parameter": [], "hinweis": hinweis})
     return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": ergebnis, "fehlend": a["fehlend"]}

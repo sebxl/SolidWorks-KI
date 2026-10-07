@@ -7,7 +7,9 @@ from swki.compiler import sw
 from swki.compiler.anker import RICHTUNGEN, AnkerFehler, Flaeche, laenge, skalar, zylinder_zu_punkten
 from swki.compiler.fehler import REFERENZ_MEHRDEUTIG, REFERENZ_NICHT_GEFUNDEN
 from swki.compiler.skizze import STANDARD
-from swki.compiler.topologie import flaechen, kante_aus, loese_flaeche, mit_abstand, referenz_geometrie
+from swki.compiler.topologie import (flaeche_aus, flaechen, kante_aus, koerper, loese_flaeche, mit_abstand,
+                                     referenz_geometrie)
+from swki.kaufteile.ortung import orte_gewinde
 from swki.pruefung.geometrie import Messgeometrie
 from swki.verzahnung import verzahnung_im_teil
 
@@ -78,9 +80,31 @@ def kopplung_referenz(ctx, fid: str) -> TeilReferenz:
     raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"{fid}: keine Kante entlang der Zahnreihe")
 
 
+def _alle_flaechen(ctx) -> list[Flaeche]:
+    """Flächen aller Körper des Teildokuments; je Kontext einmal gesammelt (ein COM-Aufruf je Fläche), denn das Dokument
+    ändert sich in diesem Kontext nicht mehr (Kaufteil: aus der Datei)."""
+    zwischen = getattr(ctx, "_alle_flaechen", None)
+    if zwischen is None:
+        zwischen = [flaeche_aus(f) for b in koerper(ctx.model) for f in (b.GetFaces() or ())]
+        ctx._alle_flaechen = zwischen
+    return zwischen
+
+
+def gewinde_referenz(ctx, gruppe: str, instanz: int) -> TeilReferenz:
+    """Zylinderfläche der Gewindeposition eines Kaufteils (Spec 3c §8.1): Achse durch den Eintrittspunkt der Gruppe aus
+    der Teilansicht (ctx.spec["gewinde"]), gesucht über die Flächen aller Körper."""
+    g = ctx.spec["gewinde"][gruppe]
+    w = {**g, "positionen": [g["positionen"][instanz - 1]]}
+    [o] = orte_gewinde(_alle_flaechen(ctx), gruppe, w, ctx.tol_mm)
+    return TeilReferenz(o.flaeche.objekt, _geometrie(o.flaeche), False)
+
+
 def loese_im_teil(ctx, seite: dict) -> TeilReferenz:
     """seite ohne "komponente": {referenz} | {ebene} | {nahe} | {feature, instanz, achse} | {feature, instanz, flaeche} |
-    {feature, flaeche}. ctx ist der Kontext des Teildokuments (Bau: Features des Laufs; Normteil: aus der Datei)."""
+    {feature, flaeche} | {gewinde, instanz, achse} (Kaufteil). ctx ist der Kontext des Teildokuments (Bau: Features des
+    Laufs; Norm- und Kaufteil: aus der Datei)."""
+    if "gewinde" in seite:
+        return gewinde_referenz(ctx, seite["gewinde"], seite["instanz"])
     if "referenz" in seite:
         if seite["referenz"] not in ctx.ergebnisse:
             raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"Referenz {seite['referenz']!r} fehlt im Teil")

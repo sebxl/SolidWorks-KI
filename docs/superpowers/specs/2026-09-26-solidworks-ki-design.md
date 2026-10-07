@@ -84,7 +84,9 @@ Versionsregeln:
 
 - Die Spezifikation ist die Quelle; SolidWorks-Dateien aus Aufträgen kommen nicht ins Git.
 - Eigene Normteil-Dateien werden nur auf dem 2025-Rechner gespeichert (2026-Dateien sind in 2025
-  nicht lesbar). `swki normteil aufnehmen` verweigert das Speichern in die Bibliothek unter SW > 2025.
+  nicht lesbar). **Stand 3a/3c:** Normteil- und Kaufteil-Bibliothek sind Caches getrennt je SW-Jahr
+  (`<bibliothek>/<sw_jahr>/`); maßgeblich sind Normtabelle/Vorlage bzw. Katalogeintrag und Original
+  (`config/rechner.yaml`: `normteilbibliothek`, `kaufteilbibliothek`).
 - Compiler-Code verwendet nur API-Aufrufe, die in SW 2025 verfügbar sind (siehe 7).
 - Namensschema für Dateien und Custom Properties ist in `config/standard.yaml` konfigurierbar
   (Vorgabe: `<auftrag>_<name>`; Eigenschaften Benennung, Material, Ersteller, Auftrag).
@@ -180,7 +182,8 @@ python -m swki validieren <spec>            # Schema + Plausibilität, ohne Soli
 python -m swki freigeben  <spec>            # schreibt freigabe.json (Prüfsumme)
 python -m swki bauen      <spec> [--lauf n]
 python -m swki pruefen    <spec> --lauf n
-python -m swki normteil suchen|aufnehmen ...
+python -m swki normteil hole|tabellen-pruefen|liste|muster|urteil ...
+python -m swki kaufteil untersuchen|muster|urteil|hole|liste ...   # Stufe 3c
 python -m swki api suche|methode|enum|pruefe-code ...
 ```
 
@@ -265,6 +268,8 @@ Seitentext); Nachrüstung bei Bedarf.
 
 **Stand Stufe 3a (2026-10-02):** Genormte Teile werden selbst konstruiert, aus Normtabelle und Bauvorlage, prüfen sich selbst und füllen eine lokale Bibliothek – siehe [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md). Katalog je Hersteller und `normteil aufnehmen` gelten nur noch für nicht genormte Kaufteile (eigenes Paket bei Bedarf); der Toolbox-Rückfall entfällt.
 
+**Stand Stufe 3c:** Nicht genormte Kaufteile kommen als STEP des Herstellers in einen Katalog (je Kaufteil ein Eintrag `art: kaufteil` unter `swki/wissen/kaufteile/`, Nutzerfreigabe je Eintrag, Prüfer-Urteil, Cache je SW-Jahr) – siehe [2026-10-06-kaufteile-step-import-design.md](2026-10-06-kaufteile-step-import-design.md). `swki normteil aufnehmen` entfällt; die Befehle heißen `swki kaufteil …`. Die Absätze unten sind der Ausgangsentwurf.
+
 - Katalog `normteile/katalog/<hersteller>.yaml`: `id`, `benennung`, `typ`, `kennmasse`,
   `quelle` (`datei` oder `toolbox`), `einbau` (Zuordnung Einbaureferenz → Geometrie im Teil),
   `eigenschaften` (Hersteller, Bestellnummer).
@@ -289,7 +294,8 @@ Seitentext); Nachrüstung bei Bedarf.
 - **Skills**
   - `konstruieren`: Eingabe → Spezifikation → validieren → Rückfragen → Freigabe → bauen →
     prüfen → nachbessern → Bericht.
-  - `normteile`: suchen, nachfragen, aufnehmen.
+  - `normteile`: abrufen, nachfragen, Normtabellen erweitern (Stufe 3a).
+  - `kaufteile`: STEP untersuchen, Belege, Katalogeintrag, Freigabe, Prüfer, holen (Stufe 3c).
   - `compiler-erweitern` – **wird von Claude selbst ausgelöst**, wenn (a) eine Lücke zum zweiten
     Mal auftritt und ein bestandenes Skript existiert, (b) einem Handler eine Option fehlt,
     (c) ein Handler wiederholt am selben Fehler scheitert. Neue Feature-Typen laufen beim ersten Mal
@@ -322,6 +328,7 @@ Normteil-Vorauswahl, Tool-/Skill-Routing. Vor Einsatz klären, welche Daten an T
 | 2c | Normbohrungen (Bohrungsassistent), runde Skizzenkonturen, Endbedingungen „bis Fläche“/„Versatz von Fläche“, kompakter Feature-Baum – Design: [2026-09-29-stufe-2c-design.md](2026-09-29-stufe-2c-design.md) | Referenz *Auswerferhalteplatte* besteht; Buchse und Formplatte bestehen weiter |
 | 3a | Normteile: Normtabellen mit Abgleich, Bauvorlagen, Selbstprüfung, Bibliothek (ISO 4762, 4032, 7089, 8734) – Design: [2026-10-02-stufe-3a-normteile-design.md](2026-10-02-stufe-3a-normteile-design.md) | Tabellen abgeglichen oder begründet gesperrt, Prüfer-Urteile je Vorlage, Stichprobe 20 Teile besteht |
 | 3b | Baugruppen statisch: Standardverknüpfungen, Bestimmtheit, statische Kollision, Änderungserkennung – Design: [2026-10-03-stufe-3b-baugruppen-design.md](2026-10-03-stufe-3b-baugruppen-design.md) | Referenz *Stehlager* besteht (Code-Prüfungen und Prüfer); Buchse, Formplatte und Auswerferhalteplatte bestehen weiter |
+| 3c | Kaufteile: STEP-Import nicht genormter Kaufteile, Katalog (`art: kaufteil`, Belege, Freigabe je Eintrag, Prüfer), Cache je SW-Jahr, Komponentenquelle `kaufteil`, Gewindepaarung im Kaufteil – Design: [2026-10-06-kaufteile-step-import-design.md](2026-10-06-kaufteile-step-import-design.md) | Kaufteil Nanotec GPLE60-2S-32 (echte Herstellerdatei) aufgenommen und Referenz *Motorhalter* besteht (Code-Prüfungen und Prüfer), Negativfälle; bisherige Referenzen bestehen weiter |
 | 4a | Bewegungen: Grenzverknüpfungen, Scharnier, gezählte Freiheitsgrade, `bewegungen`, Bewegungsprüfung (Kollision je Stellung, Grenze, Freiheitsgrad, Endlagen, Paarläufe) – Design: [2026-10-03-stufe-4a-bewegungen-design.md](2026-10-03-stufe-4a-bewegungen-design.md) | Referenz *Linearschlitten* besteht (Code-Prüfungen und Prüfer), vier Negativfälle; Buchse, Formplatte, Auswerferhalteplatte, Stehlager bestehen weiter |
 | 4b | Verzahnung (Feature `verzahnung`: Evolventen-Stirnrad, Zahnstange) und Kopplungen (Zahnrad-, Zahnstangenverknüpfung), Sollweg je Stellung – Design: [2026-10-05-stufe-4b-verzahnung-kopplungen-design.md](2026-10-05-stufe-4b-verzahnung-kopplungen-design.md) | Teil-Referenzen *Zahnstange*, *Ritzelwelle*, *Antriebswelle* und Referenz *Zahnstangentrieb* bestehen (Code-Prüfungen und Prüfer), fünf Negativfälle; Buchse, Formplatte, Auswerferhalteplatte, Stehlager, Linearschlitten bestehen weiter |
 | 4c | Mechanische Kopplungen: Nut- und Kurvenverknüpfung | Referenz offen (allgemeine Konstruktion, z. B. Kulisse mit Nut oder Nocken mit Stößel) |

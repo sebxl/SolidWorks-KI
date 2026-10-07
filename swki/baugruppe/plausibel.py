@@ -1,4 +1,4 @@
-"""Plausibilität einer Baugruppen-Spezifikation (Spec 3b §5, 4a §5, 4b §5.2), ohne SolidWorks."""
+"""Plausibilität einer Baugruppen-Spezifikation (Spec 3b §5, 4a §5, 4b §5.2, 3c §8.2), ohne SolidWorks."""
 
 import math
 
@@ -23,6 +23,11 @@ def _features(q: Quelle) -> dict:
     return {f["id"]: f for f in q.spec["features"]}
 
 
+def je_ziel(je: dict) -> str:
+    """"deckel.f4" bzw. "motor.flansch" (Gewindegruppe eines Kaufteils) für Meldungen."""
+    return f"{je['komponente']}.{je.get('feature', je.get('gewinde'))}"
+
+
 def _instanz_befunde(kid: str, k: str, pfad: str, spec: dict, quellen: dict) -> list[dict]:
     je = je_position(spec, k)
     if je and kid == k:
@@ -30,8 +35,28 @@ def _instanz_befunde(kid: str, k: str, pfad: str, spec: dict, quellen: dict) -> 
     if not je and kid != k:
         return [_b(f"{pfad}.komponente", f"{k} hat keine Instanzen (ohne .<n> angeben)")]
     if je and int(kid.split(".")[1]) > anzahl_positionen(spec, quellen, k):
-        return [_b(f"{pfad}.komponente", f"{kid}: {je['komponente']}.{je['feature']} hat nicht so viele Positionen")]
+        return [_b(f"{pfad}.komponente", f"{kid}: {je_ziel(je)} hat nicht so viele Positionen")]
     return []
+
+
+def _kaufteil_referenz_befunde(seite: dict, pfad: str, q: Quelle, k: str) -> list[dict]:
+    """Kaufteile nur über Einbaureferenzen oder Gewindepositionen (Spec 3c §8.1), nie über fremde Geometrie."""
+    vorhanden = ", ".join(sorted(q.referenzen))
+    if "referenz" in seite:
+        if seite["referenz"] not in q.referenzen:
+            return [_b(f"{pfad}.referenz", f"{q.kaufteil} hat keine Einbaureferenz {seite['referenz']!r} "
+                                           f"(vorhanden: {vorhanden})")]
+        return []
+    if "gewinde" in seite:
+        g = q.spec["gewinde"].get(seite["gewinde"])
+        if g is None:
+            return [_b(f"{pfad}.gewinde", f"{q.kaufteil} hat keine Gewindegruppe {seite['gewinde']!r} "
+                                          f"(vorhanden: {', '.join(q.spec['gewinde']) or 'keine'})")]
+        if isinstance(seite["instanz"], int) and seite["instanz"] > len(g["positionen"]):
+            return [_b(f"{pfad}.instanz", f"{seite['gewinde']} hat nur {len(g['positionen'])} Positionen")]
+        return []
+    return [_b(pfad, f"{k} ist ein Kaufteil: nur über Einbaureferenzen ({vorhanden}) oder Gewindepositionen "
+                     "({komponente, gewinde, instanz, achse: true})")]
 
 
 def referenz_befunde(seite: dict, pfad: str, quellen: dict[str, Quelle], spec: dict,
@@ -43,6 +68,8 @@ def referenz_befunde(seite: dict, pfad: str, quellen: dict[str, Quelle], spec: d
         return [_b(f"{pfad}.komponente", f"Komponente {kid!r} unbekannt")]
     befunde = _instanz_befunde(kid, k, pfad, spec, quellen) if instanz_id_erlaubt else []
     q = quellen[k]
+    if q.art == "kaufteil":
+        return befunde + _kaufteil_referenz_befunde(seite, pfad, q, k)
     if q.art == "normteil":
         vorhanden = ", ".join(sorted(q.referenzen))
         if "referenz" not in seite:
@@ -56,6 +83,8 @@ def referenz_befunde(seite: dict, pfad: str, quellen: dict[str, Quelle], spec: d
         f = features.get(seite["referenz"])
         if f is None or f["typ"] != "referenz":
             befunde.append(_b(f"{pfad}.referenz", f"{q.datei} hat kein referenz-Feature {seite['referenz']!r}"))
+    elif "gewinde" in seite:
+        befunde.append(_b(f"{pfad}.gewinde", f"{k} ist kein Kaufteil: Gewindepositionen nur bei Kaufteilen"))
     elif "feature" in seite:
         f = features.get(seite["feature"])
         if f is None:
@@ -89,6 +118,12 @@ def _komponenten_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
         if k.get("fixiert"):
             befunde.append(_b(pfad, "eine Komponente mit je_position kann nicht fixiert sein"))
         q = quellen.get(je["komponente"])
+        if "gewinde" in je:
+            if q is None or q.art != "kaufteil":
+                befunde.append(_b(f"{pfad}.komponente", f"{je['komponente']!r} ist kein Kaufteil (gewinde)"))
+            elif je["gewinde"] not in q.spec["gewinde"]:
+                befunde.append(_b(f"{pfad}.gewinde", f"{q.kaufteil} hat keine Gewindegruppe {je['gewinde']!r}"))
+            continue
         if q is None or q.art != "teil" or je_position(spec, je["komponente"]):
             befunde.append(_b(f"{pfad}.komponente", f"{je['komponente']!r} ist kein Eigenteil ohne je_position"))
             continue
@@ -105,6 +140,9 @@ def _ist_eben(seite: dict, quellen: dict[str, Quelle]) -> bool:
         return True
     if "referenz" in seite:
         q = quellen[basis(seite["komponente"])]
+        if q.art == "kaufteil":
+            w = q.eintrag["einbau"].get(seite["referenz"])
+            return w is not None and "zylinder" not in w
         if q.art == "normteil":
             return "ACHSE" not in seite["referenz"]
         f = next((x for x in q.spec["features"] if x["id"] == seite["referenz"]), None)
@@ -177,12 +215,13 @@ def _je_befunde(v: dict, pfad: str, spec: dict) -> list[dict]:
     for s in ("a", "b"):
         if v[s].get("instanz") != "je":
             continue
-        ziel = {"komponente": v[s]["komponente"], "feature": v[s].get("feature")}
+        art = "gewinde" if "gewinde" in v[s] else "feature"
+        ziel = {"komponente": v[s]["komponente"], art: v[s].get(art)}
         if not je:
             befunde.append(_b(f"{pfad}.{s}.instanz", "instanz: je nur zusammen mit einer Komponente mit je_position"))
         elif ziel not in je.values():
-            befunde.append(_b(f"{pfad}.{s}.instanz", "instanz: je nur auf das Feature des je_position "
-                                                     f"({', '.join(f'{x['komponente']}.{x['feature']}' for x in je.values())})"))
+            befunde.append(_b(f"{pfad}.{s}.instanz", "instanz: je nur auf das Feature bzw. die Gewindegruppe des "
+                                                     f"je_position ({', '.join(je_ziel(x) for x in je.values())})"))
     return befunde
 
 

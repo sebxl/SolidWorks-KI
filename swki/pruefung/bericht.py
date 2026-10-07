@@ -9,6 +9,13 @@ def _zelle(wert) -> str:
     return "–" if wert is None else str(wert)
 
 
+def _gewindemodelle(werte: dict | None) -> str:
+    """„flansch: kernloch Ø 4.134“ je Gruppe (Spec 3c §4.3); ohne Gewindegruppen „–“."""
+    teile = [f"{g}: {m['modell']} Ø {m['durchmesser']:g}" if isinstance(m, dict) and m.get("durchmesser") is not None
+             else f"{g}: unbekannt" for g, m in sorted((werte or {}).items())]
+    return ", ".join(teile) or "–"
+
+
 def _grenze_text(wert) -> str:
     return {True: "geht durch", False: "wirkt", None: "–"}[wert]
 
@@ -55,6 +62,13 @@ def bericht_markdown(
         zeilen += ["", "## Normteile", "", "| Schlüssel | neu gebaut | Bibliotheksprüfsumme |", "|---|---|---|"]
         zeilen += [f"| {s} | {'ja' if e.get('gebaut') else 'nein'} | {_zelle(e.get('pruefsumme'))} |"
                    for s, e in sorted(letzter["normteile"].items())]
+    if letzter.get("kaufteile"):
+        zeilen += ["", "## Kaufteile", "",
+                   "| Kaufteil | neu aufgenommen | Cache-Prüfsumme | Masse | Kennmaße | Gewindemodell (Ø mm) |",
+                   "|---|---|---|---|---|---|"]
+        zeilen += [f"| {e.get('kaufteil', s)} | {'ja' if e.get('gebaut') else 'nein'} | {_zelle(e.get('pruefsumme'))} | "
+                   f"{_zelle(e.get('masse'))} | {_zelle(e.get('kennmasse'))} | {_gewindemodelle(e.get('gewinde_modell'))} |"
+                   for s, e in sorted(letzter["kaufteile"].items())]
     if letzter.get("gewindepaarungen"):
         zeilen += ["", "## Gewindepaarungen", "",
                    "| Schraube | Teil | Bohrung | Einschraublänge (mm) | Gewindetiefe (mm) | Volumen ist / soll (mm³) |",

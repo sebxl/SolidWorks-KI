@@ -54,3 +54,12 @@ def test_normteilbibliothek_optional(tmp_path):
     assert lade_rechner(pfad).normteilbibliothek is None
     pfad.write_text(grund + "normteilbibliothek: C:/bib\n", encoding="utf-8")
     assert lade_rechner(pfad).normteilbibliothek == Path("C:/bib")
+
+
+def test_kaufteilbibliothek_optional(tmp_path):
+    pfad = tmp_path / "rechner.yaml"
+    grund = "sw_jahr: 2025\ninstallationsordner: C:/SW\nvorlage_teil: C:/t.prtdot\narbeitsordner: C:/arbeit\n"
+    pfad.write_text(grund, encoding="utf-8")
+    assert lade_rechner(pfad).kaufteilbibliothek is None
+    pfad.write_text(grund + "kaufteilbibliothek: C:/kauf\n", encoding="utf-8")
+    assert lade_rechner(pfad).kaufteilbibliothek == Path("C:/kauf")

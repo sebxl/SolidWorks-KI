@@ -61,6 +61,12 @@ def gewindebohrungen_teil(teil_spec: dict, protokoll_teil: dict) -> list[dict]:
             for i, p in enumerate(punkte.get(f["id"], []), start=1)]
 
 
+def gewindebohrungen_kaufteil(teil_spec: dict) -> list[dict]:
+    """Eintrittspunkte (STEP-Koordinaten = Teilkoordinaten) aller Gewindepositionen eines Kaufteils (Spec 3c §6.4)."""
+    return [{"feature": g, "instanz": i, "punkt": tuple(p)}
+            for g, w in teil_spec.get("gewinde", {}).items() for i, p in enumerate(w["positionen"], start=1)]
+
+
 def _geometrie(ctx, punkte: list[dict]) -> dict:
     ergebnis = {}
     for p in punkte:
@@ -104,8 +110,10 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         if q.norm == "ISO 4762":
             geo = geometrie.get(q.schluessel, {}).get(messpunkt_schluessel(KOPFAUFLAGE), "Kopfauflage fehlt")
             schrauben[i.id] = _in_baugruppe(geo, transformationen[i.id])
-        elif q.art == "teil":
-            for b in gewindebohrungen_teil(q.spec, protokoll["teile"][q.datei]):
+        elif q.art in ("teil", "kaufteil"):
+            liste = (gewindebohrungen_teil(q.spec, protokoll["teile"][q.datei]) if q.art == "teil"
+                     else gewindebohrungen_kaufteil(q.spec))
+            for b in liste:
                 bohrungen.append({"teil": i.id, "feature": b["feature"], "instanz": b["instanz"],
                                   "eintritt": transformiere(Messgeometrie("punkt", b["punkt"]), transformationen[i.id])})
     interferenzen = [{"paar": sorted(namen.get(n, n) for n in paar), "volumen": volumen}
@@ -125,7 +133,8 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         komponenten=zustand, stueckliste=stueckliste, interferenzen=interferenzen,
         box=sw_baugruppe.huellquader(asm), masse_kg=sw_baugruppe.masse_kg(asm), eigenschaften=lies_eigenschaften(asm),
         messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, teilberichte=teilberichte,
-        lagen=transformationen, kopplungen=gelesen, unterdrueckt=[f.Name for f in mates if sw_baugruppe.ist_unterdrueckt(f)])
+        lagen=transformationen, kopplungen=gelesen, unterdrueckt=[f.Name for f in mates if sw_baugruppe.ist_unterdrueckt(f)],
+        gewinde_modelle={s: k.get("gewinde_modell", {}) for s, k in protokoll.get("kaufteile", {}).items()})
 
 
 def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: BaugruppenMesswerte, ordner: Path) -> dict:
@@ -224,7 +233,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             finally:
                 if not behalten:
                     sw.schliesse(app, model)
-        for q in {q.schluessel: q for q in bg.quellen.values() if q.art == "normteil"}.values():
+        for q in {q.schluessel: q for q in bg.quellen.values() if q.art in ("normteil", "kaufteil")}.values():
             if q.schluessel not in bedarf and q.schluessel not in offen_halten:
                 continue
             pfad = ordner / dokument_name(q, auftrag, standard)
@@ -257,6 +266,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         **bewerte_baugruppe(bg.spec, bg.quellen, messwerte, standard,
                             stueckliste_soll(bg.spec, freigegebene_quellen(bg), auftrag, standard)),
         "normteile": protokoll.get("normteile", {}), "bilder": bilder,
+        **({"kaufteile": protokoll["kaufteile"]} if protokoll.get("kaufteile") else {}),
     }
     if bewegung is not None:
         bericht = ergaenze_bericht(bericht, *bewegung)

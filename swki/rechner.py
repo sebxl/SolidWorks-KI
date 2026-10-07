@@ -93,6 +93,7 @@ def erkenne(reg: Registry, jahr: int | None = None) -> Rechner:
         materialdatenbank=Path(mat) if mat else None,
         arbeitsordner=swki_home() / "arbeit",
         normteilbibliothek=swki_home() / "normteile",
+        kaufteilbibliothek=swki_home() / "kaufteile",
     )
 
 

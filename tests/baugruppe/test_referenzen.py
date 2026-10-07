@@ -220,3 +220,54 @@ def test_verknuepfe_prueft_die_ausrichtung_vor_der_gleichung(asm):
     with pytest.raises(BauFehler, match="v2 kehrt die Ausrichtung von v1 um"):
         sw_baugruppe.verknuepfe(asm, v2, None, None, {"S": 5}, gesetzt)
     assert gleichungen == [] and asm.geloescht == ["v2"]  # keine verwaiste Gleichung "D1@v2"
+
+
+def _gewinde_ctx(monkeypatch):
+    """Attrappen-Kontext eines Kaufteils: Gewindegruppe `flansch` (M5, Normale −y) mit zwei Positionen; je Position ein
+    Kernloch (Ø 4,134) und, bei Position 1, eine größere koaxiale Fläche (Ø 5,0, z. B. Senkung); dazu eine fremde Fläche
+    ohne Achse durch die Positionen. Die Körper zählen die Flächenabfragen."""
+    pos1, pos2 = (21.2, 0.0, 21.2), (-21.2, 0.0, 21.2)
+    y = (0.0, -1.0, 0.0)
+    flaechen = [Flaeche("zylinder", pos1, achse=y, radius=2.067, objekt="kern1"),
+                Flaeche("zylinder", pos1, achse=y, radius=2.5, objekt="weit1"),
+                Flaeche("zylinder", pos2, achse=y, radius=2.067, objekt="kern2"),
+                Flaeche("zylinder", (0.0, 0.0, 0.0), achse=y, radius=1.0, objekt="fremd"),
+                Flaeche("ebene", (0.0, 0.0, 0.0), normale=y, objekt="plan")]
+    abfragen = []
+
+    class _Koerper:
+        def GetFaces(self):
+            abfragen.append(1)
+            return [f.objekt for f in flaechen]
+
+    monkeypatch.setattr(referenzen, "koerper", lambda model: [_Koerper()])
+    monkeypatch.setattr(referenzen, "flaeche_aus", lambda face: next(f for f in flaechen if f.objekt == face))
+    gruppe = {"groesse": "M5", "gewindetiefe": 8, "tiefe": 10, "normale": [0, -1, 0],
+              "positionen": [list(pos1), list(pos2)]}
+    ctx = Kontext(None, object(), {"parameter": {}, "gewinde": {"flansch": gruppe}}, Path("kaufteil.sldprt"), 0.1)
+    return ctx, abfragen
+
+
+def test_gewinde_referenz_waehlt_instanz_und_kleinsten_radius(monkeypatch):
+    ctx, _ = _gewinde_ctx(monkeypatch)
+    r1 = loese_im_teil(ctx, {"gewinde": "flansch", "instanz": 1})
+    r2 = loese_im_teil(ctx, {"gewinde": "flansch", "instanz": 2})
+    assert (r1.objekt, r2.objekt) == ("kern1", "kern2")  # kleinster Radius gewinnt (nicht die Senkung weit1)
+    assert not r1.ist_feature
+    assert r1.geometrie.art == "achse" and r1.geometrie.richtung == (0.0, -1.0, 0.0)
+    assert r2.geometrie.punkt == (-21.2, 0.0, 21.2)
+
+
+def test_gewinde_referenz_sammelt_flaechen_je_kontext_einmal(monkeypatch):
+    ctx, abfragen = _gewinde_ctx(monkeypatch)
+    for i in (1, 2, 1):
+        loese_im_teil(ctx, {"gewinde": "flansch", "instanz": i})
+    assert len(abfragen) == 1
+
+
+def test_gewinde_referenz_ohne_passende_flaeche(monkeypatch):
+    ctx, _ = _gewinde_ctx(monkeypatch)
+    ctx.spec["gewinde"]["flansch"]["positionen"][1] = [50.0, 0.0, 50.0]
+    with pytest.raises(AnkerFehler) as e:
+        loese_im_teil(ctx, {"gewinde": "flansch", "instanz": 2})
+    assert e.value.code == "REFERENZ_NICHT_GEFUNDEN"

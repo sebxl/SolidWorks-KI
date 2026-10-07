@@ -1,0 +1,14 @@
+# Muster-Getriebemotor GM42-10 (Spec 3c §11): Gehäuse (fixiert, Ursprung = Baugruppenursprung) und Welle in der
+# Wellenbohrung (Wellenende y = 5 an deren Grund, freies Ende y = −25). Aus dieser Baugruppe entsteht per SaveAs3 die
+# Test-STEP gm42-10.step (Baugruppen-STEP mit 2 Körpern; Spike S15e).
+art: baugruppe
+name: GM42
+eigenschaften: {Benennung: Muster-Getriebemotor GM42-10}
+komponenten:
+  - {id: gehaeuse, quelle: {teil: gehaeuse.yaml}, fixiert: true}
+  - {id: welle, quelle: {teil: welle.yaml}}
+verknuepfungen:
+  - {id: v1, typ: deckungsgleich, a: {komponente: welle, feature: f1, flaeche: "+y"},
+     b: {komponente: gehaeuse, feature: f4, instanz: 1, flaeche: "-y"}, ausrichtung: entgegengesetzt}
+  - {id: v2, typ: konzentrisch, a: {komponente: welle, referenz: ACHSE},
+     b: {komponente: gehaeuse, feature: f4, instanz: 1, achse: true}, drehung_sperren: true}

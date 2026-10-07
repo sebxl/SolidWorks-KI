@@ -1,0 +1,72 @@
+# Nanotec GPLE60-2S-32: Präzisions-Planetengetriebe, 2-stufig, i = 32, Anbau NEMA 23/24 (echtes Herstellerteil,
+# Nutzerentscheidung 2026-10-06; ersetzt den Muster-Getriebemotor als Katalogeintrag). Original: STEP „GPLE60-2S“ von
+# nanotec.com (gilt für alle 2S-Untersetzungen), Datenblatt: Baureihenübersicht GPLE60 (Seiten 248/249). Beide liegen
+# nur im Quellordner der Kaufteil-Bibliothek, nicht im Git (fehlt das Original: KAUFTEIL_QUELLE_FEHLT mit der URL).
+# STEP-Koordinaten (Diagnose lauf-1): Achse x = 30, y = 30, Richtung z. Motoradapter □ 60 z 0…24, Gehäuse Ø 60
+# z 0…−59,5, Abtriebsflansch z = −59,5 (Normale −z), Zentrierbund Ø 40 bis z −62,5, Absatz Ø 17 bis −64,5, Welle Ø 14 bis
+# −94,5 mit Passfeder 5 (Rücken x = 21, Nut z −67…−92); 4 × M5 (modelliert mit D1 Ø 4,134 nach ISO 724, Mantel 10 lang,
+# Boden ohne ebene Fläche) auf Lochkreis Ø 52 unter 45° zum □ 60. Drei Volumenkörper (Adapter, Gehäuse, Welle).
+# Werkstoff nennt der Hersteller nicht: 1.0503 angenommen (Welle/Verzahnung Stahl); die Masse kommt aus dem Datenblatt.
+# Gewindetiefe nennt das Datenblatt nicht: gewindetiefe/tiefe aus der STEP („nicht belegt“).
+art: kaufteil
+hersteller: Nanotec
+bestellnummer: GPLE60-2S-32
+benennung: Präzisions-Planetengetriebe GPLE60, 2-stufig, i = 32
+original:
+  datei: gple60-2s-32.stp
+  sha256: "b240fd166f19394332c796e2a05cc27a0c7ed14eb500f717012318a203f36aea"
+  bezug:
+    art: url
+    url: "https://www.nanotec.com/fileadmin/files/Datenblaetter/Getriebe/Planetengetriebe_GPLE60/GPLE60-2S.stp"
+    datum: "2026-10-06"
+    hinweis: "Download mit Nutzerfreigabe (85716 Byte); STEP der Baureihe 2S, gilt für alle 2S-Untersetzungen"
+datenblatt:
+  datei: Product_Overview_GPLE60.pdf
+  url: "https://www.nanotec.com/fileadmin/files/Baureihenuebersichten/Getriebe/Product_Overview_GPLE60.pdf"
+koerper: 3
+material: "1.0503"
+masse: {kg: 1.1, beleg: [d2]}
+eigenschaften: {Untersetzung: "32", Motoranbau: "NEMA 23/24", Werkstoffhinweis: "Hersteller ohne Angabe, Masse aus Datenblatt"}
+belege:
+  d1: {art: datenblatt, datei: Product_Overview_GPLE60.pdf,
+       url: "https://www.nanotec.com/fileadmin/files/Baureihenuebersichten/Getriebe/Product_Overview_GPLE60.pdf",
+       seite: 248, hinweis: "Maßbild GPLE60 (Dimensions): Ø14h7, Ø17, Ø40h7, Ø60, □60, 35, 30, 25, 2.5, 3, 5, 16, 4-M5 auf 52"}
+  d2: {art: datenblatt, datei: Product_Overview_GPLE60.pdf,
+       url: "https://www.nanotec.com/fileadmin/files/Baureihenuebersichten/Getriebe/Product_Overview_GPLE60.pdf",
+       seite: 249, hinweis: "Tabelle Versions, Zeile GPLE60-2S-32: L 59,5 mm, L1 24 mm (NEMA 23/24), 1,1 kg"}
+  h1: {art: hersteller, url: "https://www.nanotec.com/us/en/products/901-gple60-2s-32", abgerufen: "2026-10-06",
+       hinweis: "Produktseite: Untersetzung 32, NEMA 23/24, CAD-Download GPLE60-2S – keine Maße (Herkunft, kein Kennmaß)"}
+einbau:
+  EINBAU_ACHSE: {zylinder: {nahe: [37, 30, -79.5], durchmesser: 14, senkrecht_zu: EINBAU_FLANSCH}}
+  EINBAU_FLANSCH: {ebene: {nahe: [30, 5, -59.5], normale: [0, 0, -1]}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [56, 30, -59.5]}}
+gewinde:
+  flansch:
+    groesse: M5
+    gewindetiefe: 10
+    tiefe: 10
+    normale: [0, 0, -1]
+    positionen: [[48.3848, 48.3848, -59.5], [48.3848, 11.6152, -59.5], [11.6152, 11.6152, -59.5], [11.6152, 48.3848, -59.5]]
+pruefung:
+  huellquader: {soll: [60, 60, 118.5], tol: 0.1, beleg: [d1, d2]}
+  volumen: {soll: 258960.557, toleranz_prozent: 0.01}
+  durchmesser_pruefen:
+    - {was: Welle Ø 14h7, nahe: [37, 30, -79.5], soll: 14, tol: 0.018, referenz: EINBAU_ACHSE, beleg: [d1]}
+    - {was: Zentrierbund Ø 40h7, nahe: [50, 30, -61], soll: 40, tol: 0.025, referenz: EINBAU_ACHSE, beleg: [d1]}
+    - {was: Absatz Ø 17, nahe: [38.5, 30, -63.5], soll: 17, referenz: EINBAU_ACHSE, beleg: [d1]}
+    - {was: Gehäuse Ø 60, nahe: [60, 30, -30], soll: 60, referenz: EINBAU_ACHSE, beleg: [d1]}
+  masse_pruefen:
+    - {was: Wellenlänge ab Flansch, von: {referenz: EINBAU_FLANSCH},
+       zu: {flaeche: {nahe: [36, 30, -94.5], normale: [0, 0, -1]}}, soll: 35, beleg: [d1]}
+    - {was: Zentrierbundhöhe, von: {referenz: EINBAU_FLANSCH},
+       zu: {flaeche: {nahe: [30, 15, -62.5], normale: [0, 0, -1]}}, soll: 3, beleg: [d1]}
+    - {was: Getriebelänge L, von: {referenz: EINBAU_FLANSCH},
+       zu: {flaeche: {nahe: [30, 2, 0], normale: [0, 0, -1]}}, soll: 59.5, beleg: [d2]}
+    - {was: Lochkreis Ø 52, von: {gewinde: flansch, instanz: 1}, zu: {gewinde: flansch, instanz: 3}, soll: 52,
+       beleg: [d1]}
+    - {was: Lochabstand benachbart, von: {gewinde: flansch, instanz: 1}, zu: {gewinde: flansch, instanz: 2},
+       soll: 36.77, beleg: [d1]}
+    - {was: Passfederbreite, von: {flaeche: {nahe: [22.2308, 27.5, -79.5], normale: [0, -1, 0]}},
+       zu: {flaeche: {nahe: [22.2308, 32.5, -79.5], normale: [0, 1, 0]}}, soll: 5, beleg: [d1]}
+    - {was: Wellenachse bis Passfederrücken, von: {referenz: EINBAU_ACHSE},
+       zu: {flaeche: {nahe: [21, 30, -79.5], normale: [-1, 0, 0]}}, soll: 9, beleg: [d1]}

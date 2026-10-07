@@ -4,7 +4,8 @@ Die Prüfsumme deckt nur die Anforderungen ab (Parameter, Material, Eigenschafte
 nicht den Bauweg (Features, Anker, Reihenfolge) – den darf Claude beim Nachbessern ändern.
 Zusätzlich wird die ganze Spezifikation als <spec>.freigegeben.yaml abgelegt: Sie ist das Soll für den
 Prüfer-Agenten und für das analytische Sollvolumen, auch wenn der Bauweg später nachgebessert wird.
-Baugruppen: zusätzlich die Prüfsummen der Teil-Specs (Spec 3b §6).
+Baugruppen: zusätzlich die Prüfsummen der Teil-Specs (Spec 3b §6). Kaufteile: der ganze Eintrag (Spec 3c §4.6; ein
+Kaufteil hat keinen Bauweg).
 Die Kopie ist der Rohtext der Spezifikationsdatei (Kommentare bleiben erhalten); nur wenn die Datei
 fehlt oder inhaltlich nicht mehr zum übergebenen spec passt, dient yaml.safe_dump als Rückfall.
 """
@@ -36,7 +37,7 @@ def _sha256(text: str) -> str:
 def pruefsumme(spec: dict, teile: dict[str, str] | None = None) -> str:
     """Prüfsumme der Anforderungen; bei Baugruppen zusätzlich über die Prüfsummen der Teil-Specs (Dateiname → Summe)."""
     felder = PRUEF_FELDER_BAUGRUPPE if spec.get("art") == "baugruppe" else PRUEF_FELDER
-    kern = {feld: spec.get(feld) for feld in felder}
+    kern = dict(spec) if spec.get("art") == "kaufteil" else {feld: spec.get(feld) for feld in felder}
     if spec.get("art") == "baugruppe":
         kern |= {feld: spec[feld] for feld in OPTIONAL_BAUGRUPPE if feld in spec}
     if teile is not None:
@@ -66,7 +67,9 @@ def _rohtext_oder_dump(spec_pfad: Path, spec: dict) -> str:
     return yaml.safe_dump(spec, allow_unicode=True, sort_keys=False)
 
 
-def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None, teile: dict[str, str] | None = None) -> dict:
+def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None, teile: dict[str, str] | None = None,
+              zusatz: dict | None = None) -> dict:
+    """zusatz: weitere Angaben im Eintrag von freigabe.json (Baugruppe: Prüfsummen der Kaufteile, Spec 3c §8.3)."""
     pfad = freigabe_pfad(spec_pfad)
     daten = _lies(pfad)
     kopie = _rohtext_oder_dump(spec_pfad, spec)
@@ -75,10 +78,16 @@ def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None, teile: 
         "pruefsumme": pruefsumme(spec, teile),
         "freigegeben": zeitpunkt or datetime.now().isoformat(timespec="seconds"),
         "kopie_sha256": _sha256(kopie),
+        **(zusatz or {}),
     }
     daten[spec_pfad.name] = eintrag
     pfad.write_text(json.dumps(daten, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return eintrag
+
+
+def freigabe_eintrag(spec_pfad: Path) -> dict | None:
+    """Eintrag der Spezifikation in freigabe.json (None, wenn nicht freigegeben)."""
+    return _lies(freigabe_pfad(spec_pfad)).get(spec_pfad.name)
 
 
 def pruefe_freigabe(spec_pfad: Path, spec: dict, teile: dict[str, str] | None = None) -> dict:

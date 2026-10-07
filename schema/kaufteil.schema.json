@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Katalogeintrag eines Kaufteils (Spec 3c §4)",
+  "type": "object",
+  "required": ["art", "hersteller", "bestellnummer", "benennung", "original", "koerper", "material", "einbau"],
+  "additionalProperties": false,
+  "properties": {
+    "art": {"const": "kaufteil"},
+    "hersteller": {"type": "string", "pattern": "^\\S+$"},
+    "bestellnummer": {"type": "string", "pattern": "^\\S(.*\\S)?$"},
+    "benennung": {"type": "string", "minLength": 1},
+    "original": {
+      "type": "object", "required": ["datei", "sha256", "bezug"], "additionalProperties": false,
+      "properties": {
+        "datei": {"type": "string", "pattern": "^[^/\\\\]+\\.(step|stp|STEP|STP)$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bezug": {
+          "type": "object", "required": ["art", "datum"], "additionalProperties": false,
+          "properties": {
+            "art": {"enum": ["nutzer", "url"]},
+            "url": {"type": "string", "pattern": "^https?://"},
+            "datum": {"$ref": "#/$defs/datum"},
+            "hinweis": {"type": "string"}
+          },
+          "if": {"properties": {"art": {"const": "url"}}}, "then": {"required": ["url"]}
+        }
+      }
+    },
+    "datenblatt": {
+      "type": "object", "minProperties": 1, "additionalProperties": false,
+      "properties": {"datei": {"type": "string", "pattern": "^[^/\\\\]+$"}, "url": {"type": "string", "pattern": "^https?://"}}
+    },
+    "koerper": {"type": "integer", "minimum": 1},
+    "material": {"type": "string", "minLength": 1},
+    "masse": {
+      "type": "object", "required": ["kg"], "additionalProperties": false,
+      "properties": {"kg": {"type": "number", "exclusiveMinimum": 0}, "beleg": {"$ref": "#/$defs/beleg"}}
+    },
+    "eigenschaften": {"type": "object", "additionalProperties": {"type": "string"}},
+    "belege": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/quelle"}},
+    "einbau": {
+      "type": "object", "minProperties": 1, "propertyNames": {"$ref": "#/$defs/einbauname"},
+      "additionalProperties": {"$ref": "#/$defs/einbau"}
+    },
+    "gewinde": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/gewindegruppe"}},
+    "pruefung": {"$ref": "#/$defs/pruefung"}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "einbauname": {"type": "string", "pattern": "^EINBAU_[A-Z0-9_]+$"},
+    "datum": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "zahl": {"type": "number"},
+    "punkt3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "beleg": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1, "uniqueItems": true},
+    "quelle": {
+      "type": "object", "required": ["art"], "additionalProperties": false,
+      "properties": {
+        "art": {"enum": ["hersteller", "datenblatt", "haendler", "nutzer"]},
+        "url": {"type": "string", "pattern": "^https?://"},
+        "datei": {"type": "string", "minLength": 1},
+        "seite": {"type": ["integer", "string"]},
+        "abgerufen": {"$ref": "#/$defs/datum"},
+        "hinweis": {"type": "string"}
+      },
+      "allOf": [
+        {"if": {"properties": {"art": {"enum": ["hersteller", "haendler"]}}}, "then": {"required": ["url", "abgerufen"]}},
+        {"if": {"properties": {"art": {"const": "datenblatt"}}}, "then": {"anyOf": [{"required": ["datei"]}, {"required": ["url"]}]}}
+      ]
+    },
+    "einbau": {
+      "oneOf": [
+        {"type": "object", "required": ["zylinder"], "additionalProperties": false,
+         "properties": {"zylinder": {
+           "type": "object", "required": ["nahe", "durchmesser"], "additionalProperties": false,
+           "properties": {"nahe": {"$ref": "#/$defs/punkt3"}, "durchmesser": {"type": "number", "exclusiveMinimum": 0},
+                          "senkrecht_zu": {"$ref": "#/$defs/einbauname"}}}}},
+        {"type": "object", "required": ["ebene"], "additionalProperties": false,
+         "properties": {"ebene": {
+           "type": "object", "required": ["nahe", "normale"], "additionalProperties": false,
+           "properties": {"nahe": {"$ref": "#/$defs/punkt3"}, "normale": {"$ref": "#/$defs/punkt3"}}}}},
+        {"type": "object", "required": ["ebene_durch_achse"], "additionalProperties": false,
+         "properties": {"ebene_durch_achse": {
+           "type": "object", "required": ["achse", "nahe"], "additionalProperties": false,
+           "properties": {"achse": {"$ref": "#/$defs/einbauname"}, "nahe": {"$ref": "#/$defs/punkt3"}}}}}
+      ]
+    },
+    "gewindegruppe": {
+      "type": "object", "required": ["groesse", "gewindetiefe", "tiefe", "normale", "positionen"], "additionalProperties": false,
+      "properties": {
+        "groesse": {"type": "string", "pattern": "^M\\d+(\\.\\d+)?$"},
+        "gewindetiefe": {"type": "number", "exclusiveMinimum": 0},
+        "tiefe": {"type": "number", "exclusiveMinimum": 0},
+        "normale": {"$ref": "#/$defs/punkt3"},
+        "positionen": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt3"}},
+        "beleg": {"$ref": "#/$defs/beleg"}
+      }
+    },
+    "messpunkt": {
+      "oneOf": [
+        {"type": "object", "required": ["referenz"], "additionalProperties": false,
+         "properties": {"referenz": {"$ref": "#/$defs/einbauname"}}},
+        {"type": "object", "required": ["gewinde", "instanz"], "additionalProperties": false,
+         "properties": {"gewinde": {"$ref": "#/$defs/id"}, "instanz": {"type": "integer", "minimum": 1}}},
+        {"type": "object", "required": ["flaeche"], "additionalProperties": false,
+         "properties": {"flaeche": {
+           "type": "object", "required": ["nahe", "normale"], "additionalProperties": false,
+           "properties": {"nahe": {"$ref": "#/$defs/punkt3"}, "normale": {"$ref": "#/$defs/punkt3"}}}}},
+        {"type": "object", "required": ["punkt"], "additionalProperties": false,
+         "properties": {"punkt": {"$ref": "#/$defs/punkt3"}}}
+      ]
+    },
+    "pruefung": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "huellquader": {
+          "type": "object", "required": ["soll"], "additionalProperties": false,
+          "properties": {
+            "soll": {"type": "array", "items": {"type": "number", "exclusiveMinimum": 0}, "minItems": 3, "maxItems": 3},
+            "tol": {"type": "number", "exclusiveMinimum": 0}, "beleg": {"$ref": "#/$defs/beleg"}
+          }
+        },
+        "volumen": {
+          "type": "object", "required": ["soll"], "additionalProperties": false,
+          "properties": {"soll": {"type": "number", "exclusiveMinimum": 0},
+                         "toleranz_prozent": {"type": "number", "exclusiveMinimum": 0}}
+        },
+        "durchmesser_pruefen": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["was", "nahe", "soll"], "additionalProperties": false,
+            "properties": {
+              "was": {"type": "string", "minLength": 1}, "nahe": {"$ref": "#/$defs/punkt3"},
+              "soll": {"type": "number", "exclusiveMinimum": 0}, "tol": {"type": "number", "exclusiveMinimum": 0},
+              "referenz": {"$ref": "#/$defs/einbauname"}, "beleg": {"$ref": "#/$defs/beleg"}
+            }
+          }
+        },
+        "masse_pruefen": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["was", "von", "zu", "soll"], "additionalProperties": false,
+            "properties": {
+              "was": {"type": "string", "minLength": 1}, "von": {"$ref": "#/$defs/messpunkt"},
+              "zu": {"$ref": "#/$defs/messpunkt"}, "soll": {"type": "number", "minimum": 0},
+              "tol": {"type": "number", "exclusiveMinimum": 0}, "beleg": {"$ref": "#/$defs/beleg"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

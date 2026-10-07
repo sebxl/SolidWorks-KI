@@ -24,10 +24,11 @@ class Rechner:
     materialdatenbank: Path | None
     arbeitsordner: Path
     normteilbibliothek: Path | None = None
+    kaufteilbibliothek: Path | None = None
 
 
 _PFADFELDER = ("installationsordner", "vorlage_teil", "vorlage_baugruppe", "materialdatenbank", "arbeitsordner",
-               "normteilbibliothek")
+               "normteilbibliothek", "kaufteilbibliothek")
 
 
 def swki_home() -> Path:

@@ -220,4 +220,4 @@ def test_aenderungen_oeffnet_normteil_kopie_nicht(umgebung, monkeypatch):
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: pytest.fail("Normteil-Kopie ohne Soll nicht öffnen"))
     ergebnis = aenderungen.aenderungen(spec_pfad)
     assert ergebnis["geaendert"] == [{"datei": "ISO4762_M8x30_8_8.sldprt", "parameter": [],
-                                      "hinweis": "keine Spezifikation zu dieser Datei (Normteil-Kopie)"}]
+                                      "hinweis": "keine Spezifikation zu dieser Datei (Normteil- oder Kaufteil-Kopie)"}]

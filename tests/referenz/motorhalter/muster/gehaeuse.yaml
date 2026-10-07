@@ -1,0 +1,28 @@
+# Muster-Getriebemotor GM42-10 (Spec 3c §11), Gehäuse – Quelle der Test-STEP gm42-10.step, kein echtes Herstellerteil.
+# Flanschfläche (Anlage) y = 0, Flansch y 0…FD, Motorkörper y FD…FD+LM, Zentrierbund y −HZ…0 mit Wellenbohrung,
+# 4 × M5 auf dem Lochkreis LK in der Flanschfläche (Kernloch, Gewinde kosmetisch).
+art: teil
+name: GM42_Gehaeuse
+material: "1.0038"
+eigenschaften: {Benennung: Muster-Getriebemotor GM42 Gehäuse}
+parameter: {FB: 60, FD: 12, DM: 56, LM: 70, DZ: 40, HZ: 3, DW: 10, TW: 8, LK: 60, GT: 10, GG: 8}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=FB", hoehe: "=FB"}}]}
+    ende: {typ: blind, tiefe: "=FD"}
+  - id: f2
+    typ: extrusion
+    skizze: {ebene: {feature: f1, flaeche: "+y"}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=DM"}}]}
+    ende: {typ: blind, tiefe: "=LM"}
+  - id: f3
+    typ: extrusion
+    skizze: {ebene: {feature: f1, flaeche: "-y"}, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=DZ"}}]}
+    ende: {typ: blind, tiefe: "=HZ"}
+  - {id: f4, typ: bohrung, flaeche: {feature: f3, flaeche: "-y"}, positionen: [[0, 0]], durchmesser: "=DW", tiefe: "=TW"}
+  - {id: f5, typ: normbohrung, art: gewinde, groesse: M5, flaeche: {feature: f1, flaeche: "-y"},
+     positionen: [["=LK/8**0.5", "=LK/8**0.5"], ["=-LK/8**0.5", "=LK/8**0.5"], ["=-LK/8**0.5", "=-LK/8**0.5"],
+                  ["=LK/8**0.5", "=-LK/8**0.5"]],
+     tiefe: "=GT", gewindetiefe: "=GG"}
+pruefung:
+  huellquader: ["=FB", "=HZ+FD+LM", "=FB"]

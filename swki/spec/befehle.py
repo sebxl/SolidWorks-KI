@@ -13,6 +13,10 @@ def _validieren(args) -> dict:
         from swki.baugruppe.befehle import validieren  # spät importiert: swki.baugruppe nutzt swki.spec
 
         return validieren(pfad)
+    if art_der_datei(pfad) == "kaufteil":
+        from swki.kaufteile.eintrag import validieren as validieren_kaufteil  # spät importiert (Kreisimport)
+
+        return validieren_kaufteil(pfad)
     spec = lade_spec(pfad)
     return {
         "gueltig": True,
@@ -37,6 +41,10 @@ def _freigeben(args) -> dict:
         from swki.baugruppe.befehle import freigeben as freigeben_baugruppe  # spät importiert (Kreisimport)
 
         return freigeben_baugruppe(pfad)
+    if art_der_datei(pfad) == "kaufteil":
+        from swki.kaufteile.eintrag import freigeben as freigeben_kaufteil  # spät importiert (Kreisimport)
+
+        return freigeben_kaufteil(pfad)
     spec = lade_spec(pfad)
     return {"spec": str(pfad), "kopie": str(kopie_pfad(pfad)), **freigeben(pfad, spec)}
 

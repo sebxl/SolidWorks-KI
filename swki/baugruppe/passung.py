@@ -1,4 +1,5 @@
-"""Passung Normteil ↔ Bohrung bei konzentrischen Verknüpfungen (Spec 3b §5.7), ohne SolidWorks."""
+"""Passung Normteil ↔ Bohrung bzw. Gewinde eines Kaufteils bei konzentrischen Verknüpfungen (Spec 3b §5.7, 3c §8.2),
+ohne SolidWorks."""
 
 from swki.baugruppe.modell import Quelle
 from swki.spec.ausdruck import AusdruckFehler, auswerten
@@ -58,9 +59,28 @@ def _paar(v: dict, quellen: dict[str, Quelle]):
     return None
 
 
+def _gewinde_paar(v: dict, quellen: dict[str, Quelle]) -> str | None:
+    """Meldung, wenn v die EINBAU_ACHSE eines Normteils mit einer Gewindeposition eines Kaufteils verbindet und die
+    Größe nicht passt (nur ISO 4762 derselben Größe); sonst None."""
+    for n, t in (("a", "b"), ("b", "a")):
+        qn, qt = quellen.get(v[n]["komponente"]), quellen.get(v[t]["komponente"])
+        if (qn is None or qt is None or qn.art != "normteil" or v[n].get("referenz") != "EINBAU_ACHSE"
+                or qt.art != "kaufteil" or "gewinde" not in v[t]):
+            continue
+        g = qt.spec["gewinde"].get(v[t]["gewinde"])
+        if g is None:
+            return None  # meldet referenz_befunde
+        if qn.norm != "ISO 4762" or qn.groesse != g["groesse"]:
+            return f"{qn.norm} {qn.groesse} passt nicht in Gewinde {g['groesse']} von {qt.kaufteil}"
+    return None
+
+
 def passung_befunde(spec: dict, quellen: dict[str, Quelle]) -> list[dict]:
     befunde = []
     for i, v in enumerate(spec.get("verknuepfungen", [])):
+        if v["typ"] == "konzentrisch" and (meldung := _gewinde_paar(v, quellen)):
+            befunde.append({"pfad": f"verknuepfungen[{i}]", "meldung": f"Passung: {meldung}"})
+            continue
         if v["typ"] not in ("konzentrisch", "scharnier") or (paar := _paar(v, quellen)) is None:
             continue
         qn, qt, seite = paar

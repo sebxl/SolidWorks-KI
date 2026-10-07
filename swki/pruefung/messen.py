@@ -263,7 +263,12 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
     for f in spec["features"]:
         feature = model.FeatureByName(f["id"])
         if feature is not None:
-            ctx.ergebnisse[f["id"]] = FeatureErgebnis([feature], punkte=[tuple(p) for p in punkte.get(f["id"], [])])
+            features = [feature]
+            if f["typ"] == "bohrung" and "senkung" in f:  # der Handler legt die Senkung als zweites Feature an
+                senkung = model.FeatureByName(f"{f['id']}_senkung")
+                if senkung is not None:
+                    features.append(senkung)
+            ctx.ergebnisse[f["id"]] = FeatureErgebnis(features, punkte=[tuple(p) for p in punkte.get(f["id"], [])])
     return ctx
 
 
@@ -304,7 +309,8 @@ def messpunkte(ctx, spec: dict) -> dict[str, Messgeometrie | str]:
 
 
 def durchmesser(ctx, spec: dict) -> dict[str, dict | str]:
-    """Durchmesser je pruefung.durchmesser_pruefen: Zylinderfläche des Features, auf deren Mantel `nahe` liegt; mit
+    """Durchmesser je pruefung.durchmesser_pruefen: Zylinderfläche des Features einschließlich Senkung (`<id>_senkung`
+    einer Bohrung), auf deren Mantel `nahe` liegt; mit
     `referenz` zusätzlich die Bezugsachse (Koaxialität bewertet bewertung.bewerte)."""
     ergebnis = {}
     for dp in spec.get("pruefung", {}).get("durchmesser_pruefen", []):
@@ -313,7 +319,8 @@ def durchmesser(ctx, spec: dict) -> dict[str, dict | str]:
                 if fid is not None and fid not in ctx.ergebnisse:
                     raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Feature {fid!r} fehlt im Teil")
             nahe = tuple(ctx.wert(v) for v in dp["nahe"])
-            z = zylinder_durch_punkt(flaechen(ctx.ergebnis(dp["feature"]).features[0]), nahe, ctx.tol_mm)
+            alle = [f for sw_feature in ctx.ergebnis(dp["feature"]).features for f in flaechen(sw_feature)]
+            z = zylinder_durch_punkt(alle, nahe, ctx.tol_mm)
             n = laenge(z.achse)
             wert = {"durchmesser": round(2 * z.radius, 6),
                     "achse": Messgeometrie("achse", z.punkt, tuple(c / n for c in z.achse))}
