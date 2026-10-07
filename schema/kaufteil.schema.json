@@ -18,7 +18,7 @@
           "type": "object", "required": ["art", "datum"], "additionalProperties": false,
           "properties": {
             "art": {"enum": ["nutzer", "url"]},
-            "url": {"type": "string", "minLength": 1},
+            "url": {"type": "string", "pattern": "^https?://"},
             "datum": {"$ref": "#/$defs/datum"},
             "hinweis": {"type": "string"}
           },
@@ -28,7 +28,7 @@
     },
     "datenblatt": {
       "type": "object", "minProperties": 1, "additionalProperties": false,
-      "properties": {"datei": {"type": "string", "pattern": "^[^/\\\\]+$"}, "url": {"type": "string", "minLength": 1}}
+      "properties": {"datei": {"type": "string", "pattern": "^[^/\\\\]+$"}, "url": {"type": "string", "pattern": "^https?://"}}
     },
     "koerper": {"type": "integer", "minimum": 1},
     "material": {"type": "string", "minLength": 1},
@@ -56,7 +56,7 @@
       "type": "object", "required": ["art"], "additionalProperties": false,
       "properties": {
         "art": {"enum": ["hersteller", "datenblatt", "haendler", "nutzer"]},
-        "url": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "pattern": "^https?://"},
         "datei": {"type": "string", "minLength": 1},
         "seite": {"type": ["integer", "string"]},
         "abgerufen": {"$ref": "#/$defs/datum"},

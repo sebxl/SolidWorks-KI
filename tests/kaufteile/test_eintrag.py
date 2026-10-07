@@ -56,6 +56,21 @@ def test_datum_muss_text_sein():
     assert meldung.startswith("original.bezug.datum")
 
 
+@pytest.mark.parametrize("stelle", ["original", "datenblatt", "beleg"])
+def test_url_braucht_schema(stelle):
+    """Ohne http(s):// wäre die Domain leer und die Belegregel (≥ 2 Domains) umgehbar."""
+    spec = kopie()
+    if stelle == "original":
+        spec["original"]["bezug"] = {"art": "url", "url": "haendler.de/x", "datum": "2026-10-07"}
+    elif stelle == "datenblatt":
+        spec["datenblatt"] = {"datei": "datenblatt.md", "url": "www.hersteller.de/d.pdf"}
+    else:
+        spec["belege"]["d1"] = {"art": "hersteller", "url": "hersteller.de/d.pdf", "abgerufen": "2026-10-07"}
+    meldungen = _meldungen(spec)
+    assert meldungen and any("url" in m for m in meldungen), meldungen
+    assert not _meldungen(kopie())
+
+
 def test_einbau_bezuege():
     spec = kopie()
     spec["einbau"]["EINBAU_ACHSE"]["zylinder"]["senkrecht_zu"] = "EINBAU_ACHSE"
