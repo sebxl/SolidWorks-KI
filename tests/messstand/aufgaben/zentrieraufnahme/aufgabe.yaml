@@ -3,5 +3,5 @@ art: teil
 skill: konstruieren
 eingaben: [tests/referenz/zentrieraufnahme/eingabe/beschreibung.md]
 referenz: {spec_ordner: tests/referenz/zentrieraufnahme, spec: zentrieraufnahme.yaml}
-entfernen: [tests/referenz/zentrieraufnahme]
+entfernen: [tests/referenz/zentrieraufnahme, tests/referenz/test_zentrieraufnahme.py]
 verboten: [tests/referenz/zentrieraufnahme]
