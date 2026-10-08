@@ -62,6 +62,20 @@ def test_polygon_mit_konvexen_und_konkaver_ecke():
         assert sw.teilebox_mm(ctx.model) == pytest.approx([0, 0, 0, 40, 40, 10], abs=1e-6)
 
 
+def test_mehrere_langloecher_in_einer_skizze():
+    """Vier Langlöcher in einer Skizze (AP 6.8 Durchlicht): GetSketchSegments liefert nicht in Erzeugungsreihenfolge."""
+    spec = _platte({"langloch": {"mitte": [-30, 20], "laenge": 4, "breite": 5, "winkel": 0}})
+    spec["features"][0]["skizze"]["elemente"] += [
+        {"langloch": {"mitte": [30, 20], "laenge": 4, "breite": 5, "winkel": 0}},
+        {"langloch": {"mitte": [30, -20], "laenge": 4, "breite": 5, "winkel": 0}},
+        {"langloch": {"mitte": [-30, -20], "laenge": 4, "breite": 5, "winkel": 0}},
+    ]
+    with gebautes_teil(spec) as (ctx, fehler, _):
+        assert fehler is None
+        assert volumen_mm3(ctx.model) == pytest.approx(4 * (4 * 5 + 2.5 ** 2 * math.pi) * 10, abs=1e-3)
+        assert sw.teilebox_mm(ctx.model) == pytest.approx([-34.5, 0, -22.5, 34.5, 10, 22.5], abs=1e-6)
+
+
 @pytest.mark.parametrize(("winkel", "box"), [
     (0, [-9, 0, -9, 29, 10, -1]),     # oben: X = u, Z = −v
     (90, [6, 0, -24, 14, 10, 14]),

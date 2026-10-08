@@ -277,12 +277,16 @@ class Skizzierer:
         winkel = math.radians(w(l.get("winkel", 0)))
         xm, ym = self.zu_skizze(mu_, mv)
         xe, ye = self.zu_skizze(mu_ + laenge / 2 * math.cos(winkel), mv + laenge / 2 * math.sin(winkel))
-        vorher = len(self.skizze.GetSketchSegments or ())
+        # Neue Segmente über Typ + ID (GetSketchSegments liefert nicht in Erzeugungsreihenfolge, AP 6.8)
+        def schluessel(s) -> tuple:
+            return (s.GetType, tuple(s.GetID))
+
+        vorher = {schluessel(s) for s in self.skizze.GetSketchSegments or ()}
         nut = self.sm.CreateSketchSlot(SW_NUT_MITTELPUNKT, SW_NUT_MITTE_MITTE, mm(breite), xm, ym, 0.0, xe, ye, 0.0,
                                        0.0, 0.0, 0.0, SW_GEGEN_UHRZEIGERSINN, False)
         if nut is None:
             raise BauFehler(SKIZZE_UNGUELTIG, "CreateSketchSlot fehlgeschlagen", schritt="skizze")
-        neu = list(self.skizze.GetSketchSegments or ())[vorher:]
+        neu = [s for s in self.skizze.GetSketchSegments or () if schluessel(s) not in vorher]
         seiten = [s for s in neu if s.GetType == SW_SKIZZE_LINIE and not s.ConstructionGeometry]
         achsen = [s for s in neu if s.GetType == SW_SKIZZE_LINIE and s.ConstructionGeometry]
         if len(seiten) != 2 or len(achsen) != 1:
