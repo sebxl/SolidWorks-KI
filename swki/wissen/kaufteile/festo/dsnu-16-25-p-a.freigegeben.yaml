@@ -1,0 +1,39 @@
+# Festo DSNU-16-25-P-A: Rundzylinder Ø 16, Hub 25, doppeltwirkend (Antrieb der Ausschleusweiche 7MM1, Prüfstation AP 6.8).
+# Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 19199, Download der Vorbereitungssitzung 08.10.2026); belegt sind die
+# Angaben der Produktseite (Kolben-Ø, Hub, Kolbenstangengewinde, Anschluss, Gewicht). Maßbild (Länge, Bundgewinde M16×1,5)
+# nur aus einer Drittquelle → nicht als Kennmaß geprüft.
+# STEP-Koordinaten (Diagnose lauf-1): Achse x = y = 0, Richtung z, Kolbenstange eingefahren. Vorderdeckel mit Bundgewinde
+# Ø 16 und flacher Mutter M16×1,5 (Körper im Modell, z −8 … 0), Stirn z = 0, Deckelbund z −17 (Normale +z, Anlage einer
+# Halteplatte zwischen Mutter und Bund), Schlüsselflächen SW 18; Rohr Ø 17,3 z −27 … −88; Kolbenstange Ø 6 mit M6 bis
+# z 21, SW 5; Hinterdeckel mit Gelenkauge Ø 6 quer (Achse x bei z −102, Breite 12), Ende z −115. Anschlüsse M5 auf +y bei
+# z −23 und −92. Drei Körper (Gehäuse, Kolben/Stange, Mutter).
+art: kaufteil
+hersteller: Festo
+bestellnummer: DSNU-16-25-P-A
+benennung: Rundzylinder DSNU, Kolben-Ø 16, Hub 25
+original:
+  datei: dsnu-16-25-p-a.stp
+  sha256: "87de6efad5a786289063f211a228ac480f7e0129987c194256d4109ba1748b26"
+  bezug:
+    art: nutzer
+    datum: "2026-10-08"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 19199_DSNU-16-25-P-A.stp; Produktseite https://www.festo.com/de/de/a/19199/"
+koerper: 3
+material: "1.4301"
+masse: {kg: 0.1014, beleg: [h1]}
+eigenschaften: {Teilenummer: "19199", Hub: "25 mm", Kolbenstangengewinde: "M6", Anschluesse: "2 x M5",
+                Werkstoffhinweis: "Rohr und Stange rostfrei, Deckel Aluminium; Masse 89,9 g + 2,5 x 4,6 g von der Produktseite"}
+belege:
+  h1: {art: hersteller, url: "https://www.festo.com/de/de/a/19199/", abgerufen: "2026-10-08",
+       hinweis: "Technische Daten: Kolben-Ø 16 mm, Hub 25 mm, Kolbenstangengewinde M6 (Außengewinde), Anschluss M5, Grundgewicht 89,9 g + 4,6 g je 10 mm Hub"}
+einbau:
+  EINBAU_ACHSE: {zylinder: {nahe: [-8.65, 0, -57.5], durchmesser: 17.3, senkrecht_zu: EINBAU_STIRN}}
+  EINBAU_STIRN: {ebene: {nahe: [0, 6, 0], normale: [0, 0, 1]}}
+  EINBAU_BUND: {ebene: {nahe: [0, 8.5, -17], normale: [0, 0, 1]}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [0, 9, -94.5]}}
+  EINBAU_LAGER: {zylinder: {nahe: [0, 0, -99], durchmesser: 6}}
+pruefung:
+  volumen: {soll: 24115.099, toleranz_prozent: 0.01}
+  durchmesser_pruefen:
+    - {was: Kolben-Ø 16, nahe: [8, 0, -68.2], soll: 16, tol: 0.05, referenz: EINBAU_ACHSE, beleg: [h1]}
+    - {was: Kolbenstangengewinde M6 (Nenn-Ø), nahe: [0, 3, 15], soll: 6, tol: 0.1, referenz: EINBAU_ACHSE, beleg: [h1]}

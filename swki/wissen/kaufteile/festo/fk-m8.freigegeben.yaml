@@ -1,0 +1,37 @@
+# Festo FK-M8: Flexo-Kupplung M8 (Ausgleichskupplung zwischen Kolbenstange ADNM und Schieber, Prüfstation AP 6.8, R6).
+# Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 2062, Download der Vorbereitungssitzung 08.10.2026); ein Datenblatt
+# mit Maßbild liegt nicht vor, belegt sind nur die Angaben der Produktseite (Baugröße M8, Gewicht, Werkstoffe).
+# STEP-Koordinaten (Diagnose lauf-1): Achse x = y = 0, Richtung z. Buchse (Innengewinde M8 für die Kolbenstange, Kernloch
+# Ø 6,647, SW 10) z −29,5 … −15,5 mit Stirn z −29,5 (Normale −z); Gehäuse SW 17 z −20,5 … 0 mit Mutter SW 17; Kugelbolzen
+# mit Außengewinde M8 z 0,5 … 19,5; Kontermutter M8 (flach, SW 13) z 8,5 … 12,5 mit Anlage z 12,5 (Normale +z).
+# Sieben Körper (Buchse, Gehäuse, Mutter, Bolzen, zwei Kugelscheiben, Kontermutter) – im Modell starr, gerade.
+# Gesamtlänge 49 nur aus Händlerquelle (eine Domain) → nicht als Kennmaß geprüft.
+art: kaufteil
+hersteller: Festo
+bestellnummer: FK-M8
+benennung: Flexo-Kupplung FK, Baugröße M8
+original:
+  datei: fk-m8.stp
+  sha256: "d29caa1014376e9eabadaf276bd42d6eadd08811fc25ceeaa68d66f9e0a2b990"
+  bezug:
+    art: nutzer
+    datum: "2026-10-08"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 2062_FK-M8.stp; Produktseite https://www.festo.com/de/de/a/2062/"
+koerper: 7
+material: "1.0038"
+masse: {kg: 0.056, beleg: [h1]}
+eigenschaften: {Teilenummer: "2062", Werkstoffhinweis: "Stahl verzinkt bzw. Einsatzstahl; Masse von der Produktseite"}
+belege:
+  h1: {art: hersteller, url: "https://www.festo.com/de/de/a/2062/", abgerufen: "2026-10-08",
+       hinweis: "Technische Daten: Baugröße M8, Produktgewicht 56 g, Buchse/Gehäuse/Mutter Stahl verzinkt, Kugelbolzen und Kugelscheibe Einsatzstahl"}
+einbau:
+  EINBAU_ACHSE: {zylinder: {nahe: [-7, 0, -20.1817], durchmesser: 14, senkrecht_zu: EINBAU_BUCHSE}}
+  EINBAU_BUCHSE: {ebene: {nahe: [0, 5, -29.5], normale: [0, 0, -1]}}
+  EINBAU_KONTERMUTTER: {ebene: {nahe: [0, 5, 12.5], normale: [0, 0, 1]}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [5, 0, -27.2]}}
+pruefung:
+  volumen: {soll: 7093.526, toleranz_prozent: 0.01}
+  durchmesser_pruefen:
+    - {was: Außengewinde Bolzen M8 (Nenn-Ø), nahe: [4, 0, 12.6165], soll: 8, tol: 0.1, referenz: EINBAU_ACHSE, beleg: [h1]}
+    - {was: Innengewinde Buchse M8 (Kernloch D1), nahe: [-3.3235, 0, -22.5], soll: 6.647, tol: 0.05,
+       referenz: EINBAU_ACHSE, beleg: [h1]}

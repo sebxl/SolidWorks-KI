@@ -1,5 +1,6 @@
 # Maßtabelle der Normbohrungen: Maße, die der SOLIDWORKS-Bohrungsassistent (HoleWizard5) je Norm, Art und Größe
-# erzeugt. Erste Fassung aus Spike S10 (docs/stufe0/ergebnisse/s10_f3_normmasse.json, SOLIDWORKS 2025).
+# erzeugt. Erste Fassung aus Spike S10 (docs/stufe0/ergebnisse/s10_f3_normmasse.json, SOLIDWORKS 2025); M2, M3 und
+# Zylinderschraube M3 aus Spike S10b (docs/stufe0/ergebnisse/s10b_m2_m3.json, 08.10.2026).
 # Nur live geprüfte Größen aufnehmen (Spec 2c §3.3). Weicht SolidWorks von der ISO-Norm ab, gilt der SolidWorks-Wert;
 # die Abweichung steht dann unter "abweichung".
 # Längen in mm, Winkel in Grad. Bohrungstiefe = zylindrischer Teil ab der Ansatzfläche; bei blind darunter die
@@ -10,6 +11,8 @@ bohrspitze_grad: 118
 normen:
   ISO:
     gewinde:                 # ISO-Gewindebohrung (swStandardISOTappedHole), Kernloch nach ISO 2306
+      M2: {sw_groesse: "M2", kernloch: 1.6}
+      M3: {sw_groesse: "M3", kernloch: 2.5}
       M5: {sw_groesse: "M5", kernloch: 4.2}
       M6: {sw_groesse: "M6", kernloch: 5.0}
       M8: {sw_groesse: "M8", kernloch: 6.8}
@@ -21,6 +24,7 @@ normen:
       M12x1.5: {sw_groesse: "M12x1.5", kernloch: 10.5}
       M16x1.5: {sw_groesse: "M16x1.5", kernloch: 14.5}
     zylinderschraube:        # ISO 4762 (swStandardISOSocketHeadCap), Durchgang "normal", Flachsenkung
+      M3: {sw_groesse: "M3", durchgang: 3.4, senkung_d: 6.5, senkung_t: 3.4}
       M5: {sw_groesse: "M5", durchgang: 5.5, senkung_d: 10.0, senkung_t: 5.4}
       M6: {sw_groesse: "M6", durchgang: 6.6, senkung_d: 11.0, senkung_t: 6.4}
       M8: {sw_groesse: "M8", durchgang: 9.0, senkung_d: 15.0, senkung_t: 8.6, abweichung: "senkung_t ISO 8.4, SolidWorks 8.6"}

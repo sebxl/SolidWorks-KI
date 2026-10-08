@@ -1,0 +1,98 @@
+# Festo ADNM-25-A-P-A-28Z1-58Z2: Mehrstellungszylinder Ø 25 mit zwei Positionen 28/58 (Schieberantrieb der Prüfstation
+# AP 6.8, K24). Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 539695, Download der Vorbereitungssitzung 08.10.2026),
+# Datenblatt: Festo-Katalog ADNM, Stand 2025/10 (S. 6 Technische Daten, S. 8 Maßbild, S. 9 Maßtabelle). Beide liegen nur im
+# Quellordner der Kaufteil-Bibliothek, nicht im Git.
+# STEP-Koordinaten (Diagnose lauf-1): Achse x = y = 0, Richtung z. Vorderdeckel-Stirn z = 0 (Normale +z), Zentrierbund Ø 22
+# bis z 6, Kolbenstange Ø 10 (eingefahren) bis Bund z 11,8, Schlüsselflächen SW 9, M8 bis z 27,8; Hinterdeckel z −162,85
+# mit Zentrierung D1 Ø 9 × 2,1. Anschlüsse M5 auf +y (Deckel y = 19,75) bei z −6 / −92,975 (Mitte) / −156,85; der
+# Mittelanschluss auf −x ist mit M5-ADVU verschlossen (eigener Körper). Nut für Näherungsschalter auf −y, ±x (Boden 14,1 ab
+# Achse). Vier Körper: Gehäuse, Kolben/Stange Zylinder 2 und Zylinder 1 (eingefahren, nicht beweglich), Verschlussstopfen.
+# Befestigungsgewinde RT M5 je Deckel in den Bundschrauben: Sechskant SW 5 bis 3,5 tief, Fase bis 3,93, Kernloch D1 Ø 4,134
+# bis 15 (flacher Boden). Eintrittspunkt am Grund des Sechskants (z −3,5 bzw. −159,35), Tiefe ab dort aus der STEP.
+# Masse nennt der Katalog nur für Zubehör: aus dem Material (Aluminium; Stange und Bundschrauben Stahl nicht getrennt).
+art: kaufteil
+hersteller: Festo
+bestellnummer: ADNM-25-A-P-A-28Z1-58Z2
+benennung: Mehrstellungszylinder ADNM, Kolben-Ø 25, Positionen 28/58
+original:
+  datei: adnm-25-a-p-a-28z1-58z2.stp
+  sha256: "75198b037c601c1f785c92827699cf1c6d758e6306f818ee2ed1d40976b86465"
+  bezug:
+    art: nutzer
+    datum: "2026-10-08"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 539695_ADNM-25-A-P-A-28Z1-58Z2.stp; Produktseite https://www.festo.com/de/de/a/539695/"
+datenblatt:
+  datei: ADNM_katalog_201001_documentation.pdf
+  url: "https://www.festo.com/media/catalog/201001_documentation.pdf"
+koerper: 4
+material: "6063-T6"
+eigenschaften: {Teilenummer: "539695", Positionen: "0 / 28 / 58", Kolbenstangengewinde: "M8", Anschluesse: "3 x M5",
+                Werkstoffhinweis: "Deckel/Rohr Aluminium eloxiert, Kolbenstange Stahl; Masse aus Material"}
+belege:
+  d1: {art: datenblatt, datei: ADNM_katalog_201001_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/201001_documentation.pdf", seite: 6,
+       hinweis: "Allgemeine Technische Daten: Ø 25 – Pneumatischer Anschluss M5, Kolbenstangengewinde außen M8"}
+  d2: {art: datenblatt, datei: ADNM_katalog_201001_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/201001_documentation.pdf", seite: 8,
+       hinweis: "Maßbild Ø 25/Z2 – 2 Positionen: Maße B, D1, E, MM, PL, PL12+Z1, RT, SF, T2, TG, VD, ZA+Z2+Z1, ZB+Z2+Z1"}
+  d3: {art: datenblatt, datei: ADNM_katalog_201001_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/201001_documentation.pdf", seite: 9,
+       hinweis: "Maßtabelle Ø 25: B 22 f8, D1 9 H9, E 39,5 +0,3, MM 10, PL 6, PL12 41,9 ±0,3, RT M5, SF 9, T2 2,1 +0,1, TG 26 ±0,2, VD 6, ZA 76,3 +1,2, ZB 88,5 +1,6"}
+  h1: {art: hersteller, url: "https://www.festo.com/de/de/a/539695/", abgerufen: "2026-10-08",
+       hinweis: "Produktseite ADNM-25: Kolben-Ø 25, Befestigungsart mit Innengewinde, Anschluss M5; Z1/Z2 aus dem Typschlüssel 28Z1-58Z2"}
+einbau:
+  EINBAU_ACHSE: {zylinder: {nahe: [0, 11, 2.85], durchmesser: 22, senkrecht_zu: EINBAU_FLANSCH}}
+  EINBAU_FLANSCH: {ebene: {nahe: [-7, -16, 0], normale: [0, 0, 1]}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [0, 19.75, -6]}}
+  EINBAU_ANSCHLUSSSEITE: {ebene: {nahe: [5, 19.75, -6], normale: [0, 1, 0]}}
+  EINBAU_NUT: {ebene: {nahe: [0, -14.1, -50], normale: [0, -1, 0]}}
+gewinde:
+  deckel_vorn:
+    groesse: M5
+    gewindetiefe: 11.5
+    tiefe: 11.5
+    normale: [0, 0, 1]
+    positionen: [[13, 13, -3.5], [-13, 13, -3.5], [-13, -13, -3.5], [13, -13, -3.5]]
+  deckel_hinten:
+    groesse: M5
+    gewindetiefe: 11.5
+    tiefe: 11.5
+    normale: [0, 0, -1]
+    positionen: [[13, 13, -159.35], [-13, 13, -159.35], [-13, -13, -159.35], [13, -13, -159.35]]
+  anschluss:
+    groesse: M5
+    gewindetiefe: 11
+    tiefe: 11
+    normale: [0, 1, 0]
+    positionen: [[0, 19.75, -6], [0, 19.75, -92.975], [0, 19.75, -156.85]]
+
+pruefung:
+  volumen: {soll: 194280.566, toleranz_prozent: 0.01}
+  durchmesser_pruefen:
+    - {was: Zentrierbund B Ø 22 f8, nahe: [0, 11, 2.85], soll: 22, tol: 0.053, referenz: EINBAU_ACHSE, beleg: [d3]}
+    - {was: Kolbenstange MM Ø 10, nahe: [0, 5, 9], soll: 10, tol: 0.05, referenz: EINBAU_ACHSE, beleg: [d3]}
+    - {was: Kolbenstangengewinde M8 (Nenn-Ø), nahe: [-4, 0, 21.4], soll: 8, tol: 0.1, referenz: EINBAU_ACHSE, beleg: [d1]}
+    - {was: Zentrierung hinten D1 Ø 9 H9, nahe: [0, 4.5, -161.8], soll: 9, tol: 0.036, referenz: EINBAU_ACHSE, beleg: [d3]}
+  masse_pruefen:
+    - {was: Kantenmaß E, von: {flaeche: {nahe: [19.75, 10, -6], normale: [1, 0, 0]}},
+       zu: {flaeche: {nahe: [-19.75, 10, -6], normale: [-1, 0, 0]}}, soll: 39.5, tol: 0.3, beleg: [d2, d3]}
+    - {was: Lochabstand TG (RT vorn), von: {gewinde: deckel_vorn, instanz: 1}, zu: {gewinde: deckel_vorn, instanz: 2},
+       soll: 26, tol: 0.2, beleg: [d2, d3]}
+    - {was: Lochabstand TG (RT hinten), von: {gewinde: deckel_hinten, instanz: 2}, zu: {gewinde: deckel_hinten, instanz: 3},
+       soll: 26, tol: 0.2, beleg: [d2, d3]}
+    - {was: "Körperlänge ZA+Z2+Z1 (76,3+58+28)", von: {referenz: EINBAU_FLANSCH},
+       zu: {flaeche: {nahe: [-7, -16, -162.85], normale: [0, 0, -1]}}, soll: 162.3, tol: 1.2, beleg: [d2, d3, h1]}
+    - {was: "Länge bis Stangenbund ZB+Z2+Z1 (88,5+58+28)", von: {flaeche: {nahe: [-7, -16, -162.85], normale: [0, 0, -1]}},
+       zu: {flaeche: {nahe: [3.7, 0, 11.8], normale: [0, 0, 1]}}, soll: 174.5, tol: 1.6, beleg: [d2, d3, h1]}
+    - {was: "Mittelanschluss PL12+Z1 (41,9+28) ab Hinterkante", von: {flaeche: {nahe: [-7, -16, -162.85], normale: [0, 0, -1]}},
+       zu: {gewinde: anschluss, instanz: 2}, soll: 69.9, tol: 0.3, beleg: [d2, d3, h1]}
+    - {was: Anschluss vorn PL, von: {referenz: EINBAU_FLANSCH}, zu: {gewinde: anschluss, instanz: 1}, soll: 6, tol: 0.3,
+       beleg: [d2, d3]}
+    - {was: Anschluss hinten PL, von: {flaeche: {nahe: [-7, -16, -162.85], normale: [0, 0, -1]}},
+       zu: {gewinde: anschluss, instanz: 3}, soll: 6, tol: 0.3, beleg: [d2, d3]}
+    - {was: Bundhöhe VD, von: {referenz: EINBAU_FLANSCH}, zu: {flaeche: {nahe: [0, 8, 6], normale: [0, 0, 1]}}, soll: 6,
+       beleg: [d2, d3]}
+    - {was: Zentriertiefe T2, von: {flaeche: {nahe: [-7, -16, -162.85], normale: [0, 0, -1]}},
+       zu: {flaeche: {nahe: [0, 0, -160.75], normale: [0, 0, -1]}}, soll: 2.1, tol: 0.1, beleg: [d2, d3]}
+    - {was: Schlüsselweite SF, von: {flaeche: {nahe: [4.5, 0, 9.7], normale: [1, 0, 0]}},
+       zu: {flaeche: {nahe: [-4.5, 0, 9.7], normale: [-1, 0, 0]}}, soll: 9, beleg: [d2, d3]}

@@ -1,0 +1,29 @@
+# Festo SMBR-8-16: Befestigungsbausatz für Näherungsschalter SMT-8M am Rundzylinder Ø 16 (Weichenzylinder DSNU-16,
+# Prüfstation AP 6.8). Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 175094, Download der Vorbereitungssitzung
+# 08.10.2026); die Produktseite nennt keine Maße (nur Baugröße 16, Werkstoffe) → keine Kennmaße, Masse aus dem Material.
+# STEP-Koordinaten (Diagnose lauf-1): Spannband mit Bohrung Ø 17,26 (Achse x = 0, y = 9,9, Richtung z; Band z ±4),
+# Schalterhalter oben mit Nut für den Schalter (Boden y = 21,2, Normale +y, Mitte x = 0), Halterbreite z ±9,5. Ein Körper.
+art: kaufteil
+hersteller: Festo
+bestellnummer: SMBR-8-16
+benennung: Befestigungsbausatz SMBR für Näherungsschalter, Zylinder-Ø 16
+original:
+  datei: smbr-8-16.stp
+  sha256: "e7add9a98b35bfb3be7859fd64f49f0d32129908244f263711f1ac4bea8c7ae4"
+  bezug:
+    art: nutzer
+    datum: "2026-10-08"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 175094_SMBR-8-16.stp; Produktseite https://www.festo.com/de/de/a/175094/"
+koerper: 1
+material: "6063-T6"
+eigenschaften: {Teilenummer: "175094", Baugroesse: "16", Werkstoffhinweis: "Profil Aluminium, Halter POM; Masse aus Material"}
+belege:
+  h1: {art: hersteller, url: "https://www.festo.com/de/de/a/175094/", abgerufen: "2026-10-08",
+       hinweis: "Technische Daten: Baugröße 16, Werkstoff Profil Aluminium-Knetlegierung, Halter POM – keine Maße (Herkunft, kein Kennmaß)"}
+einbau:
+  EINBAU_ACHSE: {zylinder: {nahe: [-8.63, 9.9, 0], durchmesser: 17.26, senkrecht_zu: EINBAU_STIRN}}
+  EINBAU_STIRN: {ebene: {nahe: [0, 20.5869, 9.5], normale: [0, 0, 1]}}
+  EINBAU_NUT: {ebene: {nahe: [0, 21.2, 0], normale: [0, 1, 0]}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [0, 21.2, 0]}}
+pruefung:
+  volumen: {soll: 2797.912, toleranz_prozent: 0.01}
