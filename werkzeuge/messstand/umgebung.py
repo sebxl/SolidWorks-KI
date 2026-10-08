@@ -111,7 +111,8 @@ Lies und schreibe nur unter {wt}. Das Hauptrepo {repo} (insbesondere dessen auft
 {arbeit}\\AP68-Pruefstation und {arbeit}\\MESSSTAND sind tabu; swki selbst schreibt in {arbeit}\\{auftrag}.
 
 Auftrag: Ordner {wt}\\auftraege\\{auftrag}\\ – Aufgabe in aufgabe.md, Eingaben in eingabe\\.
-Vorgehen wie im echten Betrieb: Skill `{skill}` (Skill-Tool) bis Prüfer bestanden und `swki bericht`.
+Vorgehen wie im echten Betrieb nach dem Skill `{skill}` bis Prüfer bestanden und `swki bericht`. Lies den Skill mit dem
+Read-Tool aus {wt}\\.claude\\skills\\{skill}\\SKILL.md (nicht mit dem Skill-Tool: es liefert einen älteren Stand).
 
 Anweisungen des Nutzers für diesen Lauf (gehen den Skills vor):
 - Keine Rückfragen. Wo der Skill den Nutzer fragen würde, entscheide selbst und dokumentiere die Annahme als Kommentar
