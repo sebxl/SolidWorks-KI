@@ -126,12 +126,15 @@ def abschliessen(args) -> dict:
         datei = protokolle.ergebnisdatei(r.arbeitsordner / auftrag.name / f"lauf-{pk['letzter_lauf']}")
         ref = messordner() / "referenz" / f"{a.id}.stl"
         if datei and ref.exists():
-            from werkzeuge.messstand.stl_export import exportiere
-            from werkzeuge.messstand.vergleich import vergleiche
-            stl = exportiere(datei, lo / "ergebnis.stl")
-            v = vergleiche(stl, ref)
-            erg = {"richtig": v["richtig"], "gespiegelt": v["gespiegelt"], "vergleich": v["beste"],
-                   "ergebnisdatei": str(datei)}
+            stl = lo / "ergebnis.stl"
+            if not stl.exists():
+                from werkzeuge.messstand.stl_export import exportiere
+                exportiere(datei, stl)
+            erg = {"richtig": None, "vergleich": None, "ergebnisdatei": str(datei)}
+            if not args.ohne_vergleich:
+                from werkzeuge.messstand.vergleich import vergleiche
+                v = vergleiche(stl, ref)
+                erg |= {"richtig": v["richtig"], "gespiegelt": v["gespiegelt"], "vergleich": v["beste"]}
     kpi = {"lauf": args.lauf, "durchgang": info["durchgang"], "aufgabe": a.id, "commit": info["commit"],
            **tk, **pk, **sp, "bestanden": pk["pruefer_bestanden"], **erg,
            "haenger": args.haenger, "abgeschlossen": datetime.now().isoformat(timespec="seconds")}
@@ -172,7 +175,9 @@ def main() -> int:
     s = sub.add_parser("vorbereiten"); s.add_argument("durchgang", type=int); s.add_argument("aufgabe")
     s.add_argument("nr", type=int); s.add_argument("--commit", default="HEAD"); s.set_defaults(f=vorbereiten)
     s = sub.add_parser("abschliessen"); s.add_argument("lauf"); s.add_argument("--agent", required=True)
-    s.add_argument("--haenger", type=int, default=0); s.set_defaults(f=abschliessen)
+    s.add_argument("--haenger", type=int, default=0)
+    s.add_argument("--ohne-vergleich", action="store_true", help="nur exportieren, Vergleich später")
+    s.set_defaults(f=abschliessen)
     s = sub.add_parser("score"); s.add_argument("durchgang", type=int); s.add_argument("--baseline", type=int, default=0)
     s.set_defaults(f=score_befehl)
     s = sub.add_parser("aufraeumen"); s.add_argument("durchgang", type=int); s.set_defaults(f=aufraeumen)

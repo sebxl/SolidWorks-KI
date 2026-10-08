@@ -9,6 +9,7 @@ from pathlib import Path
 
 _SWKI = re.compile(r"-m\s+swki\s+(\w+)")
 _EIGENE = {"bauen", "pruefen", "validieren", "freigeben"}
+_RANG = ["bauen", "pruefen", "freigeben", "validieren"]   # verkettete Befehle zählen zur teuersten Kategorie
 
 # Gewichte für tokens_gewichtet (relativ zum Eingabepreis)
 GEWICHTE = {"input_tokens": 1.0, "cache_creation_input_tokens": 1.25, "cache_read_input_tokens": 0.1,
@@ -33,9 +34,12 @@ def kategorie(name: str, eingabe: dict) -> str:
     """Zeitkategorie eines Tool-Aufrufs."""
     if name in ("Bash", "PowerShell"):
         befehl = str(eingabe.get("command", ""))
-        m = _SWKI.search(befehl)
-        if m:
-            return m.group(1) if m.group(1) in _EIGENE else "swki_sonst"
+        befehle = _SWKI.findall(befehl)
+        for k in _RANG:
+            if k in befehle:
+                return k
+        if befehle:
+            return "swki_sonst"
         return "werkzeuge" if "-m werkzeuge" in befehl else "shell"
     if name in ("Agent", "Task"):
         return "pruefer" if eingabe.get("subagent_type") == "pruefer" else "subagent"
@@ -101,7 +105,7 @@ def tokens(eintraege: list[dict]) -> dict:
 
 def _freigabe_ok(a: dict) -> bool:
     """swki meldet Fehler mit Exit ≠ 0 (Tool-Fehler) bzw. "fehler" im JSON."""
-    return not a["fehler"] and '"fehler"' not in a["ergebnis"] and "Exit code" not in a["ergebnis"]
+    return not a["fehler"] and not re.search(r'"fehler":\s*[{"]', a["ergebnis"]) and "Exit code" not in a["ergebnis"]
 
 
 def _normiere(s: str) -> str:
@@ -147,12 +151,17 @@ def auswerten(wurzel: list[dict], unter: dict[str, list[dict]] | None = None,
             je_werkzeug[a["name"]] = je_werkzeug.get(a["name"], 0) + 1
         for k, v in tokens(eintraege).items():
             tok[k] += v
-    freigaben = sum(1 for a in eigene if kategorie(a["name"], a["eingabe"]) == "freigeben" and _freigabe_ok(a))
-    swki = {}
+    swki: dict[str, int] = {}
+    freigaben = 0
     for a in eigene:
-        k = kategorie(a["name"], a["eingabe"])
-        if k in _EIGENE or k == "swki_sonst":
+        if a["name"] not in ("Bash", "PowerShell"):
+            continue
+        befehle = _SWKI.findall(str(a["eingabe"].get("command", "")))
+        for b in befehle:
+            k = b if b in _EIGENE else "swki_sonst"
             swki[k] = swki.get(k, 0) + 1
+        if "freigeben" in befehle and _freigabe_ok(a):
+            freigaben += befehle.count("freigeben")
     return {
         "zeit_s": round(zeit_s, 1),
         "zeit_anteile_s": anteile,
