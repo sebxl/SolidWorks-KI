@@ -7,3 +7,5 @@ materialdatenbank: 'C:\ProgramData\SolidWorks\SOLIDWORKS 2024\Benutzerdefinierte
 arbeitsordner: 'C:\Users\<Benutzer>\.swki\arbeit'
 normteilbibliothek: 'C:\Users\<Benutzer>\.swki\normteile'
 kaufteilbibliothek: 'C:\Users\<Benutzer>\.swki\kaufteile'
+# optional, nur für Blender-Skripte in Aufträgen (z. B. auftraege/AP68-Pruefstation/umgebung/layout.py)
+blender: 'C:\Program Files\Blender Foundation\Blender <Version>\blender.exe'

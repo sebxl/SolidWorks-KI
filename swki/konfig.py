@@ -25,10 +25,11 @@ class Rechner:
     arbeitsordner: Path
     normteilbibliothek: Path | None = None
     kaufteilbibliothek: Path | None = None
+    blender: Path | None = None  # blender.exe für Blender-Skripte in Aufträgen (optional)
 
 
 _PFADFELDER = ("installationsordner", "vorlage_teil", "vorlage_baugruppe", "materialdatenbank", "arbeitsordner",
-               "normteilbibliothek", "kaufteilbibliothek")
+               "normteilbibliothek", "kaufteilbibliothek", "blender")
 
 
 def swki_home() -> Path:
