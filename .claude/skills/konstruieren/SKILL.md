@@ -13,7 +13,14 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Mehrere Teile, die zusammengebaut werden: Skill `baugruppe` (eine Freigabe für Baugruppe und Teile).
 
 ## 2. Spezifikation schreiben
-- Datei `auftraege/<auftrag>/<name>.yaml` nach `schema/teil.schema.json`. Vorlagen: `tests/referenz/*/`.
+- Datei `auftraege/<auftrag>/<name>.yaml` nach `schema/teil.schema.json`. Dieser Skill enthält alles Nötige (Elemente,
+  Endbedingungen, Kurzreferenz Prüfwerte) – Schema und Vorlagen nur bei einem Validierfehler nachlesen.
+- Zeichnung lesen (vor dem Schreiben, einmal und knapp): Projektionsmethode am Symbol im Schriftfeld – ISO E
+  (Erstwinkel): Draufsicht **unter** der Vorderansicht, Ansicht von links **rechts** daneben; ISO A (Drittwinkel):
+  Draufsicht **über** der Vorderansicht, Ansicht von rechts **rechts** daneben. Je Ansicht festhalten: Blickrichtung
+  als Modellachse und welche Modellachse im Bild nach rechts/oben zeigt; erst dann Lagemaße mit Vorzeichen
+  umrechnen und je Maß die Bezugskante nennen (Plattenrand oder Gehäuse?).
+- Kommentare knapp: je Annahme eine Zeile.
 - Maße, die zusammenhängen, als `parameter` und Ausdrücke (`"=L/2-20"`); sie werden SW-Gleichungen.
 - Anforderungsmaße (vom Nutzer vorgegeben oder zu prüfen) immer als `parameter` führen: feste Zahlen in Features
   gehören zum Bauweg und sind von der Freigabe-Prüfsumme nicht geschützt.
@@ -87,7 +94,11 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   ```
   Messpunkte: `{feature, flaeche: "+x"|"-x"|…}`, `{feature, instanz, achse: true}` (nur `bohrung`/`normbohrung`, nicht an
   Extrusionen – deren Lage über `durchmesser_pruefen` mit `nahe` oder `schwerpunkt` prüfen), `{punkt: [x, y, z]}`.
-  Weitere Vorlagen nur bei Bedarf: `tests/referenz/*/`.
+  Nicht von Hand nachrechnen (kein Python für Volumen oder Schwerpunkt): `volumen: {soll: auto}` rechnet auch Löcher
+  in derselben Skizze und Durchgänge (`durch_alles`, `durch`) durch eine Platte; `schwerpunkt` nur für
+  Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale zeigt der Steckbrief nach dem Bau.
+  `auto` setzt voraus, dass Aufsätze nicht in andere Körper hineinragen: einen Aufsatz (auch mit Formschräge oder
+  `mittig`) auf der Fläche beginnen lassen, auf der er steht – er verschmilzt dort ohne Spalt.
 
 ### Modellierregeln (kompakter Feature-Baum)
 Änderbarkeit zuerst, sonst so wenige Features wie möglich:
@@ -130,7 +141,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst nachbessern.
 - Der Prüfbericht vergleicht Normbohrungen (Art, Größe, Norm, Positionen, durch/Tiefe) mit der freigegebenen Kopie
   (Prüfung `normbohrungen`) und nennt unter `baum` Knoten- und Featurezahl.
-- Prüfer-Agent (`subagent_type: pruefer`) starten mit den Pfaden: Eingabeordner, freigegebene Spezifikation
+- Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) starten mit den Pfaden: Eingabeordner, freigegebene Spezifikation
   (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs, `steckbrief.txt`. Keine Protokolle, keine
   Skripte übergeben.
 - Sein JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json` schreiben – nur das

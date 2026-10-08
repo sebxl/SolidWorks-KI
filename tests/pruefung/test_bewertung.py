@@ -106,7 +106,10 @@ def test_sollvolumen_aus_freigegebener_spec():
 
 NB = {"id": "f2", "typ": "normbohrung", "art": "zylinderschraube", "groesse": "M8",
       "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [["=-L/2+10", 0], ["=L/2-10", 0]], "durch": True}
-SPEC_NB = {**SPEC, "features": [*SPEC["features"], NB]}
+# Durchgangsbohrungen auf der Plattenfläche: das Sollvolumen wäre berechenbar (Messstand Umbau 2) – hier ohne Volumen,
+# die Messwerte-Attrappe kennt nur die Platte
+OHNE_VOLUMEN = {k: v for k, v in SPEC["pruefung"].items() if k != "volumen"}
+SPEC_NB = {**SPEC, "features": [*SPEC["features"], NB], "pruefung": OHNE_VOLUMEN}
 # typ = swWzdHoleTypes_e (Art und Ende zusammen): ISO 4762 durch = 14
 IST_NB = {"typ": 14, "befestigung": 139, "norm": 8, "groesse": normmasse("zylinderschraube", "M8")["sw_groesse"],
           "ende": 1, "tiefe": 0.0, "gewindetiefe": 0.0, "positionen": 2}
@@ -152,7 +155,7 @@ def test_normbohrung_tiefen():
 def test_normbohrung_stift_durch():
     # Stift mit durch (CreateDefinition) liest FastenerType2 = -1; die Art zeigt dann nur Type = 25 (swHoleThru)
     stift = {**NB, "art": "stift", "groesse": 8}
-    spec = {**SPEC, "features": [SPEC["features"][0], stift]}
+    spec = {**SPEC, "features": [SPEC["features"][0], stift], "pruefung": OHNE_VOLUMEN}
     ist = IST_NB | {"typ": 25, "befestigung": -1, "groesse": normmasse("stift", 8)["sw_groesse"]}
     assert bewerte(spec, _messwerte(normbohrungen={"f2": ist}), STANDARD)["bestanden"] is True
     [mangel] = bewerte(spec, _messwerte(normbohrungen={"f2": ist | {"typ": 22}}), STANDARD)["maengel"]

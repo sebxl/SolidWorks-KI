@@ -53,12 +53,14 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - `swki validieren <baugruppe.yaml>` (prüft auch alle Teil-Specs, die Normteile und die Passung Normteil ↔ Bohrung)
   bis `"gueltig": true`; `hinweise` abarbeiten wie beim Teil.
 - Dem Nutzer zeigen: Teile (Parameter, Material), Normteile (Norm, Größe, Variante, Anzahl), Verknüpfungen in Worten,
-  Prüfwerte. Erst nach ausdrücklichem OK: `swki freigeben <baugruppe.yaml>` – **eine** Freigabe für alles.
+  Prüfwerte. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
+  Prüfung: `swki durchlauf <baugruppe.yaml> --freigeben` (validieren → freigeben → bauen → prüfen → status in einem
+  Aufruf, kompakte Ausgabe; ohne `--freigeben` für jeden weiteren Lauf). Einzeln weiter `swki freigeben`.
 - Verknüpfungen sind Bauweg (nachbesserbar); Komponenten, Parameter, `freiheitsgrade`, `pruefung` und die
   Anforderungen der Teil-Specs nicht (sonst `FREIGABE_VERALTET`).
 
 ## 4. Bauen, prüfen, Prüfer
-- `swki bauen <baugruppe.yaml>`: baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
+- `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
   verknüpft. Fehlercodes (die `meldung` nennt Komponente bzw. Verknüpfung):
   - `TEIL_BAU` (Knoten `<komponente>/<feature>`): Bauweg der Teil-Spec nachbessern.
   - `KOMPONENTE_FEHLER`: Einfügen oder Fixieren einer Komponente gescheitert (Komponente und Datei in der Meldung).
@@ -76,7 +78,7 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - `swki pruefen <baugruppe.yaml>` → Prüfbericht mit `verknuepfungen`, `bestimmtheit`, `stueckliste`, `kollision`,
   `gewinde:<schraube>` (Einschraublänge, Volumen ist/soll), `mass:*`, `huellquader`, Teilprüfungen
   `<komponente>: <prüfung>`.
-- Prüfer-Agent (`subagent_type: pruefer`) mit Eingabeordner, allen freigegebenen Specs (Baugruppe und Teile),
+- Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit Eingabeordner, allen freigegebenen Specs (Baugruppe und Teile),
   Prüfbericht und Screenshot-Ordner; Urteil unverändert nach `protokolle/<spec>.lauf-<n>.pruefer.json`.
 - **Speicher:** Ein Baugruppenlauf (Bau + Prüfen) kostet SolidWorks mehrere GB (Stehlager 3,1–3,6 GB Private Bytes).
   Nach jedem Baugruppenlauf die Private Bytes von `SLDWORKS.exe` prüfen
@@ -87,7 +89,10 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   auf frischem SolidWorks: `-m werkzeuge.live_frisch`.
 
 ## 5. Schleife und Bericht
-- `swki status <spec>` und `swki bericht <spec>` wie beim Teil (Skill `konstruieren`, Abschnitte 6–7).
+- `swki status <spec>` und `swki bericht <spec>` wie beim Teil (Skill `konstruieren`, Abschnitte 6–7), bei `bestanden`
+  in einem Shell-Aufruf: `… swki status <spec> && … swki bericht <spec>`.
+- Teil-Specs der Baugruppe: Regeln und Kurzreferenz Prüfwerte aus dem Skill `konstruieren` (Abschnitt 2), nichts von
+  Hand nachrechnen (`volumen: {soll: auto}`).
 - Nachbessern nur am Bauweg; hält Claude eine Anforderung für falsch (z. B. Schraube zu lang), den Nutzer fragen.
 
 ## 6. Bewegungen (Stufe 4a)

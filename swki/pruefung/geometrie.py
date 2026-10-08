@@ -110,6 +110,40 @@ def _flaeche(element: dict, p: dict) -> float | None:
     return None
 
 
+def _umriss(element: dict, p: dict) -> tuple[float, float, float, float] | None:
+    """Achsparalleler Umriss (umin, vmin, umax, vmax) eines geschlossenen Skizzenelements, sonst None."""
+    if "rechteck" in element or "kreis" in element or "langloch" in element:
+        e = element.get("rechteck") or element.get("kreis") or element["langloch"]
+        u, v = (auswerten(x, p) for x in e["mitte"])
+        if "rechteck" in element:
+            hu, hv = auswerten(e["breite"], p) / 2, auswerten(e["hoehe"], p) / 2
+        elif "kreis" in element:
+            hu = hv = auswerten(e["durchmesser"], p) / 2
+        else:
+            w, halb, r = math.radians(auswerten(e.get("winkel", 0), p)), auswerten(e["laenge"], p) / 2,                 auswerten(e["breite"], p) / 2
+            hu, hv = halb * abs(math.cos(w)) + r, halb * abs(math.sin(w)) + r
+        return u - hu, v - hv, u + hu, v + hv
+    if "polygon" in element or "kontur" in element:
+        pts = (_punkte(element["polygon"]["punkte"], p) if "polygon" in element
+               else kontur_punkte(element["kontur"], p))
+        return min(x for x, _ in pts), min(y for _, y in pts), max(x for x, _ in pts), max(y for _, y in pts)
+    return None
+
+
+def _skizzen_flaeche(elemente: list, p: dict) -> float:
+    """Fläche der geschlossenen Profile einer Skizze: ein Profil, dessen Umriss ganz in dem eines größeren liegt, ist
+    ein Loch (z. B. Langlöcher in der Plattenskizze) und wird abgezogen; getrennte Profile werden addiert."""
+    teile = [(e, _flaeche(e, p), _umriss(e, p)) for e in elemente]
+    teile = [(e, a, u) for e, a, u in teile if a is not None]
+    summe = 0.0
+    for i, (_, a, u) in enumerate(teile):
+        innen = u is not None and any(
+            j != i and b > a and w is not None and w[0] <= u[0] and w[1] <= u[1] and u[2] <= w[2] and u[3] <= w[3]
+            for j, (_, b, w) in enumerate(teile))
+        summe += -a if innen else a
+    return summe
+
+
 def _hat_rundung(element: dict) -> bool:
     return ("radius" in element.get("rechteck", {}) or "radien" in element.get("polygon", {})
             or "langloch" in element or "kontur" in element)
@@ -171,19 +205,49 @@ def _pappus(f: dict, p: dict) -> float | None:
     return flaeche * 2 * math.pi * r * auswerten(f.get("winkel", 360), p) / 360
 
 
+_EBENEN_ACHSE = {"vorne": "z", "oben": "y", "rechts": "x"}
+
+
+def _dicke(features: dict, flaeche, p: dict) -> float | None:
+    """Materialdicke für einen Durchgang (durch_alles, durch): liegt die Skizze bzw. Fläche auf einer Fläche einer
+    Extrusion mit fester Tiefe (blind, ohne Formschräge) quer zu deren Extrusionsrichtung, ist deren Tiefe die Dicke
+    (Annahme wie überall hier: der Durchgang geht nur durch dieses Feature). Sonst None."""
+    if not isinstance(flaeche, dict) or "feature" not in flaeche or "flaeche" not in flaeche:
+        return None
+    x = features.get(flaeche["feature"])
+    if not x or x["typ"] != "extrusion" or x["ende"]["typ"] != "blind" or schraege(x) is not None:
+        return None
+    ebene = x["skizze"]["ebene"]
+    if isinstance(ebene, str):
+        achse = _EBENEN_ACHSE.get(ebene)
+    elif isinstance(ebene, dict) and isinstance(ebene.get("flaeche"), str):
+        achse = ebene["flaeche"][-1]
+    else:
+        return None
+    if achse != str(flaeche["flaeche"])[-1]:
+        return None
+    return auswerten(x["ende"]["tiefe"], p)
+
+
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
     """Sollvolumen aus der Spezifikation, soweit analytisch möglich (Annahme: Schnitte liegen ganz im Material,
     Aufsätze überlappen nicht). Rückgabe (volumen, grund); volumen None = nicht berechenbar, grund sagt warum.
     Kennt Rundungen, Langloch, Kontur, Normbohrung mit Tiefe, Formschräge an einem Profil (swki.formschraege);
-    bis_flaeche/versatz_von_flaeche und Normbohrung durch sind nicht berechenbar."""
+    Durchgänge (durch_alles, durch) nur auf der Fläche einer Extrusion mit fester Tiefe (`_dicke`);
+    bis_flaeche/versatz_von_flaeche sind nicht berechenbar."""
     p = spec.get("parameter", {})
     beitrag: dict[str, float] = {}
+    nach_id = {f["id"]: f for f in spec["features"]}
     for f in spec["features"]:
         typ = f["typ"]
         if typ in ("extrusion", "schnitt"):
             ende = f["ende"]
+            tiefe = None
             if ende["typ"] == "durch_alles":
-                return None, f"{f['id']}: durch_alles"
+                tiefe = (_dicke(nach_id, f["skizze"]["ebene"], p)
+                         if typ == "schnitt" and schraege(f) is None else None)
+                if tiefe is None:
+                    return None, f"{f['id']}: durch_alles"
             if ende["typ"] in ("bis_flaeche", "versatz_von_flaeche"):
                 return None, f"{f['id']}: ende {ende['typ']} (Tiefe hängt von der Geometrie ab)"
             if schraege(f) is not None:
@@ -191,7 +255,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
                 if v is None:
                     return None, grund
             else:
-                v = sum(_flaeche(e, p) for e in f["skizze"]["elemente"]) * auswerten(ende["tiefe"], p)
+                v = _skizzen_flaeche(f["skizze"]["elemente"], p) * (tiefe or auswerten(ende["tiefe"], p))
             beitrag[f["id"]] = -v if typ == "schnitt" else v
         elif typ == "rotation":
             if any(_hat_rundung(e) for e in f["skizze"]["elemente"]):
@@ -201,19 +265,22 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
                 return None, f"{f['id']}: Rotation mit mehreren Profilen nicht analytisch"
             beitrag[f["id"]] = -v if f.get("schnitt") else v
         elif typ == "bohrung":
-            if f.get("durch"):
+            t = _dicke(nach_id, f["flaeche"], p) if f.get("durch") else auswerten(f["tiefe"], p)
+            if t is None:
                 return None, f"{f['id']}: Bohrung durch"
-            d, t = auswerten(f["durchmesser"], p), auswerten(f["tiefe"], p)
+            d = auswerten(f["durchmesser"], p)
             v = math.pi * d**2 / 4 * t
             if "senkung" in f:
                 ds, ts = auswerten(f["senkung"]["durchmesser"], p), auswerten(f["senkung"]["tiefe"], p)
                 v += math.pi * (ds**2 - d**2) / 4 * ts
             beitrag[f["id"]] = -v * len(f["positionen"])
         elif typ == "normbohrung":
-            if f.get("durch"):
+            dicke = _dicke(nach_id, f["flaeche"], p) if f.get("durch") else None
+            if f.get("durch") and dicke is None:
                 return None, f"{f['id']}: Normbohrung durch"
             masse = normmasse(f["art"], f["groesse"], norm_von(f))
-            v = normbohrung_volumen(f["art"], masse, auswerten(f["tiefe"], p), spitze_grad=bohrspitze_grad())
+            v = normbohrung_volumen(f["art"], masse, None if f.get("durch") else auswerten(f["tiefe"], p), dicke=dicke,
+                                    spitze_grad=bohrspitze_grad())
             beitrag[f["id"]] = -v * len(f["positionen"])
         elif typ == "muster_linear":
             kopien = f["richtung1"]["anzahl"] * f.get("richtung2", {}).get("anzahl", 1) - 1
