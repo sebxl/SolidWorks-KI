@@ -1,0 +1,5 @@
+id: kamera
+art: teil
+skill: konstruieren
+eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/Basler_ace2_GigE_Massbild.png]
+referenz: {datei: "{arbeitsordner}/AP68-Pruefstation/lauf-5/AP68-Pruefstation_Kamera.SLDPRT"}

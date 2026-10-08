@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+messstand = ["numpy>=2.3", "scipy>=1.16", "trimesh>=4.8"]
 
 [tool.setuptools.packages.find]
 include = ["swki*"]

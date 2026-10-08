@@ -1,0 +1,7 @@
+id: stehlager
+art: baugruppe
+skill: baugruppe
+eingaben: [tests/referenz/stehlager/eingabe/beschreibung.md]
+referenz: {spec_ordner: tests/referenz/stehlager, spec: stehlager.yaml}
+entfernen: [tests/referenz/stehlager]
+verboten: [tests/referenz/stehlager]

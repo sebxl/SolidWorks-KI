@@ -1,0 +1,7 @@
+id: zentrieraufnahme
+art: teil
+skill: konstruieren
+eingaben: [tests/referenz/zentrieraufnahme/eingabe/beschreibung.md]
+referenz: {spec_ordner: tests/referenz/zentrieraufnahme, spec: zentrieraufnahme.yaml}
+entfernen: [tests/referenz/zentrieraufnahme]
+verboten: [tests/referenz/zentrieraufnahme]

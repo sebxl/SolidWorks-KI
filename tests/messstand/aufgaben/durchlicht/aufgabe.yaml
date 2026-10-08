@@ -1,0 +1,5 @@
+id: durchlicht
+art: teil
+skill: konstruieren
+eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/AI_BL-S050075_Massbild.png]
+referenz: {datei: "{arbeitsordner}/AP68-Pruefstation/lauf-8/AP68-Pruefstation_Durchlicht.SLDPRT"}
