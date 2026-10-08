@@ -50,7 +50,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   `abstand`; der Versatz geht zur Skizze hin – z. B. Restwandstärke über der Unterseite). Bekannte Einschränkung: ein
   Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt einen getrennten Körper
   – dafür `bis_flaeche` oder `blind` verwenden. `swki pruefen` meldet mehrere Volumenkörper als Mangel (Prüfung
-  `koerper`: „2 Volumenkörper statt 1”).
+  `koerper`: „2 Volumenkörper statt 1“).
 - Schräge Wände eines extrudierten Elements (konischer Zapfen, Einführschräge, Trichter, verjüngter Steg) als
   `formschraege` im `ende` von `extrusion`/`schnitt` (Paket Formschräge, Vorlage `tests/referenz/zentrieraufnahme/`):
   `formschraege: {winkel: "=W", querschnitt: kleiner | groesser}`. Der Winkel (Grad, 0 < winkel < 90) zählt gegen die

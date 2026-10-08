@@ -3,7 +3,7 @@
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
 Stand: Paket Formschräge (Option an Extrusion und Schnitt) umgesetzt – Ergebnisse: docs/formschraege/ergebnisse.md
 (davor 3c: docs/stufe3c/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
-„Messarten” (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
+„Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).

@@ -65,8 +65,8 @@ Volumen Trichter (Kegelstumpf): 7990,922 mm³ (Sollwert aus `sollvolumen.py`). G
 
 Quelle: `tests/live/test_live_zentrieraufnahme.py` (Commit 7495f73) · Zusammen 86,9 s, 1453 MB Private Bytes
 
-- `test_richtung_vertauscht`: Mängel {formschraegen, volumen} am Knoten Zapfen. Text „Querschnitt nicht kleiner (…)".
-- `test_winkel_verfaelscht` (WZ+3 → 13° statt 10°): Mängel {formschraegen, volumen} am Knoten Zapfen. Text „Winkel 13° statt 10° (…)", gemessen 13,0°.
+- `test_richtung_vertauscht`: Mängel {formschraegen, volumen} am Knoten Zapfen. Text „Querschnitt nicht kleiner (…)“.
+- `test_winkel_verfaelscht` (WZ+3 → 13° statt 10°): Mängel {formschraegen, volumen} am Knoten Zapfen. Text „Winkel 13° statt 10° (…)“, gemessen 13,0°.
 
 ## 5. Regression
 
@@ -80,7 +80,7 @@ Alle Tests über `tests\live_einzeln.py` (Rechner A, frisches SW, 2026-10-08)
 
 **pytest -q:** 1022 passed, 152 deselected (Plan: 1021; ein Test mehr: `test_ddir_kleiner_aus_spike` aus Fix 5b).
 
-Einstellungen vor/nach: False 1; eine SW-Instanz pro Lauf.
+Einstellungen nach jedem Lauf False 1, eine Instanz.
 
 ## 6. Abweichungen vom Plan
 
@@ -88,7 +88,7 @@ Einstellungen vor/nach: False 1; eine SW-Instanz pro Lauf.
 
 1. **Winkelmaß (Spike 4):** Alle fünf Endbedingungen nutzen **D3** als Winkelmaß, nicht D2/D1. Fix 5a (0010215). Spec §4 nachgezogen. Live-Test erwartet `"D3@f2" = "W"`.
 
-2. **Richtung (Spike 1):** `DDIR_KLEINER = {"extrusion": False, "schnitt": False}` (True baute „groesser"), unabhängig von `umkehren`. Fix 5b (2ef590b). Neuer Test `test_ddir_kleiner_aus_spike` (+1 Test: 1022/152).
+2. **Richtung (Spike 1):** `DDIR_KLEINER = {"extrusion": False, "schnitt": False}` (True baute „groesser“), unabhängig von `umkehren`. Fix 5b (2ef590b). Neuer Test `test_ddir_kleiner_aus_spike` (+1 Test: 1022/152).
 
 3. **Mittig (Spike 2):** Beidseitig schrägen, `Dchk2`/`Ddir2`/`Dang2` ungesetzt. Alle Endbedingungen bauen.
 
