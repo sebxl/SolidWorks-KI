@@ -8,8 +8,13 @@ __pycache__/
 # Rechnerspezifisch
 config/rechner.yaml
 
-# Aufträge (Arbeitsstände; Referenzen liegen in tests/referenz/) und SolidWorks-Temporärdateien
-auftraege/
+# Aufträge (Arbeitsstände; Referenzen liegen in tests/referenz/) und SolidWorks-Temporärdateien.
+# Ausnahme: Skripte (*.py) in Aufträgen sind Code und werden versioniert; wiederverwendbare Werkzeuge gehören nach werkzeuge/.
+auftraege/**
+!auftraege/**/
+!auftraege/**/*.py
+# abgelöst durch werkzeuge/ (live_frisch, bau_wiederholen, cpu_last, inspiziere); alte Kopien, können gelöscht werden
+auftraege/REPRO-NB/diagnose/*.py
 ~$*
 
 # Lokale Claude-Einstellungen
