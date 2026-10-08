@@ -72,7 +72,22 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
 - `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
-  `schwerpunkt` für Symmetrie/Spiegelfehler.
+  `schwerpunkt` für Symmetrie/Spiegelfehler. Kurzreferenz (vollständig, Schema nicht extra lesen):
+  ```yaml
+  pruefung:
+    huellquader: ["=B", "=H", "=L"]            # Kanten in X, Y, Z
+    volumen: {soll: auto}                       # oder Zahl; optional toleranz_prozent
+    schwerpunkt: {soll: [0, null, 0]}           # null = Koordinate nicht prüfen; optional tol
+    masse_pruefen:                              # Abstand zweier Messpunkte; optional tol (mm)
+      - {was: Höhe, von: {feature: f1, flaeche: "-y"}, zu: {feature: f2, flaeche: "+y"}, soll: "=H"}
+      - {was: Lochabstand, von: {feature: f3, instanz: 1, achse: true}, zu: {feature: f3, instanz: 2, achse: true}, soll: "=A"}
+      - {was: Loch zur Kante, von: {feature: f1, flaeche: "-x"}, zu: {feature: f3, instanz: 1, achse: true}, soll: "=E"}
+    durchmesser_pruefen:                        # Zylinderfläche des Features nahe einem Punkt auf dem Mantel
+      - {was: Zapfen, feature: f4, nahe: ["=X0+D/2", "=H+5", 0], soll: "=D"}
+  ```
+  Messpunkte: `{feature, flaeche: "+x"|"-x"|…}`, `{feature, instanz, achse: true}` (nur `bohrung`/`normbohrung`, nicht an
+  Extrusionen – deren Lage über `durchmesser_pruefen` mit `nahe` oder `schwerpunkt` prüfen), `{punkt: [x, y, z]}`.
+  Weitere Vorlagen nur bei Bedarf: `tests/referenz/*/`.
 
 ### Modellierregeln (kompakter Feature-Baum)
 Änderbarkeit zuerst, sonst so wenige Features wie möglich:
@@ -90,7 +105,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
    Rotation eines Trapezes und nicht als Schnitt mit schräger Skizze.
 
 ## 3. Validieren und Rückfragen
-- `swki validieren <spec>` bis `"gueltig": true`.
+- `swki validieren <spec>` bis `"gueltig": true` (ohne SolidWorks, schnell).
 - `hinweise` aus `validieren` vor der Freigabe abarbeiten (sie blockieren nie):
   - `art: feste_zahl` – feste Zahl in einem maßtragenden Feld: meist als Parameter führen, sonst dem Nutzer bei der
     Freigabe ausdrücklich nennen.
@@ -100,29 +115,37 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 
 ## 4. Freigabe (einziger menschlicher Eingriff)
 - Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten.
-- Erst nach ausdrücklichem OK: `swki freigeben <spec>` (legt `<name>.freigegeben.yaml` ab; diese Kopie nie ändern).
+- Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
+  `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
+  `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.
 
 ## 5. Bauen, prüfen, Prüfer
+- Nach der Freigabe: `swki durchlauf <spec>` (ohne `--freigeben`) baut den nächsten Lauf und prüft ihn. Ausgabe
+  kompakt: `schritt` (wo er endete), `lauf`, `pruefung.fehlgeschlagen`, `pruefung.steckbrief`, `empfehlung`.
+  Einzelbefehle (`swki bauen`, `swki pruefen <spec> --lauf n`) bleiben für Sonderfälle.
+- Endet der Durchlauf mit `schritt: bauen` (Bauabbruch): Fehlercode und Knoten lesen, Bauweg nachbessern (Schritt 6).
 - Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert: `swki aenderungen <spec>` zeigt die Parameterdifferenz; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
-- `swki bauen <spec>` → Lauf n (Protokoll unter `protokolle/`). Bei Bauabbruch: Fehlercode und Knoten lesen,
-  dann nicht `swki pruefen`, sondern nachbessern (Schritt 6, „Bauabbruch“).
-- `swki pruefen <spec> --lauf n` → Prüfbericht + Screenshots.
+- **Lage-Selbstcheck vor dem Prüfer:** `pruefung.steckbrief` (auch `steckbrief.txt` im Laufordner) nennt Hüllquader,
+  Schwerpunkt und jeden achsparallelen Zylinder mit Achse, Mitte, Ø und Ausdehnung. Mit der Eingabe vergleichen:
+  liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst nachbessern.
 - Der Prüfbericht vergleicht Normbohrungen (Art, Größe, Norm, Positionen, durch/Tiefe) mit der freigegebenen Kopie
   (Prüfung `normbohrungen`) und nennt unter `baum` Knoten- und Featurezahl.
 - Prüfer-Agent (`subagent_type: pruefer`) starten mit den Pfaden: Eingabeordner, freigegebene Spezifikation
-  (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs. Keine Protokolle, keine Skripte übergeben.
+  (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs, `steckbrief.txt`. Keine Protokolle, keine
+  Skripte übergeben.
 - Sein JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json` schreiben – nur das
   JSON-Objekt (Code-Fences und Text drumherum weglassen, am Inhalt nichts ändern).
   Beispiel für `auftraege/A-1/platte.yaml` (Dateistamm `platte` = Name der Spezifikationsdatei ohne `.yaml`), Lauf 2:
   Freigabe-Kopie `auftraege/A-1/platte.freigegeben.yaml`, Prüfbericht
   `auftraege/A-1/protokolle/platte.lauf-2.pruefbericht.json`, Urteil
   `auftraege/A-1/protokolle/platte.lauf-2.pruefer.json`.
+- Danach `swki status <spec>` und bei `bestanden` gleich `swki bericht <spec>` (gern in einem Shell-Aufruf mit `&&`).
 
 ## 6. Schleife
 - `swki status <spec>` (optional `--max N`, wenn der Nutzer eine Zahl genannt hat) → `empfehlung`:
   - `nachbessern`: nur den Bauweg ändern (Anker, Reihenfolge, Handler-Optionen, Skripte). Anforderungen (Parameter,
     Material, Eigenschaften, Prüfwerte) sind tabu – `swki bauen` verweigert sonst (FREIGABE_VERALTET). Hält Claude eine
-    Anforderung für falsch: Nutzer fragen. Dann neu bauen (Schritt 5).
+    Anforderung für falsch: Nutzer fragen. Dann `swki durchlauf <spec>` (Schritt 5).
   - Bauabbruch (`swki bauen` meldet `status: fehler`): nicht `swki pruefen` (verweigert mit LAUF_ABGEBROCHEN), sondern
     direkt den Bauweg nachbessern und neu bauen. Ein Abbruch verbraucht einen Lauf, wird aber nicht als Mängelzahl
     verglichen; „kein Fortschritt“ vergleicht nur durchgebaute und geprüfte Läufe. Vorgabe: 1 + 3 = 4 Läufe;

@@ -11,6 +11,9 @@ dependencies = [
   "pywin32>=311",
   "PyYAML>=6.0",
   "jsonschema>=4.23",
+  "numpy>=2.3",       # Geometrie-Steckbrief (swki pruefen)
+  "scipy>=1.16",
+  "trimesh>=4.8",
 ]
 
 [project.optional-dependencies]

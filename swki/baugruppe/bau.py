@@ -328,12 +328,14 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
                 b.asm = sw_baugruppe.neue_baugruppe(b.app, r.vorlage_baugruppe)
                 globale_variablen(b.asm, bg.spec.get("parameter", {}))
                 setze_eigenschaften(b.asm, eigenschaften_fuer(bg.spec, auftrag))
-                fehler = _fuege_ein(b, alle_instanzen)
+                with sw.schnell(b.app, b.asm):
+                    fehler = _fuege_ein(b, alle_instanzen)
         if fehler is not None:
             _ueberspringe_komponenten(b, alle_instanzen)
         with protokoll.phase("verknuepfen"):
             if fehler is None:
-                fehler = _verknuepfe(b, alle_verknuepfungen)
+                with sw.schnell(b.app, b.asm):
+                    fehler = _verknuepfe(b, alle_verknuepfungen)
             else:
                 _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
         if fehler is None and b.asm is not None and bg.spec.get("bewegungen"):

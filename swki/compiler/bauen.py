@@ -50,7 +50,7 @@ def baue_teil_dokument(app, r, standard: dict, spec: dict, spec_pfad: Path, auft
         except Exception as e:  # z. B. MATERIAL_UNBEKANNT
             fehler = e
         if fehler is None:
-            with protokoll.phase("bauen"):
+            with protokoll.phase("bauen"), sw.schnell(app, model):
                 fehler = baue_features(ctx, protokoll, alle_handler(), lambda c: sw.rebuild(c.model))
     except BaseException:
         try:
