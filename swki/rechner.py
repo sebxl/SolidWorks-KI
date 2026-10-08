@@ -1,6 +1,7 @@
 """Erkennung der lokalen SolidWorks-Installation und Befehle "swki rechner …"."""
 
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Protocol
 
@@ -97,11 +98,19 @@ def erkenne(reg: Registry, jahr: int | None = None) -> Rechner:
     )
 
 
+def behalte_handeintraege(neu: Rechner, alt: Rechner | None) -> Rechner:
+    """Übernimmt die von Hand gepflegten Einträge (blender, dateien), die die Registry nicht kennt."""
+    if alt is None:
+        return neu
+    return replace(neu, blender=alt.blender, dateien=alt.dateien)
+
+
 def _init(args) -> dict:
     pfad = rechner_pfad()
     if pfad.exists() and not args.neu:
         return {"unveraendert": True, "pfad": str(pfad), **rechner_als_dict(lade_rechner(pfad))}
-    r = erkenne(WinRegistry(), args.jahr)
+    alt = lade_rechner(pfad) if pfad.exists() else None
+    r = behalte_handeintraege(erkenne(WinRegistry(), args.jahr), alt)
     schreibe_rechner(r, pfad)
     r.arbeitsordner.mkdir(parents=True, exist_ok=True)
     return {"unveraendert": False, "pfad": str(pfad), **rechner_als_dict(r)}

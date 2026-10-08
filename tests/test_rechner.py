@@ -1,7 +1,9 @@
+from pathlib import Path
+
 import pytest
 
-from swki.konfig import KonfigFehler
-from swki.rechner import erkenne, sw_jahre
+from swki.konfig import KonfigFehler, Rechner
+from swki.rechner import behalte_handeintraege, erkenne, sw_jahre
 
 
 class FakeRegistry:
@@ -72,3 +74,21 @@ def test_unbekanntes_jahr(tmp_path):
 def test_kein_solidworks():
     with pytest.raises(KonfigFehler, match="Kein SOLIDWORKS"):
         erkenne(FakeRegistry({}, {}))
+
+
+def _rechner(jahr, **mehr):
+    return Rechner(sw_jahr=jahr, installationsordner=Path(f"C:/SW{jahr}"), vorlage_teil=Path("t.prtdot"),
+                   vorlage_baugruppe=None, materialdatenbank=None, arbeitsordner=Path("arbeit"), **mehr)
+
+
+def test_init_neu_behaelt_handeintraege():
+    # "rechner init --neu" erkennt nur die Registry-Werte; blender und dateien pflegt man von Hand.
+    alt = _rechner(2025, blender=Path("C:/Blender/blender.exe"), dateien={"szene": Path("C:/x/szene.blend")})
+    neu = behalte_handeintraege(_rechner(2026), alt)
+    assert neu.sw_jahr == 2026
+    assert neu.blender == Path("C:/Blender/blender.exe")
+    assert neu.dateien == {"szene": Path("C:/x/szene.blend")}
+
+
+def test_init_neu_ohne_alte_datei():
+    assert behalte_handeintraege(_rechner(2026), None) == _rechner(2026)
