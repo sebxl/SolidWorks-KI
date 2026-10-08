@@ -31,6 +31,20 @@ SW_NUT_MITTELPUNKT = 1  # swSketchSlotCreationType_e.swSketchSlotCreationType_ce
 SW_NUT_MITTE_MITTE = 0  # swSketchSlotLengthType_e.swSketchSlotLengthType_CenterCenter
 SW_SKIZZE_LINIE = 0  # swSketchSegments_e.swSketchLINE
 SW_GEGEN_UHRZEIGERSINN = 1  # CreateArc/CreateSketchSlot Direction: +1 = gegen den Uhrzeigersinn (Skizzensystem)
+SW_DECKUNGSGLEICH = 9  # swConstraintType_e.swConstraintType_COINCIDENT
+SW_BEZIEHUNG_PUNKT = 2  # swSketchRelationEntityTypes_e.swSketchRelationEntityType_Point
+
+
+def schluessel_element(element, typ: int) -> tuple:
+    """Skizzenelement eindeutig in seiner Skizze: Punkt bzw. Segmenttyp + ID (IDs sind je Typ eindeutig)."""
+    return ("punkt" if typ == SW_BEZIEHUNG_PUNKT else element.GetType, tuple(element.GetID))
+
+
+def fremde_deckungen(beziehungen, alte: set) -> list:
+    """Deckungsbeziehungen, die ein Element aus `alte` (vor dem Erzeugen vorhanden) betreffen – beim Erzeugen
+    automatisch angelegt (Fangen trotz AddToDB, AP 6.8 Lauf 7) und neben den Lagemaßen überzählig."""
+    return [b for b in beziehungen if b.GetRelationType == SW_DECKUNGSGLEICH
+            and any(schluessel_element(e, t) in alte for e, t in zip(b.GetEntities or (), b.GetEntitiesType or ()))]
 
 
 @dataclass
@@ -282,10 +296,19 @@ class Skizzierer:
             return (s.GetType, tuple(s.GetID))
 
         vorher = {schluessel(s) for s in self.skizze.GetSketchSegments or ()}
+        alte = ({schluessel_element(s, 0) for s in self.skizze.GetSketchSegments or ()}
+                | {schluessel_element(p, SW_BEZIEHUNG_PUNKT) for p in self.skizze.GetSketchPoints2 or ()})
         nut = self.sm.CreateSketchSlot(SW_NUT_MITTELPUNKT, SW_NUT_MITTE_MITTE, mm(breite), xm, ym, 0.0, xe, ye, 0.0,
                                        0.0, 0.0, 0.0, SW_GEGEN_UHRZEIGERSINN, False)
         if nut is None:
             raise BauFehler(SKIZZE_UNGUELTIG, "CreateSketchSlot fehlgeschlagen", schritt="skizze")
+        # Gefangene Deckungen mit vorhandener Geometrie (z. B. Bogenmitte eines Nachbar-Langlochs auf der Mittellinie)
+        # löschen: Lage und Richtung legen die Maße fest, sonst ist die Skizze überbestimmt ("Gleichungen: Code 1").
+        verwalter = self.skizze.RelationManager
+        for b in fremde_deckungen(verwalter.GetRelations(0) or (), alte):
+            if not verwalter.DeleteRelation(b):
+                raise BauFehler(SKIZZE_UNGUELTIG, "Langloch: automatische Deckungsbeziehung nicht löschbar",
+                                schritt="skizze")
         neu = [s for s in self.skizze.GetSketchSegments or () if schluessel(s) not in vorher]
         seiten = [s for s in neu if s.GetType == SW_SKIZZE_LINIE and not s.ConstructionGeometry]
         achsen = [s for s in neu if s.GetType == SW_SKIZZE_LINIE and s.ConstructionGeometry]
