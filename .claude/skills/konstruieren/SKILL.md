@@ -53,12 +53,12 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   `koerper`: „2 Volumenkörper statt 1”).
 - Schräge Wände eines extrudierten Elements (konischer Zapfen, Einführschräge, Trichter, verjüngter Steg) als
   `formschraege` im `ende` von `extrusion`/`schnitt` (Paket Formschräge, Vorlage `tests/referenz/zentrieraufnahme/`):
-  `formschraege: {winkel: “=W”, querschnitt: kleiner | groesser}`. Der Winkel (Grad, 0 < winkel < 90) zählt gegen die
+  `formschraege: {winkel: "=W", querschnitt: kleiner | groesser}`. Der Winkel (Grad, 0 < winkel < 90) zählt gegen die
   Extrusionsrichtung und ist ein Parameter. `querschnitt` gilt von der Skizze weg für den extrudierten Bereich
   (Material beim Aufsatz, Aussparung beim Schnitt): `kleiner` = Zapfen verjüngt sich, Tasche wird zum Boden enger;
   `groesser` = wird weiter. Bei `mittig` gilt das zu beiden Seiten. Ein Trichter wird von der Seite skizziert, deren
   Durchmesser Anforderung ist (enge Seite → `groesser`, weite Seite → `kleiner`). Seitenflächen eines schrägen
-  Features sind nicht achsparallel: nicht mit `{feature, flaeche: “+x”}`/`kanten_an` quer zur Extrusion und nicht
+  Features sind nicht achsparallel: nicht mit `{feature, flaeche: "+x"}`/`kanten_an` quer zur Extrusion und nicht
   mit `senkrechte_kanten` ansprechen (`validieren` lehnt das ab), sondern mit `nahe`; Ecken als Eckradius in der
   Skizze (wird mitgeschrägt). `validieren` meldet, wenn das Profil bei `kleiner` zusammenfällt (Kreis, Rechteck,
   Eckradius, Langloch). `swki pruefen` misst Winkel und Richtung jeder Seitenfläche selbst (`formschraegen`);
