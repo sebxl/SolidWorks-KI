@@ -81,9 +81,10 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - **Speicher:** Ein Baugruppenlauf (Bau + Prüfen) kostet SolidWorks mehrere GB (Stehlager 3,1–3,6 GB Private Bytes).
   Nach jedem Baugruppenlauf die Private Bytes von `SLDWORKS.exe` prüfen
   (`Get-Process SLDWORKS | Select-Object Id,@{n='Privat_MB';e={[int]($_.PrivateMemorySize64/1MB)}}`); ab ca. 4 GB
-  SolidWorks selbst neu starten, nicht den Nutzer fragen: vorher genau eine Instanz und keine fremden ungespeicherten
-  Dokumente (MCP `list_open_documents`), beenden (`ExitApp`), Start über `installationsordner` aus `config/rechner.yaml`,
-  danach genau eine Instanz, sichtbares Fenster und Einstellungen Toggle 10 / Integer 6 = `False 1` prüfen.
+  SolidWorks selbst neu starten, nicht den Nutzer fragen: `.venv\Scripts\python.exe -m werkzeuge.sw_neustart` (prüft
+  genau eine Instanz und keine offenen Dokumente, beendet per `ExitApp`, startet aus `installationsordner`, meldet
+  Instanzen und Einstellungen Toggle 10 / Integer 6 als JSON; `einstellungen_ok` muss `true` sein). Live-Serien je Test
+  auf frischem SolidWorks: `-m werkzeuge.live_frisch`.
 
 ## 5. Schleife und Bericht
 - `swki status <spec>` und `swki bericht <spec>` wie beim Teil (Skill `konstruieren`, Abschnitte 6–7).

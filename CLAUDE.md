@@ -8,7 +8,11 @@ Stand: Paket Formschräge (Option an Extrusion und Schnitt) umgesetzt – Ergebn
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
 - SolidWorks-Version und Pfade stehen in `config/rechner.yaml` (pro Rechner, nicht im Git). Nie ein Jahr oder einen Pfad fest in Code schreiben.
+  Pfade für Auftragsskripte ebenfalls dort: `blender`, `dateien: {<name>: <pfad>}`.
 - Einrichten eines Rechners: `powershell -ExecutionPolicy Bypass -File setup\einrichten.ps1`.
+- Werkzeuge (SolidWorks-Neustart, Live-Tests auf frischem SolidWorks, Teil-Diagnose, STL-Hüllquader, Kaufteil-Vorprüfung):
+  `werkzeuge/` (Übersicht in `werkzeuge/__init__.py`, Aufruf `-m werkzeuge.<name>`). Ein Hilfsskript, das wiederkommt,
+  dorthin übernehmen; Scratch ist Wegwerf. `*.py` in `auftraege/` ist versioniert, der Rest dort bleibt Arbeitsstand.
 
 ## SolidWorks
 - Gebaut wird nur über `swki` bzw. Spikes/Skripte dieses Repos. Das MCP `solidworks-mcp` dient nur zum Ansehen (Feature-Baum, Masseeigenschaften).
