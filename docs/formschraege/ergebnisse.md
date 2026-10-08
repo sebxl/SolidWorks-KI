@@ -19,12 +19,12 @@ Lauf 3: 150,5 s, `ok: true`, 16 Teile gebaut und ungespeichert geschlossen, Priv
 | 7 | weitere Profile | Rechteck mit Eckradius `groesser` und Sechseck `kleiner`: Volumen < 0,01 % | `7_eckradius_groesser` 6791,529 mm³ (0,0 %), acht Seitenflächen −1; `7_sechseck_kleiner` 2889,188 mm³ (0,0 %), sechs Seitenflächen +1, 10,0°; alle `koerper` 1 | ja | `querschnitt_koeffizienten` bleibt |
 
 Verlauf: Lauf 1 scheiterte an der Gleichung `D2@f2`/`D1@f2` (Winkelmaß heißt D3) → Fix 5a (0010215). Lauf 2 lieferte mit
-`Ddir1 = True` in allen 17 Fällen die gespiegelte Richtung → Fix 5b (2ef590b). Lauf 3 bestätigt beide Korrektionen.
+`Ddir1 = True` in allen 17 Fällen die gespiegelte Richtung → Fix 5b (2ef590b). Lauf 3 bestätigt beide Korrekturen.
 Größte Volumenabweichung in Lauf 3: 0,00475 % (`6_eckradius_20`).
 
 ## 2. Live-Tests
 
-Quell: `tests/live/test_live_formschraege.py` (Commit a965209)
+Quelle: `tests/live/test_live_formschraege.py` (Commit a965209)
 
 8 Tests, alle bestanden; Volumen gegen Sollwert `swki.formschraege.volumen` mit Toleranz < 0,0001 % geprüft, Winkeltoleranz 0,01°. SW frisch (422 MB), nachher 2524 MB Private Bytes.
 
@@ -39,21 +39,21 @@ Quell: `tests/live/test_live_formschraege.py` (Commit a965209)
 
 ## 3. Referenz Zentrieraufnahme
 
-Spezifikation: `auftraege/REF-FS-ZENTRIERAUFNAHME/zentrieraufnahme.yaml` (Platte 160 × 100 × 20, Eckradius 8; Zapfen, Tasche, Trichter, Steg mit Formschrägen, alle lagen als Parameter)
+Spezifikation: `tests/referenz/zentrieraufnahme/zentrieraufnahme.yaml` (Platte 160 × 100 × 20, Eckradius 8; Zapfen, Tasche, Trichter, Steg mit Formschrägen, alle Lagen als Parameter)
 
-Code-Prüfung: 1 regressionstest in 46 s (Spitze ca. 3,9 GB kumuliert).
+**Regressionstest (Task 7):** 1 passed in 48 s, Private Bytes 419 → 1026 MB.
 
-Prüfer-Lauf: Bauen Lauf 1 ok in 35 s, Prüfung 9 s, Prüfer-Agent bestanden (0 Mängel); Private Bytes 419 → 1026 MB.
+**Prüfer-Lauf des Controllers:** bauen Lauf 1 ok in 35 s, Prüfung 9 s, Prüfer-Agent bestanden (0 Mängel), Private Bytes nach dem Lauf 1678 MB.
 
-| Prüfwert | Ist | Soll | Abweichung | Bemerkung |
-|----------|-----|------|-----------|----------|
-| Volumen | 315014,796 mm³ | 315014,796 mm³ | 0,0 % | Toleranz 0,05 % |
-| Hüllquader | 160 × 45 × 100 | 160 × 45 × 100 | — | ✓ |
-| Körper | 1 | 1 | — | ✓ |
-| Zapfen Höhe, Taschenboden | ✓ | ✓ | — | Messung über Anker |
-| Baum | 5 Knoten / 5 Features | 5 | — | kompakt |
+| Prüfwert | Ist | Soll | Abweichung |
+|----------|-----|------|-----------|
+| Volumen | 315014,796 mm³ | 315014,796 mm³ | 0,0 % (Toleranz 0,05 %) |
+| Hüllquader | 160 × 45 × 100 | 160 × 45 × 100 | ✓ |
+| Körper | 1 | 1 | ✓ |
 
 Formschrägen gemessen: Zapfen 10,0°, Tasche 8,0°, Steg 5,0°.
+
+**Regression (Task 8):** OK in 46 s, Spitze ca. 3,9 GB kumuliert.
 
 ### Trichter
 
@@ -63,7 +63,7 @@ Volumen Trichter (Kegelstumpf): 7990,922 mm³ (Sollwert aus `sollvolumen.py`). G
 
 ## 4. Negativfälle
 
-Quell: `tests/live/test_live_zentrieraufnahme.py` (Commit 7495f73) · Zusammen 86,9 s, 1453 MB Private Bytes
+Quelle: `tests/live/test_live_zentrieraufnahme.py` (Commit 7495f73) · Zusammen 86,9 s, 1453 MB Private Bytes
 
 - `test_richtung_vertauscht`: Mängel {formschraegen, volumen} am Knoten Zapfen. Text „Querschnitt nicht kleiner (…)".
 - `test_winkel_verfaelscht` (WZ+3 → 13° statt 10°): Mängel {formschraegen, volumen} am Knoten Zapfen. Text „Winkel 13° statt 10° (…)", gemessen 13,0°.
@@ -96,7 +96,11 @@ Einstellungen vor/nach: False 1; eine SW-Instanz pro Lauf.
 
 5. **Messung (Spike 5):** `toleranzen.winkel_grad` bleibt 0.01; Messung über `EvaluateAtPoint`/`FaceInSurfaceSense` bestätigt.
 
-6. **Ring, weitere Profile (Spikes 3, 7):** Bestätigt, keine Änderung.
+6. **Ring (Spike 3):** `volumen_aenderung` = `innen_waechst` (Innenrand wächst bei `kleiner`); keine Ablehnung mehrerer Profile.
+
+7. **Weitere Profile (Spike 7):** Rechteck mit Eckradius `groesser` und Sechseck `kleiner` bestätigt; `querschnitt_koeffizienten` bleibt.
+
+8. **Task 7 Step 6 (Prüfer) und Task 8 Step 4 (Regression):** Der Controller hat beide selbst ausgeführt (SolidWorks-Neustarts).
 
 ## 7. Offene Punkte
 
