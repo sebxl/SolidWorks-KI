@@ -200,6 +200,8 @@ Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*
 - Kreismuster: `D1` Anzahl, `D3` Gesamtwinkel. Fase (Abstand-Winkel): `D1` Abstand, `D2` Winkel.
 - Versetzte Referenzebene: `D1@<Ebenenname>`, Betrag; die Richtung steckt im Umkehren-Flag. Der Name ist sprachabhängig
   (`Ebene1`) → aus `IFeature.Name` lesen.
+- Extrusion/Schnitt mit Formschräge: `D1` Tiefe bzw. Versatz, `D3` Winkel bei allen Endbedingungen (`D2` gibt es nicht);
+  `Ddir1` False baut den Querschnitt „kleiner“ (Spike S16, 2026-10-08).
 - Maße eines Features auflisten: `feature.GetFirstDisplayDimension`, `feature.GetNextDisplayDimension(dd)`,
   `dd.GetDimension2(0).FullName` bzw. `.SystemValue`; Wert eines Maßes: `model.Parameter("D3@f3").SystemValue`.
 

@@ -168,7 +168,11 @@
         "tiefe": {"$ref": "#/$defs/wert"},
         "umkehren": {"type": "boolean"},
         "flaeche": {"$ref": "#/$defs/flaechenanker"},
-        "abstand": {"$ref": "#/$defs/wert"}
+        "abstand": {"$ref": "#/$defs/wert"},
+        "formschraege": {
+          "type": "object", "required": ["winkel", "querschnitt"], "additionalProperties": false,
+          "properties": {"winkel": {"$ref": "#/$defs/wert"}, "querschnitt": {"enum": ["kleiner", "groesser"]}}
+        }
       },
       "allOf": [
         {"if": {"properties": {"typ": {"enum": ["blind", "mittig"]}}}, "then": {"required": ["tiefe"]}},

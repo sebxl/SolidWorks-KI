@@ -1,0 +1,2546 @@
+{
+  "ok": true,
+  "annahmen": {
+    "DDIR_KLEINER": {
+      "extrusion": false,
+      "schnitt": false
+    },
+    "WINKEL_MASS": {
+      "blind": "D3",
+      "mittig": "D3",
+      "versatz_von_flaeche": "D3",
+      "durch_alles": "D3",
+      "bis_flaeche": "D3"
+    }
+  },
+  "1_extrusion_kleiner": {
+    "fehler": null,
+    "volumen_aenderung": 2175.418,
+    "soll_aenderung": 2175.418,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil1.Part",
+        "typ2": 2,
+        "wert": 0.008
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil1.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil1.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            28.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            25.5895,
+            9.0144
+          ],
+          "n": [
+            0.0,
+            0.173648,
+            0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "1_extrusion_groesser": {
+    "fehler": null,
+    "volumen_aenderung": 2884.471,
+    "soll_aenderung": 2884.471,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil2.Part",
+        "typ2": 2,
+        "wert": 0.008
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil2.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil2.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            28.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            22.1693,
+            10.3825
+          ],
+          "n": [
+            0.0,
+            -0.173648,
+            0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "1_schnitt_kleiner": {
+    "fehler": null,
+    "volumen_aenderung": -2175.418,
+    "soll_aenderung": -2175.418,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil3.Part",
+        "typ2": 2,
+        "wert": 0.008
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil3.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil3.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            12.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            14.4105,
+            9.0144
+          ],
+          "n": [
+            -0.0,
+            0.173648,
+            -0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "1_schnitt_groesser": {
+    "fehler": null,
+    "volumen_aenderung": -2884.471,
+    "soll_aenderung": -2884.471,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil4.Part",
+        "typ2": 2,
+        "wert": 0.008
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil4.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil4.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            12.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            17.8307,
+            10.3825
+          ],
+          "n": [
+            -0.0,
+            -0.173648,
+            -0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "1_extrusion_kleiner_umkehren": {
+    "fehler": null,
+    "volumen_aenderung": 3028.488,
+    "soll_aenderung": 3028.488,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Ebene1@Teil5.Part",
+        "typ2": 2,
+        "wert": 0.032
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil5.Part",
+        "typ2": 2,
+        "wert": 0.012
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil5.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil5.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            32.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            24.4708,
+            8.6724
+          ],
+          "n": [
+            0.0,
+            -0.173648,
+            0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "1_schnitt_kleiner_umkehren": {
+    "fehler": null,
+    "volumen_aenderung": -1783.051,
+    "soll_aenderung": -1783.051,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@Ebene1@Teil6.Part",
+        "typ2": 2,
+        "wert": 0.005
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil6.Part",
+        "typ2": 2,
+        "wert": 0.013
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil6.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil6.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            8.0,
+            0.0
+          ],
+          "n": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            -1.0,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            5.4387,
+            8.1594
+          ],
+          "n": [
+            -0.0,
+            -0.173648,
+            -0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "2_mittig": {
+    "fehler": null,
+    "volumen_aenderung": 3695.725,
+    "soll_aenderung": 3695.725,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 2,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil7.Part",
+        "typ2": 2,
+        "wert": 0.008
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil7.Part",
+        "typ2": 3,
+        "wert": 0.087266463
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil7.Part",
+        "typ2": 2,
+        "wert": 0.04
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil7.Part",
+        "typ2": 2,
+        "wert": 0.012
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2_skizze@Teil7.Part",
+        "typ2": 11,
+        "wert": 0.02
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@f2_skizze@Teil7.Part",
+        "typ2": 12,
+        "wert": 0.034
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 5",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 5.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            40.0,
+            4.0
+          ],
+          "n": [
+            -0.0,
+            0.0,
+            1.0
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            45.825,
+            2.0
+          ],
+          "n": [
+            0.0,
+            0.996195,
+            0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            0.996195,
+            0.087156
+          ]
+        },
+        {
+          "punkt": [
+            19.825,
+            40.0,
+            2.0
+          ],
+          "n": [
+            0.996195,
+            0.0,
+            0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            0.996195,
+            0.0,
+            0.087156
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            34.175,
+            2.0
+          ],
+          "n": [
+            0.0,
+            -0.996195,
+            0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            -0.996195,
+            0.087156
+          ]
+        },
+        {
+          "punkt": [
+            -19.825,
+            40.0,
+            2.0
+          ],
+          "n": [
+            -0.996195,
+            0.0,
+            0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.996195,
+            0.0,
+            0.087156
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            40.0,
+            -4.0
+          ],
+          "n": [
+            0.0,
+            -0.0,
+            -1.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            -0.0,
+            -1.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            34.175,
+            -2.0
+          ],
+          "n": [
+            0.0,
+            -0.996195,
+            -0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            -0.996195,
+            -0.087156
+          ]
+        },
+        {
+          "punkt": [
+            19.825,
+            40.0,
+            -2.0
+          ],
+          "n": [
+            0.996195,
+            0.0,
+            -0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            0.996195,
+            0.0,
+            -0.087156
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            45.825,
+            -2.0
+          ],
+          "n": [
+            0.0,
+            0.996195,
+            -0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            0.996195,
+            -0.087156
+          ]
+        },
+        {
+          "punkt": [
+            -19.825,
+            40.0,
+            -2.0
+          ],
+          "n": [
+            -0.996195,
+            0.0,
+            -0.087156
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.996195,
+            0.0,
+            -0.087156
+          ]
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "2_durch_alles": {
+    "fehler": null,
+    "volumen_aenderung": -8759.445,
+    "soll_aenderung": -8759.445,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil8.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil8.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            7.9884,
+            -11.4086
+          ],
+          "n": [
+            -0.0,
+            0.173648,
+            0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "2_bis_flaeche": {
+    "fehler": null,
+    "volumen_aenderung": -4327.864,
+    "soll_aenderung": -4327.864,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil9.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil9.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            8.5914,
+            7.9884
+          ],
+          "n": [
+            -0.0,
+            0.173648,
+            -0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "2_versatz_von_flaeche": {
+    "fehler": null,
+    "volumen_aenderung": -3575.892,
+    "soll_aenderung": -3575.892,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil10.Part",
+        "typ2": 2,
+        "wert": 0.005
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil10.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil10.Part",
+        "typ2": 6,
+        "wert": 0.02
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            5.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            11.0161,
+            8.4159
+          ],
+          "n": [
+            -0.0,
+            0.173648,
+            -0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 10.0
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "3_ring_soll": {
+    "innen_waechst": 5175.29,
+    "innen_schrumpft": 5729.238
+  },
+  "3_ring": {
+    "fehler": null,
+    "volumen_aenderung": 5175.29,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil11.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil11.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil11.Part",
+        "typ2": 6,
+        "wert": 0.03
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil11.Part",
+        "typ2": 6,
+        "wert": 0.01
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            23.9942,
+            5.7043
+          ],
+          "n": [
+            -0.0,
+            0.173648,
+            -0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 5.0
+        },
+        {
+          "punkt": [
+            0.0,
+            27.4144,
+            13.6926
+          ],
+          "n": [
+            0.0,
+            0.173648,
+            0.984808
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 15.0
+        },
+        {
+          "punkt": [
+            0.0,
+            30.0,
+            -6.7633
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      ],
+      "abw_normale_max": 0.0,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "6_eckradius_16": {
+    "fehler": null,
+    "volumen_aenderung": -4648.963,
+    "soll_aenderung": -4648.963,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil12.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil12.Part",
+        "typ2": 3,
+        "wert": 0.27925268
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil12.Part",
+        "typ2": 2,
+        "wert": 0.03
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil12.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2_skizze@Teil12.Part",
+        "typ2": 11,
+        "wert": 0.015
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@f2_skizze@Teil12.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D5",
+        "fullname": "D5@f2_skizze@Teil12.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D6",
+        "fullname": "D6@f2_skizze@Teil12.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D7",
+        "fullname": "D7@f2_skizze@Teil12.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D8",
+        "fullname": "D8@f2_skizze@Teil12.Part",
+        "typ2": 5,
+        "wert": 0.003
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 16",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 16.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            10.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            -0.0,
+            15.0,
+            8.5663
+          ],
+          "n": [
+            -0.0,
+            0.275637,
+            -0.961262
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.275637,
+            -0.961262
+          ]
+        },
+        {
+          "punkt": [
+            13.1373,
+            15.1471,
+            8.1373
+          ],
+          "n": [
+            -0.679715,
+            0.275637,
+            -0.679715
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 16.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            13.5663,
+            15.0,
+            0.0
+          ],
+          "n": [
+            -0.961262,
+            0.275637,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.961262,
+            0.275637,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            13.1373,
+            15.1471,
+            -8.1373
+          ],
+          "n": [
+            -0.679715,
+            0.275637,
+            0.679715
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 16.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -0.0,
+            15.0,
+            -8.5663
+          ],
+          "n": [
+            -0.0,
+            0.275637,
+            0.961262
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.275637,
+            0.961262
+          ]
+        },
+        {
+          "punkt": [
+            -13.1373,
+            15.1471,
+            -8.1373
+          ],
+          "n": [
+            0.679715,
+            0.275637,
+            0.679715
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 16.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -13.5663,
+            15.0,
+            -0.0
+          ],
+          "n": [
+            0.961262,
+            0.275637,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.961262,
+            0.275637,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            -13.1373,
+            15.1471,
+            8.1373
+          ],
+          "n": [
+            0.679715,
+            0.275637,
+            -0.679715
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 16.0,
+          "radius_mm": 3.0
+        }
+      ],
+      "abw_normale_max": 1.1102230246251565e-16,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "6_eckradius_17": {
+    "fehler": null,
+    "volumen_aenderung": -4570.705,
+    "soll_aenderung": -4570.705,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil13.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil13.Part",
+        "typ2": 3,
+        "wert": 0.296705973
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil13.Part",
+        "typ2": 2,
+        "wert": 0.03
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil13.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2_skizze@Teil13.Part",
+        "typ2": 11,
+        "wert": 0.015
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@f2_skizze@Teil13.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D5",
+        "fullname": "D5@f2_skizze@Teil13.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D6",
+        "fullname": "D6@f2_skizze@Teil13.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D7",
+        "fullname": "D7@f2_skizze@Teil13.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D8",
+        "fullname": "D8@f2_skizze@Teil13.Part",
+        "typ2": 5,
+        "wert": 0.003
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 17",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 17.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            10.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            15.0,
+            8.4713
+          ],
+          "n": [
+            -0.0,
+            0.292372,
+            -0.956305
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.292372,
+            -0.956305
+          ]
+        },
+        {
+          "punkt": [
+            13.0982,
+            15.2674,
+            8.0982
+          ],
+          "n": [
+            -0.67621,
+            0.292372,
+            -0.67621
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 17.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            13.4713,
+            15.0,
+            -0.0
+          ],
+          "n": [
+            -0.956305,
+            0.292372,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.956305,
+            0.292372,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            13.0982,
+            15.2674,
+            -8.0982
+          ],
+          "n": [
+            -0.67621,
+            0.292372,
+            0.67621
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 17.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -0.0,
+            15.0,
+            -8.4713
+          ],
+          "n": [
+            -0.0,
+            0.292372,
+            0.956305
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.292372,
+            0.956305
+          ]
+        },
+        {
+          "punkt": [
+            -13.0982,
+            15.2674,
+            -8.0982
+          ],
+          "n": [
+            0.67621,
+            0.292372,
+            0.67621
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 17.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -13.4713,
+            15.0,
+            -0.0
+          ],
+          "n": [
+            0.956305,
+            0.292372,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.956305,
+            0.292372,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            -13.0982,
+            15.2674,
+            8.0982
+          ],
+          "n": [
+            0.67621,
+            0.292372,
+            -0.67621
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 17.0,
+          "radius_mm": 3.0
+        }
+      ],
+      "abw_normale_max": 1.1102230246251565e-16,
+      "abw_kegelwinkel_max_grad": 3.552713678800501e-15
+    }
+  },
+  "6_eckradius_20": {
+    "fehler": null,
+    "volumen_aenderung": -4335.555,
+    "soll_aenderung": -4335.349,
+    "volumen_abw_prozent": 0.00475,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil14.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil14.Part",
+        "typ2": 3,
+        "wert": 0.34906585
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil14.Part",
+        "typ2": 2,
+        "wert": 0.03
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil14.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2_skizze@Teil14.Part",
+        "typ2": 11,
+        "wert": 0.015
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@f2_skizze@Teil14.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D5",
+        "fullname": "D5@f2_skizze@Teil14.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D6",
+        "fullname": "D6@f2_skizze@Teil14.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D7",
+        "fullname": "D7@f2_skizze@Teil14.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D8",
+        "fullname": "D8@f2_skizze@Teil14.Part",
+        "typ2": 5,
+        "wert": 0.003
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 20",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 20.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            10.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            15.0,
+            8.1801
+          ],
+          "n": [
+            -0.0,
+            0.34202,
+            -0.939693
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.34202,
+            -0.939693
+          ]
+        },
+        {
+          "punkt": [
+            13.1121,
+            16.0785,
+            8.1121
+          ],
+          "n": [
+            -0.664463,
+            0.34202,
+            -0.664463
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 20.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            13.1801,
+            15.0,
+            -0.0
+          ],
+          "n": [
+            -0.939693,
+            0.34202,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.939693,
+            0.34202,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            13.1121,
+            16.0785,
+            -8.1121
+          ],
+          "n": [
+            -0.664463,
+            0.34202,
+            0.664463
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 20.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -0.0,
+            15.0,
+            -8.1801
+          ],
+          "n": [
+            -0.0,
+            0.34202,
+            0.939693
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.0,
+            0.34202,
+            0.939693
+          ]
+        },
+        {
+          "punkt": [
+            -13.1121,
+            16.0785,
+            -8.1121
+          ],
+          "n": [
+            0.664463,
+            0.34202,
+            0.664463
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 20.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -13.1801,
+            15.0,
+            -0.0
+          ],
+          "n": [
+            0.939693,
+            0.34202,
+            -0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.939693,
+            0.34202,
+            -0.0
+          ]
+        },
+        {
+          "punkt": [
+            -13.1121,
+            16.0785,
+            8.1121
+          ],
+          "n": [
+            0.664463,
+            0.34202,
+            -0.664463
+          ],
+          "art": "kegel",
+          "achse": [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          "halber_winkel": 20.0,
+          "radius_mm": 3.0
+        }
+      ],
+      "abw_normale_max": 1.1102230246251565e-16,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "7_eckradius_groesser": {
+    "fehler": null,
+    "volumen_aenderung": 6791.529,
+    "soll_aenderung": 6791.529,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil15.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil15.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil15.Part",
+        "typ2": 2,
+        "wert": 0.03
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil15.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2_skizze@Teil15.Part",
+        "typ2": 11,
+        "wert": 0.015
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@f2_skizze@Teil15.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D5",
+        "fullname": "D5@f2_skizze@Teil15.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D6",
+        "fullname": "D6@f2_skizze@Teil15.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D7",
+        "fullname": "D7@f2_skizze@Teil15.Part",
+        "typ2": 5,
+        "wert": 0.003
+      },
+      {
+        "name": "D8",
+        "fullname": "D8@f2_skizze@Teil15.Part",
+        "typ2": 5,
+        "wert": 0.003
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": -1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": -1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            30.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            -15.8816,
+            25.0,
+            0.0
+          ],
+          "n": [
+            -0.984808,
+            -0.173648,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.984808,
+            -0.173648,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            -14.7338,
+            24.9122,
+            -9.7338
+          ],
+          "n": [
+            -0.696364,
+            -0.173648,
+            -0.696364
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            -0.0,
+            25.0,
+            -10.8816
+          ],
+          "n": [
+            0.0,
+            -0.173648,
+            -0.984808
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            -0.173648,
+            -0.984808
+          ]
+        },
+        {
+          "punkt": [
+            14.7338,
+            24.9122,
+            -9.7338
+          ],
+          "n": [
+            0.696364,
+            -0.173648,
+            -0.696364
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            15.8816,
+            25.0,
+            -0.0
+          ],
+          "n": [
+            0.984808,
+            -0.173648,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.984808,
+            -0.173648,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            14.7338,
+            24.9122,
+            9.7338
+          ],
+          "n": [
+            0.696364,
+            -0.173648,
+            0.696364
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 3.0
+        },
+        {
+          "punkt": [
+            0.0,
+            25.0,
+            10.8816
+          ],
+          "n": [
+            0.0,
+            -0.173648,
+            0.984808
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            -0.173648,
+            0.984808
+          ]
+        },
+        {
+          "punkt": [
+            -14.7338,
+            24.9122,
+            9.7338
+          ],
+          "n": [
+            -0.696364,
+            -0.173648,
+            0.696364
+          ],
+          "art": "kegel",
+          "achse": [
+            -0.0,
+            -1.0,
+            -0.0
+          ],
+          "halber_winkel": 10.0,
+          "radius_mm": 3.0
+        }
+      ],
+      "abw_normale_max": 1.1102230246251565e-16,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  },
+  "7_sechseck_kleiner": {
+    "fehler": null,
+    "volumen_aenderung": 2889.188,
+    "soll_aenderung": 2889.188,
+    "volumen_abw_prozent": 0.0,
+    "koerper": 1,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@f2@Teil16.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2@Teil16.Part",
+        "typ2": 3,
+        "wert": 0.174532925
+      },
+      {
+        "name": "D1",
+        "fullname": "D1@f2_skizze@Teil16.Part",
+        "typ2": 11,
+        "wert": 0.011547005
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@f2_skizze@Teil16.Part",
+        "typ2": 11,
+        "wert": 0.005773503
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@f2_skizze@Teil16.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@f2_skizze@Teil16.Part",
+        "typ2": 11,
+        "wert": 0.005773503
+      },
+      {
+        "name": "D5",
+        "fullname": "D5@f2_skizze@Teil16.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D6",
+        "fullname": "D6@f2_skizze@Teil16.Part",
+        "typ2": 11,
+        "wert": 0.011547005
+      },
+      {
+        "name": "D7",
+        "fullname": "D7@f2_skizze@Teil16.Part",
+        "typ2": 11,
+        "wert": 0.005773503
+      },
+      {
+        "name": "D8",
+        "fullname": "D8@f2_skizze@Teil16.Part",
+        "typ2": 12,
+        "wert": 0.01
+      },
+      {
+        "name": "D9",
+        "fullname": "D9@f2_skizze@Teil16.Part",
+        "typ2": 11,
+        "wert": 0.005773503
+      },
+      {
+        "name": "D10",
+        "fullname": "D10@f2_skizze@Teil16.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "gleichungen": [
+      "\"W\" = 10",
+      "\"D3@f2\" = \"W\""
+    ],
+    "soll_vorzeichen": 1,
+    "gemessen": {
+      "flaechen": [
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        },
+        {
+          "winkel": 10.0,
+          "vorzeichen": 1
+        }
+      ]
+    },
+    "vorzeichen_passt": true,
+    "winkel_abw_max_grad": 0.0,
+    "flaechen": {
+      "liste": [
+        {
+          "punkt": [
+            0.0,
+            30.0,
+            0.0
+          ],
+          "n": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            25.0,
+            9.1184
+          ],
+          "n": [
+            0.0,
+            0.173648,
+            0.984808
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            0.173648,
+            0.984808
+          ]
+        },
+        {
+          "punkt": [
+            -7.781,
+            24.9246,
+            4.7862
+          ],
+          "n": [
+            -0.852869,
+            0.173648,
+            0.492404
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.852869,
+            0.173648,
+            0.492404
+          ]
+        },
+        {
+          "punkt": [
+            -7.781,
+            24.9246,
+            -4.7862
+          ],
+          "n": [
+            -0.852869,
+            0.173648,
+            -0.492404
+          ],
+          "art": "ebene",
+          "normal": [
+            -0.852869,
+            0.173648,
+            -0.492404
+          ]
+        },
+        {
+          "punkt": [
+            0.0,
+            25.0,
+            -9.1184
+          ],
+          "n": [
+            0.0,
+            0.173648,
+            -0.984808
+          ],
+          "art": "ebene",
+          "normal": [
+            0.0,
+            0.173648,
+            -0.984808
+          ]
+        },
+        {
+          "punkt": [
+            7.781,
+            24.9246,
+            -4.7862
+          ],
+          "n": [
+            0.852869,
+            0.173648,
+            -0.492404
+          ],
+          "art": "ebene",
+          "normal": [
+            0.852869,
+            0.173648,
+            -0.492404
+          ]
+        },
+        {
+          "punkt": [
+            7.781,
+            24.9246,
+            4.7862
+          ],
+          "n": [
+            0.852869,
+            0.173648,
+            0.492404
+          ],
+          "art": "ebene",
+          "normal": [
+            0.852869,
+            0.173648,
+            0.492404
+          ]
+        }
+      ],
+      "abw_normale_max": 1.1102230246251565e-16,
+      "abw_kegelwinkel_max_grad": 0.0
+    }
+  }
+}

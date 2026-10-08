@@ -7,6 +7,7 @@ import math
 from dataclasses import dataclass
 
 from swki.compiler.anker import Vektor, differenz, laenge, punkt_achse_abstand, skalar
+from swki.formschraege import schraege, volumen_feature
 from swki.spec.ausdruck import auswerten
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import bohrspitze_grad, norm_von, normmasse
@@ -173,8 +174,8 @@ def _pappus(f: dict, p: dict) -> float | None:
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
     """Sollvolumen aus der Spezifikation, soweit analytisch möglich (Annahme: Schnitte liegen ganz im Material,
     Aufsätze überlappen nicht). Rückgabe (volumen, grund); volumen None = nicht berechenbar, grund sagt warum.
-    Kennt Rundungen, Langloch, Kontur, Normbohrung mit Tiefe; bis_flaeche/versatz_von_flaeche und Normbohrung durch
-    sind nicht berechenbar."""
+    Kennt Rundungen, Langloch, Kontur, Normbohrung mit Tiefe, Formschräge an einem Profil (swki.formschraege);
+    bis_flaeche/versatz_von_flaeche und Normbohrung durch sind nicht berechenbar."""
     p = spec.get("parameter", {})
     beitrag: dict[str, float] = {}
     for f in spec["features"]:
@@ -185,8 +186,12 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
                 return None, f"{f['id']}: durch_alles"
             if ende["typ"] in ("bis_flaeche", "versatz_von_flaeche"):
                 return None, f"{f['id']}: ende {ende['typ']} (Tiefe hängt von der Geometrie ab)"
-            flaechen = [_flaeche(e, p) for e in f["skizze"]["elemente"]]
-            v = sum(flaechen) * auswerten(ende["tiefe"], p)
+            if schraege(f) is not None:
+                v, grund = volumen_feature(f, p)
+                if v is None:
+                    return None, grund
+            else:
+                v = sum(_flaeche(e, p) for e in f["skizze"]["elemente"]) * auswerten(ende["tiefe"], p)
             beitrag[f["id"]] = -v if typ == "schnitt" else v
         elif typ == "rotation":
             if any(_hat_rundung(e) for e in f["skizze"]["elemente"]):

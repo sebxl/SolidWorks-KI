@@ -1,0 +1,90 @@
+# Referenzteil Paket Formschräge: Zentrieraufnahme (selbst definiert, allgemeine Konstruktion).
+# Nutzt die Formschräge an Aufsatz und Schnitt, in beiden Richtungen und mit vier Endbedingungen: konischer Zentrierzapfen
+# (Aufsatz, kleiner, blind), Einführtasche mit Eckradius (Schnitt, kleiner, blind), Trichter-Durchbruch von der
+# Unterseite (Schnitt, groesser, durch_alles) und beidseitig verjüngter Steg (Aufsatz auf Ebene vorne, kleiner, mittig;
+# der Steg ragt 2 mm in die Platte). Platte L × B × H auf Ebene oben (wächst nach +Y), Mitte im Ursprung; (u, v) auf
+# Deck- und Unterseite: X = u, Z = −v.
+art: teil
+name: Zentrieraufnahme
+material: "1.0038"
+eigenschaften: {Benennung: Zentrieraufnahme}
+parameter:
+  L: 160      # Länge (X)
+  B: 100      # Breite (Z)
+  H: 20       # Dicke (Y)
+  R: 8        # Eckradius der Platte
+  DZ: 30      # Zentrierzapfen: Fuß-Ø
+  HZ: 25      # Zentrierzapfen: Höhe
+  WZ: 10      # Zentrierzapfen: Schräge (Grad)
+  XZ: -50     # Zentrierzapfen: Lage (u)
+  TL: 40      # Einführtasche: Länge (X) an der Deckfläche
+  TB: 30      # Einführtasche: Breite (Z) an der Deckfläche
+  TR: 6       # Einführtasche: Eckradius an der Deckfläche
+  TT: 12      # Einführtasche: Tiefe
+  WT: 8       # Einführtasche: Schräge (Grad)
+  XT: 45      # Einführtasche: Lage (u)
+  VT: 22      # Einführtasche: Lage (v)
+  DR: 10      # Trichter: Auslauf-Ø an der Unterseite
+  WR: 30      # Trichter: Schräge (Grad), oben weit
+  XR: 45      # Trichter: Lage (u)
+  VR: -25     # Trichter: Lage (v) auf der Unterseite
+  SL: 40      # Steg: Länge (X)
+  SH: 12      # Steg: Höhe des Profils (Y), ragt SY − SH/2 bis H in die Platte
+  SY: 24      # Steg: Mitte des Profils (Y)
+  SX: -5      # Steg: Mitte des Profils (X)
+  ST: 10      # Steg: Dicke (Z), mittig zur Ebene vorne
+  WS: 5       # Steg: Schräge (Grad) zu beiden Seiten
+features:
+  - id: f1            # Grundplatte mit Eckradius
+    typ: extrusion
+    skizze:
+      ebene: oben
+      elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", radius: "=R"}}]
+    ende: {typ: blind, tiefe: "=H"}
+  - id: zapfen        # Zentrierzapfen, verjüngt sich nach oben
+    typ: extrusion
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente: [{kreis: {mitte: ["=XZ", 0], durchmesser: "=DZ"}}]
+    ende: {typ: blind, tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: kleiner}}
+  - id: tasche        # Einführtasche, wird zum Boden hin enger
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente: [{rechteck: {mitte: ["=XT", "=VT"], breite: "=TL", hoehe: "=TB", radius: "=TR"}}]
+    ende: {typ: blind, tiefe: "=TT", formschraege: {winkel: "=WT", querschnitt: kleiner}}
+  - id: trichter      # Trichter, von der engen Unterseite aus skizziert, oben weit
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "-y"}
+      elemente: [{kreis: {mitte: ["=XR", "=VR"], durchmesser: "=DR"}}]
+    ende: {typ: durch_alles, formschraege: {winkel: "=WR", querschnitt: groesser}}
+  - id: steg          # Steg auf Ebene vorne, zu beiden Seiten verjüngt
+    typ: extrusion
+    skizze:
+      ebene: vorne
+      elemente: [{rechteck: {mitte: ["=SX", "=SY"], breite: "=SL", hoehe: "=SH"}}]
+    ende: {typ: mittig, tiefe: "=ST", formschraege: {winkel: "=WS", querschnitt: kleiner}}
+pruefung:
+  huellquader: ["=L", "=H+HZ", "=B"]
+  volumen:
+    # analytisch (tests/referenz/zentrieraufnahme/sollvolumen.py):
+    #   Platte (L·B − (4 − π)·R²)·H                                      318901,239
+    # + Zapfen, Kegelstumpf Ø DZ → DZ − 2·HZ·tan WZ                       12986,929
+    # + Steg über der Platte, 2 × ∫ (SL − 2d)·(SY + SH/2 − d − H)          3870,043
+    # − Tasche, ∫ Rechteck mit Eckradius nach innen versetzt              12752,492
+    # − Trichter, Kegelstumpf Ø DR → DR + 2·H·tan WR                       7990,922
+    # = 315014,796 mm³   (bei geänderten Parametern neu rechnen)
+    soll: 315014.796
+    toleranz_prozent: 0.05
+  masse_pruefen:
+    - was: Zapfenhöhe über der Unterseite
+      von: {feature: f1, flaeche: "-y"}
+      zu: {feature: zapfen, flaeche: "+y"}
+      soll: "=H+HZ"
+      tol: 0.01
+    - was: Taschenboden über der Unterseite
+      von: {feature: f1, flaeche: "-y"}
+      zu: {feature: tasche, flaeche: "+y"}
+      soll: "=H-TT"
+      tol: 0.01

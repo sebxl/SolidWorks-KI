@@ -332,7 +332,8 @@ Normteil-Vorauswahl, Tool-/Skill-Routing. Vor Einsatz klären, welche Daten an T
 | 4a | Bewegungen: Grenzverknüpfungen, Scharnier, gezählte Freiheitsgrade, `bewegungen`, Bewegungsprüfung (Kollision je Stellung, Grenze, Freiheitsgrad, Endlagen, Paarläufe) – Design: [2026-10-03-stufe-4a-bewegungen-design.md](2026-10-03-stufe-4a-bewegungen-design.md) | Referenz *Linearschlitten* besteht (Code-Prüfungen und Prüfer), vier Negativfälle; Buchse, Formplatte, Auswerferhalteplatte, Stehlager bestehen weiter |
 | 4b | Verzahnung (Feature `verzahnung`: Evolventen-Stirnrad, Zahnstange) und Kopplungen (Zahnrad-, Zahnstangenverknüpfung), Sollweg je Stellung – Design: [2026-10-05-stufe-4b-verzahnung-kopplungen-design.md](2026-10-05-stufe-4b-verzahnung-kopplungen-design.md) | Teil-Referenzen *Zahnstange*, *Ritzelwelle*, *Antriebswelle* und Referenz *Zahnstangentrieb* bestehen (Code-Prüfungen und Prüfer), fünf Negativfälle; Buchse, Formplatte, Auswerferhalteplatte, Stehlager, Linearschlitten bestehen weiter |
 | 4c | Mechanische Kopplungen: Nut- und Kurvenverknüpfung | Referenz offen (allgemeine Konstruktion, z. B. Kulisse mit Nut oder Nocken mit Stößel) |
-| 5 | Zeitauswertung + Jev; optional `swki` als MCP; Blech, Schweiß, Flächen, Formschräge, Zeichnungen | je Erweiterung eigene Referenz |
+| Formschräge | Option `formschraege` an Extrusion und Schnitt (Richtung über den Querschnitt, Prüfung der Seitenflächen) – Design: [2026-10-07-formschraege-design.md](2026-10-07-formschraege-design.md) | Referenz *Zentrieraufnahme* besteht (Code-Prüfungen und Prüfer), zwei Negativfälle; bisherige Referenzen bestehen weiter |
+| 5 | Zeitauswertung + Jev; optional `swki` als MCP; Blech, Schweiß, Flächen, Formschräge an beliebigen Flächen (eigenes Feature), Zeichnungen | je Erweiterung eigene Referenz |
 
 ## 12. Tests
 

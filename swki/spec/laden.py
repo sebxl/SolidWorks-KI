@@ -10,7 +10,9 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import best_match
 
 from swki.cli import SwkiFehler
+from swki.compiler.anker import RICHTUNGEN
 from swki.compiler.skriptpruefung import pruefe_skript
+from swki.formschraege import feste_tiefe, grenze_kleiner, quer_zur_richtung, schraege, skizzennormale
 from swki.konfig import PROJEKT
 from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.konturen import eckradien, kontur_punkte
@@ -174,6 +176,73 @@ def _ende_befunde(ende: dict, pfad: str) -> list[dict]:
     return befunde
 
 
+def _formschraege_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
+    """Spec Formschräge §5.2: Bei querschnitt "kleiner" und bekannter Tiefe darf ein einzelnes Profil (Kreis, Rechteck,
+    Langloch) nicht zusammenfallen. Den Winkelbereich prüft die allgemeine Winkelprüfung."""
+    s = schraege(f)
+    if s is None or s["querschnitt"] != "kleiner" or len(f["skizze"]["elemente"]) != 1:
+        return []
+    try:
+        winkel, tiefe = auswerten(s["winkel"], p), feste_tiefe(f["ende"], p)
+        grenze = grenze_kleiner(f["skizze"]["elemente"][0], p)
+    except AusdruckFehler:
+        return []  # bereits oben gemeldet
+    if tiefe is None or grenze is None or not 0 < winkel < 90:
+        return []
+    einzug = tiefe * math.tan(math.radians(winkel))
+    if einzug < grenze[0]:
+        return []
+    return [{"pfad": f"{pfad}.ende.formschraege",
+             "meldung": f"Profil fällt zusammen: Einzug {einzug:.4g} mm (Tiefe {tiefe:g} · tan {winkel:g}°) erreicht "
+                        f"{grenze[1]} {grenze[0]:g} mm – Winkel oder Tiefe verkleinern"}]
+
+
+def _anker(obj, pfad: list):
+    """Liefert (pfad, anker) für alle Objekte mit einem Feature-Verweis "feature" (Flächen-, Kanten-, Messanker)."""
+    if isinstance(obj, dict):
+        if isinstance(obj.get("feature"), str):
+            yield pfad, obj
+        for k, v in obj.items():
+            yield from _anker(v, [*pfad, k])
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            yield from _anker(v, [*pfad, i])
+
+
+def _schraege_anker_befunde(spec: dict) -> list[dict]:
+    """Spec Formschräge §5.3: Seitenflächen eines Features mit Formschräge sind nicht achsparallel – Richtungsanker quer
+    zur Extrusionsrichtung und senkrechte_kanten finden dort nichts. Eine Skizze auf {nahe} lehnt die Prüfung ab:
+    swki pruefen kann die Extrusionsrichtung im fertigen Teil nicht bestimmen (Übergangslösung)."""
+    schraege_ids, normalen, befunde = set(), {}, []
+    for i, f in enumerate(spec["features"]):
+        if schraege(f) is None:
+            continue
+        schraege_ids.add(f["id"])
+        ebene = f["skizze"]["ebene"]
+        if isinstance(ebene, dict) and "nahe" in ebene:
+            befunde.append({"pfad": f"features[{i}].skizze.ebene",
+                            "meldung": f"{f['id']} hat eine Formschräge: die Skizze darf nicht auf {{nahe: …}} liegen "
+                                       "(swki pruefen kann die Extrusionsrichtung im fertigen Teil nicht bestimmen) – "
+                                       "Skizzenebene als Flächenanker {feature, flaeche} oder Versatzebene angeben"})
+        elif (n := skizzennormale(ebene)) is not None:
+            normalen[f["id"]] = n
+    for pfad, anker in _anker({k: v for k, v in spec.items() if k in ("features", "pruefung")}, []):
+        fid = anker["feature"]
+        if fid not in schraege_ids:
+            continue
+        for schluessel in ("flaeche", "kanten_an"):
+            richtung = anker.get(schluessel)
+            if fid in normalen and richtung in RICHTUNGEN and quer_zur_richtung(richtung, normalen[fid]):
+                befunde.append({"pfad": _pfad([*pfad, schluessel]),
+                                "meldung": f"{fid} hat eine Formschräge: seine Seitenflächen sind geschrägt, {richtung!r} "
+                                           "findet keine Fläche – die Fläche mit {nahe: [x, y, z]} ansprechen"})
+        if anker.get("auswahl") == "senkrechte_kanten":
+            befunde.append({"pfad": _pfad([*pfad, "auswahl"]),
+                            "meldung": f"{fid} hat eine Formschräge: es gibt keine senkrechten Kanten – Ecken mit "
+                                       "Eckradius in der Skizze runden oder alle_kanten/kanten_an/nahe verwenden"})
+    return befunde
+
+
 def _normbohrung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
     befunde = []
     norm = norm_von(f)
@@ -294,6 +363,9 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
         if schluessel in _WINKEL and "langloch" in pfad:
             if not 0 <= wert < 180:
                 befunde.append({"pfad": _pfad(pfad), "meldung": f"langloch.winkel muss in [0, 180) liegen (ist {wert:g})"})
+        elif schluessel in _WINKEL and "formschraege" in pfad:
+            if not 0 < wert < 90:
+                befunde.append({"pfad": _pfad(pfad), "meldung": f"formschraege.winkel muss in (0, 90) liegen (ist {wert:g})"})
         elif schluessel in _WINKEL and _in_verzahnung(spec, pfad):
             if not 0 <= wert < 360:
                 befunde.append({"pfad": _pfad(pfad), "meldung": f"verzahnung.winkel muss in [0, 360) liegen (ist {wert:g})"})
@@ -325,6 +397,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde += _element_befunde(e, f"features[{i}].skizze.elemente[{k}]", parameter)
         if "ende" in f:
             befunde += _ende_befunde(f["ende"], f"features[{i}].ende")
+            befunde += _formschraege_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "normbohrung":
             befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "verzahnung":
@@ -333,6 +406,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde.append({"pfad": f"features[{i}].ebene.umkehren",
                             "meldung": "umkehren wirkt nur zusammen mit abstand (ohne Abstand ist die Ebene "
                                        "deckungsgleich zur Basisebene)"})
+    befunde += _schraege_anker_befunde(spec)
     return befunde
 
 
