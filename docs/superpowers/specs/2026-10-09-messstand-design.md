@@ -73,7 +73,8 @@ Eintrag), Protokolle des Auftrags, Speicherabtastung.
 - Vergleich (numpy/scipy/trimesh): für jede der 24 eigentlichen Drehungen der Achsen (det = +1) Schwerpunkte
   übereinander, dann Oberflächenabstand beidseitig (Punktstichprobe → nächster Punkt der anderen Oberfläche).
   Beste Drehung zählt.
-- `richtig` = Volumen ±0,5 %, Hüllquader-Kanten ±0,3 mm (sortiert nach Drehung), p99 des Oberflächenabstands ≤ 0,3 mm.
+- `richtig` = Volumen ±0,5 %, Hüllquader-Kanten ±0,3 mm (sortiert nach Drehung), p99 des Oberflächenabstands ≤ 0,3 mm und
+  größter Abstand ≤ 1,0 mm (festgelegt vor der ersten Bewertung: p99 allein übersieht eine fehlende kleine Bohrung).
 - `gespiegelt` = keine eigentliche Drehung passt, aber eine uneigentliche (det = −1) erfüllt die Kriterien.
 
 ## 4. Score
