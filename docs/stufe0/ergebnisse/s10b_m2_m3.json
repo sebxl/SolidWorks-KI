@@ -1,0 +1,458 @@
+{
+  "ok": true,
+  "groessen": {
+    "gewinde": {
+      "M2": "M2",
+      "M3": "M3"
+    },
+    "zylinderschraube": {
+      "M3": "M3"
+    }
+  },
+  "tiefe_mm": 20.0,
+  "gewindetiefe_mm": 12.0,
+  "messungen": {
+    "gewinde M2": {
+      "durch": {
+        "abnahme_mm3": 60.319,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 0.8,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -0.8,
+                0.0,
+                -0.8,
+                0.8,
+                30.0,
+                0.8
+              ]
+            }
+          ],
+          "kegel": []
+        },
+        "daten": {
+          "Type": 48,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M2",
+          "EndCondition": 1,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.002,
+          "ThreadEndCondition": 1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 0.0,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      },
+      "blind": {
+        "abnahme_mm3": 40.535,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 0.8,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -0.8,
+                10.0,
+                -0.8,
+                0.8,
+                30.0,
+                0.8
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0008,
+                1.029744
+              ],
+              "box": [
+                -0.8,
+                9.5193,
+                -0.8,
+                0.8,
+                10.0,
+                0.8
+              ]
+            }
+          ]
+        },
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M2",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.002,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0016,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "gewinde M3": {
+      "durch": {
+        "abnahme_mm3": 147.262,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 1.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -1.25,
+                0.0,
+                -1.25,
+                1.25,
+                30.0,
+                1.25
+              ]
+            }
+          ],
+          "kegel": []
+        },
+        "daten": {
+          "Type": 48,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M3",
+          "EndCondition": 1,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.003,
+          "ThreadEndCondition": 1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 0.0,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      },
+      "blind": {
+        "abnahme_mm3": 99.404,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 1.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -1.25,
+                10.0,
+                -1.25,
+                1.25,
+                30.0,
+                1.25
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00125,
+                1.029744
+              ],
+              "box": [
+                -1.25,
+                9.2489,
+                -1.25,
+                1.25,
+                10.0,
+                1.25
+              ]
+            }
+          ]
+        },
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M3",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.003,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0025,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M3": {
+      "durch": {
+        "abnahme_mm3": 354.329,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 3.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.25,
+                26.6,
+                -3.25,
+                3.25,
+                30.0,
+                3.25
+              ]
+            },
+            {
+              "r": 1.7,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -1.7,
+                0.0,
+                -1.7,
+                1.7,
+                26.6,
+                1.7
+              ]
+            }
+          ],
+          "kegel": []
+        },
+        "daten": {
+          "Type": 14,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M3",
+          "EndCondition": 1,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.006500000000000001,
+          "CounterBoreDepth": 0.0034,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0034,
+          "ThruHoleDepth": 0.03,
+          "DrillAngle": 0.0,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      },
+      "blind": {
+        "abnahme_mm3": 266.629,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 3.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -3.25,
+                26.6,
+                -3.25,
+                3.25,
+                30.0,
+                3.25
+              ]
+            },
+            {
+              "r": 1.7,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -1.7,
+                10.0,
+                -1.7,
+                1.7,
+                26.6,
+                1.7
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.0017,
+                1.029744
+              ],
+              "box": [
+                -1.7,
+                8.9785,
+                -1.7,
+                1.7,
+                10.0,
+                1.7
+              ]
+            }
+          ]
+        },
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M3",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0034,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.006500000000000001,
+          "CounterBoreDepth": 0.0034,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    }
+  },
+  "tabelle": {
+    "gewinde": {
+      "M2": {
+        "sw_groesse": "M2",
+        "kernloch": 1.6
+      },
+      "M3": {
+        "sw_groesse": "M3",
+        "kernloch": 2.5
+      }
+    },
+    "zylinderschraube": {
+      "M3": {
+        "sw_groesse": "M3",
+        "durchgang": 3.4,
+        "senkung_d": 6.5,
+        "senkung_t": 3.4
+      }
+    }
+  },
+  "abgleich": {
+    "gewinde M2": {
+      "durch_ist": 60.319,
+      "durch_soll": 60.3186,
+      "blind_ist": 40.535,
+      "blind_soll": 40.5345,
+      "passt": true
+    },
+    "gewinde M3": {
+      "durch_ist": 147.262,
+      "durch_soll": 147.2622,
+      "blind_ist": 99.404,
+      "blind_soll": 99.4037,
+      "passt": true
+    },
+    "zylinderschraube M3": {
+      "durch_ist": 354.329,
+      "durch_soll": 354.3292,
+      "blind_ist": 266.629,
+      "blind_soll": 266.6286,
+      "passt": true
+    }
+  }
+}

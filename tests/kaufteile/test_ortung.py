@@ -73,8 +73,9 @@ def test_gewinde_kernloch_bereich_nenn_und_falsch():
 
 
 def test_kernloch_bereich_und_steigung():
-    assert [steigung(g) for g in ("M5", "M6", "M10x1", "M12x1.5", "M3")] == [0.8, 1.0, 1.0, 1.5, None]
+    assert [steigung(g) for g in ("M5", "M6", "M10x1", "M12x1.5", "M3", "M2")] == [0.8, 1.0, 1.0, 1.5, 0.5, None]
     assert kernloch_bereich("M5") == (4.134, 4.2) and kernloch_bereich("M6") == (4.9175, 5.0)
+    assert kernloch_bereich("M3") == (2.4588, 2.5) and kernloch_bereich("M2") == (1.6, 1.6)  # M2 ohne ISO-4762-Zeile
     assert kernloch_bereich("M8x1") == (6.9175, 7.0) and kernloch_bereich("M16") == (13.835, 14.0)
 
 

@@ -1,0 +1,34 @@
+# Festo GRLA-M5-QS-4-D: Drossel-Rückschlagventil (Abluftdrosselung) M5 mit Steckanschluss QS-4, für die Anschlüsse des ADNM
+# (Prüfstation AP 6.8, A24b). Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 193138, Download der Vorbereitungssitzung
+# 08.10.2026); belegt sind die Angaben der Produktseite (M5, QS-4, Gewicht).
+# STEP-Koordinaten (Diagnose lauf-1): Hohlschraube M5 Achse x = 0, z = 0, Richtung y; Gewinde Ø 5 von y −10,7 bis −14,05,
+# Anlage (Dichtring Ø 7,8) y = −10,7 mit Normale −y; Schwenkkörper mit Steckanschluss QS-4 (Bohrung Ø 4, Achse z) bis
+# z 19,05; Regulierschraube oben. Ein Körper.
+art: kaufteil
+hersteller: Festo
+bestellnummer: GRLA-M5-QS-4-D
+benennung: Drossel-Rückschlagventil GRLA, Gewinde M5, Steckanschluss QS-4
+original:
+  datei: grla-m5-qs-4-d.stp
+  sha256: "0076b0fbce0deb61ad9d980ff74ddfd078272a500024592c6529f2759a812680"
+  bezug:
+    art: nutzer
+    datum: "2026-10-08"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 193138_GRLA-M5-QS-4-D.stp; Produktseite https://www.festo.com/de/de/a/193138/"
+koerper: 1
+material: "Messing"
+masse: {kg: 0.013, beleg: [h1]}
+eigenschaften: {Teilenummer: "193138", Funktion: "Abluft-Drossel-Rückschlag", Anschluss: "M5 / QS-4",
+                Werkstoffhinweis: "Hohlschraube Messing vernickelt, Schwenkanschluss Zink-Druckguss; Masse von der Produktseite"}
+belege:
+  h1: {art: hersteller, url: "https://www.festo.com/de/de/a/193138/", abgerufen: "2026-10-08",
+       hinweis: "Technische Daten: Pneumatischer Anschluss 1 QS-4, Anschluss 2 M5, einschraubbar mit Außengewinde, Produktgewicht 13 g"}
+einbau:
+  EINBAU_ACHSE: {zylinder: {nahe: [0, -12.1297, -2.5], durchmesser: 5, senkrecht_zu: EINBAU_ANLAGE}}
+  EINBAU_ANLAGE: {ebene: {nahe: [0, -10.7, 3.2], normale: [0, -1, 0]}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [0, -1, 4.05]}}
+pruefung:
+  volumen: {soll: 2025.183, toleranz_prozent: 0.01}
+  durchmesser_pruefen:
+    - {was: Einschraubgewinde M5 (Nenn-Ø), nahe: [0, -12.1297, -2.5], soll: 5, tol: 0.1, referenz: EINBAU_ACHSE, beleg: [h1]}
+    - {was: Steckanschluss QS-4 (Schlauch-Ø 4), nahe: [0, 2, 11.4], soll: 4, tol: 0.1, beleg: [h1]}

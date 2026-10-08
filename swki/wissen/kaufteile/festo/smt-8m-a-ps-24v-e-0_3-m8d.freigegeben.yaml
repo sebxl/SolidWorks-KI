@@ -1,0 +1,33 @@
+# Festo SMT-8M-A-PS-24V-E-0,3-M8D: Näherungsschalter für T-Nut, PNP, Kabel 0,3 m mit Stecker M8 (6BG1–3 am ADNM, 7BG1/2
+# an der Weiche über SMBR-8-16, Prüfstation AP 6.8). Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 574334, Download
+# der Vorbereitungssitzung 08.10.2026); die Produktseite nennt keine Gehäusemaße → keine Kennmaße, Masse von der Produktseite.
+# STEP-Koordinaten (Diagnose lauf-1): Schalterkopf z 0 … 26,3, Breite x ±2,5 (Klemmflügel Ø 6,45), Unterseite y = 0
+# (Normale −y, liegt auf dem Nutgrund), Höhe 4,6; Klemmung (Flügel Ø 6,45, Schraube) Achse y bei x = 0, z = 13,45; Stirn z = 26,3. Das Kabel ist
+# gerade nach −z modelliert (bis z −64,4), Stecker M8 und zwei Kabelclips bis z −162 – kürzer als 0,3 m (Vereinfachung
+# des Herstellermodells). Vier Körper.
+art: kaufteil
+hersteller: Festo
+bestellnummer: SMT-8M-A-PS-24V-E-0,3-M8D
+benennung: Näherungsschalter SMT-8M für T-Nut, PNP, Kabel 0,3 m mit Stecker M8
+original:
+  datei: smt-8m-a-ps-24v-e-0_3-m8d.stp
+  sha256: "b3b7e37c085a32a3baeddfa735ab1749bead9444a1c72a1be8e94ae37525e99e"
+  bezug:
+    art: nutzer
+    datum: "2026-10-08"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 574334_SMT-8M-A-PS-24V-E-03-M8D.stp; Produktseite https://www.festo.com/de/de/a/574334/"
+koerper: 4
+material: "PA Typ 6"
+masse: {kg: 0.0089, beleg: [h1]}
+eigenschaften: {Teilenummer: "574334", Schaltausgang: "PNP, Schließer", Anschluss: "Kabel 0,3 m mit Stecker M8x1, 3-polig",
+                Werkstoffhinweis: "Gehäuse PA verstärkt; Masse von der Produktseite"}
+belege:
+  h1: {art: hersteller, url: "https://www.festo.com/de/de/a/574334/", abgerufen: "2026-10-08",
+       hinweis: "Technische Daten: Bauform für T-Nut, von oben in Nut einsetzbar, PNP, Kabel 0,3 m, M8x1, Produktgewicht 8,9 g – keine Maße"}
+einbau:
+  EINBAU_BODEN: {ebene: {nahe: [0, 0, 13.15], normale: [0, -1, 0]}}
+  EINBAU_STIRN: {ebene: {nahe: [0, 2.3, 26.3], normale: [0, 0, 1]}}
+  EINBAU_KLEMMUNG: {zylinder: {nahe: [3.225, 2.5, 13.45], durchmesser: 6.45}}
+  EINBAU_MITTE: {ebene_durch_achse: {achse: EINBAU_KLEMMUNG, nahe: [0, 0, 0]}}
+pruefung:
+  volumen: {soll: 3889.381, toleranz_prozent: 0.01}
