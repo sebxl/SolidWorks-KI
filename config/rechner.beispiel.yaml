@@ -9,3 +9,6 @@ normteilbibliothek: 'C:\Users\<Benutzer>\.swki\normteile'
 kaufteilbibliothek: 'C:\Users\<Benutzer>\.swki\kaufteile'
 # optional, nur für Blender-Skripte in Aufträgen (z. B. auftraege/AP68-Pruefstation/umgebung/layout.py)
 blender: 'C:\Program Files\Blender Foundation\Blender <Version>\blender.exe'
+# optional: benannte Eingabedateien für Skripte in Aufträgen (Name → Pfad)
+dateien:
+  schleifmaschine_blend: 'C:\Users\<Benutzer>\…\Blender_Schleifmaschine\schleifmaschine.blend'   # AP 6.8 umgebung/layout.py

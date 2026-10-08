@@ -72,3 +72,16 @@ def test_blender_optional(tmp_path):
     assert lade_rechner(pfad).blender is None
     pfad.write_text(grund + "blender: C:/Blender/blender.exe\n", encoding="utf-8")
     assert lade_rechner(pfad).blender == Path("C:/Blender/blender.exe")
+
+
+def test_dateien_optional_und_rundreise(tmp_path):
+    pfad = tmp_path / "rechner.yaml"
+    grund = "sw_jahr: 2025\ninstallationsordner: C:/SW\nvorlage_teil: C:/t.prtdot\narbeitsordner: C:/arbeit\n"
+    pfad.write_text(grund, encoding="utf-8")
+    assert lade_rechner(pfad).dateien == {}
+    pfad.write_text(grund + "dateien:\n  szene: C:/x/szene.blend\n", encoding="utf-8")
+    r = lade_rechner(pfad)
+    assert r.dateien == {"szene": Path("C:/x/szene.blend")}
+    assert rechner_als_dict(r)["dateien"] == {"szene": str(Path("C:/x/szene.blend"))}
+    schreibe_rechner(r, pfad)
+    assert lade_rechner(pfad) == r
