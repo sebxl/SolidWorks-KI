@@ -211,17 +211,28 @@ def _anker(obj, pfad: list):
 
 def _schraege_anker_befunde(spec: dict) -> list[dict]:
     """Spec Formschräge §5.3: Seitenflächen eines Features mit Formschräge sind nicht achsparallel – Richtungsanker quer
-    zur Extrusionsrichtung und senkrechte_kanten finden dort nichts."""
-    normalen = {f["id"]: n for f in spec["features"]
-                if schraege(f) is not None and (n := skizzennormale(f["skizze"]["ebene"])) is not None}
-    befunde = []
+    zur Extrusionsrichtung und senkrechte_kanten finden dort nichts. Eine Skizze auf {nahe} lehnt die Prüfung ab:
+    swki pruefen kann die Extrusionsrichtung im fertigen Teil nicht bestimmen (Übergangslösung)."""
+    schraege_ids, normalen, befunde = set(), {}, []
+    for i, f in enumerate(spec["features"]):
+        if schraege(f) is None:
+            continue
+        schraege_ids.add(f["id"])
+        ebene = f["skizze"]["ebene"]
+        if isinstance(ebene, dict) and "nahe" in ebene:
+            befunde.append({"pfad": f"features[{i}].skizze.ebene",
+                            "meldung": f"{f['id']} hat eine Formschräge: die Skizze darf nicht auf {{nahe: …}} liegen "
+                                       "(swki pruefen kann die Extrusionsrichtung im fertigen Teil nicht bestimmen) – "
+                                       "Skizzenebene als Flächenanker {feature, flaeche} oder Versatzebene angeben"})
+        elif (n := skizzennormale(ebene)) is not None:
+            normalen[f["id"]] = n
     for pfad, anker in _anker({k: v for k, v in spec.items() if k in ("features", "pruefung")}, []):
         fid = anker["feature"]
-        if fid not in normalen:
+        if fid not in schraege_ids:
             continue
         for schluessel in ("flaeche", "kanten_an"):
             richtung = anker.get(schluessel)
-            if richtung in RICHTUNGEN and quer_zur_richtung(richtung, normalen[fid]):
+            if fid in normalen and richtung in RICHTUNGEN and quer_zur_richtung(richtung, normalen[fid]):
                 befunde.append({"pfad": _pfad([*pfad, schluessel]),
                                 "meldung": f"{fid} hat eine Formschräge: seine Seitenflächen sind geschrägt, {richtung!r} "
                                            "findet keine Fläche – die Fläche mit {nahe: [x, y, z]} ansprechen"})

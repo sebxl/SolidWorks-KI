@@ -19,7 +19,7 @@ Lauf 3: 150,5 s, `ok: true`, 16 Teile gebaut und ungespeichert geschlossen, Priv
 | 7 | weitere Profile | Rechteck mit Eckradius `groesser` und Sechseck `kleiner`: Volumen < 0,01 % | `7_eckradius_groesser` 6791,529 mm³ (0,0 %), acht Seitenflächen −1; `7_sechseck_kleiner` 2889,188 mm³ (0,0 %), sechs Seitenflächen +1, 10,0°; alle `koerper` 1 | ja | `querschnitt_koeffizienten` bleibt |
 
 Verlauf: Lauf 1 scheiterte an der Gleichung `D2@f2`/`D1@f2` (Winkelmaß heißt D3) → Fix 5a (0010215). Lauf 2 lieferte mit
-`Ddir1 = True` in allen 17 Fällen die gespiegelte Richtung → Fix 5b (2ef590b). Lauf 3 bestätigt beide Korrekturen.
+`Ddir1 = True` in allen 16 Fällen die gespiegelte Richtung → Fix 5b (2ef590b). Lauf 3 bestätigt beide Korrekturen.
 Größte Volumenabweichung in Lauf 3: 0,00475 % (`6_eckradius_20`).
 
 ## 2. Live-Tests
@@ -102,9 +102,13 @@ Einstellungen nach jedem Lauf False 1, eine Instanz.
 
 8. **Task 7 Step 6 (Prüfer) und Task 8 Step 4 (Regression):** Der Controller hat beide selbst ausgeführt (SolidWorks-Neustarts).
 
+9. **Gesamt-Review:** `{nahe}`-Skizzen an schrägen Features lehnt `validieren` ab (Übergangslösung, Controller-Entscheidung), `senkrechte_kanten` wird an schrägen Features immer abgelehnt.
+
 ## 7. Offene Punkte
 
 - Eigenes Feature Formschräge (`InsertMultiFaceDraft`) bei Bedarf über Skill `compiler-erweitern`; Formschräge an Rotation.
 - Polygon bei `kleiner`: Gültigkeitsgrenze (A + P·d + K·d²), wenn eine Kante verschwindet – nicht abgefangen. Trapez mit kurzer Kante könnte falschen Volumen-Mangel auslösen.
-- Eckradius ≥ halbe kürzere Seite wird nicht abgefangen.
 - Bei 20° mit Eckradius: nicht gemessen, ob Ecken zusammenfallen (Volumen 0,00475 % neben Formel); Regel bleibt vorsichtig.
+- Formschräge auf einer `{nahe}`-Skizze: `validieren` lehnt sie vorerst ab, weil `swki pruefen` die Skizzenebene im fertigen Teil neu auflösen müsste. Echter Fix: Extrusionsrichtung und bei `mittig` einen Punkt der Skizzenebene beim Bau ins Bauprotokoll schreiben (wie die Bohrungspunkte) und `formschraegen` daraus lesen.
+- `mittig` auf einem Flächenanker, dessen Deckfläche geteilt ist: die Messung sucht die Skizzenfläche neu und kann `REFERENZ_MEHRDEUTIG` melden (gleicher Fix wie oben).
+- `durchmesser_pruefen` findet an schrägen Features keinen Zylinder (Kegelfläche); Maße über Deck-/Bodenfläche mit `masse_pruefen`.

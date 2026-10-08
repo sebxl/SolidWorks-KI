@@ -62,7 +62,11 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   mit `senkrechte_kanten` ansprechen (`validieren` lehnt das ab), sondern mit `nahe`; Ecken als Eckradius in der
   Skizze (wird mitgeschrägt). `validieren` meldet, wenn das Profil bei `kleiner` zusammenfällt (Kreis, Rechteck,
   Eckradius, Langloch). `swki pruefen` misst Winkel und Richtung jeder Seitenfläche selbst (`formschraegen`);
-  `volumen: auto` rechnet Kreis, Rechteck (auch mit Eckradius), Langloch und konvexe Polygone bei `blind`/`mittig`.
+  `volumen: auto` rechnet Kreis, Rechteck (auch mit Eckradius), Langloch und konvexe Polygone bei `blind`/`mittig`
+  (nur ein Profil je Skizze). Die Skizze eines schrägen Features liegt auf einer Standardebene, einer Versatzebene
+  oder einem Flächenanker `{feature, flaeche}` – nicht auf `{nahe}` (`validieren` lehnt das ab).
+  `durchmesser_pruefen` findet an schrägen Features keinen Zylinder; Maße über Deck- und Bodenfläche mit
+  `masse_pruefen`.
 - Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `<skript-id>_<n>`) nicht als Feature-IDs
   verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
 - Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.

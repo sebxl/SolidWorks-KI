@@ -166,10 +166,21 @@ def test_unbekannter_parameter_im_winkel(tmp_path):
     assert "WX" in befunde[0]["meldung"]
 
 
-def test_skizze_auf_nahe_ohne_ankerpruefung(tmp_path):
+def test_skizze_auf_nahe_wird_abgelehnt(tmp_path):
     spec = _mit({"id": "fase", "typ": "fase", "kanten": [{"feature": "zapfen", "kanten_an": "+x"}], "abstand": 1})
     spec["features"][1]["skizze"]["ebene"] = {"nahe": [0, 20, 0]}  # Normale erst im Modell bekannt
-    assert plausibel_befunde(spec, tmp_path) == []
+    befunde = plausibel_befunde(spec, tmp_path)
+    assert [b["pfad"] for b in befunde] == ["features[1].skizze.ebene"]  # kein Folgefehler am Anker kanten_an
+    assert "{nahe" in befunde[0]["meldung"]
+
+
+def test_senkrechte_kanten_bei_nahe_skizze_wird_abgelehnt(tmp_path):
+    rundung = {"id": "rund", "typ": "verrundung", "kanten": [{"feature": "zapfen", "auswahl": "senkrechte_kanten"}],
+               "radius": 1}
+    spec = _mit(rundung)
+    spec["features"][1]["skizze"]["ebene"] = {"nahe": [0, 20, 0]}  # Normale unbekannt, die Auswahl braucht sie nicht
+    befunde = plausibel_befunde(spec, tmp_path)
+    assert [b["pfad"] for b in befunde] == ["features[1].skizze.ebene", "features[2].kanten[0].auswahl"]
 
 
 def test_ring_mit_kleiner_ohne_vorabpruefung(tmp_path):

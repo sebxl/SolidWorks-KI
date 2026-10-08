@@ -395,7 +395,7 @@ def durchmesser(ctx, spec: dict) -> dict[str, dict | str]:
 
 
 def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
-    """freigegeben: Spezifikation im Stand der Freigabe (Soll der Prüfungen normbohrungen und verzahnungen); ohne Angabe
+    """freigegeben: Spezifikation im Stand der Freigabe (Soll der Prüfungen normbohrungen, verzahnungen und formschraegen); ohne Angabe
     ctx.spec."""
     model = ctx.model
     mp = model.Extension.CreateMassProperty2
