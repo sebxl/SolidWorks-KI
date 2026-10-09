@@ -11,6 +11,7 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 ## 1. Auftrag
 - `auftraege/<auftrag>/` mit `eingabe/`, einer Baugruppen-Spec und den Teil-Specs der Eigenteile (Teil-Format,
   Regeln aus dem Skill `konstruieren`, Abschnitt 2).
+- Specs mit dem Write-Tool schreiben: je Datei ein Aufruf, alle Dateien in derselben Antwort.
 - Normteile nie als Teil-Spec: in der Baugruppe als `quelle: {normteil: "<Norm> <Größe>"}` (Skill `normteile`).
 - Nicht genormte Kaufteile nie als Teil-Spec: `quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}` aus dem Katalog
   (Skill `kaufteile`; Regeln für Baugruppen in Abschnitt 8 dieses Skills).
