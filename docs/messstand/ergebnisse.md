@@ -132,3 +132,54 @@ Skizzenebene ab (Kamera: Freiraum hinter der C-Mount-Senkung). Sollvolumen aller
 **Score 5,4** (Zeit 4,3 · Aufwand 4,6 · Fehler 10 · Speicher 3,4; Verhältnisse Zeit 0,65, Aufwand 0,74, Fehler 0,
 Speicher 0,92) ≥ 4,1 + 1,0, kein Teilscore schlechter, alles richtig → Merge in `messstand`. Alle Läufe im ersten
 Baulauf bestanden, Agenten lesen kein Schema mehr (Teile 9 Tool-Aufrufe im Hauptagenten statt 16–26).
+
+## Durchgang 5 – Umbau 5 (Commit d5b62eb): nicht deutlich besser → verworfen
+
+Umbau (auf Umbau 4): Messen in `swki pruefen` (Teil und Baugruppe) im Schnellmodus – Prüfdauer Durchlicht 11,0 → 6,6 s,
+Prüfwerte identisch; `swki durchlauf` liefert den fertigen Prüfer-Auftrag. Regression 11/11 (Suite 516 s statt 685 s).
+
+
+| Lauf | Zeit s | Modell | Bauen+Prüfen | Prüfer | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d5-durchlicht-1 | 142 | 92 | 24 | 25 | 18 | 12324 | 269174 | 1 | 0 | 3379 | ja |
+| d5-durchlicht-2 | 129 | 81 | 24 | 22 | 18 | 11177 | 207313 | 1 | 0 | 3382 | ja |
+| d5-kamera-1 | 191 | 144 | 22 | 23 | 21 | 17219 | 291184 | 1 | 0 | 3387 | ja |
+| d5-stehlager-1 | 368 | 246 | 97 | 19 | 31 | 31567 | 469726 | 2 | 3 | 12237 | ja |
+| d5-zentrieraufnahme-1 | 129 | 85 | 25 | 16 | 20 | 10244 | 217452 | 1 | 0 | 3358 | ja |
+
+**Score 3,8** (Zeit 4,4 · Aufwand 4,5 · Fehler 2,0 · Speicher 2,9) < 5,4 + 1,0 → verworfen. Zeit und Aufwand gleich gut
+wie Umbau 4, aber im Stehlager verrechnete sich der Agent bei zwei Prüfwerten (Deckeloberseite 80 statt 100,
+Hüllquader-Höhe 93 statt 113) → 2 Prüfmängel, neue Freigabe, zweiter Lauf. Der Schnellmodus beim Messen selbst ist
+messbar nützlich und regressionsfrei; verworfen wurde er nur nach der Score-Regel.
+
+## Fazit nach 5 Umbauten (Abbruchkriterium erreicht)
+
+**Endstand: Umbau 4, Score 5,4/10** (Ziel 7 nicht erreicht). Gegenüber der Baseline, je Aufgabe:
+
+| Aufgabe | Baseline s | Umbau 4 s | Bauen+Prüfen s (vorher → nachher) |
+|---|---|---|---|
+| Durchlicht (Mittel aus 2) | 217 | 145 | 56 → 28 |
+| Kamera | 332 | 180 | 76 → 28 |
+| Zentrieraufnahme | 216 | 131 | 49 → 29 |
+| Stehlager (Baugruppe) | 459 | 362 | 196 → 64 |
+
+Zeit −35 %, Tool-Aufrufe und Tokens −26 %, keine Fehler (alle Läufe im ersten Baulauf, ohne neue Freigabe), alle
+Ergebnisse geometrisch exakt richtig.
+
+**Warum nicht 4× schneller:** Nach Umbau 4 sind SolidWorks-Bau und -Prüfung nur noch ~15–20 % der Zeit. 60–75 % sind
+Denk- und Schreibzeit des Modells (Zeichnung deuten ~40 s, Spec schreiben ~30 s, je Runde ~2–3 s) und 12–20 % der
+unabhängige Prüfer (vor allem dessen eigene Deutung der Zeichnung). Werkzeugseitig sind die großen Hebel ausgeschöpft
+(Schnellmodus, ein Befehl statt fünf, vollständige Syntax-Referenz statt Erkundung, Sollvolumen ohne Handrechnung).
+
+**Was sich gezeigt hat:**
+- Größter Einzelhebel: SolidWorks-Bildschirmarbeit abschalten (Bauen 3–4×, Messen 1,7× schneller, Regression grün).
+- Fehler entstehen fast nur bei Prüfwerten, die der Agent von Hand rechnet (Volumen bei Überlappung, Höhen,
+  Hüllquader); jeder solche Fehler kostet einen Lauf und eine Freigabe. Automatisch abgeleitete Prüfwerte
+  (`volumen: auto` mit Durchgängen/Überlappungen) haben das bei Teilen beseitigt.
+- Der Fehler-Teilscore ist mit 1 Lauf je Aufgabe sehr empfindlich (ein Fehlerfall: 10 → 2); Zeit und Aufwand sind
+  über die Durchgänge stabil (Umbau 3–5: Zeit 0,65–0,73, Aufwand 0,74–0,77).
+- Speicher: das erste offene Teil kostet ~2,5 GB unabhängig vom Fenster; kein Hebel gefunden.
+
+**Mögliche nächste Schritte (nicht umgesetzt):** `huellquader: auto` und weitere abgeleitete Prüfwerte (gegen
+Rechenfehler), Schnellmodus beim Messen aus Umbau 5 separat übernehmen, mehr Läufe je Aufgabe für eine robustere
+Entscheidung, schnellere Modelle nur für klar abgegrenzte Teilschritte prüfen.
