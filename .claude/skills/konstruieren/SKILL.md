@@ -13,14 +13,57 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Mehrere Teile, die zusammengebaut werden: Skill `baugruppe` (eine Freigabe für Baugruppe und Teile).
 
 ## 2. Spezifikation schreiben
-- Datei `auftraege/<auftrag>/<name>.yaml` nach `schema/teil.schema.json`. Vorlagen: `tests/referenz/*/`.
+- Datei `auftraege/<auftrag>/<name>.yaml` nach `schema/teil.schema.json`. Dieser Skill enthält alles Nötige (Elemente,
+  Endbedingungen, Kurzreferenz Prüfwerte) – Schema und Vorlagen nur bei einem Validierfehler nachlesen.
+- Zeichnung lesen (vor dem Schreiben, einmal und knapp): Projektionsmethode am Symbol im Schriftfeld – ISO E
+  (Erstwinkel): Draufsicht **unter** der Vorderansicht, Ansicht von links **rechts** daneben; ISO A (Drittwinkel):
+  Draufsicht **über** der Vorderansicht, Ansicht von rechts **rechts** daneben. Je Ansicht festhalten: Blickrichtung
+  als Modellachse und welche Modellachse im Bild nach rechts/oben zeigt; erst dann Lagemaße mit Vorzeichen
+  umrechnen und je Maß die Bezugskante nennen (Plattenrand oder Gehäuse?).
+- Kommentare knapp: je Annahme eine Zeile.
 - Maße, die zusammenhängen, als `parameter` und Ausdrücke (`"=L/2-20"`); sie werden SW-Gleichungen.
 - Anforderungsmaße (vom Nutzer vorgegeben oder zu prüfen) immer als `parameter` führen: feste Zahlen in Features
   gehören zum Bauweg und sind von der Freigabe-Prüfsumme nicht geschützt.
 - Anforderungen nie nur als Kommentar: was gebaut oder geprüft werden muss, gehört in `parameter`, Features oder
   `pruefung`. Kommentare erläutern nur; die Freigabe-Kopie behält sie für den Prüfer.
+- **Spec-Syntax vollständig** (Schema nicht lesen; `?` = optional, `wert` = Zahl oder `"=Ausdruck"`):
+  ```yaml
+  art: teil
+  name: Platte                                  # Kopf: material?, eigenschaften? {Benennung: …}, parameter? {L: 100},
+  material: "1.0038"                            #       pruefung?, max_nachbesserungen?
+  parameter: {L: 100, B: 60, T: 10}
+  features:
+    - id: f1
+      typ: extrusion                            # oder schnitt
+      skizze:
+        ebene: oben                             # vorne | oben | rechts | {feature: f1, flaeche: "+y"} (±x/±y/±z)
+                                                # | {versatz: {ebene: oben, abstand: 20}} | {nahe: [x, y, z]}
+        elemente:                               # mehrere geschlossene Profile: innere sind Löcher
+          - {rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", radius?: 3}}
+          - {kreis: {mitte: [u, v], durchmesser: 10}}
+          - {langloch: {mitte: [u, v], laenge: 3, breite: 5, winkel?: 0}}   # laenge = Mittenabstand der Bögen
+          - {polygon: {punkte: [[u, v], …], radien?: 2}}
+          - {kontur: {start: [u, v], segmente: [{linie: [u, v]}, {bogen: [u, v], mitte: [u, v]}]}}
+          - {mittellinie: {von: [u, v], bis: [u, v]}}                     # Rotationsachse
+      ende: {typ: blind, tiefe: "=T"}           # | {typ: mittig, tiefe} | {typ: durch_alles}
+                                                # | {typ: bis_flaeche, flaeche: <anker>}
+                                                # | {typ: versatz_von_flaeche, flaeche: <anker>, abstand}
+                                                # optional: umkehren: true, formschraege: {winkel, querschnitt}
+    - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [[u, v], …], durchmesser: 6,
+       tiefe: 8}                                # oder durch: true; senkung?: {durchmesser, tiefe}
+    - {id: f3, typ: normbohrung, art: gewinde, groesse: M6, flaeche: <anker>, positionen: [[u, v]], tiefe: 12,
+       gewindetiefe: 10}                        # art: gewinde | zylinderschraube | senkschraube | stift (groesse 8)
+    - {id: f4, typ: rotation, skizze: {…, elemente: [<profil>, {mittellinie: …}]}, winkel?: 360, schnitt?: true}
+    - {id: f5, typ: verrundung, kanten: [{feature: f1, auswahl: senkrechte_kanten}], radius: 2}   # fase: abstand, winkel?
+    - {id: f6, typ: muster_linear, features: [f2], richtung1: {achse: x, abstand: 20, anzahl: 3}}
+    - {id: f7, typ: spiegeln, features: [f2], ebene: rechts}
+    - {id: f8, typ: referenz, ebene: {basis: oben, abstand: 50}}           # oder achse: x|y|z
+  ```
+  Kanten: `{feature, auswahl: senkrechte_kanten|alle_kanten}`, `{feature, kanten_an: "+y"}`, `{nahe: [x, y, z]}`.
 - Ebenen: `vorne` (Normale +Z), `oben` (+Y), `rechts` (+X). Skizzenkoordinaten (u, v): vorne X=u, Y=v · oben X=u, Z=−v ·
   rechts Z=−u, Y=v.
+  Skizzen und `positionen` auf Flächen und Versatzebenen nutzen dieselbe (u, v)-Zuordnung wie die parallele
+  Standardebene (Fläche ±y wie `oben`: X=u, Z=−v), unabhängig vom Vorzeichen der Normale.
 - Flächen/Kanten bevorzugt semantisch (`{feature, flaeche}`, `{feature, auswahl}`), sonst `{nahe: [x, y, z]}`.
 - Schnitt geht standardmäßig gegen die Skizzennormale (von einer Deckfläche ins Material); `umkehren: true` dreht.
 - Bohrungen für Schrauben, Gewinde und Stifte als `typ: normbohrung` (`art: gewinde | zylinderschraube |
@@ -87,7 +130,15 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   ```
   Messpunkte: `{feature, flaeche: "+x"|"-x"|…}`, `{feature, instanz, achse: true}` (nur `bohrung`/`normbohrung`, nicht an
   Extrusionen – deren Lage über `durchmesser_pruefen` mit `nahe` oder `schwerpunkt` prüfen), `{punkt: [x, y, z]}`.
-  Weitere Vorlagen nur bei Bedarf: `tests/referenz/*/`.
+  Nicht von Hand nachrechnen (kein Python für Volumen oder Schwerpunkt): `volumen: {soll: auto}` rechnet auch Löcher
+  in derselben Skizze und Durchgänge (`durch_alles`, `durch`) durch eine Platte; `schwerpunkt` nur für
+  Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale zeigt der Steckbrief nach dem Bau.
+  Ineinanderliegende Schnitte (oder Aufsätze) ab derselben Skizzenebene, z. B. Freiraum hinter einer Senkung, rechnet
+  `auto` richtig (gemeinsamer Teil zählt einmal); Überlappungen anderer Art vermeiden.
+  `auto` setzt voraus, dass Aufsätze nicht in andere Körper hineinragen: einen Aufsatz auf der Fläche beginnen lassen,
+  auf der er steht. Ausnahme: Wird seine Grundkante mitgeschrägt (Formschräge an einem `mittig`-Steg, der quer zur
+  Platte skizziert ist), das Profil 1 mm in die Platte führen – sonst bleibt ein Keilspalt (2 Körper); `auto` zählt
+  die Überlappung doppelt, bleibt bei 1 mm aber in der Toleranz.
 
 ### Modellierregeln (kompakter Feature-Baum)
 Änderbarkeit zuerst, sonst so wenige Features wie möglich:
@@ -118,6 +169,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
   `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
   `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.
+- Hat der Nutzer die Freigabe schon im Auftrag erteilt, nach dem Schreiben der Spec direkt `swki durchlauf <spec>
+  --freigeben` aufrufen – er validiert selbst und endet bei einem Fehler mit `schritt: validieren`.
 
 ## 5. Bauen, prüfen, Prüfer
 - Nach der Freigabe: `swki durchlauf <spec>` (ohne `--freigeben`) baut den nächsten Lauf und prüft ihn. Ausgabe
@@ -130,7 +183,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst nachbessern.
 - Der Prüfbericht vergleicht Normbohrungen (Art, Größe, Norm, Positionen, durch/Tiefe) mit der freigegebenen Kopie
   (Prüfung `normbohrungen`) und nennt unter `baum` Knoten- und Featurezahl.
-- Prüfer-Agent (`subagent_type: pruefer`) starten mit den Pfaden: Eingabeordner, freigegebene Spezifikation
+- Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) starten mit den Pfaden: Eingabeordner, freigegebene Spezifikation
   (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs, `steckbrief.txt`. Keine Protokolle, keine
   Skripte übergeben.
 - Sein JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json` schreiben – nur das
@@ -139,7 +192,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Freigabe-Kopie `auftraege/A-1/platte.freigegeben.yaml`, Prüfbericht
   `auftraege/A-1/protokolle/platte.lauf-2.pruefbericht.json`, Urteil
   `auftraege/A-1/protokolle/platte.lauf-2.pruefer.json`.
-- Danach `swki status <spec>` und bei `bestanden` gleich `swki bericht <spec>` (gern in einem Shell-Aufruf mit `&&`).
+- Danach in **einem** Shell-Aufruf: Urteil schreiben (Heredoc nach `protokolle/<spec>.lauf-<n>.pruefer.json`),
+  `swki status <spec>` und bei `bestanden` `swki bericht <spec>` (mit `&&` verkettet).
 
 ## 6. Schleife
 - `swki status <spec>` (optional `--max N`, wenn der Nutzer eine Zahl genannt hat) → `empfehlung`:

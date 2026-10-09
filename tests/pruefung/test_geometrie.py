@@ -3,7 +3,7 @@ import math
 import pytest
 
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, normbohrung_volumen, volumen_auto
-from swki.spec.normen import normmasse
+from swki.spec.normen import norm_von, normmasse
 
 P = Messgeometrie("punkt", (0, 0, 0))
 ACHSE_Y = Messgeometrie("achse", (125, 46, 100), (0, 1, 0))
@@ -191,3 +191,89 @@ def test_volumen_referenz_traegt_nichts_bei():
     ]}
     volumen, grund = volumen_auto(spec)
     assert volumen == pytest.approx(1000.0) and grund == "analytisch"
+
+
+# Durchgang durch eine Platte (Messstand Umbau 2): Skizze bzw. Fläche auf einer Fläche einer Extrusion mit fester Tiefe
+# entlang derselben Achse → die Tiefe dieser Extrusion ist die Dicke.
+def _platte_mit(feature):
+    return {"parameter": {"T": 2}, "features": [
+        _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 75, "hoehe": 89}}], "=T"), feature]}
+
+
+def test_volumen_schnitt_durch_alles_auf_plattenflaeche():
+    langloch = {"langloch": {"mitte": [27, 39.5], "laenge": 3.1, "breite": 4.8, "winkel": 0}}
+    spec = _platte_mit({"id": "f2", "typ": "schnitt", "ende": {"typ": "durch_alles"},
+                        "skizze": {"ebene": {"feature": "f1", "flaeche": "+y"}, "elemente": [langloch, langloch]}})
+    flaeche = 3.1 * 4.8 + math.pi * 2.4**2
+    volumen, grund = volumen_auto(spec)
+    assert grund == "analytisch" and volumen == pytest.approx(75 * 89 * 2 - 2 * flaeche * 2)
+
+
+def test_volumen_bohrung_und_normbohrung_durch_auf_plattenflaeche():
+    bohrung = {"id": "f2", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "-y"}, "positionen": [[0, 0]],
+               "durchmesser": 4, "durch": True}
+    assert volumen_auto(_platte_mit(bohrung))[0] == pytest.approx(75 * 89 * 2 - math.pi * 4 * 2)
+    stift = {"id": "f2", "typ": "normbohrung", "art": "stift", "groesse": 8, "flaeche": {"feature": "f1", "flaeche": "+y"},
+             "positionen": [[0, 0], [10, 0]], "durch": True}
+    masse = normmasse("stift", 8, norm_von({}))
+    erwartet = 75 * 89 * 2 - 2 * normbohrung_volumen("stift", masse, None, dicke=2)
+    assert volumen_auto(_platte_mit(stift))[0] == pytest.approx(erwartet)
+
+
+@pytest.mark.parametrize("flaeche", [{"feature": "f1", "flaeche": "+x"}, {"nahe": [0, 2, 0]}])
+def test_volumen_durch_quer_oder_ohne_feature_bleibt_offen(flaeche):
+    spec = _platte_mit({"id": "f2", "typ": "bohrung", "flaeche": flaeche, "positionen": [[0, 0]], "durchmesser": 1,
+                        "durch": True})
+    assert volumen_auto(spec)[0] is None
+
+
+def test_volumen_innere_profile_werden_abgezogen():
+    # Platte mit Langlöchern in derselben Skizze (so schreiben Agenten das Durchlicht): Löcher abziehen, nicht addieren
+    langloch = [{"langloch": {"mitte": [sx * 27, sz * 39.5], "laenge": 3.1, "breite": 4.8, "winkel": 0}}
+                for sx in (-1, 1) for sz in (-1, 1)]
+    platte = _platte({"rechteck": {"mitte": [0, 0], "breite": 75, "hoehe": 89, "radius": 3}}, *langloch, tiefe=2)
+    loch = 3.1 * 4.8 + math.pi * 2.4**2
+    rechteck = 75 * 89 - (4 - math.pi) * 9
+    assert volumen_auto(platte)[0] == pytest.approx((rechteck - 4 * loch) * 2)
+
+
+def test_volumen_getrennte_profile_werden_addiert():
+    zwei = _platte({"rechteck": {"mitte": [-30, 0], "breite": 20, "hoehe": 10}},
+                   {"kreis": {"mitte": [30, 0], "durchmesser": 10}}, tiefe=1)
+    assert volumen_auto(zwei)[0] == pytest.approx(200 + math.pi * 25)
+
+
+def test_volumen_durchgang_auf_standardebene_der_platte():
+    spec = _platte_mit({"id": "f2", "typ": "schnitt", "ende": {"typ": "durch_alles"},
+                        "skizze": {"ebene": "oben", "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 10}}]}})
+    assert volumen_auto(spec)[0] == pytest.approx(75 * 89 * 2 - math.pi * 25 * 2)
+    spec["features"][1]["skizze"]["ebene"] = "vorne"   # quer zur Platte: Dicke unbekannt
+    assert volumen_auto(spec)[0] is None
+
+
+def test_volumen_ueberlappende_schnitte_auf_derselben_flaeche():
+    # Kamera: C-Mount Ø25,4 × 4,5 und Freiraum Ø23 × 9, beide ab derselben Fläche → der Freiraum überlappt den C-Mount
+    # auf 4,5 mm Tiefe; der gemeinsame Teil zählt nur einmal (Messstand Umbau 4)
+    flaeche = {"feature": "f1", "flaeche": "-y"}
+    spec = {"features": [
+        _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 29, "hoehe": 29}}], 55),
+        {"id": "f2", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 25.4}}]},
+         "ende": {"typ": "blind", "tiefe": 4.5}},
+        {"id": "f3", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 23}}]},
+         "ende": {"typ": "blind", "tiefe": 9}},
+    ]}
+    a = lambda d: math.pi * d * d / 4
+    erwartet = 29 * 29 * 55 - a(25.4) * 4.5 - a(23) * (9 - 4.5)
+    assert volumen_auto(spec)[0] == pytest.approx(erwartet)
+
+
+def test_volumen_getrennte_schnitte_auf_derselben_flaeche_ueberlappen_nicht():
+    flaeche = {"feature": "f1", "flaeche": "+y"}
+    spec = {"features": [
+        _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}], 20),
+        {"id": "f2", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [-30, 0], "durchmesser": 10}}]},
+         "ende": {"typ": "blind", "tiefe": 5}},
+        {"id": "f3", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [30, 0], "durchmesser": 10}}]},
+         "ende": {"typ": "blind", "tiefe": 8}},
+    ]}
+    assert volumen_auto(spec)[0] == pytest.approx(100 * 60 * 20 - math.pi * 25 * 13)
