@@ -210,8 +210,15 @@ _EBENEN_ACHSE = {"vorne": "z", "oben": "y", "rechts": "x"}
 
 def _dicke(features: dict, flaeche, p: dict) -> float | None:
     """Materialdicke für einen Durchgang (durch_alles, durch): liegt die Skizze bzw. Fläche auf einer Fläche einer
-    Extrusion mit fester Tiefe (blind, ohne Formschräge) quer zu deren Extrusionsrichtung, ist deren Tiefe die Dicke
-    (Annahme wie überall hier: der Durchgang geht nur durch dieses Feature). Sonst None."""
+    Extrusion mit fester Tiefe (blind, ohne Formschräge) quer zu deren Extrusionsrichtung – oder auf der Standardebene,
+    auf der diese Extrusion beginnt –, ist deren Tiefe die Dicke (Annahme wie überall hier: der Durchgang geht nur durch
+    dieses Feature). Sonst None."""
+    if isinstance(flaeche, str) and flaeche in _EBENEN_ACHSE:   # Standardebene: die Platte, die auf ihr beginnt
+        for x in features.values():
+            if (x["typ"] == "extrusion" and x["skizze"]["ebene"] == flaeche and x["ende"]["typ"] == "blind"
+                    and schraege(x) is None):
+                return auswerten(x["ende"]["tiefe"], p)
+        return None
     if not isinstance(flaeche, dict) or "feature" not in flaeche or "flaeche" not in flaeche:
         return None
     x = features.get(flaeche["feature"])
@@ -244,10 +251,10 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             ende = f["ende"]
             tiefe = None
             if ende["typ"] == "durch_alles":
-                tiefe = (_dicke(nach_id, f["skizze"]["ebene"], p)
-                         if typ == "schnitt" and schraege(f) is None else None)
+                tiefe = _dicke(nach_id, f["skizze"]["ebene"], p) if typ == "schnitt" else None
                 if tiefe is None:
                     return None, f"{f['id']}: durch_alles"
+                f = {**f, "ende": {**ende, "typ": "blind", "tiefe": tiefe}}   # Durchgang = blind über die Dicke
             if ende["typ"] in ("bis_flaeche", "versatz_von_flaeche"):
                 return None, f"{f['id']}: ende {ende['typ']} (Tiefe hängt von der Geometrie ab)"
             if schraege(f) is not None:

@@ -241,3 +241,11 @@ def test_volumen_getrennte_profile_werden_addiert():
     zwei = _platte({"rechteck": {"mitte": [-30, 0], "breite": 20, "hoehe": 10}},
                    {"kreis": {"mitte": [30, 0], "durchmesser": 10}}, tiefe=1)
     assert volumen_auto(zwei)[0] == pytest.approx(200 + math.pi * 25)
+
+
+def test_volumen_durchgang_auf_standardebene_der_platte():
+    spec = _platte_mit({"id": "f2", "typ": "schnitt", "ende": {"typ": "durch_alles"},
+                        "skizze": {"ebene": "oben", "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 10}}]}})
+    assert volumen_auto(spec)[0] == pytest.approx(75 * 89 * 2 - math.pi * 25 * 2)
+    spec["features"][1]["skizze"]["ebene"] = "vorne"   # quer zur Platte: Dicke unbekannt
+    assert volumen_auto(spec)[0] is None

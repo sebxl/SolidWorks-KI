@@ -154,7 +154,13 @@ def test_sollvolumen_nicht_analytisch():
                 "skizze": {"ebene": {"feature": "f1", "flaeche": "-y"},
                            "elemente": [{"kreis": {"mitte": [-30, 0], "durchmesser": 8}}]},
                 "ende": {"typ": "durch_alles", "formschraege": {"winkel": 20, "querschnitt": "groesser"}}}
-    assert volumen_auto(_mit(trichter)) == (None, "trichter: durch_alles")
+    # Durchgang mit Formschräge durch die Platte f1 (Dicke 20, Messstand Umbau 2): Kegelstumpf über die Plattendicke
+    v, grund = volumen_auto(_mit(trichter))
+    kegel = volumen(querschnitt_koeffizienten({"kreis": {"mitte": [0, 0], "durchmesser": 8}}, {}), 20, 20, "groesser")
+    assert grund == "analytisch" and v == pytest.approx(volumen_auto(_mit())[0] - kegel)
+    frei = copy.deepcopy(trichter)
+    frei["skizze"]["ebene"] = {"nahe": [-30, 0, 0]}
+    assert volumen_auto(_mit(frei)) == (None, "trichter: durch_alles")
     ring = copy.deepcopy(PLATTE)
     ring["features"][1]["skizze"]["elemente"].append({"kreis": {"mitte": [0, 0], "durchmesser": 6}})
     assert volumen_auto(ring) == (None, "zapfen: Formschräge mit mehreren Profilen nicht analytisch")
