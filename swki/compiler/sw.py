@@ -89,6 +89,33 @@ def ohne_inferenz(sketch_manager):
         sketch_manager.AddToDB = False
 
 
+@contextmanager
+def schnell(app, model):
+    """Bauen ohne Bildschirmarbeit (Messstand Umbau 1): CommandInProgress, keine Grafikaktualisierung, Skizzenelemente
+    nicht einzeln anzeigen, Feature-Baum nicht nachführen. Danach immer zurück, auch nach einem Fehler."""
+    schalter = [(lambda: app, "CommandInProgress", True), (lambda: model.ActiveView, "EnableGraphicsUpdate", False),
+                (lambda: model.SketchManager, "DisplayWhenAdded", False),
+                (lambda: model.FeatureManager, "EnableFeatureTree", False),
+                (lambda: model.FeatureManager, "EnableFeatureTreeWindow", False)]
+    gesetzt = []
+    for objekt, name, wert_ in schalter:
+        try:
+            o = objekt()
+            if o is not None:
+                setattr(o, name, wert_)
+                gesetzt.append((o, name, not wert_))
+        except Exception:   # Schalter fehlt (Attrappe, Dokument ohne Ansicht): ohne ihn weiterbauen
+            continue
+    try:
+        yield
+    finally:
+        for o, name, wert_ in reversed(gesetzt):
+            try:
+                setattr(o, name, wert_)
+            except Exception:
+                pass
+
+
 def ausblenden(model, feature) -> None:
     """Bezugsgeometrie ausblenden, damit sie nicht in den Screenshots erscheint."""
     auswahl_leeren(model)

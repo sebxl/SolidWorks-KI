@@ -12,6 +12,9 @@ Du prüfst ein von SolidWorks-KI gebautes Teil unabhängig vom Konstrukteur. Du 
   `<spec>.yaml` kann einen nachgebesserten Bauweg enthalten und ist nicht dein Maßstab)
 - den Prüfbericht `protokolle/<spec>.lauf-<n>.pruefbericht.json`
 - die Screenshots des Laufs (iso, vorne, oben, rechts – PNG, mit Read ansehen)
+- falls vorhanden `steckbrief.txt` im Laufordner: Hüllquader, Schwerpunkt und jeder achsparallele Zylinder (Achse,
+  Mitte, Ø, Ausdehnung, außen/innen) als Zahlen aus der Geometrie – für Lage und Vorzeichen zuerst diese Zahlen mit der
+  Eingabe vergleichen, die Bilder bestätigen nur noch
 
 Lies **nicht** `protokolle/*.protokoll.json` und nichts unter `skripte/` – du beurteilst das Ergebnis, nicht den Bauweg.
 
@@ -19,7 +22,7 @@ Lies **nicht** `protokolle/*.protokoll.json` und nichts unter `skripte/` – du 
 1. Jede Anforderung aus Eingabe und Spezifikation ist im Ergebnis belegt (Prüfbericht-Wert oder sichtbar im Screenshot).
 2. Nichts ist ungebaut: jedes Feature der Spezifikation ist in den Bildern erkennbar (Bohrungen, Taschen, Fasen, Muster …).
 3. Keine Spiegel- oder Vorzeichenfehler: Lage von Bohrungen, Taschen und Bund stimmt mit Eingabe und Spezifikation überein
-   (Achsrichtungen: vorne → +Z, oben → +Y, rechts → +X); Schwerpunkt im Prüfbericht plausibel.
+   (Achsrichtungen: vorne → +Z, oben → +Y, rechts → +X); Steckbrief-Koordinaten und Schwerpunkt plausibel.
 4. Alle Code-Prüfungen im Prüfbericht sind `ok: true` oder mit Hinweis begründet `ok: null`. Mängel, die bereits in
    `maengel` des Prüfberichts stehen, führst du nicht noch einmal auf (sie zählen sonst doppelt in `offen`) –
    melde nur zusätzliche Mängel, die der Prüfbericht nicht schon zeigt.

@@ -59,6 +59,22 @@ def schreibe_pruefbericht(spec_pfad: Path, lauf: int, ordner: Path, bericht: dic
     ziel.write_text(text, encoding="utf-8")
 
 
+def steckbrief_fuer(app, model, ordner: Path) -> dict:
+    """Geometrie-Steckbrief aus einer STL des geöffneten Modells (numpy/trimesh, Messstand Umbau 1): Lage der Zylinder,
+    Hüllquader, Schwerpunkt als Text – damit Agent und Prüfer Seiten- und Spiegelfehler an Zahlen prüfen. Ein Fehler
+    hier bricht die Prüfung nicht ab."""
+    try:
+        from swki.pruefung.steckbrief import als_text, steckbrief
+        from swki.pruefung.stl import exportiere_stl
+
+        sb = steckbrief(exportiere_stl(app, model, ordner / "geometrie.stl"))
+        text = als_text(sb)
+        (ordner / "steckbrief.txt").write_text(text + "\n", encoding="utf-8")
+        return {"steckbrief": sb, "steckbrief_text": text}
+    except Exception as e:  # Steckbrief ist Zusatz, keine Prüfung
+        return {"steckbrief_text": f"(Steckbrief nicht erzeugt: {type(e).__name__}: {e})"}
+
+
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
     if art_der_datei(spec_pfad) == "baugruppe":
@@ -87,11 +103,13 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         ctx = kontext_aus_datei(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], protokoll)
         messwerte = messe(ctx, soll)
         bilder = screenshots(app, model, ordner / "bilder")
+        geometrie = steckbrief_fuer(app, model, ordner)
     finally:
         sw.schliesse(app, model)
     bericht = {
         "auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil),
         **bewerte(spec, messwerte, standard, soll), "baum": baum_kennzahl(spec, protokoll), "bilder": bilder,
+        **geometrie,
     }
     schreibe_pruefbericht(spec_pfad, lauf, ordner, bericht)
     return bericht

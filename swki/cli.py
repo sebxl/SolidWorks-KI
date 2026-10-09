@@ -53,7 +53,7 @@ def _parser() -> SwkiArgumentParser:
 
 
 def _befehlsgruppen() -> list:
-    from swki import aenderungen, rechner
+    from swki import aenderungen, durchlauf, rechner
     from swki.api import bauen
     from swki.compiler import bauen as compiler_bauen
     from swki.kaufteile import befehle as kaufteil_befehle
@@ -62,7 +62,7 @@ def _befehlsgruppen() -> list:
     from swki.spec import befehle as spec_befehle
 
     return [rechner, bauen, spec_befehle, compiler_bauen, pruefung_befehle, normteil_befehle, kaufteil_befehle,
-            aenderungen]
+            aenderungen, durchlauf]
 
 
 def main(argv: list[str] | None = None) -> int:
