@@ -1,4 +1,5 @@
-"""Schnellmodus und unsichtbares Anlegen (Messstand Umbau 1/2) ohne SolidWorks."""
+"""Schnellmodus (Messstand Umbau 1) ohne SolidWorks. Unsichtbares Anlegen (DocumentVisible False) wurde in Umbau 2
+verworfen: SolidWorks lehnt dann die globalen Variablen ab (GLEICHUNG_FEHLER)."""
 
 from pathlib import Path
 
@@ -19,19 +20,6 @@ class _App:
         if self.fehler:
             raise RuntimeError("COM")
         return object()
-
-
-def test_neues_teil_unsichtbar_und_danach_wieder_sichtbar():
-    app = _App()
-    assert sw.neues_teil(app, Path("v.prtdot")) is not None
-    assert app.log == [("sichtbar", False, 1), ("neu", "v.prtdot"), ("sichtbar", True, 1)]
-
-
-def test_neues_teil_setzt_sichtbarkeit_auch_nach_fehler_zurueck():
-    app = _App(fehler=True)
-    with pytest.raises(RuntimeError):
-        sw.neues_teil(app, Path("v.prtdot"))
-    assert app.log[-1] == ("sichtbar", True, 1)
 
 
 class _Obj:

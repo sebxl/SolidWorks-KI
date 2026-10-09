@@ -19,18 +19,8 @@ SW_SAVEAS_SILENT = 1  # swSaveAsOptions_e
 SW_SAVEAS_COPY = 2
 
 
-SW_DOC_PART = 1  # swDocumentTypes_e
-
-
 def neues_teil(app, vorlage: Path):
-    """Neues Teil ohne Fenster (DocumentVisible False nur für dieses Anlegen, Messstand Umbau 2): spart das Grafikfenster
-    (~2,5 GB Private Bytes je offenem Teil) und Zeichenzeit. Später geöffnete Teile (Prüfung, Screenshots) sind wieder
-    sichtbar."""
-    app.DocumentVisible(False, SW_DOC_PART)
-    try:
-        model = app.NewDocument(str(vorlage), 0, 0, 0)
-    finally:
-        app.DocumentVisible(True, SW_DOC_PART)
+    model = app.NewDocument(str(vorlage), 0, 0, 0)
     if model is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"NewDocument mit {vorlage} fehlgeschlagen", schritt="dokument")
     return model
