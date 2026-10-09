@@ -158,6 +158,13 @@ def test_normbohrung_gueltig(tmp_path):
     assert plausibel_befunde(spec, tmp_path) == []
 
 
+def test_stiftgroesse_als_text(tmp_path):
+    """Retro Messstand: Agenten schreiben die Stiftgröße wie "M8" in Anführungszeichen ("8") – gleichwertig zu 8."""
+    spec = _mit_feature(NB | {"art": "stift", "groesse": "8"})
+    assert schema_befunde(spec) == []
+    assert plausibel_befunde(spec, tmp_path) == []
+
+
 @pytest.mark.parametrize(("art", "groesse"), [("gewinde", "M7"), ("stift", "M8")])
 def test_normbohrung_groesse_nicht_in_tabelle(tmp_path, art, groesse):
     [befund] = plausibel_befunde(_mit_feature(NB | {"art": art, "groesse": groesse}), tmp_path)

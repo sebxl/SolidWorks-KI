@@ -223,7 +223,7 @@
         "id": true, "typ": true,
         "art": {"enum": ["gewinde", "zylinderschraube", "senkschraube", "stift"]},
         "groesse": {"oneOf": [
-          {"type": "string", "pattern": "^M[0-9]+(x[0-9]+(\\.[0-9]+)?)?$"},
+          {"type": "string", "pattern": "^(M[0-9]+(x[0-9]+(\\.[0-9]+)?)?|[0-9]+(\\.[0-9]+)?)$"},
           {"type": "number", "exclusiveMinimum": 0}
         ]},
         "norm": {"enum": ["ISO"]},
