@@ -129,6 +129,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
   `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
   `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.
+- Hat der Nutzer die Freigabe schon im Auftrag erteilt, nach dem Schreiben der Spec direkt `swki durchlauf <spec>
+  --freigeben` aufrufen – er validiert selbst und endet bei einem Fehler mit `schritt: validieren`.
 
 ## 5. Bauen, prüfen, Prüfer
 - Nach der Freigabe: `swki durchlauf <spec>` (ohne `--freigeben`) baut den nächsten Lauf und prüft ihn. Ausgabe
@@ -150,7 +152,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Freigabe-Kopie `auftraege/A-1/platte.freigegeben.yaml`, Prüfbericht
   `auftraege/A-1/protokolle/platte.lauf-2.pruefbericht.json`, Urteil
   `auftraege/A-1/protokolle/platte.lauf-2.pruefer.json`.
-- Danach `swki status <spec>` und bei `bestanden` gleich `swki bericht <spec>` (gern in einem Shell-Aufruf mit `&&`).
+- Danach in **einem** Shell-Aufruf: Urteil schreiben (Heredoc nach `protokolle/<spec>.lauf-<n>.pruefer.json`),
+  `swki status <spec>` und bei `bestanden` `swki bericht <spec>` (mit `&&` verkettet).
 
 ## 6. Schleife
 - `swki status <spec>` (optional `--max N`, wenn der Nutzer eine Zahl genannt hat) → `empfehlung`:
