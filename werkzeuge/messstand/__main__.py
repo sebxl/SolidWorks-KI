@@ -96,7 +96,7 @@ def vorbereiten(args) -> dict:
 
 def _verboten(a) -> list[str]:
     r = lade_rechner()
-    return [str(REPO / "auftraege"), str(r.arbeitsordner / "AP68-Pruefstation"), str(messordner() / "referenz"),
+    return [str(REPO), str(r.arbeitsordner / "AP68-Pruefstation"), str(messordner() / "referenz"),
             *(str(REPO / v) for v in a.verboten)]
 
 

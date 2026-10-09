@@ -12,6 +12,7 @@ from swki.konfig import lade_rechner
 
 REPO = Path(__file__).resolve().parents[2]
 AUFGABEN = REPO / "tests" / "messstand" / "aufgaben"
+IMMER_ENTFERNEN = ["docs", "tests/messstand", "tests/live", "tests/baugruppe/test_referenzen.py"]
 
 
 @dataclass
@@ -76,7 +77,13 @@ def worktree_anlegen(lauf: str, commit: str, alle: dict[str, Aufgabe]) -> Path:
                 shutil.rmtree(p)
             elif p.exists():
                 p.unlink()
-    shutil.rmtree(wt / "tests" / "messstand", ignore_errors=True)
+    # Dokumente und Tests, die Referenzlösungen enthalten (Pläne, Ergebnisse, Live-Tests), fehlen in jedem Lauf
+    for rel in IMMER_ENTFERNEN:
+        p = wt / rel
+        if p.is_dir():
+            shutil.rmtree(p, ignore_errors=True)
+        elif p.exists():
+            p.unlink()
     return wt
 
 

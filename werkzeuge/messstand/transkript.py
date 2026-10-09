@@ -8,8 +8,8 @@ from datetime import datetime
 from pathlib import Path
 
 _SWKI = re.compile(r"-m\s+swki\s+(\w+)")
-_EIGENE = {"bauen", "pruefen", "validieren", "freigeben"}
-_RANG = ["bauen", "pruefen", "freigeben", "validieren"]   # verkettete Befehle zählen zur teuersten Kategorie
+_EIGENE = {"durchlauf", "bauen", "pruefen", "validieren", "freigeben"}
+_RANG = ["durchlauf", "bauen", "pruefen", "freigeben", "validieren"]   # verkettete Befehle zählen zur teuersten Kategorie
 
 # Gewichte für tokens_gewichtet (relativ zum Eingabepreis)
 GEWICHTE = {"input_tokens": 1.0, "cache_creation_input_tokens": 1.25, "cache_read_input_tokens": 0.1,
@@ -160,8 +160,11 @@ def auswerten(wurzel: list[dict], unter: dict[str, list[dict]] | None = None,
         for b in befehle:
             k = b if b in _EIGENE else "swki_sonst"
             swki[k] = swki.get(k, 0) + 1
-        if "freigeben" in befehle and _freigabe_ok(a):
-            freigaben += befehle.count("freigeben")
+        n = befehle.count("freigeben")
+        if "durchlauf" in befehle and "--freigeben" in str(a["eingabe"].get("command", "")):
+            n += 1
+        if n and _freigabe_ok(a):
+            freigaben += n
     return {
         "zeit_s": round(zeit_s, 1),
         "zeit_anteile_s": anteile,
