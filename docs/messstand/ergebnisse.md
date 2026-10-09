@@ -64,3 +64,30 @@ Einordnung: Bauen+Prüfen 3–4× schneller, die Gesamtzeit nur 12 % – das Mod
 Zeit. Der Fehler-Teilscore springt von wenigen Baseline-Fehlern (3, alle Kamera) auf 0 und ist entsprechend unsicher.
 Agenten rechnen weiter Volumen von Hand (`volumen: auto` kann Durchgänge und Löcher in der Skizze nicht) und schauen
 in Vorlagen.
+
+## Durchgang 2 – Umbau 2 (Commit 433ad57): nicht deutlich besser → verworfen
+
+Umbau (auf Umbau 1): `volumen: auto` rechnet Durchgänge (`durch_alles`, `durch`, auch mit Formschräge) durch eine Platte
+und innere Profile einer Skizze als Löcher; Skill ohne Erkundung und Handrechnung, Kurzanleitung Zeichnung lesen,
+knappe Kommentare, `durchlauf --freigeben` validiert selbst, Urteil + status + bericht in einem Aufruf; Prüfer auf
+Sonnet. Verworfen schon vor der Messung: Teile unsichtbar anlegen (`DocumentVisible False`) – SolidWorks lehnt dann
+die globalen Variablen ab (Regression 0/11). Regression des gemessenen Stands 11/11.
+
+| Lauf | Zeit s | Modell | Bauen+Prüfen | Prüfer | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d2-durchlicht-1 | 176 | 121 | 29 | 24 | 22 | 15179 | 338693 | 1 | 0 | 3911 | ja |
+| d2-durchlicht-2 | 184 | 105 | 31 | 46 | 21 | 16141 | 275625 | 1 | 0 | 3926 | ja |
+| d2-kamera-1 | 208 | 145 | 27 | 33 | 23 | 17526 | 304261 | 1 | 0 | 3361 | ja |
+| d2-stehlager-1 | 377 | 290 | 61 | 20 | 35 | 35569 | 574978 | 1 | 0 | 10482 | ja |
+| d2-zentrieraufnahme-1 | 267 | 186 | 56 | 23 | 26 | 19840 | 332373 | 2 | 1 | 4156 | ja |
+
+Summe 1212 s: Modell 70 %, Bauen+Prüfen 17 %, Prüfer 12 %.
+
+**Score 3,8** (Zeit 2,9 · Aufwand 2,8 · Fehler 8,0 · Speicher 2,0) < 4,1 + 1,0 → verworfen, Umbau 1 bleibt Baseline.
+Ursache des Rückschritts: die neue Regel „Aufsatz auf der Fläche beginnen“ ist bei einem `mittig`-Steg mit Formschräge
+falsch (die Grundkante wird mitgeschrägt → Keilspalt → 2 Körper → zweiter Lauf). Kamera (−37 %) und Durchlicht
+(−17 %) wurden schneller; Agenten lesen trotz Hinweis weiter Schema und Vorlagen (Teile 3–5 Runden, Stehlager
+13 Aufrufe).
+
+**Speicher-Test (Wegwerf):** ein neues Teil hebt SolidWorks von 0,43 auf ~3,0 GB – gleich bei normalem,
+minimiertem und unsichtbarem Hauptfenster. Der Speicher hängt nicht am Fenster; kein Hebel über die Anzeige.
