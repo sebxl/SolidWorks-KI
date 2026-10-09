@@ -6,7 +6,7 @@ description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen
 # Baugruppe (Stufe 3b, Kaufteile Stufe 3c, Bewegungen Stufe 4a, Kopplungen Stufe 4b)
 
 Spec: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Abweichungen der Umsetzung: `docs/stufe3b/ergebnisse.md`).
-Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Vorlage: `tests/referenz/stehlager/`.
+Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Syntax: Kurzreferenz in Abschnitt 2 (Muster-Specs unter `tests/referenz/*/` nur bei Bedarf).
 
 ## 1. Auftrag
 - `auftraege/<auftrag>/` mit `eingabe/`, einer Baugruppen-Spec und den Teil-Specs der Eigenteile (Teil-Format,
@@ -16,6 +16,59 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   (Skill `kaufteile`; Regeln für Baugruppen in Abschnitt 8 dieses Skills).
 
 ## 2. Baugruppen-Spec
+- **Spec-Syntax vollständig (Baugruppe)** (Schema, Referenz-Specs und Normteil-Vorlagen nicht lesen; `?` = optional,
+  `wert` = Zahl oder `"=Ausdruck"`; Teil-Specs nach „Spec-Syntax vollständig“ im Skill `konstruieren`):
+  ```yaml
+  art: baugruppe
+  name: Halter                                  # [A-Za-z0-9_-]; Kopf: eigenschaften?, parameter?, freiheitsgrade?,
+  eigenschaften: {Benennung: Halter}            #   bewegungen? (§6, §7), pruefung?, max_nachbesserungen?
+  parameter: {HOEHE: 28}                        # nur Zahlen
+  komponenten:
+    - {id: platte, quelle: {teil: platte.yaml}, fixiert: true}      # genau eine fixiert; Teil-Spec im selben Ordner
+    - {id: klotz, quelle: {teil: klotz.yaml}}                       # gruppe?: <name> (gemeinsam bewegt, §6/§7)
+    - {id: schraube, quelle: {normteil: "ISO 4762 M6x20", variante?: "8.8"},
+       je_position: {komponente: klotz, feature: f2}}               # Instanzen schraube.1 … je Position von klotz.f2
+    - {id: stift, quelle: {normteil: "ISO 8734 6x20"}, je_position: {komponente: platte, feature: f3}}
+    - {id: scheibe, quelle: {normteil: "ISO 7089 M8"}}              # Scheibe, Mutter: Größe ohne Länge
+    - {id: mutter, quelle: {normteil: "ISO 4032 M8"}}
+    - {id: motor, quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}}   # §8; je_position: {komponente, gewinde}
+  verknuepfungen:                     # deckungsgleich | konzentrisch | parallel | senkrecht | abstand | winkel
+    - {id: v1, typ: deckungsgleich, a: {komponente: klotz, feature: f1, flaeche: "-y"},       # Eigenteil: Auflage,
+       b: {komponente: platte, feature: f1, flaeche: "+y"}, ausrichtung: entgegengesetzt}    # dann eine Bohrung,
+    - {id: v2, typ: konzentrisch, a: {komponente: klotz, feature: f3, instanz: 1, achse: true},   # dann parallel
+       b: {komponente: platte, feature: f3, instanz: 1, achse: true}}          # ausrichtung? hier optional
+    - {id: v3, typ: parallel, a: {komponente: klotz, feature: f1, flaeche: "+x"},
+       b: {komponente: platte, feature: f1, flaeche: "+x"}, ausrichtung: gleich}
+    - {id: v4, typ: deckungsgleich, a: {komponente: schraube, referenz: EINBAU_EBENE},       # Normteil: Ebene vor
+       b: {komponente: klotz, feature: f2, instanz: je, flaeche: "+y"}, ausrichtung: gleich}  # Achse; Senkungsgrund
+    - {id: v5, typ: konzentrisch, a: {komponente: schraube, referenz: EINBAU_ACHSE},
+       b: {komponente: klotz, feature: f2, instanz: je, achse: true}}          # drehung_sperren?: false
+    - {id: v6, typ: deckungsgleich, a: {komponente: mutter, referenz: EINBAU_EBENE},
+       b: {komponente: scheibe, referenz: EINBAU_EBENE_2}, ausrichtung: gleich}   # Normteil auf Normteil
+    - {id: v7, typ: abstand, a: {…}, b: {…}, ausrichtung: gleich, wert: "=A"}   # winkel: 0…180°; senkrecht ohne
+    - {id: v8, typ: deckungsgleich, a: {komponente: klotz, ebene: rechts},    #   ausrichtung; Ebenen: vorne|oben|rechts
+       b: {komponente: platte, ebene: rechts}, ausrichtung: gleich}
+    # weitere Referenzen: {komponente, referenz: <referenz-Feature der Teil-Spec>}, {komponente, nahe: [x, y, z]}
+    # (Rückfall), {komponente, gewinde, instanz, achse: true} (Kaufteil, §8), {komponente, feature} (Kopplung, §7)
+  pruefung:
+    huellquader: [160, 48.4, 80]                # x, y, z der Baugruppe; huellquader_tol?
+    masse_pruefen:                              # von/zu: {punkt: [x, y, z]} | {komponente, referenz}
+      - {was: Bauhöhe, von: {komponente: platte, feature: f1, flaeche: "-y"},   # | {komponente, feature, flaeche}
+         zu: {komponente: klotz, feature: f1, flaeche: "+y"}, soll: "=HOEHE", tol?: 0.1}  # | {…, instanz: <n>, achse: true}
+      - {was: Stift bündig, von: {komponente: stift.1, referenz: EINBAU_EBENE_1},   # je_position: Instanz-ID
+         zu: {komponente: platte, feature: f1, flaeche: "-y"}, soll: 0}
+    masse?: {soll: 1.2, toleranz_prozent?: 5}   # kg
+  ```
+  Normteile: Achse = Modell-Y, Körper ab der Auflage in +y, Bezugsebenen mit Normale +y. ISO 4762: `EINBAU_EBENE`
+  (Kopfunterseite), ISO 4032: `EINBAU_EBENE` (eine Stirnseite, beide gleich), ISO 7089: `EINBAU_EBENE` (Auflage am
+  Bauteil) und `EINBAU_EBENE_2` (Gegenseite, darauf Kopf bzw. Mutter), ISO 8734: `EINBAU_EBENE_1`/`EINBAU_EBENE_2`
+  (Stirnseiten); alle mit `EINBAU_ACHSE`. **Ausrichtung:** Normteil außerhalb des Materials (Kopf, Scheibe, Mutter auf
+  Fläche, Senkungsgrund oder `EINBAU_EBENE_2`) → `gleich`; Normteil ragt ins Material (Stift bündig mit einer Fläche) →
+  `entgegengesetzt`; Fläche auf Fläche zweier Eigenteile → `entgegengesetzt`, bündige Seitenflächen → `gleich`.
+  `konzentrisch` eines Normteils immer auf eine Bohrungsachse eines Eigenteils (nur dort prüft `validieren` die Passung:
+  ISO 4762 in `normbohrung` zylinderschraube/gewinde gleicher Größe oder `bohrung` Ø > d, ISO 8734 nur `normbohrung`
+  stift, Scheibe/Mutter auf Bohrung gleicher Größe oder Ø ≥ Innen-Ø); Durchsteckschraube: `bohrung` (M8: Ø 9) in beiden
+  Teilen, Länge aus Klemmlänge + Scheiben + Mutter selbst nachrechnen.
 - `komponenten`: `id`, `quelle` (`{teil: <datei.yaml>}` | `{normteil: "ISO 4762 M8x30", variante?}` | `{kaufteil: "<Hersteller> <Bestellnummer>"}`
   Skill `kaufteile`, Abschnitt 8), genau eine
   `fixiert: true` (ihr Ursprung = Baugruppenursprung), `je_position: {komponente, feature}` für eine Instanz je
