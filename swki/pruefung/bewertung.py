@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from swki.compiler.eigenschaften import material_passt
 from swki.formschraege import schraege, soll_vorzeichen
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
+from swki.pruefung.huellquader import huellquader_auto
 from swki.spec.ausdruck import auswerten
 from swki.spec.normen import (
     SW_BEFESTIGUNG, SW_BEFESTIGUNG_STIFT_DURCH, SW_END_BLIND, SW_END_DURCH_ALLES, SW_LOCH_DURCH, SW_NORM, groesse_text,
@@ -194,11 +195,18 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
                                     hinweis=f"{m.koerper} Volumenkörper statt 1"))
 
     if "huellquader" in pr:
-        soll = [auswerten(v, p) for v in pr["huellquader"]]
         ist = [round(m.box[i + 3] - m.box[i], 6) for i in range(3)]
+        if pr["huellquader"] == "auto":
+            soll, grund = huellquader_auto(freigegeben or spec)
+        else:
+            soll, grund = [auswerten(v, p) for v in pr["huellquader"]], "vorgegeben"
         tol = pr.get("huellquader_tol", _TOL_HUELLQUADER)
-        ok = all(abs(a - b) <= tol for a, b in zip(ist, soll))
-        ergebnisse.append(eintrag("huellquader", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
+        if soll is None:
+            ergebnisse.append(eintrag("huellquader", None, ist=ist, hinweis=f"Sollhüllquader nicht berechenbar ({grund})",
+                                        knoten=[]))
+        else:
+            ok = all(abs(a - b) <= tol for a, b in zip(ist, soll))
+            ergebnisse.append(eintrag("huellquader", ok, ist=ist, soll=soll, tol=tol, knoten=[]))
 
     if "volumen" in pr:
         roh = pr["volumen"]["soll"]

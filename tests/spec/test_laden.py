@@ -390,3 +390,21 @@ def test_unbekannte_referenz_in_pruefung(tmp_path):
                                                 "referenz": "EINBAU_ACHSE"}]
     meldungen = [b["meldung"] for b in plausibel_befunde(spec, tmp_path)]
     assert any("EINBAU_EBENE" in m for m in meldungen) and any("EINBAU_ACHSE" in m for m in meldungen)
+
+
+def test_huellquader_auto_gueltig(tmp_path):
+    spec = _spec()
+    spec["pruefung"]["huellquader"] = "auto"
+    assert schema_befunde(spec) == []
+    assert plausibel_befunde(spec, tmp_path) == []
+
+
+def test_huellquader_auto_nicht_berechenbar_ist_ein_befund(tmp_path):
+    """Sonst bliebe die Prüfung still ungeprüft (ok: null) – lieber vor der Freigabe Werte verlangen."""
+    (tmp_path / "skripte").mkdir()
+    (tmp_path / "skripte" / "f7.py").write_text("def bauen(ctx):\n    pass\n", encoding="utf-8")
+    spec = _spec()
+    spec["features"].append({"id": "f7", "typ": "skript", "datei": "skripte/f7.py", "luecke": "Gewinde"})
+    spec["pruefung"]["huellquader"] = "auto"
+    [befund] = plausibel_befunde(spec, tmp_path)
+    assert befund["pfad"] == "pruefung.huellquader" and "f7: Skript" in befund["meldung"]

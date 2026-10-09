@@ -165,3 +165,11 @@ def test_senkung_ohne_iso_treffer_und_mit_ausdrucksfehler():
         _bohrung("f2", durchmesser="=X", senkung={"durchmesser": 15, "tiefe": 5}),   # unbekannter Parameter
     ]}
     assert [h for h in zusammenfassen(spec) if "ISO 4762" in h["meldung"]] == []
+
+
+def test_pruefwert_hinweis_bei_abweichendem_huellquader():
+    """Retro Messstand: von Hand gerechnete Hüllquader weichen ab → Hinweis vor der Freigabe."""
+    spec = {**GUELTIG, "pruefung": {**GUELTIG["pruefung"], "huellquader": ["=L", 30, "=B"]}}
+    [h] = [h for h in hinweise(spec) if h["art"] == "pruefwert"]
+    assert h["pfad"] == "pruefung.huellquader" and "[100, 20, 60]" in h["meldung"]
+    assert not [h for h in hinweise(GUELTIG) if h["art"] == "pruefwert"]

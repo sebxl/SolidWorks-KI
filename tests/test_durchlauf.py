@@ -64,3 +64,15 @@ def test_validierfehler_endet_vor_dem_bau(schritte, monkeypatch, tmp_path):
     monkeypatch.setattr(sb, "_validieren", wirf)
     erg = d.durchlauf(tmp_path / "a.yaml", freigeben=True)
     assert erg["schritt"] == "validieren" and "bauen" not in schritte
+
+
+def test_pruefwert_hinweis_stoppt_vor_der_freigabe(schritte, monkeypatch, tmp_path):
+    """Ein Prüfwert, der von der Rechnung aus den Features abweicht, würde nach der Freigabe eine neue Freigabe kosten."""
+    import swki.spec.befehle as sb
+
+    hinweis = {"art": "pruefwert", "pfad": "pruefung.huellquader", "meldung": "weicht ab"}
+    monkeypatch.setattr(sb, "_validieren", lambda a: schritte.append("validieren") or {"gueltig": True,
+                                                                                          "hinweise": [hinweis]})
+    erg = d.durchlauf(tmp_path / "a.yaml", freigeben=True)
+    assert erg["schritt"] == "validieren" and erg["pruefwerte"] == [hinweis]
+    assert schritte == ["validieren"]

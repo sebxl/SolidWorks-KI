@@ -212,3 +212,13 @@ def test_durchmesser_mangel(messung):
     bericht = bewerte(DM_SPEC, m, STANDARD)
     assert [x["pruefung"] for x in bericht["maengel"]] == ["durchmesser:d"]
     assert bericht["maengel"][0]["knoten"] == ["f1"]
+
+
+def test_huellquader_auto_aus_freigegebener_spec():
+    spec = copy.deepcopy(SPEC)
+    spec["pruefung"]["huellquader"] = "auto"
+    bericht = bewerte(spec, _messwerte(), STANDARD, freigegeben=spec)
+    huellquader = next(p for p in bericht["pruefungen"] if p["id"] == "huellquader")
+    assert huellquader["ok"] is True and huellquader["soll"] == [100, 20, 60]
+    bericht = bewerte(spec, _messwerte(box=[-50, 0, -30, 50, 25, 30]), STANDARD, freigegeben=spec)
+    assert any(m["pruefung"] == "huellquader" for m in bericht["maengel"])

@@ -153,7 +153,31 @@ def verzahnung_hinweise(spec: dict) -> list[dict]:
     return ergebnis
 
 
+def pruefwert_hinweise(spec: dict) -> list[dict]:
+    """Retro Messstand: ein von Hand angegebener Hüllquader, der von der Rechnung aus den Features abweicht, als
+    Hinweis art "pruefwert" – vor der Freigabe, denn danach kostet ein Rechenfehler eine neue Freigabe. Kein Befund:
+    Schnitte, die den Hüllquader doch verkleinern, kennt die Rechnung nicht."""
+    pr = spec.get("pruefung", {})
+    if not isinstance(pr.get("huellquader"), list):
+        return []
+    from swki.pruefung.huellquader import huellquader_auto  # spät importiert: swki.pruefung nutzt swki.spec
+
+    try:
+        soll = [auswerten(v, spec.get("parameter", {})) for v in pr["huellquader"]]
+    except AusdruckFehler:
+        return []
+    hq, _ = huellquader_auto(spec)
+    tol = pr.get("huellquader_tol", 0.01)
+    if hq is None or all(abs(a - b) <= tol for a, b in zip(hq, soll)):
+        return []
+    def text(werte: list[float]) -> str:
+        return "[" + ", ".join(f"{x:g}" for x in werte) + "]"
+    return [{"art": "pruefwert", "pfad": "pruefung.huellquader",
+             "meldung": f"huellquader {text(soll)} weicht von der Rechnung aus den Features {text(hq)} ab – "
+                        "Prüfwert nachrechnen oder huellquader: auto"}]
+
+
 def hinweise(spec: dict) -> list[dict]:
-    """Alle Hinweise für swki validieren: erst feste Zahlen, dann Zusammenfassbares, dann Verzahnung. Hinweise
-    blockieren nie."""
-    return feste_masse(spec) + zusammenfassen(spec) + verzahnung_hinweise(spec)
+    """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Zusammenfassbares und Verzahnung. Hinweise
+    blockieren nie (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
+    return pruefwert_hinweise(spec) + feste_masse(spec) + zusammenfassen(spec) + verzahnung_hinweise(spec)

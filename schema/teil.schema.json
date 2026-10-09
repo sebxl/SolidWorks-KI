@@ -396,7 +396,10 @@
     "pruefung": {
       "type": "object", "additionalProperties": false,
       "properties": {
-        "huellquader": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
+        "huellquader": {"oneOf": [
+          {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
+          {"const": "auto"}
+        ]},
         "huellquader_tol": {"type": "number", "exclusiveMinimum": 0},
         "volumen": {
           "type": "object", "required": ["soll"], "additionalProperties": false,

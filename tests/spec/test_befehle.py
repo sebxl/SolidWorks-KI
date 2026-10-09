@@ -53,3 +53,12 @@ def test_freigabe_kopie_wird_nicht_freigegeben(capsys, tmp_path):
     assert code == 1 and daten["code"] == "FREIGABE_KOPIE"
     assert "platte.yaml" in daten["fehler"]
     assert not (tmp_path / "freigabe.json").exists()
+
+
+def test_validieren_nennt_auto_werte(capsys, tmp_path):
+    pfad = tmp_path / "platte.yaml"
+    spec = {**GUELTIG, "pruefung": {**GUELTIG["pruefung"], "huellquader": "auto"}}
+    pfad.write_text(yaml.safe_dump(spec, allow_unicode=True), encoding="utf-8")
+    code, daten = _lauf(capsys, "validieren", str(pfad))
+    assert code == 0 and daten["auto"]["huellquader"] == [100, 20, 60]
+    assert daten["auto"]["volumen"].startswith("nicht berechenbar (f3: verrundung")   # Beispiel hat Verrundungen

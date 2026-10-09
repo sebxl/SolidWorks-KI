@@ -114,11 +114,11 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
 - Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
-- `pruefung` immer füllen: `huellquader` [X, Y, Z], `volumen` (`auto` oder Wert), wichtige Maße unter `masse_pruefen`,
-  `schwerpunkt` für Symmetrie/Spiegelfehler. Kurzreferenz (vollständig, Schema nicht extra lesen):
+- `pruefung` immer füllen: `huellquader` (`auto` oder [X, Y, Z]), `volumen` (`auto` oder Wert), wichtige Maße unter
+  `masse_pruefen`, `schwerpunkt` für Symmetrie/Spiegelfehler. Kurzreferenz (vollständig, Schema nicht extra lesen):
   ```yaml
   pruefung:
-    huellquader: ["=B", "=H", "=L"]            # Kanten in X, Y, Z
+    huellquader: auto                           # oder Kanten in X, Y, Z: ["=B", "=H", "=L"]
     volumen: {soll: auto}                       # oder Zahl; optional toleranz_prozent
     schwerpunkt: {soll: [0, null, 0]}           # null = Koordinate nicht prüfen; optional tol
     masse_pruefen:                              # Abstand zweier Messpunkte; optional tol (mm)
@@ -130,6 +130,10 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   ```
   Messpunkte: `{feature, flaeche: "+x"|"-x"|…}`, `{feature, instanz, achse: true}` (nur `bohrung`/`normbohrung`, nicht an
   Extrusionen – deren Lage über `durchmesser_pruefen` mit `nahe` oder `schwerpunkt` prüfen), `{punkt: [x, y, z]}`.
+  `huellquader: auto` rechnet aus den Aufsätzen (Schnitte und Bohrungen verkleinern ihn nicht); `validieren` zeigt die
+  `auto`-Werte zum Abgleich mit der Zeichnung und lehnt `auto` ab, wo es nicht geht (Verzahnung, Skript, Kreismuster
+  von Aufsätzen, Skizze auf `nahe`) – dort Kanten angeben. Weicht ein von Hand angegebener Hüllquader von der Rechnung
+  ab, meldet `validieren` einen Hinweis `pruefwert`, und `swki durchlauf --freigeben` hält vor der Freigabe an.
   Nicht von Hand nachrechnen (kein Python für Volumen oder Schwerpunkt): `volumen: {soll: auto}` rechnet auch Löcher
   in derselben Skizze und Durchgänge (`durch_alles`, `durch`) durch eine Platte; `schwerpunkt` nur für
   Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale zeigt der Steckbrief nach dem Bau.

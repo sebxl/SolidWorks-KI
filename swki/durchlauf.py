@@ -35,6 +35,13 @@ def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = No
     except SwkiFehler as e:
         return {**erg, "schritt": "validieren", "fehler": str(e), **getattr(e, "daten", {})}
     erg["hinweise"] = v.get("hinweise", [])
+    if "auto" in v:
+        erg["auto"] = v["auto"]
+    pruefwerte = [h for h in erg["hinweise"] if h.get("art") == "pruefwert"]
+    if freigeben and pruefwerte:   # nach der Freigabe kostet ein falscher Prüfwert eine neue Freigabe
+        return {**erg, "schritt": "validieren", "pruefwerte": pruefwerte,
+                "fehler": "Prüfwert weicht von der Rechnung aus den Features ab – Spec korrigieren (oder bewusst "
+                          "abweichend: swki freigeben, dann swki durchlauf ohne --freigeben)"}
     if freigeben:
         try:
             f = _freigeben(Namespace(spec=str(spec_pfad)))

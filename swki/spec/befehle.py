@@ -18,7 +18,7 @@ def _validieren(args) -> dict:
 
         return validieren_kaufteil(pfad)
     spec = lade_spec(pfad)
-    return {
+    erg = {
         "gueltig": True,
         "spec": str(pfad),
         "name": spec["name"],
@@ -26,6 +26,23 @@ def _validieren(args) -> dict:
         "pruefsumme": pruefsumme(spec),
         "hinweise": hinweise(spec),
     }
+    if auto := auto_werte(spec):
+        erg["auto"] = auto
+    return erg
+
+
+def auto_werte(spec: dict) -> dict:
+    """Die Sollwerte, die `auto` aus den Features rechnet – zum Abgleich mit der Zeichnung vor der Freigabe."""
+    from swki.pruefung.geometrie import volumen_auto  # spät importiert (Kreisimport)
+    from swki.pruefung.huellquader import huellquader_auto
+
+    pr, erg = spec.get("pruefung", {}), {}
+    if pr.get("huellquader") == "auto":
+        erg["huellquader"] = huellquader_auto(spec)[0]
+    if pr.get("volumen", {}).get("soll") == "auto":
+        v, grund = volumen_auto(spec)
+        erg["volumen"] = round(v, 3) if v is not None else f"nicht berechenbar ({grund})"
+    return erg
 
 
 _KOPIE_ENDUNG = ".freigegeben.yaml"

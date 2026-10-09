@@ -14,6 +14,7 @@ from swki.compiler.anker import RICHTUNGEN
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.formschraege import feste_tiefe, grenze_kleiner, quer_zur_richtung, schraege, skizzennormale
 from swki.konfig import PROJEKT
+from swki.pruefung.huellquader import huellquader_auto, seitenpunkt
 from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import groesse_text, norm_von, normmasse, verfuegbare_groessen
@@ -233,9 +234,15 @@ def _schraege_anker_befunde(spec: dict) -> list[dict]:
         for schluessel in ("flaeche", "kanten_an"):
             richtung = anker.get(schluessel)
             if fid in normalen and richtung in RICHTUNGEN and quer_zur_richtung(richtung, normalen[fid]):
+                try:
+                    punkt = seitenpunkt(spec, fid, richtung) if schluessel == "flaeche" else None
+                except AusdruckFehler:
+                    punkt = None   # bereits oben gemeldet
+                vorschlag = f", z. B. {{nahe: {punkt}}} (Mitte der Seitenfläche {richtung})" if punkt else ""
                 befunde.append({"pfad": _pfad([*pfad, schluessel]),
                                 "meldung": f"{fid} hat eine Formschräge: seine Seitenflächen sind geschrägt, {richtung!r} "
-                                           "findet keine Fläche – die Fläche mit {nahe: [x, y, z]} ansprechen"})
+                                           "findet keine Fläche – die Fläche mit {nahe: [x, y, z]} ansprechen"
+                                           + vorschlag})
         if anker.get("auswahl") == "senkrechte_kanten":
             befunde.append({"pfad": _pfad([*pfad, "auswahl"]),
                             "meldung": f"{fid} hat eine Formschräge: es gibt keine senkrechten Kanten – Ecken mit "
@@ -407,6 +414,12 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
                             "meldung": "umkehren wirkt nur zusammen mit abstand (ohne Abstand ist die Ebene "
                                        "deckungsgleich zur Basisebene)"})
     befunde += _schraege_anker_befunde(spec)
+    if spec.get("pruefung", {}).get("huellquader") == "auto" and not befunde:
+        hq, grund = huellquader_auto(spec)
+        if hq is None:
+            befunde.append({"pfad": "pruefung.huellquader",
+                            "meldung": f"huellquader: auto ist hier nicht berechenbar ({grund}) – Kanten [X, Y, Z] "
+                                       "angeben"})
     return befunde
 
 

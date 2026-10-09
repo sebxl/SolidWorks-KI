@@ -100,6 +100,15 @@ def test_anker_quer_zur_extrusion(tmp_path):
     assert "Eckradius in der Skizze" in befunde[1]["meldung"]
 
 
+def test_anker_quer_nennt_einen_nahe_punkt(tmp_path):
+    """Retro Messstand: die Meldung nennt gleich einen Punkt mitten auf der Seitenfläche (halbe Höhe des Zapfens)."""
+    bohrung = {"id": "b1", "typ": "bohrung", "flaeche": {"feature": "zapfen", "flaeche": "-z"}, "positionen": [[0, 5]],
+               "durchmesser": 3, "tiefe": 2}
+    [befund] = plausibel_befunde(_mit(bohrung), tmp_path)
+    einzug = 6 * math.tan(math.radians(15))
+    assert f"{{nahe: [0.0, 26.0, {round(-(10 - einzug), 3)}]}}" in befund["meldung"]
+
+
 def test_anker_parallel_und_ohne_formschraege_bleiben_erlaubt(tmp_path):
     deckel = {"id": "b1", "typ": "bohrung", "flaeche": {"feature": "zapfen", "flaeche": "+y"}, "positionen": [[0, 0]],
               "durchmesser": 3, "tiefe": 2}
