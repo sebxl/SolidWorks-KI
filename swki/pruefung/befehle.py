@@ -101,7 +101,8 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     model = oeffne(app, teil)
     try:
         ctx = kontext_aus_datei(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], protokoll)
-        messwerte = messe(ctx, soll)
+        with sw.schnell(app, model):   # Messen ohne Bildschirmarbeit (Messstand Umbau 5); Screenshots danach normal
+            messwerte = messe(ctx, soll)
         bilder = screenshots(app, model, ordner / "bilder")
         geometrie = steckbrief_fuer(app, model, ordner)
     finally:

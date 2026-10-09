@@ -225,8 +225,9 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             behalten = False
             try:
                 ctx = kontext_aus_datei(app, model, teil_spec, bg.pfad.parent / datei, tol, protokoll["teile"][datei])
-                teilberichte[datei] = bewerte(teil_spec, messe(ctx, soll_teile[datei]), standard, soll_teile[datei])
-                geometrie[datei] = _geometrie(ctx, bedarf.get(datei, []))
+                with sw.schnell(app, model):   # Messen ohne Bildschirmarbeit (Messstand Umbau 5)
+                    teilberichte[datei] = bewerte(teil_spec, messe(ctx, soll_teile[datei]), standard, soll_teile[datei])
+                    geometrie[datei] = _geometrie(ctx, bedarf.get(datei, []))
                 if datei in offen_halten:
                     kontexte[datei], behalten = ctx, True
                     offen.append(model)
@@ -251,7 +252,8 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         asm = oeffne(app, asm_pfad)
         try:
             sw_baugruppe.aufloesen(asm)
-            messwerte = _messe_baugruppe(asm, bg, protokoll, geometrie, teilberichte)
+            with sw.schnell(app, asm):
+                messwerte = _messe_baugruppe(asm, bg, protokoll, geometrie, teilberichte)
             bilder = screenshots(app, asm, ordner / "bilder")
             bilder |= _kopplungsbilder(app, asm, bg, protokoll, messwerte, ordner / "bilder")
             if mit_bewegung:

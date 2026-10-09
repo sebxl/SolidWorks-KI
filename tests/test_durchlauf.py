@@ -38,6 +38,7 @@ def test_alle_schritte_in_reihenfolge(schritte, tmp_path):
     assert erg["schritt"] == "fertig" and erg["lauf"] == 3 and erg["pruefung"]["bestanden"] is True
     assert erg["pruefung"]["ohne_urteil"] == ["v"] and erg["pruefung"]["steckbrief"] == ["Zeile 1", "Zeile 2"]
     assert erg["pruefung"]["bilder"] == [str(Path("C:/l/bilder"))]
+    assert "Prüfe Lauf 3 von a.yaml" in erg["pruefer_auftrag"] and "Prüfbericht:" in erg["pruefer_auftrag"]
 
 
 def test_ohne_freigeben_kein_freigabeschritt(schritte, tmp_path):

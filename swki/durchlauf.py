@@ -23,6 +23,26 @@ def _kurz_pruefung(bericht: dict) -> dict:
     return erg
 
 
+def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
+    """Fertiger Prompt für den Prüfer-Agenten (nur erlaubte Eingaben: Eingabe, Freigabe-Kopien, Prüfbericht, Bilder,
+    Steckbrief – keine Protokolle, keine Skripte)."""
+    from swki.auftrag import lauf_datei
+
+    ordner = spec_pfad.parent
+    kopien = ", ".join(str(p) for p in sorted(ordner.glob("*.freigegeben.yaml")))
+    bilder = sorted({str(Path(b).parent) for b in (bericht.get("bilder") or {}).values()})
+    laufordner = Path(bericht["datei"]).parent if bericht.get("datei") else None
+    steck = laufordner / "steckbrief.txt" if laufordner and (laufordner / "steckbrief.txt").exists() else None
+    teile = [f"Prüfe Lauf {lauf} von {spec_pfad.name}.", f"Eingabe des Nutzers: {ordner / 'eingabe'} (und aufgabe.md, falls vorhanden).",
+             f"Freigegebene Spezifikation(en): {kopien}.", f"Prüfbericht: {lauf_datei(spec_pfad, lauf, 'pruefbericht')}."]
+    if bilder:
+        teile.append(f"Screenshots: {', '.join(bilder)}.")
+    if steck:
+        teile.append(f"Geometrie-Steckbrief: {steck} (Lage und Vorzeichen zuerst daran prüfen).")
+    teile.append("Antworte nur mit dem JSON-Urteil.")
+    return " ".join(teile)
+
+
 def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = None) -> dict:
     from swki.compiler.bauen import BauAbbruch, _bauen
     from swki.pruefung.befehle import pruefen, status
@@ -62,6 +82,8 @@ def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = No
     except SwkiFehler as e:
         return {**erg, "schritt": "pruefen", "fehler": str(e), **getattr(e, "daten", {})}
     erg["pruefung"] = _kurz_pruefung(p)
+    if p.get("bestanden"):
+        erg["pruefer_auftrag"] = pruefer_auftrag(spec_pfad, b["lauf"], p)
     st = status(spec_pfad, maximal)
     erg |= {"schritt": "fertig", "empfehlung": st["empfehlung"], "empfehlung_text": st["text"],
             "naechstes": "Prüfer-Agent starten (Eingabe, freigegebene Spec, Prüfbericht, Bilder)"

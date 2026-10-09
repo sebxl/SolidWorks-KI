@@ -132,8 +132,8 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - `swki pruefen <baugruppe.yaml>` → Prüfbericht mit `verknuepfungen`, `bestimmtheit`, `stueckliste`, `kollision`,
   `gewinde:<schraube>` (Einschraublänge, Volumen ist/soll), `mass:*`, `huellquader`, Teilprüfungen
   `<komponente>: <prüfung>`.
-- Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit Eingabeordner, allen freigegebenen Specs (Baugruppe und Teile),
-  Prüfbericht und Screenshot-Ordner; Urteil unverändert nach `protokolle/<spec>.lauf-<n>.pruefer.json`.
+- Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit `pruefer_auftrag` aus `swki durchlauf` (sonst mit Eingabeordner, allen freigegebenen Specs (Baugruppe und Teile),
+  Prüfbericht und Screenshot-Ordner); Urteil unverändert nach `protokolle/<spec>.lauf-<n>.pruefer.json`.
 - **Speicher:** Ein Baugruppenlauf (Bau + Prüfen) kostet SolidWorks mehrere GB (Stehlager 3,1–3,6 GB Private Bytes).
   Nach jedem Baugruppenlauf die Private Bytes von `SLDWORKS.exe` prüfen
   (`Get-Process SLDWORKS | Select-Object Id,@{n='Privat_MB';e={[int]($_.PrivateMemorySize64/1MB)}}`); ab ca. 4 GB
