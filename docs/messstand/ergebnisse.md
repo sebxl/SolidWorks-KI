@@ -91,3 +91,25 @@ falsch (die Grundkante wird mitgeschrägt → Keilspalt → 2 Körper → zweite
 
 **Speicher-Test (Wegwerf):** ein neues Teil hebt SolidWorks von 0,43 auf ~3,0 GB – gleich bei normalem,
 minimiertem und unsichtbarem Hauptfenster. Der Speicher hängt nicht am Fenster; kein Hebel über die Anzeige.
+
+## Durchgang 3 – Umbau 3 (Commit f583a35): nicht deutlich besser → verworfen
+
+Umbau (Umbau 2 ohne unsichtbares Anlegen, Steg-Regel korrigiert: mitgeschrägter Steg 1 mm in die Platte) plus
+vollständige Syntax-Kurzreferenzen im Skill `konstruieren` (alle Elemente, Ebenen, Endbedingungen, Feature-Typen,
+(u, v)-Regel auf Flächen) und `baugruppe` (Komponenten, Referenzen, Verknüpfungen, EINBAU-Referenzen der Normteile,
+Ausrichtungsregel; Beispiel „Klemmhalter“ mit `swki validieren` gültig).
+
+
+| Lauf | Zeit s | Modell | Bauen+Prüfen | Prüfer | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d3-durchlicht-1 | 165 | 94 | 27 | 42 | 20 | 13497 | 244509 | 1 | 0 | 3367 | ja |
+| d3-durchlicht-2 | 140 | 88 | 28 | 22 | 18 | 12154 | 221488 | 1 | 0 | 3362 | ja |
+| d3-kamera-1 | 290 | 176 | 78 | 34 | 23 | 21840 | 327526 | 3 | 3 | 4289 | ja |
+| d3-stehlager-1 | 309 | 221 | 60 | 23 | 30 | 29882 | 438163 | 1 | 0 | 10534 | ja |
+| d3-zentrieraufnahme-1 | 146 | 95 | 29 | 18 | 22 | 11780 | 242769 | 1 | 0 | 3373 | ja |
+
+**Score 3,4** (Zeit 3,8 · Aufwand 4,3 · Fehler 2,0 · Speicher 2,5; Verhältnisse Zeit 0,73, Aufwand 0,77) < 5,1 →
+verworfen. Zeit und Aufwand so gut wie nie (Durchlicht 140–165 s, Zentrieraufnahme 146 s, Stehlager 309 s), aber
+Kamera 3 Läufe + neue Freigabe: C-Mount und Freiraum ab derselben Fläche überlappen, `volumen: auto` zählt doppelt,
+und weil `auto` aus der Freigabe-Kopie rechnet, hilft kein Bauweg → neue Freigabe. Ein Fehlerfall kippt den
+Fehler-Teilscore von 10 auf 2 (Baseline: 0,6 Fehler je Lauf).
