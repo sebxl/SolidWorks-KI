@@ -113,3 +113,22 @@ verworfen. Zeit und Aufwand so gut wie nie (Durchlicht 140–165 s, Zentrieraufn
 Kamera 3 Läufe + neue Freigabe: C-Mount und Freiraum ab derselben Fläche überlappen, `volumen: auto` zählt doppelt,
 und weil `auto` aus der Freigabe-Kopie rechnet, hilft kein Bauweg → neue Freigabe. Ein Fehlerfall kippt den
 Fehler-Teilscore von 10 auf 2 (Baseline: 0,6 Fehler je Lauf).
+
+## Durchgang 4 – Umbau 4 (Commit 3bac8d7): deutlich besser → neue Baseline
+
+Umbau 3 plus: `volumen: auto` zieht den gemeinsamen Teil ineinanderliegender Schnitte (bzw. Aufsätze) ab derselben
+Skizzenebene ab (Kamera: Freiraum hinter der C-Mount-Senkung). Sollvolumen aller 20 Referenz-Teilspecs unverändert
+(ohne SolidWorks geprüft), Code sonst wie Umbau 2 (Regression 11/11).
+
+
+| Lauf | Zeit s | Modell | Bauen+Prüfen | Prüfer | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d4-durchlicht-1 | 149 | 90 | 27 | 30 | 20 | 12725 | 235793 | 1 | 0 | 3355 | ja |
+| d4-durchlicht-2 | 140 | 83 | 30 | 26 | 20 | 12104 | 224112 | 1 | 0 | 3298 | ja |
+| d4-kamera-1 | 180 | 116 | 28 | 35 | 20 | 16069 | 259258 | 1 | 0 | 3563 | ja |
+| d4-stehlager-1 | 362 | 271 | 64 | 22 | 31 | 34410 | 467827 | 1 | 0 | 10462 | ja |
+| d4-zentrieraufnahme-1 | 131 | 79 | 29 | 21 | 19 | 10733 | 211155 | 1 | 0 | 3294 | ja |
+
+**Score 5,4** (Zeit 4,3 · Aufwand 4,6 · Fehler 10 · Speicher 3,4; Verhältnisse Zeit 0,65, Aufwand 0,74, Fehler 0,
+Speicher 0,92) ≥ 4,1 + 1,0, kein Teilscore schlechter, alles richtig → Merge in `messstand`. Alle Läufe im ersten
+Baulauf bestanden, Agenten lesen kein Schema mehr (Teile 9 Tool-Aufrufe im Hauptagenten statt 16–26).
