@@ -1,32 +1,66 @@
 # Messstand – Ergebnisse
 
 Spec: `docs/superpowers/specs/2026-10-09-messstand-design.md`. Messdaten (Transkripte, STL, `kpi.json`, `score.json`)
-unter `<arbeitsordner>/MESSSTAND/durchgang-<n>/`. Score-Anker: Durchgang 0 = 2,0.
+unter `<arbeitsordner>/MESSSTAND/durchgang-<n>/`. Score-Anker: Durchgang 0 = 2,0. Ziel 7,0, höchstens 5 Umbauten.
 
-## Durchgang 0 – Baseline (09.10.2026, Commit a104b8d)
+## Korrekturen am Messverfahren (vor jeder Score-Entscheidung)
 
-Alle 5 Läufe bestanden, alle **richtig** (Oberflächenabstand zur Referenz < 1e-8 mm), keine Lecks.
+- **Leck:** Ein Agent übernahm die Stehlager-Specs aus `docs/superpowers/plans/…3b…`; zwei Baseline-Läufe hatten
+  Ergebnisdokumente mit Teilen der Lösung gelesen. Seitdem fehlen in jedem Lauf-Worktree `docs/`, `tests/live/`,
+  `tests/baugruppe/test_referenzen.py`; das ganze Hauptrepo gilt als Leck. Betroffene Läufe liegen unter
+  `durchgang-<n>/_ungueltig/` und wurden wiederholt.
+- **Stehlager-Aufgabe präzisiert:** Die Beschreibung ließ Details offen (Stiftbohrungstiefe, Ø der Durchgänge);
+  ein Agent wählte 15 statt 12 mm Stiftbohrung → „nicht richtig“, obwohl beschreibungskonform. Die Aufgabe enthält
+  jetzt die Nutzervorgaben (wie Durchlicht/Kamera); beide Stehlager-Läufe (Baseline, Umbau 1) wurden wiederholt.
+- **Skill-Stand:** Das Skill-Tool liefert in einer laufenden Sitzung den Stand vom Sitzungsstart. Ab den
+  Wiederholungen liest der Agent den Skill per Read aus seinem Worktree (Baseline-Worktree = Original-Skill).
+- **Vordergrund:** Prüfer und Befehle laufen im Vordergrund (Hintergrund-Meldungen gingen bei einer Unterbrechung
+  der Sitzung verloren).
+- **Richtig:** zusätzlich größter Oberflächenabstand ≤ 1,0 mm (vor der ersten Bewertung festgelegt).
 
-| Lauf | Zeit s | Modell | bauen | prüfen | Prüfer | Rest | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| d0-durchlicht-1 | 221 | 118 | 50 | 12 | 37 | 4 | 26 | 15339 | 314019 | 1 | 0 | 3923 | ja |
-| d0-durchlicht-2 | 212 | 117 | 40 | 9 | 40 | 5 | 26 | 13368 | 292352 | 1 | 0 | 3911 | ja |
-| d0-kamera-1 | 332 | 198 | 55 | 21 | 52 | 7 | 36 | 22607 | 465409 | 2 | 3 | 3546 | ja |
-| d0-stehlager-1 | 499 | 267 | 184 | 22 | 18 | 8 | 37 | 33871 | 540018 | 1 | 0 | 11083 | ja |
-| d0-zentrieraufnahme-1 | 220 | 134 | 49 | 10 | 20 | 7 | 31 | 15514 | 386521 | 1 | 0 | 3954 | ja |
+## Durchgang 0 – Baseline (Commit a104b8d)
 
-**Wo die Zeit hängt (Summe 1484 s):** Modell (Denken/Schreiben) 56 %, `swki bauen` 25 %, Prüfer-Agent 11 %,
-`swki pruefen` 5 %.
+| Lauf | Zeit s | Modell | Bauen+Prüfen | Prüfer | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d0-durchlicht-1 | 221 | 118 | 62 | 37 | 26 | 15339 | 314019 | 1 | 0 | 3923 | ja |
+| d0-durchlicht-2 | 212 | 117 | 50 | 40 | 26 | 13368 | 292352 | 1 | 0 | 3911 | ja |
+| d0-kamera-1 | 332 | 198 | 76 | 52 | 36 | 22607 | 465409 | 2 | 3 | 3546 | ja |
+| d0-stehlager-1 | 459 | 234 | 196 | 23 | 32 | 28971 | 493838 | 1 | 0 | 10729 | ja |
+| d0-zentrieraufnahme-1 | 216 | 140 | 49 | 21 | 27 | 16857 | 338556 | 1 | 0 | 3637 | ja |
 
-- **Modell:** Zeit ≈ Ausgabe-Tokens / ~100 je s plus ~2 s je Runde. Teuer sind das Lesen der Zeichnung (29–50 s) und
-  das Schreiben der Spec (33 s); dazu 3–6 Runden Erkundung von Schema und Vorlagen, je Befehl eine eigene Runde
-  (validieren, freigeben+bauen, prüfen, ls, Prüfer, status+bericht).
-- **bauen:** jedes Feature 3,5–5 s, unabhängig von der Größe (Durchlicht: Platte mit 4 Langlöchern 30 s). Profil
-  (cProfile, Durchlicht 39,8 s): 22 s COM-`Invoke` (2480 Aufrufe, ~9 ms, prozessübergreifend), 13,6 s pywin32-
-  Overhead (`GetTypeInfo` 7,8 s, `GetIDsOfNames` 5,8 s). Grafikaktualisierung, Feature-Baum und Skizzenanzeige laufen
-  beim Bauen mit (nirgends abgeschaltet).
-- **prüfen:** 10 s, davon Screenshots 4,9 s, Messen 4,2 s.
-- **Prüfer:** 3–4 Runden, 2–5k Ausgabe-Tokens; liest Aufgabe, Spec, Prüfbericht, Zeichnung und 4 Screenshots.
-- **Fehler:** nur Kamera (eine Prüfung „Lage des Steckers“ war an einer Extrusion nicht messbar → 2 Prüfmängel,
-  neue Freigabe, zweiter Lauf).
-- **Speicher:** Teile 3,5–4 GB, Stehlager 11,1 GB.
+Summe 1441 s: Modell 56 %, Bauen+Prüfen 30 %, Prüfer 12 %.
+
+**Wo die Zeit hängt:**
+- **Modell:** Zeit ≈ Ausgabe-Tokens / ~100 je s plus ~2 s je Runde. Teuer: Zeichnung lesen (29–50 s), Spec schreiben
+  (23–33 s), Prüfwerte (Volumen, Schwerpunkt) von Hand nachrechnen (bis 18 s), Erkundung von Schema und Vorlagen
+  (3–6 Runden), je swki-Befehl eine Runde.
+- **bauen:** jedes Feature 3,5–5 s. Profil (Durchlicht 39,8 s): 22 s COM-`Invoke` (2480 Aufrufe à ~9 ms),
+  13,6 s pywin32-Overhead (`GetTypeInfo` 7,8 s, `GetIDsOfNames` 5,8 s); Grafik, Feature-Baum und Skizzenanzeige
+  liefen beim Bauen mit.
+- **prüfen:** ~10 s (Screenshots 4,9 s, Messen 4,2 s). **Prüfer:** 3–4 Runden, 2–5k Ausgabe-Tokens.
+- **Speicher:** schon das Anlegen eines Teils hebt SolidWorks von ~0,4 auf ~2,9 GB (Grafikfenster); Teile 3,5–4 GB,
+  Stehlager 10,7 GB.
+
+## Durchgang 1 – Umbau 1 (Commit c6a0d96): deutlich besser → neue Baseline
+
+Umbau: Schnellmodus beim Bauen (CommandInProgress, keine Grafik/Feature-Baum/Skizzenanzeige), `swki durchlauf`
+(validieren → freigeben → bauen → prüfen → status in einem Aufruf), Geometrie-Steckbrief aus STL (numpy/scipy/trimesh:
+Zylinder mit Achse/Mitte/Ø, Hüllquader, Schwerpunkt) für Agent und Prüfer, Skill mit Kurzreferenz der Prüfwerte.
+Live-Regression 11/11 (Stehlager Bau+Prüfung 61 s statt 125–213 s).
+
+| Lauf | Zeit s | Modell | Bauen+Prüfen | Prüfer | Tool-Aufrufe | Ausgabe-Tokens | Tokens gew. | Läufe | Fehler | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d1-durchlicht-1 | 202 | 136 | 29 | 32 | 25 | 17197 | 365608 | 1 | 0 | 3954 | ja |
+| d1-durchlicht-2 | 220 | 144 | 28 | 44 | 24 | 17598 | 312704 | 1 | 0 | 3922 | ja |
+| d1-kamera-1 | 268 | 172 | 31 | 60 | 28 | 23378 | 397813 | 1 | 0 | 3374 | ja |
+| d1-stehlager-1 | 364 | 262 | 61 | 34 | 35 | 32334 | 525022 | 1 | 0 | 10643 | ja |
+| d1-zentrieraufnahme-1 | 183 | 129 | 30 | 20 | 24 | 15125 | 285941 | 1 | 0 | 3920 | ja |
+
+Summe 1237 s: Modell 68 %, Bauen+Prüfen 14 %, Prüfer 15 %.
+
+**Score 4,1** (Zeit 2,8 · Aufwand 2,4 · Fehler 10 · Speicher 2,0; Verhältnisse Zeit 0,88, Aufwand 0,96, Fehler 0,
+Speicher 1,0). Regel erfüllt (+2,1, kein Teilscore > 1 schlechter, alles richtig) → Merge in `messstand`.
+Einordnung: Bauen+Prüfen 3–4× schneller, die Gesamtzeit nur 12 % – das Modell (Denken/Schreiben) ist jetzt 68 % der
+Zeit. Der Fehler-Teilscore springt von wenigen Baseline-Fehlern (3, alle Kamera) auf 0 und ist entsprechend unsicher.
+Agenten rechnen weiter Volumen von Hand (`volumen: auto` kann Durchgänge und Löcher in der Skizze nicht) und schauen
+in Vorlagen.
