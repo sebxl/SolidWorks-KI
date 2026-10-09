@@ -180,6 +180,14 @@ unabhängige Prüfer (vor allem dessen eigene Deutung der Zeichnung). Werkzeugse
   über die Durchgänge stabil (Umbau 3–5: Zeit 0,65–0,73, Aufwand 0,74–0,77).
 - Speicher: das erste offene Teil kostet ~2,5 GB unabhängig vom Fenster; kein Hebel gefunden.
 
-**Mögliche nächste Schritte (nicht umgesetzt):** `huellquader: auto` und weitere abgeleitete Prüfwerte (gegen
-Rechenfehler), Schnellmodus beim Messen aus Umbau 5 separat übernehmen, mehr Läufe je Aufgabe für eine robustere
+**Nachträglich übernommen (09.10.2026, nicht neu gemessen):**
+- Umbau 5 (Schnellmodus beim Messen, Prüfer-Auftrag aus `swki durchlauf`) – nur nach der Score-Regel verworfen,
+  Zeit und Aufwand wie Umbau 4.
+- Retro: `huellquader: auto` für Teile (aus den Aufsätzen; Gegenprobe 42/42 Messstand-Teile und alle Referenzen),
+  Hinweis `pruefwert` für abweichende Hüllquader (`swki durchlauf --freigeben` hält vor der Freigabe an),
+  `nahe`-Vorschlag an Formschrägen, Stiftgröße auch als Text, Skill `baugruppe`: Specs mit dem Write-Tool (vier
+  Heredocs in einem Bash-Aufruf scheiterten in allen 9 Stehlager-Läufen, je ~46 s).
+
+**Offen:** abgeleitete Prüfwerte auf Baugruppen-Ebene (Hüllquader, Höhen aus der Lage der Teile – Ursache des
+d5-Fehlers; bräuchte eine Auflösung der Verknüpfungen in swki), mehr Läufe je Aufgabe für eine robustere
 Entscheidung, schnellere Modelle nur für klar abgegrenzte Teilschritte prüfen.

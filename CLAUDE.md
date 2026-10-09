@@ -1,8 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Paket Formschräge (Option an Extrusion und Schnitt) umgesetzt – Ergebnisse: docs/formschraege/ergebnisse.md
-(davor 3c: docs/stufe3c/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse: docs/messstand/ergebnisse.md
+(davor Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
