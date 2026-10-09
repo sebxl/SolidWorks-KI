@@ -128,6 +128,7 @@ Anweisungen des Nutzers für diesen Lauf (gehen den Skills vor):
 - Kein Brainstorming, keine Pläne, kein git, keine Commits, keine Änderungen an swki/ oder an den Skills.
 - SolidWorks ist frisch gestartet. Neu starten nur bei SPEICHER_KNAPP oder Hänger: `cd "{wt}" && .venv\\Scripts\\python.exe -m werkzeuge.sw_neustart`.
 - Arbeite zügig; Zeit, Tool-Aufrufe, Tokens und Fehler werden gemessen.
+- Starte Subagenten (Prüfer) und Befehle im Vordergrund und warte auf ihr Ergebnis (nicht im Hintergrund).
 
 Antworte am Ende nur mit: Status (bestanden / nicht bestanden), letzter Lauf, Pfad der Spec, offene Punkte (1–3 Zeilen).
 """
