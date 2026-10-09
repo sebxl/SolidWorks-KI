@@ -102,6 +102,14 @@ Stand: Paket Formschräge (Option an Extrusion und Schnitt) umgesetzt – Ergebn
 - `swki pruefen` prüft Normbohrungen gegen die freigegebene Kopie (Größen sind Text, die Prüfsumme schützt sie nicht).
 - Wiederholt sich eine Lücke oder ein Handlerfehler: Skill `compiler-erweitern` (Test zuerst, Regressions-Suite).
 - Regressions-Suite: `.venv\Scripts\python.exe tests\live_einzeln.py tests\referenz` (SolidWorks geöffnet).
+- Schneller Weg: `swki durchlauf <spec> [--freigeben]` (validieren → freigeben → bauen → prüfen → status, kompakt;
+  `--freigeben` nur nach Nutzer-OK). `swki pruefen` schreibt dazu `steckbrief.txt` (Zylinder, Hüllquader, Schwerpunkt
+  aus STL) für Lage- und Vorzeichenkontrolle.
+
+## Messstand
+- KPI-Messung der KI-Konstruktion: `-m werkzeuge.messstand` (Spec `docs/superpowers/specs/2026-10-09-messstand-design.md`,
+  Ergebnisse `docs/messstand/ergebnisse.md`, Daten unter `<arbeitsordner>/MESSSTAND/`). Läufe je Aufgabe in eigenem
+  Worktree ohne `docs/`/Referenzen; Freigabe ohne Rückfrage **nur** in Messstand-Aufträgen `MESS-*` (Nutzer 09.10.2026).
 
 ## Git
 - Kein `git push` ohne Rückfrage.
