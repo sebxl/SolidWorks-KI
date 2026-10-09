@@ -133,8 +133,10 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Nicht von Hand nachrechnen (kein Python für Volumen oder Schwerpunkt): `volumen: {soll: auto}` rechnet auch Löcher
   in derselben Skizze und Durchgänge (`durch_alles`, `durch`) durch eine Platte; `schwerpunkt` nur für
   Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale zeigt der Steckbrief nach dem Bau.
-  `auto` setzt voraus, dass Aufsätze nicht in andere Körper hineinragen: einen Aufsatz (auch mit Formschräge oder
-  `mittig`) auf der Fläche beginnen lassen, auf der er steht – er verschmilzt dort ohne Spalt.
+  `auto` setzt voraus, dass Aufsätze nicht in andere Körper hineinragen: einen Aufsatz auf der Fläche beginnen lassen,
+  auf der er steht. Ausnahme: Wird seine Grundkante mitgeschrägt (Formschräge an einem `mittig`-Steg, der quer zur
+  Platte skizziert ist), das Profil 1 mm in die Platte führen – sonst bleibt ein Keilspalt (2 Körper); `auto` zählt
+  die Überlappung doppelt, bleibt bei 1 mm aber in der Toleranz.
 
 ### Modellierregeln (kompakter Feature-Baum)
 Änderbarkeit zuerst, sonst so wenige Features wie möglich:
