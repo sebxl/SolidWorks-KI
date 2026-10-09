@@ -236,6 +236,28 @@ def _dicke(features: dict, flaeche, p: dict) -> float | None:
     return auswerten(x["ende"]["tiefe"], p)
 
 
+def _ueberlappung(bisher: list, f: dict, tiefe: float, p: dict) -> float:
+    """Gemeinsames Volumen von f mit früheren Features gleicher Art (beide Schnitt oder beide Aufsatz, blind, ohne
+    Formschräge) auf derselben Skizzenebene und in derselben Richtung: liegt ein Profil ganz im anderen, überlappen sie
+    auf der kleineren Tiefe (z. B. Freiraum Ø 23 hinter einer Senkung Ø 25,4 ab derselben Fläche). Wird abgezogen,
+    damit der gemeinsame Teil nur einmal zählt (Messstand Umbau 4)."""
+    schluessel = (f["typ"], repr(f["skizze"]["ebene"]), bool(f["ende"].get("umkehren")))
+    profile = [(_flaeche(e, p), _umriss(e, p)) for e in f["skizze"]["elemente"]]
+    summe = 0.0
+    for alt_schluessel, alt_profile, alt_tiefe in bisher:
+        if alt_schluessel != schluessel:
+            continue
+        for a, u in profile:
+            for b, w in alt_profile:
+                if None in (a, b, u, w):
+                    continue
+                innen = (w[0] <= u[0] and w[1] <= u[1] and u[2] <= w[2] and u[3] <= w[3]) or                         (u[0] <= w[0] and u[1] <= w[1] and w[2] <= u[2] and w[3] <= u[3])
+                if innen:
+                    summe += min(a, b) * min(tiefe, alt_tiefe)
+    bisher.append((schluessel, profile, tiefe))
+    return summe
+
+
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
     """Sollvolumen aus der Spezifikation, soweit analytisch möglich (Annahme: Schnitte liegen ganz im Material,
     Aufsätze überlappen nicht). Rückgabe (volumen, grund); volumen None = nicht berechenbar, grund sagt warum.
@@ -245,6 +267,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
     p = spec.get("parameter", {})
     beitrag: dict[str, float] = {}
     nach_id = {f["id"]: f for f in spec["features"]}
+    bisher: list = []   # für _ueberlappung
     for f in spec["features"]:
         typ = f["typ"]
         if typ in ("extrusion", "schnitt"):
@@ -262,7 +285,10 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
                 if v is None:
                     return None, grund
             else:
-                v = _skizzen_flaeche(f["skizze"]["elemente"], p) * (tiefe or auswerten(ende["tiefe"], p))
+                t = tiefe or auswerten(ende["tiefe"], p)
+                v = _skizzen_flaeche(f["skizze"]["elemente"], p) * t
+                if ende["typ"] in ("blind", "durch_alles") and len(f["skizze"]["elemente"]) == 1:
+                    v -= _ueberlappung(bisher, f, t, p)
             beitrag[f["id"]] = -v if typ == "schnitt" else v
         elif typ == "rotation":
             if any(_hat_rundung(e) for e in f["skizze"]["elemente"]):

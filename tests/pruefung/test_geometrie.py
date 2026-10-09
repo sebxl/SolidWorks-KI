@@ -249,3 +249,31 @@ def test_volumen_durchgang_auf_standardebene_der_platte():
     assert volumen_auto(spec)[0] == pytest.approx(75 * 89 * 2 - math.pi * 25 * 2)
     spec["features"][1]["skizze"]["ebene"] = "vorne"   # quer zur Platte: Dicke unbekannt
     assert volumen_auto(spec)[0] is None
+
+
+def test_volumen_ueberlappende_schnitte_auf_derselben_flaeche():
+    # Kamera: C-Mount Ø25,4 × 4,5 und Freiraum Ø23 × 9, beide ab derselben Fläche → der Freiraum überlappt den C-Mount
+    # auf 4,5 mm Tiefe; der gemeinsame Teil zählt nur einmal (Messstand Umbau 4)
+    flaeche = {"feature": "f1", "flaeche": "-y"}
+    spec = {"features": [
+        _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 29, "hoehe": 29}}], 55),
+        {"id": "f2", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 25.4}}]},
+         "ende": {"typ": "blind", "tiefe": 4.5}},
+        {"id": "f3", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 23}}]},
+         "ende": {"typ": "blind", "tiefe": 9}},
+    ]}
+    a = lambda d: math.pi * d * d / 4
+    erwartet = 29 * 29 * 55 - a(25.4) * 4.5 - a(23) * (9 - 4.5)
+    assert volumen_auto(spec)[0] == pytest.approx(erwartet)
+
+
+def test_volumen_getrennte_schnitte_auf_derselben_flaeche_ueberlappen_nicht():
+    flaeche = {"feature": "f1", "flaeche": "+y"}
+    spec = {"features": [
+        _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}], 20),
+        {"id": "f2", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [-30, 0], "durchmesser": 10}}]},
+         "ende": {"typ": "blind", "tiefe": 5}},
+        {"id": "f3", "typ": "schnitt", "skizze": {"ebene": flaeche, "elemente": [{"kreis": {"mitte": [30, 0], "durchmesser": 10}}]},
+         "ende": {"typ": "blind", "tiefe": 8}},
+    ]}
+    assert volumen_auto(spec)[0] == pytest.approx(100 * 60 * 20 - math.pi * 25 * 13)

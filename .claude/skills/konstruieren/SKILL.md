@@ -133,6 +133,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Nicht von Hand nachrechnen (kein Python für Volumen oder Schwerpunkt): `volumen: {soll: auto}` rechnet auch Löcher
   in derselben Skizze und Durchgänge (`durch_alles`, `durch`) durch eine Platte; `schwerpunkt` nur für
   Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale zeigt der Steckbrief nach dem Bau.
+  Ineinanderliegende Schnitte (oder Aufsätze) ab derselben Skizzenebene, z. B. Freiraum hinter einer Senkung, rechnet
+  `auto` richtig (gemeinsamer Teil zählt einmal); Überlappungen anderer Art vermeiden.
   `auto` setzt voraus, dass Aufsätze nicht in andere Körper hineinragen: einen Aufsatz auf der Fläche beginnen lassen,
   auf der er steht. Ausnahme: Wird seine Grundkante mitgeschrägt (Formschräge an einem `mittig`-Steg, der quer zur
   Platte skizziert ist), das Profil 1 mm in die Platte führen – sonst bleibt ein Keilspalt (2 Körper); `auto` zählt
