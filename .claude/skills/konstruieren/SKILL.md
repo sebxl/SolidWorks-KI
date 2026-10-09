@@ -26,8 +26,44 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   gehören zum Bauweg und sind von der Freigabe-Prüfsumme nicht geschützt.
 - Anforderungen nie nur als Kommentar: was gebaut oder geprüft werden muss, gehört in `parameter`, Features oder
   `pruefung`. Kommentare erläutern nur; die Freigabe-Kopie behält sie für den Prüfer.
+- **Spec-Syntax vollständig** (Schema nicht lesen; `?` = optional, `wert` = Zahl oder `"=Ausdruck"`):
+  ```yaml
+  art: teil
+  name: Platte                                  # Kopf: material?, eigenschaften? {Benennung: …}, parameter? {L: 100},
+  material: "1.0038"                            #       pruefung?, max_nachbesserungen?
+  parameter: {L: 100, B: 60, T: 10}
+  features:
+    - id: f1
+      typ: extrusion                            # oder schnitt
+      skizze:
+        ebene: oben                             # vorne | oben | rechts | {feature: f1, flaeche: "+y"} (±x/±y/±z)
+                                                # | {versatz: {ebene: oben, abstand: 20}} | {nahe: [x, y, z]}
+        elemente:                               # mehrere geschlossene Profile: innere sind Löcher
+          - {rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", radius?: 3}}
+          - {kreis: {mitte: [u, v], durchmesser: 10}}
+          - {langloch: {mitte: [u, v], laenge: 3, breite: 5, winkel?: 0}}   # laenge = Mittenabstand der Bögen
+          - {polygon: {punkte: [[u, v], …], radien?: 2}}
+          - {kontur: {start: [u, v], segmente: [{linie: [u, v]}, {bogen: [u, v], mitte: [u, v]}]}}
+          - {mittellinie: {von: [u, v], bis: [u, v]}}                     # Rotationsachse
+      ende: {typ: blind, tiefe: "=T"}           # | {typ: mittig, tiefe} | {typ: durch_alles}
+                                                # | {typ: bis_flaeche, flaeche: <anker>}
+                                                # | {typ: versatz_von_flaeche, flaeche: <anker>, abstand}
+                                                # optional: umkehren: true, formschraege: {winkel, querschnitt}
+    - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [[u, v], …], durchmesser: 6,
+       tiefe: 8}                                # oder durch: true; senkung?: {durchmesser, tiefe}
+    - {id: f3, typ: normbohrung, art: gewinde, groesse: M6, flaeche: <anker>, positionen: [[u, v]], tiefe: 12,
+       gewindetiefe: 10}                        # art: gewinde | zylinderschraube | senkschraube | stift (groesse 8)
+    - {id: f4, typ: rotation, skizze: {…, elemente: [<profil>, {mittellinie: …}]}, winkel?: 360, schnitt?: true}
+    - {id: f5, typ: verrundung, kanten: [{feature: f1, auswahl: senkrechte_kanten}], radius: 2}   # fase: abstand, winkel?
+    - {id: f6, typ: muster_linear, features: [f2], richtung1: {achse: x, abstand: 20, anzahl: 3}}
+    - {id: f7, typ: spiegeln, features: [f2], ebene: rechts}
+    - {id: f8, typ: referenz, ebene: {basis: oben, abstand: 50}}           # oder achse: x|y|z
+  ```
+  Kanten: `{feature, auswahl: senkrechte_kanten|alle_kanten}`, `{feature, kanten_an: "+y"}`, `{nahe: [x, y, z]}`.
 - Ebenen: `vorne` (Normale +Z), `oben` (+Y), `rechts` (+X). Skizzenkoordinaten (u, v): vorne X=u, Y=v · oben X=u, Z=−v ·
   rechts Z=−u, Y=v.
+  Skizzen und `positionen` auf Flächen und Versatzebenen nutzen dieselbe (u, v)-Zuordnung wie die parallele
+  Standardebene (Fläche ±y wie `oben`: X=u, Z=−v), unabhängig vom Vorzeichen der Normale.
 - Flächen/Kanten bevorzugt semantisch (`{feature, flaeche}`, `{feature, auswahl}`), sonst `{nahe: [x, y, z]}`.
 - Schnitt geht standardmäßig gegen die Skizzennormale (von einer Deckfläche ins Material); `umkehren: true` dreht.
 - Bohrungen für Schrauben, Gewinde und Stifte als `typ: normbohrung` (`art: gewinde | zylinderschraube |
