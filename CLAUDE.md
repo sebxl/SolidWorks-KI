@@ -76,6 +76,7 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
   Parameter), `freiheitsgrade: 1`, eine Bewegung je Grenze; Scharnier mit Anlage. Regeln im Skill `baugruppe` (§6).
 - `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` → SolidWorks selbst neu starten und erneut prüfen.
 - Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen: Stehlager 10,8 GB, Schlitten 9,9–10,2 GB, Prüfstation AP 6.8 mit zwei Bewegungen 14,3 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau). Grenze: `speicher_grenze_mb` in `config/standard.yaml`.
+- Standardweg mit Bewegungen: `swki durchlauf <spec> --neustart` (startet SolidWorks vor Bauen und vor Prüfen frisch).
 - Regressions-Suite enthält den Linearschlitten (`tests/referenz/schlitten/`).
 
 ## Verzahnung und Kopplungen (Stufe 4b)

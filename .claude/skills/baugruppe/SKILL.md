@@ -111,10 +111,13 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   Prüfwerte, „Selbst entschieden“. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
   Prüfung: `swki durchlauf <baugruppe.yaml> --freigeben` (validieren → freigeben → bauen → prüfen → status in einem
   Aufruf, kompakte Ausgabe; ohne `--freigeben` für jeden weiteren Lauf). Einzeln weiter `swki freigeben`.
+  Mit Bewegungen immer `--neustart` dazu (SolidWorks frisch vor Bauen und vor Prüfen, §4).
 - Verknüpfungen sind Bauweg (nachbesserbar); Komponenten, Parameter, `freiheitsgrade`, `pruefung` und die
   Anforderungen der Teil-Specs nicht (sonst `FREIGABE_VERALTET`).
 
 ## 4. Bauen, prüfen, Prüfer
+- Mit Bewegungen Standardweg `swki durchlauf <baugruppe.yaml> --neustart` (frisches SolidWorks vor Bauen und vor Prüfen;
+  Bauabbruch kompakt: `code`, `meldung`, Knoten ≠ ok/übersprungen; Neustart abgelehnt → `schritt: neustart`, `vor`).
 - `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
   verknüpft. Fehlercodes (die `meldung` nennt Komponente bzw. Verknüpfung):
   - `TEIL_BAU` (Knoten `<komponente>/<feature>`): Bauweg der Teil-Spec nachbessern.
