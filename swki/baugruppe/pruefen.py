@@ -30,6 +30,7 @@ from swki.pruefung.bilder import kopplungsbild, screenshots
 from swki.pruefung.geometrie import Messgeometrie
 from swki.pruefung.messen import kontext_aus_datei, messe, messgeometrie, oeffne, rebuild_fehler
 from swki.spec.ausdruck import auswerten
+from swki.speicher import privat_mb
 from swki.verbindung import verbinde
 
 KOPFAUFLAGE = {"referenz": "EINBAU_EBENE"}
@@ -191,10 +192,11 @@ def _komponenten(asm, protokoll: dict) -> dict:
 
 
 def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict, messwerte, standard: dict,
-                       ordner: Path) -> tuple[list[dict], dict, dict]:
+                       ordner: Path, start_mb: float) -> tuple[list[dict], dict, dict]:
     """Bewegungsprüfung am geöffneten Lauf-Dokument (Spec 4a §8.2); liefert Prüfungen, Bewegungsbericht und Bilder.
     Bei statischen Fehlern oder einem Fehler der Läufe entstehen Mängel bewegung:<name> statt eines Abbruchs (nur
-    SpeicherKnapp bricht ab). Die treibenden Verknüpfungen verschwinden wieder; der Aufrufer schließt ohne Speichern."""
+    SpeicherKnapp bricht ab; start_mb: Private Bytes zu Beginn von pruefen). Die treibenden Verknüpfungen verschwinden
+    wieder; der Aufrufer schließt ohne Speichern."""
     komponenten = _komponenten(asm, protokoll)
 
     def entitaet(seite: dict):
@@ -209,7 +211,7 @@ def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict,
     tol = standard["toleranzen"]["anker_mm"]
     pruefungen, bericht, laeufe = bewegungen_oder_ersatz(
         bg.spec, bws, messwerte, mechanik, {frozenset(i["paar"]) for i in messwerte.interferenzen},
-        standard["speicher_grenze_mb"], tol, [v.id for v in verknuepfungen(bg.spec, bg.quellen)])
+        standard["speicher_grenze_mb"], tol, [v.id for v in verknuepfungen(bg.spec, bg.quellen)], start_mb)
     bilder = {Path(p).stem: p for lauf in laeufe
               for p in [*lauf.bilder.values(), *(k["bild"] for k in lauf.kollisionen)] if p}
     return pruefungen, bericht, bilder
@@ -238,6 +240,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     mit_bewegung = bool(bg.spec.get("bewegungen"))
     offen_halten = _dokumente_der_grenzen(bg) if mit_bewegung else set()
     app = verbinde(r.sw_jahr)
+    start_mb = privat_mb(int(app.GetProcessID)) if mit_bewegung else None  # frisches SolidWorks? (SWKI-11)
     teilberichte, geometrie, kontexte, offen = {}, {}, {}, []
     bewegung = None
     try:
@@ -278,7 +281,8 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             bilder = screenshots(app, asm, ordner / "bilder")
             bilder |= _kopplungsbilder(app, asm, bg, protokoll, messwerte, ordner / "bilder")
             if mit_bewegung:
-                bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner)
+                bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner,
+                                              start_mb)
         finally:
             sw.schliesse(app, asm)  # ohne Speichern: keine treibende Verknüpfung bleibt in der Datei (Spec 4a §8)
     finally:

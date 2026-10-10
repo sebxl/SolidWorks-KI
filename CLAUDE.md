@@ -74,7 +74,7 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
 ## Bewegungen (Stufe 4a)
 - Bewegliche Komponenten: Grenzverknüpfung (`grenze_abstand`/`grenze_winkel`, bewegt wird Seite `a`, `min`/`max` als
   Parameter), `freiheitsgrade: 1`, eine Bewegung je Grenze; Scharnier mit Anlage. Regeln im Skill `baugruppe` (§6).
-- `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` → SolidWorks selbst neu starten und erneut prüfen.
+- `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` mit `frisch: false` → SolidWorks selbst neu starten und erneut prüfen, mit `frisch: true` (Prüfung begann auf frischem SolidWorks) → nicht neu starten, Nutzer nach `speicher_grenze_mb` fragen.
 - Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen: Stehlager 10,8 GB, Schlitten 9,9–10,2 GB, Prüfstation AP 6.8 mit zwei Bewegungen 14,3 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau). Grenze: `speicher_grenze_mb` in `config/standard.yaml`.
 - Regressions-Suite enthält den Linearschlitten (`tests/referenz/schlitten/`).
 

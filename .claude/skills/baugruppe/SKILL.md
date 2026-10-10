@@ -186,8 +186,9 @@ Vorlage: `tests/referenz/schlitten/`.
 - **Fehler der Bewegungsprüfung sind Mängel:** Rebuild-/Verknüpfungsfehler im Lauf-Dokument (die Bewegungsprüfung läuft
   dann nicht, `bewegung:<name>` mit `ok=None`) und Fehler in den Läufen (`bewegung:<name>` mit `ok=False`) landen im
   Prüfbericht; nachbessern wie jeden Mangel. Nur `SPEICHER_KNAPP` bricht ab.
-- **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht): SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen;
-  scheitert es auch frisch, dem Nutzer melden.
+- **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht; `daten` nennen `bewegung` und `privat_mb_start`): bei
+  `frisch: false` SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen; bei `frisch: true` (Prüfung begann
+  auf frischem SolidWorks) nicht neu starten – die Grenze ist für diese Baugruppe zu niedrig, Nutzer fragen.
 - Ab vier Bewegungen meldet `validieren` den Hinweis `pruefaufwand` – mit dem Nutzer klären, ob alle nötig sind.
 
 ## 7. Kopplungen (Stufe 4b)
