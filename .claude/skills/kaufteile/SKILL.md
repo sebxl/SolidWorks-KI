@@ -62,6 +62,10 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
   `nahe` liegt auf der Fläche (Punkte aus der Diagnose); Ø und Normale sind die Gegenprobe.
 - `gewinde: {<gruppe>: {groesse, gewindetiefe, tiefe, normale, positionen, beleg?}}` für Gewindelöcher, in die Normteile
   geschraubt werden (Eintrittspunkte, `normale` aus dem Material).
+- Außengewinde (z. B. Kolbenstange): Gruppe mit `art: aussen` (Vorgabe `innen`). `positionen` = Gewindeanfang auf der
+  Achse (Körperseite, z. B. Stangenbund), `normale` = Richtung zur Gewindespitze, `gewindetiefe` = nutzbare
+  Gewindelänge, `tiefe` = Länge des Gewindezylinders (≥ `gewindetiefe`). Die Aufnahme sucht den koaxialen Zylinder mit
+  Nenn-Ø (Modell `nenn`); fehlt er, ist das eine Abweichung mit den gemessenen Ø. Keine Schraube hinein (`validieren`).
 - Gewindelöcher modellieren Hersteller oft mit dem Kerndurchmesser D1 nach ISO 724 statt mit dem Bohrer-Ø: swki nimmt
   jeden Ø von D1 bis zum Tabellen-Kernloch (± 0,01) als Modell `kernloch`, den Nenn-Ø als `nenn`; der gemessene Ø steht
   im Cache und rechnet die Gewindepaarung (M5: D1 4,134 bis Bohrer-Ø 4,2). Die Gewindetiefe nennen Datenblätter selten:

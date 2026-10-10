@@ -236,5 +236,7 @@ Nicht genormte Kaufteile kommen aus dem Katalog (Skill `kaufteile`). Spec:
   Gewindetiefe des Eintrags und dem gemessenen Gewinde-Ø (Bericht: Spalte „Gewindemodell“); Kaufteile bekommen keine
   Teilprüfung (sie wurden bei der Aufnahme geprüft), der Bericht nennt Cache-Prüfsumme, Masse (Datenblatt oder Material)
   und Belegstand.
+- Ein Außengewinde eines Kaufteils (`art: aussen`) in einer Gewinde-Normbohrung eines anderen Teils prüft `pruefen` wie
+  eine Schraube (`gewinde:<instanz>.<gruppe>.<i>`: Größe, Einschraublänge, Überlappungsvolumen), nicht als Kollision.
 - Ändert sich ein Eintrag nach der Baugruppen-Freigabe: `FREIGABE_VERALTET` mit dem Kaufteil – Nutzer fragen, neu freigeben.
 - Speicher: der Motorhalter (mit Kaufteil-Import) hat Spitzen ~9,1–9,3 GB; Live-Läufe wie §6 auf frischem SolidWorks.

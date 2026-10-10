@@ -71,7 +71,7 @@ def bericht_markdown(
                    for s, e in sorted(letzter["kaufteile"].items())]
     if letzter.get("gewindepaarungen"):
         zeilen += ["", "## Gewindepaarungen", "",
-                   "| Schraube | Teil | Bohrung | Einschraublänge (mm) | Gewindetiefe (mm) | Volumen ist / soll (mm³) |",
+                   "| Schraube bzw. Außengewinde | Teil | Bohrung | Einschraublänge (mm) | Gewindetiefe (mm) | Volumen ist / soll (mm³) |",
                    "|---|---|---|---|---|---|"]
         zeilen += [f"| {g['schraube']} | {g['teil']} | {g['bohrung']} | {g['einschraublaenge']} | "
                    f"{_zelle(g.get('gewindetiefe'))} | {g['volumen']} / {_zelle(g.get('soll'))} |"

@@ -134,10 +134,25 @@ def kernloch_bereich(groesse: str) -> tuple[float, float]:
     return min(d1, kern), max(d1, kern)
 
 
+def _aussengewinde(name: str, passend: list[Flaeche], groesse: str) -> Ortung:
+    """Außengewinde: unter den koaxialen Zylindern der mit Nenn-Ø ± TOL_DURCHMESSER (modell nenn); ohne ihn eine
+    Abweichung mit allen gemessenen Ø (die Fläche ist dann die mit dem Ø, der dem Nenn-Ø am nächsten liegt)."""
+    nenn = nenn_durchmesser(groesse)
+    f = min(passend, key=lambda x: abs(2 * x.radius - nenn))
+    d = 2 * f.radius
+    treffer = abs(d - nenn) <= TOL_DURCHMESSER
+    gemessen = ", ".join(f"{x:g}" for x in sorted({round(2 * x.radius, 4) for x in passend}))
+    abweichung = (None if treffer
+                  else f"kein koaxialer Zylinder mit Nenn-Ø {nenn:g} ({groesse} außen), gemessen Ø {gemessen}")
+    return Ortung(name, "gewinde", f, {"durchmesser": round(d, 6), "modell": "nenn" if treffer else None,
+                                       "achse": einheit(f.achse), "punkt": f.punkt}, abweichung)
+
+
 def orte_gewinde(flaechen: list[Flaeche], gruppe: str, w: dict, tol_mm: float) -> list[Ortung]:
     """Je Position die Zylinderfläche, deren Achse durch den Eintrittspunkt läuft und parallel zu `normale` ist
     (der kleinste Radius gewinnt, wie bei Bohrungen mit Senkung); Gegenprobe Ø: von D1 bis zum Tabellen-Kernloch
-    (modell kernloch) oder Nenn-Ø (modell nenn), je ± TOL_DURCHMESSER; der gemessene Ø steht in ist.durchmesser."""
+    (modell kernloch) oder Nenn-Ø (modell nenn), je ± TOL_DURCHMESSER; der gemessene Ø steht in ist.durchmesser.
+    art aussen (Außengewinde, Position = Gewindeanfang): nur der Nenn-Ø gilt (_aussengewinde)."""
     n = einheit(tuple(w["normale"]))
     unten, oben = kernloch_bereich(w["groesse"])
     nenn = nenn_durchmesser(w["groesse"])
@@ -148,6 +163,9 @@ def orte_gewinde(flaechen: list[Flaeche], gruppe: str, w: dict, tol_mm: float) -
                    and punkt_achse_abstand(tuple(p), f.punkt, einheit(f.achse)) <= tol_mm]
         if not passend:
             raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"Gewinde {name}: keine Zylinderfläche mit Achse durch {list(p)}")
+        if w.get("art") == "aussen":
+            ergebnis.append(_aussengewinde(name, passend, w["groesse"]))
+            continue
         f = min(passend, key=lambda x: x.radius)
         d = 2 * f.radius
         modell = ("kernloch" if unten - TOL_DURCHMESSER <= d <= oben + TOL_DURCHMESSER
