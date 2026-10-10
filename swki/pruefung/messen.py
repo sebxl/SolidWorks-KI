@@ -345,7 +345,7 @@ def messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
         raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Feature {mp['feature']!r} fehlt im Teil")
     feature = ctx.ergebnis(mp["feature"]).features[0]
     if "flaeche" in mp:
-        f = flaeche_in_richtung(flaechen(feature), mp["flaeche"])
+        f = flaeche_in_richtung(flaechen(feature), mp["flaeche"], koplanar_ok=True)
         return Messgeometrie("ebene", f.punkt, f.normale)
     punkte = ctx.ergebnis(mp["feature"]).punkte
     if not punkte:
