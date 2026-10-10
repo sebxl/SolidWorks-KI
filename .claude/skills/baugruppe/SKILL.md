@@ -106,8 +106,9 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 ## 3. Validieren, Freigabe
 - `swki validieren <baugruppe.yaml>` (prüft auch alle Teil-Specs, die Normteile und die Passung Normteil ↔ Bohrung)
   bis `"gueltig": true`; `hinweise` abarbeiten wie beim Teil.
+- Rückfragen und Konstruktionsreview (alle neuen oder geänderten Teil-Specs) wie im Skill `konstruieren` §3.
 - Dem Nutzer zeigen: Teile (Parameter, Material), Normteile (Norm, Größe, Variante, Anzahl), Verknüpfungen in Worten,
-  Prüfwerte. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
+  Prüfwerte, „Selbst entschieden“. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
   Prüfung: `swki durchlauf <baugruppe.yaml> --freigeben` (validieren → freigeben → bauen → prüfen → status in einem
   Aufruf, kompakte Ausgabe; ohne `--freigeben` für jeden weiteren Lauf). Einzeln weiter `swki freigeben`.
 - Verknüpfungen sind Bauweg (nachbesserbar); Komponenten, Parameter, `freiheitsgrade`, `pruefung` und die
