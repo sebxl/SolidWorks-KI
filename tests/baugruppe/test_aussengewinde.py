@@ -2,6 +2,7 @@
 Schraube (gewinde:<instanz>.<gruppe>.<i>), nicht als Kollision (Anlass: AP 6.8, Schieberkopf auf Festo ADNM-25)."""
 
 import copy
+import math
 
 import pytest
 import yaml
@@ -22,6 +23,7 @@ Y = (0.0, 1.0, 0.0)
 WELLE = {"art": "aussen", "groesse": "M8", "gewindetiefe": 12, "tiefe": 12, "normale": [0, -1, 0],
          "positionen": [[0, -13, 0]]}
 NENN8 = {"modell": "nenn", "durchmesser": 8.0}
+RING_P = math.pi / 4 * (8 ** 2 - 6.8 ** 2) * 1.25  # Gewindering M8 / Kernloch 6,8 über eine Steigung
 ANFANG = (0.0, 5.0, 0.0)  # Gewindeanfang in Baugruppenkoordinaten, Gewinde in +y
 
 
@@ -105,7 +107,7 @@ def test_gewindepaarung_statt_kollision(bg):
 
 def test_falsches_volumen_und_zu_tief(bg):
     soll = ueberlappung_soll(8.0, 1.25, 6.8, 6.0)
-    falsch = _bericht(bg, _messwerte(bg, 6.0, soll * 1.1))
+    falsch = _bericht(bg, _messwerte(bg, 6.0, soll + 1.1 * RING_P))
     assert _pruefung(falsch, "gewinde:motor.welle.1")["ok"] is False
     assert _pruefung(falsch, "kollision")["ok"] is True
     tief = _pruefung(_bericht(bg, _messwerte(bg, 2.0, ueberlappung_soll(8.0, 1.25, 6.8, 10.0))), "gewinde:motor.welle.1")
@@ -144,3 +146,16 @@ def test_schraube_passt_nicht_ins_aussengewinde(tmp_path, monkeypatch):
         _schreibe(tmp_path / "A", baugruppe=spec)
     assert [f"{b['pfad']}: {b['meldung']}" for b in e.value.daten["befunde"]] == [
         "verknuepfungen[4]: Passung: welle von SWKI-MUSTER GM42-10 ist ein Außengewinde (keine Schraube hinein)"]
+
+
+def test_band_eine_steigung(bg):
+    """Frage 5 A: Freistich und Auslauf am Stangengewinde – Band ± eine Steigung Gewindering."""
+    soll = ueberlappung_soll(8.0, 1.25, 6.8, 6.0)
+    assert _pruefung(_bericht(bg, _messwerte(bg, 6.0, soll - 0.9 * RING_P)), "gewinde:motor.welle.1")["ok"] is True
+    assert _pruefung(_bericht(bg, _messwerte(bg, 6.0, soll - 1.1 * RING_P)), "gewinde:motor.welle.1")["ok"] is False
+
+
+def test_gewindeanfang_in_der_bohrung(bg):
+    """Liegt der Gewindeanfang schon hinter dem Eintritt, ist die Einschraublänge höchstens die Gewindelänge."""
+    g = _pruefung(_bericht(bg, _messwerte(bg, -1.2, 100.0)), "gewinde:motor.welle.1")
+    assert g["einschraublaenge"] == 12.0

@@ -119,5 +119,7 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
 - Die Baugruppen-Freigabe schützt den Eintrag mit: Ändert sich ein Eintrag, meldet `bauen` `FREIGABE_VERALTET` mit dem
   Kaufteil – Nutzer fragen, Baugruppe neu freigeben.
 - Schrauben im Kaufteil-Gewinde: Gewindepaarung wie bei Eigenteilen (Modell `kernloch` → Ringvolumen bis zum gemessenen Ø,
-  `nenn` → keine Überlappung über 0,01 mm³); jede andere Überlappung ist ein Mangel.
+  `nenn` → keine Überlappung über 0,01 mm³). Toleranz im Kaufteil-Gewinde (innen und außen): ± eine Steigung
+  Gewindering (Senkung am Eintritt, Freistich, Auslauf der Herstellergeometrie); mehr ist ein Mangel. Beim Außengewinde
+  den Gewindeanfang auf den Beginn des Auslaufs legen, nicht auf einen Freistich davor.
 - Regeln für Baugruppen im Einzelnen: Skill `baugruppe` §8.

@@ -65,6 +65,16 @@ gewinde:
     tiefe: 11
     normale: [0, 1, 0]
     positionen: [[0, 19.75, -6], [0, 19.75, -92.975], [0, 19.75, -156.85]]
+  # Kolbenstangengewinde M8 (Größe: Beleg d1) als Außengewinde (AP 6.8, Schieberkopf mit Gewinde M8 direkt auf der Stange).
+  # STEP: Bund z 11,8, Freistich Ø 6,2 bis z 13,2, Auslauf (Kegel) z 13,4 … 15,77, voll Ø 8 bis z 27,03, Fase bis z 27,8.
+  # Gewindeanfang am Beginn des Auslaufs z 13,4, Länge 14,4 bis zur Spitze – Lage und Länge aus der STEP (nicht belegt).
+  kolbenstange:
+    art: aussen
+    groesse: M8
+    gewindetiefe: 14.4
+    tiefe: 14.4
+    normale: [0, 0, 1]
+    positionen: [[0, 0, 13.4]]
 
 pruefung:
   volumen: {soll: 194280.566, toleranz_prozent: 0.01}

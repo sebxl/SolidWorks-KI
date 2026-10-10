@@ -1,6 +1,7 @@
 """Bewertung einer Baugruppe (Spec 3b §9) ohne SolidWorks: Messwerte → Prüfungen und Mängel mit Knoten-IDs
 (Instanz-, Verknüpfungs- oder Teil-Knoten wie "deckelschraube.2", "v11.1", "deckel/f4")."""
 
+import math
 from dataclasses import dataclass, field
 
 from swki.baugruppe.aufloesen import basis, instanzen, verknuepfungen
@@ -19,6 +20,8 @@ STATUS_TEXT = {1: "unbekannt", 2: "unterbestimmt", 3: "voll bestimmt", 4: "über
 VOLL_BESTIMMT, UNTERBESTIMMT, UEBERBESTIMMT = 3, 2, 4
 TOL_GEWINDE_PROZENT = 1.0  # Spike S12 Zeile 9
 TOL_GEWINDE_MIN_MM3 = 0.01  # absolute Untergrenze (Soll 0 bei Modell nenn): Rechenrauschen, keine echte Überlappung
+# Kaufteil-Gewinde (innen und außen): Herstellergeometrie mit Senkung am Eintritt, Freistich und Gewindeauslauf – Band
+# ± eine Steigung Gewindering statt TOL_GEWINDE_PROZENT (AP 6.8, Sebastian 10.10.2026)
 TOL_LAENGE = 0.01
 TOL_UEBERSETZUNG = 1e-6  # relativ, zurückgelesene Übersetzung (Spec 4b §5.5)
 _TOL_HUELLQUADER = 0.01
@@ -154,13 +157,21 @@ def _ist_volumen(m: BaugruppenMesswerte, a: str, b: str) -> float:
     return sum(i["volumen"] for i in m.interferenzen if frozenset(i["paar"]) == _paar(a, b))
 
 
+def band_kaufteil(d: float, p: float, kernloch: float | str | None) -> float | None:
+    """Toleranz (mm³) für ein Kaufteil-Gewinde: Gewindering Nenn-Ø/Kernloch über eine Steigung; None ohne Kernloch."""
+    return None if not isinstance(kernloch, (int, float)) else math.pi / 4 * (d ** 2 - kernloch ** 2) * p
+
+
 def _gewinde_ergebnis(pid: str, knoten: list[str], bericht: dict, ist: float, laenge: float, tiefe: float,
-                      gewindetiefe: float, soll: float | None, hinweis: str | None) -> tuple[dict, dict]:
-    """Volumen ist ↔ soll (TOL_GEWINDE_*), Einschraublänge ≤ Gewindetiefe und Bohrtiefe; dazu die Bericht-Zeile."""
+                      gewindetiefe: float, soll: float | None, hinweis: str | None,
+                      band: float | None = None) -> tuple[dict, dict]:
+    """Volumen ist ↔ soll (TOL_GEWINDE_*, im Kaufteil-Gewinde `band`), Einschraublänge ≤ Gewindetiefe und Bohrtiefe;
+    dazu die Bericht-Zeile."""
     bericht |= {"soll": None if soll is None else round(soll, 3), "gewindetiefe": gewindetiefe, "tiefe": tiefe}
     daten = {"ist": round(ist, 3), "soll": None if soll is None else round(soll, 3), "einschraublaenge": round(laenge, 3),
              "gewindetiefe": gewindetiefe, "tiefe": tiefe, "knoten": knoten, **({"hinweis": hinweis} if hinweis else {})}
-    ok = None if soll is None else abs(ist - soll) <= max(soll * TOL_GEWINDE_PROZENT / 100, TOL_GEWINDE_MIN_MM3)
+    tol = max(soll * TOL_GEWINDE_PROZENT / 100 if band is None else band, TOL_GEWINDE_MIN_MM3) if soll is not None else 0
+    ok = None if soll is None else abs(ist - soll) <= tol
     if laenge > min(gewindetiefe, tiefe) + TOL_LAENGE:
         ok = False
         daten["hinweis"] = (f"Einschraublänge {laenge:.2f} mm größer als Gewindetiefe {gewindetiefe:g} bzw. "
@@ -177,8 +188,8 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
     qs, qt = quellen[basis(g.schraube)], quellen[basis(g.teil)]
     laenge = einschraublaenge(qs.laenge, g.kopfauflage, g.eintritt)
     ist = _ist_volumen(m, g.schraube, g.teil)
-    if laenge <= 0 and ist == 0:
-        return None  # die Schraube erreicht diese Bohrung nicht
+    if laenge <= 0:
+        return None  # die Schraube erreicht diese Bohrung nicht (Überlappung prüft eine erreichte Paarung bzw. kollision)
     pid, knoten = f"gewinde:{g.schraube}", [g.schraube, g.teil]
     bericht = {"schraube": g.schraube, "teil": g.teil, "bohrung": f"{g.feature}.{g.instanz}",
                "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
@@ -186,7 +197,8 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
         return _gewinde_durch(pid, knoten, bericht, ist, laenge)
     tiefe, gewindetiefe, _, kernloch, hinweis = _bohrung(qt, g.feature, m)
     soll = _ueberlappung(qs.masse["d"], qs.masse["p"], kernloch, laenge)
-    return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis)
+    band = band_kaufteil(qs.masse["d"], qs.masse["p"], kernloch) if qt.art == "kaufteil" else None
+    return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis, band)
 
 
 def _aussengewinde(a: Aussenpaarung, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> tuple[dict, dict] | None:
@@ -194,9 +206,10 @@ def _aussengewinde(a: Aussenpaarung, quellen: dict[str, Quelle], m: BaugruppenMe
     Gewindelänge − Abstand Gewindeanfang → Eintrittsebene; Soll-Überlappung mit dem gemessenen Nenn-Ø des Gewindes
     (modell nenn) und der Steigung der Größe."""
     qk, qt = quellen[basis(a.kaufteil)], quellen[basis(a.teil)]
-    laenge = a.laenge - skalar(differenz(a.eintritt.punkt, a.anfang.punkt), a.anfang.richtung)
+    # liegt der Gewindeanfang schon hinter dem Eintritt, steckt höchstens die ganze Gewindelänge in der Bohrung
+    laenge = a.laenge - max(skalar(differenz(a.eintritt.punkt, a.anfang.punkt), a.anfang.richtung), 0.0)
     ist = _ist_volumen(m, a.kaufteil, a.teil)
-    if laenge <= 0 and ist == 0:
+    if laenge <= 0:
         return None  # das Gewinde erreicht diese Bohrung nicht
     pid, knoten = f"gewinde:{a.gewinde}", [a.kaufteil, a.teil]
     bericht = {"schraube": a.gewinde, "teil": a.teil, "bohrung": f"{a.feature}.{a.instanz}",
@@ -217,7 +230,8 @@ def _aussengewinde(a: Aussenpaarung, quellen: dict[str, Quelle], m: BaugruppenMe
                               else f"Steigung von {a.groesse} unbekannt")
     else:
         soll = _ueberlappung(d, p, kernloch, laenge)
-    return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis)
+    band = band_kaufteil(d, p, kernloch) if d is not None and p is not None else None
+    return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis, band)
 
 
 def _erlaubt_unterbestimmt(spec: dict, instanz_id: str) -> bool:
