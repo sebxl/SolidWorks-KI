@@ -28,5 +28,10 @@
     "pruefsumme": "a4905e7d81a35202d32e30aab32b9be0dc6fdd4c64e4a835941ca4a32bbea8ed",
     "freigegeben": "2026-10-08T19:18:02",
     "kopie_sha256": "587fdf1a0b701db3d407a23146e9efef9830999a481770d622e5a5a49cd97e1b"
+  },
+  "adngf-16-25-p-a.yaml": {
+    "pruefsumme": "88fd3fbb9bf4c0db290afb94db55c2cad263e97f190e2bbab50d2970b1bc0beb",
+    "freigegeben": "2026-10-10T21:45:33",
+    "kopie_sha256": "79abec0cffbc6759a3164335d9a92e3295a20f5edbc72781e54fe5c3db4107b9"
   }
 }
