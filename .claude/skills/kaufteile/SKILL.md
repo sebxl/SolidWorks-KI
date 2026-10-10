@@ -45,6 +45,11 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
    `--datenblatt` in den Quellordner). Herstellerdateien (STEP, Datenblatt) kommen nie ins Git:
    `original.bezug: {art: url, url: <Download>, datum: "<JJJJ-MM-TT>"}`, `datenblatt: {datei, url}`; fehlt die Datei auf
    einem Rechner, nennt `KAUFTEIL_QUELLE_FEHLT` die URL.
+   **Datenblatt-PDF lesen** nur mit `.venv\Scripts\python.exe -m werkzeuge.pdf_seiten` (keine eigene venv, keine
+   Hilfsskripte): `text <pdf> [--seiten 2-3]` für Werte und Seitenzahl des Belegs, `seite <pdf> <ordner> [--dpi 150]` für
+   Zeichnungsseiten, `ausschnitt <pdf> <ordner> --seite N --rechteck X0 Y0 X1 Y1` (Prozent der Seite, Standard 300 dpi)
+   für Maßbilder – auch als Bilder für den Prüfer. Ausgabeordner im Scratchpad, nie im Repo. Fehlt PyMuPDF:
+   `.venv\Scripts\python.exe -m pip install -e ".[pdf]"`.
 2. Sonst selbst suchen, nur öffentliche Seiten ohne Anmeldung, Herstellerseite zuerst. In Suchanfragen nur Hersteller und
    Bestellnummer, keine Daten des Nutzers.
 3. Belegregel: eine Herstellerquelle (`hersteller` mit `url` und `abgerufen`, oder `datenblatt`) oder `nutzer` genügt
