@@ -2,7 +2,9 @@
 
 Spart dem Agenten Runden und Kontext (Messstand Umbau 1). `--freigeben` nur, wenn der Nutzer die Anforderungen
 ausdrücklich freigegeben hat (CLAUDE.md); ohne die Option braucht der Durchlauf eine gültige Freigabe.
-Bei einem Fehler endet der Durchlauf im betreffenden Schritt und nennt ihn (`schritt`)."""
+Bei einem Fehler endet der Durchlauf im betreffenden Schritt und nennt ihn (`schritt`). `--neustart` startet
+SolidWorks vor dem Bauen und vor dem Prüfen frisch (werkzeuge.sw_neustart; nur ohne offene Dokumente) – Standardweg für
+Baugruppen mit Bewegungen."""
 
 from argparse import Namespace
 from pathlib import Path
@@ -21,6 +23,22 @@ def _kurz_pruefung(bericht: dict) -> dict:
     if bericht.get("steckbrief_text"):
         erg["steckbrief"] = bericht["steckbrief_text"].splitlines()
     return erg
+
+
+def _neustart(erg: dict, vor: str) -> dict | None:
+    """SolidWorks frisch starten; None = gut, sonst das Abbruch-Ergebnis (schritt: neustart)."""
+    from werkzeuge.sw_neustart import NeustartFehler, neustart   # spät: werkzeuge liegt neben swki im Repo
+
+    try:
+        n = neustart()
+    except NeustartFehler as e:
+        return {**erg, "schritt": "neustart", "vor": vor, "fehler": str(e)}
+    if not n.get("einstellungen_ok"):
+        return {**erg, "schritt": "neustart", "vor": vor, "einstellungen": n.get("einstellungen"),
+                "fehler": "Einstellungen nach dem Neustart nicht wie erwartet (Toggle 10 = False, Integer 6 = 1)"}
+    erg.setdefault("neustart", []).append({"vor": vor, **{k: n.get(k) for k in ("privat_mb_vorher", "beendet_s",
+                                                                               "gestartet_s")}})
+    return None
 
 
 def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
@@ -43,7 +61,7 @@ def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
     return " ".join(teile)
 
 
-def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = None) -> dict:
+def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = None, neustart: bool = False) -> dict:
     from swki.compiler.bauen import BauAbbruch, _bauen
     from swki.pruefung.befehle import pruefen, status
     from swki.spec.befehle import _freigeben, _validieren
@@ -68,15 +86,19 @@ def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = No
         except SwkiFehler as e:
             return {**erg, "schritt": "freigeben", "fehler": str(e), **getattr(e, "daten", {})}
         erg["freigegeben"] = f.get("kopie", True)
+    if neustart and (abbruch := _neustart(erg, "bauen")):
+        return abbruch
     try:
         b = _bauen(Namespace(spec=str(spec_pfad), lauf=None, verwerfen=False, uebernommen=False))
     except BauAbbruch as e:
-        d = e.daten
-        return {**erg, "schritt": "bauen", "lauf": d.get("lauf"), "fehler": d.get("fehler"),
-                "knoten": [k for k in d.get("knoten", []) if k.get("status") != "ok"]}
+        d, f = e.daten, e.daten.get("fehler") or {}
+        return {**erg, "schritt": "bauen", "lauf": d.get("lauf"), "code": f.get("code"), "meldung": f.get("meldung"),
+                "knoten": [k for k in d.get("knoten", []) if k.get("status") not in ("ok", "uebersprungen")]}
     except SwkiFehler as e:
         return {**erg, "schritt": "bauen", "fehler": str(e), **getattr(e, "daten", {})}
     erg |= {"lauf": b["lauf"], "bau_s": b.get("dauer_s")}
+    if neustart and (abbruch := _neustart(erg, "pruefen")):
+        return abbruch
     try:
         p = pruefen(spec_pfad, b["lauf"])
     except SwkiFehler as e:
@@ -97,4 +119,6 @@ def einrichten(subparsers) -> None:
     p.add_argument("--freigeben", action="store_true",
                    help="vorher freigeben – nur nach ausdrücklichem OK des Nutzers zu den Anforderungen")
     p.add_argument("--max", type=ganzzahl_ab(0, "--max"), help="maximale Nachbesserungen laut Anweisung im Chat")
-    p.set_defaults(func=lambda a: durchlauf(Path(a.spec), a.freigeben, a.max))
+    p.add_argument("--neustart", action="store_true",
+                   help="SolidWorks vor dem Bauen und vor dem Prüfen frisch starten (Baugruppen mit Bewegungen)")
+    p.set_defaults(func=lambda a: durchlauf(Path(a.spec), a.freigeben, a.max, neustart=a.neustart))
