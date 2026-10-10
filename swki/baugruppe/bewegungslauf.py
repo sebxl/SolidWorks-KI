@@ -14,15 +14,26 @@ from swki.cli import SwkiFehler
 from swki.compiler.fehler import BauFehler
 
 SPEICHER_KNAPP = "SPEICHER_KNAPP"
+# Private Bytes (MB), unter denen SolidWorks zu Beginn von swki pruefen als frisch gestartet gilt (SWKI-11). Gemessen auf
+# Rechner A: frisch 422–431 MB, nach vorherigen Läufen ab 860 MB (docs/stufe4a/ergebnisse.md, docs/formschraege/…).
+FRISCH_MB = 700
 
 
 class SpeicherKnapp(SwkiFehler):
-    """SolidWorks belegt mehr Private Bytes als speicher_grenze_mb (Spec 4a §8.4, Präzisierung 14)."""
+    """SolidWorks belegt vor dem Lauf der Bewegung bewegung (Paarlauf: gegen) mehr Private Bytes als speicher_grenze_mb
+    (Spec 4a §8.4, Präzisierung 14). Begann die Prüfung auf frischem SolidWorks (start_mb < FRISCH_MB), hilft ein
+    Neustart nicht: die Grenze ist für diese Baugruppe zu niedrig (SWKI-11)."""
 
-    def __init__(self, privat_mb: float, grenze_mb: float):
-        super().__init__(f"SolidWorks belegt {privat_mb:.0f} MB Private Bytes (Grenze {grenze_mb:.0f} MB) – SolidWorks "
-                         "neu starten und swki pruefen erneut aufrufen")
-        self.daten = {"code": SPEICHER_KNAPP, "privat_mb": round(privat_mb), "grenze_mb": grenze_mb}
+    def __init__(self, privat_mb: float, grenze_mb: float, bewegung: str, gegen: dict[str, str], start_mb: float):
+        frisch = start_mb < FRISCH_MB
+        lauf = f"Bewegung {bewegung}" + "".join(f" gegen {n} {s}" for n, s in gegen.items())
+        rat = (f"die Prüfung begann auf frischem SolidWorks ({start_mb:.0f} MB), ein Neustart hilft nicht: Grenze für "
+               "diese Baugruppe zu niedrig – Nutzer fragen (speicher_grenze_mb in config/standard.yaml)" if frisch
+               else f"Prüfung begann bei {start_mb:.0f} MB – SolidWorks neu starten und swki pruefen erneut aufrufen")
+        super().__init__(f"SolidWorks belegt vor {lauf} {privat_mb:.0f} MB Private Bytes (Grenze {grenze_mb:.0f} MB); "
+                         + rat)
+        self.daten = {"code": SPEICHER_KNAPP, "privat_mb": round(privat_mb), "grenze_mb": grenze_mb,
+                      "bewegung": bewegung, "gegen": dict(gegen), "privat_mb_start": round(start_mb), "frisch": frisch}
 
 
 class StellungFehler(SwkiFehler):
@@ -63,9 +74,14 @@ class Mechanik(Protocol):
         """Private Bytes des SolidWorks-Prozesses in MB."""
 
 
-def _speicher(mech: Mechanik, grenze_mb: float) -> None:
-    if (mb := mech.speicher_mb()) > grenze_mb:
-        raise SpeicherKnapp(mb, grenze_mb)
+def _speicher(mech: Mechanik, grenze_mb: float, start_mb: float | None, b: Bewegung,
+              gegen: dict[str, str]) -> float:
+    """Prüft die Private Bytes vor dem Lauf von b; liefert den Start der Prüfung (ohne start_mb diese Abfrage)."""
+    mb = mech.speicher_mb()
+    start_mb = mb if start_mb is None else start_mb
+    if mb > grenze_mb:
+        raise SpeicherKnapp(mb, grenze_mb, b.name, gegen, start_mb)
+    return start_mb
 
 
 def _zurueck(mech: Mechanik, b: Bewegung, wert: float) -> None:
@@ -125,12 +141,13 @@ def _grenze_geht(mech: Mechanik, b: Bewegung, wert: float, start: list[float], t
 
 
 def fahre(mech: Mechanik, bws: list[Bewegung], bekannt: set[frozenset], grenze_mb: float,
-          tol_mm: float) -> BewegungsMesswerte:
+          tol_mm: float, start_mb: float | None = None) -> BewegungsMesswerte:
     """Zuerst die Grenzen der Bewegungen unterdrücken und den Status lesen (eine Grenzverknüpfung zählt sonst als
     Bindung, Spike S13b), dann alle Bewegungen auf min festhalten und den Status erneut lesen, die Grenzen wieder
     aktivieren; je Bewegung ein Grundstellungslauf mit „Grenze wirkt“, dann die Paarläufe (die andere Bewegung auf
     max). Unterdrückte Grenzen werden immer wieder aktiviert, die treibenden Verknüpfungen immer gelöscht; ein Fehler
-    beim Aufräumen verdeckt die Ursache nicht."""
+    beim Aufräumen verdeckt die Ursache nicht. start_mb: Private Bytes zu Beginn von swki pruefen (für SpeicherKnapp;
+    ohne Angabe gilt die erste Speicherabfrage)."""
     unterdrueckt: list[Bewegung] = []
     try:
         for b in bws:
@@ -146,7 +163,7 @@ def fahre(mech: Mechanik, bws: list[Bewegung], bekannt: set[frozenset], grenze_m
         laeufe: list[Lauf] = []
         grund: dict[str, Lauf] = {}
         for b in bws:
-            _speicher(mech, grenze_mb)
+            start_mb = _speicher(mech, grenze_mb, start_mb, b, {})
             lauf = _durchlauf(mech, b, {}, bekannt, True)
             if lauf.fehler is None:
                 start = lauf.lagen[0][b.komponente]
@@ -162,7 +179,7 @@ def fahre(mech: Mechanik, bws: list[Bewegung], bekannt: set[frozenset], grenze_m
             for x, y in ((b1, b2), (b2, b1)):
                 if grund[x.name].fehler is not None or grund[y.name].fehler is not None:
                     continue
-                _speicher(mech, grenze_mb)
+                start_mb = _speicher(mech, grenze_mb, start_mb, x, {y.name: "max"})
                 _zurueck(mech, y, y.max)
                 laeufe.append(_durchlauf(mech, x, {y.name: "max"}, bekannt, False))
                 _zurueck(mech, x, x.min)
@@ -193,20 +210,21 @@ def _statisch_fehlerhaft(messwerte, soll_verknuepfungen: Collection[str]) -> boo
 
 def bewegungen_oder_ersatz(spec: dict, bws: list[Bewegung], messwerte, mech_fabrik, bekannt: set[frozenset],
                            grenze_mb: float, tol_mm: float,
-                           soll_verknuepfungen: Collection[str]) -> tuple[list[dict], dict, list[Lauf]]:
+                           soll_verknuepfungen: Collection[str],
+                           start_mb: float | None = None) -> tuple[list[dict], dict, list[Lauf]]:
     """Bewegungsprüfung oder, wo sie nicht laufen kann, Mängel statt Abbruch (Spec 4a §8.2.3). Liefert Prüfungen,
     Bewegungsbericht und die Läufe (für die Bilder). mech_fabrik erzeugt die Mechanik erst, wenn gefahren wird.
     - Statische Fehler (rebuild, verknuepfungen; auch unterdrückte oder fehlende Verknüpfungen, soll_verknuepfungen sind
       die erwarteten IDs): nicht fahren, je Bewegung bewegung:<name> mit ok=None.
     - StellungFehler/BauFehler aus fahre (nach dessen Aufräumen): bewegung:<name> mit ok=False; bei StellungFehler nur
       für die betroffene Bewegung (übrige ok=None), bei BauFehler ohne Bewegungsbezug für alle.
-    - SpeicherKnapp bleibt ein Abbruch ohne Prüfbericht (Präzisierung 14)."""
+    - SpeicherKnapp bleibt ein Abbruch ohne Prüfbericht (Präzisierung 14); start_mb wie bei fahre."""
     if _statisch_fehlerhaft(messwerte, soll_verknuepfungen):
         pruefungen, bericht = ersatz_pruefungen(
             bws, "Bewegungsprüfung nicht gefahren: statische Fehler (siehe rebuild/verknuepfungen)")
         return pruefungen, bericht, []
     try:
-        m = fahre(mech_fabrik(), bws, bekannt, grenze_mb, tol_mm)
+        m = fahre(mech_fabrik(), bws, bekannt, grenze_mb, tol_mm, start_mb)
     except StellungFehler as e:
         pruefungen, bericht = ersatz_pruefungen(bws, "nicht geprüft (Bewegungsprüfung abgebrochen)", {e.bewegung: str(e)})
         return pruefungen, bericht, []

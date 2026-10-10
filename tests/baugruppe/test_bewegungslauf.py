@@ -3,7 +3,7 @@
 import pytest
 
 from swki.baugruppe.bewegung import bewegungen
-from swki.baugruppe.bewegungslauf import SpeicherKnapp, bewegungen_oder_ersatz, fahre
+from swki.baugruppe.bewegungslauf import FRISCH_MB, SpeicherKnapp, bewegungen_oder_ersatz, fahre
 from swki.konfig import lade_standard
 from tests.baugruppe.attrappe_mechanik import Attrappe
 from tests.baugruppe.beispiel_bewegung import BAUGRUPPE
@@ -11,8 +11,8 @@ from tests.baugruppe.beispiel_bewegung import BAUGRUPPE
 BEKANNT = {frozenset({"bolzen", "schieber"})}  # statische Überlappung: in den Läufen nicht neu
 
 
-def _fahre(mech, grenze_mb=3500):
-    return fahre(mech, bewegungen(BAUGRUPPE, lade_standard()), BEKANNT, grenze_mb, 0.1)
+def _fahre(mech, grenze_mb=3500, **kw):
+    return fahre(mech, bewegungen(BAUGRUPPE, lade_standard()), BEKANNT, grenze_mb, 0.1, **kw)
 
 
 def test_ohne_befund():
@@ -65,8 +65,45 @@ def test_speicher_knapp_raeumt_auf():
     mech = Attrappe(speicher=5000.0)
     with pytest.raises(SpeicherKnapp) as e:
         _fahre(mech)
-    assert e.value.daten == {"code": "SPEICHER_KNAPP", "privat_mb": 5000, "grenze_mb": 3500}
+    assert e.value.daten == {"code": "SPEICHER_KNAPP", "privat_mb": 5000, "grenze_mb": 3500, "bewegung": "Hub",
+                             "gegen": {}, "privat_mb_start": 5000, "frisch": False}
     assert mech.geloest == ["Schwenk", "Hub"]
+
+
+def test_speicher_knapp_nennt_die_bewegung_und_den_start():
+    # SWKI-11: vor Hub 1000 MB, vor Schwenk 5000 MB – ohne Start aus pruefen gilt die erste Abfrage als Start
+    with pytest.raises(SpeicherKnapp) as e:
+        _fahre(Attrappe(speicher=[1000.0, 5000.0]))
+    assert {k: e.value.daten[k] for k in ("bewegung", "gegen", "privat_mb", "privat_mb_start")} == {
+        "bewegung": "Schwenk", "gegen": {}, "privat_mb": 5000, "privat_mb_start": 1000}
+
+
+def test_speicher_knapp_im_paarlauf_nennt_die_gegenbewegung():
+    with pytest.raises(SpeicherKnapp) as e:
+        _fahre(Attrappe(speicher=[1000.0, 1000.0, 5000.0]), start_mb=2000.0)
+    assert {k: e.value.daten[k] for k in ("bewegung", "gegen", "privat_mb_start")} == {
+        "bewegung": "Hub", "gegen": {"Schwenk": "max"}, "privat_mb_start": 2000}
+
+
+def test_speicher_knapp_nach_frischem_start_heisst_grenze_klaeren():
+    # SWKI-11: begann die Prüfung auf frischem SolidWorks, hilft ein Neustart nicht – Grenze mit dem Nutzer klären
+    with pytest.raises(SpeicherKnapp) as e:
+        _fahre(Attrappe(speicher=5000.0), start_mb=FRISCH_MB - 1)
+    assert e.value.daten["frisch"] is True and e.value.daten["privat_mb_start"] == FRISCH_MB - 1
+    assert "Nutzer fragen" in str(e.value) and "config/standard.yaml" in str(e.value)
+    assert "neu starten" not in str(e.value)
+
+
+def test_speicher_knapp_ohne_frischen_start_heisst_neu_starten():
+    with pytest.raises(SpeicherKnapp) as e:
+        _fahre(Attrappe(speicher=5000.0), start_mb=FRISCH_MB)
+    assert e.value.daten["frisch"] is False
+    assert "neu starten" in str(e.value) and "Nutzer fragen" not in str(e.value)
+
+
+def test_frisch_mb_liegt_zwischen_frischem_und_benutztem_solidworks():
+    # gemessen: frisch 422–431 MB, kleinster Start nach vorherigen Läufen 860 MB (docs/stufe4a, docs/formschraege)
+    assert 431 < FRISCH_MB < 860
 
 
 def test_aufraeumfehler_verdeckt_die_ursache_nicht():
@@ -86,7 +123,7 @@ def test_aufraeumen_aktiviert_die_grenzen():
 
 # --- Fehlerpfade (Fix-Welle nach dem Gesamt-Review, Spec 4a §8.2.3): Mangel statt Abbruch -------------------------------
 
-def _oder_ersatz(mech, statisch=None, grenze_mb=3500, soll=("g1", "g2")):
+def _oder_ersatz(mech, statisch=None, grenze_mb=3500, soll=("g1", "g2"), **kw):
     from types import SimpleNamespace
 
     messwerte = statisch or SimpleNamespace(rebuild_fehler=[], verknuepfungen={"g1": 0, "g2": 0}, unterdrueckt=[])
@@ -97,7 +134,7 @@ def _oder_ersatz(mech, statisch=None, grenze_mb=3500, soll=("g1", "g2")):
         return mech
 
     ergebnis = bewegungen_oder_ersatz(BAUGRUPPE, bewegungen(BAUGRUPPE, lade_standard()), messwerte, fabrik, BEKANNT,
-                                      grenze_mb, 0.1, soll)
+                                      grenze_mb, 0.1, soll, **kw)
     return ergebnis, gebaut
 
 
@@ -168,6 +205,12 @@ def test_baufehler_wird_zum_mangel_aller_bewegungen():
 def test_speicher_knapp_bleibt_ein_abbruch():
     with pytest.raises(SpeicherKnapp):
         _oder_ersatz(Attrappe(speicher=5000.0))
+
+
+def test_oder_ersatz_reicht_den_start_durch():
+    with pytest.raises(SpeicherKnapp) as e:
+        _oder_ersatz(Attrappe(speicher=5000.0), start_mb=430.0)
+    assert e.value.daten["privat_mb_start"] == 430 and e.value.daten["frisch"] is True
 
 
 def test_ersatz_im_bericht():
