@@ -403,7 +403,7 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
     return Messwerte(
         rebuild_fehler=rebuild_fehler(model),
         skizzen=skizzenstatus(model),
-        box=sw.teilebox_mm(model),
+        box=sw.huellquader_eng_mm(model),
         volumen=in_mm3(mp.Volume),
         schwerpunkt=tuple(in_mm(c) for c in mp.CenterOfMass),
         material=model.GetMaterialPropertyName2("", byref_str()) or "",
