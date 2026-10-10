@@ -7,11 +7,12 @@ from swki.baugruppe.aufloesen import basis, instanzen, verknuepfungen
 from swki.baugruppe.geometrie import einschraublaenge, ueberlappung_soll
 from swki.baugruppe.kopplung import eingriff, in_baugruppe, kopplungen, teilkreise, verzahnung_der_seite
 from swki.baugruppe.modell import Quelle, dokument_name
-from swki.compiler.anker import punkt_achse_abstand
+from swki.compiler.anker import differenz, punkt_achse_abstand, skalar
+from swki.kaufteile.ortung import steigung
 from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
 from swki.spec.ausdruck import auswerten
-from swki.spec.normen import norm_von, normmasse
+from swki.spec.normen import groesse_text, norm_von, normmasse
 
 STATUS_TEXT = {1: "unbekannt", 2: "unterbestimmt", 3: "voll bestimmt", 4: "überbestimmt", 5: "keine Lösung",
                6: "ungültige Lösung", 7: "Lösen ausgeschaltet"}  # swConstrainedStatus_e
@@ -42,6 +43,9 @@ class BaugruppenMesswerte:
     kopplungen: dict[str, dict | str] = field(default_factory=dict)   # Kopplungs-ID → gelesene Werte oder Fehlertext
     unterdrueckt: list[str] = field(default_factory=list)             # unterdrückte Verknüpfungen (Spec 4b §5.5)
     gewinde_modelle: dict[str, dict] = field(default_factory=dict)    # Kaufteil-Schlüssel → {Gruppe: {modell, durchmesser}}
+    # Außengewinde von Kaufteilen: {teil (Instanz-ID), gruppe, instanz, groesse, laenge, tiefe, anfang (Ebene am
+    # Gewindeanfang, Richtung zur Gewindespitze, Baugruppenkoordinaten)}
+    aussengewinde: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -64,6 +68,30 @@ def gewindepaarungen(schrauben: dict, bohrungen: list[dict], tol_mm: float) -> l
             if punkt_achse_abstand(b["eintritt"].punkt, ebene.punkt, ebene.richtung) <= tol_mm:
                 paare.append(Gewindepaarung(sid, b["teil"], b["feature"], b["instanz"], ebene, b["eintritt"]))
     return paare
+
+
+@dataclass
+class Aussenpaarung:
+    gewinde: str     # "<kaufteil-instanz>.<gruppe>.<i>"
+    kaufteil: str
+    gruppe: str
+    groesse: str
+    laenge: float    # nutzbare Gewindelänge (gewindetiefe des Eintrags)
+    anfang: Messgeometrie
+    teil: str
+    feature: str
+    instanz: int
+    eintritt: Messgeometrie
+
+
+def aussengewindepaarungen(aussen: list[dict], bohrungen: list[dict], tol_mm: float) -> list[Aussenpaarung]:
+    """Gepaart sind ein Außengewinde und die Gewindebohrung eines anderen Teils, deren Eintrittspunkt auf der
+    Gewindeachse liegt (wie gewindepaarungen)."""
+    return [Aussenpaarung(f"{a['teil']}.{a['gruppe']}.{a['instanz']}", a["teil"], a["gruppe"], a["groesse"], a["laenge"],
+                          a["anfang"], b["teil"], b["feature"], b["instanz"], b["eintritt"])
+            for a in aussen for b in bohrungen
+            if b["teil"] != a["teil"]
+            and punkt_achse_abstand(b["eintritt"].punkt, a["anfang"].punkt, a["anfang"].richtung) <= tol_mm]
 
 
 def stueckliste_soll(spec: dict, quellen: dict[str, Quelle], auftrag: str, standard: dict) -> dict[str, int]:
@@ -91,41 +119,44 @@ def _paar(a: str, b: str) -> frozenset:
     return frozenset((a, b))
 
 
-def _gewinde_soll(g: Gewindepaarung, qs: Quelle, qt: Quelle, m: BaugruppenMesswerte, laenge: float) \
-        -> tuple[float, float, float | None, str | None]:
-    """(tiefe, gewindetiefe, Soll des Überlappungsvolumens, Hinweis): Eigenteil aus der normbohrung, Kaufteil aus der
-    Gewindegruppe des Eintrags mit dem Modell aus der Aufnahme (Spec 3c §6.4: kernloch → Ring bis zum gemessenen Ø,
-    nenn → 0); die alte Form (nur Text) gilt als unbekannt."""
+def _bohrung(qt: Quelle, feature: str, m: BaugruppenMesswerte) \
+        -> tuple[float, float, str, float | str | None, str | None]:
+    """(tiefe, gewindetiefe, Größe, Kernloch, Hinweis) einer Gewindebohrung: Eigenteil aus der normbohrung (Kernloch der
+    Tabelle), Kaufteil aus der Gewindegruppe des Eintrags mit dem Modell aus der Aufnahme (Spec 3c §6.4: kernloch → Ring
+    bis zum gemessenen Ø, nenn → "nenn", Soll 0); die alte Form (nur Text) gilt als unbekannt (Kernloch None)."""
     if qt.art == "kaufteil":
-        w = qt.spec["gewinde"][g.feature]
-        modell = m.gewinde_modelle.get(qt.schluessel, {}).get(g.feature)
+        w = qt.spec["gewinde"][feature]
+        modell = m.gewinde_modelle.get(qt.schluessel, {}).get(feature)
         art = modell.get("modell") if isinstance(modell, dict) else None
         if art == "nenn":
-            return w["tiefe"], w["gewindetiefe"], 0.0, None
+            return w["tiefe"], w["gewindetiefe"], w["groesse"], "nenn", None
         if art != "kernloch" or not modell.get("durchmesser"):
-            return w["tiefe"], w["gewindetiefe"], None, f"Gewindemodell von {qt.kaufteil}.{g.feature} unbekannt"
-        return (w["tiefe"], w["gewindetiefe"],
-                ueberlappung_soll(qs.masse["d"], qs.masse["p"], modell["durchmesser"], laenge), None)
-    f = next(x for x in qt.spec["features"] if x["id"] == g.feature)
+            return (w["tiefe"], w["gewindetiefe"], w["groesse"], None,
+                    f"Gewindemodell von {qt.kaufteil}.{feature} unbekannt")
+        return w["tiefe"], w["gewindetiefe"], w["groesse"], modell["durchmesser"], None
+    f = next(x for x in qt.spec["features"] if x["id"] == feature)
     tp = qt.spec.get("parameter", {})
     kernloch = normmasse("gewinde", f["groesse"], norm_von(f))["kernloch"]
-    return (auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp),
-            ueberlappung_soll(qs.masse["d"], qs.masse["p"], kernloch, laenge), None)
+    return auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp), groesse_text(f["groesse"]), kernloch, None
 
 
-def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> tuple[dict, dict] | None:
-    qs, qt = quellen[basis(g.schraube)], quellen[basis(g.teil)]
-    laenge = einschraublaenge(qs.laenge, g.kopfauflage, g.eintritt)
-    ist = sum(i["volumen"] for i in m.interferenzen if frozenset(i["paar"]) == _paar(g.schraube, g.teil))
-    if laenge <= 0 and ist == 0:
-        return None  # die Schraube erreicht diese Bohrung nicht
-    pid, knoten = f"gewinde:{g.schraube}", [g.schraube, g.teil]
-    bericht = {"schraube": g.schraube, "teil": g.teil, "bohrung": f"{g.feature}.{g.instanz}",
-               "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
-    if qt.art == "teil" and next(x for x in qt.spec["features"] if x["id"] == g.feature).get("durch"):
-        return eintrag(pid, None, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
-                         hinweis="Gewinde durch: Volumen nicht geprüft (Präzisierung 2)"), bericht
-    tiefe, gewindetiefe, soll, hinweis = _gewinde_soll(g, qs, qt, m, laenge)
+def _ueberlappung(d: float, p: float, kernloch: float | str | None, laenge: float) -> float | None:
+    if kernloch == "nenn":
+        return 0.0
+    return None if kernloch is None else ueberlappung_soll(d, p, kernloch, laenge)
+
+
+def _durch(qt: Quelle, feature: str) -> bool:
+    return qt.art == "teil" and bool(next(x for x in qt.spec["features"] if x["id"] == feature).get("durch"))
+
+
+def _ist_volumen(m: BaugruppenMesswerte, a: str, b: str) -> float:
+    return sum(i["volumen"] for i in m.interferenzen if frozenset(i["paar"]) == _paar(a, b))
+
+
+def _gewinde_ergebnis(pid: str, knoten: list[str], bericht: dict, ist: float, laenge: float, tiefe: float,
+                      gewindetiefe: float, soll: float | None, hinweis: str | None) -> tuple[dict, dict]:
+    """Volumen ist ↔ soll (TOL_GEWINDE_*), Einschraublänge ≤ Gewindetiefe und Bohrtiefe; dazu die Bericht-Zeile."""
     bericht |= {"soll": None if soll is None else round(soll, 3), "gewindetiefe": gewindetiefe, "tiefe": tiefe}
     daten = {"ist": round(ist, 3), "soll": None if soll is None else round(soll, 3), "einschraublaenge": round(laenge, 3),
              "gewindetiefe": gewindetiefe, "tiefe": tiefe, "knoten": knoten, **({"hinweis": hinweis} if hinweis else {})}
@@ -135,6 +166,58 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
         daten["hinweis"] = (f"Einschraublänge {laenge:.2f} mm größer als Gewindetiefe {gewindetiefe:g} bzw. "
                             f"Bohrtiefe {tiefe:g} mm")
     return eintrag(pid, ok, **daten), bericht
+
+
+def _gewinde_durch(pid: str, knoten: list[str], bericht: dict, ist: float, laenge: float) -> tuple[dict, dict]:
+    return eintrag(pid, None, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
+                   hinweis="Gewinde durch: Volumen nicht geprüft (Präzisierung 2)"), bericht
+
+
+def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> tuple[dict, dict] | None:
+    qs, qt = quellen[basis(g.schraube)], quellen[basis(g.teil)]
+    laenge = einschraublaenge(qs.laenge, g.kopfauflage, g.eintritt)
+    ist = _ist_volumen(m, g.schraube, g.teil)
+    if laenge <= 0 and ist == 0:
+        return None  # die Schraube erreicht diese Bohrung nicht
+    pid, knoten = f"gewinde:{g.schraube}", [g.schraube, g.teil]
+    bericht = {"schraube": g.schraube, "teil": g.teil, "bohrung": f"{g.feature}.{g.instanz}",
+               "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
+    if _durch(qt, g.feature):
+        return _gewinde_durch(pid, knoten, bericht, ist, laenge)
+    tiefe, gewindetiefe, _, kernloch, hinweis = _bohrung(qt, g.feature, m)
+    soll = _ueberlappung(qs.masse["d"], qs.masse["p"], kernloch, laenge)
+    return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis)
+
+
+def _aussengewinde(a: Aussenpaarung, quellen: dict[str, Quelle], m: BaugruppenMesswerte) -> tuple[dict, dict] | None:
+    """Außengewinde eines Kaufteils in einer Gewindebohrung, geprüft wie eine Schraube: Größe gleich; Einschraublänge =
+    Gewindelänge − Abstand Gewindeanfang → Eintrittsebene; Soll-Überlappung mit dem gemessenen Nenn-Ø des Gewindes
+    (modell nenn) und der Steigung der Größe."""
+    qk, qt = quellen[basis(a.kaufteil)], quellen[basis(a.teil)]
+    laenge = a.laenge - skalar(differenz(a.eintritt.punkt, a.anfang.punkt), a.anfang.richtung)
+    ist = _ist_volumen(m, a.kaufteil, a.teil)
+    if laenge <= 0 and ist == 0:
+        return None  # das Gewinde erreicht diese Bohrung nicht
+    pid, knoten = f"gewinde:{a.gewinde}", [a.kaufteil, a.teil]
+    bericht = {"schraube": a.gewinde, "teil": a.teil, "bohrung": f"{a.feature}.{a.instanz}",
+               "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
+    if _durch(qt, a.feature):
+        return _gewinde_durch(pid, knoten, bericht, ist, laenge)
+    tiefe, gewindetiefe, groesse, kernloch, hinweis = _bohrung(qt, a.feature, m)
+    if groesse != a.groesse:
+        bericht |= {"soll": None, "gewindetiefe": gewindetiefe, "tiefe": tiefe}
+        return eintrag(pid, False, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
+                       hinweis=f"Außengewinde {a.groesse} passt nicht in Gewindebohrung {groesse}"), bericht
+    modell = m.gewinde_modelle.get(qk.schluessel, {}).get(a.gruppe)
+    d = modell.get("durchmesser") if isinstance(modell, dict) and modell.get("modell") == "nenn" else None
+    p = steigung(a.groesse)
+    if d is None or p is None:
+        soll = None
+        hinweis = hinweis or (f"Gewindemodell von {qk.kaufteil}.{a.gruppe} unbekannt" if d is None
+                              else f"Steigung von {a.groesse} unbekannt")
+    else:
+        soll = _ueberlappung(d, p, kernloch, laenge)
+    return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis)
 
 
 def _erlaubt_unterbestimmt(spec: dict, instanz_id: str) -> bool:
@@ -260,6 +343,11 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
             ergebnisse.append(e[0])
             gewinde_bericht.append(e[1])
             gepaart.add(_paar(g.schraube, g.teil))
+    for a in aussengewindepaarungen(m.aussengewinde, m.gewindebohrungen, standard["toleranzen"]["anker_mm"]):
+        if (e := _aussengewinde(a, quellen, m)) is not None:
+            ergebnisse.append(e[0])
+            gewinde_bericht.append(e[1])
+            gepaart.add(_paar(a.kaufteil, a.teil))
     kollisionen = [i for i in m.interferenzen if frozenset(i["paar"]) not in gepaart]
     ergebnisse.append(eintrag("kollision", not kollisionen, ist=kollisionen,
                                 knoten=sorted({k for i in kollisionen for k in i["paar"]})))

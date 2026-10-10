@@ -22,6 +22,7 @@ from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.eigenschaften import lies_eigenschaften
 from swki.compiler.fehler import BauFehler
+from swki.kaufteile.ortung import einheit
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.befehle import pruefe_lauf_gebaut, schreibe_pruefbericht
 from swki.pruefung.bewertung import bewerte, messpunkt_schluessel
@@ -61,10 +62,26 @@ def gewindebohrungen_teil(teil_spec: dict, protokoll_teil: dict) -> list[dict]:
             for i, p in enumerate(punkte.get(f["id"], []), start=1)]
 
 
+def _aussen(w: dict) -> bool:
+    return w.get("art", "innen") == "aussen"
+
+
 def gewindebohrungen_kaufteil(teil_spec: dict) -> list[dict]:
-    """Eintrittspunkte (STEP-Koordinaten = Teilkoordinaten) aller Gewindepositionen eines Kaufteils (Spec 3c §6.4)."""
+    """Eintrittspunkte (STEP-Koordinaten = Teilkoordinaten) aller Innengewinde-Positionen eines Kaufteils
+    (Spec 3c §6.4)."""
     return [{"feature": g, "instanz": i, "punkt": tuple(p)}
-            for g, w in teil_spec.get("gewinde", {}).items() for i, p in enumerate(w["positionen"], start=1)]
+            for g, w in teil_spec.get("gewinde", {}).items() if not _aussen(w)
+            for i, p in enumerate(w["positionen"], start=1)]
+
+
+def aussengewinde_kaufteil(teil_spec: dict) -> list[dict]:
+    """Außengewinde eines Kaufteils (art aussen) in Teilkoordinaten: je Position Größe, nutzbare Gewindelänge, Länge
+    des Gewindezylinders und der Gewindeanfang als Ebene mit Richtung zur Gewindespitze (wie die Kopfauflage einer
+    Schraube)."""
+    return [{"gruppe": g, "instanz": i, "groesse": w["groesse"], "laenge": w["gewindetiefe"], "tiefe": w["tiefe"],
+             "anfang": Messgeometrie("ebene", tuple(p), einheit(tuple(w["normale"])))}
+            for g, w in teil_spec.get("gewinde", {}).items() if _aussen(w)
+            for i, p in enumerate(w["positionen"], start=1)]
 
 
 def _geometrie(ctx, punkte: list[dict]) -> dict:
@@ -102,7 +119,7 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
                 quelle = bg.quellen[basis(p["komponente"])].schluessel_dokument
                 geo = geometrie.get(quelle, {}).get(messpunkt_schluessel(_ohne_komponente(p)), "Messpunkt fehlt")
                 messpunkte[messpunkt_schluessel(p)] = _in_baugruppe(geo, transformationen[p["komponente"]])
-    schrauben, bohrungen = {}, []
+    schrauben, bohrungen, aussen = {}, [], []
     for i in instanzen(bg.spec, bg.quellen):
         q = bg.quellen[i.komponente]
         if i.id not in transformationen:
@@ -116,6 +133,9 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
             for b in liste:
                 bohrungen.append({"teil": i.id, "feature": b["feature"], "instanz": b["instanz"],
                                   "eintritt": transformiere(Messgeometrie("punkt", b["punkt"]), transformationen[i.id])})
+            if q.art == "kaufteil":
+                aussen += [{**a, "teil": i.id, "anfang": transformiere(a["anfang"], transformationen[i.id])}
+                           for a in aussengewinde_kaufteil(q.spec)]
     interferenzen = [{"paar": sorted(namen.get(n, n) for n in paar), "volumen": volumen}
                      for paar, volumen in sw_baugruppe.interferenzen(asm)]
     mates = sw_baugruppe.verknuepfungen(asm)
@@ -132,7 +152,8 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         verknuepfungen={f.Name: sw_baugruppe.fehlercode(f) for f in mates},
         komponenten=zustand, stueckliste=stueckliste, interferenzen=interferenzen,
         box=sw_baugruppe.huellquader(asm), masse_kg=sw_baugruppe.masse_kg(asm), eigenschaften=lies_eigenschaften(asm),
-        messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, teilberichte=teilberichte,
+        messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, aussengewinde=aussen,
+        teilberichte=teilberichte,
         lagen=transformationen, kopplungen=gelesen, unterdrueckt=[f.Name for f in mates if sw_baugruppe.ist_unterdrueckt(f)],
         gewinde_modelle={s: k.get("gewinde_modell", {}) for s, k in protokoll.get("kaufteile", {}).items()})
 
