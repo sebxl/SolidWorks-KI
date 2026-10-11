@@ -258,6 +258,35 @@ def _ueberlappung(bisher: list, f: dict, tiefe: float, p: dict) -> float:
     return summe
 
 
+def _bohrungs_ueberlappung(bohrungen: list, f: dict, d: float, tiefe: float | None, nach_id: dict, p: dict) -> float:
+    """Gemeinsames Volumen der Bohrung bzw. Normbohrung f mit früheren Bohrungen in derselben Extrusion (Fläche ±a eines
+    blinden Features mit bekannter Dicke) an denselben Positionen: koaxiale Zylinder, die sich entlang der Achse
+    überschneiden (Senkung von oben, Gewinde durch von unten; Effilux AP 6.8). Gerechnet mit dem Kern-Ø (Senkungsring
+    einer Normbohrung und Bohrspitze nicht); wird zurückaddiert, damit der gemeinsame Teil nur einmal zählt."""
+    flaeche = f["flaeche"]
+    if not isinstance(flaeche, dict) or "feature" not in flaeche or "flaeche" not in flaeche:
+        return 0.0
+    dicke = _dicke(nach_id, flaeche, p)
+    if dicke is None:
+        return 0.0
+    t = dicke if tiefe is None else min(tiefe, dicke)
+    seite = str(flaeche["flaeche"])
+    von = 0.0 if seite.startswith("+") else dicke - t      # Abschnitt auf der Achse, gezählt ab der +-Fläche
+    schluessel = (flaeche["feature"], seite[-1])
+    positionen = _punkte(f["positionen"], p)
+    summe = 0.0
+    for alt_schluessel, alt_positionen, alt_d, alt_von, alt_bis in bohrungen:
+        if alt_schluessel != schluessel:
+            continue
+        laenge = min(von + t, alt_bis) - max(von, alt_von)
+        if laenge <= 0:
+            continue
+        gleich = sum(1 for u in positionen for w in alt_positionen if math.dist(u, w) < 1e-6)
+        summe += gleich * math.pi * min(d, alt_d) ** 2 / 4 * laenge
+    bohrungen.append((schluessel, positionen, d, von, von + t))
+    return summe
+
+
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
     """Sollvolumen aus der Spezifikation, soweit analytisch möglich (Annahme: Schnitte liegen ganz im Material,
     Aufsätze überlappen nicht). Rückgabe (volumen, grund); volumen None = nicht berechenbar, grund sagt warum.
@@ -268,6 +297,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
     beitrag: dict[str, float] = {}
     nach_id = {f["id"]: f for f in spec["features"]}
     bisher: list = []   # für _ueberlappung
+    bohrungen: list = []   # für _bohrungs_ueberlappung
     for f in spec["features"]:
         typ = f["typ"]
         if typ in ("extrusion", "schnitt"):
@@ -306,7 +336,8 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             if "senkung" in f:
                 ds, ts = auswerten(f["senkung"]["durchmesser"], p), auswerten(f["senkung"]["tiefe"], p)
                 v += math.pi * (ds**2 - d**2) / 4 * ts
-            beitrag[f["id"]] = -v * len(f["positionen"])
+            beitrag[f["id"]] = -v * len(f["positionen"]) + _bohrungs_ueberlappung(
+                bohrungen, f, d, None if f.get("durch") else t, nach_id, p)
         elif typ == "normbohrung":
             dicke = _dicke(nach_id, f["flaeche"], p) if f.get("durch") else None
             if f.get("durch") and dicke is None:
@@ -314,7 +345,9 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             masse = normmasse(f["art"], f["groesse"], norm_von(f))
             v = normbohrung_volumen(f["art"], masse, None if f.get("durch") else auswerten(f["tiefe"], p), dicke=dicke,
                                     spitze_grad=bohrspitze_grad())
-            beitrag[f["id"]] = -v * len(f["positionen"])
+            kern = masse.get("kernloch") or masse.get("durchgang") or masse["durchmesser"]
+            beitrag[f["id"]] = -v * len(f["positionen"]) + _bohrungs_ueberlappung(
+                bohrungen, f, kern, None if f.get("durch") else auswerten(f["tiefe"], p), nach_id, p)
         elif typ == "muster_linear":
             kopien = f["richtung1"]["anzahl"] * f.get("richtung2", {}).get("anzahl", 1) - 1
             beitrag[f["id"]] = kopien * sum(beitrag[q] for q in f["features"])

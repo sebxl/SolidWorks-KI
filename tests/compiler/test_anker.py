@@ -32,6 +32,15 @@ def test_flaeche_in_richtung_mehrdeutig():
     assert e.value.code == REFERENZ_MEHRDEUTIG
 
 
+def test_flaeche_in_richtung_koplanar_fuer_messung():
+    # Zapfen so hoch wie die Stirn teilt sie in zwei Teilflächen derselben Ebene: zum Messen eindeutig, zum Bauen nicht
+    teil = Flaeche("ebene", (40, 20, 10), normale=(0, 1, 0))
+    assert flaeche_in_richtung([OBEN, teil, TASCHENBODEN], "+y", koplanar_ok=True) is OBEN
+    with pytest.raises(AnkerFehler) as e:
+        flaeche_in_richtung([OBEN, teil], "+y")
+    assert e.value.code == REFERENZ_MEHRDEUTIG
+
+
 def test_senkrechte_kanten():
     senkrecht = Kante("linie", (50, 0, 30), (50, 20, 30), richtung=(0, 1, 0))
     umgekehrt = Kante("linie", (-50, 20, 30), (-50, 0, 30), richtung=(0, -1, 0))

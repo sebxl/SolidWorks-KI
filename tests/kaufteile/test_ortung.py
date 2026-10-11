@@ -69,6 +69,27 @@ def test_gewinde_kernloch_bereich_nenn_und_falsch():
     assert ergebnis[4].abweichung == "Ø 4.1200: weder Kernloch 4.134…4.2 noch Nenn-Ø 5 (M5)"
     with pytest.raises(AnkerFehler):
         orte_gewinde(flaechen, "flansch", {**w, "positionen": [[55, 0, 0]]}, 0.1)
+
+
+def test_aussengewinde_unter_koaxialen_zylindern():
+    """art aussen (Kolbenstange): unter den koaxialen Zylindern zählt der mit Nenn-Ø (modell nenn); ein Kernloch-Ø gilt
+    nicht. Ohne Nenn-Ø-Zylinder: Abweichung mit den gemessenen Ø."""
+    z = (0.0, 0.0, 1.0)
+    w = {"art": "aussen", "groesse": "M8", "normale": [0, 0, 1], "positionen": [[0, 0, 11.8]]}
+    stange, gewinde, bund = _zyl((0, 0, 5), z, 5.0), _zyl((0, 0, 20), (0, 0, -1), 4.0), _zyl((0, 0, 3), z, 11.0)
+    neben = _zyl((20, 0, 0), z, 4.0)
+    [o] = orte_gewinde([bund, stange, gewinde, neben], "kolbenstange", w, 0.1)
+    assert (o.name, o.flaeche, o.abweichung) == ("kolbenstange.1", gewinde, None)
+    assert o.ist["modell"] == "nenn" and o.ist["durchmesser"] == 8.0
+    assert gewinde_modelle({o.name: {"ist": o.ist, "abweichung": o.abweichung}}) == {
+        "kolbenstange": {"modell": "nenn", "durchmesser": 8.0}}
+    [o] = orte_gewinde([bund, stange, neben], "kolbenstange", w, 0.1)
+    assert o.ist["modell"] is None and o.flaeche is stange and o.ist["durchmesser"] == 10.0
+    assert o.abweichung == "kein koaxialer Zylinder mit Nenn-Ø 8 (M8 außen), gemessen Ø 10, 22"
+    [o] = orte_gewinde([_zyl((0, 0, 20), z, 3.4)], "kolbenstange", w, 0.1)
+    assert o.ist["modell"] is None and o.abweichung.endswith("gemessen Ø 6.8")
+    with pytest.raises(AnkerFehler):
+        orte_gewinde([neben], "kolbenstange", w, 0.1)
     assert nenn_durchmesser("M10x1") == 10.0
 
 

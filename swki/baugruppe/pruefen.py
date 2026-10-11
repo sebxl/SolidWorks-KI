@@ -22,6 +22,7 @@ from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.eigenschaften import lies_eigenschaften
 from swki.compiler.fehler import BauFehler
+from swki.kaufteile.ortung import einheit
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.befehle import pruefe_lauf_gebaut, schreibe_pruefbericht
 from swki.pruefung.bewertung import bewerte, messpunkt_schluessel
@@ -29,6 +30,7 @@ from swki.pruefung.bilder import kopplungsbild, screenshots
 from swki.pruefung.geometrie import Messgeometrie
 from swki.pruefung.messen import kontext_aus_datei, messe, messgeometrie, oeffne, rebuild_fehler
 from swki.spec.ausdruck import auswerten
+from swki.speicher import privat_mb
 from swki.verbindung import verbinde
 
 KOPFAUFLAGE = {"referenz": "EINBAU_EBENE"}
@@ -61,10 +63,26 @@ def gewindebohrungen_teil(teil_spec: dict, protokoll_teil: dict) -> list[dict]:
             for i, p in enumerate(punkte.get(f["id"], []), start=1)]
 
 
+def _aussen(w: dict) -> bool:
+    return w.get("art", "innen") == "aussen"
+
+
 def gewindebohrungen_kaufteil(teil_spec: dict) -> list[dict]:
-    """Eintrittspunkte (STEP-Koordinaten = Teilkoordinaten) aller Gewindepositionen eines Kaufteils (Spec 3c §6.4)."""
+    """Eintrittspunkte (STEP-Koordinaten = Teilkoordinaten) aller Innengewinde-Positionen eines Kaufteils
+    (Spec 3c §6.4)."""
     return [{"feature": g, "instanz": i, "punkt": tuple(p)}
-            for g, w in teil_spec.get("gewinde", {}).items() for i, p in enumerate(w["positionen"], start=1)]
+            for g, w in teil_spec.get("gewinde", {}).items() if not _aussen(w)
+            for i, p in enumerate(w["positionen"], start=1)]
+
+
+def aussengewinde_kaufteil(teil_spec: dict) -> list[dict]:
+    """Außengewinde eines Kaufteils (art aussen) in Teilkoordinaten: je Position Größe, nutzbare Gewindelänge, Länge
+    des Gewindezylinders und der Gewindeanfang als Ebene mit Richtung zur Gewindespitze (wie die Kopfauflage einer
+    Schraube)."""
+    return [{"gruppe": g, "instanz": i, "groesse": w["groesse"], "laenge": w["gewindetiefe"], "tiefe": w["tiefe"],
+             "anfang": Messgeometrie("ebene", tuple(p), einheit(tuple(w["normale"])))}
+            for g, w in teil_spec.get("gewinde", {}).items() if _aussen(w)
+            for i, p in enumerate(w["positionen"], start=1)]
 
 
 def _geometrie(ctx, punkte: list[dict]) -> dict:
@@ -102,7 +120,7 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
                 quelle = bg.quellen[basis(p["komponente"])].schluessel_dokument
                 geo = geometrie.get(quelle, {}).get(messpunkt_schluessel(_ohne_komponente(p)), "Messpunkt fehlt")
                 messpunkte[messpunkt_schluessel(p)] = _in_baugruppe(geo, transformationen[p["komponente"]])
-    schrauben, bohrungen = {}, []
+    schrauben, bohrungen, aussen = {}, [], []
     for i in instanzen(bg.spec, bg.quellen):
         q = bg.quellen[i.komponente]
         if i.id not in transformationen:
@@ -116,6 +134,9 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
             for b in liste:
                 bohrungen.append({"teil": i.id, "feature": b["feature"], "instanz": b["instanz"],
                                   "eintritt": transformiere(Messgeometrie("punkt", b["punkt"]), transformationen[i.id])})
+            if q.art == "kaufteil":
+                aussen += [{**a, "teil": i.id, "anfang": transformiere(a["anfang"], transformationen[i.id])}
+                           for a in aussengewinde_kaufteil(q.spec)]
     interferenzen = [{"paar": sorted(namen.get(n, n) for n in paar), "volumen": volumen}
                      for paar, volumen in sw_baugruppe.interferenzen(asm)]
     mates = sw_baugruppe.verknuepfungen(asm)
@@ -132,7 +153,8 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         verknuepfungen={f.Name: sw_baugruppe.fehlercode(f) for f in mates},
         komponenten=zustand, stueckliste=stueckliste, interferenzen=interferenzen,
         box=sw_baugruppe.huellquader(asm), masse_kg=sw_baugruppe.masse_kg(asm), eigenschaften=lies_eigenschaften(asm),
-        messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, teilberichte=teilberichte,
+        messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, aussengewinde=aussen,
+        teilberichte=teilberichte,
         lagen=transformationen, kopplungen=gelesen, unterdrueckt=[f.Name for f in mates if sw_baugruppe.ist_unterdrueckt(f)],
         gewinde_modelle={s: k.get("gewinde_modell", {}) for s, k in protokoll.get("kaufteile", {}).items()})
 
@@ -170,10 +192,11 @@ def _komponenten(asm, protokoll: dict) -> dict:
 
 
 def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict, messwerte, standard: dict,
-                       ordner: Path) -> tuple[list[dict], dict, dict]:
+                       ordner: Path, start_mb: float) -> tuple[list[dict], dict, dict]:
     """Bewegungsprüfung am geöffneten Lauf-Dokument (Spec 4a §8.2); liefert Prüfungen, Bewegungsbericht und Bilder.
     Bei statischen Fehlern oder einem Fehler der Läufe entstehen Mängel bewegung:<name> statt eines Abbruchs (nur
-    SpeicherKnapp bricht ab). Die treibenden Verknüpfungen verschwinden wieder; der Aufrufer schließt ohne Speichern."""
+    SpeicherKnapp bricht ab; start_mb: Private Bytes zu Beginn von pruefen). Die treibenden Verknüpfungen verschwinden
+    wieder; der Aufrufer schließt ohne Speichern."""
     komponenten = _komponenten(asm, protokoll)
 
     def entitaet(seite: dict):
@@ -188,7 +211,7 @@ def _pruefe_bewegungen(app, asm, bg: Baugruppe, protokoll: dict, kontexte: dict,
     tol = standard["toleranzen"]["anker_mm"]
     pruefungen, bericht, laeufe = bewegungen_oder_ersatz(
         bg.spec, bws, messwerte, mechanik, {frozenset(i["paar"]) for i in messwerte.interferenzen},
-        standard["speicher_grenze_mb"], tol, [v.id for v in verknuepfungen(bg.spec, bg.quellen)])
+        standard["speicher_grenze_mb"], tol, [v.id for v in verknuepfungen(bg.spec, bg.quellen)], start_mb)
     bilder = {Path(p).stem: p for lauf in laeufe
               for p in [*lauf.bilder.values(), *(k["bild"] for k in lauf.kollisionen)] if p}
     return pruefungen, bericht, bilder
@@ -217,6 +240,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     mit_bewegung = bool(bg.spec.get("bewegungen"))
     offen_halten = _dokumente_der_grenzen(bg) if mit_bewegung else set()
     app = verbinde(r.sw_jahr)
+    start_mb = privat_mb(int(app.GetProcessID)) if mit_bewegung else None  # frisches SolidWorks? (SWKI-11)
     teilberichte, geometrie, kontexte, offen = {}, {}, {}, []
     bewegung = None
     try:
@@ -257,7 +281,8 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             bilder = screenshots(app, asm, ordner / "bilder")
             bilder |= _kopplungsbilder(app, asm, bg, protokoll, messwerte, ordner / "bilder")
             if mit_bewegung:
-                bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner)
+                bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner,
+                                              start_mb)
         finally:
             sw.schliesse(app, asm)  # ohne Speichern: keine treibende Verknüpfung bleibt in der Datei (Spec 4a §8)
     finally:

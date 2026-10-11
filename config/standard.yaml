@@ -13,4 +13,4 @@ api:
   max_jahr_compiler: 2025
 # Bewegungen (Stufe 4a): Schritte je Bewegung (Vorgabe) und Speichergrenze von SolidWorks (Private Bytes) für swki pruefen
 bewegung_schritte: 8
-speicher_grenze_mb: 10000
+speicher_grenze_mb: 16000  # Sebastian 10.10.2026 (Frage 4 A): Prüfstation Etappe 4, zwei Bewegungen, 13,2 GB vor dem 2. Lauf; Rechner 31 GB

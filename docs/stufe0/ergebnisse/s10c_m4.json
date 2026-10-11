@@ -1,0 +1,323 @@
+{
+  "ok": true,
+  "groessen": {
+    "gewinde": {
+      "M4": "M4"
+    },
+    "zylinderschraube": {
+      "M4": "M4"
+    }
+  },
+  "tiefe_mm": 20.0,
+  "gewindetiefe_mm": 12.0,
+  "messungen": {
+    "gewinde M4": {
+      "durch": {
+        "abnahme_mm3": 256.59,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 1.65,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -1.65,
+                0.0,
+                -1.65,
+                1.65,
+                30.0,
+                1.65
+              ]
+            }
+          ],
+          "kegel": []
+        },
+        "daten": {
+          "Type": 48,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M4",
+          "EndCondition": 1,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.004,
+          "ThreadEndCondition": 1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 0.0,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      },
+      "blind": {
+        "abnahme_mm3": 173.886,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 1.65,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -1.65,
+                10.0,
+                -1.65,
+                1.65,
+                30.0,
+                1.65
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00165,
+                1.029744
+              ],
+              "box": [
+                -1.65,
+                9.0086,
+                -1.65,
+                1.65,
+                10.0,
+                1.65
+              ]
+            }
+          ]
+        },
+        "daten": {
+          "Type": 46,
+          "Standard2": 8,
+          "FastenerType2": 147,
+          "FastenerSize": "M4",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.012,
+          "ThreadDiameter": 0.004,
+          "ThreadEndCondition": 0,
+          "TapDrillDiameter": 0.0033,
+          "TapDrillDepth": 0.02,
+          "CounterBoreDiameter": 0.0,
+          "CounterBoreDepth": 0.0,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": -1,
+          "CosmeticThreadType": 2,
+          "GetSketchPointCount": 1
+        }
+      }
+    },
+    "zylinderschraube M4": {
+      "durch": {
+        "abnahme_mm3": 628.319,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 4.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.0,
+                25.6,
+                -4.0,
+                4.0,
+                30.0,
+                4.0
+              ]
+            },
+            {
+              "r": 2.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.25,
+                0.0,
+                -2.25,
+                2.25,
+                25.6,
+                2.25
+              ]
+            }
+          ],
+          "kegel": []
+        },
+        "daten": {
+          "Type": 14,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M4",
+          "EndCondition": 1,
+          "Depth": 0.0,
+          "HoleDepth": 0.0,
+          "HoleDiameter": 0.0,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.008,
+          "CounterBoreDepth": 0.0044,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0045000000000000005,
+          "ThruHoleDepth": 0.03,
+          "DrillAngle": 0.0,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      },
+      "blind": {
+        "abnahme_mm3": 476.443,
+        "geometrie": {
+          "zylinder": [
+            {
+              "r": 4.0,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -4.0,
+                25.6,
+                -4.0,
+                4.0,
+                30.0,
+                4.0
+              ]
+            },
+            {
+              "r": 2.25,
+              "achse_xz": [
+                0.0,
+                0.0
+              ],
+              "box": [
+                -2.25,
+                10.0,
+                -2.25,
+                2.25,
+                25.6,
+                2.25
+              ]
+            }
+          ],
+          "kegel": [
+            {
+              "params": [
+                0.0,
+                0.01,
+                0.0,
+                0.0,
+                -1.0,
+                0.0,
+                0.00225,
+                1.029744
+              ],
+              "box": [
+                -2.25,
+                8.6481,
+                -2.25,
+                2.25,
+                10.0,
+                2.25
+              ]
+            }
+          ]
+        },
+        "daten": {
+          "Type": 10,
+          "Standard2": 8,
+          "FastenerType2": 139,
+          "FastenerSize": "M4",
+          "EndCondition": 0,
+          "Depth": 0.0,
+          "HoleDepth": 0.02,
+          "HoleDiameter": 0.0045000000000000005,
+          "Diameter": 0.0,
+          "ThreadDepth": 0.0,
+          "ThreadDiameter": 0.0,
+          "ThreadEndCondition": -1,
+          "TapDrillDiameter": 0.0,
+          "TapDrillDepth": 0.0,
+          "CounterBoreDiameter": 0.008,
+          "CounterBoreDepth": 0.0044,
+          "CounterSinkDiameter": 0.0,
+          "CounterSinkAngle": 0.0,
+          "NearCounterSinkDiameter": 0.0,
+          "ThruHoleDiameter": 0.0,
+          "ThruHoleDepth": 0.0,
+          "DrillAngle": 2.059488517353309,
+          "HoleFit": 1,
+          "CosmeticThreadType": -1,
+          "GetSketchPointCount": 1
+        }
+      }
+    }
+  },
+  "tabelle": {
+    "gewinde": {
+      "M4": {
+        "sw_groesse": "M4",
+        "kernloch": 3.3
+      }
+    },
+    "zylinderschraube": {
+      "M4": {
+        "sw_groesse": "M4",
+        "durchgang": 4.5,
+        "senkung_d": 8.0,
+        "senkung_t": 4.4
+      }
+    }
+  },
+  "abgleich": {
+    "gewinde M4": {
+      "durch_ist": 256.59,
+      "durch_soll": 256.5896,
+      "blind_ist": 173.886,
+      "blind_soll": 173.8863,
+      "passt": true
+    },
+    "zylinderschraube M4": {
+      "durch_ist": 628.319,
+      "durch_soll": 628.3185,
+      "blind_ist": 476.443,
+      "blind_soll": 476.4426,
+      "passt": true
+    }
+  }
+}

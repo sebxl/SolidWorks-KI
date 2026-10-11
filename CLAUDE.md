@@ -74,8 +74,9 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
 ## Bewegungen (Stufe 4a)
 - Bewegliche Komponenten: Grenzverknüpfung (`grenze_abstand`/`grenze_winkel`, bewegt wird Seite `a`, `min`/`max` als
   Parameter), `freiheitsgrade: 1`, eine Bewegung je Grenze; Scharnier mit Anlage. Regeln im Skill `baugruppe` (§6).
-- `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` → SolidWorks selbst neu starten und erneut prüfen.
-- Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen bis ~11 GB Private Bytes: Stehlager 10,8 GB, Schlitten 9,9–10,2 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau); `speicher_grenze_mb` 10000.
+- `swki pruefen` prüft die Bewegungen mit; `SPEICHER_KNAPP` mit `frisch: false` → SolidWorks selbst neu starten und erneut prüfen, mit `frisch: true` (Prüfung begann auf frischem SolidWorks) → nicht neu starten, Nutzer nach `speicher_grenze_mb` fragen.
+- Vor jedem Live-Lauf mit Bewegungen SolidWorks frisch starten (Spitzen: Stehlager 10,8 GB, Schlitten 9,9–10,2 GB, Prüfstation AP 6.8 mit zwei Bewegungen 14,3 GB; die Abfrage vor jedem Lauf sieht nur das Dauerniveau). Grenze: `speicher_grenze_mb` in `config/standard.yaml`.
+- Standardweg mit Bewegungen: `swki durchlauf <spec> --neustart` (startet SolidWorks vor Bauen und vor Prüfen frisch).
 - Regressions-Suite enthält den Linearschlitten (`tests/referenz/schlitten/`).
 
 ## Verzahnung und Kopplungen (Stufe 4b)
@@ -86,7 +87,7 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
   gekoppelten Wellen mit `pi`, Drehsinn aus der Geometrie.
 - Regressions-Suite enthält den Zahnstangentrieb und seine Teile (`tests/referenz/zahnstangentrieb/`); Live-Läufe mit
   Kopplungen wie Bewegungen je Test auf frischem SolidWorks. Speicher: Zahnstangentrieb Spitzen ~9,8–10,3 GB (über
-  `speicher_grenze_mb` 10000, ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht).
+  `speicher_grenze_mb` (damals 10000), ohne `SPEICHER_KNAPP`, weil die Abfrage nur das Dauerniveau sieht).
 
 ## Formschräge (Paket Formschräge)
 - Schräge Wände nur als `formschraege` im `ende` von `extrusion`/`schnitt` (Regeln im Skill `konstruieren`): Winkel als

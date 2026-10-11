@@ -31,7 +31,7 @@ class Attrappe:
         self.durchlass = set(durchlass)        # Bewegungen, deren Grenze im Modell nicht wirkt
         self.kollision = kollision or (lambda werte: [])
         self.fehler_bei = fehler_bei           # (Bewegung, Wert): dort meldet stelle() einen Fehler
-        self.speicher = speicher
+        self.speicher = speicher               # MB; eine Liste liefert je Abfrage den nächsten Wert (der letzte bleibt)
         self.loese_wirft = loese_wirft
         self.interferenz_wirft = interferenz_wirft
         self.halte_wirft = halte_wirft
@@ -98,4 +98,6 @@ class Attrappe:
         return f"{name}.png"
 
     def speicher_mb(self):
+        if isinstance(self.speicher, list):
+            return self.speicher.pop(0) if len(self.speicher) > 1 else self.speicher[0]
         return self.speicher

@@ -14,7 +14,7 @@ from swki.compiler.anker import AnkerFehler
 from swki.compiler.fehler import (FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, REBUILD_FEHLER, REFERENZ_NICHT_GEFUNDEN,
                                   BauFehler)
 from swki.spec.ausdruck import auswerten, ist_ausdruck, sw_ausdruck
-from swki.verbindung import byref_bool, byref_long, dispatch_array, grad, in_mm, in_mm3, mm, r8_array
+from swki.verbindung import byref_bool, byref_long, byref_variant, dispatch_array, grad, in_mm, in_mm3, mm, r8_array
 
 MATE_TYP = {"deckungsgleich": 0, "konzentrisch": 1, "senkrecht": 2, "parallel": 3, "abstand": 5, "winkel": 6,
             "grenze_abstand": 5, "grenze_winkel": 6}  # swMateType_e; Grenze = Abstand/Winkel mit Grenzen (Spike S13 Zeile 1)
@@ -324,8 +324,16 @@ def interferenzen(asm) -> list[tuple[list[str], float]]:
 
 
 def huellquader(asm) -> list[float]:
-    """[xmin, ymin, zmin, xmax, ymax, zmax] in mm (IAssemblyDoc.GetBox, ohne Bezugsgeometrie)."""
-    return [in_mm(x) for x in asm.GetBox(0)]
+    """[xmin, ymin, zmin, xmax, ymax, zmax] in mm, eng über die Extrempunkte aller Komponentenkörper (Kopie je Körper,
+    mit Transform2 in Baugruppenkoordinaten; GetBodies3 liefert Teilkoordinaten). IAssemblyDoc.GetBox schätzt bei
+    Freiformflächen zu groß (AP 6.8 Trichter) und bleibt nur der Rückfall ohne Körper."""
+    punkte = []
+    for komp in komponenten(asm):
+        for koerper in komp.GetBodies3(sw.SW_SOLID_BODY, byref_variant()) or ():
+            kopie = koerper.Copy()
+            kopie.ApplyTransform(komp.Transform2)
+            punkte += sw.extrempunkte_mm(kopie)
+    return sw.box_aus_punkten(punkte) if punkte else [in_mm(x) for x in asm.GetBox(0)]
 
 
 def masse_kg(asm) -> float:

@@ -63,14 +63,17 @@ def punkt_achse_abstand(punkt: Vektor, achspunkt: Vektor, achse: Vektor) -> floa
     return math.sqrt(max(skalar(d, d) - t * t, 0.0))
 
 
-def flaeche_in_richtung(flaechen: list[Flaeche], richtung: str) -> Flaeche:
-    """Ebene Fläche mit Normale in `richtung`; bei mehreren die am weitesten in diese Richtung."""
+def flaeche_in_richtung(flaechen: list[Flaeche], richtung: str, koplanar_ok: bool = False) -> Flaeche:
+    """Ebene Fläche mit Normale in `richtung`; bei mehreren die am weitesten in diese Richtung.
+
+    Gleich weit außen liegende Teilflächen (eine Fläche, von einem Zapfen geteilt) sind beim Bauen mehrdeutig (auf
+    welcher wird skizziert?), beim Messen nicht: dort zählt nur die Ebene (`koplanar_ok`)."""
     vek = RICHTUNGEN[richtung]
     passend = [f for f in flaechen if f.art == "ebene" and f.normale and skalar(f.normale, vek) > _PARALLEL]
     if not passend:
         raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"keine ebene Fläche mit Normale {richtung}")
     passend.sort(key=lambda f: skalar(f.punkt, vek), reverse=True)
-    if len(passend) > 1 and skalar(passend[0].punkt, vek) - skalar(passend[1].punkt, vek) < _GLEICH_MM:
+    if not koplanar_ok and len(passend) > 1 and skalar(passend[0].punkt, vek) - skalar(passend[1].punkt, vek) < _GLEICH_MM:
         raise AnkerFehler(REFERENZ_MEHRDEUTIG, f"{len(passend)} gleich weit außen liegende Flächen mit Normale {richtung}")
     return passend[0]
 

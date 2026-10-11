@@ -17,3 +17,4 @@ auftraege/**
 
 # Lokale Claude-Einstellungen
 .claude/settings.local.json
+.claude/worktrees/

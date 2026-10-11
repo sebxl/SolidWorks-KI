@@ -106,14 +106,18 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 ## 3. Validieren, Freigabe
 - `swki validieren <baugruppe.yaml>` (prüft auch alle Teil-Specs, die Normteile und die Passung Normteil ↔ Bohrung)
   bis `"gueltig": true`; `hinweise` abarbeiten wie beim Teil.
+- Rückfragen und Konstruktionsreview (alle neuen oder geänderten Teil-Specs) wie im Skill `konstruieren` §3.
 - Dem Nutzer zeigen: Teile (Parameter, Material), Normteile (Norm, Größe, Variante, Anzahl), Verknüpfungen in Worten,
-  Prüfwerte. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
+  Prüfwerte, „Selbst entschieden“. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
   Prüfung: `swki durchlauf <baugruppe.yaml> --freigeben` (validieren → freigeben → bauen → prüfen → status in einem
   Aufruf, kompakte Ausgabe; ohne `--freigeben` für jeden weiteren Lauf). Einzeln weiter `swki freigeben`.
+  Mit Bewegungen immer `--neustart` dazu (SolidWorks frisch vor Bauen und vor Prüfen, §4).
 - Verknüpfungen sind Bauweg (nachbesserbar); Komponenten, Parameter, `freiheitsgrade`, `pruefung` und die
   Anforderungen der Teil-Specs nicht (sonst `FREIGABE_VERALTET`).
 
 ## 4. Bauen, prüfen, Prüfer
+- Mit Bewegungen Standardweg `swki durchlauf <baugruppe.yaml> --neustart` (frisches SolidWorks vor Bauen und vor Prüfen;
+  Bauabbruch kompakt: `code`, `meldung`, Knoten ≠ ok/übersprungen; Neustart abgelehnt → `schritt: neustart`, `vor`).
 - `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
   verknüpft. Fehlercodes (die `meldung` nennt Komponente bzw. Verknüpfung):
   - `TEIL_BAU` (Knoten `<komponente>/<feature>`): Bauweg der Teil-Spec nachbessern.
@@ -185,8 +189,9 @@ Vorlage: `tests/referenz/schlitten/`.
 - **Fehler der Bewegungsprüfung sind Mängel:** Rebuild-/Verknüpfungsfehler im Lauf-Dokument (die Bewegungsprüfung läuft
   dann nicht, `bewegung:<name>` mit `ok=None`) und Fehler in den Läufen (`bewegung:<name>` mit `ok=False`) landen im
   Prüfbericht; nachbessern wie jeden Mangel. Nur `SPEICHER_KNAPP` bricht ab.
-- **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht): SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen;
-  scheitert es auch frisch, dem Nutzer melden.
+- **`SPEICHER_KNAPP`** (Exit 1, kein Prüfbericht; `daten` nennen `bewegung` und `privat_mb_start`): bei
+  `frisch: false` SolidWorks selbst neu starten und `swki pruefen` erneut aufrufen; bei `frisch: true` (Prüfung begann
+  auf frischem SolidWorks) nicht neu starten – die Grenze ist für diese Baugruppe zu niedrig, Nutzer fragen.
 - Ab vier Bewegungen meldet `validieren` den Hinweis `pruefaufwand` – mit dem Nutzer klären, ob alle nötig sind.
 
 ## 7. Kopplungen (Stufe 4b)
@@ -236,5 +241,9 @@ Nicht genormte Kaufteile kommen aus dem Katalog (Skill `kaufteile`). Spec:
   Gewindetiefe des Eintrags und dem gemessenen Gewinde-Ø (Bericht: Spalte „Gewindemodell“); Kaufteile bekommen keine
   Teilprüfung (sie wurden bei der Aufnahme geprüft), der Bericht nennt Cache-Prüfsumme, Masse (Datenblatt oder Material)
   und Belegstand.
+- Ein Außengewinde eines Kaufteils (`art: aussen`) in einer Gewinde-Normbohrung eines anderen Teils prüft `pruefen` wie
+  eine Schraube (`gewinde:<instanz>.<gruppe>.<i>`: Größe, Einschraublänge, Überlappungsvolumen), nicht als Kollision.
+  Kaufteil-Gewinde haben ein Volumenband von ± einer Steigung Gewindering; nicht erreichte koaxiale Gewinde (vorderes
+  und hinteres Deckelgewinde) zählen nicht.
 - Ändert sich ein Eintrag nach der Baugruppen-Freigabe: `FREIGABE_VERALTET` mit dem Kaufteil – Nutzer fragen, neu freigeben.
 - Speicher: der Motorhalter (mit Kaufteil-Import) hat Spitzen ~9,1–9,3 GB; Live-Läufe wie §6 auf frischem SolidWorks.

@@ -277,3 +277,41 @@ def test_volumen_getrennte_schnitte_auf_derselben_flaeche_ueberlappen_nicht():
          "ende": {"typ": "blind", "tiefe": 8}},
     ]}
     assert volumen_auto(spec)[0] == pytest.approx(100 * 60 * 20 - math.pi * 25 * 13)
+
+
+def _platte15_mit(*bohrungen):
+    return {"features": [_extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": 64, "hoehe": 54}}], 15),
+                         *bohrungen]}
+
+
+def test_volumen_koaxiale_bohrungen_von_beiden_seiten_ueberlappen():
+    # Effilux-Ersatzkörper (AP 6.8, Lauf 17): Senkung Ø 6 × 3,2 von oben und M4 durch von unten an derselben Position –
+    # das Kernloch läuft durch die Senkung, der gemeinsame Teil zählt nur einmal
+    senkung = {"id": "f2", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[-27.6, 22.5], [-27.6, 10]],
+               "durchmesser": 6, "tiefe": 3.2}
+    gewinde = {"id": "f3", "typ": "normbohrung", "art": "gewinde", "groesse": "M4", "flaeche": {"feature": "f1", "flaeche": "-y"},
+               "positionen": [[-27.6, 22.5], [-27.6, 10]], "durch": True}
+    a = lambda d: math.pi * d * d / 4
+    erwartet = 64 * 54 * 15 - 2 * (a(6) * 3.2 + a(3.3) * (15 - 3.2))
+    assert volumen_auto(_platte15_mit(senkung, gewinde))[0] == pytest.approx(erwartet)
+
+
+def test_volumen_koaxiale_bohrungen_von_derselben_seite_ueberlappen():
+    senkung = {"id": "f2", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[0, 0]],
+               "durchmesser": 8, "tiefe": 4}
+    durch = {"id": "f3", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[0, 0]],
+             "durchmesser": 4, "durch": True}
+    a = lambda d: math.pi * d * d / 4
+    assert volumen_auto(_platte15_mit(senkung, durch))[0] == pytest.approx(64 * 54 * 15 - a(8) * 4 - a(4) * 11)
+
+
+def test_volumen_bohrungen_von_beiden_seiten_ohne_beruehrung_ueberlappen_nicht():
+    oben = {"id": "f2", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[0, 0]],
+            "durchmesser": 6, "tiefe": 5}
+    unten = {"id": "f3", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "-y"}, "positionen": [[0, 0]],
+             "durchmesser": 4, "tiefe": 6}
+    andere = {"id": "f4", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "-y"}, "positionen": [[10, 0]],
+              "durchmesser": 4, "durch": True}
+    a = lambda d: math.pi * d * d / 4
+    assert volumen_auto(_platte15_mit(oben, unten, andere))[0] == pytest.approx(
+        64 * 54 * 15 - a(6) * 5 - a(4) * 6 - a(4) * 15)

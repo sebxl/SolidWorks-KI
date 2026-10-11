@@ -162,6 +162,32 @@ def teilebox_mm(model) -> list[float]:
     return [in_mm(x) for x in model.GetPartBox(True)]
 
 
+_ACHSRICHTUNGEN = ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
+SW_SOLID_BODY = 0  # swBodyType_e
+
+
+def box_aus_punkten(punkte) -> list[float]:
+    """[xmin, ymin, zmin, xmax, ymax, zmax] einer Punktmenge."""
+    return [min(p[i] for p in punkte) for i in range(3)] + [max(p[i] for p in punkte) for i in range(3)]
+
+
+def extrempunkte_mm(koerper) -> list[tuple[float, float, float]]:
+    """Extrempunkte (mm) eines Körpers in ±X/±Y/±Z (IBody2.GetExtremePoint)."""
+    punkte = []
+    for d in _ACHSRICHTUNGEN:
+        ok, x, y, z = koerper.GetExtremePoint(*d)
+        if ok:
+            punkte.append((in_mm(x), in_mm(y), in_mm(z)))
+    return punkte
+
+
+def huellquader_eng_mm(model) -> list[float]:
+    """Enger Hüllquader [xmin … zmax] (mm) über die Extrempunkte aller Volumenkörper. GetPartBox schätzt bei
+    Freiformflächen (Ausformung des Trichters AP 6.8) bis ~2 mm zu groß; ohne Körper bleibt es bei GetPartBox."""
+    punkte = [p for k in (model.GetBodies2(SW_SOLID_BODY, False) or ()) for p in extrempunkte_mm(k)]
+    return box_aus_punkten(punkte) if punkte else teilebox_mm(model)
+
+
 def rebuild(model) -> None:
     """Baut neu auf; wirft REBUILD_FEHLER mit Feature und Code, wenn SolidWorks Fehler meldet."""
     ok = model.EditRebuild3
