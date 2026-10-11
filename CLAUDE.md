@@ -1,7 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse: docs/messstand/ergebnisse.md
+Stand: Prüfen ohne Bilder (Merkmalsbericht aus der STEP, Vorprüfung vor dem Bau) umgesetzt, live noch nicht erprobt –
+docs/superpowers/specs/2026-10-10-step-merkmale-design.md. Davor Messstand (Umbau 4 + 5) und `huellquader: auto` – Ergebnisse: docs/messstand/ergebnisse.md
 (davor Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
@@ -96,9 +97,14 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
 - Regressions-Suite enthält die Zentrieraufnahme (`tests/referenz/zentrieraufnahme/`).
 
 ## Prüfen und Nachbessern (Stufe 2)
-- Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,
-  freigegebene Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach
-  `protokolle/<spec>.lauf-<n>.pruefer.json` → `swki status <spec>` → nachbessern oder `swki bericht <spec>`.
+- Ablauf komplett im Skill `konstruieren`: `swki validieren` → Prüfer-Agent `pruefer` **vor dem Bau** (Vorprüfung:
+  nur Eingabe und Spec; `swki urteil <spec> --vorpruefung`) → Freigabe → `swki durchlauf` (bauen, prüfen) →
+  `swki status` → nachbessern oder Bericht. Ein Prüfer nach dem Bau (Eingabe, freigegebene Spec, Prüfbericht,
+  `merkmale.txt`, Screenshots nur bei Lücken) nur, wenn status nicht schon `bestanden` meldet; Urteil mit
+  `swki urteil <spec>` ablegen (Spec `docs/superpowers/specs/2026-10-10-step-merkmale-design.md`).
+- `swki pruefen` liest die STEP des Laufs (Merkmalsbericht `merkmale.txt`) und sucht jedes Feature der freigegebenen
+  Kopie darin (Prüfung `merkmale`: Bohrungen mit Lage, Seite, Ø, Tiefe, Senkung; Zapfen, Rundungen, Fasen).
+  `swki merkmale <datei.step>` zeigt den Bericht einer beliebigen STEP.
 - `swki pruefen` prüft Normbohrungen gegen die freigegebene Kopie (Größen sind Text, die Prüfsumme schützt sie nicht).
 - Wiederholt sich eine Lücke oder ein Handlerfehler: Skill `compiler-erweitern` (Test zuerst, Regressions-Suite).
 - Regressions-Suite: `.venv\Scripts\python.exe tests\live_einzeln.py tests\referenz` (SolidWorks geöffnet).
@@ -114,7 +120,8 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
 ## Git
 - Kein `git push` ohne Rückfrage.
 - Erzeugte SolidWorks-Dateien kommen nicht ins Git (einzige Ausnahme: Test-STEP
-  `tests/referenz/motorhalter/muster/gm42-10.step`, interne Testdatei). Herstellerdateien (STEP, Datenblätter) nie ins Git.
+  `tests/referenz/motorhalter/muster/gm42-10.step`, interne Testdatei). Das Testteil
+  `tests/pruefung/daten/platte_merkmale.step` ist mit CadQuery erzeugt (keine SolidWorks-Datei). Herstellerdateien (STEP, Datenblätter) nie ins Git.
 
 ## Tests
 - `.venv\Scripts\python.exe -m pytest` (ohne SolidWorks), `… -m sw` (mit geöffnetem SolidWorks).

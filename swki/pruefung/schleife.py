@@ -5,6 +5,9 @@ Dateien je Lauf im Auftragsordner (protokolle/):
   <spec>.lauf-<n>.pruefbericht.json  (swki pruefen)
   <spec>.lauf-<n>.pruefer.json       (Urteil des Prüfer-Agenten, von Claude geschrieben:
                                       {"bestanden": bool, "maengel": [{"knoten": [...], "beschreibung": "..."}]})
+  <spec>.vorpruefung.json            (Urteil der Vorprüfung vor dem Bau; ersetzt das Lauf-Urteil, wenn genau der geprüfte
+                                      Spec-Text freigegeben ist und der Prüfbericht die Bildprüfung ersetzt –
+                                      swki/pruefung/vorpruefung.py)
 
 Regel „kein Fortschritt“: verglichen werden nur Läufe, die durchgebaut und geprüft sind (Prüfbericht und Prüfer-Urteil),
 jeweils mit dem letzten solchen Lauf davor. Ein Bauabbruch (Protokollstatus "fehler") hat keine Mängelzahl (offen None)
@@ -67,7 +70,13 @@ def lies_laeufe(spec_pfad: Path) -> list[dict]:
         protokoll = _lies(lauf_datei(spec_pfad, n, "protokoll"))
         bericht = _lies(lauf_datei(spec_pfad, n, "pruefbericht"))
         urteil = lies_urteil(lauf_datei(spec_pfad, n, "pruefer"))
+        quelle = "lauf" if urteil is not None else None
         bau_ok = protokoll["status"] == "ok"
+        if urteil is None and bau_ok and bericht is not None:
+            from swki.pruefung.vorpruefung import urteil_fuer_lauf  # spät importiert (Kreisimport)
+
+            if (urteil := urteil_fuer_lauf(spec_pfad, bericht)) is not None:
+                quelle = "vorpruefung"
         code_maengel = len(bericht["maengel"]) if bericht else None
         pruefer_maengel = len(urteil["maengel"]) if urteil else None
         offen = (code_maengel or 0) + (pruefer_maengel or 0) if bau_ok else None  # Bauabbruch: nicht zählbar
@@ -78,6 +87,7 @@ def lies_laeufe(spec_pfad: Path) -> list[dict]:
             "code_maengel": code_maengel,
             "pruefer": "ausstehend" if urteil is None else ("bestanden" if urteil["bestanden"] else "maengel"),
             "pruefer_maengel": pruefer_maengel,
+            "pruefer_quelle": quelle,
             "offen": offen,
             "vergleichbar": bau_ok and bericht is not None and urteil is not None,
             "bestanden": bau_ok and bericht is not None and bericht["bestanden"] and urteil is not None

@@ -136,7 +136,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   ab, meldet `validieren` einen Hinweis `pruefwert`, und `swki durchlauf --freigeben` hält vor der Freigabe an.
   Nicht von Hand nachrechnen (kein Python für Volumen oder Schwerpunkt): `volumen: {soll: auto}` rechnet auch Löcher
   in derselben Skizze und Durchgänge (`durch_alles`, `durch`) durch eine Platte; `schwerpunkt` nur für
-  Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale zeigt der Steckbrief nach dem Bau.
+  Symmetrieachsen (0) und sonst `null`. Die Lage asymmetrischer Merkmale prüft der Merkmalsabgleich nach dem Bau.
   Ineinanderliegende Schnitte (oder Aufsätze) ab derselben Skizzenebene, z. B. Freiraum hinter einer Senkung, rechnet
   `auto` richtig (gemeinsamer Teil zählt einmal); Überlappungen anderer Art vermeiden.
   `auto` setzt voraus, dass Aufsätze nicht in andere Körper hineinragen: einen Aufsatz auf der Fläche beginnen lassen,
@@ -160,7 +160,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
    Rotation eines Trapezes und nicht als Schnitt mit schräger Skizze.
 
 ## 3. Validieren und Rückfragen
-- `swki validieren <spec>` bis `"gueltig": true` (ohne SolidWorks, schnell).
+- `swki validieren <spec>` bis `"gueltig": true` (ohne SolidWorks, schnell). Die Ausgabe enthält
+  `vorpruefung_auftrag` (Prompt für die Vorprüfung, Schritt 4).
 - `hinweise` aus `validieren` vor der Freigabe abarbeiten (sie blockieren nie):
   - `art: feste_zahl` – feste Zahl in einem maßtragenden Feld: meist als Parameter führen, sonst dem Nutzer bei der
     Freigabe ausdrücklich nennen.
@@ -168,37 +169,53 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
     Nutzer begründen, warum nicht (z. B. Anzahl und Abstand sind Anforderungen).
 - Unklarheiten in der Eingabe (fehlende Maße, Toleranzen, Material) gesammelt beim Nutzer erfragen, nicht raten.
 
-## 4. Freigabe (einziger menschlicher Eingriff)
-- Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten.
-- Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
+## 4. Vorprüfung und Freigabe (einziger menschlicher Eingriff)
+Der Prüfer prüft **vor** dem Bau, ob die Spec die Eingabe richtig umsetzt (nur Text: Eingabe + Spec). Nach dem Bau
+prüft der Code das Teil gegen die freigegebene Spec (Prüfung `merkmale` aus der STEP) – ein zweiter Prüfer entfällt,
+wenn `swki status` danach `bestanden` meldet.
+- Vorprüfung: Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit `vorpruefung_auftrag` aus `swki validieren`
+  als Prompt (unverändert). Urteil ablegen: `swki urteil <spec> --vorpruefung` mit dem JSON auf stdin (Heredoc) oder
+  `--json '<JSON>'`. Mängel → Spec korrigieren, validieren, Vorprüfung wiederholen (`swki durchlauf --freigeben`
+  verweigert bei Mängeln einer Vorprüfung desselben Spec-Texts mit `schritt: vorpruefung`).
+- **Freigabe steht noch aus:** Vorprüfung zuerst, dann dem Nutzer die Anforderungen zeigen (Parameter, Material,
+  Eigenschaften, Prüfwerte, Feature-Liste in Worten) und das Ergebnis der Vorprüfung nennen. Nach ausdrücklichem OK:
   `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
   `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.
-- Hat der Nutzer die Freigabe schon im Auftrag erteilt, nach dem Schreiben der Spec direkt `swki durchlauf <spec>
-  --freigeben` aufrufen – er validiert selbst und endet bei einem Fehler mit `schritt: validieren`.
+- **Freigabe schon im Auftrag erteilt:** nach `swki validieren` den Prüfer (Vorprüfung) und `swki durchlauf <spec>
+  --freigeben` in **einer** Nachricht als zwei parallele Tool-Aufrufe starten (beide im Vordergrund). Danach
+  `swki urteil <spec> --vorpruefung` – er legt das Urteil ab, nennt den Status und schreibt bei `bestanden` gleich den
+  Bericht.
+- Die Spec nach der Vorprüfung nicht mehr ändern, bevor sie freigegeben ist: Die Vorprüfung gilt nur für genau den
+  Text, der freigegeben wird.
 
 ## 5. Bauen, prüfen, Prüfer
 - Nach der Freigabe: `swki durchlauf <spec>` (ohne `--freigeben`) baut den nächsten Lauf und prüft ihn. Ausgabe
-  kompakt: `schritt` (wo er endete), `lauf`, `pruefung.fehlgeschlagen`, `pruefung.steckbrief`, `empfehlung`.
-  Einzelbefehle (`swki bauen`, `swki pruefen <spec> --lauf n`) bleiben für Sonderfälle.
+  kompakt: `schritt` (wo er endete), `lauf`, `pruefung.fehlgeschlagen`, `pruefung.merkmale` (Merkmalsbericht aus der
+  STEP), `empfehlung`, `naechstes`. Einzelbefehle (`swki bauen`, `swki pruefen <spec> --lauf n`) bleiben für
+  Sonderfälle.
+- `swki pruefen` liest die STEP, die `swki bauen` je Lauf speichert, und sucht jedes Feature der freigegebenen Spec
+  darin (Prüfung `merkmale`): Bohrungen und Normbohrungen mit Achse, Lage, Ø, durch/blind, Eintrittsseite, Tiefe und
+  Senkung, Kreise von Extrusionen/Schnitten (Zapfen, Löcher), Verrundungen (Radius) und Fasen (Winkel); Muster und
+  Spiegelungen werden aufgelöst. Abweichungen sind Mängel mit Knoten; `nicht_geprueft` nennt, was der Abgleich nicht
+  abbildet (Rotation, Skript, Verzahnung, Kontur, Fläche über `nahe` ohne Treffer …) – dann bleibt der Prüfer nach dem
+  Bau nötig. `swki merkmale <datei.step>` zeigt den Bericht einer beliebigen STEP.
 - Endet der Durchlauf mit `schritt: bauen` (Bauabbruch): Fehlercode und Knoten lesen, Bauweg nachbessern (Schritt 6).
 - Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert: `swki aenderungen <spec>` zeigt die Parameterdifferenz; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
-- **Lage-Selbstcheck vor dem Prüfer:** `pruefung.steckbrief` (auch `steckbrief.txt` im Laufordner) nennt Hüllquader,
-  Schwerpunkt und jeden achsparallelen Zylinder mit Achse, Mitte, Ø und Ausdehnung. Mit der Eingabe vergleichen:
-  liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst nachbessern.
+- **Lage-Selbstcheck:** `pruefung.merkmale` (auch `merkmale.txt` im Laufordner; ohne STEP `pruefung.steckbrief`)
+  nennt Hüllquader, Bohrungen, Zapfen, Taschenböden, Rundungen und Fasen mit Lage. Bei Widerspruch zur Eingabe erst
+  nachbessern.
 - Der Prüfbericht vergleicht Normbohrungen (Art, Größe, Norm, Positionen, durch/Tiefe) mit der freigegebenen Kopie
   (Prüfung `normbohrungen`) und nennt unter `baum` Knoten- und Featurezahl.
-- Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit `pruefer_auftrag` aus der Ausgabe von `swki durchlauf`
-  als Prompt starten (unverändert übernehmen). Ohne durchlauf: Prompt mit den Pfaden: Eingabeordner, freigegebene Spezifikation
-  (`<name>.freigegeben.yaml`), Prüfbericht, Screenshot-Ordner des Laufs, `steckbrief.txt`. Keine Protokolle, keine
-  Skripte übergeben.
-- Sein JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json` schreiben – nur das
-  JSON-Objekt (Code-Fences und Text drumherum weglassen, am Inhalt nichts ändern).
-  Beispiel für `auftraege/A-1/platte.yaml` (Dateistamm `platte` = Name der Spezifikationsdatei ohne `.yaml`), Lauf 2:
-  Freigabe-Kopie `auftraege/A-1/platte.freigegeben.yaml`, Prüfbericht
-  `auftraege/A-1/protokolle/platte.lauf-2.pruefbericht.json`, Urteil
-  `auftraege/A-1/protokolle/platte.lauf-2.pruefer.json`.
-- Danach in **einem** Shell-Aufruf: Urteil schreiben (Heredoc nach `protokolle/<spec>.lauf-<n>.pruefer.json`),
-  `swki status <spec>` und bei `bestanden` `swki bericht <spec>` (mit `&&` verkettet).
+- Meldet `swki durchlauf` (bzw. `swki urteil --vorpruefung`) `empfehlung: bestanden`, ist kein Prüfer nach dem Bau
+  nötig: weiter mit 7 (der Bericht ist nach `swki urteil` schon geschrieben, sonst `swki bericht <spec>`).
+- Sonst (keine gültige Vorprüfung oder `nicht_geprueft`): Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit
+  `pruefer_auftrag` aus der Ausgabe von `swki durchlauf` als Prompt starten (unverändert übernehmen; Screenshots nennt
+  er nur, wo der Merkmalsbericht nicht reicht). Ohne durchlauf: Prompt mit den Pfaden: Eingabeordner, freigegebene
+  Spezifikation (`<name>.freigegeben.yaml`), Prüfbericht, `merkmale.txt` des Laufs. Keine Protokolle, keine Skripte
+  übergeben.
+- Sein Urteil mit `swki urteil <spec>` ablegen (JSON auf stdin per Heredoc oder `--json`; Code-Fences werden
+  weggelassen, am Inhalt nichts ändern). Der Befehl schreibt `protokolle/<spec>.lauf-<n>.pruefer.json` (letzter Lauf,
+  sonst `--lauf n`), nennt `empfehlung` und schreibt bei `bestanden` gleich den Bericht.
 
 ## 6. Schleife
 - `swki status <spec>` (optional `--max N`, wenn der Nutzer eine Zahl genannt hat) → `empfehlung`:

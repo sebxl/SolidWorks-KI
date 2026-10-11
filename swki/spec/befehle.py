@@ -28,6 +28,9 @@ def _validieren(args) -> dict:
     }
     if auto := auto_werte(spec):
         erg["auto"] = auto
+    from swki.pruefung.vorpruefung import vorpruefung_auftrag  # spät importiert (Kreisimport)
+
+    erg["vorpruefung_auftrag"] = vorpruefung_auftrag(pfad.resolve())
     return erg
 
 
