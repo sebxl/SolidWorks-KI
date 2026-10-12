@@ -1,8 +1,9 @@
 # Normtabelle ISO 4762 – Zylinderschrauben mit Innensechskant (Spec 3a §4). Stand: abgeglichen am 2026-10-02 per
 # Web-Recherche (je Wert ≥ 2 unabhängige Quellen, Rohdaten in docs/stufe3a/abgleich/); M3 nachgetragen am 2026-10-08
-# (Auftrag AP 6.8, Rohdaten iso4762.m3.<a|b>.json; Längen 14, 18, 22 nur aus Lagerlisten, nicht in der Normreihe); nutzbar nur mit
-# status: abgeglichen. Die Längenreihe enthält nur Längen, die ≥ 2 unabhängige Quellen für die Größe nennen und in
-# der Normreihe des ISO-Normtexts (Tabelle 1) liegen.
+# (Auftrag AP 6.8, Rohdaten iso4762.m3.<a|b>.json; Längen 14, 18, 22 nur aus Lagerlisten, nicht in der Normreihe); M4
+# nachgetragen am 2026-10-10 (Auftrag AP 6.8, Rohdaten iso4762.m4.<a|b>.json; Längen 4, 5 und 14, 18, 22 nur aus
+# Lagerlisten bzw. außerhalb des Normbereichs 6…40); nutzbar nur mit status: abgeglichen. Die Längenreihe enthält nur
+# Längen, die ≥ 2 unabhängige Quellen für die Größe nennen und in der Normreihe des ISO-Normtexts (Tabelle 1) liegen.
 # Maße in mm: d Nenndurchmesser, dk Kopfdurchmesser (Höchstmaß), k Kopfhöhe (Höchstmaß), s Schlüsselweite (Nennmaß),
 # t Innensechskanttiefe (Mindestmaß), p Steigung des Regelgewindes (ISO 261, nur für die Fase am Schaftende).
 norm: ISO 4762
@@ -20,6 +21,9 @@ vorgabe_variante: "8.8"
 groessen:
   M3: {masse: {d: 3, dk: 5.5, k: 3, s: 2.5, t: 1.3, p: 0.5},
        laengen: [5, 6, 8, 10, 12, 16, 20, 25, 30],
+       status: abgeglichen}
+  M4: {masse: {d: 4, dk: 7, k: 4, s: 3, t: 2, p: 0.7},
+       laengen: [6, 8, 10, 12, 16, 20, 25, 30, 35, 40],
        status: abgeglichen}
   M5: {masse: {d: 5, dk: 8.5, k: 5, s: 4, t: 2.5, p: 0.8},
        laengen: [8, 10, 12, 16, 20, 25, 30, 35, 40, 45, 50],
@@ -43,11 +47,11 @@ quellen:
   - url: "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
     titel: "Metric DIN 912 Hexagon Socket Head Cap Screw - Technical Specifications (Gewichtstabelle je Länge)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
     titel: "Produktdatenblatt ISO 4762 aehnlich DIN 912, Zylinderschrauben Innensechskant mit Schaft, Stahl 8.8 VZD"
     abgerufen: "2026-10-02"
-    groessen: [M5, M6, M8, M10, M12, M16]
+    groessen: [M4, M5, M6, M8, M10, M12, M16]
   - url: "https://www.cad-programme.com/tipps/zylinderschraube/"
     titel: "Zylinderschraube ISO 4762 (DIN 912) - CAD Programme"
     abgerufen: "2026-10-02"
@@ -59,15 +63,15 @@ quellen:
   - url: "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
     titel: "ISO 4762 Socket Head Cap Screws Dimensions & ISO Equivalent (Engineering Hardware)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://www.fasteners.eu/de/standards/ISO/4762/"
     titel: "ISO 4762 - Zylinderschrauben mit Innensechskant (EU Fasteners Portal, s.r.o.)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
     titel: "ISO 4762, 12474 Specifications - Hex Socket Cap Screws (Fuller Fasteners)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://bolt.msk.ru/standards/DIN%20EN%20ISO%204762.pdf"
     titel: "ISO 4762:2004 / EN ISO 4762 Normtext, Tabelle 1 Nennlängen und Bereichsgrenzen (bolt.msk.ru; Kopie derselben Tabelle wie iTeh und Aramfix, zählt mit iTeh als eine Quelle)"
     abgerufen: "2026-10-02"
@@ -75,11 +79,11 @@ quellen:
   - url: "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
     titel: "REYHER Technische Informationen 2019/2020, Seite TI-11 Maße für Schrauben (ISO 4762, 12474 entspricht DIN 912)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
     titel: "Technisches Datenblatt Innensechskantschrauben mit Zylinderkopf DIN 912 / DIN EN ISO 4762 (Schraube & Mutter)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://www.schrauben-lexikon.de/norm/ISO_4762.asp"
     titel: "ISO 4762 - Zylinderschrauben, mit Innensechskant (schrauben-lexikon.de)"
     abgerufen: "2026-10-02"
@@ -99,19 +103,19 @@ quellen:
   - url: "https://www.wegertseder.com/Download/techdat/ISO-4762-Zylinderschrauben-mit-Innensechskant.pdf"
     titel: "ISO 4762 Zylinderschrauben, mit Innensechskant (austauschbar mit DIN912) - Techdat-PDF (Wegertseder GmbH)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12, M16]
+    groessen: [M3, M4, M5, M6, M8, M10, M12, M16]
   - url: "https://www.farnell.com/datasheets/11699.pdf"
     titel: "Metric socket head cap screws DIN 912 / ISO 4762 - Preferred Lengths (TR Fastenings, Datenblatt bei Farnell; zwei Datenblätter = ein Unternehmen)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12]
+    groessen: [M3, M4, M5, M6, M8, M10, M12]
   - url: "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
     titel: "ISO 4762:2004 Hexagon socket head cap screws (iTeh Standards, Vorschau-PDF, Tabelle 1 nur bis M12)"
     abgerufen: "2026-10-02"
-    groessen: [M3, M5, M6, M8, M10, M12]
+    groessen: [M3, M4, M5, M6, M8, M10, M12]
   - url: "https://fasten.it/norms/norm/din_en_iso_4762"
     titel: "DIN EN ISO 4762:2004 Maßtabelle (fasten.it)"
     abgerufen: "2026-10-08"
-    groessen: [M3]
+    groessen: [M3, M4]
   - url: "https://eshop.wurth.ae/Hexagon-Socket-Head-Cap-Screw-ISO-4762-DIN-912-steel-88-plain-SCR-CYL-ISO4762-88-HS25-M3X8/00823%20%208.sku/en/US/AED"
     titel: "Würth Hexagon Socket Head Cap Screw ISO 4762 M3x8 (Produktseite mit Maßen)"
     abgerufen: "2026-10-08"

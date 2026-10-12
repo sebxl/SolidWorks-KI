@@ -1,0 +1,373 @@
+{
+  "norm": "ISO 4762",
+  "quellenkreis": "a",
+  "groessen": {
+    "M4": {
+      "masse": {
+        "d": [
+          {
+            "wert": 4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.farnell.com/datasheets/11699.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://eshop.wurth.ae/Hexagon-Socket-Head-Cap-Screw-ISO-4762-DIN-912-steel-88-plain-SCR-CYL-ISO4762-88-HS3-M4X8/00824%20%208.sku/en/US/AED"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 7,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://www.farnell.com/datasheets/11699.pdf"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://eshop.wurth.ae/Hexagon-Socket-Head-Cap-Screw-ISO-4762-DIN-912-steel-88-plain-SCR-CYL-ISO4762-88-HS3-M4X8/00824%20%208.sku/en/US/AED"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
+          }
+        ],
+        "k": [
+          {
+            "wert": 4,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.farnell.com/datasheets/11699.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://eshop.wurth.ae/Hexagon-Socket-Head-Cap-Screw-ISO-4762-DIN-912-steel-88-plain-SCR-CYL-ISO4762-88-HS3-M4X8/00824%20%208.sku/en/US/AED"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
+          }
+        ],
+        "s": [
+          {
+            "wert": 3,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.farnell.com/datasheets/11699.pdf"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://eshop.wurth.ae/Hexagon-Socket-Head-Cap-Screw-ISO-4762-DIN-912-steel-88-plain-SCR-CYL-ISO4762-88-HS3-M4X8/00824%20%208.sku/en/US/AED"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
+          }
+        ],
+        "t": [
+          {
+            "wert": 2,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.farnell.com/datasheets/11699.pdf"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
+          }
+        ],
+        "p": [
+          {
+            "wert": 0.7,
+            "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+          },
+          {
+            "wert": 0.7,
+            "quelle": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/"
+          },
+          {
+            "wert": 0.7,
+            "quelle": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/"
+          },
+          {
+            "wert": 0.7,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 0.7,
+            "quelle": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf"
+          },
+          {
+            "wert": 0.7,
+            "quelle": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            4,
+            5,
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            25,
+            28,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80,
+            85,
+            90,
+            95,
+            100,
+            110,
+            120
+          ],
+          "bereich": [
+            4,
+            120
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 4762 (Wegertseder: austauschbar mit DIN 912; alle Werkstoffe/Ausfuehrungen der Seite zusammen)",
+          "quelle": "https://www.wegertseder.com/ISO-4762-Zylinderschrauben-mit-Innensechskant-Diameter-4"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            50
+          ],
+          "bereich": [
+            6,
+            50
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "ISO 4762 (TR Fastenings/Farnell: DIN 912 / BS 4168 / ISO 4762, 'Preferred Lengths' HT und A2)",
+          "quelle": "https://www.farnell.com/datasheets/11699.pdf"
+        },
+        {
+          "werte": [
+            2.5,
+            3,
+            4,
+            5,
+            6,
+            8,
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Normtabelle",
+          "norm_der_quelle": "ISO 4762 (fasteners.eu: Wiedergabe der Normtabelle ls/lg; Obergrenze 40 ablesbar, Untergrenze nicht markiert)",
+          "quelle": "https://www.fasteners.eu/de/standards/ISO/4762/"
+        }
+      ]
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://www.fasteners.eu/de/standards/ISO/4762/",
+      "titel": "ISO 4762 - Zylinderschrauben mit Innensechskant (EU Fasteners Portal, s.r.o.)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://fullerfasteners.com/tech/iso-4762-12474-specifications-hex-socket-cap-screws/",
+      "titel": "ISO 4762, 12474 Specifications - Hex Socket Cap Screws (Fuller Fasteners)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://engineeringhardware.com/guide/standard/iso-4762-socket-head-cap-screws/",
+      "titel": "ISO 4762 Socket Head Cap Screws (Engineering Hardware)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.wegertseder.com/ISO-4762-Zylinderschrauben-mit-Innensechskant-Diameter-4",
+      "titel": "ISO 4762 Zylinderschrauben mit Innensechskant, Durchmesser 4 - Artikeluebersicht (Wegertseder GmbH)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.reyher.de/fileadmin/user_upload/Downloadbereich/Reyher_2019-DE_Technische_Informationen_ks.pdf",
+      "titel": "Technische Informationen, Masse fuer Schrauben ISO 4762, 12474 (F. Reyher Nchfg. GmbH & Co. KG, PDF)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://fasten.it/norms/norm/din_en_iso_4762",
+      "titel": "DIN EN ISO 4762 Standard Dimensions for Hexagon socket head cap screws (Fasten.it s.r.l.)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.farnell.com/datasheets/11699.pdf",
+      "titel": "Metric socket head cap screws DIN 912 / BS 4168 / ISO 4762 (TR Fastenings, Datenblatt bei Farnell)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://eshop.wurth.ae/Hexagon-Socket-Head-Cap-Screw-ISO-4762-DIN-912-steel-88-plain-SCR-CYL-ISO4762-88-HS3-M4X8/00824%20%208.sku/en/US/AED",
+      "titel": "Hexagon Socket Head Cap Screw ISO 4762/DIN 912, steel 8.8, plain, M4x8, Art. 00824 8 (Wuerth, eShop VAE)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://cdn.standards.iteh.ai/samples/34460/06335046afaf46fb8e84d91a3eda001d/ISO-4762-2004.pdf",
+      "titel": "ISO 4762:2004 Hexagon socket head cap screws - Preview (iTeh Standards)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://eshop.boellhoff.de/out/media/pdf/ISO_4762_Stahl_8.8_zdpb1___de.pdf",
+      "titel": "Produktdatenblatt ISO 4762 aehnlich DIN 912, Zylinderschrauben Innensechskant mit Schaft, Stahl 8.8 VZD (Boellhoff)",
+      "abgerufen": "2026-10-10"
+    }
+  ],
+  "bemerkungen": [
+    "Keine Widersprueche bei M4: alle 9 Masse-Quellen nennen dk 7, k 4, s 3; alle, die t bzw. p fuehren, nennen t min 2 und p 0.7. dk 7 gilt fuer glatten Kopf; fasteners.eu, fullerfasteners.com, fasten.it und iTeh nennen zusaetzlich dk max 7.22 fuer geraendelten Kopf und dk min 6.78 (nicht verwendet). k min 3.82 (fasteners.eu, Fuller, fasten.it, iTeh, Boellhoff).",
+    "Art des Masses: Hoechstmass (dk max, k max), Nennmass (s nominal) und Mindestmass (t min) beschriftet bei fasteners.eu, fullerfasteners.com, fasten.it, iTeh (Normtext Tabelle 1) und Boellhoff ('dk max. 7,0', 'k max. 4', 's Nennmass 3', 't min. 2,0', 'Steigung (P) 0,70'); TR Fastenings: 'Max D' 7, 'Max H' 4, 'S (key size)' 3, 't min' 2. engineeringhardware.com: dk, k ohne max-Angabe, 'Socket depth t min'. Reyher: dk/k/s ohne Massart. Wuerth: 'Head diameter (dk) 7 mm', 'Head height (k1) 4 mm', 'Internal drive (s1) HS3' (Produktmerkmale des Artikels M4x8, keine Massart).",
+    "t fehlt bei Reyher und Wuerth; p fehlt bei Reyher, TR Fastenings und Wuerth. d = 4 aus der Groessenbezeichnung bei allen Quellen.",
+    "iTeh-Vorschau (Normtext ISO 4762:2004, Tabelle 1) lokal mit pdftotext gelesen: M4 dk max 7,00 (geraendelt 7,22, min 6,78); k max 4,00 (min 3,82); s nom. 3; t min 2; b 20; P 0,7 (im Textauszug mit dem Wasserzeichen 'ISO 4762:2004' und P von M5 zu 'ISO 4762:20040,70,8' verschmolzen, Spaltenfolge M4, M5 eindeutig). ls/lg im Text fuer M4: 6,5/10, 11,5/15, 16,5/20 (= l 30, 35, 40), danach keine M4-Werte -> deckt sich mit fasteners.eu. Laengenbereichsgrenzen sind Grafik; iTeh daher nicht als Laengenquelle gefuehrt.",
+    "Laengen fasteners.eu (Normtabelle, HTML per curl mit colspan ausgewertet): Die Zeilen 2,5 bis 25 tragen fuer M4 'full thread' ueber einen colspan (Untergrenze des M4-Bereichs in dieser Wiedergabe NICHT markiert); M4 hat ls/lg bei l 30 (6,5/10), 35 (11,5/15) und 40 (16,5/20), ab l 45 ist die M4-Spalte leer -> groesste Normlaenge M4 = 40. Normreihe der Tabelle zwischen 6 und 40: 6, 8, 10, 12, 16, 20, 25, 30, 35, 40 (kein 14, 18, 22, 28). werte listet die Zeilen, in denen die M4-Spalte belegt ist (2.5 bis 40), bereich = null.",
+    "Laengen Wegertseder: Lagerliste (Vereinigung aller Artikel der Seite 'Diameter-4' ueber alle Werkstoffe/Ausfuehrungen, per curl Regex 'M 4 x <l>'). Enthaelt Laengen ausserhalb der Normreihe bzw. des Normbereichs: 4 und 5 (kuerzer als 6), 14, 18, 22, 28 (nicht in der Normreihe) und 45 bis 120 (ueber 40). M 4 x 28, 85, 95 nur mit je 2 Artikeln.",
+    "Laengen TR Fastenings/Farnell: Lagerliste 'Preferred Lengths' (HT/A2), Zuordnung per pdftotext -table (Spaltenposition). M4: 6, 8, 10, 12, 16, 20, 25, 30, 35, 50; Zeile 14 ohne M4-Eintrag; Zeilen 40 und 45 beginnen erst in der Spalte M5, Zeile 50 wieder bei M4. 40 fehlt also in dieser Lagerliste, 50 liegt ausserhalb des Normbereichs.",
+    "Fazit Laengen M4 (Kreis A): Obergrenze 40 durch Normtabelle (fasteners.eu, bestaetigt durch die ls/lg-Werte im iTeh-Normtext); Untergrenze 6 aus Quellenkreis A nur durch TR (Lagerliste), Wegertseder fuehrt zusaetzlich 4 und 5. Gemeinsame Laengen von fasteners.eu und Wegertseder im Bereich 6..40: 6, 8, 10, 12, 16, 20, 25, 30, 35, 40; TR deckt davon alle ausser 40.",
+    "Boellhoff-Datenblatt (Stahl 8.8 VZD, beginnt bei M4): Masse per pdftotext -table gelesen. Die Laengenmatrix auf Seite 2 ist eine Punktgrafik und laesst sich im Textauszug den Laengenspalten nicht sicher zuordnen; Boellhoff daher nicht als Laengenquelle fuer M4 gefuehrt.",
+    "Nicht verwertbar: Normtext bolt.msk.ru (Ziffern fehlen im Textauszug, Rendering ohne Ghostscript nicht moeglich, Browser bietet nur Download an). Wuerth-Seite per curl hinter Bot-Challenge (nicht umgangen), Werte per WebFetch gelesen.",
+    "Unabhaengigkeit: verschiedene Unternehmen/Organisationen (EU Fasteners Portal, Fuller Fasteners, Engineering Hardware, Wegertseder, Reyher, Fasten.it, TR Fastenings, Wuerth, iTeh/ISO-Normtext, Boellhoff); gleiche Werte beruhen auf der gemeinsamen Norm. Wegertseder nur mit der Artikelseite (Laengen) wie bei M3.",
+    "Hinweis zum Abruf: fasteners.eu, fullerfasteners.com, engineeringhardware.com, fasten.it, Wegertseder (HTML per curl, Tabellen geparst), Reyher-, TR-, iTeh- und Boellhoff-PDF (pdftotext) wortgetreu lokal gelesen; Wuerth nur per WebFetch."
+  ]
+}

@@ -70,6 +70,8 @@ def _gewinde_paar(v: dict, quellen: dict[str, Quelle]) -> str | None:
         g = qt.spec["gewinde"].get(v[t]["gewinde"])
         if g is None:
             return None  # meldet referenz_befunde
+        if g.get("art") == "aussen":
+            return f"{v[t]['gewinde']} von {qt.kaufteil} ist ein Außengewinde (keine Schraube hinein)"
         if qn.norm != "ISO 4762" or qn.groesse != g["groesse"]:
             return f"{qn.norm} {qn.groesse} passt nicht in Gewinde {g['groesse']} von {qt.kaufteil}"
     return None

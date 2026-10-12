@@ -65,6 +65,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Skizzen und `positionen` auf Flächen und Versatzebenen nutzen dieselbe (u, v)-Zuordnung wie die parallele
   Standardebene (Fläche ±y wie `oben`: X=u, Z=−v), unabhängig vom Vorzeichen der Normale.
 - Flächen/Kanten bevorzugt semantisch (`{feature, flaeche}`, `{feature, auswahl}`), sonst `{nahe: [x, y, z]}`.
+  Liegen zwei Flächen gleich weit außen (`REFERENZ_MEHRDEUTIG`), den Anker auf `{nahe}` umstellen – die Geometrie folgt
+  nur der Funktion (keine Stufe, kein Versatz für den Bauweg).
 - Schnitt geht standardmäßig gegen die Skizzennormale (von einer Deckfläche ins Material); `umkehren: true` dreht.
 - Bohrungen für Schrauben, Gewinde und Stifte als `typ: normbohrung` (`art: gewinde | zylinderschraube |
   senkschraube | stift`, `groesse` wie „M8“, „M10x1“ bzw. Stift-Nenndurchmesser `8`, `durch: true` oder `tiefe`,
@@ -166,10 +168,16 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
     Freigabe ausdrücklich nennen.
   - `art: zusammenfassen` – Knoten (`knoten`) lassen sich nach den Modellierregeln zusammenfassen: umbauen oder dem
     Nutzer begründen, warum nicht (z. B. Anzahl und Abstand sind Anforderungen).
-- Unklarheiten in der Eingabe (fehlende Maße, Toleranzen, Material) gesammelt beim Nutzer erfragen, nicht raten.
+- **Ansage = Entscheidung:** Was der Nutzer als Änderung nennt, umsetzen (durchrechnen ja; zurückfragen nur, wenn die
+  Rechnung widerspricht). Kleine Entscheidungen (Halbzeug, Schraubengröße, Lage) selbst treffen. Echte Gabelungen und
+  Unklarheiten in der Eingabe (fehlende Maße, Toleranzen, Material) gesammelt in **einer** Nachricht erfragen, nicht raten.
+- **Konstruktionsreview** vor der Freigabe-Vorlage: Subagent `konstruktionsreview` mit den Pfaden der neuen oder
+  geänderten Specs, der Eingabe und den Datenblättern beteiligter Kaufteile. Eindeutige Befunde selbst umsetzen,
+  Befunde mit echter Wahl in die gesammelte Rückfrage.
 
 ## 4. Freigabe (einziger menschlicher Eingriff)
-- Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten.
+- Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten; dazu
+  „Selbst entschieden“ (eigene Entscheidungen und umgesetzte Review-Befunde, je eine Zeile mit Grund).
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
   `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
   `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.

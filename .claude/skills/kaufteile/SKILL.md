@@ -45,6 +45,11 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
    `--datenblatt` in den Quellordner). Herstellerdateien (STEP, Datenblatt) kommen nie ins Git:
    `original.bezug: {art: url, url: <Download>, datum: "<JJJJ-MM-TT>"}`, `datenblatt: {datei, url}`; fehlt die Datei auf
    einem Rechner, nennt `KAUFTEIL_QUELLE_FEHLT` die URL.
+   **Datenblatt-PDF lesen** nur mit `.venv\Scripts\python.exe -m werkzeuge.pdf_seiten` (keine eigene venv, keine
+   Hilfsskripte): `text <pdf> [--seiten 2-3]` für Werte und Seitenzahl des Belegs, `seite <pdf> <ordner> [--dpi 150]` für
+   Zeichnungsseiten, `ausschnitt <pdf> <ordner> --seite N --rechteck X0 Y0 X1 Y1` (Prozent der Seite, Standard 300 dpi)
+   für Maßbilder – auch als Bilder für den Prüfer. Ausgabeordner im Scratchpad, nie im Repo. Fehlt PyMuPDF:
+   `.venv\Scripts\python.exe -m pip install -e ".[pdf]"`.
 2. Sonst selbst suchen, nur öffentliche Seiten ohne Anmeldung, Herstellerseite zuerst. In Suchanfragen nur Hersteller und
    Bestellnummer, keine Daten des Nutzers.
 3. Belegregel: eine Herstellerquelle (`hersteller` mit `url` und `abgerufen`, oder `datenblatt`) oder `nutzer` genügt
@@ -62,6 +67,10 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
   `nahe` liegt auf der Fläche (Punkte aus der Diagnose); Ø und Normale sind die Gegenprobe.
 - `gewinde: {<gruppe>: {groesse, gewindetiefe, tiefe, normale, positionen, beleg?}}` für Gewindelöcher, in die Normteile
   geschraubt werden (Eintrittspunkte, `normale` aus dem Material).
+- Außengewinde (z. B. Kolbenstange): Gruppe mit `art: aussen` (Vorgabe `innen`). `positionen` = Gewindeanfang auf der
+  Achse (Körperseite, z. B. Stangenbund), `normale` = Richtung zur Gewindespitze, `gewindetiefe` = nutzbare
+  Gewindelänge, `tiefe` = Länge des Gewindezylinders (≥ `gewindetiefe`). Die Aufnahme sucht den koaxialen Zylinder mit
+  Nenn-Ø (Modell `nenn`); fehlt er, ist das eine Abweichung mit den gemessenen Ø. Keine Schraube hinein (`validieren`).
 - Gewindelöcher modellieren Hersteller oft mit dem Kerndurchmesser D1 nach ISO 724 statt mit dem Bohrer-Ø: swki nimmt
   jeden Ø von D1 bis zum Tabellen-Kernloch (± 0,01) als Modell `kernloch`, den Nenn-Ø als `nenn`; der gemessene Ø steht
   im Cache und rechnet die Gewindepaarung (M5: D1 4,134 bis Bohrer-Ø 4,2). Die Gewindetiefe nennen Datenblätter selten:
@@ -115,5 +124,7 @@ Spec: `docs/superpowers/specs/2026-10-06-kaufteile-step-import-design.md` (Abwei
 - Die Baugruppen-Freigabe schützt den Eintrag mit: Ändert sich ein Eintrag, meldet `bauen` `FREIGABE_VERALTET` mit dem
   Kaufteil – Nutzer fragen, Baugruppe neu freigeben.
 - Schrauben im Kaufteil-Gewinde: Gewindepaarung wie bei Eigenteilen (Modell `kernloch` → Ringvolumen bis zum gemessenen Ø,
-  `nenn` → keine Überlappung über 0,01 mm³); jede andere Überlappung ist ein Mangel.
+  `nenn` → keine Überlappung über 0,01 mm³). Toleranz im Kaufteil-Gewinde (innen und außen): ± eine Steigung
+  Gewindering (Senkung am Eintritt, Freistich, Auslauf der Herstellergeometrie); mehr ist ein Mangel. Beim Außengewinde
+  den Gewindeanfang auf den Beginn des Auslaufs legen, nicht auf einen Freistich davor.
 - Regeln für Baugruppen im Einzelnen: Skill `baugruppe` §8.

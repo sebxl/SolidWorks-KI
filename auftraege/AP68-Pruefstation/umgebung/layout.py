@@ -14,6 +14,8 @@ Szene `dateien: {schleifmaschine_blend: …}` (sonst --blend).
 """
 import ast, fnmatch, json, math, os, shutil, subprocess, sys
 
+BEWEGT = ("schieber", "weiche")  # bewegte Gruppen (Weichenschlitten: Sitzung 4)
+
 HIER = os.path.dirname(os.path.abspath(__file__))
 AUFTRAG = os.path.dirname(HIER)
 
@@ -374,6 +376,12 @@ def blender(pfad):
         return False
 
     sr = d["masse"].get("s", 1)   # Schubrichtung in Y
+    w_hub = d["masse"].get("w_hub", 0)   # Weichenschlitten: Pos. 1 Ruhestellung, Pos. 2/3 um w_hub in Y (Sitzung 4)
+
+    def versatz(k, pname, off):
+        if k.get("gruppe") == "schieber": return off
+        if k.get("gruppe") == "weiche": return 0.0 if pname == "Pos. 1" else w_hub
+        return 0.0
     pos = [("Pos. 1", 0.0), ("Pos. 2", sr * d["masse"]["hub1"]), ("Pos. 3", sr * d["masse"]["hub2"])]
     befunde = {}     # (bereich, teil, gegen) → dict
     naechste = {}    # teil → (abstand, gegen, wo)
@@ -406,20 +414,20 @@ def blender(pfad):
         fest_cache = {}
         for pname, off in pos:
             for o, k in station:
-                o.location = (0, off * MM if k.get("gruppe") == "schieber" else 0, 0)
+                o.location = (0, versatz(k, pname, off) * MM, 0)
             bpy.context.view_layer.update()
             teile = {}
             for o, k in station:
                 if not k.get("pruefen", True): continue
                 if k.get("nur_pos") and int(pname[-1]) not in k["nur_pos"]: continue
-                if k.get("gruppe") != "schieber" and o.name in fest_cache: teile[o.name] = fest_cache[o.name]
+                if k.get("gruppe") not in BEWEGT and o.name in fest_cache: teile[o.name] = fest_cache[o.name]
                 else: teile[o.name] = Teil(o, abtast=True)
-                if k.get("gruppe") != "schieber": fest_cache[o.name] = teile[o.name]
+                if k.get("gruppe") not in BEWEGT: fest_cache[o.name] = teile[o.name]
             kd = {o.name: k for o, k in station}
             wo = f"{z['name']} {pname}"
             for n, t in teile.items():
                 k = kd[n]
-                bewegt = k.get("gruppe") == "schieber" or k.get("nur_pos")
+                bewegt = k.get("gruppe") in BEWEGT or k.get("nur_pos")
                 if pname != "Pos. 1" and not bewegt and z is not None:
                     pass
                 grenze = k.get("abstand_min", rg["mindestabstand_maschine"])
@@ -437,7 +445,7 @@ def blender(pfad):
                 for i, a in enumerate(namen):
                     for b in namen[i + 1:]:
                         ka, kb = kd[a], kd[b]
-                        bew = ka.get("gruppe") == "schieber" or kb.get("gruppe") == "schieber" or ka.get("nur_pos") or kb.get("nur_pos")
+                        bew = ka.get("gruppe") in BEWEGT or kb.get("gruppe") in BEWEGT or ka.get("nur_pos") or kb.get("nur_pos")
                         if pname != "Pos. 1" and not bew: continue
                         if erlaubt(a, b): continue
                         e = vergleiche(teile[a], teile[b], max(rg["mindestabstand_intern"], 2) * MM)

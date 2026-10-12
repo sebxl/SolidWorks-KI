@@ -1,0 +1,249 @@
+{
+  "norm": "ISO 4762",
+  "quellenkreis": "b",
+  "groessen": {
+    "M4": {
+      "masse": {
+        "d": [
+          {
+            "wert": 4,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.sfs.ch/CH/en/dl/p/127834"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.keller-kalmbach.de/p/291912435/pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.trfastenings.com/products/catalogue/Screws-and-Bolts/Hexagon-Socket-Screws/Cap-Head"
+          }
+        ],
+        "dk": [
+          {
+            "wert": 7,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://www.sfs.ch/CH/en/dl/p/127834"
+          },
+          {
+            "wert": 7,
+            "quelle": "https://www.keller-kalmbach.de/p/291912435/pdf"
+          }
+        ],
+        "k": [
+          {
+            "wert": 4,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.sfs.ch/CH/en/dl/p/127834"
+          },
+          {
+            "wert": 4,
+            "quelle": "https://www.keller-kalmbach.de/p/291912435/pdf"
+          }
+        ],
+        "s": [
+          {
+            "wert": 3,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.sfs.ch/CH/en/dl/p/127834"
+          },
+          {
+            "wert": 3,
+            "quelle": "https://www.keller-kalmbach.de/p/291912435/pdf"
+          }
+        ],
+        "t": [
+          {
+            "wert": 2,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.sfs.ch/CH/en/dl/p/127834"
+          },
+          {
+            "wert": 2,
+            "quelle": "https://www.keller-kalmbach.de/p/291912435/pdf"
+          }
+        ],
+        "p": [
+          {
+            "wert": 0.7,
+            "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+          },
+          {
+            "wert": 0.7,
+            "quelle": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/"
+          }
+        ]
+      },
+      "laengen": [
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            16,
+            18,
+            20,
+            25,
+            30,
+            35,
+            40
+          ],
+          "bereich": [
+            6,
+            40
+          ],
+          "reihe_selbst_genannt": true,
+          "art": "Normbereich",
+          "norm_der_quelle": "DIN EN ISO 4762:2004-06 (Seite: 'source DIN EN ISO 4762', ersetzt Ausgabe 1998-02)",
+          "quelle": "https://fasten.it/norms/norm/din_en_iso_4762"
+        },
+        {
+          "werte": [
+            6,
+            8,
+            10,
+            12,
+            16,
+            20,
+            25,
+            30,
+            35,
+            40
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912",
+          "quelle": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf"
+        },
+        {
+          "werte": [
+            4,
+            5,
+            6,
+            8,
+            10,
+            12,
+            14,
+            15,
+            16,
+            18,
+            20,
+            22,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50,
+            55,
+            60,
+            65,
+            70,
+            75,
+            80,
+            85,
+            90,
+            100,
+            110
+          ],
+          "bereich": null,
+          "reihe_selbst_genannt": true,
+          "art": "Lagerliste",
+          "norm_der_quelle": "DIN 912 / ISO 4762 (Hinweis der Seite: Umstellung DIN auf ISO laufend)",
+          "quelle": "https://www.trfastenings.com/products/catalogue/Screws-and-Bolts/Hexagon-Socket-Screws/Cap-Head"
+        }
+      ]
+    }
+  },
+  "quellen": [
+    {
+      "url": "https://fasten.it/norms/norm/din_en_iso_4762",
+      "titel": "DIN EN ISO 4762 Standard Dimensions for Hexagon socket head cap screws - fasten.it (Masstabelle 'source DIN EN ISO 4762', Ausgabe 06-2004, und Massentabelle 'commercial items')",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://schraube-mutter.de/din-912-technisches-datenblatt-innensechskantschrauben/",
+      "titel": "DIN 912 Technisches Datenblatt Innensechskantschrauben - Schraube & Mutter (schraube-mutter.de)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.aspenfasteners.com/content/pdf/Metric_DIN_912_spec.pdf",
+      "titel": "Metric DIN 912 Hexagon Socket Head Cap Screw - Technical Specifications (Aspen Fasteners, PDF)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.sfs.ch/CH/en/dl/p/127834",
+      "titel": "Cylinder screws hexagon socket fully threaded ISO 4762-12.9 tempered black M4x40 mm - SFS (Technical Data)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.keller-kalmbach.de/p/291912435/pdf",
+      "titel": "ISO 4762 / DIN 912, Zylinderschraube, M 4x35, 12.9, Zinklamelle - Keller & Kalmbach (Produktdatenblatt PDF, Art.-Nr. 291912435)",
+      "abgerufen": "2026-10-10"
+    },
+    {
+      "url": "https://www.trfastenings.com/products/catalogue/Screws-and-Bolts/Hexagon-Socket-Screws/Cap-Head",
+      "titel": "Cap Head Hexagon Socket Drive Screw (DIN 912 / ISO 4762) - TR Fastenings, Katalogseite mit Groessen-/Laengenmatrix (Preferred/Non-Preferred)",
+      "abgerufen": "2026-10-10"
+    }
+  ],
+  "bemerkungen": [
+    "Alle Zahlen am Rohtext geprueft (HTML-Tabellen geparst bzw. PDF-Text mit pdftotext), nicht nur an der Zusammenfassung des Abruf-Werkzeugs. Dezimalkomma als Dezimalpunkt geschrieben.",
+    "Kennzeichnung max/nom/min: fasten.it fuehrt ausdruecklich 'dk max plain' 7 (geraendelt 'dk max knurled' 7.22, dk min 6.78), 'k max' 4 (k min 3.82), 's nom' 3, 't min' 2, P 0.7 (dazu w min 1.4, b 20). SFS (M4x40, 12.9): 'd2' 7 mm, 'k' 4 mm, 's' 3 mm ohne Zusatz, 't min' 2 mm ausdruecklich. Keller & Kalmbach (M 4x35, 12.9): 'Kopfdurchmesser dk' 7 mm, 'Kopfhoehe k' 4 mm, 'Kraftangriff s ISK 3', 'Tiefe t' 2 mm (ohne min-Zusatz), b 20. Schraube & Mutter: k 4,00, dk 7,00, s 3,0, p 0,70 (Regelgewinde), b max 20, ohne max/min, kein t. Aspen (PDF, DIN 912): D1 7, K 4, S 3, B 20 ohne Zusatz, kein t, kein p.",
+    "Kein Widerspruch zwischen den Quellen bei d, p, dk, k, s, t fuer M4. p nur von 2 Quellen (fasten.it, Schraube & Mutter), t von 3 Quellen (fasten.it, SFS, Keller & Kalmbach).",
+    "Normbezug: fasten.it nennt DIN EN ISO 4762:2004 als Quelle. SFS fuehrt 'Norm ISO ~4762' und 'Norm DIN ~912 (Norm withdrawn)'. Keller & Kalmbach: Norm ISO 4762, 'DIN 912 wurde zurueckgezogen und ist austauschbar mit ISO 4762'. Schraube & Mutter: Datenblatt nach DIN 912 / DIN EN ISO 4762. Aspen: DIN 912 (ISO-Entsprechung ISO 4762 im Text). TR Fastenings: 'DIN 912 ISO 4762'.",
+    "Laengen fasten.it: Tabelle 'Din 4762 2004 - Approximate mass ... - commercial items' (Massentabelle der Norm, Zeilen = Nennlaengen). Zellen fuer M4 belegt bei 6, 8, 10, 12, 16, 18, 20, 25, 30, 35, 40 (leer bei 2,5..5 und ab 45). Die Zeile 18 ist in dieser Tabelle enthalten (auch fuer M2..M10); 18 steht nicht in der Normreihe der ISO-Tabelle 1 (fasteners.eu, iTeh) - wie bei M3. Untergrenze 6 und Obergrenze 40 eindeutig ablesbar.",
+    "Laengen Aspen: Gewichtstabelle (kg/1000 Stk) im Haendler-Datenblatt DIN 912, als Lagerliste gewertet wie bei M3. M4-Spalte belegt bei 6, 8, 10, 12, 16, 20, 25, 30, 35, 40 (keine Zeile 18; Zeile 45 erst ab M5). Gewichte M4 identisch mit fasten.it (z. B. 6: 1.5, 40: 4.65) ausser 20 (Aspen 2.85, fasten.it 2.65).",
+    "Laengen TR Fastenings: Groessen-/Laengenmatrix des Lagerprogramms (je Zelle 'Preferred' oder 'Non-Preferred'), keine Norm. M4: Preferred 4, 5, 10, 12, 16, 20, 22, 25, 30, 40, 45, 55, 60, 65, 75, 85, 100, 110; Non-Preferred 6, 8, 14, 15, 18, 35, 50, 70, 80, 90. Weicht von der Normreihe ab (4, 5, 14, 15, 18, 22 und 45..110 ausserhalb von 6..40). Die Katalogseite nennt keine Kopfmasse; d = 4 nur aus der Groessenbezeichnung. Hinweis: Das Farnell-PDF in Quellenkreis A ist ebenfalls ein TR-Fastenings-Datenblatt (selbes Unternehmen, zaehlt einmal).",
+    "Nicht gewertet: SFS und Keller & Kalmbach fuer Laengen (nur Einzelartikel; SFS-Suchtreffer zeigen M4 auch in 4, 5, 22 mm). Wie bei M3 kein schrauben-lexikon.de (Wegertseder, Kreis A)."
+  ]
+}

@@ -87,6 +87,7 @@
     "gewindegruppe": {
       "type": "object", "required": ["groesse", "gewindetiefe", "tiefe", "normale", "positionen"], "additionalProperties": false,
       "properties": {
+        "art": {"enum": ["innen", "aussen"], "default": "innen"},
         "groesse": {"type": "string", "pattern": "^M\\d+(\\.\\d+)?$"},
         "gewindetiefe": {"type": "number", "exclusiveMinimum": 0},
         "tiefe": {"type": "number", "exclusiveMinimum": 0},

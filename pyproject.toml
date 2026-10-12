@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 messstand = ["numpy>=2.3", "scipy>=1.16", "trimesh>=4.8"]
+pdf = ["pymupdf>=1.26"]  # werkzeuge.pdf_seiten (Datenblätter lesen); swki braucht es nicht
 
 [tool.setuptools.packages.find]
 include = ["swki*"]

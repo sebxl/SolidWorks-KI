@@ -9,6 +9,7 @@ Aufruf immer aus dem Repo-Wurzelordner: .venv\\Scripts\\python.exe -m werkzeuge.
 - inspiziere           gespeichertes Teil öffnen: Gleichungen, Feature-Baum, Skizzen (Punkte, Beziehungen, Maße),
                        Zylinderflächen, Bohrungsassistent, What's Wrong
 - stl_huellquader      Hüllquader aller STL eines Ordners (ohne SolidWorks/Blender)
+- pdf_seiten           Datenblatt-PDF: Seitentext, Seiten oder Ausschnitte als PNG (ohne SolidWorks; Gruppe pdf)
 - kaufteil_vollanalyse STEP importieren (nichts speichern), je Körper Hüllquader und Flächenübersicht
 - kaufteil_vorpruefung Aufnahmeprüfung eines noch nicht freigegebenen Kaufteil-Eintrags, Ablage im Arbeitsordner
 """

@@ -95,6 +95,23 @@ def test_gewinde_befunde():
     ]
 
 
+def _aussengewinde(spec: dict, **werte) -> dict:
+    spec["gewinde"]["welle"] = {"art": "aussen", "groesse": "M8", "gewindetiefe": 16, "tiefe": 16, "normale": [0, -1, 0],
+                                "positionen": [[0, -10, 0]], **werte}
+    return spec
+
+
+def test_gewindegruppe_art():
+    """art: innen (Vorgabe, auch ohne Angabe) | aussen; anderes ist ungültig. Bei aussen bleibt tiefe ≥ gewindetiefe."""
+    assert _meldungen(_aussengewinde(kopie())) == []
+    assert _meldungen(_aussengewinde(kopie(), art="innen")) == []
+    assert "art" not in kopie()["gewinde"]["flansch"] and _meldungen(kopie()) == []
+    [meldung] = _meldungen(_aussengewinde(kopie(), art="aussengewinde"))
+    assert meldung.startswith("gewinde.welle.art")
+    assert _meldungen(_aussengewinde(kopie(), gewindetiefe=18)) == [
+        "gewinde.welle.gewindetiefe: gewindetiefe darf nicht größer als tiefe sein"]
+
+
 def test_messpunkte_und_namen():
     spec = kopie()
     pr = spec["pruefung"]

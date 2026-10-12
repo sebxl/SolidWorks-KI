@@ -345,7 +345,7 @@ def messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
         raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Feature {mp['feature']!r} fehlt im Teil")
     feature = ctx.ergebnis(mp["feature"]).features[0]
     if "flaeche" in mp:
-        f = flaeche_in_richtung(flaechen(feature), mp["flaeche"])
+        f = flaeche_in_richtung(flaechen(feature), mp["flaeche"], koplanar_ok=True)
         return Messgeometrie("ebene", f.punkt, f.normale)
     punkte = ctx.ergebnis(mp["feature"]).punkte
     if not punkte:
@@ -403,7 +403,7 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
     return Messwerte(
         rebuild_fehler=rebuild_fehler(model),
         skizzen=skizzenstatus(model),
-        box=sw.teilebox_mm(model),
+        box=sw.huellquader_eng_mm(model),
         volumen=in_mm3(mp.Volume),
         schwerpunkt=tuple(in_mm(c) for c in mp.CenterOfMass),
         material=model.GetMaterialPropertyName2("", byref_str()) or "",

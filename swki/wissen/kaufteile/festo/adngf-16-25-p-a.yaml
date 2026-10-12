@@ -1,0 +1,114 @@
+# Festo ADNGF-16-25-P-A: Kompaktzylinder Ø 16 mit Führung (Führungsstangen + Jochplatte, verdrehgesichert), Hub 25
+# (Weichenkeil der Prüfstation AP 6.8, Etappe 4). Original: STEP aus dem Festo-CAD-Portal (Teile-Nr. 554216, Download
+# 10.10.2026), Datenblatt: Festo-Katalog ADNGF, Stand 2026/09 (S. 6 Technische Daten, S. 7 Gewicht, S. 9 Werkstoffe,
+# S. 10 Maßbild und Maßtabelle, S. 12 Bestellangaben). Beide liegen nur im Quellordner der Kaufteil-Bibliothek, nicht im Git.
+# STEP-Koordinaten (Diagnose lauf-1, Vollanalyse): Achse x = y = 0, Richtung z, eingefahren. Zwei Körper:
+# Gehäuse (z −60 … 0) und bewegte Einheit (Kolben, Stange Ø 8, Führungsstangen Ø 4 bei (−9/−9), (9/9), Jochplatte
+# z 4,7 … 10,7). Rückseite z −60 mit Zentrierung D1 Ø 9 × 2,1. Jochplatte: 2 × M3 durchgehend (Kern Ø 2,459, Senkung Ø 3
+# je Seite 0,27) auf Teilkreis D4 14 bei (−4,95/−4,95), (4,95/4,95), 2 × Stiftloch FB Ø 3 auf der anderen Diagonale,
+# 2 × Ø 6 Durchgriff zu den vorderen Flanschschrauben. Befestigungsgewinde RT M4 in den Flanschschrauben, je Deckel eine
+# Diagonale: hinten bei (−9/−9), (9/9) – Senkung Ø 9,2 bis z −55, Schraubenkopf, Ansenkung Ø 4 bis z −56,5 (Eintritt),
+# Kernloch Ø 3,242 bis z −43 (ebener Grund); vorn bei (9/−9), (−9/9) hinter der Jochplatte (nicht nutzbar, nicht
+# aufgenommen). Anschlüsse EE M5 auf +y: vorn x 2,6 z −6 (Grund y 7,8), hinten x −2,6 z −54 (Grund y 5,5).
+# Gewindetiefen aus der Mantellänge der Kernlöcher (nicht belegt). Durchgehende M3 der Jochplatte: Schrauben dürfen
+# hinten nicht über z 4,7 hinausragen (Spalt WH 4,7 zum Gehäuse, eingefahren).
+art: kaufteil
+hersteller: Festo
+bestellnummer: ADNGF-16-25-P-A
+benennung: Kompaktzylinder ADNGF mit Führung, Kolben-Ø 16, Hub 25
+original:
+  datei: adngf-16-25-p-a.stp
+  sha256: "8744baf3d75dd2f462ddb563b5aa3e23fa884e1c4c9b168fe8f1f5e2274240a0"
+  bezug:
+    art: nutzer
+    datum: "2026-10-10"
+    hinweis: "Festo-CAD-Portal (CADENAS), Datei 554216_ADNGF-16-25-P-A.stp; Produktseite https://www.festo.com/de/de/a/554216/"
+datenblatt:
+  datei: ADNGF_katalog_203986_documentation.pdf
+  url: "https://www.festo.com/media/catalog/203986_documentation.pdf"
+koerper: 2
+material: "6063-T6"
+masse: {kg: 0.128, beleg: [d2]}
+eigenschaften: {Teilenummer: "554216", Hub: "25", Anschluesse: "2 x M5", Jochplatte: "2 x M3, 2 x Stiftloch 3 H8",
+                Befestigung: "RT M4 (2 je Deckel)",
+                Werkstoffhinweis: "Deckel/Rohr Aluminium eloxiert, Kolbenstange und Flanschschrauben hochlegierter Stahl; Masse aus Datenblatt"}
+belege:
+  d1: {art: datenblatt, datei: ADNGF_katalog_203986_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/203986_documentation.pdf", seite: 6,
+       hinweis: "Allgemeine Technische Daten: Ø 16 – Pneumatischer Anschluss M5, doppeltwirkend, Befestigung mit Durchgangsbohrung/Innengewinde"}
+  d2: {art: datenblatt, datei: ADNGF_katalog_203986_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/203986_documentation.pdf", seite: 7,
+       hinweis: "Gewicht ADNGF Ø 16: 88 g bei 0 mm Hub + 16 g je 10 mm Hub → 88 + 2,5 · 16 = 128 g"}
+  d3: {art: datenblatt, datei: ADNGF_katalog_203986_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/203986_documentation.pdf", seite: 10,
+       hinweis: "Maßbild und Maßtabelle Ø 16: D1 9 H9, D4 14 ±0,1, D5 6 F9, D6 M3, E 29 +0,3, EE M5, FB 3 H8, ME 6, MM 8 h8, PL 6 +0,2, RT M4, ST 7 h13, T2 2,1 +0,1, TG 18 ±0,2, WH 4,7 +1,3, ZA 35 ±0,6 (+Hub), ZB 39,7 +1,2 (+Hub)"}
+  d4: {art: datenblatt, datei: ADNGF_katalog_203986_documentation.pdf,
+       url: "https://www.festo.com/media/catalog/203986_documentation.pdf", seite: 12,
+       hinweis: "Bestellangaben: Teile-Nr. 554216 = ADNGF-16-25-P-A, Kolben-Ø 16, Hub 25"}
+einbau:
+  EINBAU_RUECKSEITE: {ebene: {nahe: [-6, 0, -60], normale: [0, 0, -1]}}
+  EINBAU_ACHSE: {zylinder: {nahe: [0, 4.5, -58.95], durchmesser: 9, senkrecht_zu: EINBAU_RUECKSEITE}}
+  EINBAU_DREHLAGE: {ebene_durch_achse: {achse: EINBAU_ACHSE, nahe: [0, 14.5, -30]}}
+  EINBAU_ANSCHLUSSSEITE: {ebene: {nahe: [-5, 14.5, -5.5], normale: [0, 1, 0]}}
+  EINBAU_JOCH: {ebene: {nahe: [-6, 0, 10.7], normale: [0, 0, 1]}}
+gewinde:
+  joch:
+    groesse: M3
+    gewindetiefe: 5.4
+    tiefe: 6
+    normale: [0, 0, 1]
+    positionen: [[-4.9497, -4.9497, 10.7], [4.9497, 4.9497, 10.7]]
+    beleg: [d3]
+  befestigung:
+    groesse: M4
+    gewindetiefe: 13
+    tiefe: 13.5
+    normale: [0, 0, -1]
+    positionen: [[-9, -9, -56.5], [9, 9, -56.5]]
+    beleg: [d3]
+  anschluss_vorn:
+    groesse: M5
+    gewindetiefe: 6.2
+    tiefe: 6.7
+    normale: [0, 1, 0]
+    positionen: [[2.6, 14.5, -6]]
+    beleg: [d1, d3]
+  anschluss_hinten:
+    groesse: M5
+    gewindetiefe: 8.5
+    tiefe: 9
+    normale: [0, 1, 0]
+    positionen: [[-2.6, 14.5, -54]]
+    beleg: [d1, d3]
+
+pruefung:
+  huellquader: {soll: [29, 29, 70.7], tol: 0.3, beleg: [d3]}
+  volumen: {soll: 40668.693, toleranz_prozent: 0.01}
+  durchmesser_pruefen:
+    - {was: Zentrierung hinten D1 Ø 9 H9, nahe: [0, 4.5, -58.95], soll: 9, tol: 0.036, referenz: EINBAU_ACHSE, beleg: [d3]}
+    - {was: Kolbenstange MM Ø 8 h8, nahe: [4, 0, 2.85], soll: 8, tol: 0.022, referenz: EINBAU_ACHSE, beleg: [d3]}
+    - {was: Stiftloch FB Ø 3 H8 (Jochplatte), nahe: [4.9497, -3.4497, 7.7], soll: 3, tol: 0.014, beleg: [d3]}
+    - {was: Senkung hinten D5 Ø 6 F9, nahe: [9, -6, -58.25], soll: 6, tol: 0.04, beleg: [d3]}
+  masse_pruefen:
+    - {was: Kantenmaß E, von: {flaeche: {nahe: [14.5, 6.05, -5.5], normale: [1, 0, 0]}},
+       zu: {flaeche: {nahe: [-14.5, -6.05, -5.5], normale: [-1, 0, 0]}}, soll: 29, tol: 0.3, beleg: [d3]}
+    - {was: "Gehäuselänge ZA+Hub (35+25)", von: {referenz: EINBAU_RUECKSEITE},
+       zu: {flaeche: {nahe: [-6, 0, 0], normale: [0, 0, 1]}}, soll: 60, tol: 0.6, beleg: [d3, d4]}
+    - {was: "Rückseite bis Jochplatte ZB+Hub (39,7+25)", von: {referenz: EINBAU_RUECKSEITE},
+       zu: {flaeche: {nahe: [-6, 0, 4.7], normale: [0, 0, -1]}}, soll: 64.7, tol: 1.2, beleg: [d3, d4]}
+    - {was: Abstand Gehäuse–Jochplatte WH, von: {flaeche: {nahe: [-6, 0, 0], normale: [0, 0, 1]}},
+       zu: {flaeche: {nahe: [-6, 0, 4.7], normale: [0, 0, -1]}}, soll: 4.7, tol: 1.3, beleg: [d3]}
+    - {was: Dicke Jochplatte ME, von: {flaeche: {nahe: [-6, 0, 4.7], normale: [0, 0, -1]}},
+       zu: {referenz: EINBAU_JOCH}, soll: 6, beleg: [d3]}
+    - {was: "Lochabstand RT diagonal (TG · √2)", von: {gewinde: befestigung, instanz: 1},
+       zu: {gewinde: befestigung, instanz: 2}, soll: 25.456, tol: 0.283, beleg: [d3]}
+    - {was: "Teilkreis D4 der Jochplatten-Gewinde D6", von: {gewinde: joch, instanz: 1}, zu: {gewinde: joch, instanz: 2},
+       soll: 14, tol: 0.1, beleg: [d3]}
+    - {was: Zentriertiefe T2, von: {referenz: EINBAU_RUECKSEITE},
+       zu: {flaeche: {nahe: [0, 0, -57.9], normale: [0, 0, -1]}}, soll: 2.1, tol: 0.1, beleg: [d3]}
+    - {was: Anschluss vorn PL, von: {flaeche: {nahe: [-6, 0, 0], normale: [0, 0, 1]}},
+       zu: {gewinde: anschluss_vorn, instanz: 1}, soll: 6, tol: 0.2, beleg: [d3]}
+    - {was: Anschluss hinten PL, von: {referenz: EINBAU_RUECKSEITE}, zu: {gewinde: anschluss_hinten, instanz: 1},
+       soll: 6, tol: 0.2, beleg: [d3]}
+    - {was: Schlüsselweite ST, von: {flaeche: {nahe: [0, 3.5, 2.85], normale: [0, 1, 0]}},
+       zu: {flaeche: {nahe: [0, -3.5, 2.85], normale: [0, -1, 0]}}, soll: 7, tol: 0.22, beleg: [d3]}

@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -124,7 +125,7 @@ def test_gewindepaarung_mit_gemessenem_kernloch(tmp_path, monkeypatch):
     soll = ueberlappung_soll(5, 0.8, 4.134, 7.4)
     ok = _gewinde(bg, _messwerte(bg, 7.4, soll, d1))
     assert ok["ok"] is True and ok["soll"] == round(soll, 3) == 42.305
-    assert _gewinde(bg, _messwerte(bg, 7.4, ueberlappung_soll(5, 0.8, 4.2, 7.4), d1))["ok"] is False
+    assert _gewinde(bg, _messwerte(bg, 7.4, soll + 1.1 * _RING_P, d1))["ok"] is False
     alt = _gewinde(bg, _messwerte(bg, 7.4, soll, "kernloch"))  # alte Form (nur Text) gilt als unbekannt
     assert alt["ok"] is None and "Gewindemodell" in alt["hinweis"]
 
@@ -143,3 +144,35 @@ def test_bericht_nennt_kaufteile():
         "kennmasse": "nicht belegt", "gewinde_modell": {"flansch": {"modell": "kernloch", "durchmesser": 4.134}}}}}
     text = bericht_markdown({"name": "Motorprobe"}, "A", [], ("WEITER", "x"), pruefbericht, None, None, [])
     assert "| SWKI-MUSTER GM42-10 | ja | abc | 1.2 kg (Datenblatt) | nicht belegt | flansch: kernloch Ø 4.134 |" in text
+
+
+_RING_P = math.pi / 4 * (5 ** 2 - 4.134 ** 2) * 0.8  # Gewindering M5 / D1 4,134 über eine Steigung
+
+
+def test_kaufteil_gewinde_band_eine_steigung(tmp_path, monkeypatch):
+    """AP 6.8 (Sebastian 10.10.2026, Frage 5 A): Herstellergeometrie (Senkung am Eintritt, Auslauf) – im Kaufteil-Gewinde
+    gilt ein Band von ± einer Steigung Gewindering statt 1 %."""
+    katalog(tmp_path / "kat", monkeypatch)
+    bg = lade_baugruppe(schreibe(tmp_path / "A", _ins_gewinde(kopie())))
+    d1 = {"modell": "kernloch", "durchmesser": 4.134}
+    soll = ueberlappung_soll(5, 0.8, 4.134, 7.4)
+    assert _gewinde(bg, _messwerte(bg, 7.4, soll - 0.9 * _RING_P, d1))["ok"] is True   # Senkung 90° am Eintritt
+    assert _gewinde(bg, _messwerte(bg, 7.4, soll + 0.9 * _RING_P, d1))["ok"] is True
+    assert _gewinde(bg, _messwerte(bg, 7.4, soll - 1.1 * _RING_P, d1))["ok"] is False
+    assert _gewinde(bg, _messwerte(bg, 7.4, soll + 1.1 * _RING_P, d1))["ok"] is False
+
+
+def test_koaxiales_gewinde_nicht_erreicht(tmp_path, monkeypatch):
+    """AP 6.8: vorderes und hinteres Deckelgewinde des ADNM liegen auf einer Achse – das nicht erreichte hintere zählt
+    nicht (vorher eine zweite Prüfung mit Soll 0 und dem Volumen des vorderen)."""
+    katalog(tmp_path / "kat", monkeypatch)
+    bg = lade_baugruppe(schreibe(tmp_path / "A", _ins_gewinde(kopie())))
+    d1 = {"modell": "kernloch", "durchmesser": 4.134}
+    soll = ueberlappung_soll(5, 0.8, 4.134, 7.4)
+    m = _messwerte(bg, 7.4, soll, d1)
+    m.gewindebohrungen.append({"teil": "motor", "feature": "flansch", "instanz": 2,
+                               "eintritt": Messgeometrie("punkt", (L, 150.0, L))})
+    bericht = bewerte_baugruppe(bg.spec, bg.quellen, m, STANDARD, stueckliste_soll(bg.spec, bg.quellen, "A", STANDARD))
+    gewinde = [e for e in bericht["pruefungen"] if e["id"] == "gewinde:schraube.1"]
+    assert len(gewinde) == 1 and gewinde[0]["ok"] is True
+    assert next(e for e in bericht["pruefungen"] if e["id"] == "kollision")["ok"] is True
