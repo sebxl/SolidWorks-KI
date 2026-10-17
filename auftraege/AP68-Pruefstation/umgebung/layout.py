@@ -160,6 +160,12 @@ def geometrie_regeln(d):
         rr = m["dd"] / 2 + rg["durchblick_rand"]
         reserve = min(m["kx"] - rr - x0, x1 - m["kx"] - rr, m["pm"] - rr - y0, y1 - m["pm"] - rr)
         regel(f"Leuchtfläche deckt Ø {m['dd']:g} + {rg['durchblick_rand']:g} (Ziel)", reserve >= 0, f"Reserve {reserve:.1f}")
+    if t and "abwurf_x" in m:   # Rohraustritt C2, beide Schlittenlagen (Blender, Tisch C2) innerhalb der Öffnung
+        (x0, x1), (y0, y1) = t["oben"]["x"], t["oben"]["y"]
+        rx = (m["abwurf_x"][0] - x0, x1 - m["abwurf_x"][1]); ry = (m["abwurf_y"][0] - y0, y1 - m["abwurf_y"][1])
+        rv = rg["abwurf_reserve"]
+        regel(f"Abwurf C2 im Trichter, Reserve X ≥ {rv['x']:g}, Y ≥ {rv['y']:g}", min(rx) >= rv["x"] and min(ry) >= rv["y"],
+              f"X −/+ {rx[0]:.1f}/{rx[1]:.1f}, Y −/+ {ry[0]:.1f}/{ry[1]:.1f}")
     dl = k.get("Durchlicht")
     if dl:
         s = m.get("s", 1)
@@ -207,10 +213,12 @@ def blender(pfad):
     rg = d["regeln"]
 
     ausschluss = re.compile(r"^(Boden|Messer [+-]\d+|Schrott [+-]\d+)$")
+    weg = d.get("maschine_ausblenden", [])   # Teile, die die Station ersetzt (17.10.2026: alte Kiste mit Ablage)
     maschine = []
     for o in sc.objects:
+        if any(fnmatch.fnmatch(o.name, m) for m in weg): o.hide_render = True   # auch Schriften (FONT)
         if o.type == 'MESH' and not o.hide_render:
-            if ausschluss.match(o.name): o.hide_render = True
+            if ausschluss.match(o.name) or any(fnmatch.fnmatch(o.name, m) for m in weg): o.hide_render = True
             else: maschine.append(o)
 
     coll = bpy.data.collections.new("Pruefstation")
@@ -391,12 +399,16 @@ def blender(pfad):
 
     def melde(bereich, teil, gegen, erg, wo, grenze):
         koll, dist, tiefe = erg
-        if not koll and dist >= grenze: return
+        if not koll and dist >= grenze: return False
+        k = next((k for o, k in station if o.name == teil), {})
+        if bereich == "maschine" and any(fnmatch.fnmatch(gegen, m) for m in k.get("anlage", [])) and tiefe <= 0.5:
+            return False   # Befestigung liegt an dieser Maschinenfläche an (17.10.2026); Durchdringung > 0,5 zählt weiter
         sch = (bereich, teil, gegen)
         e = befunde.setdefault(sch, {"bereich": bereich, "teil": teil, "gegen": gegen, "art": "Kollision" if koll else "knapp",
                                      "abstand": dist, "tiefe": tiefe, "wo": []})
         if koll: e["art"] = "Kollision"
         e["abstand"] = min(e["abstand"], dist); e["tiefe"] = max(e["tiefe"], tiefe); e["wo"].append(wo)
+        return True
 
     for z in d["zustaende"]:
         sc.frame_set(z["bild"])
@@ -436,8 +448,7 @@ def blender(pfad):
                         e = vergleiche(t, m, max(grenze, 30) * MM)
                         if e is None: continue
                         if pname == "Pos. 1" or bewegt:
-                            melde("maschine", n, m.name, e, wo, grenze)
-                            if e[0]: treffer_maschine[z["name"]].add(m.name); treffer_station[z["name"]].add(n)
+                            if melde("maschine", n, m.name, e, wo, grenze) and e[0]: treffer_maschine[z["name"]].add(m.name); treffer_station[z["name"]].add(n)
                             if not k.get("nur_pos") and (n not in naechste or e[1] < naechste[n][0]):
                                 naechste[n] = (e[1], m.name, wo)
             if z is d["zustaende"][0]:
