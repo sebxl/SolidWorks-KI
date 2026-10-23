@@ -19,6 +19,7 @@ class Knoten:
     sw_name: str | None = None
     fehler: dict | None = None
     punkte: list | None = None  # Bohrungsinstanzen: Achspunkte (mm), für die Prüfung
+    masse: list[dict] | None = None  # Maßprotokoll: [{"name", "pfad", "art", "bezug", "roh", "vorzeichen", "wert"}]
 
 
 @dataclass

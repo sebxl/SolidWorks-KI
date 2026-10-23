@@ -78,9 +78,10 @@ def muster_linear(ctx, f: dict) -> FeatureErgebnis:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"muster_linear {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
     # Maße des Musters (live belegt): D1/D2 Anzahl, D3/D4 Abstand Richtung 1/2
-    ctx.verknuepfe(f"D3@{f['id']}", r1["abstand"])
+    pfad = ctx.pfad(f["id"])
+    ctx.mass(f"D3@{f['id']}", r1["abstand"], f"{pfad}.richtung1.abstand", "abstand")
     if r2:
-        ctx.verknuepfe(f"D4@{f['id']}", r2["abstand"])
+        ctx.mass(f"D4@{f['id']}", r2["abstand"], f"{pfad}.richtung2.abstand", "abstand")
     return FeatureErgebnis([feature])
 
 
@@ -101,13 +102,13 @@ def muster_kreis(ctx, f: dict) -> FeatureErgebnis:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"muster_kreis {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
     if "winkel" in f:
-        ctx.verknuepfe(f"D3@{f['id']}", f["winkel"])  # D1 Anzahl, D3 Gesamtwinkel (live belegt)
+        ctx.mass(f"D3@{f['id']}", f["winkel"], f"{ctx.pfad(f['id'])}.winkel", "winkel")  # D1 Anzahl, D3 Gesamtwinkel (live belegt)
     return FeatureErgebnis([feature], richtung=richtung)
 
 
 @handler("spiegeln")
 def spiegeln(ctx, f: dict) -> FeatureErgebnis:
-    ebene = ebene_aufloesen(ctx, f["ebene"])
+    ebene = ebene_aufloesen(ctx, f["ebene"], f"{ctx.pfad(f['id'])}.ebene")
     sw.auswahl_leeren(ctx.model)
     for feature in _sw_features(ctx, f["features"]):
         sw.waehle(ctx.model, feature, 1, anhaengen=True)

@@ -30,6 +30,8 @@ class Kontext:
     ergebnisse: dict[str, FeatureErgebnis] = field(default_factory=dict)
     achsen: dict[str, tuple] = field(default_factory=dict)  # Referenzachsen je Teil (swki.compiler.handler.muster)
     gleichungen: bool = False  # Maße per Gleichung an Parameter binden (gleichungen_an)
+    knoten: str | None = None  # Feature-ID des Knotens, der gerade gebaut wird (setzt baue_features vor jedem Handler)
+    masse: dict[str, list[dict]] = field(default_factory=dict)  # Maßprotokoll je Feature-ID, baue_features holt es ab
 
     def wert(self, x) -> float:
         """Zahl oder "=Ausdruck" → mm bzw. Grad."""
@@ -45,12 +47,28 @@ class Kontext:
     def ergebnis(self, fid: str) -> FeatureErgebnis:
         return self.ergebnisse[fid]
 
-    def verknuepfe(self, masname: str, roh, vorzeichen: int = 1) -> None:
-        """Maß per SW-Gleichung an Parameter binden, wenn roh ein Ausdruck ist (z. B. "=L").
+    def pfad(self, fid: str) -> str:
+        """Spec-Pfad eines Features: Position im Feature-Baum, z. B. "features[1]"."""
+        for index, f in enumerate(self.spec["features"]):
+            if f["id"] == fid:
+                return f"features[{index}]"
+        raise KeyError(f"Feature {fid!r} steht nicht in der Spezifikation")
 
-        vorzeichen -1: das Maß (immer ein Betrag) entspricht dem negierten Ausdruck, z. B. Lage u = "=-L/2".
+    def mass(self, masname: str, roh, pfad: str, art: str, vorzeichen: int = 1, bezug=None) -> None:
+        """Maß ins Maßprotokoll des laufenden Knotens eintragen (Knoten.masse im Bauprotokoll).
+
+        pfad: Spec-Pfad des Werts (z. B. "features[1].ende.tiefe"), art: lage | groesse | radius | winkel | tiefe | abstand
+        | versatz | konstruktion | skript, roh: Wert der Spezifikation (Zahl oder "=Ausdruck"), vorzeichen -1: das Maß (immer
+        ein Betrag) entspricht dem negierten Wert, z. B. Lage u = "=-L/2". bezug: Text des Bezugs ("-rand" …) oder None.
+
+        Nur mit ctx.gleichungen und bei einem Ausdruck bindet die Methode das Maß per SW-Gleichung an den Parameter; bei einem
+        Bezug außer dem Ursprung nie (der Wert hängt dann an der Geometrie, nicht am Ursprung).
         """
-        if not self.gleichungen or not ist_ausdruck(roh):
+        self.masse.setdefault(self.knoten or "", []).append({
+            "name": masname, "pfad": pfad, "art": art, "bezug": bezug, "roh": roh, "vorzeichen": vorzeichen,
+            "wert": abs(self.wert(roh)),
+        })
+        if not self.gleichungen or not ist_ausdruck(roh) or bezug not in (None, "ursprung"):
             return
         rechts = sw_ausdruck(roh) if vorzeichen > 0 else f"-({sw_ausdruck(roh)})"
         if self.model.GetEquationMgr.Add2(-1, f'"{masname}" = {rechts}', True) < 0:

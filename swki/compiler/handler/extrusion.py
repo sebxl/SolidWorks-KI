@@ -11,7 +11,8 @@ einen getrennten Körper. Der Bau meldet das nicht; die allgemeine Code-Prüfung
 meldet es als Mangel ("2 Volumenkörper statt 1").
 
 Formschräge (Paket Formschräge, Spike S16): Dchk1/Ddir1/Dang1 (Index 7, 9, 11 bei beiden Aufrufen); querschnitt
-"kleiner"/"groesser" aus Sicht der Skizze (swki.formschraege), der Winkel per Gleichung an WINKEL_MASS[ende] gebunden.
+"kleiner"/"groesser" aus Sicht der Skizze (swki.formschraege); der Winkel (Maß WINKEL_MASS[ende]) geht ins Maßprotokoll und
+nur mit ctx.gleichungen per Gleichung an den Parameter.
 """
 
 from swki.compiler import sw
@@ -61,7 +62,10 @@ def schraege_sw(ctx, f: dict) -> tuple:
 
 @handler("extrusion", "schnitt")
 def extrusion(ctx, f: dict) -> FeatureErgebnis:
-    skizze, se = skizziere(ctx, f["skizze"]["ebene"], f["skizze"]["elemente"], f"{f['id']}_skizze")
+    pfad = ctx.pfad(f["id"])
+    skizze, se = skizziere(ctx, f["skizze"]["ebene"], f["skizze"]["elemente"], f"{f['id']}_skizze",
+                           [f"{pfad}.skizze.elemente[{k}]" for k in range(len(f["skizze"]["elemente"]))],
+                           f"{pfad}.skizze.ebene")
     ende = f["ende"]
     typ = ENDE[ende["typ"]]
     mass = ende.get("tiefe", ende.get("abstand"))  # blind/mittig: Tiefe; versatz_von_flaeche: Versatz
@@ -82,9 +86,9 @@ def extrusion(ctx, f: dict) -> FeatureErgebnis:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"{f['typ']} {f['id']} nicht erzeugt{grund}", schritt="feature")
     feature.Name = f["id"]
     if "tiefe" in ende:
-        ctx.verknuepfe(f"D1@{f['id']}", ende["tiefe"])
+        ctx.mass(f"D1@{f['id']}", ende["tiefe"], f"{pfad}.ende.tiefe", "tiefe")
     if "abstand" in ende:
-        ctx.verknuepfe(f"{VERSATZ_MASS}@{f['id']}", ende["abstand"])
+        ctx.mass(f"{VERSATZ_MASS}@{f['id']}", ende["abstand"], f"{pfad}.ende.abstand", "abstand")
     if "formschraege" in ende:
-        ctx.verknuepfe(f"{WINKEL_MASS[ende['typ']]}@{f['id']}", schraege(f)["winkel"])
+        ctx.mass(f"{WINKEL_MASS[ende['typ']]}@{f['id']}", schraege(f)["winkel"], f"{pfad}.ende.formschraege.winkel", "winkel")
     return FeatureErgebnis([feature], richtung=richtung(se, umkehren != ist_schnitt))

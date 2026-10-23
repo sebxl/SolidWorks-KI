@@ -351,7 +351,7 @@ def _fall_einmal(app, r, ebene, zeichnen, soll_flaeche, parameter, aendere) -> d
         skizze.Name = SKIZZE
         d["masse"] = _masse(skizze)
         for m in masse:
-            ctx.verknuepfe(f"{m.name}@{SKIZZE}", m.roh, m.vorzeichen)
+            ctx.mass(f"{m.name}@{SKIZZE}", m.roh, m.pfad, m.art, m.vorzeichen)
         d["gebunden"] = [f"{m.name}@{SKIZZE} = {m.roh}" for m in masse if isinstance(m.roh, str)]
         sw.auswahl_leeren(model)
         skizze.Select2(False, 0)

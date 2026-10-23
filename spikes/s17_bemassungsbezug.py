@@ -276,7 +276,7 @@ def _positionen_mit_bezug(befund: dict, variante: str, seite: int):
     (seite −1 links, +1 rechts; Ende deckungsgleich mit der Kante bzw. Längenmaß 50), Symmetrie, Abstand, Randmaß.
     Wirft nicht bei Status ≠ 3 (Befund statt Bauabbruch)."""
 
-    def festlegen(ctx, feature, se, positionen, name) -> None:
+    def festlegen(ctx, feature, se, positionen, name, pfad=None) -> None:
         skizze_f = positionsskizze(feature)
         model, sm = ctx.model, ctx.model.SketchManager
         kante = _randkante(ctx, 50 * seite).objekt

@@ -2,7 +2,8 @@
 (Spec 2c §3; Aufrufkette wie S9b Baustein 21, Positionen laut Spike S10 Frage 2).
 
 Die erste Position wird per SelectByRay auf der Fläche gewählt; die übrigen kommen als Skizzenpunkte in die
-Positionsskizze, die danach voll bestimmt wird (Lagemaße zum Ursprung, per Gleichung an Parameter). Gewinde immer
+Positionsskizze, die danach voll bestimmt wird (Lagemaße zum Ursprung, im Maßprotokoll, per Gleichung an Parameter nur mit
+ctx.gleichungen). Gewinde immer
 kosmetisch, Größen und Normmaße aus swki/wissen/bohrungsnormen.yaml. Instanzen 1, 2, … in Reihenfolge der Positionen;
 ihre Achspunkte gehen ins Bauprotokoll (masse_pruefen).
 
@@ -136,6 +137,6 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    positionen_festlegen(ctx, feature, se, f["positionen"], f"{f['id']}_positionen")
+    positionen_festlegen(ctx, feature, se, f["positionen"], f"{f['id']}_positionen", f"{ctx.pfad(f['id'])}.positionen")
     _neu_aufbauen_bis_vollstaendig(ctx, feature, f["id"], punkte)
     return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)

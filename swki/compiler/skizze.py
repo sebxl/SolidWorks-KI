@@ -17,7 +17,7 @@ from swki.compiler.fehler import (
 from swki.compiler.topologie import loese_flaeche
 from swki.spec.ausdruck import ist_ausdruck
 from swki.spec.konturen import bogenende_koordinate, eckradien_roh, kontur_punkte_roh
-from swki.verbindung import mm
+from swki.verbindung import in_mm, mm
 
 STANDARD = {"vorne": 0, "oben": 1, "rechts": 2}  # Index in sw.standardebenen()
 NORMALE = {"vorne": (0.0, 0.0, 1.0), "oben": (0.0, 1.0, 0.0), "rechts": (1.0, 0.0, 0.0)}
@@ -33,6 +33,7 @@ SW_SKIZZE_LINIE = 0  # swSketchSegments_e.swSketchLINE
 SW_GEGEN_UHRZEIGERSINN = 1  # CreateArc/CreateSketchSlot Direction: +1 = gegen den Uhrzeigersinn (Skizzensystem)
 SW_DECKUNGSGLEICH = 9  # swConstraintType_e.swConstraintType_COINCIDENT
 SW_BEZIEHUNG_PUNKT = 2  # swSketchRelationEntityTypes_e.swSketchRelationEntityType_Point
+ART_SKRIPT = "skript"  # art im Maßprotokoll für Maße ohne Spec-Pfad (Notausgang-Skripte); der Pfad ist dann das Feature
 
 
 def schluessel_element(element, typ: int) -> tuple:
@@ -78,7 +79,30 @@ def ebene_aus_flaeche(flaeche: Flaeche) -> Skizzenebene:
     return Skizzenebene(flaeche.objekt, orientierung, lage, flaeche.normale)
 
 
-def ebene_aufloesen(ctx, ebene) -> Skizzenebene:
+def feld_pfad(pfad, typ: str, feld: str):
+    """Spec-Pfad eines Felds im Skizzenelement: "<pfad>.<typ>.<feld>" (pfad = Pfad des Elements, typ = sein Schlüssel,
+    z. B. "kreis"). Ein Dict ordnet jedem Feld seinen Pfad selbst zu (Bohrungen: Lage in positionen[k], Durchmesser am
+    Feature); None (Notausgang-Skript, kein Spec-Pfad) bleibt None."""
+    if pfad is None:
+        return None
+    if isinstance(pfad, dict):
+        return pfad[feld]
+    return f"{pfad}.{typ}.{feld}"
+
+
+def _index(pfad, k: int):
+    return None if pfad is None else f"{pfad}[{k}]"
+
+
+def _massziel(ctx, pfad, art: str) -> tuple[str, str]:
+    """Pfad und art eines Maßes fürs Maßprotokoll; ohne Spec-Pfad der Pfad des laufenden Features mit art "skript"."""
+    if pfad is not None:
+        return pfad, art
+    return (ctx.pfad(ctx.knoten) if ctx.knoten else ""), ART_SKRIPT
+
+
+def ebene_aufloesen(ctx, ebene, pfad: str | None = None) -> Skizzenebene:
+    """Skizzenebene der Spezifikation; pfad = Spec-Pfad dieser Ebene (für das Maßprotokoll des Versatzes)."""
     if isinstance(ebene, Skizzenebene):
         return ebene
     ebenen = sw.standardebenen(ctx.model)
@@ -95,7 +119,8 @@ def ebene_aufloesen(ctx, ebene) -> Skizzenebene:
             raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Versetzte Ebene {basis} {abstand:g} mm", schritt="ebene")
         # Das Maß ist der Betrag, die Richtung steckt im Umkehren-Flag (live belegt: D1@<Ebenenname>).
         # Wechselt der Parameter später das Vorzeichen, kippt die Ebene nicht mit – dann neu bauen.
-        ctx.verknuepfe(f"D1@{neu.Name}", ebene["versatz"]["abstand"], -1 if abstand < 0 else 1)
+        ziel, art = _massziel(ctx, None if pfad is None else f"{pfad}.versatz.abstand", "versatz")
+        ctx.mass(f"D1@{neu.Name}", ebene["versatz"]["abstand"], ziel, art, -1 if abstand < 0 else 1)
         return Skizzenebene(neu, basis, abstand, NORMALE[basis])
     return ebene_aus_flaeche(loese_flaeche(ctx, ebene))
 
@@ -123,6 +148,8 @@ class _Mass:
     name: str  # z. B. "D3" (vor dem Umbenennen der Skizze)
     roh: object  # Zahl oder Ausdruck aus der Spezifikation
     vorzeichen: int = 1  # Maße sind Beträge: -1, wenn der Maßwert dem negierten Ausdruck entspricht
+    pfad: str = ""  # Spec-Pfad des Werts (Maßprotokoll)
+    art: str = ART_SKRIPT  # lage | groesse | radius | winkel | konstruktion | skript
 
 
 class Skizzierer:
@@ -153,15 +180,19 @@ class Skizzierer:
     def _text(self, u: float, v: float) -> tuple[float, float, float]:
         return tuple(mm(c) for c in _position_mm(self.se, u, v))
 
-    def _merke(self, anzeige, roh, vorzeichen: int = 1) -> None:
+    def _eintrag(self, name: str, roh, vorzeichen: int, pfad: str | None, art: str) -> _Mass:
+        ziel, art = _massziel(self.ctx, pfad, art)
+        return _Mass(name, roh, vorzeichen, ziel, art)
+
+    def _merke(self, anzeige, roh, vorzeichen: int = 1, pfad: str | None = None, art: str = "groesse") -> None:
         if anzeige is None:
             raise BauFehler(SKIZZE_UNGUELTIG, "Maß konnte nicht angelegt werden", schritt="skizze")
-        self.masse.append(_Mass(anzeige.GetDimension2(0).Name, roh, vorzeichen))
+        self.masse.append(self._eintrag(anzeige.GetDimension2(0).Name, roh, vorzeichen, pfad, art))
 
-    def groesse(self, segment, text_uv: tuple[float, float], roh) -> None:
+    def groesse(self, segment, text_uv: tuple[float, float], roh, pfad: str | None = None, art: str = "groesse") -> None:
         sw.auswahl_leeren(self.model)
         sw.waehle(self.model, segment, 0)
-        self._merke(self.model.AddDimension2(*self._text(*text_uv)), roh)
+        self._merke(self.model.AddDimension2(*self._text(*text_uv)), roh, 1, pfad, art)
         sw.auswahl_leeren(self.model)
 
     def hat_punkt(self, u, v) -> bool:
@@ -174,10 +205,11 @@ class Skizzierer:
                 return p
         raise BauFehler(SKIZZE_UNGUELTIG, f"Skizzenpunkt ({x}, {y}) nicht gefunden", schritt="skizze")
 
-    def lage(self, roh_uv, text_uv: tuple[float, float], nur: int | None = None) -> None:
+    def lage(self, roh_uv, text_uv: tuple[float, float], nur: int | None = None, pfad: str | None = None) -> None:
         """Kennpunkt (u, v) zum Ursprung festlegen: je Richtung Maß, bei 0 Ausrichtung, bei (0, 0) deckungsgleich.
 
         nur = 0 bzw. 1: nur die u- bzw. v-Lage (Endpunkt eines Bogens, dessen Radius schon feststeht; S10 Frage 5).
+        pfad: Spec-Pfad des Punkts (Liste [u, v]); das Maß der Koordinate a trägt "<pfad>[a]" ins Maßprotokoll.
         """
         uv = (self.ctx.wert(roh_uv[0]), self.ctx.wert(roh_uv[1]))
         x, y = self.zu_skizze(*uv)
@@ -202,8 +234,8 @@ class Skizzierer:
                 continue
             text = self._text(*text_uv)
             anzeige = self.model.AddHorizontalDimension2(*text) if waagrecht else self.model.AddVerticalDimension2(*text)
-            roh = roh_uv[index] if self.lage_bindbar else wert
-            self._merke(anzeige, roh, _vorzeichen(wert) * richtung)
+            roh = roh_uv[index] if self.lage_bindbar else in_mm(wert)
+            self._merke(anzeige, roh, _vorzeichen(wert) * richtung, _index(pfad, index), "lage")
         sw.auswahl_leeren(self.model)
 
     def _massnamen(self) -> list[str]:
@@ -221,7 +253,7 @@ class Skizzierer:
         return [s for s in linien for p in (s.GetStartPoint2, s.GetEndPoint2)
                 if abs(p.X - x) < 1e-8 and abs(p.Y - y) < 1e-8]
 
-    def verrunde(self, linien: list, ecke_uv: tuple[float, float], roh_radius) -> None:
+    def verrunde(self, linien: list, ecke_uv: tuple[float, float], roh_radius, pfad: str | None = None) -> None:
         """Ecke (u, v) mit Skizzenverrundung runden. Die beiden Linien der Ecke werden gewählt; Maße der Ecke bleiben
         am virtuellen Schnittpunkt (swConstrainedCornerKeepGeometry). CreateFillet legt selbst ein maßgebendes
         Radiusmaß an (S10 Frage 5): es wird über den Vergleich der Maßnamen vor/nach dem Aufruf gefunden und wie
@@ -244,11 +276,12 @@ class Skizzierer:
         if len(neu) != 1:
             raise BauFehler(SKIZZE_UNGUELTIG, f"CreateFillet an Ecke {ecke_uv}: {len(neu)} neue Maße statt 1 ({neu})",
                             schritt="skizze")
-        self.masse.append(_Mass(neu[0], roh_radius))
+        self.masse.append(self._eintrag(neu[0], roh_radius, 1, pfad, "radius"))
 
-    def _richtung_zu_u(self, linie, mitte_uv: tuple[float, float], roh_winkel, mitte_punkt) -> None:
+    def _richtung_zu_u(self, linie, mitte_uv: tuple[float, float], roh_winkel, mitte_punkt, pfad: str | None = None) -> None:
         """Richtung einer Linie zur u-Achse: 0°/90° über Beziehungen, sonst Winkelmaß zu einer u-parallelen
-        Hilfslinie durch mitte_uv (Anfang per sgCOINCIDENT an mitte_punkt, den Slot-Mittelpunkt, gebunden, S10 Frage 5)."""
+        Hilfslinie durch mitte_uv (Anfang per sgCOINCIDENT an mitte_punkt, den Slot-Mittelpunkt, gebunden, S10 Frage 5).
+        pfad: Spec-Pfad des Winkels; die Hilfslinie (Konstruktionslänge) trägt ihn als art "konstruktion"."""
         winkel = self.ctx.wert(roh_winkel) % 180
         u_ist_x = self.x_von[0] == 0
         sw.auswahl_leeren(self.model)
@@ -274,15 +307,15 @@ class Skizzierer:
         sw.waehle(self.model, hilfe, 0)
         self.model.SketchAddConstraints("sgHORIZONTAL2D" if u_ist_x else "sgVERTICAL2D")
         sw.auswahl_leeren(self.model)
-        self.groesse(hilfe, (mu_ + _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM), 2 * _MASS_ABSTAND_MM)
+        self.groesse(hilfe, (mu_ + _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM), 2 * _MASS_ABSTAND_MM, pfad, "konstruktion")
         sw.waehle(self.model, linie, 0)
         sw.waehle(self.model, hilfe, 0, anhaengen=True)
         halb = math.radians(winkel) / 2
         text = (mu_ + 3 * _MASS_ABSTAND_MM * math.cos(halb), mv + 3 * _MASS_ABSTAND_MM * math.sin(halb))
-        self._merke(self.model.AddDimension2(*self._text(*text)), roh_winkel)
+        self._merke(self.model.AddDimension2(*self._text(*text)), roh_winkel, 1, pfad, "winkel")
         sw.auswahl_leeren(self.model)
 
-    def _langloch(self, l: dict) -> None:
+    def _langloch(self, l: dict, pfad=None) -> None:
         """Langloch (CreateSketchSlot, Mittelpunkt-Typ, Länge Mitte–Mitte): Breite = Abstand der geraden Seiten,
         Länge = Mittellinie, Richtung zu u, Lage der Mitte (S10 Frage 5)."""
         w = self.ctx.wert
@@ -318,16 +351,18 @@ class Skizzierer:
         sw.auswahl_leeren(self.model)
         sw.waehle(self.model, seiten[0], 0)
         sw.waehle(self.model, seiten[1], 0, anhaengen=True)
-        self._merke(self.model.AddDimension2(*self._text(mu_, mv + breite / 2 + _MASS_ABSTAND_MM)), l["breite"])
+        self._merke(self.model.AddDimension2(*self._text(mu_, mv + breite / 2 + _MASS_ABSTAND_MM)), l["breite"], 1,
+                    feld_pfad(pfad, "langloch", "breite"), "groesse")
         sw.auswahl_leeren(self.model)
-        self.groesse(achsen[0], (mu_, mv - breite / 2 - _MASS_ABSTAND_MM), l["laenge"])
+        self.groesse(achsen[0], (mu_, mv - breite / 2 - _MASS_ABSTAND_MM), l["laenge"], feld_pfad(pfad, "langloch", "laenge"))
         mitte_punkt = nut.GetCenterPointHandle
         if mitte_punkt is None:
             raise BauFehler(SKIZZE_UNGUELTIG, "Langloch: Mittelpunkt (GetCenterPointHandle) nicht verfügbar", schritt="skizze")
-        self._richtung_zu_u(achsen[0], (mu_, mv), l.get("winkel", 0), mitte_punkt)
-        self.lage(l["mitte"], (mu_ - laenge / 2 - _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM))
+        self._richtung_zu_u(achsen[0], (mu_, mv), l.get("winkel", 0), mitte_punkt, feld_pfad(pfad, "langloch", "winkel"))
+        self.lage(l["mitte"], (mu_ - laenge / 2 - _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM),
+                  pfad=feld_pfad(pfad, "langloch", "mitte"))
 
-    def _kontur(self, k: dict) -> None:
+    def _kontur(self, k: dict, pfad=None) -> None:
         """Geschlossener Linienzug aus Linien und Bögen (Bögen gegen den Uhrzeigersinn in (u, v)). Bestimmung:
         Eckpunkte und Bogenmittelpunkte zum Ursprung; der Endpunkt eines Bogens nur in einer Koordinate
         (bogenende_koordinate), die andere folgt aus dem Radius (S10 Frage 5). Benachbarte Segmente teilen ihre
@@ -347,21 +382,24 @@ class Skizzierer:
                 raise BauFehler(SKIZZE_UNGUELTIG, f"Kontur: Segment {i + 1} nicht erzeugt", schritt="skizze")
         bemasst: set[tuple[float, float]] = set()
 
-        def festlegen(p_roh, nur: int | None = None) -> None:
+        def festlegen(p_roh, p_pfad, nur: int | None = None) -> None:
             q = (w(p_roh[0]), w(p_roh[1]))
             schluessel = (round(q[0], 6), round(q[1], 6))
             if schluessel in bemasst:
                 return
             bemasst.add(schluessel)
-            self.lage(p_roh, (q[0] + _MASS_ABSTAND_MM, q[1] + _MASS_ABSTAND_MM), nur)
+            self.lage(p_roh, (q[0] + _MASS_ABSTAND_MM, q[1] + _MASS_ABSTAND_MM), nur, p_pfad)
 
+        segmente = feld_pfad(pfad, "kontur", "segmente")
         for i, s in enumerate(k["segmente"]):
+            segment = _index(segmente, i)
             if "bogen" in s:
-                festlegen(s["mitte"])
+                festlegen(s["mitte"], None if segment is None else f"{segment}.mitte")
                 mitte = (w(s["mitte"][0]), w(s["mitte"][1]))
-                festlegen(roh[i + 1], bogenende_koordinate(uv[i + 1], mitte))
+                festlegen(roh[i + 1], None if segment is None else f"{segment}.bogen",
+                          bogenende_koordinate(uv[i + 1], mitte))
             else:
-                festlegen(roh[i + 1])
+                festlegen(roh[i + 1], None if segment is None else f"{segment}.linie")
 
     def _linienzug(self, punkte: list[tuple[float, float]]) -> list:
         """Geschlossener Linienzug durch die Skizzenpunkte (m); benachbarte Linien teilen ihre Endpunkte."""
@@ -373,7 +411,9 @@ class Skizzierer:
             linien.append(linie)
         return linien
 
-    def element(self, element: dict) -> None:
+    def element(self, element: dict, pfad=None) -> None:
+        """Ein Skizzenelement anlegen und bemaßen. pfad: Spec-Pfad des Elements (z. B. "features[0].skizze.elemente[1]",
+        feld_pfad ergänzt Typ und Feld); None bei Notausgang-Skripten."""
         w = self.ctx.wert
         if "rechteck" in element:
             r = element["rechteck"]
@@ -391,13 +431,16 @@ class Skizzierer:
                 sw.waehle(self.model, linie, 0)
                 self.model.SketchAddConstraints("sgHORIZONTAL2D" if abs(p.Y - q.Y) < 1e-9 else "sgVERTICAL2D")
             sw.auswahl_leeren(self.model)
-            self.groesse(seg[0], (mu_, mv - h / 2 - _MASS_ABSTAND_MM), r["breite"])  # seg[0] läuft in u, seg[1] in v
-            self.groesse(seg[1], (mu_ - b / 2 - _MASS_ABSTAND_MM, mv), r["hoehe"])
+            # seg[0] läuft in u, seg[1] in v
+            self.groesse(seg[0], (mu_, mv - h / 2 - _MASS_ABSTAND_MM), r["breite"], feld_pfad(pfad, "rechteck", "breite"))
+            self.groesse(seg[1], (mu_ - b / 2 - _MASS_ABSTAND_MM, mv), r["hoehe"], feld_pfad(pfad, "rechteck", "hoehe"))
             ecke = (_halb_weg(r["mitte"][0], r["breite"]), _halb_weg(r["mitte"][1], r["hoehe"]))
-            self.lage(ecke, (mu_ - b / 2 - _MASS_ABSTAND_MM, mv - h / 2 - _MASS_ABSTAND_MM))
+            self.lage(ecke, (mu_ - b / 2 - _MASS_ABSTAND_MM, mv - h / 2 - _MASS_ABSTAND_MM),
+                      pfad=feld_pfad(pfad, "rechteck", "mitte"))
             if "radius" in r:
                 for du, dv in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-                    self.verrunde(list(seg), (mu_ + du * b / 2, mv + dv * h / 2), r["radius"])
+                    self.verrunde(list(seg), (mu_ + du * b / 2, mv + dv * h / 2), r["radius"],
+                                  feld_pfad(pfad, "rechteck", "radius"))
         elif "kreis" in element:
             k = element["kreis"]
             mu_, mv = w(k["mitte"][0]), w(k["mitte"][1])
@@ -406,37 +449,46 @@ class Skizzierer:
             seg = self.sm.CreateCircleByRadius(x, y, 0.0, mm(d / 2))
             if seg is None:
                 raise BauFehler(SKIZZE_UNGUELTIG, "CreateCircleByRadius fehlgeschlagen", schritt="skizze")
-            self.groesse(seg, (mu_ + d / 2 + _MASS_ABSTAND_MM, mv + _MASS_ABSTAND_MM), k["durchmesser"])
-            self.lage(k["mitte"], (mu_ - d / 2 - _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM))
+            self.groesse(seg, (mu_ + d / 2 + _MASS_ABSTAND_MM, mv + _MASS_ABSTAND_MM), k["durchmesser"],
+                         feld_pfad(pfad, "kreis", "durchmesser"))
+            self.lage(k["mitte"], (mu_ - d / 2 - _MASS_ABSTAND_MM, mv - _MASS_ABSTAND_MM),
+                      pfad=feld_pfad(pfad, "kreis", "mitte"))
         elif "polygon" in element:
             p = element["polygon"]
             uv = [(w(q[0]), w(q[1])) for q in p["punkte"]]
             linien = self._linienzug([self.zu_skizze(*q) for q in uv])
-            for q in p["punkte"]:
-                self.lage(q, (w(q[0]) + _MASS_ABSTAND_MM, w(q[1]) + _MASS_ABSTAND_MM))
+            punkte = feld_pfad(pfad, "polygon", "punkte")
+            for k, q in enumerate(p["punkte"]):
+                self.lage(q, (w(q[0]) + _MASS_ABSTAND_MM, w(q[1]) + _MASS_ABSTAND_MM), pfad=_index(punkte, k))
             if "radien" in p:
-                for ecke, radius in zip(uv, eckradien_roh(p)):
-                    self.verrunde(linien, ecke, radius)
+                radien = feld_pfad(pfad, "polygon", "radien")
+                for k, (ecke, radius) in enumerate(zip(uv, eckradien_roh(p))):
+                    self.verrunde(linien, ecke, radius, _index(radien, k) if isinstance(p["radien"], list) else radien)
         elif "langloch" in element:
-            self._langloch(element["langloch"])
+            self._langloch(element["langloch"], pfad)
         elif "kontur" in element:
-            self._kontur(element["kontur"])
+            self._kontur(element["kontur"], pfad)
         else:
             m = element["mittellinie"]
             xa, ya = self.zu_skizze(w(m["von"][0]), w(m["von"][1]))
             xb, yb = self.zu_skizze(w(m["bis"][0]), w(m["bis"][1]))
             if self.sm.CreateCenterLine(xa, ya, 0.0, xb, yb, 0.0) is None:
                 raise BauFehler(SKIZZE_UNGUELTIG, "CreateCenterLine fehlgeschlagen", schritt="skizze")
-            for q in (m["von"], m["bis"]):
-                self.lage(q, (w(q[0]) - _MASS_ABSTAND_MM, w(q[1]) + _MASS_ABSTAND_MM))
+            for feld in ("von", "bis"):
+                q = m[feld]
+                self.lage(q, (w(q[0]) - _MASS_ABSTAND_MM, w(q[1]) + _MASS_ABSTAND_MM),
+                          pfad=feld_pfad(pfad, "mittellinie", feld))
 
 
-def skizziere(ctx, ebene, elemente: list[dict], name: str):
+def skizziere(ctx, ebene, elemente: list[dict], name: str, pfade: list | None = None, ebene_pfad: str | None = None):
     """Erzeugt eine voll bestimmte Skizze und benennt sie. Rückgabe: (Skizzen-Feature, Skizzenebene).
 
-    Alle Größen- und Lagemaße werden per Gleichung an Parameter gebunden, wenn der Wert ein Ausdruck ist.
+    Alle Größen- und Lagemaße gehen mit ihrem Spec-Pfad ins Maßprotokoll (ctx.mass); per Gleichung an Parameter gebunden
+    werden sie nur mit ctx.gleichungen und bei einem Ausdruck.
+    pfade[k]: Spec-Pfad des Elements k (z. B. "features[0].skizze.elemente[1]"; bei Bohrungen ein Dict, das Lage und
+    Durchmesser zuordnet, siehe feld_pfad); None bei Notausgang-Skripten. ebene_pfad: Spec-Pfad der Ebene.
     """
-    se = ebene_aufloesen(ctx, ebene)
+    se = ebene_aufloesen(ctx, ebene, ebene_pfad)
     model, sm = ctx.model, ctx.model.SketchManager
     sw.auswahl_leeren(model)
     sw.waehle(model, se.objekt, 0)
@@ -445,8 +497,8 @@ def skizziere(ctx, ebene, elemente: list[dict], name: str):
     try:
         skizzierer = Skizzierer(ctx, se, sm.ActiveSketch)
         with sw.einstellung(ctx.app, sw.SW_INPUT_DIM_VAL_ON_CREATE, False), sw.ohne_inferenz(sm):
-            for element in elemente:
-                skizzierer.element(element)
+            for k, element in enumerate(elemente):
+                skizzierer.element(element, None if pfade is None else pfade[k])
         status, masse = sm.ActiveSketch.GetConstrainedStatus, skizzierer.masse
     finally:
         sm.InsertSketch(True)
@@ -455,7 +507,7 @@ def skizziere(ctx, ebene, elemente: list[dict], name: str):
     feature = sw.letztes_feature(model)
     feature.Name = name
     for m in masse:
-        ctx.verknuepfe(f"{m.name}@{name}", m.roh, m.vorzeichen)
+        ctx.mass(f"{m.name}@{name}", m.roh, m.pfad, m.art, m.vorzeichen)
     return feature, se
 
 
@@ -470,9 +522,10 @@ def positionsskizze(feature):
     raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"{feature.Name}: keine Positionsskizze gefunden", schritt="skizze")
 
 
-def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name: str) -> None:
+def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name: str, pfad: str) -> None:
     """Die erste Position steht schon (SelectByRay); weitere als Skizzenpunkte in die Positionsskizze einfügen, alle
-    Punkte zum Ursprung bemaßen, die Skizze benennen und die Maße an Parameter binden (S10 Frage 2)."""
+    Punkte zum Ursprung bemaßen, die Skizze benennen und die Maße ins Maßprotokoll tragen (S10 Frage 2).
+    pfad: Spec-Pfad der Positionsliste (z. B. "features[1].positionen"); die Lage von Punkt k trägt "<pfad>[k][a]"."""
     skizze = positionsskizze(feature)
     model, sm = ctx.model, ctx.model.SketchManager
     sw.auswahl_leeren(model)
@@ -486,8 +539,8 @@ def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name:
                 x, y = skizzierer.zu_skizze(ctx.wert(u), ctx.wert(v))
                 if sm.CreatePoint(x, y, 0.0) is None:
                     raise BauFehler(SKIZZE_UNGUELTIG, f"Positionspunkt ({u}, {v}) nicht angelegt", schritt="skizze")
-            for p in positionen:
-                skizzierer.lage(p, (ctx.wert(p[0]) + _MASS_ABSTAND_MM, ctx.wert(p[1]) + _MASS_ABSTAND_MM))
+            for k, p in enumerate(positionen):
+                skizzierer.lage(p, (ctx.wert(p[0]) + _MASS_ABSTAND_MM, ctx.wert(p[1]) + _MASS_ABSTAND_MM), pfad=_index(pfad, k))
         status, masse = sm.ActiveSketch.GetConstrainedStatus, skizzierer.masse
     finally:
         sm.InsertSketch(True)
@@ -496,7 +549,7 @@ def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name:
                         schritt="skizze")
     skizze.Name = name
     for m in masse:
-        ctx.verknuepfe(f"{m.name}@{name}", m.roh, m.vorzeichen)
+        ctx.mass(f"{m.name}@{name}", m.roh, m.pfad, m.art, m.vorzeichen)
 
 
 def richtung(se: Skizzenebene, umkehren: bool) -> Vektor:

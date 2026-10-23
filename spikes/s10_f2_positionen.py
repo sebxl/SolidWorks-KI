@@ -85,7 +85,7 @@ def variante_b(app, r) -> dict:
             sm.InsertSketch(True)
         skizze.Name = "f2_positionen"
         for m in masse:
-            ctx.verknuepfe(f"{m.name}@f2_positionen", m.roh, m.vorzeichen)
+            ctx.mass(f"{m.name}@f2_positionen", m.roh, m.pfad, m.art, m.vorzeichen)
         d["rebuild"] = model.EditRebuild3
         d["status"] = skizze.GetSpecificFeature2.GetConstrainedStatus
         d["punkte"] = f.GetDefinition.GetSketchPointCount
