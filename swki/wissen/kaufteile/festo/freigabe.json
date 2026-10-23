@@ -33,5 +33,10 @@
     "pruefsumme": "88fd3fbb9bf4c0db290afb94db55c2cad263e97f190e2bbab50d2970b1bc0beb",
     "freigegeben": "2026-10-10T21:45:33",
     "kopie_sha256": "79abec0cffbc6759a3164335d9a92e3295a20f5edbc72781e54fe5c3db4107b9"
+  },
+  "adnm-25-a-p-a-52z1-82z2.yaml": {
+    "pruefsumme": "b080f2ed23e0a153438c773ee558f21fcc62edea0b29313dee481c9f6da1be95",
+    "freigegeben": "2026-10-17T18:54:48",
+    "kopie_sha256": "8e27efa2f9c3bfa29588ad9e5f3f54884f23f35f8d5f42dd89084ea370a7b36a"
   }
 }
