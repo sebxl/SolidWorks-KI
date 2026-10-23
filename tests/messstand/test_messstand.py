@@ -50,7 +50,7 @@ PRUEFER = [
 def test_kategorien():
     assert transkript.kategorie("Bash", {"command": "x -m swki pruefen a"}) == "pruefen"
     assert transkript.kategorie("Bash", {"command": "x -m swki status a"}) == "swki_sonst"
-    assert transkript.kategorie("Bash", {"command": "x -m werkzeuge.sw_neustart"}) == "werkzeuge"
+    assert transkript.kategorie("Bash", {"command": "x -m werkzeuge.sw_neustart"}) == "neustart"
     assert transkript.kategorie("Agent", {"subagent_type": "pruefer"}) == "pruefer"
     assert transkript.kategorie("Grep", {}) == "lesen"
 
@@ -100,7 +100,7 @@ def test_protokolle(tmp_path):
     _schreibe(tmp_path, "a.lauf-3.pruefer.json", {"bestanden": True, "maengel": []})
     k = protokolle.auswerten(tmp_path)
     assert k == {"laeufe": 3, "bauabbrueche": 1, "pruefmaengel": 1, "pruefer_urteile": 2, "pruefer_maengel": 2,
-                 "letzter_lauf": 3, "pruefer_bestanden": True}
+                 "letzter_lauf": 3, "pruefer_bestanden": True, "phasen_s": {}}
 
 
 def test_ergebnisdatei(tmp_path):

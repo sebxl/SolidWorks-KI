@@ -40,6 +40,8 @@ def kategorie(name: str, eingabe: dict) -> str:
                 return k
         if befehle:
             return "swki_sonst"
+        if "-m werkzeuge.sw_neustart" in befehl:
+            return "neustart"
         return "werkzeuge" if "-m werkzeuge" in befehl else "shell"
     if name in ("Agent", "Task"):
         return "pruefer" if eingabe.get("subagent_type") == "pruefer" else "subagent"

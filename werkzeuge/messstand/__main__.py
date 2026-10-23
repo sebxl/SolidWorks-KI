@@ -4,7 +4,12 @@
   vorbereiten <durchgang> <aufgabe> <nr>     Worktree + Auftrag anlegen, SolidWorks neu starten, Abtaster starten;
                                              gibt den Prompt für den Konstruktions-Agenten aus
   abschliessen <lauf> --agent <id>           Abtaster stoppen, Transkripte/Protokolle auswerten, STL vergleichen → kpi.json
-  score <durchgang> [--baseline 0]           Score des Durchgangs → score.json
+  score <durchgang> [--baseline 0]           Score des Durchgangs → score.json (Messstand 09.10.)
+  btp <durchgang> [--vergleich n]            Score nach dem Bewertungsbogen (Spec 2026-10-23) → btp.json
+  vorlage <aufgabe> <quelle> [--referenz]    Auftrag als Vorlage (bzw. Referenz-Specs) der Änderungsaufgabe einfrieren
+  fallen bauen [<id> …]                      Präzisions-Fallen bauen und prüfen (MESSSTAND/fallen/<id>/stand.json)
+  fallen auftraege <durchgang>               Prüf-Prompts je Falle (×3) → durchgang-<n>/fallen/auftraege.json
+  fallen auswerten <durchgang>               Urteile auswerten → durchgang-<n>/fallen/fallen.json
   aufraeumen <durchgang>                     Worktrees des Durchgangs entfernen
   abtasten <datei> <stopp>                   (intern) Speicher-Abtaster
 """
@@ -19,10 +24,15 @@ from datetime import datetime
 from pathlib import Path
 
 from swki.konfig import lade_rechner
-from werkzeuge.messstand import abtaster, protokolle, score, transkript
-from werkzeuge.messstand.umgebung import (REPO, auftrag_anlegen, auftrag_name, aufgaben, lauf_id, lauf_ordner,
-                                          lies_json, messordner, prompt, schreibe_json, worktree_anlegen,
-                                          worktree_entfernen)
+from werkzeuge.messstand import abtaster, btp, fallen, protokolle, score, transkript
+from werkzeuge.messstand.umgebung import (QUELLREPO, REPO, auftrag_anlegen, auftrag_name, aufgaben, lauf_id,
+                                          lauf_ordner, lies_json, messordner, prompt, schreibe_json,
+                                          vorlage_kopieren, worktree_anlegen, worktree_entfernen)
+
+
+def _neustart() -> dict:
+    from werkzeuge.sw_neustart import neustart
+    return neustart()
 
 
 def _swki(*args, cwd=REPO) -> dict:
@@ -48,17 +58,21 @@ def referenz(args) -> dict:
     auftrag = REPO / "auftraege" / f"MESSREF-{a.id}"
     if auftrag.exists():
         shutil.rmtree(auftrag)
-    shutil.copytree(REPO / a.referenz["spec_ordner"], auftrag,
+    quelle = Path(a.referenz["spec_ordner"].format(arbeitsordner=r.arbeitsordner))
+    quelle = quelle if quelle.is_absolute() else REPO / quelle
+    shutil.copytree(quelle, auftrag,
                     ignore=shutil.ignore_patterns("__pycache__", "*.py", "protokolle", "*.freigegeben.yaml",
                                                   "freigabe.json"))
     for unter in ("skripte",):   # Skripte gehören zum Bauweg
-        q = REPO / a.referenz["spec_ordner"] / unter
+        q = quelle / unter
         if q.is_dir():
             shutil.copytree(q, auftrag / unter, dirs_exist_ok=True)
     spec = auftrag / a.referenz["spec"]
     fr = _swki("freigeben", str(spec))
     if fr["_exit"]:
         return {"aufgabe": a.id, "status": "fehler", "freigeben": fr}
+    if a.art == "baugruppe":
+        _neustart()
     bau = _swki("bauen", str(spec))
     if bau["_exit"]:
         return {"aufgabe": a.id, "status": "fehler", "bauen": bau}
@@ -82,22 +96,46 @@ def vorbereiten(args) -> dict:
     alt = lade_rechner().arbeitsordner / auftrag_name(lauf)
     if alt.exists():
         shutil.rmtree(alt)
-    from werkzeuge.sw_neustart import neustart
-    neu = neustart()
+    ausgang = _ausgangslauf(wt, auftrag, a) if a.ausgangslauf else None
+    if ausgang and ausgang.get("status") == "fehler":
+        return {"lauf": lauf, "status": "fehler", "ausgangslauf": ausgang}
+    neu = _neustart()
     pid = abtaster.starte(lo / "speicher.jsonl", lo / "abtaster.stopp")
     text = prompt(lauf, wt, a)
     (lo / "prompt.md").write_text(text, encoding="utf-8")
     info = {"lauf": lauf, "durchgang": args.durchgang, "aufgabe": a.id, "nr": args.nr, "commit": commit,
             "wt": str(wt), "auftrag": str(auftrag), "abtaster_pid": pid, "neustart": neu,
+            "ausgangslauf": ausgang["lauf"] if ausgang else None,
             "vorbereitet": datetime.now().isoformat(timespec="seconds")}
     schreibe_json(lo / "lauf.json", info)
     return {**info, "prompt": text}
 
 
+def _ausgangslauf(wt: Path, auftrag: Path, a) -> dict:
+    """Vorlage mit dem gemessenen Stand bauen und prüfen (Code des Worktrees), Prüfer-Urteil wie im Betrieb bestanden.
+    Liegt außerhalb von zeit_s (Bogen §2.1)."""
+    spec = auftrag / a.spec
+    beginn = time.time()
+    _neustart()
+    bau = _swki("bauen", str(spec), cwd=wt)
+    if bau["_exit"] or bau.get("status") != "ok":
+        return {"status": "fehler", "schritt": "bauen", "bauen": bau}
+    _neustart()
+    pr = _swki("pruefen", str(spec), "--lauf", str(bau["lauf"]), cwd=wt)
+    if pr["_exit"] or not pr.get("bestanden"):
+        return {"status": "fehler", "schritt": "pruefen", "lauf": bau["lauf"],
+                "pruefen": {k: pr.get(k) for k in ("bestanden", "maengel", "stdout", "stderr")}}
+    urteil = auftrag / "protokolle" / f"{spec.stem}.lauf-{bau['lauf']}.pruefer.json"
+    urteil.write_text(json.dumps({"bestanden": True, "maengel": [], "hinweis": "Ausgangslauf des Messstands"},
+                                 ensure_ascii=False), encoding="utf-8")
+    return {"status": "ok", "lauf": bau["lauf"], "dauer_s": round(time.time() - beginn, 1)}
+
+
 def _verboten(a) -> list[str]:
     r = lade_rechner()
-    return [str(REPO), str(r.arbeitsordner / "AP68-Pruefstation"), str(messordner() / "referenz"),
-            *(str(REPO / v) for v in a.verboten)]
+    return [str(QUELLREPO), str(REPO), str(r.arbeitsordner / "AP68-Pruefstation"), str(messordner() / "referenz"),
+            str(messordner() / "vorlagen"), str(messordner() / "fallen"),
+            *(str(QUELLREPO / v) for v in a.verboten)]
 
 
 def abschliessen(args) -> dict:
@@ -120,7 +158,8 @@ def abschliessen(args) -> dict:
     tk = transkript.auswerten(transkript.lade(pfad), unter, _verboten(a))
 
     auftrag = Path(info["auftrag"])
-    pk = protokolle.auswerten(auftrag)
+    ab = info.get("ausgangslauf")
+    pk = protokolle.auswerten(auftrag, ab_lauf=ab + 1 if ab else None)
     erg = {"richtig": False, "vergleich": None, "ergebnisdatei": None}
     if pk["letzter_lauf"]:
         datei = protokolle.ergebnisdatei(r.arbeitsordner / auftrag.name / f"lauf-{pk['letzter_lauf']}")
@@ -138,6 +177,8 @@ def abschliessen(args) -> dict:
     kpi = {"lauf": args.lauf, "durchgang": info["durchgang"], "aufgabe": a.id, "commit": info["commit"],
            **tk, **pk, **sp, "bestanden": pk["pruefer_bestanden"], **erg,
            "haenger": args.haenger, "abgeschlossen": datetime.now().isoformat(timespec="seconds")}
+    if args.wiederholung_von:
+        kpi |= {"wiederholung_von": args.wiederholung_von, "original_fehler_zaehlen": args.original_fehler_zaehlen}
     schreibe_json(lo / "kpi.json", kpi)
     kurz = {k: kpi[k] for k in ("lauf", "zeit_s", "zeit_anteile_s", "tool_aufrufe", "laeufe", "bauabbrueche",
                                  "pruefmaengel", "pruefer_maengel", "freigaben", "speicher_spitze_mb",
@@ -160,6 +201,106 @@ def score_befehl(args) -> dict:
     return erg
 
 
+def btp_befehl(args) -> dict:
+    """Score nach dem Bewertungsbogen; Bezug = Durchgang 0, Vergleich (optional) = aktueller Stand."""
+    b = btp.bezug(_kpis(0))
+
+    def bewertet(n: int) -> dict:
+        f = _fallen_ordner(n) / "fallen.json"
+        if not f.exists():
+            raise SystemExit(f"{f} fehlt – zuerst: fallen auswerten {n}")
+        return btp.bewerte(_kpis(n), lies_json(f), b)
+
+    erg = bewertet(args.durchgang)
+    if args.vergleich is not None:
+        alt, d0 = bewertet(args.vergleich), bewertet(0)
+        ok, grund = btp.besser(erg, alt, d0)
+        erg["entscheidung"] = {"gegen": args.vergleich, "besser": ok, "grund": grund, "score_vorher": alt["score"]}
+    erg["bezug"] = b
+    schreibe_json(messordner() / f"durchgang-{args.durchgang}" / "btp.json", erg)
+    return erg
+
+
+def vorlage(args) -> dict:
+    a = aufgaben()[args.aufgabe]
+    r = lade_rechner()
+    if args.referenz:
+        ziel = Path(a.referenz["spec_ordner"].format(arbeitsordner=r.arbeitsordner))
+    else:
+        ziel = a.vorlage_pfad(r.arbeitsordner)
+    vorlage_kopieren(Path(args.quelle), ziel)
+    return {"aufgabe": a.id, "ziel": str(ziel),
+            "dateien": sorted(str(p.relative_to(ziel)) for p in ziel.rglob("*") if p.is_file())}
+
+
+def _fallen_ordner(durchgang: int) -> Path:
+    return messordner() / f"durchgang-{durchgang}" / "fallen"
+
+
+def _commit(ref: str = "HEAD") -> str:
+    return subprocess.run(["git", "rev-parse", ref], cwd=REPO, capture_output=True, text=True, check=True).stdout.strip()
+
+
+def fallen_bauen(args) -> dict:
+    alle = fallen.fallen()
+    erg = {}
+    for fid in args.ids or sorted(alle):
+        f = alle[fid]
+        auftrag = fallen.auftrag_anlegen(f, REPO / "auftraege")
+        spec = auftrag / f.spec
+        alt = lade_rechner().arbeitsordner / f.auftrag
+        if alt.exists():
+            shutil.rmtree(alt)
+        schritte = {"freigeben": _swki("freigeben", str(spec))}
+        if not schritte["freigeben"]["_exit"]:
+            _neustart()
+            schritte["bauen"] = _swki("bauen", str(spec))
+        if "bauen" in schritte and not schritte["bauen"]["_exit"]:
+            _neustart()
+            schritte["pruefen"] = _swki("pruefen", str(spec))
+        pr = schritte.get("pruefen") or {}
+        stand = {"id": fid, "art": f.art, "spec": str(spec), "lauf": (schritte.get("bauen") or {}).get("lauf"),
+                 "gebaut": "pruefen" in schritte and not pr.get("_exit"), "swki_bestanden": pr.get("bestanden"),
+                 "commit": _commit(),
+                 "fehler": {k: {x: v.get(x) for x in ("fehler", "stdout", "stderr", "_exit")}
+                            for k, v in schritte.items() if v.get("_exit")}}
+        schreibe_json(messordner() / "fallen" / fid / "stand.json", stand)
+        erg[fid] = {k: stand[k] for k in ("lauf", "gebaut", "swki_bestanden", "fehler")}
+    return {"fallen": erg, "status": "ok" if all(v["gebaut"] for v in erg.values()) else "fehler"}
+
+
+def fallen_auftraege(args) -> dict:
+    from swki.durchlauf import pruefer_auftrag
+    pruefer_md = subprocess.run(["git", "show", f"{args.commit}:.claude/agents/pruefer.md"], cwd=REPO,
+                                capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    ordner = _fallen_ordner(args.durchgang)
+    ordner.mkdir(parents=True, exist_ok=True)
+    auftraege, swki_treffer = [], []
+    for fid in sorted(fallen.fallen()):
+        stand = lies_json(messordner() / "fallen" / fid / "stand.json")
+        if not stand["gebaut"]:
+            raise SystemExit(f"Falle {fid} ist nicht gebaut – zuerst: fallen bauen {fid}")
+        if stand["swki_bestanden"] is False:
+            swki_treffer.append(fid)
+            continue
+        spec = Path(stand["spec"])
+        bericht = lies_json(spec.parent / "protokolle" / f"{spec.stem}.lauf-{stand['lauf']}.pruefbericht.json")
+        text = fallen.pruefauftrag(pruefer_md, pruefer_auftrag(spec, stand["lauf"], bericht))
+        for k in range(1, fallen.WIEDERHOLUNGEN + 1):
+            auftraege.append({"id": fid, "k": k, "urteil": str(ordner / f"urteil-{fid}-{k}.json"), "prompt": text})
+    (ordner / "swki_treffer.json").write_text(json.dumps(swki_treffer), encoding="utf-8")
+    schreibe_json(ordner / "auftraege.json", {"commit": _commit(args.commit), "auftraege": auftraege})
+    return {"auftraege": len(auftraege), "swki_treffer": swki_treffer, "datei": str(ordner / "auftraege.json"),
+            "hinweis": "Je Auftrag einen unabhängigen Agenten (nur Read/Glob) mit dem Prompt starten und nur dessen "
+                       "JSON-Urteil unverändert in die Datei 'urteil' schreiben; danach: fallen auswerten"}
+
+
+def fallen_auswerten(args) -> dict:
+    erg = fallen.auswerten(_fallen_ordner(args.durchgang))
+    schreibe_json(_fallen_ordner(args.durchgang) / "fallen.json", erg)
+    return erg
+
+
 def aufraeumen(args) -> dict:
     weg = []
     for wt in sorted((messordner() / "wt").glob(f"d{args.durchgang}-*")):
@@ -177,9 +318,21 @@ def main() -> int:
     s = sub.add_parser("abschliessen"); s.add_argument("lauf"); s.add_argument("--agent", required=True)
     s.add_argument("--haenger", type=int, default=0)
     s.add_argument("--ohne-vergleich", action="store_true", help="nur exportieren, Vergleich später")
+    s.add_argument("--wiederholung-von", help="Lauf, den dieser Lauf wiederholt (Bogen §5.1)")
+    s.add_argument("--original-fehler-zaehlen", action="store_true",
+                   help="Fehlerpunkte des wiederholten Laufs zählen mit (Durchgang 0)")
     s.set_defaults(f=abschliessen)
     s = sub.add_parser("score"); s.add_argument("durchgang", type=int); s.add_argument("--baseline", type=int, default=0)
     s.set_defaults(f=score_befehl)
+    s = sub.add_parser("btp"); s.add_argument("durchgang", type=int); s.add_argument("--vergleich", type=int)
+    s.set_defaults(f=btp_befehl)
+    s = sub.add_parser("vorlage"); s.add_argument("aufgabe"); s.add_argument("quelle")
+    s.add_argument("--referenz", action="store_true"); s.set_defaults(f=vorlage)
+    s = sub.add_parser("fallen"); fs = s.add_subparsers(dest="fallen_befehl", required=True)
+    x = fs.add_parser("bauen"); x.add_argument("ids", nargs="*"); x.set_defaults(f=fallen_bauen)
+    x = fs.add_parser("auftraege"); x.add_argument("durchgang", type=int); x.add_argument("--commit", default="HEAD")
+    x.set_defaults(f=fallen_auftraege)
+    x = fs.add_parser("auswerten"); x.add_argument("durchgang", type=int); x.set_defaults(f=fallen_auswerten)
     s = sub.add_parser("aufraeumen"); s.add_argument("durchgang", type=int); s.set_defaults(f=aufraeumen)
     s = sub.add_parser("abtasten"); s.add_argument("datei", type=Path); s.add_argument("stopp", type=Path)
     s.set_defaults(f=None)
