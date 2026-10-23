@@ -16,9 +16,9 @@ class _Gleichungen:
         return self.rueckgabe
 
 
-def _ctx(rueckgabe: int = 0) -> Kontext:
+def _ctx(rueckgabe: int = 0, gleichungen: bool = True) -> Kontext:
     model = SimpleNamespace(GetEquationMgr=_Gleichungen(rueckgabe))
-    return Kontext(None, model, {"parameter": {"L": 100}}, Path("x.yaml"), 0.1)
+    return Kontext(None, model, {"parameter": {"L": 100}}, Path("x.yaml"), 0.1, gleichungen=gleichungen)
 
 
 def test_feste_zahl_wird_nicht_gebunden():
@@ -43,3 +43,10 @@ def test_abgelehnte_gleichung_ist_baufehler():
     with pytest.raises(BauFehler) as e:
         _ctx(rueckgabe=-1).verknuepfe("D1@f1", "=L")
     assert "D1@f1" in str(e.value)
+
+
+def test_verknuepfe_ohne_gleichungen_legt_nichts_an():
+    ctx = _ctx(gleichungen=False)
+    ctx.verknuepfe("D1@f1", "=L")
+    ctx.verknuepfe("D2@f1_skizze", "=L/2-20", -1)
+    assert ctx.model.GetEquationMgr.texte == []

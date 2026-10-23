@@ -23,7 +23,7 @@ from swki.baugruppe.referenzen import kopplung_referenz, loese_im_teil
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.bauen import BauAbbruch, baue_teil_dokument
-from swki.compiler.eigenschaften import eigenschaften_fuer, globale_variablen, setze_eigenschaften
+from swki.compiler.eigenschaften import eigenschaften_fuer, gleichungen_an, globale_variablen, setze_eigenschaften
 from swki.compiler.fehler import BauFehler, fehler_dict
 from swki.compiler.protokoll import Protokoll
 from swki.kaufteile import befehle as kaufteil_befehle
@@ -246,7 +246,8 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
                         feature = _kopple(b, v)
                     else:
                         feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
-                                                          b.bg.spec.get("parameter", {}), b.gesetzt)
+                                                          b.bg.spec.get("parameter", {}), b.gesetzt,
+                                                          gleichungen_an(b.bg.spec, b.standard))
                     knoten.sw_name = feature.Name
                 except Exception as e:
                     if isinstance(e, BauFehler) and str(e).startswith(f"{v.id} "):
@@ -326,7 +327,8 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
         if fehler is None:
             with protokoll.phase("einfuegen"):
                 b.asm = sw_baugruppe.neue_baugruppe(b.app, r.vorlage_baugruppe)
-                globale_variablen(b.asm, bg.spec.get("parameter", {}))
+                if gleichungen_an(bg.spec, standard):
+                    globale_variablen(b.asm, bg.spec.get("parameter", {}))
                 setze_eigenschaften(b.asm, eigenschaften_fuer(bg.spec, auftrag))
                 with sw.schnell(b.app, b.asm):
                     fehler = _fuege_ein(b, alle_instanzen)

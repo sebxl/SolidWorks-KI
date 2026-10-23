@@ -120,10 +120,11 @@ def test_gesetzt_wird_ueber_alle_verknuepfungen_durchgereicht(umgebung, tmp_path
     _, pfad, _ = umgebung
     b, bg = _baulauf(pfad, tmp_path)
     alle = verknuepfungen(bg.spec, bg.quellen)
-    erhalten = []
+    erhalten, flaggen = [], []
 
-    def verknuepfe(asm, v, a, b_, parameter, gesetzt=None):
+    def verknuepfe(asm, v, a, b_, parameter, gesetzt=None, gleichungen=None):
         erhalten.append(gesetzt)
+        flaggen.append(gleichungen)
         return SimpleNamespace(Name=v.id)
 
     monkeypatch.setattr(bau, "_entitaet", lambda b_, seite: object())
@@ -131,6 +132,7 @@ def test_gesetzt_wird_ueber_alle_verknuepfungen_durchgereicht(umgebung, tmp_path
     assert bau._verknuepfe(b, alle) is None
     assert len(erhalten) == len(alle) > 1
     assert all(g is b.gesetzt for g in erhalten)
+    assert flaggen == [False] * len(alle)  # Vorgabe: keine Gleichungen
 
 
 def test_komponenten_datei_ist_die_von_swki_gespeicherte(umgebung, tmp_path, monkeypatch):

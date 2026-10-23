@@ -10,6 +10,7 @@
     "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"},
     "material": {"type": "string", "minLength": 1},
     "eigenschaften": {"type": "object", "additionalProperties": {"type": "string"}},
+    "gleichungen": {"type": "boolean"},
     "parameter": {
       "type": "object",
       "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]*$"},

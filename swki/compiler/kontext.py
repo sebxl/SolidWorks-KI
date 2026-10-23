@@ -29,6 +29,7 @@ class Kontext:
     tol_mm: float
     ergebnisse: dict[str, FeatureErgebnis] = field(default_factory=dict)
     achsen: dict[str, tuple] = field(default_factory=dict)  # Referenzachsen je Teil (swki.compiler.handler.muster)
+    gleichungen: bool = False  # Maße per Gleichung an Parameter binden (gleichungen_an)
 
     def wert(self, x) -> float:
         """Zahl oder "=Ausdruck" → mm bzw. Grad."""
@@ -49,7 +50,7 @@ class Kontext:
 
         vorzeichen -1: das Maß (immer ein Betrag) entspricht dem negierten Ausdruck, z. B. Lage u = "=-L/2".
         """
-        if not ist_ausdruck(roh):
+        if not self.gleichungen or not ist_ausdruck(roh):
             return
         rechts = sw_ausdruck(roh) if vorzeichen > 0 else f"-({sw_ausdruck(roh)})"
         if self.model.GetEquationMgr.Add2(-1, f'"{masname}" = {rechts}', True) < 0:
