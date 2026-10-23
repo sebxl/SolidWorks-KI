@@ -37,6 +37,10 @@ Die fünf Messstand-Aufgaben bleiben unverändert (vergleichbar mit Durchgang 0�
   neue Freigabe nötig) **und eine Bauweg-Änderung an einer Verschraubung** (Schraubenlänge). Die genaue Änderung legt
   die Einrichtung fest (§6, Schritt 1) und wählt sie so, dass sie zwei Teile, eine Normteilgröße und mindestens eine
   Verknüpfung berührt und die Bewegungsprüfung mitläuft.
+- **Festgelegt (24.10.2026):** Vorgabe A12 neu ± 20 statt ± 15 (Kamerahalter `HUB` 30 → 40) und Schenkel B des
+  Kamerahalters 12 statt 10 dick (`TB`), Kameraverschraubung mit gleicher Einschraubtiefe (`schraube_kam` M3 × 10 →
+  M3 × 12). Text: `tests/messstand/aufgaben/pruefstation/aufgabe.md`; Vorlage und Referenz-Specs unter
+  `<arbeitsordner>/MESSSTAND/vorlagen/` (Stand Lauf 28, eingefroren 24.10.).
 - Ablauf im Lauf wie im Betrieb: Skill `baugruppe`, Spec ändern, validieren, freigeben (erlaubt, `MESS-*`),
   `swki durchlauf --neustart`, Prüfer, `swki bericht`.
 - Referenz: dieselbe Änderung einmal von Hand korrekt umgesetzt, gebaut, geprüft, STL der Baugruppe.
