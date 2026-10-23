@@ -1,0 +1,784 @@
+{
+  "ok": true,
+  "einstellungen_vorher": [
+    false,
+    1
+  ],
+  "1_punkt_kante_hv": {
+    "aufruf": "AddHorizontalDimension2(Punkt, Kante)",
+    "fehler": null,
+    "mass": "D1",
+    "wert_mm": 10.0,
+    "driven_state": 2,
+    "status": 3,
+    "beziehungen_neu": [
+      "DISTANCE",
+      "DISTANCE"
+    ],
+    "status_geschlossen": 3,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_punkt@Teil1.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_punkt@Teil1.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "1_punkt_kante_dim2": {
+    "aufruf": "AddDimension2(Punkt, Kante)",
+    "fehler": null,
+    "mass": "D1",
+    "wert_mm": 10.0,
+    "driven_state": 2,
+    "status": 3,
+    "beziehungen_neu": [
+      "DISTANCE",
+      "DISTANCE"
+    ],
+    "status_geschlossen": 3,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_punkt@Teil2.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_punkt@Teil2.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "2_punkt_flaeche_hv": {
+    "aufruf": "AddHorizontalDimension2(Punkt, Seitenfläche -x)",
+    "fehler": "AddHorizontalDimension2(Punkt, Seitenfläche -x) lieferte None",
+    "mass": null,
+    "status": 2,
+    "beziehungen_neu": [
+      "DISTANCE"
+    ],
+    "status_geschlossen": 2,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_punkt@Teil3.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "2_punkt_flaeche_dim2": {
+    "aufruf": "AddDimension2(Punkt, Seitenfläche -x)",
+    "fehler": "AddDimension2(Punkt, Seitenfläche -x) lieferte None",
+    "mass": null,
+    "status": 2,
+    "beziehungen_neu": [
+      "DISTANCE"
+    ],
+    "status_geschlossen": 2,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_punkt@Teil4.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "3_linie_kante": {
+    "rechteck": {
+      "mitte": [
+        -35,
+        10
+      ],
+      "breite": 20,
+      "hoehe": 10
+    },
+    "status_vor_randmass": 2,
+    "aufruf": "AddDimension2(linke Rechteckseite, Kante)",
+    "fehler": null,
+    "mass": "D4",
+    "wert_mm": 5.0,
+    "driven_state": 2,
+    "status": 3,
+    "beziehungen_neu": [
+      "HORIZONTAL",
+      "VERTICAL",
+      "HORIZONTAL",
+      "VERTICAL",
+      "DISTANCE",
+      "DISTANCE",
+      "DISTANCE",
+      "DISTANCE"
+    ],
+    "status_geschlossen": 3,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_linie@Teil5.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_linie@Teil5.Part",
+        "typ2": 2,
+        "wert": 0.01
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_linie@Teil5.Part",
+        "typ2": 12,
+        "wert": 0.005
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_linie@Teil5.Part",
+        "typ2": 2,
+        "wert": 0.005
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "4_mittellinie_kante": {
+    "fehler": null,
+    "positionsskizze": {
+      "status_vorher": 2,
+      "mittellinie": {
+        "aufruf": "SketchAddConstraints(sgCOINCIDENT) Endpunkt, Kante"
+      },
+      "status_nach_mittellinie": 2,
+      "status_nach_symmetrie": 2,
+      "abstand": {
+        "aufruf": "AddVerticalDimension2(Punkt 1, Punkt 2)",
+        "fehler": null,
+        "mass": "D1",
+        "wert_mm": 40.0,
+        "driven_state": 2
+      },
+      "rand": {
+        "aufruf": "AddHorizontalDimension2(Punkt 1, Kante)",
+        "fehler": null,
+        "mass": "D2",
+        "wert_mm": 10.0,
+        "driven_state": 2
+      },
+      "status": 3,
+      "gesetzt": [
+        "sgCOINCIDENT",
+        "sgHORIZONTAL2D",
+        "sgCOINCIDENT",
+        "sgSYMMETRIC"
+      ],
+      "beziehungen_neu": [
+        "COINCIDENT",
+        "COINCIDENT",
+        "DISTANCE",
+        "DISTANCE",
+        "HORIZONTAL",
+        "SYMMETRIC"
+      ],
+      "ueberzaehlig": [],
+      "status_geschlossen": 3,
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@f2_positionen@Teil6.Part",
+          "typ2": 12,
+          "wert": 0.04
+        },
+        {
+          "name": "D2",
+          "fullname": "D2@f2_positionen@Teil6.Part",
+          "typ2": 2,
+          "wert": 0.01
+        }
+      ]
+    },
+    "bohrungen_achsen_xz": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -40.0,
+        20.0
+      ]
+    ],
+    "bohrungen": 2,
+    "rebuild_fehler": []
+  },
+  "4_mittellinie_laenge": {
+    "fehler": null,
+    "positionsskizze": {
+      "status_vorher": 2,
+      "mittellinie": {
+        "aufruf": "AddDimension2(Mittellinie (Länge 50))",
+        "fehler": null,
+        "mass": "D1",
+        "wert_mm": 50.0,
+        "driven_state": 2
+      },
+      "status_nach_mittellinie": 2,
+      "status_nach_symmetrie": 2,
+      "abstand": {
+        "aufruf": "AddVerticalDimension2(Punkt 1, Punkt 2)",
+        "fehler": null,
+        "mass": "D2",
+        "wert_mm": 40.0,
+        "driven_state": 2
+      },
+      "rand": {
+        "aufruf": "AddHorizontalDimension2(Punkt 1, Kante)",
+        "fehler": null,
+        "mass": "D3",
+        "wert_mm": 10.0,
+        "driven_state": 2
+      },
+      "status": 3,
+      "gesetzt": [
+        "sgCOINCIDENT",
+        "sgHORIZONTAL2D",
+        "sgSYMMETRIC"
+      ],
+      "beziehungen_neu": [
+        "COINCIDENT",
+        "DISTANCE",
+        "DISTANCE",
+        "DISTANCE",
+        "HORIZONTAL",
+        "SYMMETRIC"
+      ],
+      "ueberzaehlig": [],
+      "status_geschlossen": 3,
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@f2_positionen@Teil7.Part",
+          "typ2": 2,
+          "wert": 0.05
+        },
+        {
+          "name": "D2",
+          "fullname": "D2@f2_positionen@Teil7.Part",
+          "typ2": 12,
+          "wert": 0.04
+        },
+        {
+          "name": "D3",
+          "fullname": "D3@f2_positionen@Teil7.Part",
+          "typ2": 2,
+          "wert": 0.01
+        }
+      ]
+    },
+    "bohrungen_achsen_xz": [
+      [
+        -40.0,
+        -20.0
+      ],
+      [
+        -40.0,
+        20.0
+      ]
+    ],
+    "bohrungen": 2,
+    "rebuild_fehler": []
+  },
+  "5_symmetrie_kreise": {
+    "mittellinie": {
+      "aufruf": "AddDimension2(Mittellinie (Länge 20))",
+      "fehler": null,
+      "mass": "D3",
+      "wert_mm": 20.0,
+      "driven_state": 2
+    },
+    "abstand": {
+      "aufruf": "AddHorizontalDimension2(Mitte 1, Mitte 2)",
+      "fehler": null,
+      "mass": "D4",
+      "wert_mm": 60.0,
+      "driven_state": 2
+    },
+    "status": 3,
+    "gesetzt": [
+      "sgCOINCIDENT",
+      "sgVERTICAL2D",
+      "sgSYMMETRIC",
+      "sgHORIZONTALPOINTS2D"
+    ],
+    "beziehungen_neu": [
+      "COINCIDENT",
+      "DIAMETER",
+      "DIAMETER",
+      "DISTANCE",
+      "DISTANCE",
+      "HORIZPOINTS",
+      "SYMMETRIC",
+      "VERTICAL"
+    ],
+    "ueberzaehlig": [],
+    "status_geschlossen": 3,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_kreise@Teil8.Part",
+        "typ2": 6,
+        "wert": 0.008
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_kreise@Teil8.Part",
+        "typ2": 6,
+        "wert": 0.008
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_kreise@Teil8.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_kreise@Teil8.Part",
+        "typ2": 11,
+        "wert": 0.06
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "5_rechteck_diagonale": {
+    "rechteck": {
+      "mitte": [
+        0,
+        0
+      ],
+      "breite": 40,
+      "hoehe": 20
+    },
+    "diagonale_konstruktion": true,
+    "diagonale_teilt_ecken": [
+      true,
+      true
+    ],
+    "status": 3,
+    "gesetzt": [
+      "sgHORIZONTAL2D",
+      "sgVERTICAL2D",
+      "sgHORIZONTAL2D",
+      "sgVERTICAL2D",
+      "sgATMIDDLE"
+    ],
+    "beziehungen_neu": [
+      "ATMIDDLE",
+      "DISTANCE",
+      "DISTANCE",
+      "HORIZONTAL",
+      "HORIZONTAL",
+      "VERTICAL",
+      "VERTICAL"
+    ],
+    "ueberzaehlig": [],
+    "status_geschlossen": 3,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_rechteck@Teil9.Part",
+        "typ2": 2,
+        "wert": 0.04
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_rechteck@Teil9.Part",
+        "typ2": 2,
+        "wert": 0.02
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "5_rechteck_symmetrie": {
+    "rechteck": {
+      "mitte": [
+        20,
+        10
+      ],
+      "breite": 40,
+      "hoehe": 20
+    },
+    "diagonale_konstruktion": true,
+    "diagonale_teilt_ecken": [
+      true,
+      true
+    ],
+    "status": 3,
+    "gesetzt": [
+      "sgHORIZONTAL2D",
+      "sgVERTICAL2D",
+      "sgHORIZONTAL2D",
+      "sgVERTICAL2D",
+      "sgATMIDDLE"
+    ],
+    "beziehungen_neu": [
+      "ATMIDDLE",
+      "DISTANCE",
+      "DISTANCE",
+      "DISTANCE",
+      "DISTANCE",
+      "HORIZONTAL",
+      "HORIZONTAL",
+      "VERTICAL",
+      "VERTICAL"
+    ],
+    "ueberzaehlig": [],
+    "status_geschlossen": 3,
+    "masse": [
+      {
+        "name": "D1",
+        "fullname": "D1@s_rechteck@Teil10.Part",
+        "typ2": 2,
+        "wert": 0.04
+      },
+      {
+        "name": "D2",
+        "fullname": "D2@s_rechteck@Teil10.Part",
+        "typ2": 2,
+        "wert": 0.02
+      },
+      {
+        "name": "D3",
+        "fullname": "D3@s_rechteck@Teil10.Part",
+        "typ2": 11,
+        "wert": 0.02
+      },
+      {
+        "name": "D4",
+        "fullname": "D4@s_rechteck@Teil10.Part",
+        "typ2": 12,
+        "wert": 0.01
+      }
+    ],
+    "rebuild_fehler": []
+  },
+  "6a_handtest": {
+    "rand": {
+      "aufruf": "AddHorizontalDimension2(Kreismitte, rechte Kante)",
+      "fehler": null,
+      "mass": "D2",
+      "wert_mm": 10.0,
+      "driven_state": 2
+    },
+    "status": 3,
+    "rebuild_fehler_bau": [],
+    "breitenmass": "D1@f1_skizze",
+    "achsen_vorher": [
+      [
+        40.0,
+        0.0
+      ]
+    ],
+    "set_system_value3": 0,
+    "edit_rebuild3": true,
+    "rebuild_fehler": [],
+    "breite_nachher_mm": 90.0,
+    "achsen_nachher": [
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "x_ist": [
+      30.0
+    ],
+    "x_soll": 30.0,
+    "x_abw_max": 0.0,
+    "randmass_nachher_mm": 10.0,
+    "status_skizze_nachher": 3,
+    "achsen_nach_force": [
+      [
+        30.0,
+        0.0
+      ]
+    ]
+  },
+  "6b_handtest_fase": {
+    "rand": {
+      "aufruf": "AddHorizontalDimension2(Kreismitte, rechte Kante)",
+      "fehler": null,
+      "mass": "D2",
+      "wert_mm": 10.0,
+      "driven_state": 2
+    },
+    "status": 3,
+    "rebuild_fehler_bau": [],
+    "fase_rebuild_fehler": [],
+    "breitenmass": "D1@f1_skizze",
+    "achsen_vorher": [
+      [
+        40.0,
+        0.0
+      ]
+    ],
+    "set_system_value3": 0,
+    "edit_rebuild3": true,
+    "rebuild_fehler": [],
+    "breite_nachher_mm": 90.0,
+    "achsen_nachher": [
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "x_ist": [
+      30.0
+    ],
+    "x_soll": 30.0,
+    "x_abw_max": 0.0,
+    "randmass_nachher_mm": 10.0,
+    "status_skizze_nachher": 3,
+    "achsen_nach_force": [
+      [
+        30.0,
+        0.0
+      ]
+    ]
+  },
+  "6c_handtest_normbohrung": {
+    "fehler": null,
+    "positionsskizze": {
+      "status_vorher": 2,
+      "mittellinie": {
+        "aufruf": "SketchAddConstraints(sgCOINCIDENT) Endpunkt, Kante"
+      },
+      "status_nach_mittellinie": 2,
+      "status_nach_symmetrie": 2,
+      "abstand": {
+        "aufruf": "AddVerticalDimension2(Punkt 1, Punkt 2)",
+        "fehler": null,
+        "mass": "D1",
+        "wert_mm": 40.0,
+        "driven_state": 2
+      },
+      "rand": {
+        "aufruf": "AddHorizontalDimension2(Punkt 1, Kante)",
+        "fehler": null,
+        "mass": "D2",
+        "wert_mm": 10.0,
+        "driven_state": 2
+      },
+      "status": 3,
+      "gesetzt": [
+        "sgCOINCIDENT",
+        "sgHORIZONTAL2D",
+        "sgCOINCIDENT",
+        "sgSYMMETRIC"
+      ],
+      "beziehungen_neu": [
+        "COINCIDENT",
+        "COINCIDENT",
+        "DISTANCE",
+        "DISTANCE",
+        "HORIZONTAL",
+        "SYMMETRIC"
+      ],
+      "ueberzaehlig": [],
+      "status_geschlossen": 3,
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@f2_positionen@Teil13.Part",
+          "typ2": 12,
+          "wert": 0.04
+        },
+        {
+          "name": "D2",
+          "fullname": "D2@f2_positionen@Teil13.Part",
+          "typ2": 2,
+          "wert": 0.01
+        }
+      ]
+    },
+    "breitenmass": "D1@f1_skizze",
+    "achsen_vorher": [
+      [
+        40.0,
+        -20.0
+      ],
+      [
+        40.0,
+        20.0
+      ]
+    ],
+    "set_system_value3": 0,
+    "edit_rebuild3": true,
+    "rebuild_fehler": [],
+    "breite_nachher_mm": 90.0,
+    "achsen_nachher": [
+      [
+        30.0,
+        -20.0
+      ],
+      [
+        30.0,
+        20.0
+      ]
+    ],
+    "x_ist": [
+      30.0,
+      30.0
+    ],
+    "x_soll": 30.0,
+    "x_abw_max": 0.0,
+    "randmass_nachher_mm": 10.0,
+    "status_skizze_nachher": 3,
+    "achsen_nach_force": [
+      [
+        30.0,
+        -20.0
+      ],
+      [
+        30.0,
+        20.0
+      ]
+    ],
+    "bohrungen": 2
+  },
+  "6c_handtest_normbohrung_laenge": {
+    "fehler": null,
+    "positionsskizze": {
+      "status_vorher": 2,
+      "mittellinie": {
+        "aufruf": "AddDimension2(Mittellinie (Länge 50))",
+        "fehler": null,
+        "mass": "D1",
+        "wert_mm": 50.0,
+        "driven_state": 2
+      },
+      "status_nach_mittellinie": 2,
+      "status_nach_symmetrie": 2,
+      "abstand": {
+        "aufruf": "AddVerticalDimension2(Punkt 1, Punkt 2)",
+        "fehler": null,
+        "mass": "D2",
+        "wert_mm": 40.0,
+        "driven_state": 2
+      },
+      "rand": {
+        "aufruf": "AddHorizontalDimension2(Punkt 1, Kante)",
+        "fehler": null,
+        "mass": "D3",
+        "wert_mm": 10.0,
+        "driven_state": 2
+      },
+      "status": 3,
+      "gesetzt": [
+        "sgCOINCIDENT",
+        "sgHORIZONTAL2D",
+        "sgSYMMETRIC"
+      ],
+      "beziehungen_neu": [
+        "COINCIDENT",
+        "DISTANCE",
+        "DISTANCE",
+        "DISTANCE",
+        "HORIZONTAL",
+        "SYMMETRIC"
+      ],
+      "ueberzaehlig": [],
+      "status_geschlossen": 3,
+      "masse": [
+        {
+          "name": "D1",
+          "fullname": "D1@f2_positionen@Teil14.Part",
+          "typ2": 2,
+          "wert": 0.05
+        },
+        {
+          "name": "D2",
+          "fullname": "D2@f2_positionen@Teil14.Part",
+          "typ2": 12,
+          "wert": 0.04
+        },
+        {
+          "name": "D3",
+          "fullname": "D3@f2_positionen@Teil14.Part",
+          "typ2": 2,
+          "wert": 0.01
+        }
+      ]
+    },
+    "breitenmass": "D1@f1_skizze",
+    "achsen_vorher": [
+      [
+        40.0,
+        -20.0
+      ],
+      [
+        40.0,
+        20.0
+      ]
+    ],
+    "set_system_value3": 0,
+    "edit_rebuild3": true,
+    "rebuild_fehler": [],
+    "breite_nachher_mm": 90.0,
+    "achsen_nachher": [
+      [
+        30.0,
+        -20.0
+      ],
+      [
+        30.0,
+        20.0
+      ]
+    ],
+    "x_ist": [
+      30.0,
+      30.0
+    ],
+    "x_soll": 30.0,
+    "x_abw_max": 0.0,
+    "randmass_nachher_mm": 10.0,
+    "status_skizze_nachher": 3,
+    "achsen_nach_force": [
+      [
+        30.0,
+        -20.0
+      ],
+      [
+        30.0,
+        20.0
+      ]
+    ],
+    "bohrungen": 2
+  },
+  "7_lesen": {
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S17\\s17_6a.sldprt",
+    "randmass": {
+      "name": "D2@f2_skizze",
+      "soll": 0.01,
+      "system_value": 0.010000000000000002
+    },
+    "breitenmass": {
+      "name": "D1@f1_skizze",
+      "soll": 0.1,
+      "system_value": 0.1
+    }
+  },
+  "einstellungen_nachher": [
+    false,
+    1
+  ]
+}
