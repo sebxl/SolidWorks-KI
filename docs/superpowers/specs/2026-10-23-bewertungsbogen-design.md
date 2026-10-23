@@ -122,6 +122,8 @@ ein Fehlerpunkt im Durchgang bzw. 5 von 6 Fallen.
 
 ### 5.1 Entscheidung je Umbau
 
+Ein Umbau darf mehrere Optimierungen bündeln (Recherche §5.1: die meisten liegen einzeln unter +0,3).
+
 **Besser** = Gesamtscore ≥ aktueller Stand + 0,3 **und** Präzision erster Lauf und Präzision Fallen nicht schlechter
 **und** keine Sperre. Dann wird der Umbau neuer Stand (Merge in den Optimierungs-Branch). Sonst verwerfen.
 
