@@ -1,0 +1,10 @@
+id: F1
+art: falle
+beschreibung: Durchlicht – Stecker M12 in X gespiegelt (echt, AP 6.8 Durchlicht Lauf 4)
+basis: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation"
+dateien: [durchlicht.yaml]
+aufgabe: durchlicht
+eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/AI_BL-S050075_Massbild.png]
+spec: durchlicht.yaml
+ersetzen: [{datei: durchlicht.yaml, alt: "  SX: 50 ", neu: "  SX: 25 "}]
+erwartet: {knoten: [stecker], stichworte: [gespiegelt, spiegelverkehrt, falsche seite]}

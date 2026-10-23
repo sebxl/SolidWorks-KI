@@ -1,0 +1,10 @@
+id: pruefstation
+art: baugruppe
+skill: baugruppe
+# Änderungsaufgabe an der großen Baugruppe (Bewertungsbogen 2026-10-23 §2.1): Vorlage = AP 6.8 Stand Lauf 28,
+# eingefroren mit `messstand vorlage pruefstation <auftrag>`; Referenz = dieselbe Änderung von Hand
+# (`messstand vorlage pruefstation <ordner> --referenz`, dann `messstand referenz pruefstation`).
+vorlage: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation"
+spec: pruefstation.yaml
+ausgangslauf: true
+referenz: {spec_ordner: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation-referenz", spec: pruefstation.yaml}

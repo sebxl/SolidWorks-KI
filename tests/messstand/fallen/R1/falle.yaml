@@ -1,0 +1,8 @@
+id: R1
+art: richtig
+beschreibung: Durchlicht richtig (Fehlalarm-Kontrolle)
+basis: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation"
+dateien: [durchlicht.yaml]
+aufgabe: durchlicht
+eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/AI_BL-S050075_Massbild.png]
+spec: durchlicht.yaml

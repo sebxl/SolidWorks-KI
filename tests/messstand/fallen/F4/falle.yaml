@@ -1,0 +1,9 @@
+id: F4
+art: falle
+beschreibung: Zentrieraufnahme – Formschräge des Zapfens in falscher Richtung (Zapfen weitet sich nach oben)
+basis: tests/referenz/zentrieraufnahme
+aufgabe: zentrieraufnahme
+spec: zentrieraufnahme.yaml
+ersetzen: [{datei: zentrieraufnahme.yaml, alt: 'tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: kleiner}',
+            neu: 'tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: groesser}'}]
+erwartet: {knoten: [zapfen], stichworte: [verjüngt, weitet, formschräge, richtung]}

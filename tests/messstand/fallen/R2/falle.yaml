@@ -1,0 +1,6 @@
+id: R2
+art: richtig
+beschreibung: Stehlager richtig (Fehlalarm-Kontrolle)
+basis: tests/referenz/stehlager
+aufgabe: stehlager
+spec: stehlager.yaml

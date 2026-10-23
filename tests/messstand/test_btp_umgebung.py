@@ -133,6 +133,29 @@ def test_auswerten_mehrheit_und_entscheid(tmp_path, monkeypatch):
     assert fallen.auswerten(ordner)["treffer"] == 2
 
 
+def test_falle_aus_basis_mit_ersetzung(tmp_path, monkeypatch):
+    basis = tmp_path / "vorlage"
+    _schreibe(basis / "durchlicht.yaml", "parameter:\n  SX: 50         # Stecker\n")
+    _schreibe(basis / "kamera.yaml", "k")
+    monkeypatch.setattr(fallen, "FALLEN", tmp_path / "fallen")
+    monkeypatch.setattr(fallen, "AUFGABEN", tmp_path / "aufgaben")
+    _schreibe(tmp_path / "aufgaben" / "durchlicht" / "aufgabe.md", "Ersatzkörper Durchlicht")
+    d = tmp_path / "fallen" / "F1"
+    _schreibe(d / "falle.yaml", json.dumps({
+        "id": "F1", "art": "falle", "spec": "durchlicht.yaml", "basis": "{arbeitsordner}/vorlage",
+        "dateien": ["durchlicht.yaml"], "aufgabe": "durchlicht",
+        "ersetzen": [{"datei": "durchlicht.yaml", "alt": "SX: 50 ", "neu": "SX: 25 "}],
+        "erwartet": {"knoten": ["stecker"]}}))
+    f = fallen.fallen()["F1"]
+    a = fallen.auftrag_anlegen(f, tmp_path / "auftraege", arbeitsordner=tmp_path)
+    assert "SX: 25 " in (a / "durchlicht.yaml").read_text(encoding="utf-8")
+    assert not (a / "kamera.yaml").exists()
+    assert (a / "aufgabe.md").read_text(encoding="utf-8") == "Ersatzkörper Durchlicht"
+    f.ersetzen[0]["alt"] = "SX: 99"
+    with pytest.raises(ValueError, match="0-mal"):
+        fallen.auftrag_anlegen(f, tmp_path / "auftraege", arbeitsordner=tmp_path)
+
+
 def test_pruefauftrag_enthaelt_pruefer_anweisung_und_lauf(tmp_path):
     text = fallen.pruefauftrag("---\nname: pruefer\ntools: Read, Glob\n---\nDu prüfst unabhängig.", "Prüfe Lauf 1 von a.yaml.")
     assert "Du prüfst unabhängig." in text and "Prüfe Lauf 1 von a.yaml." in text and "name: pruefer" not in text

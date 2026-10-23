@@ -1,9 +1,11 @@
 """Präzisions-Fallen des Bewertungsbogens (Spec 2026-10-23-bewertungsbogen-design §3): fest gebaute Läufe mit einem
 Deutungsfehler, den `swki pruefen` grundsätzlich nicht sieht, und richtige Läufe als Fehlalarm-Kontrolle.
 
-Je Falle liegt unter tests/messstand/fallen/<id>/: falle.yaml (id, art falle|richtig, spec, eingaben, erwartet:
-{knoten, stichworte}, beschreibung) und spec/ (Specs und Skripte, die gebaut werden). Die Beschreibung sieht der
-Prüfer nie. Ablauf je Durchgang: `fallen auftraege` (Prüf-Prompts, dreimal je Falle) → das Prüfverfahren des gemessenen
+Je Falle liegt unter tests/messstand/fallen/<id>/falle.yaml: id, art (falle|richtig), basis (Ordner mit Specs,
+{arbeitsordner} erlaubt, sonst relativ zum Repo), dateien (aus der Basis; leer = alles), aufgabe (Messstand-Aufgabe,
+deren aufgabe.md als Eingabe dient), eingaben (relativ zum Hauptcheckout), ersetzen ([{datei, alt, neu}] – der
+eingebaute Fehler), spec, erwartet {knoten, stichworte}, beschreibung. Optional spec/ als Überlagerung. Die
+Beschreibung sieht der Prüfer nie. Ablauf je Durchgang: `fallen auftraege` (Prüf-Prompts, dreimal je Falle) → das Prüfverfahren des gemessenen
 Stands schreibt urteil-<id>-<k>.json → `fallen auswerten` (Mehrheit, entscheid.json für unklare Fälle)."""
 
 import json
@@ -13,7 +15,7 @@ from pathlib import Path
 
 import yaml
 
-from werkzeuge.messstand.umgebung import QUELLREPO, REPO
+from werkzeuge.messstand.umgebung import AUFGABEN, QUELLREPO, REPO
 
 FALLEN = REPO / "tests" / "messstand" / "fallen"
 WIEDERHOLUNGEN = 3
@@ -31,6 +33,10 @@ class Falle:
     knoten: list[str] = field(default_factory=list)
     stichworte: list[str] = field(default_factory=list)
     beschreibung: str = ""
+    basis: str | None = None
+    dateien: list[str] = field(default_factory=list)
+    aufgabe: str | None = None
+    ersetzen: list[dict] = field(default_factory=list)
 
     @property
     def auftrag(self) -> str:
@@ -43,7 +49,8 @@ def fallen() -> dict[str, Falle]:
         d = yaml.safe_load(p.read_text(encoding="utf-8"))
         e = d.get("erwartet") or {}
         erg[d["id"]] = Falle(d["id"], d["art"], d["spec"], p.parent, d.get("eingaben", []), e.get("knoten", []),
-                             e.get("stichworte", []), d.get("beschreibung", ""))
+                             e.get("stichworte", []), d.get("beschreibung", ""), d.get("basis"),
+                             d.get("dateien", []), d.get("aufgabe"), d.get("ersetzen", []))
     return erg
 
 
@@ -97,12 +104,37 @@ def pruefauftrag(pruefer_md: str, auftrag: str) -> str:
     return (f"{text.strip()}\n\n## Dein Auftrag\n\n{auftrag}\n\nDu änderst nichts und benutzt nur Read und Glob.")
 
 
-def auftrag_anlegen(f: Falle, auftraege: Path) -> Path:
-    """auftraege/MESSFALLE-<id> mit spec/ und Eingaben (im Hauptcheckout gelesen)."""
+def _basis(f: Falle, arbeitsordner: Path | None) -> Path:
+    if "{arbeitsordner}" in f.basis:
+        return Path(f.basis.format(arbeitsordner=arbeitsordner))
+    return REPO / f.basis
+
+
+def auftrag_anlegen(f: Falle, auftraege: Path, arbeitsordner: Path | None = None) -> Path:
+    """auftraege/MESSFALLE-<id>: Basis (ganz oder `dateien`), Überlagerung spec/, Ersetzungen, aufgabe.md und Eingaben
+    (im Hauptcheckout gelesen). Eine Ersetzung, die nicht genau einmal passt, ist ein Fehler der Falle."""
     ziel = Path(auftraege) / f.auftrag
     if ziel.exists():
         shutil.rmtree(ziel)
-    shutil.copytree(f.ordner / "spec", ziel)
+    ziel.mkdir(parents=True)
+    if f.basis:
+        b = _basis(f, arbeitsordner)
+        if f.dateien:
+            for rel in f.dateien:
+                (ziel / rel).parent.mkdir(parents=True, exist_ok=True)
+                (shutil.copytree if (b / rel).is_dir() else shutil.copy2)(b / rel, ziel / rel)
+        else:
+            shutil.copytree(b, ziel, dirs_exist_ok=True, ignore=shutil.ignore_patterns("protokolle", "__pycache__"))
+    if (f.ordner / "spec").is_dir():
+        shutil.copytree(f.ordner / "spec", ziel, dirs_exist_ok=True)
+    for e in f.ersetzen:
+        p = ziel / e["datei"]
+        text = p.read_text(encoding="utf-8")
+        if text.count(e["alt"]) != 1:
+            raise ValueError(f"Falle {f.id}: '{e['alt']}' kommt in {e['datei']} {text.count(e['alt'])}-mal vor")
+        p.write_text(text.replace(e["alt"], e["neu"]), encoding="utf-8")
+    if f.aufgabe:
+        shutil.copy2(AUFGABEN / f.aufgabe / "aufgabe.md", ziel / "aufgabe.md")
     (ziel / "eingabe").mkdir(exist_ok=True)
     for rel in f.eingaben:
         q = QUELLREPO / rel

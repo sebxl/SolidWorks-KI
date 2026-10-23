@@ -246,7 +246,7 @@ def fallen_bauen(args) -> dict:
     erg = {}
     for fid in args.ids or sorted(alle):
         f = alle[fid]
-        auftrag = fallen.auftrag_anlegen(f, REPO / "auftraege")
+        auftrag = fallen.auftrag_anlegen(f, REPO / "auftraege", lade_rechner().arbeitsordner)
         spec = auftrag / f.spec
         alt = lade_rechner().arbeitsordner / f.auftrag
         if alt.exists():
