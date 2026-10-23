@@ -15,9 +15,10 @@ from swki.compiler.topologie import loese_flaeche
 
 def _kreisschnitt(ctx, f: dict, durchmesser, tiefe, name: str, pfad: str):
     """Kreisschnitt an allen Positionen. pfad: Spec-Pfad der Felder durchmesser und tiefe ("features[i]" für die Bohrung,
-    "features[i].senkung" für die Senkung); die Lage von Position k steht in features[i].positionen[k]."""
+    "features[i].senkung" für die Senkung); die Lage von Position k steht in features[i].positionen[k] und folgt dem
+    `bezug` der Bohrung (auch die Senkung)."""
     se = ebene_aus_flaeche(loese_flaeche(ctx, f["flaeche"]))
-    kreise = [{"kreis": {"mitte": p, "durchmesser": durchmesser}} for p in f["positionen"]]
+    kreise = [{"kreis": {"mitte": p, "durchmesser": durchmesser, "bezug": f.get("bezug")}} for p in f["positionen"]]
     positionen = f"{ctx.pfad(f['id'])}.positionen"
     pfade = [{"mitte": f"{positionen}[{k}]", "durchmesser": f"{pfad}.durchmesser"} for k in range(len(kreise))]
     skizze, se = skizziere(ctx, se, kreise, f"{name}_skizze", pfade)

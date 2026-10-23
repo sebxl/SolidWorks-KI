@@ -54,21 +54,24 @@ class Kontext:
                 return f"features[{index}]"
         raise KeyError(f"Feature {fid!r} steht nicht in der Spezifikation")
 
-    def mass(self, masname: str, roh, pfad: str, art: str, vorzeichen: int = 1, bezug=None) -> None:
+    def mass(self, masname: str, roh, pfad: str, art: str, vorzeichen: int = 1, bezug=None,
+             wert: float | None = None) -> None:
         """Maß ins Maßprotokoll des laufenden Knotens eintragen (Knoten.masse im Bauprotokoll).
 
         pfad: Spec-Pfad des Werts (z. B. "features[1].ende.tiefe"), art: lage | groesse | radius | winkel | tiefe | abstand
         | versatz | konstruktion | skript, roh: Wert der Spezifikation (Zahl oder "=Ausdruck"), vorzeichen -1: das Maß (immer
-        ein Betrag) entspricht dem negierten Wert, z. B. Lage u = "=-L/2". bezug: Text des Bezugs ("-rand" …) oder None.
+        ein Betrag) entspricht dem negierten Wert, z. B. Lage u = "=-L/2". bezug: Spec-Wert des Bezugs ("-rand",
+        {"flaeche": …} …) oder None. wert: Betrag des Maßes in mm bzw. Grad, wenn er nicht |roh| ist (Lage zum Rand, Abstand
+        eines Paars, Rechteckseite statt Mitte) – roh ist dann nur die Spec-Koordinate.
 
         Nur mit ctx.gleichungen und bei einem Ausdruck bindet die Methode das Maß per SW-Gleichung an den Parameter; bei einem
-        Bezug außer dem Ursprung nie (der Wert hängt dann an der Geometrie, nicht am Ursprung).
+        Bezug außer dem Ursprung oder einem eigenen wert nie (der Wert hängt dann nicht allein am Ausdruck).
         """
         self.masse.setdefault(self.knoten or "", []).append({
             "name": masname, "pfad": pfad, "art": art, "bezug": bezug, "roh": roh, "vorzeichen": vorzeichen,
-            "wert": abs(self.wert(roh)),
+            "wert": abs(self.wert(roh)) if wert is None else wert,
         })
-        if not self.gleichungen or not ist_ausdruck(roh) or bezug not in (None, "ursprung"):
+        if not self.gleichungen or not ist_ausdruck(roh) or bezug not in (None, "ursprung") or wert is not None:
             return
         rechts = sw_ausdruck(roh) if vorzeichen > 0 else f"-({sw_ausdruck(roh)})"
         if self.model.GetEquationMgr.Add2(-1, f'"{masname}" = {rechts}', True) < 0:

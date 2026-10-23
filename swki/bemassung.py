@@ -57,15 +57,15 @@ def ebene_ist_flaeche(ebene) -> bool:
 
 def paare_mitte(punkte: list[Kennpunkt], achse: int, tol: float) -> list[tuple[int, int]]:
     """Index-Paare (i < j) mit `mitte` auf `achse`, gleicher Gruppe, auf `achse` entgegengesetzt gleich und ≠ 0, auf der
-    anderen Achse gleich."""
+    anderen Achse gleich. Nur Kennpunkte mit beiden Achsen: die Symmetrie legt den Partner ganz fest."""
     andere = 1 - achse
     paare = []
     for i, p in enumerate(punkte):
-        if p.bezug.get(achse) != MITTE or abs(p.uv[achse]) <= tol:
+        if p.bezug.get(achse) != MITTE or abs(p.uv[achse]) <= tol or p.achsen != (0, 1):
             continue
         for j in range(i + 1, len(punkte)):
             q = punkte[j]
-            if (q.bezug.get(achse) == MITTE and q.gruppe == p.gruppe
+            if (q.bezug.get(achse) == MITTE and q.gruppe == p.gruppe and q.achsen == (0, 1)
                     and abs(p.uv[achse] + q.uv[achse]) <= tol and abs(p.uv[andere] - q.uv[andere]) <= tol):
                 paare.append((i, j))
     return paare

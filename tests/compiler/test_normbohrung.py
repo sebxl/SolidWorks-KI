@@ -6,6 +6,7 @@ from swki.compiler.anker import Flaeche
 from swki.compiler.fehler import BauFehler
 from swki.compiler.handler import normbohrung as nb
 from swki.compiler.handler.normbohrung import hole_werte
+from swki.compiler.skizze import Skizzenebene
 
 
 def test_gewinde_mit_gewindetiefe():
@@ -40,6 +41,40 @@ def test_bohrungen_pruefen_meldet_fehlende_position(monkeypatch):
     with pytest.raises(BauFehler) as e:
         nb._bohrungen_pruefen(SimpleNamespace(tol_mm=0.1), None, "f2", [(-30.0, 20.0, -10.0), (30.0, 20.0, -10.0)])
     assert "Position 2 fehlt" in str(e.value)
+
+
+_DECK = {"feature": "f1", "flaeche": "+y"}
+
+
+def _ebene(lage: float):
+    return Skizzenebene(object(), "oben", lage, (0.0, 1.0, 0.0))
+
+
+def test_positionsskizze_ohne_bezug_behaelt_die_flaeche(monkeypatch):
+    monkeypatch.setattr(nb, "loese_flaeche", lambda ctx, anker: pytest.fail("nicht neu auflösen"))
+    alt = _ebene(20.0)
+    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK}, alt) is alt
+    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "ursprung"}},
+                                        alt) is alt
+
+
+def test_positionsskizze_mit_bezug_loest_die_flaeche_nach_dem_bohren_neu_auf(monkeypatch):
+    neu = Flaeche("ebene", (0.0, 20.0, 0.0), normale=(0.0, 1.0, 0.0), objekt=object())
+    monkeypatch.setattr(nb, "loese_flaeche", lambda ctx, anker: neu)
+    se = nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
+                                      _ebene(20.0))
+    assert se.flaeche is neu
+
+
+@pytest.mark.parametrize("loese", [
+    lambda ctx, anker: Flaeche("ebene", (0.0, 12.0, 0.0), normale=(0.0, 1.0, 0.0)),  # andere Ebene (Senkungsgrund)
+    lambda ctx, anker: (_ for _ in ()).throw(BauFehler("REFERENZ_NICHT_GEFUNDEN", "keine Fläche")),  # {nahe} im Loch
+])
+def test_positionsskizze_behaelt_die_alte_flaeche_ohne_passende_neue(monkeypatch, loese):
+    monkeypatch.setattr(nb, "loese_flaeche", loese)
+    alt = _ebene(20.0)
+    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"v": "mitte"}},
+                                        alt) is alt
 
 
 class _Modell:

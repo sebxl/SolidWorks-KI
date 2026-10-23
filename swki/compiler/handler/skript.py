@@ -4,6 +4,7 @@ Das Skript (auftraege/<auftrag>/skripte/<id>.py) wird vor dem Laden statisch gep
 und bekommt nur einen SkriptKontext. `bauen(ctx)` muss das erzeugte IFeature oder eine Liste davon zurückgeben.
 """
 
+from swki.bemassung import bezug_von
 from swki.compiler import sw
 from swki.compiler.fehler import SKRIPT_FEHLER, BauFehler
 from swki.compiler.kontext import FeatureErgebnis
@@ -78,7 +79,8 @@ class SkriptKontext:
                 with sw.einstellung(self.app, sw.SW_INPUT_DIM_VAL_ON_CREATE, False):
                     for u, v in punkte_uv:
                         if skizzierer.hat_punkt(u, v):
-                            skizzierer.lage((u, v), (self.wert(u) + 8, self.wert(v) + 8))
+                            skizzierer.kennpunkt((self.wert(u), self.wert(v)), (u, v), bezug_von({}), None, "")
+                    skizzierer.lagen_festlegen()
             finally:
                 sm.InsertSketch(True)
 

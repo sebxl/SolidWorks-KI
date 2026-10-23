@@ -32,6 +32,7 @@ from pathlib import Path
 
 from spikes._gemeinsam import lauf
 from spikes.s9a_gemeinsam import feature_masse
+from swki.bemassung import bezug_von
 from swki.compiler import sw
 from swki.compiler.ablauf import baue_features
 from swki.compiler.anker import flaeche_in_richtung
@@ -181,6 +182,12 @@ def _status(feature) -> int:
     return feature.GetSpecificFeature2.GetConstrainedStatus
 
 
+def _lage(sk, uv, achsen=(0, 1)) -> None:
+    """Lage zum Ursprung wie früher Skizzierer.lage (seit dem Bemaßungsbezug: Kennpunkt + lagen_festlegen)."""
+    sk.kennpunkt(tuple(uv), tuple(uv), bezug_von({}), None, "", achsen)
+    sk.lagen_festlegen()
+
+
 def _rechteck(sk, mitte, breite: float, hoehe: float, gesetzt: list) -> list:
     """Vier Linien (wie Skizzierer.element), Richtungen, Breite und Höhe. Rückgabe: Linien unten, rechts, oben, links."""
     mu_, mv = mitte
@@ -237,7 +244,7 @@ def fall_punkt(app, r, ziel: str, methode: str) -> dict:
                 d |= _mass_achse(sk, 0, (punkt, bezug), (-45, 10 + TEXT), namen)
             else:
                 d |= _mass_frei(sk, (punkt, bezug), (-45, 10 + TEXT), namen)
-            sk.lage((-40, 10), (-40 + TEXT, 10 + TEXT), nur=1)
+            _lage(sk, (-40, 10), (1,))
             d["status"] = sk.skizze.GetConstrainedStatus
             d["beziehungen_neu"] = _beziehungen(sk.skizze)
         d["status_geschlossen"] = _status(h["feature"])
@@ -258,7 +265,7 @@ def fall_linie_kante(app, r) -> dict:
         with _skizze(ctx, "s_linie") as h:
             sk = h["sk"]
             seg = _rechteck(sk, (-35, 10), 20, 10, gesetzt)
-            sk.lage((-45, 5), (-45 - TEXT, 5 - TEXT), nur=1)  # Ecke unten links: nur v zum Ursprung
+            _lage(sk, (-45, 5), (1,))  # Ecke unten links: nur v zum Ursprung
             d["status_vor_randmass"] = sk.skizze.GetConstrainedStatus
             d |= _mass_frei(sk, (seg[3], kante), (-47.5, 10 + 2 * TEXT), "linke Rechteckseite, Kante")
             d["status"] = sk.skizze.GetConstrainedStatus
@@ -276,7 +283,7 @@ def _positionen_mit_bezug(befund: dict, variante: str, seite: int):
     (seite −1 links, +1 rechts; Ende deckungsgleich mit der Kante bzw. Längenmaß 50), Symmetrie, Abstand, Randmaß.
     Wirft nicht bei Status ≠ 3 (Befund statt Bauabbruch)."""
 
-    def festlegen(ctx, feature, se, positionen, name, pfad=None) -> None:
+    def festlegen(ctx, feature, se, positionen, name, bezug=None, pfad=None) -> None:
         skizze_f = positionsskizze(feature)
         model, sm = ctx.model, ctx.model.SketchManager
         kante = _randkante(ctx, 50 * seite).objekt
@@ -408,7 +415,7 @@ def fall_rechteck(app, r, variante: str) -> dict:
                 x, y = sk.zu_skizze(*mitte)
                 punkt = sk.sm.CreatePoint(x, y, 0.0)
                 _beziehung(sk.model, gesetzt, "sgATMIDDLE", punkt, diag)
-                sk.lage(mitte, (mitte[0] + TEXT, mitte[1] + TEXT))
+                _lage(sk, mitte)
             d["status"] = sk.skizze.GetConstrainedStatus
             d["gesetzt"] = gesetzt
             d["beziehungen_neu"] = _neu(vorher, _beziehungen(sk.skizze))
@@ -441,7 +448,7 @@ def _kreis_am_rand(ctx) -> dict:
         sk.groesse(kreis, (40, 4 + TEXT), 8)
         mitte = sk._punkt(x, y)
         d["rand"] = _mass_achse(sk, 0, (mitte, kante), (45, -TEXT), "Kreismitte, rechte Kante")
-        sk.lage((40, 0), (40 - TEXT, -TEXT), nur=1)
+        _lage(sk, (40, 0), (1,))
         d["status"] = sk.skizze.GetConstrainedStatus
     sw.auswahl_leeren(ctx.model)
     h["feature"].Select2(False, 0)

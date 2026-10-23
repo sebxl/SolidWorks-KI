@@ -2,7 +2,7 @@
 (Spec 2c §3; Aufrufkette wie S9b Baustein 21, Positionen laut Spike S10 Frage 2).
 
 Die erste Position wird per SelectByRay auf der Fläche gewählt; die übrigen kommen als Skizzenpunkte in die
-Positionsskizze, die danach voll bestimmt wird (Lagemaße zum Ursprung, im Maßprotokoll, per Gleichung an Parameter nur mit
+Positionsskizze, die danach voll bestimmt wird (Lagemaße nach `bezug`, im Maßprotokoll, per Gleichung an Parameter nur mit
 ctx.gleichungen). Gewinde immer
 kosmetisch, Größen und Normmaße aus swki/wissen/bohrungsnormen.yaml. Instanzen 1, 2, … in Reihenfolge der Positionen;
 ihre Achspunkte gehen ins Bauprotokoll (masse_pruefen).
@@ -13,6 +13,7 @@ FeatureManager.CreateDefinition(swFmHoleWzd) → InitializeHole → Vorselektion
 
 import time
 
+from swki.bemassung import URSPRUNG, bezug_von
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler, zylinder_zu_punkten
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, BauFehler
@@ -98,6 +99,20 @@ def _neu_aufbauen_bis_vollstaendig(ctx, feature, fid: str, punkte: list, schlafe
         schlafe(_PAUSE_S)
 
 
+def skizzenebene_nach_bohrung(ctx, f: dict, se):
+    """Skizzenfläche für die Positionsskizze: mit Bezug (Kanten für Rand, Fläche, Mittellinie) nach HoleWizard5 neu
+    aufgelöst, wie Spike S17 Fall 4 sie las. Liegt dort keine Fläche derselben Ebene mehr (Anker {nahe} genau auf der
+    Bohrung), bleibt die vor dem Bohren aufgelöste."""
+    if all(b == URSPRUNG for b in bezug_von(f).values()):
+        return se
+    try:
+        neu = ebene_aus_flaeche(loese_flaeche(ctx, f["flaeche"]))
+    except BauFehler:
+        return se
+    gleich = neu.orientierung == se.orientierung and abs(neu.lage - se.lage) <= ctx.tol_mm
+    return neu if gleich else se
+
+
 @handler("normbohrung")
 def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     norm = norm_von(f)
@@ -137,6 +152,7 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    positionen_festlegen(ctx, feature, se, f["positionen"], f"{f['id']}_positionen", f"{ctx.pfad(f['id'])}.positionen")
+    positionen_festlegen(ctx, feature, skizzenebene_nach_bohrung(ctx, f, se), f["positionen"], f"{f['id']}_positionen",
+                         f.get("bezug"), f"{ctx.pfad(f['id'])}.positionen")
     _neu_aufbauen_bis_vollstaendig(ctx, feature, f["id"], punkte)
     return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)

@@ -16,6 +16,7 @@ from spikes._gemeinsam import lauf
 from spikes.s9a_gemeinsam import flaeche_mit_normale, kasten_oben, start, teil, volumen_mm3
 from spikes.s9b_gemeinsam import whatswrong
 from spikes.s10_gemeinsam import DICKE_MM, bohrung, geometrie, kontext, unterfeatures
+from swki.bemassung import bezug_von
 from swki.compiler import sw
 from swki.compiler.eigenschaften import globale_variablen
 from swki.compiler.skizze import Skizzierer, ebene_aus_flaeche
@@ -76,7 +77,8 @@ def variante_b(app, r) -> dict:
                     x, y = sk.zu_skizze(ctx.wert(u), ctx.wert(v))
                     d["createpoint"].append(sm.CreatePoint(x, y, 0.0) is not None)
                 for p in POSITIONEN:
-                    sk.lage(p, (ctx.wert(p[0]) + 8, ctx.wert(p[1]) + 8))
+                    sk.kennpunkt((ctx.wert(p[0]), ctx.wert(p[1])), p, bezug_von({}), None, "")
+                sk.lagen_festlegen()
             d["status_offen"] = sm.ActiveSketch.GetConstrainedStatus
             masse = sk.masse
         except Exception as e:  # Spike: alles protokollieren

@@ -16,6 +16,7 @@ from swki.compiler.protokoll import Protokoll
 from swki.compiler.skizze import Skizzenebene, Skizzierer, _Mass
 
 P = "features[0].skizze.elemente[0]"
+URSPRUNG_UV = {0: "ursprung", 1: "ursprung"}
 
 
 def _kontext(**kw) -> Kontext:
@@ -98,7 +99,7 @@ def test_protokoll_json_enthaelt_masse(tmp_path):
 
 class _Punkt:
     def __init__(self, x, y):
-        self.X, self.Y = x, y
+        self.X, self.Y, self.GetID = x, y, (1, id(self))
 
 
 class _Segment:
@@ -127,11 +128,12 @@ class _Modell:
 
 
 class _Aufzeichner(Skizzierer):
-    """Skizzierer ohne SolidWorks: Größen-, Lage- und Radiusmaße werden nur mit ihren Pfaden aufgezeichnet."""
+    """Skizzierer ohne SolidWorks: Größenmaße, vorgemerkte Lagen und Radien werden nur mit ihren Pfaden aufgezeichnet."""
 
     def __init__(self, ctx):
         self.ctx, self.model, self.sm, self.masse = ctx, _Modell(), _Skizzenmanager(), []
-        self.gleichsinnig = True
+        self.gleichsinnig, self.hilfslinien = True, True
+        self._kennpunkte, self._ziele, self._verrundungen = [], [], []
         self.aufrufe = []
 
     def zu_skizze(self, u, v):
@@ -143,8 +145,11 @@ class _Aufzeichner(Skizzierer):
     def groesse(self, segment, text_uv, roh, pfad=None, art="groesse"):
         self.aufrufe.append(("groesse", roh, pfad, art))
 
-    def lage(self, roh_uv, text_uv, nur=None, pfad=None):
-        self.aufrufe.append(("lage", list(roh_uv), pfad, nur))
+    def kennpunkt(self, punkt_uv, roh_uv, bezug, pfad, gruppe, achsen=(0, 1), ziel=None):
+        self.aufrufe.append(("lage", list(roh_uv), pfad, tuple(achsen)))
+
+    def _diagonale(self, seg):
+        return object()
 
     def verrunde(self, linien, ecke_uv, roh_radius, pfad=None):
         self.aufrufe.append(("radius", roh_radius, pfad))
@@ -159,6 +164,7 @@ def _ohne_sw(monkeypatch):
 def _aufrufe(element: dict, pfad=P) -> list:
     sk = _Aufzeichner(_kontext())
     sk.element(element, pfad)
+    sk.lagen_festlegen()  # legt die vorgemerkten Verrundungen an
     return sk.aufrufe
 
 
@@ -167,13 +173,15 @@ def test_rechteck_pfade():
     aufrufe = _aufrufe({"rechteck": r})
     assert aufrufe[0] == ("groesse", "=B", f"{P}.rechteck.breite", "groesse")
     assert aufrufe[1] == ("groesse", 20, f"{P}.rechteck.hoehe", "groesse")
-    assert (aufrufe[2][0], aufrufe[2][2], aufrufe[2][3]) == ("lage", f"{P}.rechteck.mitte", None)
+    # Seiten u = −15, v = 30 sind dem Ursprung am nächsten: ein Kennpunkt (Ecke) für beide Achsen, Pfad der Mitte
+    assert aufrufe[2] == ("lage", [5, "=B"], f"{P}.rechteck.mitte", (0, 1))
     assert aufrufe[3:] == [("radius", 3, f"{P}.rechteck.radius")] * 4
 
 
 def test_kreis_pfade():
     aufrufe = _aufrufe({"kreis": {"mitte": [1, 2], "durchmesser": "=T"}})
-    assert aufrufe == [("groesse", "=T", f"{P}.kreis.durchmesser", "groesse"), ("lage", [1, 2], f"{P}.kreis.mitte", None)]
+    assert aufrufe == [("groesse", "=T", f"{P}.kreis.durchmesser", "groesse"),
+                       ("lage", [1, 2], f"{P}.kreis.mitte", (0, 1))]
 
 
 def test_pfade_als_dict_fuer_bohrungen():
@@ -181,7 +189,7 @@ def test_pfade_als_dict_fuer_bohrungen():
     pfad = {"mitte": "features[0].positionen[2]", "durchmesser": "features[0].senkung.durchmesser"}
     aufrufe = _aufrufe({"kreis": {"mitte": [1, 2], "durchmesser": 9}}, pfad)
     assert aufrufe == [("groesse", 9, "features[0].senkung.durchmesser", "groesse"),
-                       ("lage", [1, 2], "features[0].positionen[2]", None)]
+                       ("lage", [1, 2], "features[0].positionen[2]", (0, 1))]
 
 
 def test_polygon_pfade_radien_liste_und_skalar():
@@ -217,7 +225,7 @@ def test_ohne_pfad_laeuft_alles_ueber_das_skriptfeature():
     assert sk._eintrag("D1", 5, 1, "a.b", "groesse") == _Mass("D1", 5, 1, "a.b", "groesse")
 
 
-# --- Skizzierer.lage: Pfad je Koordinate --------------------------------------------------------------------------------
+# --- Skizzierer.lagen_festlegen: Pfad je Koordinate -------------------------------------------------------------------
 
 
 class _Anzeige:
@@ -242,7 +250,8 @@ def _lage_skizzierer(punkte: list[tuple[float, float]], bindbar: bool = True) ->
     """Skizzen-x folgt u, Skizzen-y läuft gegen v (y = −v)."""
     sk = Skizzierer.__new__(Skizzierer)
     sk.ctx, sk.masse, sk.model, sk.ursprung = _kontext(), [], _LageModell(), object()
-    sk.lage_bindbar, sk.x_von, sk.y_von = bindbar, (0, 1), (1, -1)
+    sk.lage_bindbar, sk.x_von, sk.y_von, sk.hilfslinien = bindbar, (0, 1), (1, -1), True
+    sk._kennpunkte, sk._ziele, sk._belegt, sk._verrundungen = [], [], set(), []
     sk.skizze = SimpleNamespace(GetSketchPoints2=[_Punkt(*p) for p in punkte])
     sk.zu_skizze = lambda u, v: (u / 1000, -v / 1000)
     sk._text = lambda u, v: (u, v, 0.0)
@@ -251,28 +260,33 @@ def _lage_skizzierer(punkte: list[tuple[float, float]], bindbar: bool = True) ->
 
 def test_lage_traegt_pfad_mit_koordinatenindex_ein():
     sk = _lage_skizzierer([(0.04, -0.012)])
-    sk.lage(["=B", 12], (0, 0), pfad=f"{P}.kreis.mitte")
+    sk.kennpunkt((40, 12), ["=B", 12], URSPRUNG_UV, f"{P}.kreis.mitte", "")
+    sk.lagen_festlegen()
     assert sk.masse == [
-        _Mass("D1", "=B", 1, f"{P}.kreis.mitte[0]", "lage"),
-        _Mass("D2", 12, 1, f"{P}.kreis.mitte[1]", "lage"),
+        _Mass("D1", "=B", 1, f"{P}.kreis.mitte[0]", "lage", "ursprung"),
+        _Mass("D2", 12, 1, f"{P}.kreis.mitte[1]", "lage", "ursprung"),
     ]
 
 
 def test_lage_nur_eine_koordinate_und_ohne_pfad():
     sk = _lage_skizzierer([(0.03, -0.012)])
-    sk.lage([30, 12], (0, 0), nur=1, pfad=f"{P}.polygon.punkte[1]")
+    sk.kennpunkt((30, 12), [30, 12], URSPRUNG_UV, f"{P}.polygon.punkte[1]", "", achsen=(1,))
+    sk.lagen_festlegen()
     assert [(m.pfad, m.art) for m in sk.masse] == [(f"{P}.polygon.punkte[1][1]", "lage")]
     sk = _lage_skizzierer([(0.03, -0.012)])
     sk.ctx.knoten = "f1"
-    sk.lage([30, 12], (0, 0), nur=0)
+    sk.kennpunkt((30, 12), [30, 12], URSPRUNG_UV, None, "", achsen=(0,))
+    sk.lagen_festlegen()
     assert [(m.pfad, m.art) for m in sk.masse] == [("features[0]", "skript")]
 
 
 def test_lage_ohne_deckung_von_skizzen_und_modellursprung_traegt_millimeter_ein():
     sk = _lage_skizzierer([(0.04, -0.008)], bindbar=False)
-    sk.lage(["=B", "=T"], (0, 0), pfad=f"{P}.kreis.mitte")
-    # Der Maßwert ist der Abstand in der Skizze (hier in mm), nicht der Spec-Ausdruck
-    assert [(m.roh, m.vorzeichen) for m in sk.masse] == [(pytest.approx(40.0), 1), (pytest.approx(-8.0), 1)]
+    sk.kennpunkt((40, 8), ["=B", "=T"], URSPRUNG_UV, f"{P}.kreis.mitte", "")
+    sk.lagen_festlegen()
+    # Der Maßwert ist der Abstand in der Skizze (hier in mm), nicht der Spec-Ausdruck; vorzeichen gehört zu dieser
+    # Skizzenkoordinate (y = −8), nicht zu v
+    assert [(m.roh, m.vorzeichen) for m in sk.masse] == [(pytest.approx(40.0), 1), (pytest.approx(-8.0), -1)]
 
 
 # --- skizziere und positionen_festlegen -----------------------------------------------------------------------------------
@@ -284,15 +298,18 @@ class _Skizzenfeature:
 
 def _skizziere_ohne_sw(monkeypatch, ctx, erzeugt: list):
     class _Skizzierer:
-        def __init__(self, ctx_, se, skizze):
+        def __init__(self, ctx_, se, skizze, hilfslinien=True):
             self.masse = [_Mass("D1", "=B", 1, f"{P}.kreis.durchmesser", "groesse"),
                           _Mass("D2", 5, -1, f"{P}.kreis.mitte[0]", "lage")]
 
         def element(self, element, pfad=None):
             erzeugt.append((element, pfad))
 
-        def lage(self, roh_uv, text_uv, nur=None, pfad=None):
+        def kennpunkt(self, punkt_uv, roh_uv, bezug, pfad, gruppe, achsen=(0, 1), ziel=None):
             erzeugt.append((list(roh_uv), pfad))
+
+        def lagen_festlegen(self):
+            pass
 
         def zu_skizze(self, u, v):
             return u, v
@@ -345,7 +362,7 @@ def test_positionen_festlegen_gibt_jedem_punkt_seinen_pfad(monkeypatch):
     skizze.Select2 = lambda anhaengen, marke: None
     monkeypatch.setattr(modul, "positionsskizze", lambda feature: skizze)
     modul.positionen_festlegen(ctx, object(), Skizzenebene(object(), "vorne", 0.0, (0, 0, 1)), [[1, 2], ["=B", 4]],
-                               "f2_positionen", "features[1].positionen")
+                               "f2_positionen", None, "features[1].positionen")
     assert [pfad for _, pfad in erzeugt] == ["features[1].positionen[0]", "features[1].positionen[1]"]
     assert [m["name"] for m in ctx.masse["f2"]] == ["D1@f2_positionen", "D2@f2_positionen"]
     assert skizze.Name == "f2_positionen"

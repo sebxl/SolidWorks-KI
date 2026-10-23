@@ -2,8 +2,7 @@ import pytest
 
 from swki.compiler.anker import Flaeche
 from swki.compiler.fehler import BauFehler
-from swki.compiler.skizze import _halb_weg, ebene_aus_flaeche, modellpunkt, orientierung_der_normale
-from swki.spec.ausdruck import auswerten
+from swki.compiler.skizze import ebene_aus_flaeche, modellpunkt, orientierung_der_normale
 
 
 @pytest.mark.parametrize(
@@ -31,16 +30,10 @@ def test_schraege_flaeche_wird_abgelehnt():
 def test_ebene_aus_deckflaeche():
     se = ebene_aus_flaeche(Flaeche("ebene", (12, 46, -3), normale=(0, 1, 0)))
     assert (se.orientierung, se.lage, se.normale) == ("oben", 46, (0, 1, 0))
+    assert se.flaeche.punkt == (12, 46, -3)  # Skizzenfläche für Rand- und Flächenbezüge
 
 
 def test_zylinder_ist_keine_skizzenebene():
     with pytest.raises(BauFehler, match="ebenen Flächen"):
         ebene_aus_flaeche(Flaeche("zylinder", (0, 0, 0), achse=(0, 1, 0), radius=4))
 
-
-@pytest.mark.parametrize(("mitte", "groesse", "erwartet"), [(0, 100, -50), (10, 20.5, -0.25), ("=M", 100, "=(M) - 100 / 2"),
-                                                             (0, "=L", "=0 - (L) / 2"), ("=M+1", "=L", "=(M+1) - (L) / 2")])
-def test_halb_weg(mitte, groesse, erwartet):
-    ergebnis = _halb_weg(mitte, groesse)
-    assert ergebnis == erwartet
-    assert auswerten(ergebnis, {"M": 3, "L": 10}) == auswerten(mitte, {"M": 3}) - auswerten(groesse, {"L": 10}) / 2

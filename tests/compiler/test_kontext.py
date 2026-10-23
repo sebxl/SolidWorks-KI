@@ -110,6 +110,16 @@ def test_mass_mit_bezug_rand_bindet_nie(bezug):
     assert ctx.masse["f1"][0]["bezug"] == bezug
 
 
+def test_mass_mit_eigenem_wert_traegt_ihn_ein_und_bindet_nie():
+    # Rand-/Paarmaß oder Rechteckseite: roh ist die Spec-Koordinate, der Maßwert ein anderer Betrag
+    ctx = _ctx_mit_spec(gleichungen=True)
+    ctx.knoten = "f1"
+    ctx.mass("D1@f1_skizze", "=L/2-10", "features[0].skizze.elemente[0].rechteck.mitte[0]", "lage", bezug="ursprung",
+             wert=35.0)
+    assert ctx.model.GetEquationMgr.texte == []
+    assert (ctx.masse["f1"][0]["roh"], ctx.masse["f1"][0]["wert"]) == ("=L/2-10", 35.0)
+
+
 def test_pfad_ist_position_im_feature_baum():
     ctx = _ctx_mit_spec()
     assert (ctx.pfad("f1"), ctx.pfad("f2")) == ("features[0]", "features[1]")

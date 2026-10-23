@@ -91,6 +91,13 @@ def test_paare_mitte_bedingungen():
     assert paare_mitte([punkt(-10, 1, "mitte"), punkt(10.0005, 1.0005, "mitte")], 0, TOL) == [(0, 1)]
 
 
+def test_paare_mitte_nur_mit_beiden_achsen():
+    # Ein Kennpunkt nur einer Achse (Rechteckmitte in u, Seite in v) bildet kein Paar (Review Task 3)
+    halb = Kennpunkt(uv=(-10, 1), achsen=(0,), bezug={0: "mitte", 1: "ursprung"}, gruppe=LOCH)
+    assert paare_mitte([halb, punkt(10, 1, "mitte")], 0, TOL) == []
+    assert paare_mitte([punkt(10, 1, "mitte"), halb], 0, TOL) == []
+
+
 def test_ursprung_beide_null_ist_deckung():
     ist = plan([punkt(0, 0)])
     assert ist == [Auftrag("deckung", 0, 0)]
