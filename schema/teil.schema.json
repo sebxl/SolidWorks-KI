@@ -39,6 +39,19 @@
         }
       ]
     },
+    "bezugswert": {
+      "oneOf": [
+        {"enum": ["ursprung", "mitte", "-rand", "+rand"]},
+        {
+          "type": "object", "required": ["flaeche"], "additionalProperties": false,
+          "properties": {"flaeche": {"$ref": "#/$defs/flaechenanker"}}
+        }
+      ]
+    },
+    "bezug": {
+      "type": "object", "minProperties": 1, "additionalProperties": false,
+      "properties": {"u": {"$ref": "#/$defs/bezugswert"}, "v": {"$ref": "#/$defs/bezugswert"}}
+    },
     "ebene": {
       "oneOf": [
         {"$ref": "#/$defs/standardebene"},
@@ -79,7 +92,7 @@
               "type": "object", "required": ["mitte", "breite", "hoehe"], "additionalProperties": false,
               "properties": {
                 "mitte": {"$ref": "#/$defs/punkt2"}, "breite": {"$ref": "#/$defs/wert"}, "hoehe": {"$ref": "#/$defs/wert"},
-                "radius": {"$ref": "#/$defs/wert"}
+                "radius": {"$ref": "#/$defs/wert"}, "bezug": {"$ref": "#/$defs/bezug"}
               }
             }
           }
@@ -89,7 +102,10 @@
           "properties": {
             "kreis": {
               "type": "object", "required": ["mitte", "durchmesser"], "additionalProperties": false,
-              "properties": {"mitte": {"$ref": "#/$defs/punkt2"}, "durchmesser": {"$ref": "#/$defs/wert"}}
+              "properties": {
+                "mitte": {"$ref": "#/$defs/punkt2"}, "durchmesser": {"$ref": "#/$defs/wert"},
+                "bezug": {"$ref": "#/$defs/bezug"}
+              }
             }
           }
         },
@@ -124,7 +140,7 @@
               "type": "object", "required": ["mitte", "laenge", "breite"], "additionalProperties": false,
               "properties": {
                 "mitte": {"$ref": "#/$defs/punkt2"}, "laenge": {"$ref": "#/$defs/wert"}, "breite": {"$ref": "#/$defs/wert"},
-                "winkel": {"$ref": "#/$defs/wert"}
+                "winkel": {"$ref": "#/$defs/wert"}, "bezug": {"$ref": "#/$defs/bezug"}
               }
             }
           }
@@ -208,6 +224,7 @@
         "id": true, "typ": true,
         "flaeche": {"$ref": "#/$defs/flaechenanker"},
         "positionen": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt2"}},
+        "bezug": {"$ref": "#/$defs/bezug"},
         "durchmesser": {"$ref": "#/$defs/wert"},
         "tiefe": {"$ref": "#/$defs/wert"},
         "durch": {"const": true},
@@ -230,6 +247,7 @@
         "norm": {"enum": ["ISO"]},
         "flaeche": {"$ref": "#/$defs/flaechenanker"},
         "positionen": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt2"}},
+        "bezug": {"$ref": "#/$defs/bezug"},
         "durch": {"const": true},
         "tiefe": {"$ref": "#/$defs/wert"},
         "gewindetiefe": {"$ref": "#/$defs/wert"}

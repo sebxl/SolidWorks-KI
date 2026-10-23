@@ -49,6 +49,12 @@ def bezug_von(obj: dict) -> dict[int, str | dict]:
     return {0: angabe.get("u", URSPRUNG), 1: angabe.get("v", URSPRUNG)}
 
 
+def ebene_ist_flaeche(ebene) -> bool:
+    """Liegt eine Skizze auf einer Fläche (Flächenanker `{feature, flaeche}` oder `{nahe}`), nicht auf einer Standard- oder
+    Versatzebene? Nur dort gibt es eine Skizzenfläche mit Randkanten für `-rand`/`+rand` und `{flaeche}`."""
+    return isinstance(ebene, dict) and ("nahe" in ebene or "flaeche" in ebene)
+
+
 def paare_mitte(punkte: list[Kennpunkt], achse: int, tol: float) -> list[tuple[int, int]]:
     """Index-Paare (i < j) mit `mitte` auf `achse`, gleicher Gruppe, auf `achse` entgegengesetzt gleich und ≠ 0, auf der
     anderen Achse gleich."""

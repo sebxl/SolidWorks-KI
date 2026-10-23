@@ -9,6 +9,7 @@ import yaml
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import best_match
 
+from swki.bemassung import bezug_von, ebene_ist_flaeche
 from swki.cli import SwkiFehler
 from swki.compiler.anker import RICHTUNGEN
 from swki.compiler.skriptpruefung import pruefe_skript
@@ -196,6 +197,25 @@ def _formschraege_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
     return [{"pfad": f"{pfad}.ende.formschraege",
              "meldung": f"Profil fällt zusammen: Einzug {einzug:.4g} mm (Tiefe {tiefe:g} · tan {winkel:g}°) erreicht "
                         f"{grenze[1]} {grenze[0]:g} mm – Winkel oder Tiefe verkleinern"}]
+
+
+def _bezug_befunde(f: dict, pfad: str) -> list[dict]:
+    """Bemaßungsbezug (Spec §6): `-rand`/`+rand` und `{flaeche}` brauchen eine Skizzenfläche – in Skizzen auf Standard-
+    oder Versatzebene gibt es keine. Bohrungen liegen immer auf einer Fläche."""
+    skizze = f.get("skizze")
+    if not skizze or ebene_ist_flaeche(skizze["ebene"]):
+        return []
+    befunde = []
+    for k, e in enumerate(skizze["elemente"]):
+        for art, element in e.items():
+            for achse, bezug in bezug_von(element).items():
+                if isinstance(bezug, dict) or bezug in ("-rand", "+rand"):
+                    name = "flaeche" if isinstance(bezug, dict) else bezug
+                    befunde.append({"pfad": f"{pfad}.skizze.elemente[{k}].{art}.bezug.{'uv'[achse]}",
+                                    "meldung": f"Bezug {name!r} gilt nur in Skizzen auf Flächen (diese Skizze liegt auf "
+                                               "einer Standard- oder Versatzebene) – mitte oder ursprung verwenden, "
+                                               "oder die Skizze auf eine Fläche legen"})
+    return befunde
 
 
 def _anker(obj, pfad: list):
@@ -400,6 +420,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             else:
                 for b in pruefe_skript(datei.read_text(encoding="utf-8")):
                     befunde.append({"pfad": f"features[{i}].datei", "meldung": f"Zeile {b['zeile']}: {b['meldung']}"})
+        befunde += _bezug_befunde(f, f"features[{i}]")
         for k, e in enumerate(elemente):
             befunde += _element_befunde(e, f"features[{i}].skizze.elemente[{k}]", parameter)
         if "ende" in f:

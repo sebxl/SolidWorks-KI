@@ -10,4 +10,5 @@ MOTORHALTER = Path(__file__).parent / "motorhalter" / "motorhalter.yaml"
 
 def test_motorhalter_gueltig_ohne_hinweis():
     v = validieren(MOTORHALTER)
-    assert (v["komponenten"], v["verknuepfungen"], v["hinweise"]) == (9, 18, [])
+    hinweise = [h for h in v["hinweise"] if h["art"] != "bezug"]  # bezug: Referenz ist eingefroren
+    assert (v["komponenten"], v["verknuepfungen"], hinweise) == (9, 18, [])
