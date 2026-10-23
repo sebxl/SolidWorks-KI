@@ -108,6 +108,11 @@ class _Manager:
         self.modell.aufrufe.append(("punkt", p))
         return p
 
+    def CreateFillet(self, radius, art):  # noqa: N802
+        self.modell.aufrufe.append(("verrundung", tuple(self.modell.auswahl)))
+        self.modell.anzeigen.append(_Anzeige(f"R{len(self.modell.anzeigen) + 1}"))
+        return object()
+
     def InsertSketch(self, neu):  # noqa: N802
         pass
 
@@ -121,18 +126,36 @@ class _Anzeige:
 
 
 class _Feature:
-    def __init__(self):
-        self.Name = ""
+    def __init__(self, anzeigen=()):
+        self.Name, self.anzeigen = "", anzeigen
 
     def Select2(self, anhaengen, marke):  # noqa: N802
         return True
 
+    @property
+    def GetFirstDisplayDimension(self):  # noqa: N802
+        return self.anzeigen[0] if self.anzeigen else None
+
+    def GetNextDisplayDimension(self, dd):  # noqa: N802
+        i = self.anzeigen.index(dd) + 1
+        return self.anzeigen[i] if i < len(self.anzeigen) else None
+
+
+class _Gleichungen:
+    def __init__(self):
+        self.texte = []
+
+    def Add2(self, index, text, loesen):  # noqa: N802
+        self.texte.append(text)
+        return 0
+
 
 class _Modell:
     def __init__(self):
-        self.auswahl, self.aufrufe, self.nr = [], [], 0
+        self.auswahl, self.aufrufe, self.nr, self.anzeigen = [], [], 0, []
         self.SketchManager = _Manager(self)
-        self.feature = _Feature()
+        self.feature = _Feature(self.anzeigen)
+        self.GetEquationMgr = _Gleichungen()
 
     def SketchAddConstraints(self, art):  # noqa: N802
         self.aufrufe.append(("beziehung", art, tuple(self.auswahl)))
@@ -140,7 +163,8 @@ class _Modell:
     def _mass(self, art):
         self.nr += 1
         self.aufrufe.append((art, tuple(self.auswahl), f"D{self.nr}"))
-        return _Anzeige(f"D{self.nr}")
+        self.anzeigen.append(_Anzeige(f"D{self.nr}"))
+        return self.anzeigen[-1]
 
     def AddHorizontalDimension2(self, x, y, z):  # noqa: N802
         return self._mass("horizontal")
@@ -160,6 +184,27 @@ class _Modell:
 
     def mittellinien(self) -> list:
         return [a[1] for a in self.aufrufe if a[0] == "mittellinie"]
+
+    def linien(self) -> list:
+        return [a[1] for a in self.aufrufe if a[0] == "linie"]
+
+    def neue_punkte(self) -> list:
+        return [a[1] for a in self.aufrufe if a[0] == "punkt"]
+
+    def zaehlprobe(self) -> tuple[int, int]:
+        """(Freiheitsgrade, gesetzte Bedingungen) der Skizze: je Punkt 2, je Kreis 1 (Radius); Ursprung und Modellkanten
+        stehen fest. Deckung Punkt–Punkt, Mittig und Symmetrie nehmen 2, Deckung Punkt–Kante und alles andere 1."""
+        skizze = self.SketchManager.ActiveSketch
+        frei = 2 * len(skizze.punkte) + sum(isinstance(s, _Kreis) for s in skizze.segmente)
+        gesetzt = 0
+        for a in self.aufrufe:
+            if a[0] == "beziehung":
+                zwei = a[1] in ("sgATMIDDLE", "sgSYMMETRIC") or (
+                    a[1] == "sgCOINCIDENT" and all(isinstance(o, _Punkt) for o in a[2]))
+                gesetzt += 2 if zwei else 1
+            elif a[0] in ("horizontal", "vertikal", "frei"):
+                gesetzt += 1
+        return frei, gesetzt
 
 
 URSPRUNG = _Punkt(0, 0.0, 0.0, "Ursprung")
@@ -199,9 +244,9 @@ def modell(monkeypatch):
     return m
 
 
-def _kontext(modell, parameter=None) -> Kontext:
+def _kontext(modell, parameter=None, gleichungen=False) -> Kontext:
     spec = {"parameter": parameter or {}, "features": [{"id": "f1"}, {"id": "f2"}, {"id": "f3"}]}
-    ctx = Kontext(None, modell, spec, Path("t.yaml"), 0.1)
+    ctx = Kontext(None, modell, spec, Path("t.yaml"), 0.1, gleichungen=gleichungen)
     ctx.knoten = "f2"
     return ctx
 
@@ -249,48 +294,189 @@ def _lagen(ctx, fid="f2") -> list[dict]:
 # --- Rechteck ----------------------------------------------------------------------------------------------------------
 
 
-def test_rechteck_um_ursprung_ueber_mitte(modell):
+def _seiten(modell) -> list:
+    """Die vier Seiten des (ersten) Rechtecks: unten (−v), rechts (+u), oben (+v), links (−u)."""
+    return modell.linien()[:4]
+
+
+def test_rechteck_um_ursprung_ueber_seitenmitten(modell):
+    # Fall (c): Mitte (0, 0) – zwei Seitenmittelpunkte, keine Diagonale (Ruling 6)
     ctx = _kontext(modell)
     modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}], "f1_skizze",
                     [f"{P}[0]"])
-    diagonale, = modell.mittellinien()
-    # Diagonale von Ecke (−,−) nach (+,+), teilt die Ecken (Spike S17 Zeile 5)
-    assert (diagonale.GetStartPoint2.X, diagonale.GetStartPoint2.Y) == (-0.05, -0.03)
-    assert (diagonale.GetEndPoint2.X, diagonale.GetEndPoint2.Y) == (0.05, 0.03)
-    assert modell.beziehungen("sgATMIDDLE") == [(URSPRUNG, diagonale)]
-    assert modell.beziehungen("sgCOINCIDENT") == []
+    unten, _, _, links = _seiten(modell)
+    mitte_unten, mitte_links = modell.neue_punkte()
+    assert ((mitte_unten.X, mitte_unten.Y), (mitte_links.X, mitte_links.Y)) == ((0.0, -0.03), (-0.05, 0.0))
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte_unten, unten), (mitte_links, links)]
+    assert modell.beziehungen("sgVERTICALPOINTS2D") == [(mitte_unten, URSPRUNG)]  # u = 0
+    assert modell.beziehungen("sgHORIZONTALPOINTS2D") == [(mitte_links, URSPRUNG)]  # v = 0
+    assert modell.mittellinien() == []
     assert [a for a, _ in modell.masse("horizontal", "vertikal", "frei")] == ["frei", "frei"]  # Breite und Höhe
     assert [m["art"] for m in ctx.masse["f2"]] == ["groesse", "groesse"]
+    assert modell.zaehlprobe() == (12, 12)
 
 
 def test_rechteck_ursprung_bemasst_die_naechste_seite_ueber_die_ecke(modell):
+    # Fall (a): beide Achsen Seite – die Ecke der zugewandten Seiten
     ctx = _kontext(modell, {"A": 30})
     r = {"mitte": ["=A", 20], "breite": 20, "hoehe": 10}
     modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": r}], "f1_skizze", [f"{P}[0]"])
-    assert modell.mittellinien() == []  # keine Diagonale, wenn keine Achse über die Mitte läuft
+    assert modell.mittellinien() == [] and modell.neue_punkte() == []
     ecke = _punkt(modell, 20, 15)  # dem Ursprung nächste Seiten: u = 20, v = 15
     assert modell.masse("horizontal", "vertikal") == [("horizontal", (ecke, URSPRUNG)), ("vertikal", (ecke, URSPRUNG))]
-    # Pfad mitte[a]; Wert ist die Seite, roh der Spec-Wert der Mitte (keine Gleichung: roh ≠ Maßwert)
+    # Pfad mitte[a]; roh ist die Seite als Ausdruck der Mitte (Ruling 7), der Wert die Seite
     assert [(m["pfad"], m["roh"], m["wert"], m["bezug"]) for m in _lagen(ctx)] == [
-        (f"{P}[0].rechteck.mitte[0]", "=A", 20.0, "ursprung"), (f"{P}[0].rechteck.mitte[1]", 20, 15.0, "ursprung")]
+        (f"{P}[0].rechteck.mitte[0]", "=(A) - 20 / 2", 20.0, "ursprung"),
+        (f"{P}[0].rechteck.mitte[1]", 15.0, 15.0, "ursprung")]
+    assert modell.zaehlprobe() == (8, 8)
 
 
-def test_rechteck_seite_zum_rand_mit_linie_und_kante(modell):
+def test_rechteck_seite_zum_rand_und_mitte_ueber_den_seitenmittelpunkt(modell):
+    # Fall (b): u zur linken Kante, v mitte (auf 0) – Mittelpunkt der linken Seite, beide Achsen
     kanten = _block_kanten()
     ctx = _kontext(modell)
     r = {"mitte": [-35, 0], "breite": 20, "hoehe": 10, "bezug": {"u": "-rand", "v": "mitte"}}
     modul.skizziere(ctx, _auf_flaeche(kanten), [{"rechteck": r}], "f2_skizze", [f"{P}[0]"])
-    links = next(a[1] for a in modell.aufrufe if a[0] == "linie" and a[1].GetStartPoint2.X == -0.045
-                 and a[1].GetEndPoint2.X == -0.045)
-    # u: linke Seite zur linken Kante (AddDimension2, Spike Zeile 3); v: Mitte auf 0 über die Diagonale
-    assert ("frei", (links, kanten["links"])) in modell.masse("frei")
-    diagonale, = modell.mittellinien()
-    mitte, = [a[1] for a in modell.aufrufe if a[0] == "punkt"]
-    assert modell.beziehungen("sgATMIDDLE") == [(mitte, diagonale)]
-    assert modell.masse("horizontal", "vertikal") == []
+    _, _, _, links = _seiten(modell)
+    mitte, = modell.neue_punkte()
+    assert (mitte.X, mitte.Y) == (-0.045, 0.0)
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte, links)]
+    assert ("frei", (links, kanten["links"])) in modell.masse("frei")  # Seite + Kante (Spike S17 Zeile 3)
     assert modell.beziehungen("sgHORIZONTALPOINTS2D") == [(mitte, URSPRUNG)]
-    assert [(m["pfad"], m["bezug"], m["wert"], m["vorzeichen"]) for m in _lagen(ctx)] == [
-        (f"{P}[0].rechteck.mitte[0]", "-rand", 5.0, 1)]
+    assert modell.mittellinien() == [] and modell.masse("horizontal", "vertikal") == []
+    assert [(m["pfad"], m["roh"], m["bezug"], m["wert"], m["vorzeichen"]) for m in _lagen(ctx)] == [
+        (f"{P}[0].rechteck.mitte[0]", -45.0, "-rand", 5.0, 1)]
+    assert modell.zaehlprobe() == (10, 10)
+
+
+def test_zwei_taschen_mitte_und_rand_gepaart(modell):
+    # Fall (b) paarfähig: {u: mitte, v: "-rand"} bei u = ±30 → Symmetrie, Abstand 60, ein Randmaß
+    kanten = _block_kanten()
+    ctx = _kontext(modell)
+    elemente = [{"rechteck": {"mitte": [u, -20], "breite": 20, "hoehe": 10, "bezug": {"u": "mitte", "v": "-rand"}}}
+                for u in (-30, 30)]
+    modul.skizziere(ctx, _auf_flaeche(kanten), elemente, "f2_skizze", [f"{P}[0]", f"{P}[1]"])
+    links, rechts = modell.neue_punkte()  # Mitten der unteren Seiten (v = −25)
+    assert ((links.X, links.Y), (rechts.X, rechts.Y)) == ((-0.03, -0.025), (0.03, -0.025))
+    mittellinie, = modell.mittellinien()
+    assert modell.beziehungen("sgSYMMETRIC") == [(links, rechts, mittellinie)]
+    assert modell.masse("horizontal") == [("horizontal", (links, rechts))]
+    unten_links = modell.linien()[0]
+    assert modell.masse("frei")[-1] == ("frei", (unten_links, kanten["vorn"]))  # nur der festlegende Punkt
+    assert [(m["pfad"], m["bezug"], m["wert"]) for m in _lagen(ctx)] == [
+        (f"{P}[0].rechteck.mitte[0]", "mitte", 60.0), (f"{P}[0].rechteck.mitte[1]", "-rand", 5.0)]
+    assert modell.zaehlprobe() == (24, 24)
+
+
+def test_zwei_rechtecke_mitte_gepaart_ueber_diagonalen(modell):
+    # Fall (d): beide Achsen mitte-artig, Mitte ≠ (0, 0) – Mittelpunkt über die Diagonale, paarfähig
+    ctx = _kontext(modell)
+    elemente = [{"rechteck": {"mitte": [u, 0], "breite": 20, "hoehe": 10, "bezug": {"u": "mitte"}}} for u in (-30, 30)]
+    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"])
+    diagonale_1, diagonale_2, mittellinie = modell.mittellinien()
+    mitte_1, mitte_2 = modell.neue_punkte()
+    assert ((mitte_1.X, mitte_1.Y), (mitte_2.X, mitte_2.Y)) == ((-0.03, 0.0), (0.03, 0.0))
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte_1, diagonale_1), (mitte_2, diagonale_2)]
+    assert modell.beziehungen("sgSYMMETRIC") == [(mitte_1, mitte_2, mittellinie)]
+    assert modell.beziehungen("sgHORIZONTALPOINTS2D") == [(mitte_1, URSPRUNG)]
+    assert [(m["bezug"], m["wert"]) for m in _lagen(ctx)] == [("mitte", 60.0)]
+    assert modell.zaehlprobe() == (24, 24)
+
+
+def test_rechteck_versetzt_mit_mitte_ueber_diagonale(modell):
+    # Fall (d) ungepaart: Mittelpunkt über die Diagonale, Maße zum Ursprung
+    ctx = _kontext(modell)
+    r = {"mitte": [12, 7], "breite": 20, "hoehe": 10, "bezug": {"u": "mitte", "v": "mitte"}}
+    modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": r}], "f1_skizze", [f"{P}[0]"])
+    diagonale, = modell.mittellinien()
+    mitte, = modell.neue_punkte()
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte, diagonale)]
+    assert modell.masse("horizontal", "vertikal") == [("horizontal", (mitte, URSPRUNG)), ("vertikal", (mitte, URSPRUNG))]
+    assert [(m["roh"], m["wert"]) for m in _lagen(ctx)] == [(12, 12.0), (7, 7.0)]
+    assert modell.zaehlprobe() == (10, 10)
+
+
+def test_rechteck_zur_flaeche_loest_die_kante_einmal_auf(monkeypatch, modell):
+    # Kennkoordinate (zugewandte Seite) und Maß nutzen dieselbe Kante (M1)
+    kanten = _block_kanten()
+    seite = Flaeche("ebene", (50.0, 10.0, 0.0), normale=(1.0, 0.0, 0.0))
+    aufgeloest = []
+    monkeypatch.setattr(modul, "loese_flaeche", lambda ctx, anker: aufgeloest.append(anker) or seite)
+    ctx = _kontext(modell)
+    bezug = {"flaeche": {"feature": "f1", "flaeche": "+x"}}
+    r = {"mitte": [30, 0], "breite": 20, "hoehe": 10, "bezug": {"u": bezug}}
+    modul.skizziere(ctx, _auf_flaeche(kanten), [{"rechteck": r}], "f2_skizze", [f"{P}[0]"])
+    _, rechts, _, _ = _seiten(modell)
+    mitte, = modell.neue_punkte()  # Fall (b): Mitte der rechten Seite (u = 40, v = 0)
+    assert (mitte.X, mitte.Y) == (0.04, 0.0)
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte, rechts)]
+    assert ("frei", (rechts, kanten["rechts"])) in modell.masse("frei")
+    assert [(m["bezug"], m["wert"], m["vorzeichen"]) for m in _lagen(ctx)] == [(bezug, 10.0, -1)]
+    assert len(aufgeloest) == 1
+
+
+def test_rechteck_mit_radius_um_ursprung_verrundet_nach_den_lagen(modell):
+    ctx = _kontext(modell)
+    r = {"mitte": [0, 0], "breite": 40, "hoehe": 20, "radius": 5}
+    modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": r}], "f1_skizze", [f"{P}[0]"])
+    arten = [a[0] if a[0] != "beziehung" else a[1] for a in modell.aufrufe]
+    verrundungen = [i for i, a in enumerate(arten) if a == "verrundung"]
+    lagen = [i for i, a in enumerate(arten) if a in ("sgATMIDDLE", "sgVERTICALPOINTS2D", "sgHORIZONTALPOINTS2D")]
+    assert len(verrundungen) == 4 and len(lagen) == 4 and max(lagen) < min(verrundungen)
+    assert modell.mittellinien() == []
+    assert [m["art"] for m in ctx.masse["f2"]] == ["groesse", "groesse"] + ["radius"] * 4
+
+
+def test_rotation_rechteck_um_ursprung_ohne_konstruktionslinien(modell):
+    # Fall (c) in der Rotationsskizze: nur die Achse ist Mittellinie
+    ctx = _kontext(modell)
+    elemente = [{"rechteck": {"mitte": [0, 0], "breite": 20, "hoehe": 40, "bezug": {"u": "mitte", "v": "mitte"}}},
+                {"mittellinie": {"von": [0, -30], "bis": [0, 30]}}]
+    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"], hilfslinien=False)
+    assert len(modell.mittellinien()) == 1
+    assert len(modell.beziehungen("sgATMIDDLE")) == 2 and modell.beziehungen("sgSYMMETRIC") == []
+
+
+def test_rotation_rechteck_versetzt_mit_mitte_ueber_seitenmitten(modell):
+    # statt (d) ohne Hilfslinien: zwei Seitenmittelpunkte mit Maßen zum Ursprung, keine Diagonale
+    ctx = _kontext(modell)
+    elemente = [{"rechteck": {"mitte": [10, 5], "breite": 20, "hoehe": 40, "bezug": {"u": "mitte", "v": "mitte"}}},
+                {"mittellinie": {"von": [0, -30], "bis": [0, 30]}}]
+    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"], hilfslinien=False)
+    unten, _, _, links = _seiten(modell)
+    mitte_unten, mitte_links = modell.neue_punkte()
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte_unten, unten), (mitte_links, links)]
+    assert len(modell.mittellinien()) == 1
+    assert ("horizontal", (mitte_unten, URSPRUNG)) in modell.masse("horizontal")
+    assert ("vertikal", (mitte_links, URSPRUNG)) in modell.masse("vertikal")
+    assert [(m["pfad"], m["wert"]) for m in _lagen(ctx)][:2] == [
+        (f"{P}[0].rechteck.mitte[0]", 10.0), (f"{P}[0].rechteck.mitte[1]", 5.0)]
+
+
+# --- Gleichungen an (Ruling 7) ----------------------------------------------------------------------------------------
+
+
+def test_gleichung_der_rechteckseite(modell):
+    ctx = _kontext(modell, {"A": 30}, gleichungen=True)
+    modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": {"mitte": ["=A", 20], "breite": 20, "hoehe": 10}}], "f1_skizze",
+                    [f"{P}[0]"])
+    assert modell.GetEquationMgr.texte == ['"D3@f1_skizze" = "A" - (20 / 2)']
+
+
+def test_gleichung_des_paarabstands(modell):
+    ctx = _kontext(modell, {"ZG": 30}, gleichungen=True)
+    elemente = [{"kreis": {"mitte": [u, 0], "durchmesser": 8, "bezug": {"u": "mitte"}}} for u in ("=-ZG", "=ZG")]
+    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"])
+    abstand, = _lagen(ctx)
+    assert (abstand["roh"], abstand["vorzeichen"], abstand["wert"]) == ("=2 * (-ZG)", -1, 60.0)
+    assert modell.GetEquationMgr.texte == [f'"{abstand["name"]}" = -(2 * -"ZG")']
+
+
+def test_gleichung_nie_zum_rand(modell):
+    ctx = _kontext(modell, {"X": 40}, gleichungen=True)
+    elemente = [{"kreis": {"mitte": ["=-X", 0], "durchmesser": 4, "bezug": {"u": "-rand"}}}]
+    modul.skizziere(ctx, _auf_flaeche(_block_kanten()), elemente, "f2_skizze", [f"{P}[0]"])
+    assert modell.GetEquationMgr.texte == []
 
 
 # --- Kreise: mitte ----------------------------------------------------------------------------------------------------
@@ -309,7 +495,7 @@ def test_kreise_mitte_paar_ueber_elemente(modell):
     assert ("horizontal", (links, rechts)) in modell.masse("horizontal")
     abstand, = [m for m in _lagen(ctx) if m["bezug"] == "mitte"]
     assert abstand | {"name": None} == {"name": None, "pfad": f"{P}[0].kreis.mitte[0]", "art": "lage", "bezug": "mitte",
-                                        "roh": -30, "vorzeichen": -1, "wert": 60.0}
+                                        "roh": -60, "vorzeichen": -1, "wert": 60.0}
     # Mittellinie entlang v durch den Ursprung; ohne Skizzenfläche mit Längenmaß (Ruling 4a)
     assert (mittellinie.GetStartPoint2.X, mittellinie.GetEndPoint2.X) == (0.0, 0.0)
     assert modell.beziehungen("sgCOINCIDENT") == [(mittellinie.GetStartPoint2, URSPRUNG)]
@@ -466,11 +652,12 @@ def test_rotation_ohne_zusaetzliche_mittellinien(modell):
     ctx = _kontext(modell)
     elemente = [{"rechteck": {"mitte": [10, 0], "breite": 20, "hoehe": 40}},
                 {"mittellinie": {"von": [0, -30], "bis": [0, 30]}}]
-    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"])
+    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"], hilfslinien=False)
     assert len(modell.mittellinien()) == 1
-    assert modell.beziehungen("sgATMIDDLE") == []
-    ecke = _punkt(modell, 0, -20)  # v: Mitte auf 0 → Seite in −v
-    assert modell.beziehungen("sgVERTICALPOINTS2D")[0] == (ecke, URSPRUNG)  # linke Seite u = 0
+    _, _, _, links = _seiten(modell)
+    mitte, = modell.neue_punkte()  # Fall (b): linke Seite u = 0, Mitte v = 0 → Mittelpunkt der linken Seite
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte, links)]
+    assert modell.beziehungen("sgCOINCIDENT")[0] == (mitte, URSPRUNG)
 
 
 def test_nicht_bindbare_lage_traegt_skizzenkoordinate_mit_ihrem_vorzeichen(modell, monkeypatch):

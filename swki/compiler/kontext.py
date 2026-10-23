@@ -64,14 +64,16 @@ class Kontext:
         {"flaeche": …} …) oder None. wert: Betrag des Maßes in mm bzw. Grad, wenn er nicht |roh| ist (Lage zum Rand, Abstand
         eines Paars, Rechteckseite statt Mitte) – roh ist dann nur die Spec-Koordinate.
 
-        Nur mit ctx.gleichungen und bei einem Ausdruck bindet die Methode das Maß per SW-Gleichung an den Parameter; bei einem
-        Bezug außer dem Ursprung oder einem eigenen wert nie (der Wert hängt dann nicht allein am Ausdruck).
+        Nur mit ctx.gleichungen und bei einem Ausdruck bindet die Methode das Maß per SW-Gleichung an den Parameter (Spec §4:
+        auch Lage zum Ursprung und Abstand eines mitte-Paars); bei einem Rand- oder Flächenbezug oder einem eigenen wert nie
+        (der Wert hängt dann an der Geometrie, nicht allein am Ausdruck).
         """
         self.masse.setdefault(self.knoten or "", []).append({
             "name": masname, "pfad": pfad, "art": art, "bezug": bezug, "roh": roh, "vorzeichen": vorzeichen,
             "wert": abs(self.wert(roh)) if wert is None else wert,
         })
-        if not self.gleichungen or not ist_ausdruck(roh) or bezug not in (None, "ursprung") or wert is not None:
+        zur_geometrie = isinstance(bezug, dict) or bezug in ("-rand", "+rand")
+        if not self.gleichungen or not ist_ausdruck(roh) or zur_geometrie or wert is not None:
             return
         rechts = sw_ausdruck(roh) if vorzeichen > 0 else f"-({sw_ausdruck(roh)})"
         if self.model.GetEquationMgr.Add2(-1, f'"{masname}" = {rechts}', True) < 0:

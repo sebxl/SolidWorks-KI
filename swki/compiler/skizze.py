@@ -16,6 +16,7 @@ from swki.compiler.fehler import (
     FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, SKIZZE_NICHT_BESTIMMT, SKIZZE_UNGUELTIG, BauFehler,
 )
 from swki.compiler.topologie import kante_aus, loese_flaeche
+from swki.spec.ausdruck import ist_ausdruck
 from swki.spec.konturen import bogenende_koordinate, eckradien_roh, kontur_punkte_roh
 from swki.verbindung import in_mm, mm
 
@@ -136,6 +137,27 @@ def _vorzeichen(x: float) -> int:
     return -1 if x < 0 else 1
 
 
+def _teil(x) -> str:
+    return f"({x[1:]})" if ist_ausdruck(x) else repr(x)
+
+
+def _seite_roh(mitte, groesse, richtung: int):
+    """Rechteckseite "mitte ± groesse/2" (richtung −1/+1) als Zahl oder Ausdruck – mit Gleichungen hängt sie so an den
+    Parametern (Ruling 7, wie früher die Ecke)."""
+    if not ist_ausdruck(mitte) and not ist_ausdruck(groesse):
+        return mitte + richtung * groesse / 2
+    return f"={_teil(mitte)} {'-' if richtung < 0 else '+'} {_teil(groesse)} / 2"
+
+
+def _paar_roh(roh):
+    """Abstand eines zur Mitte symmetrischen Paars: 2 × Koordinate des festlegenden Punkts (Zahl oder Ausdruck)."""
+    return f"=2 * {_teil(roh)}" if ist_ausdruck(roh) else 2 * roh
+
+
+def _zur_kante(bezug) -> bool:
+    return isinstance(bezug, dict) or bezug in ("-rand", "+rand")
+
+
 def _text_zwischen(achse: int, von: float, bis: float, quer: float) -> tuple[float, float]:
     """Lage (u, v) des Maßtexts eines Maßes auf `achse` zwischen den Koordinaten von und bis, neben quer."""
     mitte = (von + bis) / 2
@@ -159,6 +181,7 @@ class _Ziel:
     punkt: object = None  # Skizzenpunkt; None bei einer Rechteckmitte, deren Punkt erst bei Bedarf entsteht
     diagonale: object = None  # Rechteck: Konstruktionsdiagonale, deren Mitte der Kennpunkt ist (Spike S17 Zeile 5)
     linien: dict = field(default_factory=dict)  # Rechteck: Seite je Achse für das Maß zur Bezugskante (Spike S17 Zeile 3)
+    kanten: dict = field(default_factory=dict)  # schon aufgelöste Bezugskante je Achse: (Kante, Lage), siehe _bezugskante
 
 
 class Skizzierer:
@@ -168,7 +191,7 @@ class Skizzierer:
     Beziehungen entstehen, die eigene Maße überbestimmen würden (live geprüft beim Schreiben von Plan 2a).
 
     hilfslinien=False (Rotationsskizze: ihre Mittellinie wird Achse): keine Diagonalen und Symmetrielinien – Rechtecke
-    über die Seite, `mitte` wie `ursprung`."""
+    über Seitenmittelpunkte, `mitte` wie `ursprung`."""
 
     def __init__(self, ctx, se: Skizzenebene, skizze, hilfslinien: bool = True):
         self.ctx, self.se, self.model, self.skizze = ctx, se, ctx.model, skizze
@@ -259,7 +282,8 @@ class Skizzierer:
         kanten: dict[tuple[int, int], tuple[Kante, float]] = {}
 
         def bezugslage(i: int, achse: int) -> float:
-            kanten[(i, achse)] = self._bezugskante(punkte[i].bezug[achse], achse, punkte[i].uv)
+            kanten[(i, achse)] = (self._ziele[i].kanten.get(achse)
+                                  or self._bezugskante(punkte[i].bezug[achse], achse, punkte[i].uv))
             return kanten[(i, achse)][1]
 
         for auftrag in massplan(punkte, bezugslage, self.ctx.tol_mm):
@@ -274,10 +298,7 @@ class Skizzierer:
             mittellinie = self._mittellinie(achse, p)
             self._beziehung("sgSYMMETRIC", self._punkt_von(a.punkt), self._punkt_von(a.partner), mittellinie)
         elif a.art == "deckung":
-            if ziel.punkt is None:  # Rechteckmitte im Ursprung: Diagonale mittig (Spike S17 Fall 5_rechteck_diagonale)
-                self._beziehung("sgATMIDDLE", self.ursprung, ziel.diagonale)
-            else:
-                self._beziehung("sgCOINCIDENT", ziel.punkt, self.ursprung)
+            self._beziehung("sgCOINCIDENT", self._punkt_von(a.punkt), self.ursprung)
         elif a.art == "ausrichtung":
             self._beziehung("sgVERTICALPOINTS2D" if self.x_von[0] == achse else "sgHORIZONTALPOINTS2D",
                             self._punkt_von(a.punkt), self.ursprung)
@@ -287,8 +308,9 @@ class Skizzierer:
             q = punkte[a.partner]
             text = _text_zwischen(achse, p.uv[achse], q.uv[achse], p.uv[1 - achse])
             anzeige = self._mass_achse(achse, (self._punkt_von(a.punkt), self._punkt_von(a.partner)), text)
-            self._merke(anzeige, p.roh[achse], _vorzeichen(p.uv[achse] - q.uv[achse]), _index(p.pfad, achse), "lage",
-                        p.bezug[achse], a.wert)
+            # symmetrisch zur Mitte: Abstand = 2 × Koordinate, Vorzeichen wie die Koordinate (Gleichung möglich, Ruling 7)
+            self._merke(anzeige, _paar_roh(p.roh[achse]), _vorzeichen(p.uv[achse] - q.uv[achse]),
+                        _index(p.pfad, achse), "lage", p.bezug[achse])
         else:  # bezug: zur Kante der Skizzenfläche (Rand bzw. Kante in der Bezugsfläche, Ruling 2)
             kante, lage = kanten[(a.punkt, achse)]
             text = _text_zwischen(achse, lage, p.uv[achse], p.uv[1 - achse])
@@ -304,7 +326,8 @@ class Skizzierer:
 
     def _ursprungsmass(self, a: Auftrag, p: Kennpunkt) -> None:
         """Maß zum Ursprung. roh ist die Spec-Koordinate, wenn Skizzen- und Modellursprung zusammenfallen, sonst die
-        Skizzenkoordinate in mm; vorzeichen gehört immer zu roh. Bei einer Rechteckseite (roh = Mitte) eigener Wert."""
+        Skizzenkoordinate in mm; vorzeichen gehört immer zu roh. Ergibt roh die Koordinate nicht, eigener Wert (dann
+        keine Gleichung)."""
         achse = a.achse
         anzeige = self._mass_achse(achse, (self._punkt_von(a.punkt), self.ursprung),
                                    _text_zwischen(achse, 0.0, p.uv[achse], p.uv[1 - achse]))
@@ -441,32 +464,55 @@ class Skizzierer:
                 self._beziehung("sgCOINCIDENT", ende, ecke)
         return diagonale
 
+    def _mittelpunkt_auf(self, linie, uv: tuple[float, float]):
+        """Skizzenpunkt mittig auf einer Rechteckseite: CreatePoint + sgATMIDDLE (Beziehung wie Spike S17 Fall
+        5_rechteck_symmetrie). Eine symmetrische Eckverrundung verschiebt ihn nicht."""
+        punkt = self.sm.CreatePoint(*self.zu_skizze(*uv), 0.0)
+        if punkt is None:
+            raise BauFehler(SKIZZE_UNGUELTIG, f"Seitenmittelpunkt {uv} des Rechtecks nicht angelegt", schritt="skizze")
+        self._beziehung("sgATMIDDLE", punkt, linie)
+        return punkt
+
     def _rechteck_lage(self, r: dict, seg: list, pfad) -> None:
-        """Kennpunkte eines Rechtecks je Achse nach bemassung.rechteck_kennkoordinate (Spec §3): die Mitte über eine
-        Konstruktionsdiagonale (Spike S17 Zeile 5), sonst die Seite – ihre Ecke für Maße zum Ursprung, die Linie für das
-        Maß zur Bezugskante (Zeile 3). Ohne Hilfslinien statt der Mitte die dem Ursprung nächste Seite (bei 0 die in −).
+        """Kennpunkte eines Rechtecks (Spec §3, Ruling 6). Je Achse nach bemassung.rechteck_kennkoordinate entweder die
+        Seite (Rand, Fläche, ursprung mit Mitte ≠ 0: zugewandte bzw. nächste Seite) oder die Mitte (mitte, ursprung mit
+        Mitte auf 0):
+        (a) beide Seite: die Ecke der beiden Seiten;
+        (b) eine Seite: Mittelpunkt dieser Seite, ein Kennpunkt mit beiden Achsen (paarfähig);
+        (c) beide Mitte, Mitte im Ursprung, oder ohne Hilfslinien: je ein Mittelpunkt einer Seite entlang u (Lage u) und
+            einer entlang v (Lage v), ohne Konstruktionslinie;
+        (d) beide Mitte, Mitte ≠ (0, 0): Mitte der Konstruktionsdiagonale (Spike S17 Zeile 5), paarfähig.
+        Maße zur Bezugskante über die Seitenlinie (Spike S17 Zeile 3); die Kante wird einmal aufgelöst und gilt für
+        Kennkoordinate und Maß. roh der Seite: "mitte ± groesse/2".
         seg: Seiten unten, rechts, oben, links (seg[i] beginnt an Ecke i: (−,−), (+,−), (+,+), (−,+))."""
         w = self.ctx.wert
         mitte, groesse = (w(r["mitte"][0]), w(r["mitte"][1])), (w(r["breite"]), w(r["hoehe"]))
+        groesse_roh = (r["breite"], r["hoehe"])
         bezug = bezug_von(r)
-        kenn = {}
-        for a in (0, 1):
-            lage = self._bezugskante(bezug[a], a, mitte)[1] if isinstance(bezug[a], dict) else None
-            kenn[a] = rechteck_kennkoordinate(mitte[a], groesse[a], bezug[a], lage)
-            if not self.hilfslinien and abs(kenn[a] - mitte[a]) < groesse[a] / 4:
-                kenn[a] = min((mitte[a] - groesse[a] / 2, mitte[a] + groesse[a] / 2), key=abs)
-        an_mitte = tuple(a for a in (0, 1) if abs(kenn[a] - mitte[a]) < groesse[a] / 4)
-        seitlich = tuple(a for a in (0, 1) if a not in an_mitte)
+        kanten = {a: self._bezugskante(bezug[a], a, mitte) for a in (0, 1) if _zur_kante(bezug[a])}
+        kenn = {a: rechteck_kennkoordinate(mitte[a], groesse[a], bezug[a], kanten[a][1] if a in kanten else None)
+                for a in (0, 1)}
+        seitlich = tuple(a for a in (0, 1) if abs(kenn[a] - mitte[a]) >= groesse[a] / 4)
+        richtung = {a: 1 if kenn[a] > mitte[a] else -1 for a in seitlich}
+        seiten = {0: (seg[3], seg[1]), 1: (seg[0], seg[2])}  # Seite quer zur Achse a, in − und in +
+        linien = {a: seiten[a][0 if richtung[a] < 0 else 1] for a in seitlich}
+        uv = (kenn[0], kenn[1])
+        roh = tuple(_seite_roh(r["mitte"][a], groesse_roh[a], richtung[a]) if a in seitlich else r["mitte"][a]
+                    for a in (0, 1))
         gruppe, mitte_pfad = f"rechteck {groesse[0]:.6g} {groesse[1]:.6g}", feld_pfad(pfad, "rechteck", "mitte")
-        if an_mitte:
-            self.kennpunkt(mitte, r["mitte"], bezug, mitte_pfad, gruppe, an_mitte, _Ziel(diagonale=self._diagonale(seg)))
-        if seitlich:
-            richtung = {a: (-1 if a not in seitlich or kenn[a] < mitte[a] else 1) for a in (0, 1)}
+        if len(seitlich) == 2:  # (a)
             ecke = seg[{(-1, -1): 0, (1, -1): 1, (1, 1): 2, (-1, 1): 3}[(richtung[0], richtung[1])]].GetStartPoint2
-            seiten = {0: (seg[3], seg[1]), 1: (seg[0], seg[2])}  # je Achse die Seite in −, in +
-            linien = {a: seiten[a][0 if richtung[a] < 0 else 1] for a in seitlich}
-            uv = tuple(kenn[a] if a in seitlich else mitte[a] for a in (0, 1))
-            self.kennpunkt(uv, r["mitte"], bezug, mitte_pfad, gruppe, seitlich, _Ziel(punkt=ecke, linien=linien))
+            self.kennpunkt(uv, roh, bezug, mitte_pfad, gruppe, ziel=_Ziel(punkt=ecke, linien=linien, kanten=kanten))
+        elif seitlich:  # (b)
+            punkt = self._mittelpunkt_auf(linien[seitlich[0]], uv)
+            self.kennpunkt(uv, roh, bezug, mitte_pfad, gruppe, ziel=_Ziel(punkt=punkt, linien=linien, kanten=kanten))
+        elif self.hilfslinien and any(abs(m) > self.ctx.tol_mm for m in mitte):  # (d)
+            self.kennpunkt(uv, roh, bezug, mitte_pfad, gruppe, ziel=_Ziel(diagonale=self._diagonale(seg)))
+        else:  # (c)
+            for achse, linie, punkt_uv in ((0, seg[0], (mitte[0], mitte[1] - groesse[1] / 2)),
+                                           (1, seg[3], (mitte[0] - groesse[0] / 2, mitte[1]))):
+                punkt = self._mittelpunkt_auf(linie, punkt_uv)
+                self.kennpunkt(punkt_uv, roh, bezug, mitte_pfad, gruppe, (achse,), _Ziel(punkt=punkt))
 
     def _massnamen(self) -> list[str]:
         """Namen der Maße der (noch offenen) Skizze, über das letzte Feature des Baums (S10 Frage 5)."""
@@ -708,7 +754,8 @@ class Skizzierer:
                 self.kennpunkt((w(q[0]), w(q[1])), q, _NUR_URSPRUNG, feld_pfad(pfad, "mittellinie", feld), "")
 
 
-def skizziere(ctx, ebene, elemente: list[dict], name: str, pfade: list | None = None, ebene_pfad: str | None = None):
+def skizziere(ctx, ebene, elemente: list[dict], name: str, pfade: list | None = None, ebene_pfad: str | None = None,
+              hilfslinien: bool = True):
     """Erzeugt eine voll bestimmte Skizze und benennt sie. Rückgabe: (Skizzen-Feature, Skizzenebene).
 
     Lagen nach ihrem Bezug (Skizzierer.lagen_festlegen, Paare für `mitte` über alle Elemente). Alle Größen- und Lagemaße
@@ -716,6 +763,7 @@ def skizziere(ctx, ebene, elemente: list[dict], name: str, pfade: list | None = 
     ctx.gleichungen und bei einem Ausdruck.
     pfade[k]: Spec-Pfad des Elements k (z. B. "features[0].skizze.elemente[1]"; bei Bohrungen ein Dict, das Lage und
     Durchmesser zuordnet, siehe feld_pfad); None bei Notausgang-Skripten. ebene_pfad: Spec-Pfad der Ebene.
+    hilfslinien=False (Rotation: die Mittellinie der Skizze wird Achse): keine weiteren Konstruktionslinien.
     """
     se = ebene_aufloesen(ctx, ebene, ebene_pfad)
     model, sm = ctx.model, ctx.model.SketchManager
@@ -724,8 +772,7 @@ def skizziere(ctx, ebene, elemente: list[dict], name: str, pfade: list | None = 
     sm.InsertSketch(True)
     status, masse = None, []
     try:
-        # Die Mittellinie einer Rotationsskizze wird Achse: dort keine weiteren Konstruktionslinien
-        skizzierer = Skizzierer(ctx, se, sm.ActiveSketch, hilfslinien=not any("mittellinie" in e for e in elemente))
+        skizzierer = Skizzierer(ctx, se, sm.ActiveSketch, hilfslinien)
         with sw.einstellung(ctx.app, sw.SW_INPUT_DIM_VAL_ON_CREATE, False), sw.ohne_inferenz(sm):
             for k, element in enumerate(elemente):
                 skizzierer.element(element, None if pfade is None else pfade[k])

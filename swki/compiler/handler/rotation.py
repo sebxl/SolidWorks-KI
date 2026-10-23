@@ -20,7 +20,7 @@ def rotation(ctx, f: dict) -> FeatureErgebnis:
     pfad = ctx.pfad(f["id"])
     skizze, se = skizziere(ctx, f["skizze"]["ebene"], f["skizze"]["elemente"], f"{f['id']}_skizze",
                            [f"{pfad}.skizze.elemente[{k}]" for k in range(len(f["skizze"]["elemente"]))],
-                           f"{pfad}.skizze.ebene")
+                           f"{pfad}.skizze.ebene", hilfslinien=False)  # ihre Mittellinie wird Achse
     sw.auswahl_leeren(ctx.model)
     skizze.Select2(False, 0)  # die einzige Mittellinie der Skizze wird automatisch Achse
     feature = rotiere(ctx.model, bool(f.get("schnitt", False)), ctx.rad(f.get("winkel", 360)))

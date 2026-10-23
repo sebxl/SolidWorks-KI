@@ -101,13 +101,15 @@ def _neu_aufbauen_bis_vollstaendig(ctx, feature, fid: str, punkte: list, schlafe
 
 def skizzenebene_nach_bohrung(ctx, f: dict, se):
     """Skizzenfläche für die Positionsskizze: mit Bezug (Kanten für Rand, Fläche, Mittellinie) nach HoleWizard5 neu
-    aufgelöst, wie Spike S17 Fall 4 sie las. Liegt dort keine Fläche derselben Ebene mehr (Anker {nahe} genau auf der
-    Bohrung), bleibt die vor dem Bohren aufgelöste."""
+    aufgelöst, wie Spike S17 Fall 4 sie las. Wird dort keine Fläche mehr gefunden (Anker {nahe} genau auf der Bohrung)
+    oder liegt sie in einer anderen Ebene, bleibt die vor dem Bohren aufgelöste; Mehrdeutigkeit ist ein Baufehler."""
     if all(b == URSPRUNG for b in bezug_von(f).values()):
         return se
     try:
         neu = ebene_aus_flaeche(loese_flaeche(ctx, f["flaeche"]))
-    except BauFehler:
+    except BauFehler as e:
+        if e.code != REFERENZ_NICHT_GEFUNDEN:
+            raise
         return se
     gleich = neu.orientierung == se.orientierung and abs(neu.lage - se.lage) <= ctx.tol_mm
     return neu if gleich else se

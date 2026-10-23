@@ -77,6 +77,17 @@ def test_positionsskizze_behaelt_die_alte_flaeche_ohne_passende_neue(monkeypatch
                                         alt) is alt
 
 
+def test_positionsskizze_mehrdeutige_flaeche_ist_ein_baufehler(monkeypatch):
+    def loese(ctx, anker):
+        raise BauFehler("REFERENZ_MEHRDEUTIG", "zwei Flächen")
+
+    monkeypatch.setattr(nb, "loese_flaeche", loese)
+    with pytest.raises(BauFehler) as e:
+        nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
+                                     _ebene(20.0))
+    assert e.value.code == "REFERENZ_MEHRDEUTIG"
+
+
 class _Modell:
     """Attrappe: die Instanzen der weiteren Positionen erscheinen erst mit dem `ab`-ten ForceRebuild3 (live belegt:
     SolidWorks übernimmt die Punkte der Positionsskizze verzögert, ein Neuaufbau davor erzeugt nur die erste Bohrung)."""

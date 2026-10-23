@@ -173,8 +173,9 @@ def test_rechteck_pfade():
     aufrufe = _aufrufe({"rechteck": r})
     assert aufrufe[0] == ("groesse", "=B", f"{P}.rechteck.breite", "groesse")
     assert aufrufe[1] == ("groesse", 20, f"{P}.rechteck.hoehe", "groesse")
-    # Seiten u = −15, v = 30 sind dem Ursprung am nächsten: ein Kennpunkt (Ecke) für beide Achsen, Pfad der Mitte
-    assert aufrufe[2] == ("lage", [5, "=B"], f"{P}.rechteck.mitte", (0, 1))
+    # Seiten u = −15, v = 30 sind dem Ursprung am nächsten: ein Kennpunkt (Ecke) für beide Achsen, Pfad der Mitte,
+    # roh die Seite als Ausdruck von Mitte und Größe (für Gleichungen, Ruling 7)
+    assert aufrufe[2] == ("lage", ["=5 - (B) / 2", "=(B) - 20 / 2"], f"{P}.rechteck.mitte", (0, 1))
     assert aufrufe[3:] == [("radius", 3, f"{P}.rechteck.radius")] * 4
 
 
@@ -392,8 +393,8 @@ class _Sammler:
     def __init__(self):
         self.aufrufe = []
 
-    def __call__(self, ctx, ebene, elemente, name, pfade=None, ebene_pfad=None):
-        self.aufrufe.append((name, pfade, ebene_pfad))
+    def __call__(self, ctx, ebene, elemente, name, pfade=None, ebene_pfad=None, hilfslinien=True):
+        self.aufrufe.append((name, pfade, ebene_pfad) + (() if hilfslinien else ("ohne hilfslinien",)))
         return SimpleNamespace(Select2=lambda anhaengen, marke: None), Skizzenebene(object(), "oben", 0.0, (0, 1, 0))
 
 
@@ -488,5 +489,7 @@ def test_rotation_pfade(monkeypatch):
     ctx = _handler_kontext([f])
     ctx.knoten = "f1"
     h.rotation(ctx, f)
-    assert sammler.aufrufe == [("f1_skizze", ["features[0].skizze.elemente[0]"], "features[0].skizze.ebene")]
+    # Rotationsskizze: ihre Mittellinie wird Achse, der Skizzierer legt keine weiteren Konstruktionslinien an
+    assert sammler.aufrufe == [("f1_skizze", ["features[0].skizze.elemente[0]"], "features[0].skizze.ebene",
+                                "ohne hilfslinien")]
     assert _namen(ctx, "f1") == [("D1@f1", "features[0].winkel", "winkel")]

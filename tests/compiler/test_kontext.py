@@ -93,15 +93,16 @@ def test_mass_mit_gleichungen_bindet_ausdruck():
     assert len(ctx.masse["f1"]) == 2
 
 
-@pytest.mark.parametrize("bezug", ["ursprung", None])
+@pytest.mark.parametrize("bezug", ["ursprung", None, "mitte"])
 def test_mass_mit_bezug_ursprung_bindet(bezug):
+    # mitte: Lage zum Ursprung oder Paarabstand (2 × Koordinate) lassen sich aus der Spec ausdrücken (Ruling 7)
     ctx = _ctx_mit_spec(gleichungen=True)
     ctx.knoten = "f1"
     ctx.mass("D1@f1", "=L", "features[0].ende.tiefe", "lage", bezug=bezug)
     assert ctx.model.GetEquationMgr.texte == ['"D1@f1" = "L"']
 
 
-@pytest.mark.parametrize("bezug", ["-rand", "+rand", "mitte"])
+@pytest.mark.parametrize("bezug", ["-rand", "+rand", {"flaeche": {"feature": "f1", "flaeche": "+x"}}])
 def test_mass_mit_bezug_rand_bindet_nie(bezug):
     ctx = _ctx_mit_spec(gleichungen=True)
     ctx.knoten = "f1"
