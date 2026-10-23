@@ -126,3 +126,25 @@ def zylinder_durch_punkt(flaechen: list[Flaeche], punkt: Vektor, tol_mm: float) 
     if len({round(f.radius, 6) for f in treffer}) > 1:
         raise AnkerFehler(REFERENZ_MEHRDEUTIG, f"{len(treffer)} Zylinderflächen mit verschiedenen Radien durch {punkt}")
     return treffer[0]
+
+
+def randkante(kanten: list[Kante], achse_modell: Vektor, vorzeichen: int, punkt: Vektor, tol_mm: float) -> Kante:
+    """Randkante einer Skizzenfläche in Richtung `vorzeichen` (+1/−1) entlang `achse_modell`: die äußerste gerade Kante
+    quer zur Achse. Bei einem unterbrochenen Rand (mehrere gleich weit außen) die zu `punkt` (Kennpunkt im Modell) nächste,
+    gemessen entlang der Kante; bei Gleichstand innerhalb `tol_mm` mehrdeutig."""
+    quer = [k for k in kanten if k.art == "linie" and k.richtung and abs(skalar(k.richtung, achse_modell)) < 1e-6]
+    if not quer:
+        raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, "keine Randkante quer zur Achse")
+    lage = {id(k): vorzeichen * skalar(k.start, achse_modell) for k in quer}
+    aussen = max(lage.values())
+    aeusserste = [k for k in quer if aussen - lage[id(k)] <= tol_mm]
+
+    def abstand(k: Kante) -> float:
+        t = skalar(differenz(punkt, k.start), k.richtung)
+        laenge_k = skalar(differenz(k.ende, k.start), k.richtung)
+        return max(min(0.0, laenge_k) - t, t - max(0.0, laenge_k), 0.0)
+
+    aeusserste.sort(key=abstand)
+    if len(aeusserste) > 1 and abstand(aeusserste[1]) - abstand(aeusserste[0]) <= tol_mm:
+        raise AnkerFehler(REFERENZ_MEHRDEUTIG, f"Randkante mehrdeutig: {len(aeusserste)} gleich weit außen, Punkt gleich weit von zwei Kanten")
+    return aeusserste[0]
