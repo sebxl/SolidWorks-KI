@@ -31,7 +31,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - **Spec-Syntax vollständig** (Schema nicht lesen; `?` = optional, `wert` = Zahl oder `"=Ausdruck"`):
   ```yaml
   art: teil
-  name: Platte                                  # Kopf: material?, eigenschaften? {Benennung: …}, parameter? {L: 100},
+  name: Platte                                  # [A-Za-z0-9_-], keine Leerzeichen. Kopf: material?, eigenschaften?
+                                                #       {Benennung: …}, parameter? {L: 100},
   material: "1.0038"                            #       pruefung?, max_nachbesserungen?
   parameter: {L: 100, B: 60, T: 10}
   features:
@@ -152,7 +153,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
     durchmesser_pruefen:                        # Zylinderfläche des Features nahe einem Punkt auf dem Mantel
       - {was: Zapfen, feature: f4, nahe: ["=X0+D/2", "=H+5", 0], soll: "=D"}
   ```
-  Messpunkte: `{feature, flaeche: "+x"|"-x"|…}`, `{feature, instanz, achse: true}` (nur `bohrung`/`normbohrung`, nicht an
+  Messpunkte: `{feature, flaeche: "+x"|"-x"|…}` = Fläche des Features, deren Normale aus dem Material zeigt (Boden einer
+  von oben geschnittenen Tasche: `+y`, Deckfläche eines Aufsatzes nach oben: `+y`, seine Auflage: `-y`),
+  `{feature, instanz, achse: true}` (nur `bohrung`/`normbohrung`, nicht an
   Extrusionen – deren Lage über `durchmesser_pruefen` mit `nahe` oder `schwerpunkt` prüfen), `{punkt: [x, y, z]}`.
   `huellquader: auto` rechnet aus den Aufsätzen (Schnitte und Bohrungen verkleinern ihn nicht); `validieren` zeigt die
   `auto`-Werte zum Abgleich mit der Zeichnung und lehnt `auto` ab, wo es nicht geht (Verzahnung, Skript, Kreismuster
@@ -195,9 +198,11 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - **Ansage = Entscheidung:** Was der Nutzer als Änderung nennt, umsetzen (durchrechnen ja; zurückfragen nur, wenn die
   Rechnung widerspricht). Kleine Entscheidungen (Halbzeug, Schraubengröße, Lage) selbst treffen. Echte Gabelungen und
   Unklarheiten in der Eingabe (fehlende Maße, Toleranzen, Material) gesammelt in **einer** Nachricht erfragen, nicht raten.
-- **Konstruktionsreview** vor der Freigabe-Vorlage: Subagent `konstruktionsreview` mit den Pfaden der neuen oder
-  geänderten Specs, der Eingabe und den Datenblättern beteiligter Kaufteile. Eindeutige Befunde selbst umsetzen,
-  Befunde mit echter Wahl in die gesammelte Rückfrage.
+- **Konstruktionsreview** vor der Freigabe-Vorlage: Subagent `konstruktionsreview` mit `model: sonnet` und
+  `effort: medium` (Aufrufparameter) und den Pfaden der neuen oder geänderten Specs, der Eingabe und den Datenblättern
+  beteiligter Kaufteile. Eindeutige Befunde selbst umsetzen, Befunde mit echter Wahl in die gesammelte Rückfrage.
+  Kein Review, wenn nichts gefertigt oder neu geformt wird: Ersatzkörper eines Kaufteils (Hüllgeometrie für die
+  Baugruppe) und Änderungen, die an bestehenden Specs nur Parameterwerte, Schraubenlängen oder Normteilgrößen ändern.
 
 ## 4. Freigabe (einziger menschlicher Eingriff)
 - Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten; dazu
