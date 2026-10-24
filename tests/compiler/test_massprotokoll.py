@@ -151,7 +151,7 @@ class _Aufzeichner(Skizzierer):
     def _diagonale(self, seg):
         return object()
 
-    def verrunde(self, linien, ecke_uv, roh_radius, pfad=None):
+    def verrunde(self, linien, ecke_uv, roh_radius, pfad=None, paar=None):
         self.aufrufe.append(("radius", roh_radius, pfad))
 
 

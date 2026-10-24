@@ -466,7 +466,8 @@ class Skizzierer:
 
     def _mittelpunkt_auf(self, linie, uv: tuple[float, float]):
         """Skizzenpunkt mittig auf einer Rechteckseite: CreatePoint + sgATMIDDLE (Beziehung wie Spike S17 Fall
-        5_rechteck_symmetrie). Eine symmetrische Eckverrundung verschiebt ihn nicht."""
+        5_rechteck_symmetrie). Er bleibt in der Mitte der getrimmten Seite: Nach einer einzelnen Eckverrundung schiebt
+        der Löser das Rechteck, erst nach allen vier symmetrischen steht es wieder (deshalb verrunde mit paar)."""
         punkt = self.sm.CreatePoint(*self.zu_skizze(*uv), 0.0)
         if punkt is None:
             raise BauFehler(SKIZZE_UNGUELTIG, f"Seitenmittelpunkt {uv} des Rechtecks nicht angelegt", schritt="skizze")
@@ -529,15 +530,18 @@ class Skizzierer:
         return [s for s in linien for p in (s.GetStartPoint2, s.GetEndPoint2)
                 if abs(p.X - x) < 1e-8 and abs(p.Y - y) < 1e-8]
 
-    def verrunde(self, linien: list, ecke_uv: tuple[float, float], roh_radius, pfad: str | None = None) -> None:
+    def verrunde(self, linien: list, ecke_uv: tuple[float, float], roh_radius, pfad: str | None = None,
+                 paar: tuple | None = None) -> None:
         """Ecke (u, v) mit Skizzenverrundung runden. Die beiden Linien der Ecke werden gewählt; Maße der Ecke bleiben
         am virtuellen Schnittpunkt (swConstrainedCornerKeepGeometry). CreateFillet legt selbst ein maßgebendes
         Radiusmaß an (S10 Frage 5): es wird über den Vergleich der Maßnamen vor/nach dem Aufruf gefunden und wie
-        jedes Skizzenmaß vorgemerkt, damit es später an den Parameter gebunden wird."""
+        jedes Skizzenmaß vorgemerkt, damit es später an den Parameter gebunden wird.
+        paar: die beiden Linien der Ecke (Rechteck). Ohne paar werden sie über ecke_uv in linien gesucht – das setzt
+        voraus, dass frühere Verrundungen die Ecke nicht verschoben haben (Seitenmittelpunkte tun das, Task 9)."""
         if self.ctx.wert(roh_radius) == 0:
             return
-        x, y = self.zu_skizze(*ecke_uv)
-        paar = self._linien_an(linien, x, y)
+        if paar is None:
+            paar = self._linien_an(linien, *self.zu_skizze(*ecke_uv))
         if len(paar) != 2:
             raise BauFehler(SKIZZE_UNGUELTIG, f"Ecke {ecke_uv}: {len(paar)} statt 2 Linien", schritt="skizze")
         sw.auswahl_leeren(self.model)
@@ -713,9 +717,11 @@ class Skizzierer:
             self.groesse(seg[1], (mu_ - b / 2 - _MASS_ABSTAND_MM, mv), r["hoehe"], feld_pfad(pfad, "rechteck", "hoehe"))
             self._rechteck_lage(r, seg, pfad)
             if "radius" in r:
-                for du, dv in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+                # Ecke i ist Ende von seg[i−1] und Anfang von seg[i]: das Linienpaar wählen, nicht die Koordinate
+                # (der Seitenmittelpunkt verschiebt das Rechteck zwischen den Verrundungen, Ruling 10)
+                for i, (du, dv) in enumerate(((-1, -1), (1, -1), (1, 1), (-1, 1))):
                     self._verrundungen.append((list(seg), (mu_ + du * b / 2, mv + dv * h / 2), r["radius"],
-                                               feld_pfad(pfad, "rechteck", "radius")))
+                                               feld_pfad(pfad, "rechteck", "radius"), (seg[i - 1], seg[i])))
         elif "kreis" in element:
             k = element["kreis"]
             mu_, mv = w(k["mitte"][0]), w(k["mitte"][1])

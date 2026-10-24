@@ -427,6 +427,28 @@ def test_rechteck_mit_radius_um_ursprung_verrundet_nach_den_lagen(modell):
     assert [m["art"] for m in ctx.masse["f2"]] == ["groesse", "groesse"] + ["radius"] * 4
 
 
+@pytest.mark.parametrize("mitte", [[0, 0], [0, -20]])  # Fall (c) und (b)
+def test_rechteck_verrundung_waehlt_die_linien_der_ecke_auch_nach_verschiebung(modell, mitte):
+    """Live (Task 9): sgATMIDDLE hält den Seitenmittelpunkt in der Mitte der getrimmten Linie – nach der ersten
+    Verrundung schiebt der Löser das Rechteck (Fall c um −4/−4 mm). Die Ecken werden daher über das Linienpaar gewählt,
+    nicht über ihre Spec-Koordinaten (Ruling 10)."""
+    erzeuge = modell.SketchManager.CreateFillet
+
+    def verrundung_mit_verschiebung(radius, art):
+        for p in modell.SketchManager.linienpunkte:  # wie live: alle Rechteckecken wandern
+            p.X, p.Y = p.X - 0.004, p.Y - 0.004
+        return erzeuge(radius, art)
+
+    modell.SketchManager.CreateFillet = verrundung_mit_verschiebung
+    ctx = _kontext(modell)
+    r = {"mitte": mitte, "breite": 40, "hoehe": 30, "radius": 5}
+    modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": r}], "f1_skizze", [f"{P}[0]"])
+    unten, rechts, oben, links = _seiten(modell)
+    assert [a[1] for a in modell.aufrufe if a[0] == "verrundung"] == [
+        (links, unten), (unten, rechts), (rechts, oben), (oben, links)]
+    assert [m["art"] for m in ctx.masse["f2"]].count("radius") == 4
+
+
 def test_rotation_rechteck_um_ursprung_ohne_konstruktionslinien(modell):
     # Fall (c) in der Rotationsskizze: nur die Achse ist Mittellinie
     ctx = _kontext(modell)
