@@ -18,7 +18,8 @@ KONTUR = {"start": [-40, 25], "segmente": [
 
 
 def _platte(element, ebene="oben", parameter=None):
-    return {"art": "teil", "name": "T", "parameter": parameter or {}, "features": [{
+    """Platte aus einem Skizzenelement; mit parameter auch gleichungen: true (die Tests ändern Parameter per Gleichung)."""
+    return {"art": "teil", "name": "T", "parameter": parameter or {}, "gleichungen": bool(parameter), "features": [{
         "id": "f1", "typ": "extrusion", "skizze": {"ebene": ebene, "elemente": [element]},
         "ende": {"typ": "blind", "tiefe": 10},
     }]}

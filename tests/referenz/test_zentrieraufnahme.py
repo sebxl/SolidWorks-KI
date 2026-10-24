@@ -21,7 +21,7 @@ def _rechnung() -> dict[str, float]:
 
 def test_gueltig_ohne_hinweis():
     spec = lade_spec(ORDNER / "zentrieraufnahme.yaml")
-    assert [h for h in hinweise(spec) if h["art"] != "bezug"] == []  # bezug: Referenz ist eingefroren
+    assert hinweise(spec) == []
     assert [f["id"] for f in spec["features"]] == ["f1", "zapfen", "tasche", "trichter", "steg"]
 
 

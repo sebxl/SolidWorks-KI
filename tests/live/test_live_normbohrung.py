@@ -47,7 +47,7 @@ def _gleichungen(ctx) -> list:
 def test_gewinde_mit_drei_positionen_in_einem_feature():
     nb = {"id": "f2", "typ": "normbohrung", "art": "gewinde", "groesse": "M8", "flaeche": DECKFLAECHE,
           "positionen": [["=-L/2+20", 10], [0, 10], ["=L/2-20", 10]], "tiefe": 16, "gewindetiefe": 12}
-    with gebautes_teil(_spec(nb)) as (ctx, fehler, protokoll):
+    with gebautes_teil({**_spec(nb), "gleichungen": True}) as (ctx, fehler, protokoll):
         assert fehler is None
         erg = ctx.ergebnis("f2")
         assert [f.Name for f in erg.features] == ["f2"]
@@ -84,7 +84,7 @@ def test_senkschraube_von_unten():
           "flaeche": {"feature": "f1", "flaeche": "-y"}, "positionen": [["=-L/2+30", 5], ["=L/2-30", 5]],
           "durch": True}
     einzeln = normbohrung_volumen("senkschraube", normmasse("senkschraube", "M6"), None, dicke=20)
-    with gebautes_teil(_spec(nb)) as (ctx, fehler, protokoll):
+    with gebautes_teil({**_spec(nb), "gleichungen": True}) as (ctx, fehler, protokoll):
         assert fehler is None
         erg = ctx.ergebnis("f2")
         assert erg.punkte == [(-20.0, 0.0, -5.0), (20.0, 0.0, -5.0)]  # L = 100: u = −20, +20; v = 5 → Z = −5
