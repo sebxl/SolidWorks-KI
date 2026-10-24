@@ -160,6 +160,9 @@ def plane(r: Rechner, auftrag: str, spec_pfad: Path, schluessel_je_teil: dict[st
         letztes = protokolle[max(protokolle)]
         plan.gescheitert = {d for d, t in (letztes.get("teile") or {}).items() if t.get("status") == "fehler"}
     for n, protokoll in protokolle.items():
+        ordner = lauf_ordner(r, auftrag, n)
+        # Name auf der Platte (SolidWorks speichert .SLDPRT groß, das Protokoll nennt den angefragten Namen)
+        auf_platte = {p.name.lower(): p for p in ordner.iterdir()} if ordner.is_dir() else {}
         for datei, tp in (protokoll.get("teile") or {}).items():
             key = schluessel_je_teil.get(datei)
             if datei in plan.quellen or key is None or tp.get("status") != "ok" or tp.get("schluessel") != key:
@@ -167,7 +170,7 @@ def plane(r: Rechner, auftrag: str, spec_pfad: Path, schluessel_je_teil: dict[st
             soll = _datei_sha(protokoll, datei)
             if key in gesperrt or soll is None or soll in gesperrt:
                 continue
-            pfad = lauf_ordner(r, auftrag, n) / Path(protokoll["dateien"][f"teil:{datei}"]).name
-            if pfad.is_file() and sha256_datei(pfad) == soll:
+            pfad = auf_platte.get(Path(protokoll["dateien"][f"teil:{datei}"]).name.lower())
+            if pfad is not None and pfad.is_file() and sha256_datei(pfad) == soll:
                 plan.quellen[datei] = Quelle(n, pfad, soll, tp)
     return plan

@@ -89,13 +89,15 @@ def _uebernimm_teil(b: Baulauf, datei: str, q: wiederverwendung.Quelle, schluess
     schon offen)."""
     beginn, gestartet = time.perf_counter(), datetime.now().isoformat(timespec="seconds")
     ziel = _teil_ziel(b, datei)
-    ziel.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(q.pfad, ziel)
-    if sha256_datei(ziel) != q.sha256:
+    # Schreibweise der Quelle (.SLDPRT wie nach SaveAs), sonst trägt die Baugruppe andere Komponentennamen
+    kopie = b.ordner / q.pfad.name if q.pfad.name.lower() == ziel.name.lower() else ziel
+    kopie.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(q.pfad, kopie)
+    if sha256_datei(kopie) != q.sha256:
         return False
     model = None
     try:
-        model = oeffne(b.app, ziel, sichtbar=False)
+        model = oeffne(b.app, kopie, sichtbar=False)
         ctx = kontext_aus_datei(b.app, model, b.bg.teile[datei], b.bg.pfad.parent / datei,
                                 b.standard["toleranzen"]["anker_mm"], q.protokoll)
     except Exception:

@@ -15,6 +15,22 @@ hängen bis zum 2-min-Zeitlimit.
 - `auftraege/<auftrag>/` mit `eingabe/`, einer Baugruppen-Spec und den Teil-Specs der Eigenteile (Teil-Format,
   Regeln aus dem Skill `konstruieren`, Abschnitt 2).
 - Specs mit dem Write-Tool schreiben: je Datei ein Aufruf, alle Dateien in derselben Antwort.
+- **Zwei oder mehr neue Eigenteile** (neue Baugruppe): erst Schnittstellen festlegen, dann die Teil-Specs parallel
+  schreiben lassen, zuletzt die Baugruppen-Spec. Für Änderungen an einer bestehenden Baugruppe und für ein einzelnes
+  neues Teil gilt das nicht – dort schreibt die Hauptsitzung selbst.
+  1. Schnittstellenliste `schnittstellen.md` im Auftragsordner (kurz, nur was zwei Seiten teilen): je Eigenteil
+     Datei, Benennung, Material, Hauptmaße als Parameternamen mit Wert, Lage des Teilursprungs in der Baugruppe und
+     die Auflage- bzw. Bezugsflächen (`feature`/`flaeche` bzw. `referenz`-Feature mit ID); Bohrbilder mit Positionen
+     in Teilkoordinaten und Art je Teil (`normbohrung` gewinde/zylinderschraube/stift oder `bohrung` Ø, durch/Tiefe)
+     samt Feature-ID, die die Verknüpfungen nennen; Normteile (Norm, Größe, Länge, `je_position`).
+  2. Je Eigenteil ein Subagent (`subagent_type: claude`, **ohne** `model`: gleiches Modell wie die Sitzung), alle in
+     **einer** Antwort. Prompt: Auftragsordner, Eingabe-Dateien, `schnittstellen.md`, Name der Teil-Spec; „Schreibe
+     nur diese Teil-Spec nach Skill `konstruieren` §2 (`.claude/skills/konstruieren/SKILL.md`), Schnittstellen aus
+     `schnittstellen.md` wörtlich (Parameternamen, Feature-IDs, Flächen, Bohrbilder), `swki validieren <teil.yaml>`
+     bis gültig; keine Freigabe, kein Bau, kein Review. Widerspricht die Liste der Eingabe: nicht still entscheiden,
+     melden. Antwort: Feature-IDs für Verknüpfungen, Parameter, offene Hinweise, Selbst entschieden.“
+  3. Rückmeldungen gegen `schnittstellen.md` abgleichen, dann die Baugruppen-Spec schreiben und weiter mit Abschnitt 3
+     (`validieren` der Baugruppe prüft alle Teile mit, Konstruktionsreview wie immer).
 - Normteile nie als Teil-Spec: in der Baugruppe als `quelle: {normteil: "<Norm> <Größe>"}` (Skill `normteile`).
 - Nicht genormte Kaufteile nie als Teil-Spec: `quelle: {kaufteil: "<Hersteller> <Bestellnummer>"}` aus dem Katalog
   (Skill `kaufteile`; Regeln für Baugruppen in Abschnitt 8 dieses Skills).
@@ -134,8 +150,13 @@ hängen bis zum 2-min-Zeitlimit.
 ## 4. Bauen, prüfen, Prüfer
 - Mit Bewegungen Standardweg `swki durchlauf <baugruppe.yaml> --neustart` (frisches SolidWorks vor Bauen und vor Prüfen;
   Bauabbruch kompakt: `code`, `meldung`, Knoten ≠ ok/übersprungen; Neustart abgelehnt → `schritt: neustart`, `vor`).
-- `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
-  verknüpft. Fehlercodes (die `meldung` nennt Komponente bzw. Verknüpfung):
+- `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut geänderte und neue
+  Eigenteile (zuletzt gescheiterte zuerst), übernimmt unveränderte aus einem früheren Lauf desselben Auftrags (gleicher
+  Schlüssel aus Teil-Spec, Skripten, Compiler-Code, SolidWorks-Version, Vorlage; Datei unverändert; kein Teilmangel),
+  holt die Normteile, kopiert sie in den Lauf, fügt ein, verknüpft. Ausgabe `teile_gebaut` (Liste) und
+  `teile_wiederverwendet` (bei `durchlauf` Anzahl); `--alles-neu` baut alle (Schalter `wiederverwenden` in
+  `config/standard.yaml`). `swki pruefen` misst jedes Teil weiter gegen die freigegebene Kopie. Fehlercodes (die
+  `meldung` nennt Komponente bzw. Verknüpfung):
   - `TEIL_BAU` (Knoten `<komponente>/<feature>`): Bauweg der Teil-Spec nachbessern.
   - `KOMPONENTE_FEHLER`: Einfügen oder Fixieren einer Komponente gescheitert (Komponente und Datei in der Meldung).
   - `VERKNUEPFUNG_FEHLER`, `REFERENZ_NICHT_GEFUNDEN`, `REFERENZ_MEHRDEUTIG` (Knoten `v<n>[.<i>]`): Referenz,

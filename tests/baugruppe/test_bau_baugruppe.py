@@ -469,3 +469,13 @@ def test_bauergebnis_nennt_gebaute_und_wiederverwendete_teile(teilbau):
     lauf(1)
     b2, _ = lauf(2, aendern={"deckel.yaml": 16})
     assert bau.teile_bilanz(b2.protokoll) == {"teile_gebaut": ["deckel.yaml"], "teile_wiederverwendet": ["platte.yaml"]}
+
+
+def test_kopie_behaelt_die_schreibweise_der_quelle(teilbau):
+    """SolidWorks speichert .SLDPRT groß; die Kopie heißt wie die Quelle, damit Komponentennamen gleich bleiben."""
+    lauf, log = teilbau
+    b1, _ = lauf(1)
+    for p in list(b1.dateien.values()):
+        p.rename(p.with_suffix(".SLDPRT"))
+    lauf(2)
+    assert log["gebaut"] == [] and {p.suffix for p, _ in log["geoeffnet"]} == {".SLDPRT"}
