@@ -2,6 +2,7 @@
 Verknüpfung, Stellen, Unterdrücken, Hüllquader, Grundstellung beim Bau."""
 
 import math
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -199,3 +200,83 @@ def test_status_baut_vor_dem_lesen_voll_neu_auf():
     assert mech.status() == {"a": 3, "b": 3}
     assert ereignisse == [("ForceRebuild3", False), ("status", "a"), ("status", "b")]
 
+
+
+# --- BTP Umbau 1: neue Verknüpfung ohne Baumdurchlauf, Handles -------------------------------------------------------
+
+
+class _Letzte:
+    """Extension.GetLastFeatureAdded einer Attrappe: liefert das zuletzt angelegte Mate (oder ein festes Feature)."""
+
+    def __init__(self, asm, fest=None):
+        self.asm, self.fest = asm, fest
+
+    @property
+    def GetLastFeatureAdded(self):  # noqa: N802 (SolidWorks-Name)
+        return self.fest if self.fest is not None else (self.asm.mates[-1] if self.asm.mates else None)
+
+
+def _mit_typ(mate, typ):
+    mate.GetSpecificFeature2 = SimpleNamespace(Alignment=0, Type=typ)
+    return mate
+
+
+def test_neue_verknuepfung_ueber_get_last_feature_added_ohne_baum(asm, monkeypatch):
+    neu = _mit_typ(_Mate("Abstand1"), 5)
+    asm.Extension = _Letzte(asm, neu)
+    monkeypatch.setattr(sw_baugruppe, "verknuepfungen", lambda _asm: pytest.fail("kein Baumdurchlauf"))
+    assert sw_baugruppe.neue_verknuepfung(asm, {"v1"}, 5) is neu
+
+
+def test_neue_verknuepfung_rueckfall_auf_den_baum_nie_eine_alte(asm):
+    alt, neu = _mit_typ(_Mate("v1"), 5), _mit_typ(_Mate("Abstand2"), 5)
+    asm.mates += [alt, neu]
+    asm.Extension = _Letzte(asm, alt)           # liefert eine schon bekannte Verknüpfung → Baum
+    assert sw_baugruppe.neue_verknuepfung(asm, {"v1"}, 5) is neu
+    asm.Extension = _Letzte(asm, _mit_typ(_Mate("Konzentrisch3"), 1))   # anderer Typ → Baum
+    assert sw_baugruppe.neue_verknuepfung(asm, {"v1"}, 5) is neu
+    asm.Extension = _Letzte(asm, SimpleNamespace(Name="Skizze1", GetSpecificFeature2=object()))  # kein Mate → Baum
+    assert sw_baugruppe.neue_verknuepfung(asm, {"v1"}, 5) is neu
+    assert sw_baugruppe.neue_verknuepfung(asm, {"v1", "Abstand2"}, 5) is None   # nichts Neues: nie eine alte
+
+
+def test_verknuepfe_mit_handles_ohne_baumdurchlauf(asm, monkeypatch):
+    def add_mate5(*args):
+        args[-1].value = 1
+        mate = _mit_typ(_Mate("Abstand7"), 5)
+        asm.mates.append(mate)
+        return mate
+
+    asm.AddMate5 = add_mate5
+    asm.Extension = _Letzte(asm)
+    monkeypatch.setattr(sw_baugruppe, "verknuepfungen", lambda _asm: pytest.fail("kein Baumdurchlauf"))
+    frueher = _mit_typ(_Mate("v0"), 0)
+    handles, gesetzt = {"v0": frueher}, {"v0": 0}
+    v = Verknuepfung("v1", "v1", "abstand", {}, {}, "gleich", 10.0, False)
+    feature = sw_baugruppe.verknuepfe(asm, v, None, None, {}, gesetzt, False, handles)
+    assert feature.Name == "v1" and handles == {"v0": frueher, "v1": feature} and gesetzt == {"v0": 0, "v1": 0}
+    frueher.GetSpecificFeature2.Alignment = 1   # v2 kehrt v0 um: an den Handles erkannt, v2 wieder gelöscht
+    geloescht = []
+    monkeypatch.setattr(sw_baugruppe, "_loesche", lambda a, f: geloescht.append(f.Name))
+    with pytest.raises(BauFehler, match="kehrt die Ausrichtung von v0 um"):
+        sw_baugruppe.verknuepfe(asm, replace(v, id="v2"), None, None, {}, gesetzt, False, handles)
+    assert geloescht == ["v2"] and "v2" not in handles
+
+
+def test_mechanik_liest_die_verknuepfungen_einmal_je_zustand(asm, monkeypatch):
+    gelesen = []
+    monkeypatch.setattr(sw_baugruppe, "verknuepfungen", lambda _asm: gelesen.append(1) or list(asm.mates))
+    asm.mates.append(_Mate("g1"))
+    asm.Extension = _Letzte(asm)
+    neu = asm.AddMate5
+    asm.AddMate5 = lambda *args: _mit_typ(neu(*args), 5)
+    v = _grenze()
+    mech = SwMechanik(None, asm, {"g1": v}, lambda seite: None, {})
+    b = Bewegung("Hub", "g1", "abstand", "schieber", 0.0, 100.0, 8)
+    mech.halte(b, 0.0)
+    for w in (10.0, 20.0, 30.0):
+        assert mech.stelle(b, w) is None
+    assert len(gelesen) == 1 and "g1.antrieb" in mech._handles()
+    mech.unterdruecke(b, True)
+    mech.stelle(b, 40.0)
+    assert len(gelesen) == 2   # nach dem Unterdrücken neu gelesen

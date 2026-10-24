@@ -26,10 +26,14 @@ def dateien(auftrag: Path) -> list[tuple[str, int, str, Path]]:
     return sorted(liste, key=lambda x: (x[1], x[2]))
 
 
-def auswerten(auftrag: Path) -> dict:
+def auswerten(auftrag: Path, ab_lauf: int | None = None) -> dict:
+    """ab_lauf: nur Läufe ab dieser Nummer (Änderungsaufgabe: der Ausgangslauf zählt nicht)."""
     laeufe = abbrueche = pruefmaengel = pruefer_urteile = pruefer_maengel = 0
     letzter_pruefer: tuple[int, bool] | None = None
+    phasen: dict[str, float] = {}
     for spec, n, art, p in dateien(auftrag):
+        if ab_lauf is not None and n < ab_lauf:
+            continue
         d = _lies(p)
         if d is None:
             continue
@@ -37,6 +41,8 @@ def auswerten(auftrag: Path) -> dict:
             laeufe += 1
             if d.get("status") != "ok":
                 abbrueche += 1
+            for k, v in (d.get("phasen") or {}).items():
+                phasen[k] = round(phasen.get(k, 0.0) + v, 1)
         elif art == "pruefbericht":
             pruefmaengel += sum(1 for x in d.get("pruefungen", []) if x.get("ok") is False)
         else:
@@ -48,7 +54,7 @@ def auswerten(auftrag: Path) -> dict:
     return {"laeufe": laeufe, "bauabbrueche": abbrueche, "pruefmaengel": pruefmaengel,
             "pruefer_urteile": pruefer_urteile, "pruefer_maengel": pruefer_maengel,
             "letzter_lauf": letzter_pruefer[0] if letzter_pruefer else None,
-            "pruefer_bestanden": bool(letzter_pruefer and letzter_pruefer[1])}
+            "pruefer_bestanden": bool(letzter_pruefer and letzter_pruefer[1]), "phasen_s": phasen}
 
 
 def ergebnisdatei(lauf_ordner: Path) -> Path | None:

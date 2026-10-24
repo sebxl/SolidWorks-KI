@@ -1,0 +1,11 @@
+id: F5
+art: falle
+beschreibung: Stehlager – Zylinderstifte 6 × 30 statt 8 × 30 laut Beschreibung (Bohrungen und Normteil konsistent)
+basis: tests/referenz/stehlager
+aufgabe: stehlager
+spec: stehlager.yaml
+ersetzen:
+  - {datei: grundplatte.yaml, alt: "art: stift, groesse: 8", neu: "art: stift, groesse: 6"}
+  - {datei: unterteil.yaml, alt: "art: stift, groesse: 8", neu: "art: stift, groesse: 6"}
+  - {datei: stehlager.yaml, alt: 'normteil: "ISO 8734 8x30"', neu: 'normteil: "ISO 8734 6x30"'}
+erwartet: {knoten: [stift, f3, f6], stichworte: ["8 × 30", "8x30", "8 x 30", "ø 8", "Ø8", "durchmesser 8"]}

@@ -7,6 +7,9 @@ description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen
 
 Spec: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Abweichungen der Umsetzung: `docs/stufe3b/ergebnisse.md`).
 Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Syntax: Kurzreferenz in Abschnitt 2 (Muster-Specs unter `tests/referenz/*/` nur bei Bedarf).
+Längere Python-Schnipsel mit dem Write-Tool als Datei anlegen und `.venv\Scripts\python.exe <datei>` ausführen; nie
+Befehle, die auf stdin warten (`python - <<'EOF' … || python - <<'EOF'`, `python -` oder `cat` ohne Eingabe) – sie
+hängen bis zum 2-min-Zeitlimit.
 
 ## 1. Auftrag
 - `auftraege/<auftrag>/` mit `eingabe/`, einer Baugruppen-Spec und den Teil-Specs der Eigenteile (Teil-Format,
@@ -74,6 +77,16 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   Skill `kaufteile`, Abschnitt 8), genau eine
   `fixiert: true` (ihr Ursprung = Baugruppenursprung), `je_position: {komponente, feature}` für eine Instanz je
   Position einer `normbohrung`/`bohrung` (Instanzen `<id>.1 …`).
+- **Instanzen** (`je_position`, Quelltext nicht lesen): Instanz `<id>.i` gehört zur i-ten Position des Features (Reihenfolge
+  der `positionen`); das Ziel ist ein Eigenteil ohne `je_position`. Eine Verknüpfung, die eine solche Komponente mit
+  ihrer `id` nennt, gilt für jede Instanz (`v4.1 …`); `instanz: je` auf der anderen Seite ist dann Position i desselben
+  Features. Normteil auf Normteil (Mutter auf Scheibe, Scheibe unter Kopf): beide Komponenten mit **demselben**
+  `je_position`, dann paart swki Instanz i mit i. In `pruefung` immer die Instanz nennen (`stift.1`), in Verknüpfungen
+  die `id`. Grenzen, Scharniere und Kopplungen nicht mit `je_position`-Komponenten.
+- **`volumen: auto` in Teil-Specs** (Regeln Skill `konstruieren` §2): rechnet nur, wenn Schnitte ganz im bisherigen
+  Material liegen und Aufsätze nicht überlappen; `bis_flaeche`/`versatz_von_flaeche` sind nicht berechenbar (Prüfung
+  ohne Urteil). Lagerbohrung in der Teilfuge: nicht als Vollkreis-Schnitt über die Fuge (`validieren` lehnt `auto` dann
+  ab), sondern als Halbkreis in der Kontur des Aufsatzes bzw. als `kontur`-Schnitt im Material.
 - `verknuepfungen`: `deckungsgleich`, `konzentrisch`, `parallel`, `senkrecht`, `abstand` (`wert`), `winkel` (`wert`).
   `ausrichtung: gleich | entgegengesetzt` (Normalen nach dem Verknüpfen gleich- bzw. gegensinnig; Flächennormalen
   zeigen aus dem Material, Bezugsebenen haben die Normale ihrer Basis) – Pflicht bei `deckungsgleich`, `parallel`, `abstand`
@@ -107,7 +120,9 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 ## 3. Validieren, Freigabe
 - `swki validieren <baugruppe.yaml>` (prüft auch alle Teil-Specs, die Normteile und die Passung Normteil ↔ Bohrung)
   bis `"gueltig": true`; `hinweise` abarbeiten wie beim Teil.
-- Rückfragen und Konstruktionsreview (alle neuen oder geänderten Teil-Specs) wie im Skill `konstruieren` §3.
+- Rückfragen und Konstruktionsreview (neue oder in der Form geänderte Teil-Specs) wie im Skill `konstruieren` §3, mit
+  denselben Aufrufparametern und Ausnahmen: kein Review für Kaufteil-Ersatzkörper und für Änderungen, die nur
+  Parameterwerte, Schraubenlängen oder Normteilgrößen ändern.
 - Dem Nutzer zeigen: Teile (Parameter, Material), Normteile (Norm, Größe, Variante, Anzahl), Verknüpfungen in Worten,
   Prüfwerte, „Selbst entschieden“. Erst nach ausdrücklichem OK freigeben – **eine** Freigabe für alles, am schnellsten zusammen mit Bau und
   Prüfung: `swki durchlauf <baugruppe.yaml> --freigeben` (validieren → freigeben → bauen → prüfen → status in einem
@@ -143,7 +158,8 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
 - Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit `pruefer_auftrag` aus `swki durchlauf` (sonst mit Eingabeordner, allen freigegebenen Specs (Baugruppe und Teile),
   Prüfbericht und Screenshot-Ordner); Urteil unverändert nach `protokolle/<spec>.lauf-<n>.pruefer.json`.
 - **Speicher:** Ein Baugruppenlauf (Bau + Prüfen) kostet SolidWorks mehrere GB (Stehlager 3,1–3,6 GB Private Bytes).
-  Nach jedem Baugruppenlauf die Private Bytes von `SLDWORKS.exe` prüfen
+  Nach jedem Baugruppenlauf ohne `--neustart` (mit `--neustart` entfällt das: jeder Durchlauf startet frisch) die
+  Private Bytes von `SLDWORKS.exe` prüfen
   (`Get-Process SLDWORKS | Select-Object Id,@{n='Privat_MB';e={[int]($_.PrivateMemorySize64/1MB)}}`); ab ca. 4 GB
   SolidWorks selbst neu starten, nicht den Nutzer fragen: `.venv\Scripts\python.exe -m werkzeuge.sw_neustart` (prüft
   genau eine Instanz und keine offenen Dokumente, beendet per `ExitApp`, startet aus `installationsordner`, meldet

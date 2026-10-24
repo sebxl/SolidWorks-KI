@@ -149,12 +149,32 @@ class _Umkehr(BauFehler):
     """Eine spätere Verknüpfung hat die Ausrichtung einer früheren umgekehrt."""
 
 
-def _pruefe_ausrichtungen(asm, v, gesetzt: dict[str, int]) -> None:
-    features = {f.Name: f for f in verknuepfungen(asm)}
+def _pruefe_ausrichtungen(asm, v, gesetzt: dict[str, int], handles: dict | None = None) -> None:
+    features = handles if handles is not None else {f.Name: f for f in verknuepfungen(asm)}
     ist = {name: ausrichtung_von(features[name]) for name in gesetzt if name in features}
     if umgekehrt := umgekehrte(gesetzt, ist):
         raise _Umkehr(VERKNUEPFUNG_FEHLER, f"{v.id} kehrt die Ausrichtung von {', '.join(umgekehrt)} um",
                       schritt="verknuepfung")
+
+
+def _bekannt(asm, handles: dict | None) -> set[str]:
+    """Namen der Verknüpfungen vor dem Anlegen: aus den Handles des Aufrufers (alle Verknüpfungen des Dokuments) oder
+    aus dem Baum."""
+    return set(handles) if handles is not None else {f.Name for f in verknuepfungen(asm)}
+
+
+def neue_verknuepfung(asm, bekannt: set[str], typ: int):
+    """Die eben angelegte Verknüpfung ohne Baumdurchlauf: IModelDocExtension.GetLastFeatureAdded, wenn sie neu (Name
+    nicht in `bekannt`) und vom erwarteten swMateType_e `typ` ist (IMate2.Type; BTP Umbau 1). Sonst die letzte neue
+    Verknüpfung im Baum; None, wenn keine entstand – nie eine schon vorhandene."""
+    try:
+        f = asm.Extension.GetLastFeatureAdded
+        if f is not None and f.Name not in bekannt and int(f.GetSpecificFeature2.Type) == typ:
+            return f
+    except Exception:  # kein Verknüpfungs-Feature (GetSpecificFeature2 ohne Type) oder Attrappe: Baum lesen
+        pass
+    neue = [f for f in verknuepfungen(asm) if f.Name not in bekannt]
+    return neue[-1] if neue else None
 
 
 def grenzen(v, parameter: dict) -> dict[str, tuple[float, str | None]]:
@@ -186,7 +206,7 @@ def _gleichungen(v, parameter: dict) -> list[tuple[str, str]]:
 
 
 def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter: dict,
-               gesetzt: dict[str, int] | None = None, gleichungen: bool = False):
+               gesetzt: dict[str, int] | None = None, gleichungen: bool = False, handles: dict | None = None):
     """Verknüpfung v anlegen (AddMate5, ein Versuch), als v.id benennen, neu aufbauen, Wert bei `gleichungen` per
     Gleichung an die Parameter binden. Grenzverknüpfungen mit min/max aus den Parametern (keine Gleichung möglich,
     Spike S13b). Jede Ausnahme nach dem Anlegen löscht die neue Verknüpfung wieder.
@@ -196,10 +216,14 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
     (Spike S12 Zeile 5; kein Status, kein Fehlercode). Nach dem Anlegen wird die Ausrichtung aller dort genannten
     Verknüpfungen zurückgelesen; ist eine umgekehrt, wird v wieder gelöscht und VERKNUEPFUNG_FEHLER gemeldet. Bei Erfolg
     wird v mit ausdrücklicher Ausrichtung eingetragen; Verknüpfungen ohne Angabe (NAECHSTE) bleiben draußen, ihre
-    Richtung ist frei."""
+    Richtung ist frei.
+
+    `handles` (Name → IFeature aller Verknüpfungen des Dokuments) erspart die Baumdurchläufe (BTP Umbau 1): die neue
+    Verknüpfung kommt über neue_verknuepfung, die Ausrichtungen werden an den Handles gelesen, v wird bei Erfolg
+    eingetragen."""
     d, d_oben, d_unten, w, w_oben, w_unten = _mate_werte(v, parameter)
     [code] = ausrichtungen(v)
-    vorher = len(verknuepfungen(asm))
+    bekannt = _bekannt(asm, handles)
     sw.auswahl_leeren(asm)
     waehle(asm, a, False)
     waehle(asm, b, True)
@@ -207,8 +231,7 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
     mate = asm.AddMate5(MATE_TYP[v.typ], code, False, d, d_oben, d_unten, 1, 1, w, w_oben, w_unten,
                         False, v.drehung_sperren, 0, status)
     sw.auswahl_leeren(asm)
-    alle = verknuepfungen(asm)
-    neu = alle[-1] if mate is not None and len(alle) > vorher else None
+    neu = neue_verknuepfung(asm, bekannt, MATE_TYP[v.typ]) if mate is not None else None
     try:
         if neu is None or status.value != SW_MATE_OK:
             raise BauFehler(VERKNUEPFUNG_FEHLER, f"AddMate5 meldet Status {status.value}", schritt="verknuepfung")
@@ -217,7 +240,7 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
         if fc := fehlercode(neu):
             raise BauFehler(VERKNUEPFUNG_FEHLER, f"Fehlercode {fc}", schritt="verknuepfung")
         if gesetzt:
-            _pruefe_ausrichtungen(asm, v, gesetzt)  # vor der Gleichung: bei einer Umkehr bleibt keine Gleichung stehen
+            _pruefe_ausrichtungen(asm, v, gesetzt, handles)  # vor der Gleichung: bei Umkehr bleibt keine Gleichung
         bindungen = _gleichungen(v, parameter) if gleichungen else []
         for name, ausdruck in bindungen:
             if asm.GetEquationMgr.Add2(-1, f'"{name}@{v.id}" = {sw_ausdruck(ausdruck)}', True) < 0:
@@ -234,16 +257,18 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"{v.id} ({v.typ}): {meldung}", schritt="verknuepfung") from e
     if gesetzt is not None and v.ausrichtung:
         gesetzt[v.id] = AUSRICHTUNG[v.ausrichtung]
+    if handles is not None:
+        handles[v.id] = neu
     return neu
 
 
 def kopple(asm, v, a: tuple[object, bool], b: tuple[object, bool], zaehler_mm: float, nenner_mm: float,
-           umkehren: bool):
+           umkehren: bool, handles: dict | None = None):
     """Zahnrad- bzw. Zahnstangenverknüpfung über CreateMate (Spec 4b §5.4.3), als v.id benannt und neu aufgebaut.
     Zahnrad: EntitiesToMate = [a, b], Übersetzung als Teilkreis-Ø zaehler : nenner; Zahnstange: Vorauswahl Zahnstange
     (Marke 64) und Ritzel (Marke 128), DiameterVal = Teilkreis-Ø des Ritzels. Jede Ausnahme nach dem Anlegen löscht die
-    neue Verknüpfung wieder."""
-    vorher = len(verknuepfungen(asm))
+    neue Verknüpfung wieder. `handles` wie bei verknuepfe."""
+    bekannt = _bekannt(asm, handles)
     sw.auswahl_leeren(asm)
     daten = asm.CreateMateData(MATE_KOPPLUNG[v.typ])
     if daten is None:
@@ -260,8 +285,7 @@ def kopple(asm, v, a: tuple[object, bool], b: tuple[object, bool], zaehler_mm: f
     daten.Reverse = umkehren
     mate = asm.CreateMate(daten)
     sw.auswahl_leeren(asm)
-    alle = verknuepfungen(asm)
-    neu = alle[-1] if mate is not None and len(alle) > vorher else None
+    neu = neue_verknuepfung(asm, bekannt, MATE_KOPPLUNG[v.typ]) if mate is not None else None
     try:
         if neu is None:
             raise BauFehler(VERKNUEPFUNG_FEHLER, "CreateMate legt keine Verknüpfung an", schritt="verknuepfung")
@@ -274,6 +298,8 @@ def kopple(asm, v, a: tuple[object, bool], b: tuple[object, bool], zaehler_mm: f
             _loesche_still(asm, neu)
         meldung = str(e) if isinstance(e, BauFehler) else f"{type(e).__name__}: {e}"
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"{v.id} ({v.typ}): {meldung}", schritt="verknuepfung") from e
+    if handles is not None:
+        handles[v.id] = neu
     return neu
 
 
@@ -357,24 +383,25 @@ def verknuepfungswerte(asm) -> dict[str, float]:
     return werte
 
 
-def treibe(asm, v, a: tuple[object, bool], b: tuple[object, bool], wert: float):
+def treibe(asm, v, a: tuple[object, bool], b: tuple[object, bool], wert: float, handles: dict | None = None):
     """Vorübergehende treibende Verknüpfung zur Grenzverknüpfung v: Abstand bzw. Winkel an denselben Flächen mit
     gleicher Ausrichtung, Name <id>.antrieb, Wert in mm bzw. Grad (Spec 4a §7, §8.2)."""
     antrieb = replace(v, id=f"{v.id}{ANTRIEB}", typ="abstand" if v.typ == "grenze_abstand" else "winkel", wert=wert,
                       min=None, max=None, drehung_sperren=False)
-    return verknuepfe(asm, antrieb, a, b, {}, None)
+    return verknuepfe(asm, antrieb, a, b, {}, None, handles=handles)
 
 
-def stelle(asm, antrieb, art: str, wert: float) -> str | None:
+def stelle(asm, antrieb, art: str, wert: float, mates: list | None = None) -> str | None:
     """Treibende Verknüpfung auf wert stellen und neu aufbauen; None = gelöst, sonst die Meldung (Rebuild-Fehler oder
-    Fehlercode einer Verknüpfung). Ob die Komponente dort steht, prüft der Aufrufer über die Lage (Präzisierung 4)."""
+    Fehlercode einer Verknüpfung). Ob die Komponente dort steht, prüft der Aufrufer über die Lage (Präzisierung 4).
+    `mates`: alle Verknüpfungen des Dokuments als Handles (ohne Baumdurchlauf, BTP Umbau 1)."""
     antrieb.Parameter(MASS_NAME).SetSystemValue3(mm(wert) if art == "abstand" else grad(wert),
                                                  SW_WERT_DIESE_KONFIGURATION, None)
     try:
         sw.rebuild(asm)
     except BauFehler as e:
         return str(e)
-    fehlerhaft = [f.Name for f in verknuepfungen(asm) if fehlercode(f)]
+    fehlerhaft = [f.Name for f in (mates if mates is not None else verknuepfungen(asm)) if fehlercode(f)]
     return f"Verknüpfungsfehler: {', '.join(fehlerhaft)}" if fehlerhaft else None
 
 

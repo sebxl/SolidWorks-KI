@@ -163,6 +163,8 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
 def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: BaugruppenMesswerte, ordner: Path) -> dict:
     """Je Kopplung ein Bild entlang der Radachse von Seite a, gezoomt auf beide Komponenten, die übrigen Komponenten
     während der Aufnahme verborgen (Spec 4b §5.7)."""
+    if not kopplungen(bg.spec):
+        return {}
     komponenten = _komponenten(asm, protokoll)
     bilder = {}
     for v in kopplungen(bg.spec):
@@ -246,7 +248,9 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     bewegung = None
     try:
         for datei, teil_spec in bg.teile.items():
-            model = oeffne(app, ordner / dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard))
+            # ohne Fenster (~1,7 GB je Fenster, BTP Umbau 1); behaltene schließt SolidWorks mit der Baugruppe
+            model = oeffne(app, ordner / dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard),
+                           sichtbar=False)
             behalten = False
             try:
                 ctx = kontext_aus_datei(app, model, teil_spec, bg.pfad.parent / datei, tol, protokoll["teile"][datei])
@@ -263,7 +267,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             if q.schluessel not in bedarf and q.schluessel not in offen_halten:
                 continue
             pfad = ordner / dokument_name(q, auftrag, standard)
-            model = oeffne(app, pfad)
+            model = oeffne(app, pfad, sichtbar=False)
             behalten = False
             try:
                 ctx = kontext_aus_datei(app, model, q.spec, pfad.with_suffix(".yaml"), tol, {"knoten": []})
@@ -277,13 +281,15 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         asm = oeffne(app, asm_pfad)
         try:
             sw_baugruppe.aufloesen(asm)
+            # alles im Schnellmodus (BTP Umbau 1: außerhalb kostet jeder COM-Zugriff 14–35-mal mehr); die Bilder
+            # schalten die Grafik dafür kurz an (bilder._aufnahme)
             with sw.schnell(app, asm):
                 messwerte = _messe_baugruppe(asm, bg, protokoll, geometrie, teilberichte)
-            bilder = screenshots(app, asm, ordner / "bilder")
-            bilder |= _kopplungsbilder(app, asm, bg, protokoll, messwerte, ordner / "bilder")
-            if mit_bewegung:
-                bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner,
-                                              start_mb)
+                bilder = screenshots(app, asm, ordner / "bilder")
+                bilder |= _kopplungsbilder(app, asm, bg, protokoll, messwerte, ordner / "bilder")
+                if mit_bewegung:
+                    bewegung = _pruefe_bewegungen(app, asm, bg, protokoll, kontexte, messwerte, standard, ordner,
+                                                  start_mb)
         finally:
             sw.schliesse(app, asm)  # ohne Speichern: keine treibende Verknüpfung bleibt in der Datei (Spec 4a §8)
     finally:

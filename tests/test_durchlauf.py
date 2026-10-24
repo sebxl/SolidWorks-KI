@@ -179,3 +179,21 @@ def test_cli_option_neustart(monkeypatch):
     monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False: gesehen.update(neustart=neustart) or {})
     assert cli.main(["durchlauf", "a.yaml", "--neustart"]) == 0 and gesehen == {"neustart": True}
     assert cli.main(["durchlauf", "a.yaml"]) == 0 and gesehen == {"neustart": False}
+
+
+def test_pruefer_auftrag_nennt_jede_datei_und_verlangt_paralleles_lesen(tmp_path):
+    # BTP Umbau 1 (Recherche O10): Dateien statt Ordner, damit der Prüfer alles in einer Runde liest
+    (tmp_path / "eingabe").mkdir()
+    (tmp_path / "eingabe" / "massbild.png").write_bytes(b"")
+    (tmp_path / "aufgabe.md").write_text("x", encoding="utf-8")
+    (tmp_path / "a.freigegeben.yaml").write_text("x", encoding="utf-8")
+    lauf = tmp_path / "lauf-3"
+    (lauf / "bilder").mkdir(parents=True)
+    (lauf / "steckbrief.txt").write_text("x", encoding="utf-8")
+    bericht = {"datei": str(lauf / "a.sldprt"),
+               "bilder": {"iso": str(lauf / "bilder" / "iso.png"), "vorne": str(lauf / "bilder" / "vorne.png")}}
+    text = d.pruefer_auftrag(tmp_path / "a.yaml", 3, bericht)
+    for datei in (tmp_path / "eingabe" / "massbild.png", tmp_path / "aufgabe.md", tmp_path / "a.freigegeben.yaml",
+                  lauf / "bilder" / "iso.png", lauf / "bilder" / "vorne.png", lauf / "steckbrief.txt"):
+        assert str(datei) in text
+    assert "parallel" in text

@@ -397,6 +397,17 @@ def test_rechteck_versetzt_mit_mitte_ueber_diagonale(modell):
     assert modell.zaehlprobe() == (10, 10)
 
 
+def test_rechteck_knapp_neben_dem_ursprung_ist_versetzt_nicht_zentriert(modell):
+    # 0,05 mm liegt in der Ankertoleranz, die Lage bleibt trotzdem erhalten: Fall (d) statt (c)
+    ctx = _kontext(modell)
+    r = {"mitte": [0.05, 0], "breite": 20, "hoehe": 10, "bezug": {"u": "mitte", "v": "mitte"}}
+    modul.skizziere(ctx, STANDARD_OBEN, [{"rechteck": r}], "f1_skizze", [f"{P}[0]"])
+    diagonale, = modell.mittellinien()
+    mitte, = modell.neue_punkte()
+    assert modell.beziehungen("sgATMIDDLE") == [(mitte, diagonale)]
+    assert [(m["roh"], m["wert"]) for m in _lagen(ctx)] == [(0.05, 0.05)]
+
+
 def test_rechteck_zur_flaeche_loest_die_kante_einmal_auf(monkeypatch, modell):
     # Kennkoordinate (zugewandte Seite) und Maß nutzen dieselbe Kante (M1)
     kanten = _block_kanten()
@@ -528,6 +539,19 @@ def test_kreise_mitte_paar_ueber_elemente(modell):
     # v = 0: nur der festlegende Punkt bekommt die Ausrichtung, der Partner folgt aus der Symmetrie
     assert modell.beziehungen("sgHORIZONTALPOINTS2D") == [(links, URSPRUNG)]
     assert [m["art"] for m in ctx.masse["f2"]] == ["groesse", "groesse", "konstruktion", "paarabstand"]
+
+
+def test_mitte_paar_nur_bei_exakt_gleicher_lage_nicht_in_der_ankertoleranz(modell):
+    # BTP Durchgang 0, Kamera: v 20,25 / 20,22 liegt innerhalb der Ankertoleranz 0,1 mm, ist aber kein Paar – die
+    # Symmetrie hätte beide auf eine Höhe gezogen. Jeder Punkt behält seine Lage (Maße zur Mitte bzw. zum Ursprung).
+    ctx = _kontext(modell)
+    elemente = [{"kreis": {"mitte": [u, v], "durchmesser": 8, "bezug": {"u": "mitte"}}}
+                for u, v in ((-30, 20.25), (30, 20.22))]
+    modul.skizziere(ctx, STANDARD_OBEN, elemente, "f1_skizze", [f"{P}[0]", f"{P}[1]"])
+    assert modell.beziehungen("sgSYMMETRIC") == [] and modell.mittellinien() == []
+    assert sorted((m["pfad"], m["wert"]) for m in _lagen(ctx)) == [
+        (f"{P}[0].kreis.mitte[0]", 30.0), (f"{P}[0].kreis.mitte[1]", 20.25),
+        (f"{P}[1].kreis.mitte[0]", 30.0), (f"{P}[1].kreis.mitte[1]", 20.22)]
 
 
 def test_mitte_auf_flaeche_mittellinie_endet_auf_der_randkante(modell):

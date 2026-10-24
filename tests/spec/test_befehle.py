@@ -62,3 +62,32 @@ def test_validieren_nennt_auto_werte(capsys, tmp_path):
     code, daten = _lauf(capsys, "validieren", str(pfad))
     assert code == 0 and daten["auto"]["huellquader"] == [100, 20, 60]
     assert daten["auto"]["volumen"].startswith("nicht berechenbar (f3: verrundung")   # Beispiel hat Verrundungen
+
+
+def _lagerunterteil(bohrung: dict) -> dict:
+    return {"art": "teil", "name": "Unterteil", "parameter": {"D": 40},
+            "features": [
+                {"id": "f1", "typ": "extrusion", "skizze": {"ebene": "vorne", "elemente": [
+                    {"rechteck": {"mitte": [0, 25], "breite": 90, "hoehe": 50}}]}, "ende": {"typ": "mittig", "tiefe": 50}},
+                {"id": "f2", "typ": "schnitt", "skizze": {"ebene": "vorne", "elemente": [bohrung]},
+                 "ende": {"typ": "mittig", "tiefe": 50}}],
+            "pruefung": {"volumen": {"soll": "auto"}}}
+
+
+def test_validieren_lehnt_volumen_auto_ab_wenn_ein_schnitt_ueber_das_material_ragt(capsys, tmp_path):
+    # BTP Durchgang 1, Stehlager: Lagerbohrung als Vollkreis in der Teilfuge → auto zöge den ganzen Kreis ab; das muss
+    # vor der Freigabe auffallen, nicht erst als Prüfmangel mit neuer Freigabe
+    pfad = tmp_path / "unterteil.yaml"
+    pfad.write_text(yaml.safe_dump(_lagerunterteil({"kreis": {"mitte": [0, 50], "durchmesser": "=D"}})),
+                    encoding="utf-8")
+    code, daten = _lauf(capsys, "validieren", str(pfad))
+    assert code == 1
+    assert any(b["pfad"] == "pruefung.volumen" and "f2" in b["meldung"] for b in daten["befunde"]), daten
+
+
+def test_validieren_halbkreis_im_material_mit_volumen_auto(capsys, tmp_path):
+    halbkreis = {"kontur": {"start": [-20, 50], "segmente": [{"bogen": [20, 50], "mitte": [0, 50]}, {"linie": [-20, 50]}]}}
+    pfad = tmp_path / "unterteil.yaml"
+    pfad.write_text(yaml.safe_dump(_lagerunterteil(halbkreis)), encoding="utf-8")
+    code, daten = _lauf(capsys, "validieren", str(pfad))
+    assert code == 0 and isinstance(daten["auto"]["volumen"], float)

@@ -48,16 +48,21 @@ def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
 
     ordner = spec_pfad.parent
     kopien = ", ".join(str(p) for p in sorted(ordner.glob("*.freigegeben.yaml")))
-    bilder = sorted({str(Path(b).parent) for b in (bericht.get("bilder") or {}).values()})
+    # Dateien statt Ordner, damit der Prüfer alles in einer Runde liest (BTP Umbau 1, Recherche O10)
+    eingabe = [p for p in sorted((ordner / "eingabe").rglob("*")) if p.is_file()] if (ordner / "eingabe").is_dir() else []
+    if (ordner / "aufgabe.md").exists():
+        eingabe.append(ordner / "aufgabe.md")
+    bilder = sorted({str(b) for b in (bericht.get("bilder") or {}).values()})
     laufordner = Path(bericht["datei"]).parent if bericht.get("datei") else None
     steck = laufordner / "steckbrief.txt" if laufordner and (laufordner / "steckbrief.txt").exists() else None
-    teile = [f"Prüfe Lauf {lauf} von {spec_pfad.name}.", f"Eingabe des Nutzers: {ordner / 'eingabe'} (und aufgabe.md, falls vorhanden).",
+    teile = [f"Prüfe Lauf {lauf} von {spec_pfad.name}.",
+             f"Eingabe des Nutzers: {', '.join(map(str, eingabe)) or ordner / 'eingabe'}.",
              f"Freigegebene Spezifikation(en): {kopien}.", f"Prüfbericht: {lauf_datei(spec_pfad, lauf, 'pruefbericht')}."]
     if bilder:
         teile.append(f"Screenshots: {', '.join(bilder)}.")
     if steck:
         teile.append(f"Geometrie-Steckbrief: {steck} (Lage und Vorzeichen zuerst daran prüfen).")
-    teile.append("Antworte nur mit dem JSON-Urteil.")
+    teile.append("Lies alle genannten Dateien in deiner ersten Antwort parallel. Antworte nur mit dem JSON-Urteil.")
     return " ".join(teile)
 
 

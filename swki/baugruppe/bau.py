@@ -53,6 +53,7 @@ class Baulauf:
     dateien: dict = field(default_factory=dict)      # "teil:<datei>" | "normteil:…" | "kaufteil:…" | "baugruppe" → Pfad
     komponenten: dict = field(default_factory=dict)  # Instanz-ID → IComponent2 (aus AddComponent5, nie über GetComponents)
     gesetzt: dict = field(default_factory=dict)      # Verknüpfungs-ID → ausdrücklich gesetzte Ausrichtung, ein Dict je Lauf
+    handles: dict = field(default_factory=dict)      # Verknüpfungs-ID → IFeature aller angelegten Verknüpfungen (BTP Umbau 1)
 
 
 def _baue_teile(b: Baulauf, r) -> Exception | None:
@@ -94,7 +95,7 @@ def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
         b.protokoll.normteile[q.schluessel] = {"bibliothek": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
                                                "pruefsumme": eintrag.get("pruefsumme")}
         b.dateien[f"normteil:{q.schluessel}"] = ziel
-        model = oeffne(b.app, ziel)
+        model = oeffne(b.app, ziel, sichtbar=False)  # ohne Fenster: ~1,7 GB weniger je Normteil (BTP Umbau 1)
         b.offen.append(model)
         b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
     return None
@@ -115,7 +116,7 @@ def _hole_kaufteile(b: Baulauf, tol_mm: float) -> Exception | None:
                                                "pruefsumme": ergebnis["pruefsumme"],
                                                "gewinde_modell": ergebnis["gewinde_modell"], **angaben_fuer_bericht(q.eintrag)}
         b.dateien[f"kaufteil:{q.schluessel}"] = ziel
-        model = oeffne(b.app, ziel)
+        model = oeffne(b.app, ziel, sichtbar=False)
         b.offen.append(model)
         b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
     return None
@@ -224,7 +225,7 @@ def _kopple(b: Baulauf, v: Verknuepfung):
     """Kopplung anlegen (Spec 4b §5.4.3): Übersetzung aus den Teilkreisen, Richtung nach sw_baugruppe.REVERSE."""
     a, gegen = (verzahnung_der_seite(b.bg.quellen, s).geo for s in (v.a, v.b))
     return sw_baugruppe.kopple(b.asm, v, _entitaet_kopplung(b, v.a), _entitaet_kopplung(b, v.b), *teilkreise(a, gegen),
-                               sw_baugruppe.REVERSE[v.typ])
+                               sw_baugruppe.REVERSE[v.typ], b.handles)
 
 
 def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
@@ -247,7 +248,7 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
                     else:
                         feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
                                                           b.bg.spec.get("parameter", {}), b.gesetzt,
-                                                          gleichungen_an(b.bg.spec, b.standard))
+                                                          gleichungen_an(b.bg.spec, b.standard), b.handles)
                     knoten.sw_name = feature.Name
                 except Exception as e:
                     if isinstance(e, BauFehler) and str(e).startswith(f"{v.id} "):
@@ -268,7 +269,8 @@ def _grundstellung(b: Baulauf) -> Exception | None:
         for bw in bewegungen(b.bg.spec, b.standard):
             with b.protokoll.knoten_lauf(f"grundstellung:{bw.name}", "grundstellung"):
                 try:
-                    grenze = {f.Name.lower(): f for f in sw_baugruppe.verknuepfungen(b.asm)}.get(bw.grenze.lower())
+                    grenze = b.handles.get(bw.grenze) or {f.Name.lower(): f for f in
+                                                          sw_baugruppe.verknuepfungen(b.asm)}.get(bw.grenze.lower())
                     if grenze is None:
                         raise BauFehler(GRUNDSTELLUNG_FEHLER, f"Grenze {bw.grenze} nicht gefunden", schritt="grundstellung")
                     ist = sw_baugruppe.grenzwert(grenze, bw.art)
@@ -341,7 +343,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
             else:
                 _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
         if fehler is None and b.asm is not None and bg.spec.get("bewegungen"):
-            with protokoll.phase("grundstellung"):
+            with protokoll.phase("grundstellung"), sw.schnell(b.app, b.asm):
                 fehler = _grundstellung(b)
         if b.asm is not None:
             with protokoll.phase("speichern"):

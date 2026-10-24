@@ -275,6 +275,24 @@ def huellquader_auto(spec: dict) -> tuple[list[float] | None, str]:
     return [round(box[i + 3] - box[i], 6) for i in range(3)], "analytisch"
 
 
+def schnitte_ausserhalb(spec: dict, tol_mm: float = 1e-6) -> list[str]:
+    """IDs der Schnitte, deren Box über die Box der vorher gebauten Aufsätze hinausragt: dort gilt die Annahme „Schnitte
+    liegen im Material“ nicht (volumen: auto zöge das ganze Profil ab). Nur grob – innerhalb der Box, aber neben einem
+    L-förmigen Körper bleibt unerkannt. [] wenn die Lagen nicht berechenbar sind."""
+    try:
+        koerper = _koerper(spec, spec.get("parameter", {}))
+    except _Offen:
+        return []
+    material, aussen = None, []
+    for fid, (box, art) in koerper.items():
+        if art == _AUFSATZ:
+            material = box if material is None else _vereinigt([material, box])
+        elif material is not None and any(box[i] < material[i] - tol_mm or box[i + 3] > material[i + 3] + tol_mm
+                                          for i in range(3)):
+            aussen.append(fid)
+    return aussen
+
+
 def seitenpunkt(spec: dict, fid: str, richtung: str) -> list[float] | None:
     """Punkt mitten auf der Seitenfläche eines Features mit Formschräge, deren äußere Normale ungefähr `richtung`
     ("+x" … "-z", quer zur Extrusion) zeigt – als Vorschlag für {nahe: [x, y, z]}; None, wenn nicht berechenbar.

@@ -9,7 +9,7 @@ damit Skizzen auf Flächen und versetzten Ebenen genauso funktionieren.
 import math
 from dataclasses import dataclass, field, replace
 
-from swki.bemassung import MITTE, URSPRUNG, Auftrag, Kennpunkt, bezug_von, massplan, rechteck_kennkoordinate
+from swki.bemassung import GLEICH_MM, MITTE, URSPRUNG, Auftrag, Kennpunkt, bezug_von, massplan, rechteck_kennkoordinate
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler, Flaeche, Kante, Vektor, differenz, randkante, skalar
 from swki.compiler.fehler import (
@@ -290,7 +290,7 @@ class Skizzierer:
                                   or self._bezugskante(punkte[i].bezug[achse], achse, punkte[i].uv))
             return kanten[(i, achse)][1]
 
-        for auftrag in massplan(punkte, bezugslage, self.ctx.tol_mm):
+        for auftrag in massplan(punkte, bezugslage, GLEICH_MM):
             self._ausfuehren(auftrag, punkte, kanten)
         for verrundung in self._verrundungen:
             self.verrunde(*verrundung)
@@ -512,7 +512,7 @@ class Skizzierer:
         elif seitlich:  # (b)
             punkt = self._mittelpunkt_auf(linien[seitlich[0]], uv)
             self.kennpunkt(uv, roh, bezug, mitte_pfad, gruppe, ziel=_Ziel(punkt=punkt, linien=linien, kanten=kanten))
-        elif self.hilfslinien and any(abs(m) > self.ctx.tol_mm for m in mitte):  # (d)
+        elif self.hilfslinien and any(abs(m) > GLEICH_MM for m in mitte):  # (d)
             self.kennpunkt(uv, roh, bezug, mitte_pfad, gruppe, ziel=_Ziel(diagonale=self._diagonale(seg)))
         else:  # (c)
             for achse, linie, punkt_uv in ((0, seg[0], (mitte[0], mitte[1] - groesse[1] / 2)),

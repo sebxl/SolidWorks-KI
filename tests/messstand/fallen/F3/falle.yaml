@@ -1,0 +1,10 @@
+id: F3
+art: falle
+beschreibung: Kamera – Stecker M8 auf der Rückseite in X gespiegelt (Falle der Messstand-Aufgabe)
+basis: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation"
+dateien: [kamera.yaml]
+aufgabe: kamera
+eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/Basler_ace2_GigE_Massbild.png]
+spec: kamera.yaml
+ersetzen: [{datei: kamera.yaml, alt: "  XS: -5.8 ", neu: "  XS: 5.8  "}]
+erwartet: {knoten: [stecker], stichworte: [gespiegelt, spiegelverkehrt, falsche seite]}

@@ -15,6 +15,7 @@ from swki.compiler.anker import RICHTUNGEN
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.formschraege import feste_tiefe, grenze_kleiner, quer_zur_richtung, schraege, skizzennormale
 from swki.konfig import PROJEKT
+from swki.pruefung.geometrie import UEBER_MATERIAL, volumen_auto
 from swki.pruefung.huellquader import huellquader_auto, seitenpunkt
 from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.konturen import eckradien, kontur_punkte
@@ -441,6 +442,12 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde.append({"pfad": "pruefung.huellquader",
                             "meldung": f"huellquader: auto ist hier nicht berechenbar ({grund}) – Kanten [X, Y, Z] "
                                        "angeben"})
+    if spec.get("pruefung", {}).get("volumen", {}).get("soll") == "auto" and not befunde:
+        # sonst rechenbar, aber ein Schnitt ragt über das Material: auto wäre falsch (BTP Durchgang 1); andere Gründe
+        # bleiben ein Hinweis (Prüfung ohne Urteil), wie bisher
+        v, grund = volumen_auto(spec)
+        if v is None and UEBER_MATERIAL in grund:
+            befunde.append({"pfad": "pruefung.volumen", "meldung": f"volumen: auto ist hier falsch ({grund})"})
     return befunde
 
 

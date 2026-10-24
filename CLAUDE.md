@@ -1,12 +1,16 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen) – Ergebnisse: docs/bemassungsbezug/ergebnisse.md
-(davor Messstand und `huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1 und 2, Score 4,9 → Mittel 7,17) – Ergebnisse:
+docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
+`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
+  Längere Python-Schnipsel mit dem Write-Tool als Datei anlegen und `.venv\Scripts\python.exe <datei>` ausführen; nie
+  `python - <<'EOF' … || python - <<'EOF'` oder andere Befehle, die auf stdin warten (hängen bis zum 2-min-Zeitlimit).
+  Der PreToolUse-Hook `werkzeuge/stdin_sperre.py` (`.claude/settings.json`) lehnt solche Bash-Befehle ab.
 - SolidWorks-Version und Pfade stehen in `config/rechner.yaml` (pro Rechner, nicht im Git). Nie ein Jahr oder einen Pfad fest in Code schreiben.
   Pfade für Auftragsskripte ebenfalls dort: `blender`, `dateien: {<name>: <pfad>}`.
 - Einrichten eines Rechners: `powershell -ExecutionPolicy Bypass -File setup\einrichten.ps1`.
@@ -116,6 +120,9 @@ Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen)
 - KPI-Messung der KI-Konstruktion: `-m werkzeuge.messstand` (Spec `docs/superpowers/specs/2026-10-09-messstand-design.md`,
   Ergebnisse `docs/messstand/ergebnisse.md`, Daten unter `<arbeitsordner>/MESSSTAND/`). Läufe je Aufgabe in eigenem
   Worktree ohne `docs/`/Referenzen; Freigabe ohne Rückfrage **nur** in Messstand-Aufträgen `MESS-*` (Nutzer 09.10.2026).
+- Bewertungsbogen BTP (Tempo und Präzision): `docs/superpowers/specs/2026-10-23-bewertungsbogen-design.md`, Ablauf
+  `docs/laufzeit-audit/goal-auftrag.md`; Score `-m werkzeuge.messstand btp <n>`, Entscheidung über einen Umbau nach dem
+  Mittel aus zwei Durchgängen (`btp-mittel`).
 
 ## Git
 - Kein `git push` ohne Rückfrage.
