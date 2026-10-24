@@ -29,11 +29,11 @@ def _lauf(capsys, *argv):
 
 
 def _vergleichbar(bericht: dict, lauf: int):
-    """Prüfbericht ohne Laufnummer, Pfade und Bilder; Listen aus Texten sortiert (Reihenfolge von `bewegt` variiert),
-    Zahlen auf 1e-9 gerundet."""
+    """Prüfbericht ohne Laufnummer, Pfade, Bilder und Laufzeiten; Listen aus Texten sortiert (Reihenfolge von
+    `bewegt` variiert), Zahlen auf 1e-9 gerundet."""
     def norm(x):
         if isinstance(x, dict):
-            return {k: norm(v) for k, v in x.items() if k not in ("lauf", "datei", "bilder", "bild")}
+            return {k: norm(v) for k, v in x.items() if k not in ("lauf", "datei", "bilder", "bild", "dauer_s")}
         if isinstance(x, list):
             return sorted(x) if x and all(isinstance(e, str) for e in x) else [norm(e) for e in x]
         if isinstance(x, str):
