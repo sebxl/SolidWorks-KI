@@ -118,7 +118,7 @@ def daten(f) -> dict:
 
 
 def kontext(app, model, parameter: dict | None = None) -> Kontext:
-    """Baukontext für Produktionshilfen (Skizzierer, skizziere, verknuepfe) im Spike-Teil."""
+    """Baukontext für Produktionshilfen (Skizzierer, skizziere, mass) im Spike-Teil."""
     return Kontext(app, model, {"parameter": parameter or {}}, Path("s10.yaml"), 0.1)
 
 

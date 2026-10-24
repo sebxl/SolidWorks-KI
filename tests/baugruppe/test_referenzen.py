@@ -218,7 +218,7 @@ def test_verknuepfe_prueft_die_ausrichtung_vor_der_gleichung(asm):
     asm.mates[0].GetSpecificFeature2.Alignment = 1  # v1 wird beim Anlegen von v2 still umgekehrt
     v2 = Verknuepfung("v2", "v2", "abstand", {}, {}, "gleich", "=S", False)
     with pytest.raises(BauFehler, match="v2 kehrt die Ausrichtung von v1 um"):
-        sw_baugruppe.verknuepfe(asm, v2, None, None, {"S": 5}, gesetzt)
+        sw_baugruppe.verknuepfe(asm, v2, None, None, {"S": 5}, gesetzt, True)
     assert gleichungen == [] and asm.geloescht == ["v2"]  # keine verwaiste Gleichung "D1@v2"
 
 
@@ -271,3 +271,15 @@ def test_gewinde_referenz_ohne_passende_flaeche(monkeypatch):
     with pytest.raises(AnkerFehler) as e:
         loese_im_teil(ctx, {"gewinde": "flansch", "instanz": 2})
     assert e.value.code == "REFERENZ_NICHT_GEFUNDEN"
+
+
+def test_verknuepfe_ohne_gleichungen_keine_add2_aufrufe(asm):
+    from types import SimpleNamespace
+
+    gleichungen: list[str] = []
+    asm.GetEquationMgr = SimpleNamespace(Add2=lambda index, text, loesen: gleichungen.append(text) or 0)
+    v = Verknuepfung("v2", "v2", "abstand", {}, {}, "gleich", "=S", False)
+    sw_baugruppe.verknuepfe(asm, v, None, None, {"S": 5}, None, False)
+    assert gleichungen == []
+    sw_baugruppe.verknuepfe(asm, v, None, None, {"S": 5}, None, True)
+    assert gleichungen == ['"D1@v2" = "S"']

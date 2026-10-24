@@ -6,6 +6,7 @@ from swki.compiler.anker import Flaeche
 from swki.compiler.fehler import BauFehler
 from swki.compiler.handler import normbohrung as nb
 from swki.compiler.handler.normbohrung import hole_werte
+from swki.compiler.skizze import Skizzenebene
 
 
 def test_gewinde_mit_gewindetiefe():
@@ -40,6 +41,68 @@ def test_bohrungen_pruefen_meldet_fehlende_position(monkeypatch):
     with pytest.raises(BauFehler) as e:
         nb._bohrungen_pruefen(SimpleNamespace(tol_mm=0.1), None, "f2", [(-30.0, 20.0, -10.0), (30.0, 20.0, -10.0)])
     assert "Position 2 fehlt" in str(e.value)
+
+
+_DECK = {"feature": "f1", "flaeche": "+y"}
+
+
+def _ebene(lage: float):
+    return Skizzenebene(object(), "oben", lage, (0.0, 1.0, 0.0),
+                        Flaeche("ebene", (0.0, lage, 0.0), normale=(0.0, 1.0, 0.0), objekt=object()))
+
+
+def test_positionsskizze_ohne_bezug_behaelt_die_flaeche(monkeypatch):
+    monkeypatch.setattr(nb, "loese_flaeche", lambda ctx, anker: pytest.fail("nicht neu auflösen"))
+    alt = _ebene(20.0)
+    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK}, alt) is alt
+    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "ursprung"}},
+                                        alt) is alt
+
+
+def test_positionsskizze_mit_bezug_loest_die_flaeche_nach_dem_bohren_neu_auf(monkeypatch):
+    neu = Flaeche("ebene", (0.0, 20.0, 0.0), normale=(0.0, 1.0, 0.0), objekt=object())
+    monkeypatch.setattr(nb, "loese_flaeche", lambda ctx, anker: neu)
+    se = nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
+                                      _ebene(20.0))
+    assert se.flaeche is neu
+
+
+_OHNE_PASSENDE_NEUE = [
+    lambda ctx, anker: Flaeche("ebene", (0.0, 12.0, 0.0), normale=(0.0, 1.0, 0.0)),  # andere Ebene (Senkungsgrund)
+    lambda ctx, anker: (_ for _ in ()).throw(BauFehler("REFERENZ_NICHT_GEFUNDEN", "keine Fläche")),  # {nahe} im Loch
+]
+
+
+@pytest.mark.parametrize("loese", _OHNE_PASSENDE_NEUE)
+def test_positionsskizze_nur_mitte_ohne_passende_neue_flaeche_ohne_skizzenflaeche(monkeypatch, loese):
+    """Nur mitte: die alte Ebene ohne Fläche (die Kanten von vor dem Bohren gibt es nicht mehr) – die Mittellinie
+    bekommt dann ihr Längenmaß (Ruling 4a)."""
+    monkeypatch.setattr(nb, "loese_flaeche", loese)
+    alt = _ebene(20.0)
+    se = nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"v": "mitte"}}, alt)
+    assert se.flaeche is None and (se.objekt, se.orientierung, se.lage) == (alt.objekt, "oben", 20.0)
+
+
+@pytest.mark.parametrize("bezug", [{"u": "-rand"}, {"u": "mitte", "v": {"flaeche": {"feature": "f1", "flaeche": "-z"}}}])
+@pytest.mark.parametrize("loese", _OHNE_PASSENDE_NEUE)
+def test_positionsskizze_rand_ohne_passende_neue_flaeche_ist_ein_baufehler(monkeypatch, loese, bezug):
+    monkeypatch.setattr(nb, "loese_flaeche", loese)
+    with pytest.raises(BauFehler) as e:
+        nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"id": "f2", "flaeche": _DECK, "bezug": bezug},
+                                     _ebene(20.0))
+    assert e.value.code == "REFERENZ_NICHT_GEFUNDEN" and "f2" in str(e.value)
+    assert "Skizzenfläche nach dem Bohren nicht wiedergefunden" in str(e.value) and "nahe-Punkt" in str(e.value)
+
+
+def test_positionsskizze_mehrdeutige_flaeche_ist_ein_baufehler(monkeypatch):
+    def loese(ctx, anker):
+        raise BauFehler("REFERENZ_MEHRDEUTIG", "zwei Flächen")
+
+    monkeypatch.setattr(nb, "loese_flaeche", loese)
+    with pytest.raises(BauFehler) as e:
+        nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
+                                     _ebene(20.0))
+    assert e.value.code == "REFERENZ_MEHRDEUTIG"
 
 
 class _Modell:

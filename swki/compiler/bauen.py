@@ -8,7 +8,9 @@ from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_
 from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.compiler.ablauf import baue_features
-from swki.compiler.eigenschaften import eigenschaften_fuer, globale_variablen, setze_eigenschaften, setze_material
+from swki.compiler.eigenschaften import (
+    eigenschaften_fuer, gleichungen_an, globale_variablen, setze_eigenschaften, setze_material,
+)
 from swki.compiler.fehler import fehler_dict
 from swki.compiler.kontext import Kontext
 from swki.compiler.protokoll import Protokoll
@@ -26,9 +28,11 @@ class BauAbbruch(SwkiFehler):
         self.daten = ergebnis
 
 
-def vorbereiten(app, model, spec: dict, auftrag: str) -> None:
-    """Parameter als Gleichungen, Werkstoff und Eigenschaften setzen (auch von swki.normteile.bau genutzt)."""
-    globale_variablen(model, spec.get("parameter", {}))
+def vorbereiten(app, model, spec: dict, auftrag: str, gleichungen: bool) -> None:
+    """Parameter als Gleichungen (nur mit gleichungen), Werkstoff und Eigenschaften setzen (auch von swki.normteile.bau
+    genutzt)."""
+    if gleichungen:
+        globale_variablen(model, spec.get("parameter", {}))
     if "material" in spec:
         setze_material(app, model, spec["material"])
     setze_eigenschaften(model, eigenschaften_fuer(spec, auftrag))
@@ -42,11 +46,12 @@ def baue_teil_dokument(app, r, standard: dict, spec: dict, spec_pfad: Path, auft
     with protokoll.phase("vorbereiten"):
         model = sw.neues_teil(app, r.vorlage_teil)
     try:
-        ctx = Kontext(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"])
+        gleichungen = gleichungen_an(spec, standard)
+        ctx = Kontext(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], gleichungen=gleichungen)
         fehler = None
         try:
             with protokoll.phase("vorbereiten"):
-                vorbereiten(app, model, spec, auftrag)
+                vorbereiten(app, model, spec, auftrag, gleichungen)
         except Exception as e:  # z. B. MATERIAL_UNBEKANNT
             fehler = e
         if fehler is None:

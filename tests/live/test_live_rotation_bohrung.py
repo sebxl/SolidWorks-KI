@@ -71,7 +71,7 @@ def test_bohrungen_mit_senkung():
 
 
 def test_lage_haengt_an_parameter():
-    spec = _spec({**BOHRUNG, "positionen": [["=-L/2+10", "=T"]]}, parameter={"L": 100, "T": 20})
+    spec = _spec({**BOHRUNG, "positionen": [["=-L/2+10", "=T"]]}, parameter={"L": 100, "T": 20}) | {"gleichungen": True}
     spec["features"][0] = {**KLOTZ, "skizze": {"ebene": "oben", "elemente": [
         {"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": 60}}]}}
     with gebautes_teil(spec) as (ctx, fehler, _):

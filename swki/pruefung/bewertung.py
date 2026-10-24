@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from swki.compiler.eigenschaften import material_passt
+from swki.compiler.eigenschaften import gleichungen_an, material_passt
 from swki.formschraege import schraege, soll_vorzeichen
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
 from swki.pruefung.huellquader import huellquader_auto
@@ -35,6 +35,7 @@ class Messwerte:
     durchmesser: dict[str, dict | str] = field(default_factory=dict)  # was → {"durchmesser", "achse", "referenz"?} oder Fehlertext
     verzahnungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Messwerte der Verzahnung oder Fehlertext
     formschraegen: dict[str, dict | str] = field(default_factory=dict)  # ID → {"flaechen": [...]} oder Fehlertext
+    gleichungen: int = 0  # Anzahl Gleichungen und globale Variablen (EquationMgr.GetCount)
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -124,6 +125,16 @@ def formschraege_abweichungen(f: dict, ist: dict, parameter: dict, tol_grad: flo
     return fehler
 
 
+def gleichungen_eintrag(spec: dict, standard: dict, anzahl: int) -> dict | None:
+    """Spec Bemaßungsbezug §4: ohne Schalter gleichungen (gleichungen_an) darf das Dokument keine Gleichungen und globalen
+    Variablen haben; mit Schalter gibt es den Prüfpunkt nicht. Gilt für Teil und Baugruppendokument."""
+    if gleichungen_an(spec, standard):
+        return None
+    if anzahl == 0:
+        return eintrag("gleichungen", True, ist=0, knoten=[])
+    return eintrag("gleichungen", False, ist=anzahl, knoten=[], hinweis=f"GLEICHUNGEN_VORHANDEN: {anzahl} Gleichungen")
+
+
 def baum_kennzahl(spec: dict, protokoll: dict | None) -> dict:
     """Spec 2c §6.3: Knoten der Spezifikation und vom Bau erzeugte Features (Namen aus dem Bauprotokoll; Skizzen,
     Ebenen und Achsen legt der Compiler nebenbei an und zählen nicht)."""
@@ -193,6 +204,9 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
     else:
         ergebnisse.append(eintrag("koerper", False, ist=m.koerper, soll=1, knoten=[],
                                     hinweis=f"{m.koerper} Volumenkörper statt 1"))
+
+    if (e := gleichungen_eintrag(spec, standard, m.gleichungen)) is not None:
+        ergebnisse.append(e)
 
     if "huellquader" in pr:
         ist = [round(m.box[i + 3] - m.box[i], 6) for i in range(3)]

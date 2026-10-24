@@ -13,10 +13,15 @@ from swki.compiler.skizze import ebene_aus_flaeche, modellpunkt, richtung, skizz
 from swki.compiler.topologie import loese_flaeche
 
 
-def _kreisschnitt(ctx, f: dict, durchmesser, tiefe, name: str):
+def _kreisschnitt(ctx, f: dict, durchmesser, tiefe, name: str, pfad: str):
+    """Kreisschnitt an allen Positionen. pfad: Spec-Pfad der Felder durchmesser und tiefe ("features[i]" für die Bohrung,
+    "features[i].senkung" für die Senkung); die Lage von Position k steht in features[i].positionen[k] und folgt dem
+    `bezug` der Bohrung (auch die Senkung)."""
     se = ebene_aus_flaeche(loese_flaeche(ctx, f["flaeche"]))
-    kreise = [{"kreis": {"mitte": p, "durchmesser": durchmesser}} for p in f["positionen"]]
-    skizze, se = skizziere(ctx, se, kreise, f"{name}_skizze")
+    kreise = [{"kreis": {"mitte": p, "durchmesser": durchmesser, "bezug": f.get("bezug")}} for p in f["positionen"]]
+    positionen = f"{ctx.pfad(f['id'])}.positionen"
+    pfade = [{"mitte": f"{positionen}[{k}]", "durchmesser": f"{pfad}.durchmesser"} for k in range(len(kreise))]
+    skizze, se = skizziere(ctx, se, kreise, f"{name}_skizze", pfade)
     sw.auswahl_leeren(ctx.model)
     skizze.Select2(False, 0)
     typ = ENDE["durch_alles"] if tiefe is None else ENDE["blind"]
@@ -25,18 +30,19 @@ def _kreisschnitt(ctx, f: dict, durchmesser, tiefe, name: str):
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"bohrung {name} nicht erzeugt", schritt="feature")
     feature.Name = name
     if tiefe is not None:
-        ctx.verknuepfe(f"D1@{name}", tiefe)
+        ctx.mass(f"D1@{name}", tiefe, f"{pfad}.tiefe", "tiefe")
     return feature, se
 
 
 @handler("bohrung")
 def bohrung(ctx, f: dict) -> FeatureErgebnis:
     features = []
-    feature, se = _kreisschnitt(ctx, f, f["durchmesser"], None if f.get("durch") else f["tiefe"], f["id"])
+    pfad = ctx.pfad(f["id"])
+    feature, se = _kreisschnitt(ctx, f, f["durchmesser"], None if f.get("durch") else f["tiefe"], f["id"], pfad)
     features.append(feature)
     if "senkung" in f:
         s = f["senkung"]
-        senkung, _ = _kreisschnitt(ctx, f, s["durchmesser"], s["tiefe"], f"{f['id']}_senkung")
+        senkung, _ = _kreisschnitt(ctx, f, s["durchmesser"], s["tiefe"], f"{f['id']}_senkung", f"{pfad}.senkung")
         features.append(senkung)
     punkte = [modellpunkt(se.orientierung, ctx.wert(u), ctx.wert(v), se.lage) for u, v in f["positionen"]]
     return FeatureErgebnis(features, richtung=richtung(se, True), punkte=punkte)

@@ -7,6 +7,7 @@ from pathlib import Path
 from swki.compiler import sw
 from swki.compiler.ablauf import baue_features
 from swki.compiler.bauen import vorbereiten
+from swki.compiler.eigenschaften import gleichungen_an
 from swki.compiler.fehler import fehler_dict
 from swki.compiler.kontext import Kontext
 from swki.compiler.protokoll import Protokoll
@@ -31,9 +32,11 @@ def baue_und_pruefe(spec: dict, ordner: Path, mit_bildern: bool = False, lauf: i
     app = verbinde(r.sw_jahr)
     model = sw.neues_teil(app, r.vorlage_teil)
     try:
-        ctx = Kontext(app, model, spec, ordner / f"{spec['name']}.yaml", standard["toleranzen"]["anker_mm"])
+        gleichungen = gleichungen_an(spec, standard)
+        ctx = Kontext(app, model, spec, ordner / f"{spec['name']}.yaml", standard["toleranzen"]["anker_mm"],
+                      gleichungen=gleichungen)
         try:
-            vorbereiten(app, model, spec, AUFTRAG)
+            vorbereiten(app, model, spec, AUFTRAG, gleichungen)
             fehler = baue_features(ctx, protokoll, alle_handler(), lambda c: sw.rebuild(c.model))
         except Exception as e:  # z. B. MATERIAL_UNBEKANNT beim Vorbereiten
             fehler = e

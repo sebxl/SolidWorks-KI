@@ -25,7 +25,7 @@ def _ebene(ctx, f: dict):
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"referenz {f['id']}: Ebene nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
     if "abstand" in e:
-        ctx.verknuepfe(f"D1@{f['id']}", e["abstand"])
+        ctx.mass(f"D1@{f['id']}", e["abstand"], f"{ctx.pfad(f['id'])}.ebene.abstand", "versatz")
     # Der Flip verschiebt nur die Lage auf die andere Seite, die Normale bleibt (wie in skizze.py, live belegt).
     return feature, NORMALE[e["basis"]]
 
