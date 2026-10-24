@@ -24,6 +24,7 @@ AUFTRAG = "SWKI-LIVE-BEZUG"
 SW_IN_DIESER_KONFIGURATION = 1  # swSetValueInConfiguration_e.swSetValue_InThisConfiguration
 BREITE = "features[0].skizze.elemente[0].rechteck.breite"
 RANDMASS = "features[1].positionen[0][0]"
+PAARABSTAND = "features[1].positionen[0][1]"
 PLATTE = {
     "art": "teil", "name": "Platte", "material": "1.0038", "eigenschaften": {"Benennung": "Testplatte Bezug"},
     "parameter": {"L": 160, "B": 100, "H": 12, "RA": 10, "ZG": 20},
@@ -147,11 +148,39 @@ def test_handaenderung_erhaelt_randabstand(capsys, spec_pfad):
 
 def test_handaenderung_randmass_ergibt_delta(capsys, spec_pfad):
     datei, masse = _gebaut(capsys, spec_pfad)
+    assert masse[PAARABSTAND]["art"] == "paarabstand" and masse[PAARABSTAND]["wert"] == pytest.approx(40)
     assert _aendere_mass(datei, masse[RANDMASS]["name"], 12) == [pytest.approx(-68, abs=0.01)]
     code, daten = _lauf(capsys, "aenderungen", str(spec_pfad))
     assert code == 0, daten
     [eintrag] = daten["geaendert"]
-    assert eintrag["vorschlaege"] == [{"pfad": RANDMASS, "bezug": "-rand", "delta": pytest.approx(2)}]
+    # Randmaß 10 → 12 vom linken Rand weg: die Spec-Koordinate u wird um 2 größer (−70 → −68, Ruling 11)
+    assert eintrag["vorschlaege"] == [{"pfad": RANDMASS, "bezug": "-rand", "delta": pytest.approx(2), "vorzeichen": 1,
+                                       "koordinate_delta": pytest.approx(2)}]
+
+
+def test_flaechenbezug_zur_absatzwand():
+    """{flaeche} live (Ruling 2, 12): Gewinde auf der Deckfläche der Platte, 15 mm vor der linken Wand eines Absatzes
+    (Seitenfläche eines anderen Features, ihre untere Kante liegt in der Skizzenfläche). Rückt der Absatz von Hand nach
+    rechts, rückt das Gewinde mit."""
+    absatz = {"id": "f2", "typ": "extrusion", "skizze": {"ebene": DECKFLAECHE, "elemente": [
+        {"rechteck": {"mitte": [20, 0], "breite": 30, "hoehe": 40}}]}, "ende": {"typ": "blind", "tiefe": 10}}
+    gewinde = {"id": "f3", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": DECKFLAECHE,
+               "positionen": [[-10, 0]], "bezug": {"u": {"flaeche": {"feature": "f2", "flaeche": "-x"}}}, "tiefe": 10,
+               "gewindetiefe": 8}
+    with gebautes_teil({"art": "teil", "name": "T", "features": [KLOTZ, absatz, gewinde]}) as (ctx, fehler, protokoll):
+        assert fehler is None, fehler
+        assert set(skizzenstatus(ctx.model).values()) == {sw.SW_FULLY_CONSTRAINED}
+        f3 = ctx.ergebnis("f3").features[0]
+        assert 15 in feature_masse(_unterfeature(f3, "f3_positionen"))
+        [mass] = [m for k in protokoll.knoten for m in k.masse or [] if m["pfad"] == "features[2].positionen[0][0]"]
+        assert (mass["bezug"], mass["wert"], mass["vorzeichen"]) == (gewinde["bezug"]["u"], pytest.approx(15), -1)
+        assert _achsen_x(f3) == [pytest.approx(-10, abs=0.01)]
+        # Absatzwand 5 → 10 mm vom Ursprung (Mittelpunkt der linken Seite, Fall b): das Gewinde bleibt 15 mm davor
+        wand = _mass_name(protokoll, "features[1].skizze.elemente[0].rechteck.mitte[0]")
+        ctx.model.Parameter(wand).SetSystemValue3(0.010, SW_IN_DIESER_KONFIGURATION, None)
+        sw.rebuild(ctx.model)
+        assert set(skizzenstatus(ctx.model).values()) == {sw.SW_FULLY_CONSTRAINED}
+        assert _achsen_x(f3) == [pytest.approx(-5, abs=0.01)]
 
 
 def _mass_name(protokoll, pfad: str) -> str:
