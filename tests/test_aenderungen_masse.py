@@ -26,7 +26,7 @@ def test_mass_differenz_meldet_nur_geaenderte():
              _m("D3@s", 5, 5.0, art="radius", pfad="features[0].profil.radius")]
     differenz = mass_differenz(masse, {"D1@s": 90.0, "D2@s": 60.0, "D3@s": 5.0000001})
     assert differenz == [{"name": "D1@s", "pfad": "features[0].profil.laenge", "art": "groesse", "bezug": None,
-                          "roh": "=L", "soll": 100.0, "ist": 90.0, "delta": -10.0}]
+                          "roh": "=L", "vorzeichen": 1, "soll": 100.0, "ist": 90.0, "delta": -10.0}]
 
 
 def test_mass_differenz_meldet_fehlendes_mass():
@@ -39,10 +39,33 @@ def test_vorschlag_direkter_parameter():
     assert vorschlaege(differenz, {"L": 100}) == [{"parameter": "L", "neu": 90.0}]
 
 
-def test_vorschlag_negierter_parameter():
-    """Das Maß ist ein Betrag: roh =-P mit Betrag 10 heißt P = -10; ist 12 → P = -12. Leerzeichen sind egal."""
-    differenz = mass_differenz([_m("D1@s", " = - P ", 10.0, vorzeichen=-1)], {"D1@s": 12.0})
+def test_vorschlag_negierter_parameter_mit_negativem_wert():
+    """Das Maß ist ein Betrag, der Parameter behält sein Vorzeichen: =-P mit P = -10 (Rohwert +10, Maß 10), ist 12 →
+    P = -12. Leerzeichen im Ausdruck sind egal."""
+    differenz = mass_differenz([_m("D1@s", " = - P ", 10.0, vorzeichen=1)], {"D1@s": 12.0})
     assert vorschlaege(differenz, {"P": -10}) == [{"parameter": "P", "neu": -12.0}]
+
+
+def test_vorschlag_negierter_parameter_mit_positivem_wert():
+    """=-V mit V = +20 (Rohwert −20, Maß 20, vorzeichen −1), ist 25 → V = 25, nicht −25."""
+    differenz = mass_differenz([_m("D1@s", "=-V", 20.0, vorzeichen=-1)], {"D1@s": 25.0})
+    assert vorschlaege(differenz, {"V": 20}) == [{"parameter": "V", "neu": 25.0}]
+
+
+def test_vorschlag_direkter_negativer_parameter():
+    """=P mit P = -10 (Rohwert −10, Maß 10, vorzeichen −1), ist 12 → P = -12."""
+    differenz = mass_differenz([_m("D1@s", "=P", 10.0, vorzeichen=-1)], {"D1@s": 12.0})
+    assert vorschlaege(differenz, {"P": -10}) == [{"parameter": "P", "neu": -12.0}]
+
+
+def test_vorschlag_parameter_null_wird_positiv():
+    differenz = mass_differenz([_m("D1@s", "=P", 0.0)], {"D1@s": 3.0})
+    assert vorschlaege(differenz, {"P": 0}) == [{"parameter": "P", "neu": 3.0}]
+
+
+def test_kein_vorschlag_bei_nicht_numerischem_parameter():
+    differenz = mass_differenz([_m("D1@s", "=P", 10.0)], {"D1@s": 12.0})
+    assert vorschlaege(differenz, {"P": "=Q+1"}) == []
 
 
 def test_kein_vorschlag_bei_zusammengesetztem_ausdruck_zahl_oder_unbekanntem_parameter():
@@ -200,7 +223,8 @@ def test_aenderungen_hinweis_wenn_weder_parameter_noch_masse_abweichen(umgebung,
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {datei.name: masse})
     monkeypatch.setattr(aenderungen, "lies_masse", lambda model, m: {"D1@f1_skizze": 100.0})
     eintrag = aenderungen.aenderungen(spec_pfad)["geaendert"][0]
-    assert eintrag["masse"] == [] and eintrag["vorschlaege"] == [] and "Parameter gleich" in eintrag["hinweis"]
+    assert eintrag["masse"] == [] and eintrag["vorschlaege"] == [] and "Maße gleich" in eintrag["hinweis"]
+    assert "Parameter gleich" not in eintrag["hinweis"]
 
 
 def test_baugruppendokument_im_massweg_vergleicht_nur_verknuepfungen(umgebung, monkeypatch):
@@ -229,3 +253,44 @@ def test_baugruppendokument_im_massweg_vergleicht_nur_verknuepfungen(umgebung, m
     eintrag = aenderungen.aenderungen(spec_pfad)["geaendert"][0]
     assert eintrag["parameter"] == [{"name": "verknuepfung:v1", "soll": 5.0, "ist": 7.0}]
     assert eintrag["masse"] == [] and eintrag["vorschlaege"] == []
+
+
+def test_baugruppendokument_im_massweg_hinweis_nennt_verknuepfungen(umgebung, monkeypatch):
+    from swki.baugruppe import sw_baugruppe
+
+    r, spec_pfad = umgebung
+    datei = _lauf(r, spec_pfad, 1)
+    asm = datei.with_name("A_Probe.sldasm")
+    asm.write_bytes(b"asm")
+    protokoll_pfad = lauf_datei(spec_pfad, 1, "protokoll")
+    protokoll = json.loads(protokoll_pfad.read_text(encoding="utf-8"))
+    protokoll["sha256"] |= aenderungen.pruefsummen(asm.parent, [asm])
+    protokoll_pfad.write_text(json.dumps(protokoll), encoding="utf-8")
+    asm.write_bytes(b"asm von Hand")
+    monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
+    monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
+    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
+    monkeypatch.setattr(sw_baugruppe, "verknuepfungswerte", lambda model: {"v1": 5.0})
+    monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {asm.name: {"ABST": 35, "verknuepfung:v1": 5.0}})
+    monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {asm.name: []})
+    monkeypatch.setattr(aenderungen, "lies_masse", lambda model, m: {})
+    hinweis = aenderungen.aenderungen(spec_pfad)["geaendert"][0]["hinweis"]
+    assert "Verknüpfungswerte gleich" in hinweis and "Parameter gleich" not in hinweis
+
+
+def test_nur_fehlende_masse_geben_einen_hinweis(umgebung, monkeypatch):
+    r, spec_pfad = umgebung
+    datei = _lauf(r, spec_pfad, 1)
+    datei.write_bytes(b"von Hand geaendert")
+    masse = [_m("D1@f1_skizze", "=L", 100.0), _m("D2@f1_skizze", "=B", 60.0)]
+    monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
+    monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
+    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
+    monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100, "B": 60}})
+    monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {datei.name: masse})
+    monkeypatch.setattr(aenderungen, "lies_masse", lambda model, m: {})
+    eintrag = aenderungen.aenderungen(spec_pfad)["geaendert"][0]
+    assert len(eintrag["masse"]) == 2 and eintrag["vorschlaege"] == []
+    assert "Maße D1@f1_skizze, D2@f1_skizze fehlen (Feature gelöscht?) – Nutzer fragen" in eintrag["hinweis"]

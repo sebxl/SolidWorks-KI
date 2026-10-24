@@ -212,20 +212,23 @@ def mass_differenz(masse: list[dict], ist: dict[str, float]) -> list[dict]:
         i = ist.get(m["name"])
         if i is None or abs(i - m["wert"]) > _TOL:
             differenz.append({"name": m["name"], "pfad": m["pfad"], "art": m["art"], "bezug": m["bezug"], "roh": m["roh"],
-                              "soll": m["wert"], "ist": i, "delta": None if i is None else i - m["wert"]})
+                              "vorzeichen": m["vorzeichen"], "soll": m["wert"], "ist": i,
+                              "delta": None if i is None else i - m["wert"]})
     return differenz
 
 
-_DIREKT = re.compile(r"=\s*(-?)\s*([A-Za-z_]\w*)\s*")
+_DIREKT = re.compile(r"=\s*-?\s*([A-Za-z_]\w*)")
 
 
 def vorschlaege(differenz: list[dict], parameter: dict) -> list[dict]:
     """Spec-Änderungen, die zu den geänderten Maßen passen (nur ein Vorschlag, der Nutzer entscheidet).
 
-    Größen-, Tiefen-, Radius-, Winkel-, Abstands- und Versatzmaße mit roh genau =P oder =-P (P ein Parameter der
-    Spezifikation) → {"parameter": P, "neu": w} (w = ist, bei =-P: −ist; Maße sind Beträge); verlangen zwei Maße
-    verschiedene Werte → {"parameter": P, "konflikt": [w1, w2, …]}. Lagemaße nie als Parameter, sondern
-    {"pfad", "bezug", "delta"}. Konstruktions- und Skriptmaße ergeben keinen Vorschlag; fehlende Maße auch nicht."""
+    parameter: die freigegebenen Parameter der Spezifikation. Größen-, Tiefen-, Radius-, Winkel-, Abstands- und
+    Versatzmaße mit roh genau =P oder =-P, P ein numerischer freigegebener Parameter → {"parameter": P, "neu": w}.
+    Maße sind Beträge, ein Parameter behält bei der Handänderung sein Vorzeichen: w = ist mit dem Vorzeichen des
+    freigegebenen P (bei P = 0 positiv), unabhängig vom − im Ausdruck. Verlangen zwei Maße verschiedene Werte →
+    {"parameter": P, "konflikt": [w1, w2, …]}. Lagemaße nie als Parameter, sondern {"pfad", "bezug", "delta"}.
+    Konstruktions- und Skriptmaße, nicht numerische oder unbekannte Parameter und fehlende Maße ergeben keinen Vorschlag."""
     ergebnis, je_parameter = [], {}
     for d in differenz:
         if d["ist"] is None or d["art"] in ("konstruktion", "skript"):
@@ -234,9 +237,13 @@ def vorschlaege(differenz: list[dict], parameter: dict) -> list[dict]:
             ergebnis.append({"pfad": d["pfad"], "bezug": d["bezug"], "delta": d["delta"]})
             continue
         treffer = _DIREKT.fullmatch(d["roh"].strip()) if isinstance(d["roh"], str) else None
-        if treffer is None or treffer[2] not in parameter:
+        if treffer is None or treffer[1] not in parameter:
             continue
-        name, wert = treffer[2], (-d["ist"] if treffer[1] else d["ist"])
+        name = treffer[1]
+        frei = parameter[name]
+        if isinstance(frei, bool) or not isinstance(frei, (int, float)):
+            continue
+        wert = -d["ist"] if frei < 0 else d["ist"]
         eintrag = je_parameter.get(name)
         if eintrag is None:
             je_parameter[name] = eintrag = {"parameter": name, "neu": wert}
@@ -282,9 +289,14 @@ def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, d
 
 
 def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
-    """Geänderte Dateien eines Laufs mit Parameterdifferenz zur Freigabe; öffnet SolidWorks nur bei geänderten
+    """Geänderte Dateien eines Laufs mit Abweichungen von der Freigabe; öffnet SolidWorks nur bei geänderten
     .sldprt/.sldasm und speichert nie. Ohne Lauf-Ordner oder ohne geänderte Datei wird nichts geöffnet und keine
-    Freigabe gebraucht; Normteil-Kopien (ohne Soll) werden nur genannt."""
+    Freigabe gebraucht; Normteil-Kopien (ohne Soll) werden nur genannt.
+
+    Je SW-Datei: parameter (Differenz zu den freigegebenen Parametern bzw. – im Baugruppendokument – Verknüpfungswerten),
+    masse (geänderte oder fehlende Maße des Maßprotokolls) und vorschlaege (Spec-Änderungen, nur zu freigegebenen
+    Parametern, siehe vorschlaege). Läufe mit Maßprotokoll lesen keine globalen Variablen: Teile vergleichen nur Maße,
+    das Baugruppendokument nur Verknüpfungswerte; ältere Läufe vergleichen die globalen Variablen wie bisher."""
     spec_pfad = spec_pfad.resolve()
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
@@ -328,8 +340,12 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
             masse_diff = mass_differenz(soll_m[name], ist_masse) if massweg else []
             eintrag = {"datei": name, "parameter": differenz, "masse": masse_diff,
                        "vorschlaege": vorschlaege(masse_diff, soll[name])}
-            if not differenz and not masse_diff:
-                eintrag["hinweis"] = "Datei geändert, Parameter gleich – den Nutzer fragen, was geändert wurde"
+            if not differenz and masse_diff and all(d["ist"] is None for d in masse_diff):
+                namen = ", ".join(d["name"] for d in masse_diff)
+                eintrag["hinweis"] = (f"Maß {namen} fehlt" if len(masse_diff) == 1 else f"Maße {namen} fehlen") +                     " (Feature gelöscht?) – Nutzer fragen"
+            elif not differenz and not masse_diff:
+                gleich = ("Verknüpfungswerte gleich" if name.lower().endswith(".sldasm") else "Maße gleich") if massweg                     else "Parameter gleich"
+                eintrag["hinweis"] = f"Datei geändert, {gleich} – den Nutzer fragen, was geändert wurde"
             ergebnis.append(eintrag)
     for n in a["geaendert"]:
         if n in sw_dateien:
