@@ -74,7 +74,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   senkschraube | stift`, `groesse` wie „M8“, „M10x1“ bzw. Stift-Nenndurchmesser `8`, `durch: true` oder `tiefe`,
   bei Gewinde mit `tiefe` ist `gewindetiefe` ≤ `tiefe` Pflicht, bei Gewinde mit `durch` ist sie erlaubt).
   Nur Größen aus `swki/wissen/bohrungsnormen.yaml`; `validieren` nennt die verfügbaren. Gewinde werden kosmetisch gebaut. `bohrung` bleibt für freie Durchmesser. Die erste Position
-  muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch).
+  muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch). Mit `rand`/`flaeche` im `bezug` löst swki
+  die Fläche nach dem Bohren neu auf; findet es sie nicht (`{nahe}` genau auf einer Bohrung), bricht der Bau mit
+  `REFERENZ_NICHT_GEFUNDEN` ab: `{feature, flaeche}` verwenden oder den nahe-Punkt neben die Bohrungen legen.
 - Zahnräder und Zahnstangen als `typ: verzahnung` (Spec 4b, Vorlage `tests/referenz/zahnstangentrieb/`): `art:
   stirnrad | zahnstange`, `ebene` (Standardebene oder `versatz`, keine Fläche), `mitte` (Stirnrad: Radachse;
   Zahnstange: Mitte von Zahn 1 auf der Profilmittellinie), `modul` (DIN 780 Reihe 1), `zaehne` (Stirnrad ≥ 17),
@@ -98,7 +100,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Senkung) sagt je Achse, **wovon aus** SolidWorks bemaßt; die Koordinaten der Spec bleiben absolut (Parameter,
   Ausdrücke), swki rechnet den Maßwert. Werte: `ursprung` (Vorgabe), `mitte` (symmetrisch zur Mittelebene **durch den
   Ursprung**: Paare spiegelbildlich zu 0 bekommen ein Abstandsmaß, Punkte auf 0 eine Ausrichtung), `"-rand"`/`"+rand"`
-  (Randkante der Skizzenfläche in −/+ Richtung), `{flaeche: <anker>}` (die Kante der Skizzenfläche in dieser Seitenfläche).
+  (Randkante der Skizzenfläche in −/+ Richtung), `{flaeche: <anker>}` (die Kante der Skizzenfläche in dieser Seitenfläche,
+  z. B. Gewinde 15 mm vor der Wand eines Absatzes: `bezug: {u: {flaeche: {feature: f2, flaeche: "-x"}}}`).
   `rand` und `flaeche` nur in Skizzen auf Flächen (`validieren` lehnt sie auf Standard- und Versatzebenen ab; keine passende
   Kante: `REFERENZ_NICHT_GEFUNDEN`, mehrere gleich weit außen: `REFERENZ_MEHRDEUTIG`). Beim `rechteck` zählt die dem Bezug
   zugewandte Seite (Tasche „5 mm vom Rand“ = Taschenwand). `polygon` und `kontur` haben keinen Bezug (Maße zum Ursprung).
@@ -186,7 +189,7 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   - `art: feste_zahl` – feste Zahl in einem maßtragenden Feld: meist als Parameter führen, sonst dem Nutzer bei der
     Freigabe ausdrücklich nennen.
   - `art: bezug` – Lagekoordinate ≠ 0 auf einer Skizzenfläche ohne `bezug` auf dieser Achse: `mitte` oder `rand` setzen,
-    sonst wird zum Ursprung bemaßt. Nicht für Konturen, Mittellinien und Basisskizzen auf Standardebenen.
+    sonst wird zum Ursprung bemaßt. Nicht für Konturen, Mittellinien und Skizzen auf Standard- oder Versatzebenen.
   - `art: zusammenfassen` – Knoten (`knoten`) lassen sich nach den Modellierregeln zusammenfassen: umbauen oder dem
     Nutzer begründen, warum nicht (z. B. Anzahl und Abstand sind Anforderungen).
 - **Ansage = Entscheidung:** Was der Nutzer als Änderung nennt, umsetzen (durchrechnen ja; zurückfragen nur, wenn die
@@ -214,9 +217,13 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Endet der Durchlauf mit `schritt: bauen` (Bauabbruch): Fehlercode und Knoten lesen, Bauweg nachbessern (Schritt 6).
 - Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert: `swki aenderungen <spec>` liest die Maße des Bauprotokolls und liefert je Datei `masse` (Differenzen soll/ist/delta) und `vorschlaege`; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
   - `vorschlaege` sind `{parameter, neu}` (Betrag des Maßes, Vorzeichen des freigegebenen Parameters; `konflikt: […]` bei
-    verschiedenen Werten: Nutzer fragen) und für Lagemaße `{pfad, bezug, delta}`. Bei Lagemaßen leitet die KI die
-    Spec-Änderung selbst ab (meist den Abstandsparameter um `delta`, z. B. `RA = 12`; steht eine feste Zahl, die Koordinate
-    als Ausdruck des Bezugs umschreiben) und legt sie dem Nutzer vor.
+    verschiedenen Werten: Nutzer fragen) und für Lagemaße `{pfad, bezug, delta, vorzeichen, koordinate_delta}`. `delta`
+    ist die Änderung des Maßes (ein Betrag, ohne Richtung), `koordinate_delta` die Änderung der Spec-Koordinate am `pfad`:
+    bei `art: lage` `vorzeichen × delta` (Randmaß 10 → 12 bei `-rand`: +2, bei `+rand`: −2), bei `art: paarabstand`
+    (Abstand eines `mitte`-Paars = 2 × Koordinate des festlegenden Punkts) `vorzeichen × delta / 2` (Abstand 40 → 44:
+    ±2, der Partner wandert spiegelbildlich mit). Bei Lagemaßen leitet die KI die Spec-Änderung aus `koordinate_delta`
+    selbst ab (meist den Abstandsparameter, z. B. `RA = 12` bei `"=-L/2+RA"`, bzw. `ZG = 22` beim Paar `±ZG`; steht eine
+    feste Zahl, die Koordinate als Ausdruck des Bezugs umschreiben) und legt sie dem Nutzer vor.
   - Ein Lagemaß, das beim Ändern des Bezugs mitgewandert ist (Bohrung 10 mm vom Rand, Platte gekürzt), erscheint nicht als
     Differenz; stimmt die Spec nicht, meldet erst `swki pruefen` die Abweichung.
 - Meldet `swki pruefen` **`GLEICHUNGEN_VORHANDEN`** (Modell mit Gleichungen oder globalen Variablen, obwohl

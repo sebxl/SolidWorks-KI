@@ -108,8 +108,9 @@ zueinander, symmetrisch zur Mittellinie. Kürzt der Nutzer die Platte auf 150, b
 - **An:** Verhalten wie heute, mit einer Ausnahme: Lagemaße mit Bezug ≠ `ursprung` bekommen keine Gleichung (der
   Bezug trägt die Absicht; eine Gleichung würde ihn überschreiben).
   *Nachgezogen bei der Umsetzung, 2026-10-24:* „Bezug ≠ `ursprung`“ meint `rand` und `flaeche`. Mit `gleichungen: true`
-  binden Lagemaße mit Bezug `ursprung`, die Paarabstände der Symmetrie und die Rechteckseiten von `mitte` wie bisher per
-  Ausdruck (Paarabstand = 2 × Koordinatenausdruck, Rechteckseite `=(mitte) ± (groesse)/2`).
+  binden alle Maße per Ausdruck, außer Lagemaßen mit Rand- oder Flächenbezug und Maßen mit eigenem Wert (Maßwert ≠
+  Betrag des Spec-Ausdrucks): die Lage zum Ursprung (auch ungepaarte Punkte mit `mitte`), der Paarabstand der Symmetrie
+  als 2 × Koordinatenausdruck und die Rechteckseite bei `ursprung` (Mitte ≠ 0) als `=(mitte) ± (groesse)/2`.
 
 ## 5. Compiler
 
@@ -122,7 +123,12 @@ zueinander, symmetrisch zur Mittellinie. Kürzt der Nutzer die Platte auf 150, b
 - Bauprotokoll: neues Feld `masse` je Knoten – Liste `{name, pfad, art, bezug, wert}`; `name` wie `D3@f2_positionen`,
   `pfad` der Spec-Pfad (`features[1].positionen[0][0]`, `features[0].skizze.elemente[0].rechteck.breite`), `art`
   `lage`|`groesse`|`tiefe`|…, `wert` in mm bzw. Grad. Grundlage für `aenderungen` (§8). Erfasst werden alle Maße, die
-  heute `verknuepfe` durchlaufen, auch Tiefen, Radien, Musterabstände und Verknüpfungswerte.
+  heute `verknuepfe` durchlaufen, auch Tiefen, Radien und Musterabstände.
+  *Nachgezogen bei der Umsetzung, 2026-10-24:* Verknüpfungswerte stehen **nicht** im Maßprotokoll; `aenderungen` liest
+  sie am Baugruppendokument und vergleicht sie über `parameter` (`verknuepfung:<id>`, §8). Ein Eintrag trägt
+  `{name, pfad, art, bezug, roh, vorzeichen, wert, einheit}`: `art` zusätzlich `paarabstand` (Abstand eines `mitte`-Paars),
+  `konstruktion` (Hilfsmaße wie das Längenmaß der Mittellinie) und `skript` (ohne Spec-Pfad, Notausgang); `einheit`
+  `mm`|`grad` unabhängig von `art` (ein Skriptmaß eines Winkels bleibt in Grad).
 
 ### 5.2 `mitte`
 
@@ -141,7 +147,8 @@ auf beiden Achsen: ein Eckpunkt) bekommt die übrigen Lage- und Abstandsmaße; R
 *Nachgezogen bei der Umsetzung, 2026-10-24 (Spike S17 Zeilen 4–5, Rulings 4, 4a, 6, 10):*
 
 - **Mittellinie:** Ihr Endpunkt liegt per `sgCOINCIDENT` auf der Randkante der Skizzenfläche. Skizzen ohne Skizzenfläche
-  (Standard- und Versatzebene) haben keine Randkante; dort bekommt die Mittellinie ein Längenmaß (Konstruktionsmaß).
+  (Standard- und Versatzebene) haben keine Randkante; dort bekommt die Mittellinie ein Längenmaß (Konstruktionsmaß),
+  ebenso auf einer Fläche, wenn keine Randkante quer zur Linie sie trifft (die Kante muss über die Mittelebene reichen).
 - **Rechteck** (Spike: Diagonale mit `sgATMIDDLE`, Seitenmittelpunkt über `CreatePoint` + `sgATMIDDLE`), festgelegt je
   Fall. „Seitenbezug“ heißt je Achse `rand`, `flaeche` oder `ursprung` mit Mitte ≠ 0 (zugewandte bzw. nächste Seite),
   „mitte“ heißt `mitte` oder `ursprung` mit Mitte auf 0:
@@ -164,6 +171,13 @@ Punkt (bzw. Rechteckseite) dazu bemaßen. SolidWorks bemaßt direkt zur Modellka
 Bohrungsassistenten (Spike S17 Zeilen 1, 3, 4); zu Flächen bemaßt es nicht (§3, Nachtrag). Bezug ist immer Geometrie, die
 im Baum **vor** dem Feature liegt.
 
+*Nachgezogen bei der Umsetzung, 2026-10-24:* Die Positionsskizze der `normbohrung` löst ihre Skizzenfläche nach
+`HoleWizard5` neu auf (die Kanten von vorher gelten nicht mehr). Findet swki sie nicht wieder (`{nahe}` genau auf einer
+Bohrung) oder liegt die gefundene in einer anderen Ebene: mit `rand`/`flaeche` `REFERENZ_NICHT_GEFUNDEN` („Anker
+{feature, flaeche} verwenden oder nahe-Punkt neben die Bohrungen legen“), mit nur `mitte` die Ebene ohne Fläche
+(Mittellinie mit Längenmaß). `{flaeche}` ist live belegt (Gewinde vor der Wand eines Absatzes,
+[ergebnisse.md](../../bemassungsbezug/ergebnisse.md) §2).
+
 ## 6. Validieren
 
 - Schema: `bezug` an den genannten Stellen; Werte wie §3.
@@ -171,7 +185,7 @@ im Baum **vor** dem Feature liegt.
   `bezug` an `polygon`/`kontur` (noch nicht unterstützt).
 - Neuer Hinweis `art: bezug`: Lagekoordinate ≠ 0 in `bohrung`/`normbohrung`-Positionen oder in `rechteck`/`kreis`/
   `langloch` auf einer Skizzenfläche **ohne** Bezug auf dieser Achse – „Bemaßungsbezug angeben (mitte oder rand),
-  sonst wird zum Ursprung bemaßt“. Nicht für Konturen, Mittellinien und Basisskizzen auf Standardebenen.
+  sonst wird zum Ursprung bemaßt“. Nicht für Konturen, Mittellinien und Skizzen auf Standard- oder Versatzebenen.
 - `feste_zahl` bleibt unverändert; Meldungstext ohne Bezug auf Gleichungen.
 - Freigabe-Vorlage (Skill `konstruieren`): Bezüge in der Feature-Liste in Worten („2 × M6, 10 mm vom linken Rand,
   symmetrisch zur Mitte, Abstand 40“).
@@ -207,12 +221,20 @@ im Baum **vor** dem Feature liegt.
 - Läufe aus der Zeit mit Gleichungen (Protokoll ohne `masse`): wie heute über globale Variablen.
 - Danach wie bisher: Spec ändern, validieren, Nutzer-OK, `swki freigeben`, `swki bauen --uebernommen`, prüfen.
 
-*Nachgezogen bei der Umsetzung, 2026-10-24:* `swki aenderungen` liefert je Datei `parameter` (nur Läufe ohne `masse`), `masse`
+*Nachgezogen bei der Umsetzung, 2026-10-24:* `swki aenderungen` liefert je Datei `parameter`, `masse`
 (je geändertem Maß `{name, pfad, art, bezug, roh, vorzeichen, soll, ist, delta}`; fehlt das Maß, ist `ist` und `delta`
-`None`) und `vorschlaege`. Der Parametervorschlag `{parameter, neu}` hat den **Betrag** des Maßes und das **Vorzeichen des
+`None`) und `vorschlaege`. `parameter` vergleicht in Läufen ohne `masse` die globalen Variablen; im Maßweg bleibt es an
+Teilen leer, das Baugruppendokument liefert dort die Verknüpfungswerte (`verknuepfung:<id>`, soll/ist). Der
+Parametervorschlag `{parameter, neu}` hat den **Betrag** des Maßes und das **Vorzeichen des
 freigegebenen Parameters** (SolidWorks-Maße sind Beträge; bei Parameter 0 positiv), unabhängig vom Minus im Ausdruck
-(`=-P`); bei verschiedenen Werten `{parameter, konflikt: […]}`. Lagemaße erscheinen als `{pfad, bezug, delta}`, nie als
-Parameter. Konstruktions- und Skriptmaße ergeben keinen Vorschlag.
+(`=-P`); bei verschiedenen Werten `{parameter, konflikt: […]}`. Lagemaße (`art: lage`) und Paarabstände
+(`art: paarabstand`) erscheinen als `{pfad, bezug, delta, vorzeichen, koordinate_delta}`, nie als Parameter: `delta` ist
+die Änderung des Maßbetrags, `vorzeichen` die Richtung vom Bezug zum Punkt (Koordinate − Bezugslage = vorzeichen × Maß;
+Bezugslage: die Kante bei Rand/Fläche, sonst der Ursprung) und `koordinate_delta` die Änderung der Spec-Koordinate am
+`pfad` – bei `lage` `vorzeichen × delta`, bei `paarabstand` (2 × Koordinate des festlegenden Punkts, der Partner liegt
+spiegelbildlich) `vorzeichen × delta / 2`. Bei Rechteckseiten ist `roh` der erzeugte Seitenausdruck
+(`mitte ± groesse/2`), `pfad` zeigt auf `rechteck.mitte[a]`; die Mitte verschiebt sich um dasselbe `koordinate_delta`
+wie die Seite. Konstruktions- und Skriptmaße ergeben keinen Vorschlag.
 
 ## 9. Skill `konstruieren` und `baugruppe`
 

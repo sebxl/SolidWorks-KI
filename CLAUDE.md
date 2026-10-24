@@ -28,8 +28,8 @@ Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen)
 - `swki validieren <spec>` → `swki freigeben <spec>` (nur nach ausdrücklichem OK des Nutzers) → `swki bauen <spec>`.
 - Anforderungsmaße als `parameter` führen; `validieren` meldet feste Zahlen in Features als `hinweise` (die Freigabe
   schützt sie nicht). `freigeben` legt `<spec>.freigegeben.yaml` ab – diese Kopie nie ändern.
-- Bemaßungsbezug: Lagen mit `bezug` (`mitte`, `-rand`/`+rand`, `ursprung`) an `rechteck`, `kreis`, `langloch`, `bohrung`,
-  `normbohrung`; Regeln und Bemaßungsstil im Skill `konstruieren`. Der Bezug ist Bauweg (nicht in der Freigabe-Prüfsumme).
+- Bemaßungsbezug: Lagen mit `bezug` (`mitte`, `-rand`/`+rand`, `{flaeche: <anker>}`, `ursprung`) an `rechteck`,
+  `kreis`, `langloch`, `bohrung`, `normbohrung`; Regeln und Bemaßungsstil im Skill `konstruieren`. Der Bezug ist Bauweg (nicht in der Freigabe-Prüfsumme).
   SolidWorks bekommt Maße als Zahlen, keine Gleichungen und keine globalen Variablen; `gleichungen: true` (Top-Level, oder
   `config/standard.yaml`) nur auf Wunsch des Nutzers. Neue Handler bemaßen über `Kontext.mass` (Maßprotokoll für
   `swki aenderungen`).

@@ -36,7 +36,10 @@ Rohdaten: docs/stufe0/ergebnisse/s17_bemassungsbezug.json · Spike: spikes/s17_b
 - Zeile 2 (Fläche nicht bemaßbar) → Ruling 2: `{flaeche}` wird auf die Kante der Skizzenfläche aufgelöst und gilt nur in
   Skizzen auf Flächen (Spec §3, Nachtrag).
 - Zeile 4/5 (Annahmen bestätigt) → Ruling 4: Mittellinie mit Endpunkt auf der Randkante; Ruling 4a: ohne Skizzenfläche
-  Längenmaß an der Mittellinie. Rechteck: Diagonale nur bei Mitte ≠ (0, 0), sonst Seitenmittelpunkte (Ruling 6, Spec §5.2).
+  (oder ohne passende Randkante) Längenmaß an der Mittellinie. Rechteck je Fall (Ruling 6, Spec §5.2): (a) beide Achsen
+  Seitenbezug → Ecke der zugewandten Seiten; (b) eine Achse Seitenbezug → Mittelpunkt dieser Seite; (c) beide Achsen
+  mitte um (0, 0) → zwei Seitenmittelpunkte; (d) beide Achsen mitte, Mitte ≠ (0, 0) → Mittelpunkt der Diagonale (nur
+  hier eine Diagonale; in Rotationsskizzen statt (d) zwei Seitenmittelpunkte).
 - Zeile 6 (Fase im Baum nach der Bezugsskizze bestanden) → Ruling 3: keine zusätzliche Skill-Regel.
 
 ### Untervarianten (über den Auftrag hinaus bzw. Annahmen)
@@ -59,7 +62,8 @@ Jeder Test lief einzeln mit `tests\live_einzeln.py <datei::test> --zeit 900`; So
 |---|---|
 | `test_platte_mit_bezuegen_ohne_gleichungen` | `gleichungen_anzahl == 0`, alle Skizzen Status 3, Positionsskizze enthält die Maße 10 und 40, Achsen bei x = −70, `swki pruefen` ohne Mangel |
 | `test_handaenderung_erhaelt_randabstand` | Länge per `Parameter(name).SetSystemValue3` auf 150: Achse bei x = −65,00 ± 0,01; `aenderungen` liefert `vorschlaege == [{"parameter": "L", "neu": 150}]`, keine Lagedifferenz |
-| `test_handaenderung_randmass_ergibt_delta` | Randmaß 10 → 12: Achse bei x = −68; `vorschlaege == [{"pfad": "features[1].positionen[0][0]", "bezug": "-rand", "delta": 2}]` |
+| `test_handaenderung_randmass_ergibt_delta` | Paarabstand im Maßprotokoll mit `art: paarabstand`, 40 mm. Randmaß 10 → 12: Achse bei x = −68; `vorschlaege == [{"pfad": "features[1].positionen[0][0]", "bezug": "-rand", "delta": 2, "vorzeichen": 1, "koordinate_delta": 2}]` (Ruling 11; Lauf 2026-10-24 nach der Schluss-Fixwelle) |
+| `test_flaechenbezug_zur_absatzwand` (`{flaeche}`, Ruling 12) | Platte 100 × 60 × 20, Absatz 30 × 40 × 10 (linke Wand bei u = 5), Gewinde M6 auf der Deckfläche der Platte bei u = −10 mit `bezug: {u: {flaeche: {feature: f2, flaeche: "-x"}}}`: alle Skizzen Status 3, Positionsskizze mit Maß 15 zur Kante der Absatzwand, Maßprotokoll `wert` 15, `vorzeichen` −1, Achse bei x = −10,00. Absatzwand per `SetSystemValue3` 5 → 10: Status 3, Achse wandert auf x = −5,00. `{flaeche}` ist damit live belegt (Lauf 2026-10-24) |
 | `test_rechteck_mit_eckradius_und_seitenmittelpunkt` (Fall c und b, Radius 8) | Status 3, Hüllquader wie Spec (Fall c [−50, 0, −30, 50, 10, 30], Fall b [−50, 0, −10, 50, 10, 50]); Breite per API auf 120 bleibt symmetrisch (±60), Volumen exakt |
 | `test_rechteck_mit_eckradius_versetzt_mit_mitte` (Fall d, Radius 4) | baut, alle Skizzen Status 3, Volumen exakt |
 | `test_kreis_mittig_in_tasche_gleicher_mitte` | `CreatePoint` an belegter Stelle: keine Überbestimmung, Status 3 |
