@@ -80,6 +80,17 @@ def einstellung_int(app, wert_id: int, wert: int):
 
 
 @contextmanager
+def einstellung_double(app, wert_id: int, wert: float):
+    """Wie einstellung(), aber für Double-Benutzereinstellungen (Get/SetUserPreferenceDoubleValue)."""
+    alt = app.GetUserPreferenceDoubleValue(wert_id)
+    app.SetUserPreferenceDoubleValue(wert_id, wert)
+    try:
+        yield
+    finally:
+        app.SetUserPreferenceDoubleValue(wert_id, alt)
+
+
+@contextmanager
 def ohne_inferenz(sketch_manager):
     """AddToDB=True: keine automatischen Beziehungen beim Erzeugen (S9a); danach immer zurück."""
     sketch_manager.AddToDB = True
@@ -105,6 +116,30 @@ def schnell(app, model):
                 setattr(o, name, wert_)
                 gesetzt.append((o, name, not wert_))
         except Exception:   # Schalter fehlt (Attrappe, Dokument ohne Ansicht): ohne ihn weiterbauen
+            continue
+    try:
+        yield
+    finally:
+        for o, name, wert_ in reversed(gesetzt):
+            try:
+                setattr(o, name, wert_)
+            except Exception:
+                pass
+
+
+@contextmanager
+def mit_grafik(app, model):
+    """Für Bilder innerhalb von schnell() (BTP Umbau 1): CommandInProgress aus und Grafikaktualisierung an, damit das
+    Bild den aktuellen Stand zeigt; danach die vorgefundenen Werte zurück. Außerhalb von schnell() ohne Wirkung."""
+    schalter = [(lambda: app, "CommandInProgress", False), (lambda: model.ActiveView, "EnableGraphicsUpdate", True)]
+    gesetzt = []
+    for objekt, name, wert_ in schalter:
+        try:
+            o = objekt()
+            if o is not None and bool(getattr(o, name)) != wert_:
+                setattr(o, name, wert_)
+                gesetzt.append((o, name, not wert_))
+        except Exception:   # Schalter fehlt (Attrappe, Dokument ohne Ansicht)
             continue
     try:
         yield
