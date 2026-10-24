@@ -168,6 +168,8 @@ Anweisungen des Nutzers für diesen Lauf (gehen den Skills vor):
 - Keine Rückfragen. Wo der Skill den Nutzer fragen würde, entscheide selbst und dokumentiere die Annahme als Kommentar
   in der Spec.
 - Die Freigabe für diesen Auftrag ist erteilt: `swki freigeben` ohne Rückfrage, sobald `validieren` gültig ist.
+  Alle Schritte vor der Freigabe-Vorlage (auch der Konstruktionsreview, wo der Skill ihn verlangt) laufen wie im
+  Betrieb; nur die Rückfrage an den Nutzer entfällt.
 - Kein Brainstorming, keine Pläne, kein git, keine Commits, keine Änderungen an swki/ oder an den Skills.
 - SolidWorks ist frisch gestartet. Neu starten nur bei SPEICHER_KNAPP oder Hänger: `cd "{wt}" && .venv\\Scripts\\python.exe -m werkzeuge.sw_neustart`.
 - Arbeite zügig; Zeit, Tool-Aufrufe, Tokens und Fehler werden gemessen.

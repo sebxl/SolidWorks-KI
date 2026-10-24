@@ -6,5 +6,10 @@ dateien: [durchlicht.yaml]
 aufgabe: durchlicht
 eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/AI_BL-S050075_Massbild.png]
 spec: durchlicht.yaml
-ersetzen: [{datei: durchlicht.yaml, alt: "  SX: 50 ", neu: "  SX: 25 "}]
+# Kommentare passend zum falschen Wert (ein falsch deutender Agent schreibt sie stimmig)
+ersetzen:
+  - {datei: durchlicht.yaml, alt: "  SX: 50 ", neu: "  SX: 25 "}
+  - {datei: durchlicht.yaml, alt: "50,0 vom Plattenrand +X (Hauptansicht blickt von +Y, links = +X)", neu: "25,0 vom Plattenrand +X (Hauptansicht blickt von +Y, links = −X)"}
+  - {datei: durchlicht.yaml, alt: "(50 vom Plattenrand +X, 15,6 hoch)", neu: "(25 vom Plattenrand +X, 15,6 hoch)"}
+  - {datei: durchlicht.yaml, alt: "(Hauptansicht von +Y: links = +X)", neu: "(Hauptansicht von +Y: links = −X)"}
 erwartet: {knoten: [stecker], stichworte: [gespiegelt, spiegelverkehrt, falsche seite]}
