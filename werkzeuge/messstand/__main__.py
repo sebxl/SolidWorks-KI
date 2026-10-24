@@ -287,7 +287,10 @@ def fallen_auftraege(args) -> dict:
         bericht = lies_json(spec.parent / "protokolle" / f"{spec.stem}.lauf-{stand['lauf']}.pruefbericht.json")
         text = fallen.pruefauftrag(pruefer_md, pruefer_auftrag(spec, stand["lauf"], bericht))
         for k in range(1, fallen.WIEDERHOLUNGEN + 1):
-            auftraege.append({"id": fid, "k": k, "urteil": str(ordner / f"urteil-{fid}-{k}.json"), "prompt": text})
+            datei = ordner / f"auftrag-{fid}-{k}.md"   # damit der Orchestrator den Prompt nicht abschreiben muss
+            datei.write_text(text, encoding="utf-8")
+            auftraege.append({"id": fid, "k": k, "urteil": str(ordner / f"urteil-{fid}-{k}.json"), "prompt": text,
+                              "datei": str(datei)})
     (ordner / "swki_treffer.json").write_text(json.dumps(swki_treffer), encoding="utf-8")
     schreibe_json(ordner / "auftraege.json", {"commit": _commit(args.commit), "auftraege": auftraege})
     return {"auftraege": len(auftraege), "swki_treffer": swki_treffer, "datei": str(ordner / "auftraege.json"),
