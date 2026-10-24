@@ -248,7 +248,9 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     bewegung = None
     try:
         for datei, teil_spec in bg.teile.items():
-            model = oeffne(app, ordner / dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard))
+            # ohne Fenster (~1,7 GB je Fenster, BTP Umbau 1); behaltene schließt SolidWorks mit der Baugruppe
+            model = oeffne(app, ordner / dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard),
+                           sichtbar=False)
             behalten = False
             try:
                 ctx = kontext_aus_datei(app, model, teil_spec, bg.pfad.parent / datei, tol, protokoll["teile"][datei])
@@ -265,7 +267,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
             if q.schluessel not in bedarf and q.schluessel not in offen_halten:
                 continue
             pfad = ordner / dokument_name(q, auftrag, standard)
-            model = oeffne(app, pfad)
+            model = oeffne(app, pfad, sichtbar=False)
             behalten = False
             try:
                 ctx = kontext_aus_datei(app, model, q.spec, pfad.with_suffix(".yaml"), tol, {"knoten": []})

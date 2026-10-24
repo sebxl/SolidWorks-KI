@@ -27,8 +27,13 @@ def neues_teil(app, vorlage: Path):
 
 
 def schliesse(app, model) -> None:
-    """Schließt genau dieses (selbst angelegte) Dokument."""
-    app.CloseDoc(model.GetTitle)
+    """Schließt genau dieses (selbst angelegte) Dokument. Ein unsichtbar geöffnetes, das SolidWorks schon mit der
+    Baugruppe geschlossen hat, hat keinen Titel mehr (AttributeError): dann ist nichts zu tun."""
+    try:
+        titel = model.GetTitle
+    except AttributeError:
+        return
+    app.CloseDoc(titel)
 
 
 def standardebenen(model) -> list:

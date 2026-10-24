@@ -345,7 +345,7 @@ def test_normteile_werden_kopiert_und_die_bibliothek_bleibt_unveraendert(umgebun
                         lambda norm, groesse, variante: {"pfad": str(pfade[(norm, groesse)]), "gebaut": False})
     monkeypatch.setattr(bau, "bibliotheksordner", lambda r_: bibliothek)
     monkeypatch.setattr(bau, "lies_eintrag", lambda ordner, schluessel: {"pruefsumme": "abc"})
-    monkeypatch.setattr(bau, "oeffne", lambda app, p: SimpleNamespace(pfad=Path(p)))
+    monkeypatch.setattr(bau, "oeffne", lambda app, p, sichtbar=True: SimpleNamespace(pfad=Path(p), sichtbar=sichtbar))
     monkeypatch.setattr(bau, "kontext_aus_datei", lambda app, model, spec, p, tol, prot: SimpleNamespace(model=model))
     assert bau._hole_normteile(b, r, 0.01) is None
     assert {p.name: p.read_bytes() for p in bibliothek.iterdir()} == vorher  # nichts in die Bibliothek geschrieben

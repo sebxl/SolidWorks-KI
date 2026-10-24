@@ -95,7 +95,7 @@ def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
         b.protokoll.normteile[q.schluessel] = {"bibliothek": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
                                                "pruefsumme": eintrag.get("pruefsumme")}
         b.dateien[f"normteil:{q.schluessel}"] = ziel
-        model = oeffne(b.app, ziel)
+        model = oeffne(b.app, ziel, sichtbar=False)  # ohne Fenster: ~1,7 GB weniger je Normteil (BTP Umbau 1)
         b.offen.append(model)
         b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
     return None
@@ -116,7 +116,7 @@ def _hole_kaufteile(b: Baulauf, tol_mm: float) -> Exception | None:
                                                "pruefsumme": ergebnis["pruefsumme"],
                                                "gewinde_modell": ergebnis["gewinde_modell"], **angaben_fuer_bericht(q.eintrag)}
         b.dateien[f"kaufteil:{q.schluessel}"] = ziel
-        model = oeffne(b.app, ziel)
+        model = oeffne(b.app, ziel, sichtbar=False)
         b.offen.append(model)
         b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
     return None
