@@ -5,8 +5,31 @@ Stand 24.10.2026. Erstellt von der Audit-Sitzung „SW KI Tool Performance Audit
 ## Ziel
 
 Score nach dem [Bewertungsbogen BTP](../superpowers/specs/2026-10-23-bewertungsbogen-design.md) **≥ 6,5** in
-**höchstens 5 Umbauten**. Ausgangswert (Durchgang 0): siehe [ergebnisse.md](ergebnisse.md). Hauptziele Geschwindigkeit
-und Präzision; Präzision darf nicht sinken (§5.1 des Bogens).
+**höchstens 5 Umbauten**. **Ausgangswert Durchgang 0: 4,9** (Details [ergebnisse.md](ergebnisse.md)). Hauptziele
+Geschwindigkeit und Präzision; Präzision darf nicht sinken (§5.1 des Bogens).
+
+## Was Durchgang 0 zeigt (Startpunkt neben der Recherche)
+
+- Teilscores: Zeit Teile 1,3 (258 s) · Stehlager 4,8 (343 s) · Prüfstation 5,0 (995 s) · Präzision erster Lauf 3,5
+  (3 Fehlerpunkte) · Fallen 10 (6/6) · Aufwand 5,0 · Robustheit 0,0 (28,2 GB).
+- **Konstruktionsreview** 23–109 s je Lauf (Teile 25–33 % der Zeit) – darf schlanker werden (Recherche O12), nicht
+  entfallen.
+- **Prüfstation:** Durchlauf 601 s; Prüfen ~300 s (Bewegungsprüfung, Recherche O1/O2), Verknüpfen 91 s (O3), Teile
+  105 s (O5 Wiederverwenden), Modell 200 s, Review 105 s, Prüfer 65 s.
+- **Speicher Prüfstation 27,5–28,2 GB beim Bauen** (Verknüpfen/Grundstellung) – vorher 14,3 GB; Ursache offen,
+  Robustheit-Teilscore 0. Lohnt eine Untersuchung (5 % Gewicht, aber auch Betriebsrisiko).
+- Fehlerpunkte: Bezug `u: mitte` gleicht Höhen eines Bohrungspaars an (Kamera, Bemaßungsbezug); falscher Messanker
+  eines Prüfwerts (Zentrieraufnahme). Präzisionshebel: Skill-Hinweise bzw. Prüfwerte aus der Geometrie ableiten.
+- Fallen stehen bei 10 – jede Prüfer-Änderung muss 6/6 und 0 Fehlalarme halten.
+
+## Lehren aus der Einrichtung (unbedingt beachten)
+
+- **Nie zwei SolidWorks-Arbeiten gleichzeitig** (Messlauf, Fallen bauen, Regression, Referenz). Fallen-*Prüfungen*
+  brauchen kein SolidWorks und dürfen parallel zu einem Lauf laufen.
+- Fallen-Prüfer schreiben ihr Urteil meist selbst; fehlt eine `urteil-*.json`, das zurückgemeldete JSON unverändert
+  ablegen. Dateien, die Prüfer versehentlich anlegen, entfernen.
+- Messdaten des Messstands vom 09.10. liegen unter `MESSSTAND/messstand-2026-10-09/` – nicht anfassen.
+- Lange Befehle (Prüfstation-`durchlauf` ~10 min) wandern im Agenten in den Hintergrund; der Lauf meldet sich danach.
 
 ## Lies zuerst
 
