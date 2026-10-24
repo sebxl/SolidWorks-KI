@@ -333,8 +333,13 @@ günstigen D1 mit Wiederholung) – genau dafür entscheidet seit Schritt 0 das 
 | d4-pruefstation-1 ohne `--haenger` | Kein SolidWorks-Absturz oder Werkzeug-Zeitlimit von swki, sondern ein Shell-Aufruf des Agenten; kostet nur Zeit (wie D1/D2 gewertet) |
 
 **Offene Hebel nach Umbau 2:**
-1. **stdin-Hänger technisch verhindern** statt nur verbieten: ein PreToolUse-Hook, der `python -`/`python.exe -` mit
-   Heredoc oder ohne Eingabe ablehnt (der Hinweis allein half in d4-pruefstation-1 nicht; ~2 min je Vorfall).
+1. ~~**stdin-Hänger technisch verhindern**~~ – **nachgezogen** (Nutzerauftrag nach Umbau 2, nicht gemessen):
+   PreToolUse-Hook `werkzeuge/stdin_sperre.py` in `.claude/settings.json` lehnt Bash-Befehle ab, die ein Python-Skript
+   über stdin lesen (`python -`, auch mit Heredoc/Pipe/`<`) oder ohne Eingabe warten (`python` ohne Skript, `cat` ohne
+   Datei/Heredoc/Pipe), und nennt den Weg über eine Datei. Gegenprobe über alle 230 Bash-Aufrufe der Messläufe D0–D4:
+   8 abgelehnt, darunter alle drei Hänger (je ~121 s) und ein 601-s-Aufruf; die übrigen vier liefen damals durch und
+   kosten künftig einen zweiten Anlauf; kein anderer Befehl betroffen. Wirkt erst in neu gestarteten Sitzungen (Hooks
+   werden beim Sitzungsstart geladen) – auch für Messläufe, die als Subagenten laufen.
 2. Prüfer-Streuung (18–118 s): Kurzbericht statt vollem Prüfbericht (O10), `omitClaudeMd`.
 3. Durchlicht-Modellzeit: die Maßliste lohnt bei Kamera mehr, als sie bei Durchlicht kostet; eine knappere Form (nur
    Lagemaße) wäre zu prüfen, ohne die Präzision zu riskieren.
