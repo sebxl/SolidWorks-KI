@@ -63,8 +63,18 @@ def test_mass_traegt_ein_ohne_gleichung():
     ctx.knoten = "f2"
     ctx.mass("D1@f2", "=T", "features[1].ende.tiefe", "tiefe")
     assert ctx.masse["f2"] == [{"name": "D1@f2", "pfad": "features[1].ende.tiefe", "art": "tiefe", "bezug": None,
-                                "roh": "=T", "vorzeichen": 1, "wert": 8.0}]
+                                "roh": "=T", "vorzeichen": 1, "wert": 8.0, "einheit": "mm"}]
     assert ctx.model.GetEquationMgr.texte == []
+
+
+def test_mass_traegt_die_einheit_ein():
+    """Einheit aus der art (winkel: Grad, sonst mm) oder ausdrücklich – Skriptmaße verlieren ihre art (Minor 4)."""
+    ctx = _ctx_mit_spec(gleichungen=False)
+    ctx.knoten = "f1"
+    ctx.mass("D1@f1", 30, "features[0].winkel", "winkel")
+    ctx.mass("D2@f1", 20, "features[0].ende.tiefe", "tiefe")
+    ctx.mass("D3@f1_skizze", 45, "features[0]", "skript", einheit="grad")
+    assert [m["einheit"] for m in ctx.masse["f1"]] == ["grad", "mm", "grad"]
 
 
 def test_mass_traegt_feste_zahl_und_betrag_ein():

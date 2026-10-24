@@ -17,6 +17,7 @@ from pathlib import Path
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_nummern_dateien, lauf_ordner
 from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
+from swki.compiler.kontext import einheit_der_art
 from swki.konfig import Rechner, lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
 from swki.spec.ausdruck import auswerten
@@ -193,14 +194,16 @@ def soll_masse(protokoll: dict, spec_pfad: Path, auftrag: str, standard: dict) -
 
 
 def lies_masse(model, masse: list[dict]) -> dict[str, float]:
-    """Aktuelle Werte der protokollierten Maße (Name → Betrag in mm bzw. Grad; winkel in Grad). Ein Maß, das es nicht
-    mehr gibt, fehlt im Ergebnis. IDimension.SystemValue liefert m bzw. rad (Spike S17 Fall 7)."""
+    """Aktuelle Werte der protokollierten Maße (Name → Betrag in mm bzw. Grad). Die Einheit steht im Feld einheit
+    (auch bei Skriptmaßen, deren art "skript" ist); ältere Protokolle ohne einheit: winkel in Grad, sonst mm. Ein Maß, das
+    es nicht mehr gibt, fehlt im Ergebnis. IDimension.SystemValue liefert m bzw. rad (Spike S17 Fall 7)."""
     werte = {}
     for m in masse:
         dimension = model.Parameter(m["name"])
         if dimension is not None:
             wert = float(dimension.SystemValue)
-            werte[m["name"]] = abs(math.degrees(wert) if m["art"] == "winkel" else in_mm(wert))
+            grad = (m.get("einheit") or einheit_der_art(m["art"])) == "grad"
+            werte[m["name"]] = abs(math.degrees(wert) if grad else in_mm(wert))
     return werte
 
 
@@ -218,6 +221,7 @@ def mass_differenz(masse: list[dict], ist: dict[str, float]) -> list[dict]:
 
 
 _DIREKT = re.compile(r"=\s*-?\s*([A-Za-z_]\w*)")
+_LAGEN = {"lage": 1, "paarabstand": 2}  # art → Maß je mm Koordinatenänderung (Paarabstand: 2 × Koordinate)
 
 
 def vorschlaege(differenz: list[dict], parameter: dict) -> list[dict]:
@@ -227,14 +231,22 @@ def vorschlaege(differenz: list[dict], parameter: dict) -> list[dict]:
     Versatzmaße mit roh genau =P oder =-P, P ein numerischer freigegebener Parameter → {"parameter": P, "neu": w}.
     Maße sind Beträge, ein Parameter behält bei der Handänderung sein Vorzeichen: w = ist mit dem Vorzeichen des
     freigegebenen P (bei P = 0 positiv), unabhängig vom − im Ausdruck. Verlangen zwei Maße verschiedene Werte →
-    {"parameter": P, "konflikt": [w1, w2, …]}. Lagemaße nie als Parameter, sondern {"pfad", "bezug", "delta"}.
-    Konstruktions- und Skriptmaße, nicht numerische oder unbekannte Parameter und fehlende Maße ergeben keinen Vorschlag."""
+    {"parameter": P, "konflikt": [w1, w2, …]}.
+    Lagemaße und Paarabstände nie als Parameter, sondern {"pfad", "bezug", "delta", "vorzeichen",
+    "koordinate_delta"}: koordinate_delta ist die Änderung der Spec-Koordinate am pfad. vorzeichen ist die Richtung
+    vom Bezug zum Punkt (Koordinate − Bezugslage = vorzeichen × Maß; Rand/Fläche: die Kante, sonst der Ursprung), also
+    lage: vorzeichen × delta. Ein Paarabstand ist 2 × Koordinate des festlegenden Punkts (der Partner liegt
+    spiegelbildlich), also paarabstand: vorzeichen × delta / 2 (Ruling 11).
+    Konstruktions- und Skriptmaße, nicht numerische oder unbekannte Parameter und fehlende Maße ergeben keinen
+    Vorschlag."""
     ergebnis, je_parameter = [], {}
     for d in differenz:
         if d["ist"] is None or d["art"] in ("konstruktion", "skript"):
             continue
-        if d["art"] == "lage":
-            ergebnis.append({"pfad": d["pfad"], "bezug": d["bezug"], "delta": d["delta"]})
+        if d["art"] in _LAGEN:
+            ergebnis.append({"pfad": d["pfad"], "bezug": d["bezug"], "delta": d["delta"],
+                             "vorzeichen": d["vorzeichen"],
+                             "koordinate_delta": d["vorzeichen"] * d["delta"] / _LAGEN[d["art"]]})
             continue
         treffer = _DIREKT.fullmatch(d["roh"].strip()) if isinstance(d["roh"], str) else None
         if treffer is None or treffer[1] not in parameter:
@@ -342,9 +354,11 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
                        "vorschlaege": vorschlaege(masse_diff, soll[name])}
             if not differenz and masse_diff and all(d["ist"] is None for d in masse_diff):
                 namen = ", ".join(d["name"] for d in masse_diff)
-                eintrag["hinweis"] = (f"Maß {namen} fehlt" if len(masse_diff) == 1 else f"Maße {namen} fehlen") +                     " (Feature gelöscht?) – Nutzer fragen"
+                eintrag["hinweis"] = ((f"Maß {namen} fehlt" if len(masse_diff) == 1 else f"Maße {namen} fehlen")
+                                      + " (Feature gelöscht?) – Nutzer fragen")
             elif not differenz and not masse_diff:
-                gleich = ("Verknüpfungswerte gleich" if name.lower().endswith(".sldasm") else "Maße gleich") if massweg                     else "Parameter gleich"
+                gleich = (("Verknüpfungswerte gleich" if name.lower().endswith(".sldasm") else "Maße gleich")
+                          if massweg else "Parameter gleich")
                 eintrag["hinweis"] = f"Datei geändert, {gleich} – den Nutzer fragen, was geändert wurde"
             ergebnis.append(eintrag)
     for n in a["geaendert"]:

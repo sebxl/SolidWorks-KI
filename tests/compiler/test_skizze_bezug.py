@@ -288,7 +288,8 @@ def _punkt(modell, u, v) -> _Punkt:
 
 
 def _lagen(ctx, fid="f2") -> list[dict]:
-    return [m for m in ctx.masse[fid] if m["art"] == "lage"]
+    """Lagemaße einschließlich der Paarabstände (art "paarabstand", Ruling 11)."""
+    return [m for m in ctx.masse[fid] if m["art"] in ("lage", "paarabstand")]
 
 
 # --- Rechteck ----------------------------------------------------------------------------------------------------------
@@ -516,8 +517,9 @@ def test_kreise_mitte_paar_ueber_elemente(modell):
     assert modell.beziehungen("sgSYMMETRIC") == [(links, rechts, mittellinie)]
     assert ("horizontal", (links, rechts)) in modell.masse("horizontal")
     abstand, = [m for m in _lagen(ctx) if m["bezug"] == "mitte"]
-    assert abstand | {"name": None} == {"name": None, "pfad": f"{P}[0].kreis.mitte[0]", "art": "lage", "bezug": "mitte",
-                                        "roh": -60, "vorzeichen": -1, "wert": 60.0}
+    assert abstand | {"name": None} == {"name": None, "pfad": f"{P}[0].kreis.mitte[0]", "art": "paarabstand",
+                                        "bezug": "mitte", "roh": -60, "vorzeichen": -1, "wert": 60.0,
+                                        "einheit": "mm"}
     # Mittellinie entlang v durch den Ursprung; ohne Skizzenfläche mit Längenmaß (Ruling 4a)
     assert (mittellinie.GetStartPoint2.X, mittellinie.GetEndPoint2.X) == (0.0, 0.0)
     assert modell.beziehungen("sgCOINCIDENT") == [(mittellinie.GetStartPoint2, URSPRUNG)]
@@ -525,7 +527,7 @@ def test_kreise_mitte_paar_ueber_elemente(modell):
     assert [m["art"] for m in ctx.masse["f2"]].count("konstruktion") == 1
     # v = 0: nur der festlegende Punkt bekommt die Ausrichtung, der Partner folgt aus der Symmetrie
     assert modell.beziehungen("sgHORIZONTALPOINTS2D") == [(links, URSPRUNG)]
-    assert [m["art"] for m in ctx.masse["f2"]] == ["groesse", "groesse", "konstruktion", "lage"]
+    assert [m["art"] for m in ctx.masse["f2"]] == ["groesse", "groesse", "konstruktion", "paarabstand"]
 
 
 def test_mitte_auf_flaeche_mittellinie_endet_auf_der_randkante(modell):
@@ -580,7 +582,8 @@ def test_bohrung_rand_maß_zur_kante(monkeypatch, modell):
     assert ("horizontal", (mitte, kanten["links"])) in modell.masse("horizontal")  # Spike S17 Zeile 1
     assert modell.beziehungen("sgHORIZONTALPOINTS2D") == [(mitte, URSPRUNG)]  # v = 0
     assert _lagen(ctx) == [{"name": "D2@f2_skizze", "pfad": "features[1].positionen[0][0]", "art": "lage",
-                            "bezug": "-rand", "roh": -40, "vorzeichen": 1, "wert": 10.0}]
+                            "bezug": "-rand", "roh": -40, "vorzeichen": 1, "wert": 10.0,
+                            "einheit": "mm"}]
 
 
 def test_bohrung_senkung_erbt_bezug(monkeypatch, modell):

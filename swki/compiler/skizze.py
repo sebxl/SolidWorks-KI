@@ -15,6 +15,7 @@ from swki.compiler.anker import AnkerFehler, Flaeche, Kante, Vektor, differenz, 
 from swki.compiler.fehler import (
     FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, SKIZZE_NICHT_BESTIMMT, SKIZZE_UNGUELTIG, BauFehler,
 )
+from swki.compiler.kontext import einheit_der_art
 from swki.compiler.topologie import kante_aus, loese_flaeche
 from swki.spec.ausdruck import ist_ausdruck
 from swki.spec.konturen import bogenende_koordinate, eckradien_roh, kontur_punkte_roh
@@ -170,9 +171,10 @@ class _Mass:
     roh: object  # Zahl oder Ausdruck aus der Spezifikation
     vorzeichen: int = 1  # Maße sind Beträge: -1, wenn der Maßwert dem negierten Ausdruck entspricht
     pfad: str = ""  # Spec-Pfad des Werts (Maßprotokoll)
-    art: str = ART_SKRIPT  # lage | groesse | radius | winkel | konstruktion | skript
+    art: str = ART_SKRIPT  # lage | paarabstand | groesse | radius | winkel | konstruktion | skript
     bezug: object = None  # Lage: Spec-Wert des Bezugs ("ursprung", "mitte", "-rand", {"flaeche": …})
     wert: float | None = None  # Betrag in mm, wenn er nicht |roh| ist (Kontext.mass)
+    einheit: str = "mm"  # "grad" | "mm" aus der ursprünglichen art (bleibt, wenn art zu "skript" wird)
 
 
 @dataclass
@@ -225,13 +227,15 @@ class Skizzierer:
 
     def _eintrag(self, name: str, roh, vorzeichen: int, pfad: str | None, art: str, bezug=None,
                  wert: float | None = None) -> _Mass:
+        einheit = einheit_der_art(art)
         ziel, art = _massziel(self.ctx, pfad, art)
-        return _Mass(name, roh, vorzeichen, ziel, art, bezug, wert)
+        return _Mass(name, roh, vorzeichen, ziel, art, bezug, wert, einheit)
 
     def _merke(self, anzeige, roh, vorzeichen: int = 1, pfad: str | None = None, art: str = "groesse", bezug=None,
                wert: float | None = None) -> None:
         if anzeige is None:
-            raise BauFehler(SKIZZE_UNGUELTIG, "Maß konnte nicht angelegt werden", schritt="skizze")
+            raise BauFehler(SKIZZE_UNGUELTIG, f"Maß konnte nicht angelegt werden ({pfad or 'ohne Spec-Pfad'}, art {art}, "
+                                              f"Bezug {bezug!r})", schritt="skizze")
         self.masse.append(self._eintrag(anzeige.GetDimension2(0).Name, roh, vorzeichen, pfad, art, bezug, wert))
 
     def groesse(self, segment, text_uv: tuple[float, float], roh, pfad: str | None = None, art: str = "groesse") -> None:
@@ -308,9 +312,10 @@ class Skizzierer:
             q = punkte[a.partner]
             text = _text_zwischen(achse, p.uv[achse], q.uv[achse], p.uv[1 - achse])
             anzeige = self._mass_achse(achse, (self._punkt_von(a.punkt), self._punkt_von(a.partner)), text)
-            # symmetrisch zur Mitte: Abstand = 2 × Koordinate, Vorzeichen wie die Koordinate (Gleichung möglich, Ruling 7)
+            # symmetrisch zur Mitte: Abstand = 2 × Koordinate, Vorzeichen wie die Koordinate (Gleichung möglich, Ruling 7);
+            # eigene art: die Koordinate ändert sich nur um die Hälfte des Maßes (aenderungen, Ruling 11)
             self._merke(anzeige, _paar_roh(p.roh[achse]), _vorzeichen(p.uv[achse] - q.uv[achse]),
-                        _index(p.pfad, achse), "lage", p.bezug[achse])
+                        _index(p.pfad, achse), "paarabstand", p.bezug[achse])
         else:  # bezug: zur Kante der Skizzenfläche (Rand bzw. Kante in der Bezugsfläche, Ruling 2)
             kante, lage = kanten[(a.punkt, achse)]
             text = _text_zwischen(achse, lage, p.uv[achse], p.uv[1 - achse])
@@ -796,7 +801,7 @@ def skizziere(ctx, ebene, elemente: list[dict], name: str, pfade: list | None = 
 
 def _protokolliere(ctx, masse: list[_Mass], skizze: str) -> None:
     for m in masse:
-        ctx.mass(f"{m.name}@{skizze}", m.roh, m.pfad, m.art, m.vorzeichen, m.bezug, m.wert)
+        ctx.mass(f"{m.name}@{skizze}", m.roh, m.pfad, m.art, m.vorzeichen, m.bezug, m.wert, m.einheit)
 
 
 def positionsskizze(feature):

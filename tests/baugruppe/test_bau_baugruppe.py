@@ -246,6 +246,23 @@ def test_schliessfehler_haelt_die_uebrigen_nicht_auf(umgebung, monkeypatch):
     assert (lauf_ordner(r, "A", 1) / "protokoll.json").is_file() and lauf_datei(pfad, 1, "protokoll").is_file()
 
 
+@pytest.mark.parametrize(("gleichungen", "erwartet"), [(True, 1), (None, 0)])
+def test_globale_variablen_der_baugruppe_nur_mit_gleichungen(umgebung, monkeypatch, gleichungen, erwartet):
+    """gleichungen: true in der Baugruppen-Spec legt die globalen Variablen am Baugruppendokument an, ohne das Feld
+    (Vorgabe config/standard.yaml: aus) nicht (Spec Bemaßungsbezug §4)."""
+    from tests.baugruppe.beispiel import BAUGRUPPE, kopie
+
+    _, pfad, _ = umgebung
+    spec = kopie(BAUGRUPPE) | ({"gleichungen": gleichungen} if gleichungen is not None else {})
+    schreibe(pfad.parent, baugruppe=spec)
+    _bauen_mit_attrappen(umgebung, monkeypatch)
+    aufrufe = []
+    monkeypatch.setattr(bau, "globale_variablen", lambda model, parameter: aufrufe.append((model.name, parameter)))
+    with pytest.raises(BauAbbruch):  # Schließfehler der Attrappe; die Einfügephase ist da schon gelaufen
+        bau.bauen(pfad)
+    assert aufrufe == [("asm", BAUGRUPPE.get("parameter", {}))] * erwartet
+
+
 def test_schliessfehler_verdeckt_den_urspruenglichen_fehler_nicht(umgebung, monkeypatch):
     original = bau.BauFehler("VERKNUEPFUNG_FEHLER", "v1: kaputt", schritt="verknuepfung")
     r, pfad, dok, geschlossen = _bauen_mit_attrappen(umgebung, monkeypatch, original)

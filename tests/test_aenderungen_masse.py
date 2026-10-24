@@ -83,16 +83,44 @@ def test_konstruktion_und_skript_nie_als_vorschlag(art):
     assert len(differenz) == 1 and vorschlaege(differenz, {"L": 100}) == []
 
 
-def test_lage_nie_als_parametervorschlag():
-    differenz = mass_differenz([_m("D1@s", "=-XG", 10.0, art="lage", pfad="features[1].positionen[0][0]",
+@pytest.mark.parametrize("art", ["lage", "paarabstand"])
+def test_lage_nie_als_parametervorschlag(art):
+    differenz = mass_differenz([_m("D1@s", "=-XG", 10.0, art=art, pfad="features[1].positionen[0][0]",
                                    vorzeichen=-1)], {"D1@s": 12.0})
-    assert vorschlaege(differenz, {"XG": -10}) == [{"pfad": "features[1].positionen[0][0]", "bezug": None, "delta": 2.0}]
+    [vorschlag] = vorschlaege(differenz, {"XG": -10})
+    assert "parameter" not in vorschlag and vorschlag["pfad"] == "features[1].positionen[0][0]"
 
 
-def test_vorschlag_lage_mit_bezug_delta():
-    differenz = mass_differenz([_m("D1@s", 10, 10.0, art="lage", pfad="features[1].positionen[0][0]", bezug="-rand")],
-                               {"D1@s": 12.0})
-    assert vorschlaege(differenz, {}) == [{"pfad": "features[1].positionen[0][0]", "bezug": "-rand", "delta": 2.0}]
+@pytest.mark.parametrize(("bezug", "vorzeichen", "koordinate_delta"), [
+    ("-rand", 1, 2.0),   # Punkt rechts vom linken Rand: Maß 10 → 12, Koordinate +2 (weg vom Rand)
+    ("+rand", -1, -2.0),  # Punkt links vom rechten Rand: Maß 10 → 12, Koordinate −2 (weg vom Rand)
+])
+def test_vorschlag_lage_zum_rand(bezug, vorzeichen, koordinate_delta):
+    differenz = mass_differenz([_m("D1@s", "=-L/2+RA", 10.0, art="lage", pfad="features[1].positionen[0][0]",
+                                   bezug=bezug, vorzeichen=vorzeichen)], {"D1@s": 12.0})
+    assert vorschlaege(differenz, {}) == [{"pfad": "features[1].positionen[0][0]", "bezug": bezug, "delta": 2.0,
+                                           "vorzeichen": vorzeichen, "koordinate_delta": koordinate_delta}]
+
+
+def test_vorschlag_lage_zum_ursprung():
+    """Koordinate −20 zum Ursprung (vorzeichen −1): Maß 20 → 25 heißt Koordinate −25."""
+    differenz = mass_differenz([_m("D1@s", -20, 20.0, art="lage", pfad="features[0].skizze.elemente[0].kreis.mitte[0]",
+                                   bezug="ursprung", vorzeichen=-1)], {"D1@s": 25.0})
+    assert vorschlaege(differenz, {})[0]["koordinate_delta"] == -5.0
+
+
+@pytest.mark.parametrize(("roh", "vorzeichen", "koordinate_delta"), [
+    ("=2 * (-ZG)", -1, -2.0),  # festlegender Punkt −ZG: Abstand 40 → 44, Koordinate −20 → −22
+    ("=2 * (ZG)", 1, 2.0),     # festlegender Punkt +ZG: Koordinate 20 → 22
+])
+def test_vorschlag_paarabstand_halbe_aenderung(roh, vorzeichen, koordinate_delta):
+    """Paarabstand = 2 × Koordinate des festlegenden Punkts (Partner symmetrisch): die Koordinate ändert sich um die
+    Hälfte, in Richtung vorzeichen (Ruling 11)."""
+    pfad = "features[1].positionen[0][1]"
+    differenz = mass_differenz([_m("D2@s", roh, 40.0, art="paarabstand", pfad=pfad, bezug="mitte",
+                                   vorzeichen=vorzeichen)], {"D2@s": 44.0})
+    assert vorschlaege(differenz, {"ZG": 20}) == [{"pfad": pfad, "bezug": "mitte", "delta": 4.0,
+                                                   "vorzeichen": vorzeichen, "koordinate_delta": koordinate_delta}]
 
 
 def test_konflikt_zwei_masse_ein_parameter():
@@ -123,6 +151,19 @@ def test_lies_masse_in_mm_und_grad():
     modell = Modell({"D1@s": 0.09, "D2@s": math.radians(45), "D3@s": 0.001})   # D3 fehlt nicht, D4 schon
     ist = lies_masse(modell, masse + [_m("D4@s", 1, 1.0)])
     assert ist == pytest.approx({"D1@s": 90.0, "D2@s": 45.0, "D3@s": 1.0})
+
+
+def test_lies_masse_nach_einheit_vor_art():
+    """Skriptmaß eines Winkels (art skript, einheit grad) in Grad; ältere Protokolle ohne einheit wie bisher nach art."""
+    class Modell:
+        def Parameter(self, name):
+            return type("Mass", (), {"SystemValue": {"D1@s": math.radians(30), "D2@s": math.radians(45),
+                                                     "D3@s": 0.005}[name]})()
+
+    masse = [_m("D1@s", 30, 30.0, art="skript", pfad="features[0]") | {"einheit": "grad"},
+             _m("D2@s", "=W", 45.0, art="winkel"),
+             _m("D3@s", 5, 5.0, art="skript", pfad="features[0]") | {"einheit": "mm"}]
+    assert lies_masse(Modell(), masse) == pytest.approx({"D1@s": 30.0, "D2@s": 45.0, "D3@s": 5.0})
 
 
 def _protokoll_mit_masse():
@@ -206,7 +247,8 @@ def test_aenderungen_ausgabe_mit_masse_und_vorschlaegen(umgebung, monkeypatch):
     assert eintrag["datei"] == datei.name and eintrag["parameter"] == []
     assert [m["name"] for m in eintrag["masse"]] == ["D1@f1_skizze", "D2@f1_skizze"]
     assert eintrag["vorschlaege"] == [{"parameter": "L", "neu": 90.0},
-                                      {"pfad": "features[0].positionen[0][0]", "bezug": None, "delta": 2.0}]
+                                      {"pfad": "features[0].positionen[0][0]", "bezug": None, "delta": 2.0,
+                                       "vorzeichen": -1, "koordinate_delta": -2.0}]
     assert "hinweis" not in eintrag and geschlossen == ["modell"]
 
 

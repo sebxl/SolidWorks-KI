@@ -281,6 +281,23 @@ def test_lage_nur_eine_koordinate_und_ohne_pfad():
     assert [(m.pfad, m.art) for m in sk.masse] == [("features[0]", "skript")]
 
 
+def test_fehlendes_mass_nennt_pfad_und_bezug():
+    sk = _lage_skizzierer([])
+    with pytest.raises(BauFehler) as e:
+        sk._merke(None, -70, 1, "features[1].positionen[0][0]", "lage", "-rand")
+    assert "features[1].positionen[0][0]" in str(e.value) and "-rand" in str(e.value)
+
+
+def test_skriptmass_behaelt_die_einheit_grad():
+    """Ohne Spec-Pfad wird art zu "skript"; die Einheit des Winkels bleibt (aenderungen liest sonst mm)."""
+    sk = _lage_skizzierer([])
+    sk.ctx.knoten = "f1"
+    assert (sk._eintrag("D1", 30, 1, None, "winkel").art, sk._eintrag("D1", 30, 1, None, "winkel").einheit) == (
+        "skript", "grad")
+    assert sk._eintrag("D2", 5, 1, None, "groesse").einheit == "mm"
+    assert sk._eintrag("D3", 30, 1, f"{P}.langloch.winkel", "winkel").einheit == "grad"
+
+
 def test_lage_ohne_deckung_von_skizzen_und_modellursprung_traegt_millimeter_ein():
     sk = _lage_skizzierer([(0.04, -0.008)], bindbar=False)
     sk.kennpunkt((40, 8), ["=B", "=T"], URSPRUNG_UV, f"{P}.kreis.mitte", "")
@@ -341,10 +358,17 @@ def test_skizziere_reicht_pfade_durch_und_protokolliert_die_masse(monkeypatch):
     assert ebenen == ["features[0].skizze.ebene"]
     assert ctx.masse["f1"] == [
         {"name": "D1@f1_skizze", "pfad": f"{P}.kreis.durchmesser", "art": "groesse", "bezug": None, "roh": "=B",
-         "vorzeichen": 1, "wert": 40.0},
+         "vorzeichen": 1, "wert": 40.0, "einheit": "mm"},
         {"name": "D2@f1_skizze", "pfad": f"{P}.kreis.mitte[0]", "art": "lage", "bezug": None, "roh": 5, "vorzeichen": -1,
-         "wert": 5.0},
+         "wert": 5.0, "einheit": "mm"},
     ]
+
+
+def test_protokolliere_reicht_die_einheit_durch():
+    ctx = _kontext()
+    ctx.knoten = "f1"
+    modul._protokolliere(ctx, [_Mass("D3", 30, 1, "features[0]", "skript", einheit="grad")], "f1_skizze")
+    assert [(m["art"], m["einheit"]) for m in ctx.masse["f1"]] == [("skript", "grad")]
 
 
 def test_skizziere_ohne_pfade_fuer_skripte(monkeypatch):
@@ -381,7 +405,7 @@ def test_versetzte_ebene_protokolliert_versatz(monkeypatch):
     se = modul.ebene_aufloesen(ctx, {"versatz": {"ebene": "oben", "abstand": "=-T"}}, "features[0].skizze.ebene")
     assert se.lage == -8
     assert ctx.masse["f1"] == [{"name": "D1@Ebene1", "pfad": "features[0].skizze.ebene.versatz.abstand", "art": "versatz",
-                                "bezug": None, "roh": "=-T", "vorzeichen": -1, "wert": 8.0}]
+                                "bezug": None, "roh": "=-T", "vorzeichen": -1, "wert": 8.0, "einheit": "mm"}]
 
 
 # --- Handler: Pfade der Feature-Maße ------------------------------------------------------------------------------------
