@@ -113,3 +113,35 @@ def test_besser():
     mit_fehler[0]["pruefmaengel"] = 2
     ok, grund = btp.besser(btp.bewerte(mit_fehler, {"treffer": 5, "fehlalarme": 0}, b), alt, d0=alt)
     assert not ok and "praezision_lauf" in grund
+
+
+def test_mittel_aus_zwei_durchgaengen():
+    """§5.1 ab Umbau 2: je Aufgabe Mittel der Zeiten, Fehlerpunkte/Fallen/Aufwand/Speicher je Durchgang gemittelt."""
+    b = btp.bezug(_durchgang())
+    d1 = _durchgang(kamera=210)
+    d2 = _durchgang(kamera=330)
+    d2[1]["pruefmaengel"] = 2                           # kamera: 2 Fehlerpunkte nur in d2
+    d2[-2]["speicher_spitze_mb"] = 8000                 # Prüfstation
+    erg = btp.mittel([(d1, {"treffer": 6, "fehlalarme": 0}), (d2, {"treffer": 5, "fehlalarme": 0})], b)
+    w = erg["werte"]
+    assert w["zeit_kamera"] == pytest.approx(270)
+    assert w["zeit_teile"] == pytest.approx((136 + 270 + 129) / 3, abs=0.1)
+    assert w["praezision_lauf"] == pytest.approx(1.0)
+    assert w["praezision_fallen"] == pytest.approx(5.5)
+    assert w["robustheit"] == pytest.approx(6000)
+    assert erg["teilscores"]["praezision_lauf"] == pytest.approx(7.0)
+    gesamt = sum(btp.GRUPPEN[g][0] * erg["teilscores"][g] for g in btp.GRUPPEN)
+    assert erg["score"] == pytest.approx(gesamt, abs=0.006)  # zwei Nachkommastellen
+    assert erg["durchgaenge"] == 2
+
+
+def test_mittel_deckel_und_besser():
+    b = btp.bezug(_durchgang())
+    falsch = _durchgang(0.5)
+    falsch[1]["richtig"] = False
+    erg = btp.mittel([(_durchgang(0.5), {"treffer": 6, "fehlalarme": 0}),
+                      (falsch, {"treffer": 6, "fehlalarme": 0})], b)
+    assert erg["nicht_richtig"] == ["kamera"] and erg["score"] <= 4.0
+    alt = btp.mittel([(_durchgang(), {"treffer": 5, "fehlalarme": 0})] * 2, b)
+    neu = btp.mittel([(_durchgang(0.6), {"treffer": 5, "fehlalarme": 0})] * 2, b)
+    assert btp.besser(neu, alt, d0=alt)[0]

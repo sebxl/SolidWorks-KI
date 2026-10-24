@@ -6,6 +6,7 @@
   abschliessen <lauf> --agent <id>           Abtaster stoppen, Transkripte/Protokolle auswerten, STL vergleichen → kpi.json
   score <durchgang> [--baseline 0]           Score des Durchgangs → score.json (Messstand 09.10.)
   btp <durchgang> [--vergleich n]            Score nach dem Bewertungsbogen (Spec 2026-10-23) → btp.json
+  btp-mittel <n> <m> [--vergleich k l]       Score aus dem Mittel der Durchgänge (§5.1 ab Umbau 2) → btp-mittel-<n>-<m>.json
   vorlage <aufgabe> <quelle> [--referenz]    Auftrag als Vorlage (bzw. Referenz-Specs) der Änderungsaufgabe einfrieren
   fallen bauen [<id> …]                      Präzisions-Fallen bauen und prüfen (MESSSTAND/fallen/<id>/stand.json)
   fallen auftraege <durchgang>               Prüf-Prompts je Falle (×3) → durchgang-<n>/fallen/auftraege.json
@@ -205,19 +206,39 @@ def btp_befehl(args) -> dict:
     """Score nach dem Bewertungsbogen; Bezug = Durchgang 0, Vergleich (optional) = aktueller Stand."""
     b = btp.bezug(_kpis(0))
 
-    def bewertet(n: int) -> dict:
-        f = _fallen_ordner(n) / "fallen.json"
-        if not f.exists():
-            raise SystemExit(f"{f} fehlt – zuerst: fallen auswerten {n}")
-        return btp.bewerte(_kpis(n), lies_json(f), b)
-
-    erg = bewertet(args.durchgang)
+    erg = _btp_bewertet(args.durchgang, b)
     if args.vergleich is not None:
-        alt, d0 = bewertet(args.vergleich), bewertet(0)
+        alt, d0 = _btp_bewertet(args.vergleich, b), _btp_bewertet(0, b)
         ok, grund = btp.besser(erg, alt, d0)
         erg["entscheidung"] = {"gegen": args.vergleich, "besser": ok, "grund": grund, "score_vorher": alt["score"]}
     erg["bezug"] = b
     schreibe_json(messordner() / f"durchgang-{args.durchgang}" / "btp.json", erg)
+    return erg
+
+
+def _fallen_von(n: int) -> dict:
+    f = _fallen_ordner(n) / "fallen.json"
+    if not f.exists():
+        raise SystemExit(f"{f} fehlt – zuerst: fallen auswerten {n}")
+    return lies_json(f)
+
+
+def _btp_bewertet(n: int, b: dict) -> dict:
+    return btp.bewerte(_kpis(n), _fallen_von(n), b)
+
+
+def btp_mittel_befehl(args) -> dict:
+    """Score aus dem Mittel mehrerer Durchgänge (Bogen §5.1 ab Umbau 2), Entscheidung gegen das Mittel des Stands."""
+    b = btp.bezug(_kpis(0))
+    erg = btp.mittel([(_kpis(n), _fallen_von(n)) for n in args.durchgaenge], b)
+    name = "-".join(map(str, args.durchgaenge))
+    if args.vergleich:
+        alt = btp.mittel([(_kpis(n), _fallen_von(n)) for n in args.vergleich], b)
+        ok, grund = btp.besser(erg, alt, _btp_bewertet(0, b))
+        erg["entscheidung"] = {"gegen": args.vergleich, "besser": ok, "grund": grund, "score_vorher": alt["score"],
+                               "teilscores_vorher": alt["teilscores"], "werte_vorher": alt["werte"]}
+    erg["einzeln"] = {n: _btp_bewertet(n, b)["score"] for n in args.durchgaenge}
+    schreibe_json(messordner() / f"btp-mittel-{name}.json", erg)
     return erg
 
 
@@ -329,6 +350,8 @@ def main() -> int:
     s.set_defaults(f=score_befehl)
     s = sub.add_parser("btp"); s.add_argument("durchgang", type=int); s.add_argument("--vergleich", type=int)
     s.set_defaults(f=btp_befehl)
+    s = sub.add_parser("btp-mittel"); s.add_argument("durchgaenge", type=int, nargs="+")
+    s.add_argument("--vergleich", type=int, nargs="+"); s.set_defaults(f=btp_mittel_befehl)
     s = sub.add_parser("vorlage"); s.add_argument("aufgabe"); s.add_argument("quelle")
     s.add_argument("--referenz", action="store_true"); s.set_defaults(f=vorlage)
     s = sub.add_parser("fallen"); fs = s.add_subparsers(dest="fallen_befehl", required=True)

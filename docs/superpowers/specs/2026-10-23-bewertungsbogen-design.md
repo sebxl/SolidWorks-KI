@@ -133,6 +133,15 @@ Ein Umbau darf mehrere Optimierungen bündeln (Recherche §5.1: die meisten lieg
 - Die Präzision darf nicht schlechter werden, auch wenn die Zeit stark gewinnt (Vorgabe des Nutzers: Tempo und
   Präzision sind beide Hauptziel).
 
+**Ab Umbau 2: Mittel aus zwei Durchgängen** (Nutzer 24.10.2026). Jeder Umbau wird in zwei Durchgängen gemessen; der
+Score kommt aus dem Mittel: je Aufgabe Mittel der Zeiten (Zeit Teile aus den gemittelten Aufgabenzeiten), Fehlerpunkte,
+Fallen (Treffer − Fehlalarme), Aufwand und Speicher (+ Hänger) je Durchgang gemittelt, dann die Anker; eine Aufgabe, die
+in einem Durchgang nicht `richtig` ist, setzt den Deckel. Verglichen wird mit dem Mittel des aktuellen Stands
+(Umbau 1: D1/D2 = 6,49), „besser“ wie oben (Mittel ≥ Stand + 0,3, Präzisionsgruppen im Mittel nicht schlechter, keine
+Sperre). **Wiederholungen nach §5.1 entfallen dann** – jeder Lauf zählt, wie er ist. Befehl:
+`-m werkzeuge.messstand btp-mittel <n> <n+1> --vergleich <k> <k+1>`. Begründung: ein einzelner Deutungsfehler des
+Agenten verschob D1/D2 um ~1 Punkt (D1 7,1, D2 6,1 auf demselben Stand); ein Durchgang allein entscheidet zufällig.
+
 ### 5.2 Abbruch
 
 Score ≥ Zielscore (§7) oder 5 Umbauten.

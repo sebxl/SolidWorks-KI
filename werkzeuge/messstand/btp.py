@@ -73,8 +73,8 @@ def bezug(d0: list[dict]) -> dict:
                          for a, ks in _zaehlend(d0).items()}}
 
 
-def bewerte(laeufe: list[dict], fallen: dict, b: dict) -> dict:
-    """Score eines Durchgangs: laeufe = kpi.json-Inhalte, fallen = {"treffer", "fehlalarme"}, b = bezug(Durchgang 0)."""
+def _werte(laeufe: list[dict], fallen: dict, b: dict) -> tuple[dict[str, float], list[str]]:
+    """Messgrößen je Gruppe (ungerundet) und die nicht richtigen Aufgaben eines Durchgangs."""
     g = _zaehlend(laeufe)
     fehlt = [a for a in AUFGABEN if a not in g]
     if fehlt:
@@ -92,14 +92,34 @@ def bewerte(laeufe: list[dict], fallen: dict, b: dict) -> dict:
     alle = [k for ks in g.values() for k in ks]
     werte["robustheit"] = (max(k["speicher_spitze_mb"] for k in alle)
                            + HAENGER_MB * sum(k.get("haenger", 0) for k in _gueltig(laeufe)))
+    return werte, sorted({k["aufgabe"] for k in alle if not k.get("richtig")})
+
+
+def _score(werte: dict[str, float], falsch: list[str], stellen: int) -> dict:
     s = {gr: anker(werte[gr], *GRUPPEN[gr][1:]) for gr in GRUPPEN}
     gesamt = sum(GRUPPEN[gr][0] * s[gr] for gr in GRUPPEN)
-    falsch = sorted({k["aufgabe"] for k in alle if not k.get("richtig")})
     if falsch:
         gesamt = min(gesamt, DECKEL_FALSCH)
-    return {"score": round(gesamt, 1), "teilscores": {k: round(v, 2) for k, v in s.items()},
-            "werte": {k: round(v, 1) for k, v in werte.items()}, "nicht_richtig": falsch,
-            "laeufe": len(alle), "ungueltig": [k["lauf"] for k in laeufe if k.get("lecks")], "fallen": fallen}
+    return {"score": round(gesamt, stellen), "teilscores": {k: round(v, 2) for k, v in s.items()},
+            "werte": {k: round(v, 1) for k, v in werte.items()}, "nicht_richtig": falsch}
+
+
+def bewerte(laeufe: list[dict], fallen: dict, b: dict) -> dict:
+    """Score eines Durchgangs: laeufe = kpi.json-Inhalte, fallen = {"treffer", "fehlalarme"}, b = bezug(Durchgang 0)."""
+    werte, falsch = _werte(laeufe, fallen, b)
+    return {**_score(werte, falsch, 1), "laeufe": sum(len(ks) for ks in _zaehlend(laeufe).values()),
+            "ungueltig": [k["lauf"] for k in laeufe if k.get("lecks")], "fallen": fallen}
+
+
+def mittel(durchgaenge: list[tuple[list[dict], dict]], b: dict) -> dict:
+    """Score aus dem Mittel mehrerer Durchgänge (§5.1 ab Umbau 2): je Aufgabe Mittel der Zeiten (Teile aus den
+    gemittelten Aufgabenzeiten), Fehlerpunkte, Fallen, Aufwand und Speicher je Durchgang gemittelt, dann die Anker.
+    Score mit zwei Nachkommastellen; nicht richtig ist jede Aufgabe, die in einem Durchgang nicht richtig war."""
+    je = [_werte(laeufe, fallen, b) for laeufe, fallen in durchgaenge]
+    werte = {k: mean(w[k] for w, _ in je) for k in je[0][0] if k != "zeit_teile"}
+    werte["zeit_teile"] = mean(werte[f"zeit_{a}"] for a in TEILE)
+    falsch = sorted({a for _, f in je for a in f})
+    return {**_score(werte, falsch, 2), "durchgaenge": len(durchgaenge)}
 
 
 def besser(neu: dict, alt: dict, d0: dict) -> tuple[bool, str]:
