@@ -4,6 +4,12 @@ beschreibung: Zentrieraufnahme – Formschräge des Zapfens in falscher Richtung
 basis: tests/referenz/zentrieraufnahme
 aufgabe: zentrieraufnahme
 spec: zentrieraufnahme.yaml
-ersetzen: [{datei: zentrieraufnahme.yaml, alt: 'tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: kleiner}',
-            neu: 'tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: groesser}'}]
+# Prüfwerte passend zur falsch gedeuteten Spec (Sollvolumen = gemessenes Volumen dieser Geometrie), damit
+# `swki pruefen` besteht und nur die Deutung falsch ist.
+ersetzen:
+  - {datei: zentrieraufnahme.yaml, alt: 'tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: kleiner}',
+     neu: 'tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: groesser}'}
+  - {datei: zentrieraufnahme.yaml, alt: "Kegelstumpf Ø DZ → DZ − 2·HZ·tan WZ", neu: "Kegelstumpf Ø DZ → DZ + 2·HZ·tan WZ"}
+  - {datei: zentrieraufnahme.yaml, alt: "= 315014,796 mm³   (bei geänderten Parametern neu rechnen)", neu: "Soll aus den Features"}
+  - {datei: zentrieraufnahme.yaml, alt: "    soll: 315014.796", neu: "    soll: 325401.313"}   # gemessen; auto weicht hier 0,22 % ab
 erwartet: {knoten: [zapfen], stichworte: [verjüngt, weitet, formschräge, richtung]}
