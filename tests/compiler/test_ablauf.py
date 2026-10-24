@@ -17,6 +17,8 @@ class _Feature:
 class _Ctx:
     spec: dict
     ergebnisse: dict = field(default_factory=dict)
+    knoten: str | None = None
+    masse: dict = field(default_factory=dict)
 
 
 def _ok(ctx, f):

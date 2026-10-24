@@ -13,9 +13,10 @@ MUSTER = Path(__file__).parent / "motorhalter" / "muster"
 
 @pytest.mark.parametrize("datei", ["gehaeuse.yaml", "welle.yaml"])
 def test_muster_teile_gueltig_ohne_hinweis(datei):
-    assert hinweise(lade_spec(MUSTER / datei)) == []
+    assert [h for h in hinweise(lade_spec(MUSTER / datei)) if h["art"] != "bezug"] == []  # bezug: Referenz eingefroren
 
 
 def test_muster_baugruppe_gueltig():
     v = validieren_baugruppe(MUSTER / "gm42.yaml")
-    assert (v["komponenten"], v["verknuepfungen"], v["hinweise"]) == (2, 2, [])
+    hinweise = [h for h in v["hinweise"] if h["art"] != "bezug"]  # bezug: Referenz ist eingefroren
+    assert (v["komponenten"], v["verknuepfungen"], hinweise) == (2, 2, [])

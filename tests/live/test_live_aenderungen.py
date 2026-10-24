@@ -1,4 +1,6 @@
-"""Live: manuelle Parameteränderung an einem gebauten Teil wird vor dem nächsten Lauf erkannt (Spec 3b §8)."""
+"""Live: manuelle Parameteränderung an einem gebauten Teil wird vor dem nächsten Lauf erkannt (Spec 3b §8). Die Teile
+haben Gleichungen (gleichungen: true), der Anwender ändert eine globale Variable; ohne Gleichungen siehe
+test_live_bemassungsbezug."""
 
 import json
 import shutil
@@ -18,7 +20,7 @@ pytestmark = pytest.mark.sw
 AUFTRAG = "SWKI-LIVE-AENDERUNGEN"
 SPEC = {
     "art": "teil", "name": "Platte", "material": "1.0038", "eigenschaften": {"Benennung": "Testplatte"},
-    "parameter": {"L": 100, "B": 60},
+    "parameter": {"L": 100, "B": 60}, "gleichungen": True,
     "features": [{"id": "f1", "typ": "extrusion",
                   "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": "=B"}}]},
                   "ende": {"typ": "blind", "tiefe": 10}}],
@@ -62,7 +64,11 @@ def test_manuelle_aenderung_am_teil(capsys, tmp_path):
         assert code == 0, daten
         [eintrag] = daten["geaendert"]
         assert eintrag["datei"] == f"{AUFTRAG}_Platte.sldprt"
-        assert eintrag["parameter"] == [{"name": "L", "soll": 100, "ist": 120.0}]
+        # Lauf mit Maßprotokoll: verglichen werden die Maße, nicht die globalen Variablen (Spec Bemaßungsbezug §8)
+        assert eintrag["parameter"] == []
+        assert [(d["pfad"], d["soll"], d["ist"]) for d in eintrag["masse"]] == [
+            ("features[0].skizze.elemente[0].rechteck.breite", 100, pytest.approx(120))]
+        assert eintrag["vorschlaege"] == [{"parameter": "L", "neu": pytest.approx(120)}]
         code, bau = _lauf(capsys, "bauen", str(spec_pfad), "--verwerfen")
         assert code == 0 and bau["lauf"] == 2, bau
     finally:

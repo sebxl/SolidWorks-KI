@@ -6,23 +6,26 @@ from pathlib import Path
 
 from swki.compiler import sw
 from swki.compiler.ablauf import baue_features
-from swki.compiler.eigenschaften import globale_variablen
+from swki.compiler.eigenschaften import gleichungen_an, globale_variablen
 from swki.compiler.kontext import Kontext
 from swki.compiler.protokoll import Protokoll
 from swki.compiler.registry import alle_handler
-from swki.konfig import lade_rechner
+from swki.konfig import lade_rechner, lade_standard
 from swki.verbindung import in_mm3, verbinde
 
 
 @contextmanager
 def gebautes_teil(spec: dict, spec_pfad: Path = Path("live.yaml")):
-    """Baut spec in einem neuen Teil; liefert (ctx, fehler, protokoll). Das Teil wird immer geschlossen."""
+    """Baut spec in einem neuen Teil; liefert (ctx, fehler, protokoll). Das Teil wird immer geschlossen. Gleichungen
+    wie bei swki bauen nur mit `gleichungen: true` in spec (bzw. der Vorgabe aus config/standard.yaml)."""
     r = lade_rechner()
     app = verbinde(r.sw_jahr)
     model = sw.neues_teil(app, r.vorlage_teil)
     try:
-        ctx = Kontext(app, model, spec, spec_pfad, 0.1)
-        globale_variablen(model, spec.get("parameter", {}))
+        gleichungen = gleichungen_an(spec, lade_standard())
+        ctx = Kontext(app, model, spec, spec_pfad, 0.1, gleichungen=gleichungen)
+        if gleichungen:
+            globale_variablen(model, spec.get("parameter", {}))
         protokoll = Protokoll("live", "live.yaml", 0, r.sw_jahr)
         fehler = baue_features(ctx, protokoll, alle_handler(), lambda c: sw.rebuild(c.model))
         yield ctx, fehler, protokoll

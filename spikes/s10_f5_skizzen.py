@@ -30,6 +30,7 @@ import pythoncom
 from spikes._gemeinsam import lauf
 from spikes.s9a_gemeinsam import start, teil, volumen_mm3
 from spikes.s10_gemeinsam import kontext
+from swki.bemassung import bezug_von
 from swki.compiler import sw
 from swki.compiler.eigenschaften import globale_variablen
 from swki.compiler.skizze import Skizzierer, _Mass, ebene_aufloesen
@@ -97,6 +98,12 @@ def verschmelzen(sk, x: float, y: float, art: str = "sgMERGEPOINTS") -> int:
         sk.model.SketchAddConstraints(art)
     sw.auswahl_leeren(sk.model)
     return len(gleich)
+
+
+def _lage(sk, uv, achsen=(0, 1)) -> None:
+    """Lage zum Ursprung wie früher Skizzierer.lage (seit dem Bemaßungsbezug: Kennpunkt + lagen_festlegen)."""
+    sk.kennpunkt(tuple(uv), tuple(uv), bezug_von({}), None, "", achsen)
+    sk.lagen_festlegen()
 
 
 def lage_nur(sk, uv, text_uv, nur: int) -> None:
@@ -243,7 +250,7 @@ def langloch(typ: str, winkel: float, parametrisch: bool = False, art: str = "sg
         status("nach_laenge")
         d["richtung"] = richtung_zu_u(sk, achsen[0], (mu, mv), winkel, art)
         status("nach_richtung")
-        sk.lage([mu, mv], (mu - 25, mv - 8))
+        _lage(sk, (mu, mv))
         status("nach_lage")
         d["masse_merk"] = [m.name for m in sk.masse]
         return d
@@ -270,11 +277,11 @@ def kontur(sk, ctx) -> dict:
     for i, (art, mitte) in enumerate(segmente):
         ende = ecken[(i + 1) % 4]
         if art == "bogen":
-            sk.lage(list(mitte), (mitte[0] + 8, mitte[1] + 8))
+            _lage(sk, mitte)
             nur = 0 if abs(ende[0] - mitte[0]) <= abs(ende[1] - mitte[1]) else 1
             lage_nur(sk, ende, (ende[0] + 8, ende[1] + 8), nur)
         else:
-            sk.lage(list(ende), (ende[0] + 8, ende[1] + 8))
+            _lage(sk, ende)
     return d
 
 
@@ -351,7 +358,7 @@ def _fall_einmal(app, r, ebene, zeichnen, soll_flaeche, parameter, aendere) -> d
         skizze.Name = SKIZZE
         d["masse"] = _masse(skizze)
         for m in masse:
-            ctx.verknuepfe(f"{m.name}@{SKIZZE}", m.roh, m.vorzeichen)
+            ctx.mass(f"{m.name}@{SKIZZE}", m.roh, m.pfad, m.art, m.vorzeichen)
         d["gebunden"] = [f"{m.name}@{SKIZZE} = {m.roh}" for m in masse if isinstance(m.roh, str)]
         sw.auswahl_leeren(model)
         skizze.Select2(False, 0)

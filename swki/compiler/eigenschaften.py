@@ -11,6 +11,11 @@ SW_CUSTOM_PROPERTY_REPLACE_VALUE = 2  # swCustomPropertyAddOption_e
 ERSTELLER = "SolidWorks-KI"
 
 
+def gleichungen_an(spec: dict, standard: dict) -> bool:
+    """Gleichungen an: Schalter der Spec, sonst die Vorgabe aus config/standard.yaml (ohne Angabe: aus)."""
+    return spec["gleichungen"] if "gleichungen" in spec else standard.get("gleichungen", False)
+
+
 def globale_variablen(model, parameter: dict) -> None:
     """Jeder Parameter wird eine SW-Gleichung "Name" = Wert (Dokumenteinheit mm bzw. Grad, Spike S9a Baustein 5)."""
     gleichungen = model.GetEquationMgr

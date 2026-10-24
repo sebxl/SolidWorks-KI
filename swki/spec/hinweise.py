@@ -2,12 +2,15 @@
 
 art "feste_zahl": feste Zahlen in maßtragenden Feldern der Features deckt die Freigabe-Prüfsumme nicht ab (sie gehören
 zum Bauweg). Anforderungsmaße sollen deshalb als Parameter geführt werden ("=Name"); validieren meldet die übrigen.
+art "bezug": Lagekoordinaten ≠ 0 ohne Bemaßungsbezug auf dieser Achse (Positionen von bohrung/normbohrung, Mitte von
+rechteck/kreis/langloch in Skizzen auf Flächen) – ohne Bezug wird zum Ursprung bemaßt.
 art "zusammenfassen": Knoten, die sich nach den Modellierregeln (Skill konstruieren) für einen kompakteren
 Feature-Baum zusammenfassen lassen.
 """
 
 import json
 
+from swki.bemassung import ebene_ist_flaeche
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.normen import lade_tabelle
 
@@ -17,6 +20,8 @@ MASS_FELDER = frozenset({
 })
 _ANKER = frozenset({"nahe", "kanten", "flaeche"})  # Anker wählen Geometrie aus, sie sind keine Maße
 _TOL_NORM_MM = 0.01
+_NULL_MM = 1e-6  # Lage, unterhalb der eine Koordinate als 0 gilt
+_BEZUG_ELEMENTE = ("rechteck", "kreis", "langloch")  # Elemente mit Bemaßungsbezug (Schema)
 
 
 _KEINE_MASSE = _ANKER | {"mittellinie"}  # Rotationsachse: Konstruktionslinie, kein Anforderungsmaß
@@ -64,6 +69,41 @@ def feste_masse(spec: dict) -> list[dict]:
     for i, feature in enumerate(spec.get("features", [])):
         gehe(feature, f"features[{i}]", False, feature.get("typ", ""))
     return hinweise
+
+
+def _bezug_meldung(achse: int) -> str:
+    return (f"Lage ohne Bemaßungsbezug auf Achse {'uv'[achse]}: bezug angeben (mitte oder rand), "
+            "sonst wird zum Ursprung bemaßt")
+
+
+def bezug_hinweise(spec: dict) -> list[dict]:
+    """Bemaßungsbezug (Spec §6): Lagekoordinate ≠ 0 ohne Bezug-Schlüssel auf der Achse, als Hinweis art "bezug" – in
+    bohrung/normbohrung-Positionen (ein Hinweis je Achse am Feld positionen) und in rechteck/kreis/langloch auf einer
+    Skizzenfläche (am Feld mitte). Nicht für Konturen, Mittellinien und Skizzen auf Standard- oder Versatzebenen; ein
+    ausdrückliches `ursprung` unterdrückt den Hinweis, ein Ausdrucksfehler (anderswo gemeldet) den Hinweis der Achse."""
+    parameter = spec.get("parameter", {})
+    ergebnis = []
+
+    def pruefe(punkte: list, bezug: dict | None, pfad: str) -> None:
+        for achse in (0, 1):
+            if "uv"[achse] in (bezug or {}):
+                continue
+            try:
+                lage = [auswerten(p[achse], parameter) for p in punkte]
+            except AusdruckFehler:
+                continue
+            if any(abs(x) > _NULL_MM for x in lage):
+                ergebnis.append({"art": "bezug", "pfad": pfad, "meldung": _bezug_meldung(achse)})
+
+    for i, f in enumerate(spec.get("features", [])):
+        if f.get("typ") in ("bohrung", "normbohrung"):
+            pruefe(f["positionen"], f.get("bezug"), f"features[{i}].positionen")
+        elif "skizze" in f and ebene_ist_flaeche(f["skizze"]["ebene"]):
+            for k, e in enumerate(f["skizze"]["elemente"]):
+                for art in _BEZUG_ELEMENTE:
+                    if art in e:
+                        pruefe([e[art]["mitte"]], e[art].get("bezug"), f"features[{i}].skizze.elemente[{k}].{art}.mitte")
+    return ergebnis
 
 
 def _gruppen(features: list[dict], typen: tuple[str, ...], ohne: str) -> list[list[tuple[int, dict]]]:
@@ -178,6 +218,7 @@ def pruefwert_hinweise(spec: dict) -> list[dict]:
 
 
 def hinweise(spec: dict) -> list[dict]:
-    """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Zusammenfassbares und Verzahnung. Hinweise
-    blockieren nie (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
-    return pruefwert_hinweise(spec) + feste_masse(spec) + zusammenfassen(spec) + verzahnung_hinweise(spec)
+    """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Bemaßungsbezug, Zusammenfassbares und
+    Verzahnung. Hinweise blockieren nie (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
+    return (pruefwert_hinweise(spec) + feste_masse(spec) + bezug_hinweise(spec) + zusammenfassen(spec)
+            + verzahnung_hinweise(spec))

@@ -29,7 +29,7 @@ def test_laedt_kaufteil(tmp_path, monkeypatch):
     assert q.referenzen == {"EINBAU_ACHSE", "EINBAU_FLANSCH", "EINBAU_DREHLAGE"} and q.eintrag == EINTRAG
     assert list(q.spec["gewinde"]) == ["flansch"] and list(bg.teile) == ["halter.yaml"]
     assert dokument_name(q, "A", {"namensschema": {"datei": "{auftrag}_{name}"}}) == "SWKI-MUSTER_GM42-10.sldprt"
-    assert hinweise_baugruppe(bg) == []
+    assert [h for h in hinweise_baugruppe(bg) if h["art"] != "bezug"] == []  # bezug: Teil ist eingefroren
 
 
 def test_unbekannt_nicht_freigegeben_ungeprueft(tmp_path, monkeypatch):
@@ -97,7 +97,7 @@ def test_hinweis_drehlage_doppelt(tmp_path, monkeypatch):
     katalog(tmp_path / "kat", monkeypatch)
     spec = kopie()
     del spec["verknuepfungen"][1]["drehung_sperren"]
-    [h] = hinweise_baugruppe(lade_baugruppe(schreibe(tmp_path / "A", spec)))
+    [h] = [h for h in hinweise_baugruppe(lade_baugruppe(schreibe(tmp_path / "A", spec))) if h["art"] != "bezug"]
     assert (h["art"], h["pfad"]) == ("drehlage_doppelt", "verknuepfungen[1].drehung_sperren")
 
 

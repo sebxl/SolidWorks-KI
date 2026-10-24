@@ -36,7 +36,7 @@ def verrundung(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"verrundung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    ctx.verknuepfe(f"D1@{f['id']}", f["radius"])
+    ctx.mass(f"D1@{f['id']}", f["radius"], f"{ctx.pfad(f['id'])}.radius", "radius")
     return FeatureErgebnis([feature])
 
 
@@ -51,7 +51,8 @@ def fase(ctx, f: dict) -> FeatureErgebnis:
         # Leeres Fase-Feature ohne Fehlermeldung ist möglich (S9b) → als Fehler behandeln
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"fase {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    ctx.verknuepfe(f"D1@{f['id']}", f["abstand"])
+    pfad = ctx.pfad(f["id"])
+    ctx.mass(f"D1@{f['id']}", f["abstand"], f"{pfad}.abstand", "abstand")
     if "winkel" in f:
-        ctx.verknuepfe(f"D2@{f['id']}", f["winkel"])  # D2 = Winkel (live belegt)
+        ctx.mass(f"D2@{f['id']}", f["winkel"], f"{pfad}.winkel", "winkel")  # D2 = Winkel (live belegt)
     return FeatureErgebnis([feature])

@@ -21,7 +21,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   als Modellachse und welche Modellachse im Bild nach rechts/oben zeigt; erst dann Lagemaße mit Vorzeichen
   umrechnen und je Maß die Bezugskante nennen (Plattenrand oder Gehäuse?).
 - Kommentare knapp: je Annahme eine Zeile.
-- Maße, die zusammenhängen, als `parameter` und Ausdrücke (`"=L/2-20"`); sie werden SW-Gleichungen.
+- Maße, die zusammenhängen, als `parameter` und Ausdrücke (`"=L/2-20"`); swki rechnet sie aus, in SolidWorks stehen
+  Zahlen zum Bezug (Abschnitt Bemaßungsbezug). Keine Gleichungen; `gleichungen: true` (Top-Level) nur auf Wunsch des Nutzers.
+- Lagen, die vom Rand oder von der Mitte abhängen, als Ausdruck **des Bezugs** schreiben (`"=-L/2+RA"`) und `bezug` setzen.
 - Anforderungsmaße (vom Nutzer vorgegeben oder zu prüfen) immer als `parameter` führen: feste Zahlen in Features
   gehören zum Bauweg und sind von der Freigabe-Prüfsumme nicht geschützt.
 - Anforderungen nie nur als Kommentar: was gebaut oder geprüft werden muss, gehört in `parameter`, Features oder
@@ -39,9 +41,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
         ebene: oben                             # vorne | oben | rechts | {feature: f1, flaeche: "+y"} (±x/±y/±z)
                                                 # | {versatz: {ebene: oben, abstand: 20}} | {nahe: [x, y, z]}
         elemente:                               # mehrere geschlossene Profile: innere sind Löcher
-          - {rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", radius?: 3}}
-          - {kreis: {mitte: [u, v], durchmesser: 10}}
-          - {langloch: {mitte: [u, v], laenge: 3, breite: 5, winkel?: 0}}   # laenge = Mittenabstand der Bögen
+          - {rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", radius?: 3, bezug?: {u: mitte, v: "-rand"}}}
+          - {kreis: {mitte: [u, v], durchmesser: 10, bezug?: …}}
+          - {langloch: {mitte: [u, v], laenge: 3, breite: 5, winkel?: 0, bezug?: …}}   # laenge = Mittenabstand der Bögen
           - {polygon: {punkte: [[u, v], …], radien?: 2}}
           - {kontur: {start: [u, v], segmente: [{linie: [u, v]}, {bogen: [u, v], mitte: [u, v]}]}}
           - {mittellinie: {von: [u, v], bis: [u, v]}}                     # Rotationsachse
@@ -50,9 +52,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
                                                 # | {typ: versatz_von_flaeche, flaeche: <anker>, abstand}
                                                 # optional: umkehren: true, formschraege: {winkel, querschnitt}
     - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [[u, v], …], durchmesser: 6,
-       tiefe: 8}                                # oder durch: true; senkung?: {durchmesser, tiefe}
+       tiefe: 8, bezug?: …}                     # oder durch: true; senkung?: {durchmesser, tiefe}
     - {id: f3, typ: normbohrung, art: gewinde, groesse: M6, flaeche: <anker>, positionen: [[u, v]], tiefe: 12,
-       gewindetiefe: 10}                        # art: gewinde | zylinderschraube | senkschraube | stift (groesse 8)
+       gewindetiefe: 10, bezug?: …}             # art: gewinde | zylinderschraube | senkschraube | stift (groesse 8)
     - {id: f4, typ: rotation, skizze: {…, elemente: [<profil>, {mittellinie: …}]}, winkel?: 360, schnitt?: true}
     - {id: f5, typ: verrundung, kanten: [{feature: f1, auswahl: senkrechte_kanten}], radius: 2}   # fase: abstand, winkel?
     - {id: f6, typ: muster_linear, features: [f2], richtung1: {achse: x, abstand: 20, anzahl: 3}}
@@ -72,7 +74,9 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   senkschraube | stift`, `groesse` wie „M8“, „M10x1“ bzw. Stift-Nenndurchmesser `8`, `durch: true` oder `tiefe`,
   bei Gewinde mit `tiefe` ist `gewindetiefe` ≤ `tiefe` Pflicht, bei Gewinde mit `durch` ist sie erlaubt).
   Nur Größen aus `swki/wissen/bohrungsnormen.yaml`; `validieren` nennt die verfügbaren. Gewinde werden kosmetisch gebaut. `bohrung` bleibt für freie Durchmesser. Die erste Position
-  muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch).
+  muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch). Mit `rand`/`flaeche` im `bezug` löst swki
+  die Fläche nach dem Bohren neu auf; findet es sie nicht (`{nahe}` genau auf einer Bohrung), bricht der Bau mit
+  `REFERENZ_NICHT_GEFUNDEN` ab: `{feature, flaeche}` verwenden oder den nahe-Punkt neben die Bohrungen legen.
 - Zahnräder und Zahnstangen als `typ: verzahnung` (Spec 4b, Vorlage `tests/referenz/zahnstangentrieb/`): `art:
   stirnrad | zahnstange`, `ebene` (Standardebene oder `versatz`, keine Fläche), `mitte` (Stirnrad: Radachse;
   Zahnstange: Mitte von Zahn 1 auf der Profilmittellinie), `modul` (DIN 780 Reihe 1), `zaehne` (Stirnrad ≥ 17),
@@ -91,6 +95,24 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Radius < halbe kürzere Nachbarkante), `langloch` (`mitte`, `laenge` = Mittenabstand der Bögen, `breite`, `winkel`
   zu u in [0, 180)), `kontur` (`start`, `segmente` aus `{linie: [u, v]}` und `{bogen: [u, v], mitte: [u, v]}`, Bögen
   gegen den Uhrzeigersinn in (u, v), letzter Endpunkt = `start`), `kreis`, `mittellinie`.
+- Bemaßungsbezug (Paket Bemaßungsbezug, Vorlage `tests/referenz/zentrieraufnahme/`): `bezug: {u?, v?}` an `rechteck`,
+  `kreis`, `langloch` (im Element) sowie `bohrung` und `normbohrung` (am Feature, gilt für alle `positionen` und die
+  Senkung) sagt je Achse, **wovon aus** SolidWorks bemaßt; die Koordinaten der Spec bleiben absolut (Parameter,
+  Ausdrücke), swki rechnet den Maßwert. Werte: `ursprung` (Vorgabe), `mitte` (symmetrisch zur Mittelebene **durch den
+  Ursprung**: Paare spiegelbildlich zu 0 bekommen ein Abstandsmaß, Punkte auf 0 eine Ausrichtung), `"-rand"`/`"+rand"`
+  (Randkante der Skizzenfläche in −/+ Richtung), `{flaeche: <anker>}` (die Kante der Skizzenfläche in dieser Seitenfläche,
+  z. B. Gewinde 15 mm vor der Wand eines Absatzes: `bezug: {u: {flaeche: {feature: f2, flaeche: "-x"}}}`).
+  `rand` und `flaeche` nur in Skizzen auf Flächen (`validieren` lehnt sie auf Standard- und Versatzebenen ab; keine passende
+  Kante: `REFERENZ_NICHT_GEFUNDEN`, mehrere gleich weit außen: `REFERENZ_MEHRDEUTIG`). Beim `rechteck` zählt die dem Bezug
+  zugewandte Seite (Tasche „5 mm vom Rand“ = Taschenwand). `polygon` und `kontur` haben keinen Bezug (Maße zum Ursprung).
+  - **Stil:** symmetrische Bilder `mitte`, alles andere `rand` der Fläche, an der das Teil gefertigt oder angeschlagen
+    wird; ein Teil hat möglichst **eine** Bezugsecke, keine Maßketten. Symmetrie um eine andere Mitte als den Ursprung
+    gibt es nicht: den Ursprung auf diese Mitte legen oder von der Kante bemaßen.
+  - **Rechteck:** Grundplatten um den Ursprung mit `mitte: [0, 0]` und `bezug: {u: mitte, v: mitte}` (nie über eine Ecke mit
+    `=-L/2`), so wächst die Platte beim Ändern symmetrisch; Platte mit Ecke im Ursprung `ursprung`.
+  - Beispiel (Platte L × B um den Ursprung, zwei Gewinde 10 mm vom linken Rand, symmetrisch ±ZG): Rechteck
+    `bezug: {u: mitte, v: mitte}`, `normbohrung` mit `positionen: [["=-L/2+RA", "=ZG"], ["=-L/2+RA", "=-ZG"]]` und
+    `bezug: {u: "-rand", v: mitte}`.
 - Endbedingungen: `blind`, `durch_alles`, `mittig`, `bis_flaeche` (`flaeche`), `versatz_von_flaeche` (`flaeche`,
   `abstand`; der Versatz geht zur Skizze hin – z. B. Restwandstärke über der Unterseite). Bekannte Einschränkung: ein
   Aufsatz mit `versatz_von_flaeche`, dessen Skizze abgesetzt über der Zielfläche liegt, ergibt einen getrennten Körper
@@ -166,6 +188,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - `hinweise` aus `validieren` vor der Freigabe abarbeiten (sie blockieren nie):
   - `art: feste_zahl` – feste Zahl in einem maßtragenden Feld: meist als Parameter führen, sonst dem Nutzer bei der
     Freigabe ausdrücklich nennen.
+  - `art: bezug` – Lagekoordinate ≠ 0 auf einer Skizzenfläche ohne `bezug` auf dieser Achse: `mitte` oder `rand` setzen,
+    sonst wird zum Ursprung bemaßt. Nicht für Konturen, Mittellinien und Skizzen auf Standard- oder Versatzebenen.
   - `art: zusammenfassen` – Knoten (`knoten`) lassen sich nach den Modellierregeln zusammenfassen: umbauen oder dem
     Nutzer begründen, warum nicht (z. B. Anzahl und Abstand sind Anforderungen).
 - **Ansage = Entscheidung:** Was der Nutzer als Änderung nennt, umsetzen (durchrechnen ja; zurückfragen nur, wenn die
@@ -178,6 +202,8 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 ## 4. Freigabe (einziger menschlicher Eingriff)
 - Dem Nutzer die Anforderungen zeigen: Parameter, Material, Eigenschaften, Prüfwerte, Feature-Liste in Worten; dazu
   „Selbst entschieden“ (eigene Entscheidungen und umgesetzte Review-Befunde, je eine Zeile mit Grund).
+  Bezüge stehen in der Feature-Liste in Worten („2 × M6, 10 mm vom linken Rand, symmetrisch zur Mitte, Abstand 40“).
+  Der Bezug ist Bauweg: die Prüfsumme schützt ihn nicht, die KI darf ihn beim Nachbessern ändern.
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
   `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
   `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.
@@ -189,7 +215,19 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   kompakt: `schritt` (wo er endete), `lauf`, `pruefung.fehlgeschlagen`, `pruefung.steckbrief`, `empfehlung`.
   Einzelbefehle (`swki bauen`, `swki pruefen <spec> --lauf n`) bleiben für Sonderfälle.
 - Endet der Durchlauf mit `schritt: bauen` (Bauabbruch): Fehlercode und Knoten lesen, Bauweg nachbessern (Schritt 6).
-- Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert: `swki aenderungen <spec>` zeigt die Parameterdifferenz; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
+- Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert: `swki aenderungen <spec>` liest die Maße des Bauprotokolls und liefert je Datei `masse` (Differenzen soll/ist/delta) und `vorschlaege`; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
+  - `vorschlaege` sind `{parameter, neu}` (Betrag des Maßes, Vorzeichen des freigegebenen Parameters; `konflikt: […]` bei
+    verschiedenen Werten: Nutzer fragen) und für Lagemaße `{pfad, bezug, delta, vorzeichen, koordinate_delta}`. `delta`
+    ist die Änderung des Maßes (ein Betrag, ohne Richtung), `koordinate_delta` die Änderung der Spec-Koordinate am `pfad`:
+    bei `art: lage` `vorzeichen × delta` (Randmaß 10 → 12 bei `-rand`: +2, bei `+rand`: −2), bei `art: paarabstand`
+    (Abstand eines `mitte`-Paars = 2 × Koordinate des festlegenden Punkts) `vorzeichen × delta / 2` (Abstand 40 → 44:
+    ±2, der Partner wandert spiegelbildlich mit). Bei Lagemaßen leitet die KI die Spec-Änderung aus `koordinate_delta`
+    selbst ab (meist den Abstandsparameter, z. B. `RA = 12` bei `"=-L/2+RA"`, bzw. `ZG = 22` beim Paar `±ZG`; steht eine
+    feste Zahl, die Koordinate als Ausdruck des Bezugs umschreiben) und legt sie dem Nutzer vor.
+  - Ein Lagemaß, das beim Ändern des Bezugs mitgewandert ist (Bohrung 10 mm vom Rand, Platte gekürzt), erscheint nicht als
+    Differenz; stimmt die Spec nicht, meldet erst `swki pruefen` die Abweichung.
+- Meldet `swki pruefen` **`GLEICHUNGEN_VORHANDEN`** (Modell mit Gleichungen oder globalen Variablen, obwohl
+  `gleichungen: false`; z. B. ein alter Lauf), `swki bauen` neu ausführen – die Freigabe bleibt gültig.
 - **Lage-Selbstcheck vor dem Prüfer:** `pruefung.steckbrief` (auch `steckbrief.txt` im Laufordner) nennt Hüllquader,
   Schwerpunkt und jeden achsparallelen Zylinder mit Achse, Mitte, Ø und Ausdehnung. Mit der Eingabe vergleichen:
   liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst nachbessern.

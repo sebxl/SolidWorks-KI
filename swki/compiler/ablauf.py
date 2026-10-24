@@ -15,14 +15,18 @@ def baue_features(ctx, protokoll: Protokoll, handler: dict[str, Callable], nach_
             continue
         try:
             with protokoll.knoten_lauf(f["id"], f["typ"]) as knoten:
-                funktion = handler.get(f["typ"])
-                if funktion is None:
-                    raise BauFehler(UNBEKANNTER_TYP, f"Kein Handler für typ {f['typ']!r}", schritt="handler")
-                ergebnis = funktion(ctx, f)
-                ctx.ergebnisse[f["id"]] = ergebnis
-                knoten.sw_name = ergebnis.sw_name
-                knoten.punkte = [list(p) for p in ergebnis.punkte] or None
-                nach_knoten(ctx)
+                ctx.knoten = f["id"]
+                try:
+                    funktion = handler.get(f["typ"])
+                    if funktion is None:
+                        raise BauFehler(UNBEKANNTER_TYP, f"Kein Handler für typ {f['typ']!r}", schritt="handler")
+                    ergebnis = funktion(ctx, f)
+                    ctx.ergebnisse[f["id"]] = ergebnis
+                    knoten.sw_name = ergebnis.sw_name
+                    knoten.punkte = [list(p) for p in ergebnis.punkte] or None
+                    nach_knoten(ctx)
+                finally:  # auch bei einem Fehler: die bis dahin gesetzten Maße helfen bei der Diagnose
+                    knoten.masse = ctx.masse.pop(f["id"], None)
         except Exception as e:  # jeder Fehler (auch COM) beendet den Lauf und steht im Protokoll
             fehler = e
     return fehler

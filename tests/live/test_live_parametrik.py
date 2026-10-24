@@ -12,7 +12,7 @@ from .bauhilfe import gebautes_teil
 pytestmark = pytest.mark.sw
 
 PARAMETER = {"V": -15, "A1": 21, "A2": 13, "W": 300, "FW": 33}
-SPEC = {"art": "teil", "name": "T", "parameter": PARAMETER, "features": [
+SPEC = {"art": "teil", "name": "T", "parameter": PARAMETER, "gleichungen": True, "features": [
     {"id": "f1", "typ": "extrusion",
      "skizze": {"ebene": {"versatz": {"ebene": "oben", "abstand": "=V"}},
                 "elemente": [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}]},

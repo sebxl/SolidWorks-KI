@@ -31,7 +31,7 @@ def test_tasche_mit_restwandstaerke():
     tasche = {"id": "f2", "typ": "schnitt",
               "skizze": {"ebene": DECKFLAECHE, "elemente": [{"rechteck": {"mitte": [0, 0], "breite": 20, "hoehe": 20}}]},
               "ende": {"typ": "versatz_von_flaeche", "flaeche": UNTERSEITE, "abstand": "=RW"}}
-    with gebautes_teil(_spec(tasche, parameter={"RW": 5})) as (ctx, fehler, _):
+    with gebautes_teil({**_spec(tasche, parameter={"RW": 5}), "gleichungen": True}) as (ctx, fehler, _):
         assert fehler is None
         assert volumen_mm3(ctx.model) == pytest.approx(VOLL - 400 * 15, abs=1e-3)
         boden = flaeche_in_richtung(flaechen(ctx.ergebnis("f2").features[0]), "+y")

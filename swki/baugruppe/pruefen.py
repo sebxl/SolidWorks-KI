@@ -28,7 +28,7 @@ from swki.pruefung.befehle import pruefe_lauf_gebaut, schreibe_pruefbericht
 from swki.pruefung.bewertung import bewerte, messpunkt_schluessel
 from swki.pruefung.bilder import kopplungsbild, screenshots
 from swki.pruefung.geometrie import Messgeometrie
-from swki.pruefung.messen import kontext_aus_datei, messe, messgeometrie, oeffne, rebuild_fehler
+from swki.pruefung.messen import gleichungen_anzahl, kontext_aus_datei, messe, messgeometrie, oeffne, rebuild_fehler
 from swki.spec.ausdruck import auswerten
 from swki.speicher import privat_mb
 from swki.verbindung import verbinde
@@ -156,7 +156,8 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         messpunkte=messpunkte, schrauben=schrauben, gewindebohrungen=bohrungen, aussengewinde=aussen,
         teilberichte=teilberichte,
         lagen=transformationen, kopplungen=gelesen, unterdrueckt=[f.Name for f in mates if sw_baugruppe.ist_unterdrueckt(f)],
-        gewinde_modelle={s: k.get("gewinde_modell", {}) for s, k in protokoll.get("kaufteile", {}).items()})
+        gewinde_modelle={s: k.get("gewinde_modell", {}) for s, k in protokoll.get("kaufteile", {}).items()},
+        gleichungen=gleichungen_anzahl(asm))
 
 
 def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: BaugruppenMesswerte, ordner: Path) -> dict:
