@@ -3,11 +3,14 @@ verliert.
 
 swki bauen schreibt den SHA-256 jeder gespeicherten Datei ins Protokoll (Feld sha256). Vor dem nächsten Bau vergleicht
 pruefe_unveraendert den höchsten durchgebauten Lauf (Protokollstatus ok) damit. Läufe ohne Prüfsummen (vor Stufe 3b) und
-ganz entfernte Lauf-Ordner gelten als unverändert. swki aenderungen liest die Parameter geänderter Dateien aus (mit
-SolidWorks, nur lesend) und vergleicht sie mit der freigegebenen Spezifikation."""
+ganz entfernte Lauf-Ordner gelten als unverändert. swki aenderungen liest geänderte Dateien aus (mit SolidWorks, nur
+lesend): bei Läufen mit Maßprotokoll (Knoten.masse) die einzelnen Maße und schlägt Spec-Änderungen vor, bei älteren Läufen
+die globalen Variablen; verglichen wird mit dem Protokoll bzw. der freigegebenen Spezifikation."""
 
 import hashlib
 import json
+import math
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -19,7 +22,7 @@ from swki.pruefung.messen import oeffne
 from swki.spec.ausdruck import auswerten
 from swki.spec.freigabe import freigabe_pfad, freigegebene_spec
 from swki.spec.laden import art_der_datei
-from swki.verbindung import verbinde
+from swki.verbindung import in_mm, verbinde
 
 MANUELL_GEAENDERT = "MANUELL_GEAENDERT"
 # Eigener Code (nicht MANUELL_GEAENDERT): MANUELL_GEAENDERT löst die Rückfrage übernehmen/verwerfen aus, diese
@@ -155,6 +158,96 @@ def lies_globale_variablen(model) -> dict[str, float]:
     return werte
 
 
+def _hat_masse(protokoll: dict) -> bool:
+    """Trägt ein Bauprotokoll das Maßprotokoll? Neue Läufe schreiben das Feld masse an jedem Knoten (auch ohne Maße als
+    null), Läufe vor dem Bemaßungsbezug kennen es nicht."""
+    return any("masse" in k for k in protokoll.get("knoten") or [])
+
+
+def _alle_masse(protokoll: dict) -> list[dict]:
+    return [m for k in protokoll.get("knoten") or [] for m in k.get("masse") or []]
+
+
+def soll_masse(protokoll: dict, spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, list[dict]]:
+    """Dateiname im Lauf → Maße aus dem Bauprotokoll (Teil: alle Knoten; Baugruppe: je Teil aus protokoll["teile"], das
+    Baugruppendokument selbst mit leerer Liste, es hat nur Verknüpfungen). Nur Dateien, deren Protokoll das Maßprotokoll
+    kennt – die übrigen (alte Läufe) fehlen im Ergebnis und gehen den alten Weg über globale Variablen."""
+    teile = protokoll.get("teile") or {}
+    if not (_hat_masse(protokoll) or any(_hat_masse(t) for t in teile.values())):
+        return {}  # kein Maßprotokoll: nicht einmal die Freigabe lesen
+    soll = freigegebene_spec(spec_pfad)
+    ergebnis = {}
+    if art_der_datei(spec_pfad) == "baugruppe":
+        from swki.baugruppe.laden import lade_baugruppe  # spät importiert: swki.baugruppe nutzt swki.compiler
+        from swki.baugruppe.modell import dokument_name
+
+        bg = lade_baugruppe(spec_pfad)
+        if _hat_masse(protokoll):
+            ergebnis[f"{dateiname(soll, auftrag, standard)}.sldasm"] = _alle_masse(protokoll)
+        for datei, teil in teile.items():
+            if _hat_masse(teil):
+                ergebnis[dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard)] = _alle_masse(teil)
+    elif _hat_masse(protokoll):
+        ergebnis[f"{dateiname(soll, auftrag, standard)}.sldprt"] = _alle_masse(protokoll)
+    return ergebnis
+
+
+def lies_masse(model, masse: list[dict]) -> dict[str, float]:
+    """Aktuelle Werte der protokollierten Maße (Name → Betrag in mm bzw. Grad; winkel in Grad). Ein Maß, das es nicht
+    mehr gibt, fehlt im Ergebnis. IDimension.SystemValue liefert m bzw. rad (Spike S17 Fall 7)."""
+    werte = {}
+    for m in masse:
+        dimension = model.Parameter(m["name"])
+        if dimension is not None:
+            wert = float(dimension.SystemValue)
+            werte[m["name"]] = abs(math.degrees(wert) if m["art"] == "winkel" else in_mm(wert))
+    return werte
+
+
+def mass_differenz(masse: list[dict], ist: dict[str, float]) -> list[dict]:
+    """Maße, die sich um mehr als 1e-6 vom Protokoll unterscheiden oder fehlen (ist und delta dann None), in der
+    Reihenfolge des Protokolls. delta = ist − soll."""
+    differenz = []
+    for m in masse:
+        i = ist.get(m["name"])
+        if i is None or abs(i - m["wert"]) > _TOL:
+            differenz.append({"name": m["name"], "pfad": m["pfad"], "art": m["art"], "bezug": m["bezug"], "roh": m["roh"],
+                              "soll": m["wert"], "ist": i, "delta": None if i is None else i - m["wert"]})
+    return differenz
+
+
+_DIREKT = re.compile(r"=\s*(-?)\s*([A-Za-z_]\w*)\s*")
+
+
+def vorschlaege(differenz: list[dict], parameter: dict) -> list[dict]:
+    """Spec-Änderungen, die zu den geänderten Maßen passen (nur ein Vorschlag, der Nutzer entscheidet).
+
+    Größen-, Tiefen-, Radius-, Winkel-, Abstands- und Versatzmaße mit roh genau =P oder =-P (P ein Parameter der
+    Spezifikation) → {"parameter": P, "neu": w} (w = ist, bei =-P: −ist; Maße sind Beträge); verlangen zwei Maße
+    verschiedene Werte → {"parameter": P, "konflikt": [w1, w2, …]}. Lagemaße nie als Parameter, sondern
+    {"pfad", "bezug", "delta"}. Konstruktions- und Skriptmaße ergeben keinen Vorschlag; fehlende Maße auch nicht."""
+    ergebnis, je_parameter = [], {}
+    for d in differenz:
+        if d["ist"] is None or d["art"] in ("konstruktion", "skript"):
+            continue
+        if d["art"] == "lage":
+            ergebnis.append({"pfad": d["pfad"], "bezug": d["bezug"], "delta": d["delta"]})
+            continue
+        treffer = _DIREKT.fullmatch(d["roh"].strip()) if isinstance(d["roh"], str) else None
+        if treffer is None or treffer[2] not in parameter:
+            continue
+        name, wert = treffer[2], (-d["ist"] if treffer[1] else d["ist"])
+        eintrag = je_parameter.get(name)
+        if eintrag is None:
+            je_parameter[name] = eintrag = {"parameter": name, "neu": wert}
+            ergebnis.append(eintrag)
+        elif "neu" in eintrag and abs(eintrag["neu"] - wert) > _TOL:
+            eintrag["konflikt"] = [eintrag.pop("neu"), wert]
+        elif "konflikt" in eintrag and all(abs(w - wert) > _TOL for w in eintrag["konflikt"]):
+            eintrag["konflikt"].append(wert)
+    return ergebnis
+
+
 def soll_verknuepfungswerte(spec: dict, quellen: dict, parameter: dict | None = None) -> dict[str, float]:
     """Abstands- und Winkelwerte der aufgelösten Verknüpfungen (mm bzw. Grad) nach Verknüpfungs-ID; die Ausdrücke
     werden mit parameter ausgewertet (Vorgabe: die Parameter von spec). Eine Grenzverknüpfung steht mit ihrem Wert in
@@ -211,23 +304,31 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     if not a["geaendert"]:
         return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": a["fehlend"]}
     soll = soll_parameter(spec_pfad, auftrag, standard)  # erst jetzt: braucht eine gültige Freigabe
+    soll_m = soll_masse(protokoll, spec_pfad, auftrag, standard)
     ergebnis = []
     sw_dateien = [n for n in a["geaendert"] if n.lower().endswith(_SW_DATEIEN) and n in soll]
     if sw_dateien:
         app = verbinde(r.sw_jahr)
         for name in sw_dateien:
+            massweg = name in soll_m  # Lauf mit Maßprotokoll: einzelne Maße, keine globalen Variablen
             model = oeffne(app, ordner / name)
             try:
-                ist = lies_globale_variablen(model)
+                ist = {} if massweg else lies_globale_variablen(model)
                 if name.lower().endswith(".sldasm"):
                     from swki.baugruppe import sw_baugruppe  # spät importiert (Kreisimport)
 
                     ist |= {f"verknuepfung:{n}": w for n, w in sw_baugruppe.verknuepfungswerte(model).items()}
+                ist_masse = lies_masse(model, soll_m[name]) if massweg else {}
             finally:
                 sw.schliesse(app, model)  # schließt ohne zu speichern (S9b)
-            differenz = parameter_differenz(soll[name], ist)
-            eintrag = {"datei": name, "parameter": differenz}
-            if not differenz:
+            soll_p = soll[name]
+            if massweg:  # Parameter ohne Variablen nicht lesbar; die Maße tragen sie. Bleiben: Verknüpfungswerte
+                soll_p = {n: w for n, w in soll_p.items() if n.startswith("verknuepfung:")}
+            differenz = parameter_differenz(soll_p, ist)
+            masse_diff = mass_differenz(soll_m[name], ist_masse) if massweg else []
+            eintrag = {"datei": name, "parameter": differenz, "masse": masse_diff,
+                       "vorschlaege": vorschlaege(masse_diff, soll[name])}
+            if not differenz and not masse_diff:
                 eintrag["hinweis"] = "Datei geändert, Parameter gleich – den Nutzer fragen, was geändert wurde"
             ergebnis.append(eintrag)
     for n in a["geaendert"]:
