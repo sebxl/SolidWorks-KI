@@ -7,6 +7,9 @@ description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen
 
 Spec: `docs/superpowers/specs/2026-10-03-stufe-3b-baugruppen-design.md` (Abweichungen der Umsetzung: `docs/stufe3b/ergebnisse.md`).
 Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm, Winkel Grad. Syntax: Kurzreferenz in Abschnitt 2 (Muster-Specs unter `tests/referenz/*/` nur bei Bedarf).
+Längere Python-Schnipsel mit dem Write-Tool als Datei anlegen und `.venv\Scripts\python.exe <datei>` ausführen; nie
+Befehle, die auf stdin warten (`python - <<'EOF' … || python - <<'EOF'`, `python -` oder `cat` ohne Eingabe) – sie
+hängen bis zum 2-min-Zeitlimit.
 
 ## 1. Auftrag
 - `auftraege/<auftrag>/` mit `eingabe/`, einer Baugruppen-Spec und den Teil-Specs der Eigenteile (Teil-Format,
@@ -74,6 +77,16 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   Skill `kaufteile`, Abschnitt 8), genau eine
   `fixiert: true` (ihr Ursprung = Baugruppenursprung), `je_position: {komponente, feature}` für eine Instanz je
   Position einer `normbohrung`/`bohrung` (Instanzen `<id>.1 …`).
+- **Instanzen** (`je_position`, Quelltext nicht lesen): Instanz `<id>.i` gehört zur i-ten Position des Features (Reihenfolge
+  der `positionen`); das Ziel ist ein Eigenteil ohne `je_position`. Eine Verknüpfung, die eine solche Komponente mit
+  ihrer `id` nennt, gilt für jede Instanz (`v4.1 …`); `instanz: je` auf der anderen Seite ist dann Position i desselben
+  Features. Normteil auf Normteil (Mutter auf Scheibe, Scheibe unter Kopf): beide Komponenten mit **demselben**
+  `je_position`, dann paart swki Instanz i mit i. In `pruefung` immer die Instanz nennen (`stift.1`), in Verknüpfungen
+  die `id`. Grenzen, Scharniere und Kopplungen nicht mit `je_position`-Komponenten.
+- **`volumen: auto` in Teil-Specs** (Regeln Skill `konstruieren` §2): rechnet nur, wenn Schnitte ganz im bisherigen
+  Material liegen und Aufsätze nicht überlappen; `bis_flaeche`/`versatz_von_flaeche` sind nicht berechenbar (Prüfung
+  ohne Urteil). Lagerbohrung in der Teilfuge: nicht als Vollkreis-Schnitt über die Fuge (`validieren` lehnt `auto` dann
+  ab), sondern als Halbkreis in der Kontur des Aufsatzes bzw. als `kontur`-Schnitt im Material.
 - `verknuepfungen`: `deckungsgleich`, `konzentrisch`, `parallel`, `senkrecht`, `abstand` (`wert`), `winkel` (`wert`).
   `ausrichtung: gleich | entgegengesetzt` (Normalen nach dem Verknüpfen gleich- bzw. gegensinnig; Flächennormalen
   zeigen aus dem Material, Bezugsebenen haben die Normale ihrer Basis) – Pflicht bei `deckungsgleich`, `parallel`, `abstand`

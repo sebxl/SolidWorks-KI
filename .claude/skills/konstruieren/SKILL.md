@@ -6,6 +6,9 @@ description: Konstruiert ein Einzelteil in SolidWorks aus Skizze, Beschreibung o
 # Konstruieren (Einzelteil, Stufe 2/2c)
 
 Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok). Längen in mm, Winkel in Grad.
+Längere Python-Schnipsel mit dem Write-Tool als Datei (Scratchpad) anlegen und `.venv\Scripts\python.exe <datei>`
+ausführen. Nie Befehle, die auf stdin warten (`python - <<'EOF' … || python - <<'EOF'`, `python -` oder `cat` ohne
+Eingabe): sie hängen bis zum 2-min-Zeitlimit.
 
 ## 1. Auftrag anlegen
 - Ordner `auftraege/<auftrag>/` (Name wie vom Nutzer, sonst kurz und sprechend), Eingaben nach `eingabe/`.
@@ -20,6 +23,12 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   Draufsicht **über** der Vorderansicht, Ansicht von rechts **rechts** daneben. Je Ansicht festhalten: Blickrichtung
   als Modellachse und welche Modellachse im Bild nach rechts/oben zeigt; erst dann Lagemaße mit Vorzeichen
   umrechnen und je Maß die Bezugskante nennen (Plattenrand oder Gehäuse?).
+- **Maßliste (Pflicht bei Zeichnung oder Maßbild), vor dem Schreiben der Spec:** jedes Maß **jeder** Ansicht (auch
+  Rück- und Seitenansichten, Lagemaße einzelner Merkmale) als Kommentarblock am Kopf der Spec, je Ansicht eine Zeile in
+  Kürzeln: `# Ansicht A (Rück): 20,3 M8-Mitte ab rechter Kante → SX; 12 Höhe ab Boden → SH; …`. Jedes Maß muss so in
+  einem Parameter, Ausdruck oder Kommentar der Spec wieder auftauchen; ein Maß ohne Ziel ist übersehen – erst
+  einordnen, dann weiterschreiben. Zwei Maße für dasselbe Merkmal, die nicht genau gleich sind (20,25/20,22), nicht
+  stillschweigend angleichen: beide führen oder die Wahl kommentieren.
 - Kommentare knapp: je Annahme eine Zeile.
 - Maße, die zusammenhängen, als `parameter` und Ausdrücke (`"=L/2-20"`); swki rechnet sie aus, in SolidWorks stehen
   Zahlen zum Bezug (Abschnitt Bemaßungsbezug). Keine Gleichungen; `gleichungen: true` (Top-Level) nur auf Wunsch des Nutzers.
@@ -238,8 +247,10 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
 - Meldet `swki pruefen` **`GLEICHUNGEN_VORHANDEN`** (Modell mit Gleichungen oder globalen Variablen, obwohl
   `gleichungen: false`; z. B. ein alter Lauf), `swki bauen` neu ausführen – die Freigabe bleibt gültig.
 - **Lage-Selbstcheck vor dem Prüfer:** `pruefung.steckbrief` (auch `steckbrief.txt` im Laufordner) nennt Hüllquader,
-  Schwerpunkt und jeden achsparallelen Zylinder mit Achse, Mitte, Ø und Ausdehnung. Mit der Eingabe vergleichen:
-  liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst nachbessern.
+  Schwerpunkt und jeden achsparallelen Zylinder mit Achse, Mitte, Ø und Ausdehnung. Zeile für Zeile gegen die
+  Maßliste prüfen, bevor der Prüfer startet: je Lagemaß Mitte und Ø des Zylinders aus dem Steckbrief zur Bezugskante
+  nachrechnen; liegen Stecker, Zapfen und Bohrungen auf der richtigen Seite (Vorzeichen!)? Bei Widerspruch erst
+  nachbessern.
 - Der Prüfbericht vergleicht Normbohrungen (Art, Größe, Norm, Positionen, durch/Tiefe) mit der freigegebenen Kopie
   (Prüfung `normbohrungen`) und nennt unter `baum` Knoten- und Featurezahl.
 - Prüfer-Agent (`subagent_type: pruefer`, `model: sonnet`) mit `pruefer_auftrag` aus der Ausgabe von `swki durchlauf`
