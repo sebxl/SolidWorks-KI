@@ -158,6 +158,7 @@ nicht erreicht. Der Hebel dagegen ist klein (offene Hebel, Punkt 1).
 
 ## Schlusszusammenfassung (24.10.2026)
 
+- **Bestätigung (Durchgang 2, unten):** D2 = 6,1, Mittel D1/D2 = 6,5 – das Ziel hält nur im Mittel und nur knapp.
 - **Endstand: Score 7,1** nach einem Umbau (Ausgang 4,9, Ziel 6,5). Alle Läufe geometrisch richtig, alle Fallen
   erkannt, kein Fehlalarm. Stand auf dem Optimierungs-Branch `claude/eager-mirzakhani-66b569` (Merge e8ca7fb), nicht
   gepusht, nicht nach `main` gemergt; `btp` selbst ist unverändert (in eigenem Worktree ausgecheckt).
@@ -186,3 +187,64 @@ nicht erreicht. Der Hebel dagegen ist klein (offene Hebel, Punkt 1).
   Zylinderhalter-Schrauben M5 × 16 greifen 8,0 statt ≥ 10 in die Alu-Anschlussplatte; Durchlicht-Schrauben M4 × 12 nur
   7,4 (≥ 8); Bandpass `LV = 51,1` statt 51,0 (0,1 Luft vor der Objektivfront); Übergang Trichter → Fallschacht mit
   0,3 Stoßkante. Bitte prüfen – mögliche echte Mängel des Auftrags AP 6.8, nicht des Messverfahrens.
+
+## Durchgang 2 – Bestätigung (24.10.2026, Commit 14b811b = Umbau 1, ohne neuen Umbau)
+
+Auftrag des Nutzers: Streuung des Stands Umbau 1 sehen. Gemessen auf 14b811b (nicht 750668c mit der späteren
+`volumen: auto`-Prüfung), alle Prompts zeichengleich zu D1 bis auf den Laufnamen. **Keine Wiederholung nach §5.1** –
+jeder Lauf zählt, wie er ist. Fallen nicht neu gebaut (seit dem Neubau nach Umbau 1 unverändert; zwischen 14b811b und
+dem Stand der Fallen-Aufträge sind `pruefer.md` und `pruefer_auftrag` gleich, die Prompts sind bis auf den
+Durchgangsordner identisch zu D1).
+
+| Lauf | Zeit s | Modell | Review | Prüfer | Werkzeug (durchlauf) | Tool-Aufrufe | Tokens gew. | Läufe | Fehlerpunkte | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d2-durchlicht-1 | 145 | 102 | – | 22 | 17 | 18 | 286219 | 1 | 0 | 3309 | ja |
+| d2-durchlicht-2 | 145 | 98 | – | 23 | 18 | 19 | 239909 | 1 | 0 | 3316 | ja |
+| d2-kamera-1 | 324 | 180 | – | 96 | 29 | 37 | 483480 | 2 | 2 | 3486 | ja |
+| d2-zentrieraufnahme-1 | 173 | 112 | 10 | 26 | 17 | 24 | 275339 | 1 | 0 | 3367 | ja |
+| d2-stehlager-1 | 324 | 218 | 32 | 26 | 37 | 37 | 487362 | 1 | 0 | 4392 | ja |
+| d2-pruefstation-1 | 565 | 164 | – | 29 | 234 | 33 | 598038 | 1 | 0 | 10788 | ja |
+
+Fallen: 6 von 6, 0 Fehlalarme. F6-3 war „unklar“ (fand Bandpass-Spalt und Trichter-Stoßkante, nicht die
+Einschraublänge der Falle) → in `entscheid.json` als „verfehlt“ gewertet; F6 bleibt mit 2/3 Treffer.
+
+**Fehlerursachen je Lauf:**
+- d2-kamera-1 (2 Fehlerpunkte): Der Agent übersah in Rückansicht A das Maß 20,3 und setzte den M8-Stecker mittig; der
+  Prüfer fand es (1 Prüfermangel), Korrektur mit neuem Parameter → zweite Freigabe. Reine Zeichnungsdeutung, kein Bezug
+  zum Umbau (die M2-Höhen hat der Agent diesmal selbst auf 20,25 vereinheitlicht und kommentiert; `richtig` = ja).
+- Alle übrigen Läufe: 0 Fehlerpunkte.
+- Zeitverluste ohne Fehlerpunkt: d2-pruefstation-1 121 s in einem Python-Heredoc mit `||`-Rückfall
+  (`python - <<'EOF' … || python - <<'EOF'`), der bis zum 2-min-Zeitlimit des Bash-Tools auf stdin wartete – dasselbe
+  Muster kostete in d1-stehlager-1 rund 2 min. d2-kamera-1: Nachbesserungsrunde (Prüfer 96 s für zwei Urteile).
+
+**Score D2 = 6,1** (`btp 2 --vergleich 1`):
+
+| Gruppe | D1 | D2 | Mittel D1/D2 (Wert → Teilscore) |
+|---|---|---|---|
+| Zeit Teile | 186 s → 3,55 | 214 s → 2,68 | 200 s → 3,11 |
+| Zeit Stehlager | 353 s → 4,68 | 324 s → 5,06 | 338 s → 4,87 |
+| Zeit Prüfstation | 536 s → 6,59 | 565 s → 6,49 | 551 s → 6,54 |
+| Präzision erster Lauf | 0 → 10,0 | 2 → 5,25 | 1 → 7,0 |
+| Präzision Fallen | 6 → 10,0 | 6 → 10,0 | 6 → 10,0 |
+| Aufwand | 0,80 → 5,91 | 0,90 → 5,69 | 0,85 → 5,75 |
+| Robustheit | 11 304 MB → 4,11 | 10 788 MB → 4,56 | 11 046 MB → 4,33 |
+| **Score** | **7,1** | **6,1** | **6,49** |
+
+Mittel = je Aufgabe Mittel der Zeiten (Teile aus den gemittelten Aufgabenzeiten), Fehlerpunkte, Fallen, Aufwand und
+Speicher je Durchgang gemittelt, dann die Anker. Ohne die §5.1-Wiederholung in D1 (also Stehlager-Lauf 1 mit 555 s und
+3 Fehlerpunkten) wäre D1 = 5,6 und das Mittel 5,8.
+
+**Einschätzung – hält der Stand die 6,5 robust? Nein, nur knapp im Mittel.**
+- **Robust ist die Zeit- und Speicherseite:** Prüfstation 536/565 s (D0 995), Durchlicht 156/145 s, Zentrieraufnahme
+  192/173 s, Stehlager 353/324 s, Speicher 11,3/10,8 GB (D0 28,2), Fallen beide Male 6/6 ohne Fehlalarm. Diese Gruppen
+  tragen zusammen ~4,3 Punkte und schwanken zwischen den Durchgängen um weniger als 0,15.
+- **Nicht robust ist „Präzision erster Lauf“:** 20 % Gewicht, und jeder Fehlerpunkt kostet bei 0–2 Punkten 0,7, darüber
+  0,35. D1 hatte (nach Wiederholung) 0, D2 hat 2 – beide Male aus der Deutung der Eingabe durch den Agenten (D1
+  Stehlager: Modellierwahl gegen eine Grenze von `volumen: auto`; D2 Kamera: übersehenes Maß), nicht aus dem
+  Werkzeug. Allein diese Gruppe verschiebt den Score zwischen 6,1 und 7,1.
+- **Kamera als Zeitausreißer:** Ein Nachbesserungslauf verdoppelt die Kamerazeit (210 → 324 s) und drückt „Zeit Teile“
+  um ~0,9 Teilscore.
+- Erwartungswert des Stands bei 0–2 Fehlerpunkten je Durchgang: ~6,1–7,1, Mittel ~6,5. Für einen sicheren Abstand zur
+  6,5 fehlen Hebel auf der Präzisionsseite: die nachgezogene `volumen: auto`-Prüfung (750668c, hätte den D1-Fehler vor
+  der Freigabe abgefangen; in D2 nicht gemessen), eine Maßliste je Ansicht vor dem Schreiben der Spec (D2-Kamera) und
+  der Hinweis gegen Heredoc-Rückfälle (Zeit, kein Score-Risiko).
