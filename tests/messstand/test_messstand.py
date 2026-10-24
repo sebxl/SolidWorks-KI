@@ -100,7 +100,8 @@ def test_protokolle(tmp_path):
     _schreibe(tmp_path, "a.lauf-3.pruefer.json", {"bestanden": True, "maengel": []})
     k = protokolle.auswerten(tmp_path)
     assert k == {"laeufe": 3, "bauabbrueche": 1, "pruefmaengel": 1, "pruefer_urteile": 2, "pruefer_maengel": 2,
-                 "letzter_lauf": 3, "pruefer_bestanden": True, "phasen_s": {}}
+                 "letzter_lauf": 3, "pruefer_bestanden": True, "phasen_s": {},
+                 "teile_gebaut": 0, "teile_wiederverwendet": 0}
 
 
 def test_ergebnisdatei(tmp_path):

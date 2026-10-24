@@ -16,6 +16,7 @@ from swki.cli import SwkiFehler, main
 from swki.compiler.bauen import BauAbbruch
 from swki.compiler.protokoll import Protokoll
 from swki.konfig import Rechner, lade_standard
+from swki.pruefung.messen import PruefFehler
 from tests.baugruppe.beispiel import schreibe
 
 
@@ -101,10 +102,13 @@ def test_uebernommen_nach_neuer_freigabe_vermerkt_das_protokoll(umgebung, monkey
 
 def test_weiche_in_swki_bauen(capsys, umgebung, monkeypatch):
     _, pfad, _ = umgebung
-    monkeypatch.setattr(bau, "bauen", lambda p, lauf, verwerfen, uebernommen: {
-        "art": "baugruppe", "lauf": lauf, "verwerfen": verwerfen, "uebernommen": uebernommen})
+    monkeypatch.setattr(bau, "bauen", lambda p, lauf, verwerfen, uebernommen, alles_neu=False: {
+        "art": "baugruppe", "lauf": lauf, "verwerfen": verwerfen, "uebernommen": uebernommen, "alles_neu": alles_neu})
     assert main(["bauen", str(pfad), "--lauf", "3", "--verwerfen"]) == 0
-    assert json.loads(capsys.readouterr().out) == {"art": "baugruppe", "lauf": 3, "verwerfen": True, "uebernommen": False}
+    assert json.loads(capsys.readouterr().out) == {"art": "baugruppe", "lauf": 3, "verwerfen": True, "uebernommen": False,
+                                                   "alles_neu": False}
+    assert main(["bauen", str(pfad), "--alles-neu"]) == 0
+    assert json.loads(capsys.readouterr().out)["alles_neu"] is True
     assert main(["bauen", str(pfad), "--uebernommen"]) == 0
     assert json.loads(capsys.readouterr().out)["uebernommen"] is True
 
@@ -223,7 +227,7 @@ def _bauen_mit_attrappen(umgebung, monkeypatch, verknuepf_fehler=None):
         if len(geschlossen) == 1:
             raise RuntimeError("Titel nicht lesbar")
 
-    def teile(b, r_):
+    def teile(b, r_, wiederverwenden=True):
         b.offen.extend(dok)
 
     monkeypatch.setattr(bau, "verbinde", lambda jahr: object())
@@ -282,7 +286,7 @@ def test_abbruch_vor_dem_einfuegen_vermerkt_komponenten_als_uebersprungen(umgebu
     freigeben_baugruppe(bg)
     monkeypatch.setattr(bau, "verbinde", lambda jahr: object())
     monkeypatch.setattr(bau, "_baue_teile",
-                        lambda b, r_: bau.BauFehler("TEIL_BAU", "platte/f2: kaputt", schritt="teil"))
+                        lambda b, r_, wiederverwenden=True: bau.BauFehler("TEIL_BAU", "platte/f2: kaputt", schritt="teil"))
     monkeypatch.setattr(bau.sw, "schliesse", lambda app, model: None)
     with pytest.raises(BauAbbruch) as e:
         bau.bauen(pfad)
@@ -298,7 +302,7 @@ def test_geworfene_ausnahme_vermerkt_komponenten_und_verknuepfungen_als_ueberspr
     freigeben_baugruppe(bg)
     monkeypatch.setattr(bau, "verbinde", lambda jahr: object())
 
-    def wirft(b, r_):
+    def wirft(b, r_, wiederverwenden=True):
         raise RuntimeError("COM kaputt")
 
     monkeypatch.setattr(bau, "_baue_teile", wirft)
@@ -351,3 +355,117 @@ def test_normteile_werden_kopiert_und_die_bibliothek_bleibt_unveraendert(umgebun
     assert {p.name: p.read_bytes() for p in bibliothek.iterdir()} == vorher  # nichts in die Bibliothek geschrieben
     assert {p.name for p in b.ordner.iterdir()} == set(vorher)               # Kopien im Lauf-Ordner
     assert all(m.pfad.parent == b.ordner for m in b.offen)                  # geöffnet werden nur die Kopien
+
+
+# --- Wiederverwenden unveränderter Eigenteile (BTP Umbau 3) ------------------------------------------------------
+
+_UMG = {"code": "c", "wissen": "w", "schema": "s", "standard": "st", "auftrag": "A", "sw": "2025/33", "vorlage": "v",
+        "material": "m"}
+
+
+@pytest.fixture
+def teilbau(umgebung, monkeypatch):
+    """Teilbau ohne SolidWorks: baue_teil_dokument liefert ein Attrappen-Modell, speichere schreibt eine Datei mit
+    Zählerinhalt (jeder Bau eine andere Datei), oeffne/kontext_aus_datei merken sich die Aufrufe."""
+    r, pfad, _ = umgebung
+    log = {"gebaut": [], "geoeffnet": [], "kontext": [], "zaehler": iter(range(1000))}
+
+    def baue(app, r_, standard, spec, spec_pfad, auftrag, tp):
+        log["gebaut"].append(spec_pfad.name)
+        with tp.knoten_lauf("f1", "extrusion") as k:
+            k.punkte = [[1.0, 2.0, 3.0]]
+        return SimpleNamespace(name=spec_pfad.name), SimpleNamespace(model=None), None
+
+    def speichere(model, ziel):
+        ziel.parent.mkdir(parents=True, exist_ok=True)
+        ziel.write_bytes(f"{model.name}-{next(log['zaehler'])}".encode())
+
+    def oeffne(app, p, sichtbar=True):
+        log["geoeffnet"].append((Path(p), sichtbar))
+        return SimpleNamespace(pfad=Path(p))
+
+    monkeypatch.setattr(bau, "baue_teil_dokument", baue)
+    monkeypatch.setattr(bau.sw, "speichere", speichere)
+    monkeypatch.setattr(bau, "oeffne", oeffne)
+    monkeypatch.setattr(bau, "kontext_aus_datei",
+                        lambda app, model, spec, p, tol, prot: log["kontext"].append(prot) or SimpleNamespace(model=model))
+    monkeypatch.setattr(bau.wiederverwendung, "umgebung", lambda app, r_, standard, auftrag: _UMG)
+
+    def lauf(n, wiederverwenden=True, aendern=None):
+        bg = lade_baugruppe(pfad)
+        for datei, h in (aendern or {}).items():
+            bg.teile[datei]["parameter"]["H"] = h
+        b = bau.Baulauf(app=None, bg=bg, auftrag="A", ordner=lauf_ordner(r, "A", n), standard=lade_standard(),
+                        protokoll=Protokoll("A", pfad.name, n, 2025))
+        log["gebaut"].clear()
+        fehler = bau._baue_teile(b, r, wiederverwenden)
+        b.protokoll.dateien = {art: str(p) for art, p in b.dateien.items()}
+        b.protokoll.sha256 = bau.pruefsummen(b.ordner, b.dateien.values())
+        b.protokoll.status = "fehler" if fehler else "ok"
+        b.protokoll.schreibe(lauf_datei(pfad, n, "protokoll"))
+        return b, fehler
+
+    return lauf, log
+
+
+def test_unveraenderte_teile_werden_aus_dem_vorlauf_uebernommen(teilbau):
+    lauf, log = teilbau
+    b1, _ = lauf(1)
+    assert log["gebaut"] == ["platte.yaml", "deckel.yaml"]
+    assert all(t["schluessel"] for t in b1.protokoll.teile.values())
+    b2, fehler = lauf(2)
+    assert fehler is None and log["gebaut"] == []
+    for datei, alt in b1.dateien.items():
+        neu = b2.dateien[datei]
+        assert neu.parent == b2.ordner and neu.read_bytes() == alt.read_bytes()
+    assert all(not sichtbar for p, sichtbar in log["geoeffnet"])      # ohne Fenster wie Norm-/Kaufteile
+    t = b2.protokoll.teile["platte.yaml"]
+    assert t["lauf"] == 2 and t["wiederverwendet"]["lauf"] == 1 and t["status"] == "ok"
+    assert t["wiederverwendet"]["datei_sha256"] == b1.protokoll.sha256[b1.dateien["teil:platte.yaml"].name]
+    assert log["kontext"][-1]["knoten"][0]["punkte"] == [[1.0, 2.0, 3.0]]  # Bohrungspunkte aus dem Quellprotokoll
+    assert set(b2.kontexte) == {"platte.yaml", "deckel.yaml"} and len(b2.offen) == 2
+
+
+def test_geaendertes_teil_wird_zuerst_und_allein_neu_gebaut(teilbau):
+    lauf, log = teilbau
+    lauf(1)
+    b2, _ = lauf(2, aendern={"deckel.yaml": 16})
+    assert log["gebaut"] == ["deckel.yaml"]
+    assert list(b2.protokoll.teile) == ["platte.yaml", "deckel.yaml"]   # Protokoll in Spec-Reihenfolge
+    assert "wiederverwendet" not in b2.protokoll.teile["deckel.yaml"]
+    assert b2.protokoll.teile["platte.yaml"]["wiederverwendet"]["lauf"] == 1
+
+
+def test_ohne_wiederverwenden_wird_alles_gebaut_geaendertes_zuerst(teilbau):
+    lauf, log = teilbau
+    lauf(1)
+    lauf(2, wiederverwenden=False, aendern={"deckel.yaml": 16})
+    assert log["gebaut"] == ["deckel.yaml", "platte.yaml"]
+
+
+def test_von_hand_geaenderte_quelle_wird_neu_gebaut(teilbau):
+    lauf, log = teilbau
+    b1, _ = lauf(1)
+    b1.dateien["teil:platte.yaml"].write_bytes(b"von Hand")
+    lauf(2)
+    assert log["gebaut"] == ["platte.yaml"]
+
+
+def test_oeffnen_scheitert_dann_wird_neu_gebaut(teilbau, monkeypatch):
+    lauf, log = teilbau
+    lauf(1)
+
+    def oeffne(app, p, sichtbar=True):
+        raise PruefFehler(f"{Path(p).name} ist bereits in SolidWorks geöffnet")
+
+    monkeypatch.setattr(bau, "oeffne", oeffne)
+    b2, fehler = lauf(2)
+    assert fehler is None and log["gebaut"] == ["platte.yaml", "deckel.yaml"]
+    assert not any("wiederverwendet" in t for t in b2.protokoll.teile.values())
+
+
+def test_bauergebnis_nennt_gebaute_und_wiederverwendete_teile(teilbau):
+    lauf, _ = teilbau
+    lauf(1)
+    b2, _ = lauf(2, aendern={"deckel.yaml": 16})
+    assert bau.teile_bilanz(b2.protokoll) == {"teile_gebaut": ["deckel.yaml"], "teile_wiederverwendet": ["platte.yaml"]}
