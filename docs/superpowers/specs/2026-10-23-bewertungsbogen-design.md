@@ -166,10 +166,12 @@ Aufwand je Durchgang geschätzt: 6 Läufe ~45 min (Prüfstation ~20 min), Ausgan
 Gewichtet: 0,15·4,6 + 0,10·4,5 + 0,25·4,8 + 0,20·6,1 + 0,20·7,0 + 0,05·5,0 + 0,05·1,5 = **5,3**. Durchgang 0
 ersetzt den Wert; er wird in `ergebnisse.md` und im Goal-Auftrag eingetragen.
 
-**Zielscore 7,0.** Ein Beispiel, das 7,0 ergibt: Prüfstation 300 s (9,0), Teile 100 s (6,2), Stehlager 250 s (6,1),
-1 Fehlerpunkt (7,0), 5 Fallen (7,0), Aufwand 0,8 (6,0), Speicher 12 GB (3,5). Die Prüfstation trägt das meiste: die
-Hebel 1–5 des Audits bringen ihre Werkzeugzeit von ~14 min auf ~4 min. Bei den Teilen geht es unter ~100 s nur
-über die Modellseite (Runden, Prüfer). Realistisch nach 5 Umbauten: 6,5–7,0.
+**Zielscore 6,5** (Nutzer 24.10.2026, nach der Recherche; ursprünglich 7,0). Die Recherche erwartet ohne Fast Mode
+und ohne Abschaffung des Konstruktionsreviews +0,4 bis +0,85 über dem Ausgangswert; 6,5 verlangt die belegten Hebel
+(Schnellmodus in Bewegungsprüfung und Grundstellung, Verknüpfen ohne Neuaufzählung, Teile wiederverwenden,
+Einschraublänge als Prüfung, schlankerer Prüfer und Review) bei gleicher Präzision. Beispiel für 6,5: Prüfstation
+400 s (7,3), Teile 130 s (5,3), Stehlager 330 s (5,0), 1 Fehlerpunkt (7,0), 6 Fallen (10), Aufwand 0,9 (5,5),
+Speicher 13 GB (2,6).
 
 ## 8. Regeln für die /goal-Session
 
@@ -183,17 +185,21 @@ Hebel 1–5 des Audits bringen ihre Werkzeugzeit von ~14 min auf ~4 min. Bei den
   das nicht, siehe Audit B9).
 - Keine Änderung an Konstruktionsregeln, Freigabe-Schutz, Prüfungen gegen die freigegebene Kopie oder Schwellen von
   `swki pruefen`, um Zeit zu sparen. Prüfungen dürfen schneller, nicht schwächer werden.
+- **Konstruktionsreview** (Skills `konstruieren`/`baugruppe`): läuft in den Messläufen wie im Betrieb. Er darf
+  schlanker werden (Modell, effort, Geltungsbereich: z. B. kein Review bei reinen Maß-, Schraubenlängen- oder
+  Normteiländerungen), aber **nicht entfallen** (Nutzer 24.10.2026).
+- **Fast Mode und effort des Hauptagenten** sind nicht Teil des Bogens (Kostenfrage, Nutzer 24.10.2026): kein Umbau
+  darf sie ändern; Messläufe laufen mit dem Betriebsstandard.
 - Kein `git push`; Merge nach `main` nur nach Rückfrage beim Nutzer.
 - Jeder Durchgang: Ergebnis-Tabelle, Teilscores, Entscheidung mit Begründung in `docs/laufzeit-audit/ergebnisse.md`.
 
-## 9. Offen beim Nutzer (vor der Einrichtung)
+## 9. Entscheidungen des Nutzers vor der Einrichtung (24.10.2026)
 
-1. **Basis-Stand:** Die Prüfstation braucht das Kaufteil Festo ADNM-25-A-P-A-52Z1-82Z2, das nur auf
-   `ap68-pruefstation` liegt (dcc5fed). Entweder `ap68-pruefstation` vorher nach `main` mergen und `btp` ab `main`,
-   oder `btp` ab `ap68-pruefstation`.
-2. **Paket Bemaßungsbezug** (Branch `bemassungsbezug`, Plan fertig) schaltet die Gleichungen ab (Audit B2, −110 s je
-   Prüfstation-Zyklus) und ändert den Bauweg. Entweder zuerst umsetzen und danach Einrichtung und Durchgang 0, oder als
-   einer der 5 Umbauten in der /goal-Session.
+1. `ap68-pruefstation` ist nach `main` gemergt (602dc8f); `btp` setzt auf `main` auf.
+2. Paket Bemaßungsbezug ist vor der Einrichtung umgesetzt und gemergt; Referenz, Fallen und Durchgang 0 entstehen
+   auf diesem Stand.
+3. Review, Fast Mode, Zielscore: siehe §7 und §8. Die Recherche (`docs/laufzeit-audit/recherche.md`) ist Startpunkt
+   der Umbau-Wahl.
 
 ## 10. Was dem Ausführenden überlassen ist
 
