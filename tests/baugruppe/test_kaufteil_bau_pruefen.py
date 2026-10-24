@@ -48,7 +48,7 @@ def test_kaufteile_werden_kopiert(tmp_path, monkeypatch):
         return {"pfad": str(cache), "gebaut": False, "pruefsumme": "abc", "gewinde_modell": {"flansch": KERN}}
 
     monkeypatch.setattr(bau.kaufteil_befehle, "hole", hole)
-    monkeypatch.setattr(bau, "oeffne", lambda app, p: SimpleNamespace(pfad=Path(p)))
+    monkeypatch.setattr(bau, "oeffne", lambda app, p, sichtbar=True: SimpleNamespace(pfad=Path(p), sichtbar=sichtbar))
     monkeypatch.setattr(bau, "kontext_aus_datei", lambda app, model, spec, p, tol, prot: SimpleNamespace(model=model, spec=spec))
     assert bau._hole_kaufteile(b, 0.1) is None
     kopie_datei = b.ordner / "SWKI-MUSTER_GM42-10.sldprt"

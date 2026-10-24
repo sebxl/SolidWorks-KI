@@ -30,12 +30,23 @@ class PruefFehler(SwkiFehler):
     pass
 
 
-def oeffne(app, pfad: Path):
+def oeffne(app, pfad: Path, sichtbar: bool = True):
     """Öffnet ein gespeichertes Teil oder eine Baugruppe (Typ nach der Endung). Ist das Dokument schon offen (evtl. beim
-    Nutzer), wird abgebrochen statt es zu schließen."""
+    Nutzer), wird abgebrochen statt es zu schließen.
+
+    `sichtbar=False` öffnet ohne Fenster (DocumentVisible): ein Fenster kostet SolidWorks ~1,7 GB Private Bytes, ohne
+    ~1 MB (BTP Umbau 1). SolidWorks schließt ein unsichtbares Dokument mit, wenn ein sichtbares schließt, das es hält
+    (Baugruppe) – nur für Dokumente, die bis dahin offen bleiben dürfen oder vorher geschlossen werden."""
     typ = SW_DOC_ASSEMBLY if pfad.suffix.lower() == ".sldasm" else SW_DOC_PART
     fehler, warnungen = byref_long(), byref_long()
-    model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
+    if sichtbar:
+        model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
+    else:
+        app.DocumentVisible(False, typ)
+        try:
+            model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
+        finally:
+            app.DocumentVisible(True, typ)
     if model is None:
         raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen (Fehler {fehler.value})")
     if warnungen.value & SW_WARNUNG_BEREITS_OFFEN:

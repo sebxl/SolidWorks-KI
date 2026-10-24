@@ -12,6 +12,7 @@ Deshalb während der Aufnahme auf "Screen capture" umschalten und danach den vor
 (siehe swki/wissen/pywin32-fallstricke.md).
 """
 
+from contextlib import contextmanager
 from pathlib import Path
 
 from swki.compiler import sw
@@ -19,6 +20,15 @@ from swki.compiler import sw
 ANSICHTEN = {"iso": 7, "vorne": 1, "oben": 5, "rechts": 4}  # swStandardViews_e
 SW_TIFF_SCREEN_OR_PRINT_CAPTURE = 6  # swUserPreferenceIntegerValue_e; 0 = Screen capture, 1 = Print capture
 SW_COMPONENT_HIDDEN, SW_COMPONENT_VISIBLE = 0, 1  # swComponentVisibilityState_e
+SW_VIEW_ANIMATION_SPEED = 38  # swUserPreferenceDoubleValue_e.swViewAnimationSpeed; 0 = Ansichtswechsel ohne Animation
+
+
+@contextmanager
+def _aufnahme(app, model):
+    """Rahmen jeder Aufnahme: Screen capture (Moduldocstring), Ansichtswechsel ohne Animation (ViewZoomtofit2 wartet
+    sonst je Aufruf ~0,5 s, BTP Umbau 1) und Grafik an, auch innerhalb von sw.schnell(); danach alles zurück."""
+    with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0),             sw.einstellung_double(app, SW_VIEW_ANIMATION_SPEED, 0.0), sw.mit_grafik(app, model):
+        yield
 
 
 def screenshots(app, model, ordner: Path) -> dict[str, str]:
@@ -26,7 +36,7 @@ def screenshots(app, model, ordner: Path) -> dict[str, str]:
     model._FlagAsMethod("ViewZoomtofit2")
     # Screen capture statt Print capture erzwingen, sonst bei schmal-langen Ansichten rechts abgeschnitten
     # (siehe Moduldocstring); danach immer den vorgefundenen Wert wiederherstellen.
-    with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
+    with _aufnahme(app, model):
         bilder = {}
         for name, ansicht in ANSICHTEN.items():
             model.ShowNamedView2("", ansicht)
@@ -52,7 +62,7 @@ def kopplungsbild(app, model, pfad: Path, achse, komponenten: list, uebrige=()) 
         for komp, zustand in vorher:
             if zustand == SW_COMPONENT_VISIBLE:
                 komp.Visible = SW_COMPONENT_HIDDEN
-        with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
+        with _aufnahme(app, model):
             model.ShowNamedView2("", ANSICHTEN[ANSICHT_DER_ACHSE[max(range(3), key=lambda i: abs(achse[i]))]])
             sw.auswahl_leeren(model)
             gewaehlt = [komp.Select4(True, model.SelectionManager.CreateSelectData, False) for komp in komponenten]
@@ -72,7 +82,7 @@ def kopplungsbild(app, model, pfad: Path, achse, komponenten: list, uebrige=()) 
 def iso_bild(app, model, pfad: Path) -> str:
     """Ein Iso-Bild der aktuellen Stellung (Bewegungsprüfung, Spec 4a §8.3); gleiche Einstellungen wie screenshots()."""
     model._FlagAsMethod("ViewZoomtofit2")
-    with sw.einstellung_int(app, SW_TIFF_SCREEN_OR_PRINT_CAPTURE, 0):
+    with _aufnahme(app, model):
         model.ShowNamedView2("", ANSICHTEN["iso"])
         model.ViewZoomtofit2()
         sw.speichere(model, pfad, kopie=True)

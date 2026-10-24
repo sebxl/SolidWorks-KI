@@ -120,11 +120,12 @@ def test_gesetzt_wird_ueber_alle_verknuepfungen_durchgereicht(umgebung, tmp_path
     _, pfad, _ = umgebung
     b, bg = _baulauf(pfad, tmp_path)
     alle = verknuepfungen(bg.spec, bg.quellen)
-    erhalten, flaggen = [], []
+    erhalten, flaggen, handles = [], [], []
 
-    def verknuepfe(asm, v, a, b_, parameter, gesetzt=None, gleichungen=None):
+    def verknuepfe(asm, v, a, b_, parameter, gesetzt=None, gleichungen=None, handles_=None):
         erhalten.append(gesetzt)
         flaggen.append(gleichungen)
+        handles.append(handles_)
         return SimpleNamespace(Name=v.id)
 
     monkeypatch.setattr(bau, "_entitaet", lambda b_, seite: object())
@@ -132,6 +133,7 @@ def test_gesetzt_wird_ueber_alle_verknuepfungen_durchgereicht(umgebung, tmp_path
     assert bau._verknuepfe(b, alle) is None
     assert len(erhalten) == len(alle) > 1
     assert all(g is b.gesetzt for g in erhalten)
+    assert all(h is b.handles for h in handles)  # Handles statt Baumdurchlauf (BTP Umbau 1)
     assert flaggen == [False] * len(alle)  # Vorgabe: keine Gleichungen
 
 
@@ -343,7 +345,7 @@ def test_normteile_werden_kopiert_und_die_bibliothek_bleibt_unveraendert(umgebun
                         lambda norm, groesse, variante: {"pfad": str(pfade[(norm, groesse)]), "gebaut": False})
     monkeypatch.setattr(bau, "bibliotheksordner", lambda r_: bibliothek)
     monkeypatch.setattr(bau, "lies_eintrag", lambda ordner, schluessel: {"pruefsumme": "abc"})
-    monkeypatch.setattr(bau, "oeffne", lambda app, p: SimpleNamespace(pfad=Path(p)))
+    monkeypatch.setattr(bau, "oeffne", lambda app, p, sichtbar=True: SimpleNamespace(pfad=Path(p), sichtbar=sichtbar))
     monkeypatch.setattr(bau, "kontext_aus_datei", lambda app, model, spec, p, tol, prot: SimpleNamespace(model=model))
     assert bau._hole_normteile(b, r, 0.01) is None
     assert {p.name: p.read_bytes() for p in bibliothek.iterdir()} == vorher  # nichts in die Bibliothek geschrieben

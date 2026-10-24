@@ -129,4 +129,6 @@ def verbinde(jahr: int):
     ist = jahr_aus_revision(wert(app.RevisionNumber))
     if ist != jahr:
         raise FalscheVersion(f"Laufendes SOLIDWORKS ist {ist}, erwartet {jahr} (config/rechner.yaml).")
+    # Ein abgebrochener Lauf (Zeitlimit, Kill) überspringt das Zurücksetzen in sw.schnell(); die Instanz ist geteilt
+    app.CommandInProgress = False
     return app
