@@ -62,7 +62,14 @@ Werte je Achse:
 | `ursprung` | Koordinatenmaß zum Ursprung (Projektion in die Skizze) – wie heute, ohne Gleichung. **Vorgabe**, wenn `bezug` oder die Achse fehlt |
 | `mitte` | symmetrisch zur Mittelebene durch den Ursprung (§5.2): Paare, die spiegelbildlich zu u = 0 (bzw. v = 0) liegen, bekommen eine Symmetriebeziehung zu einer Mittellinie und **ein** Abstandsmaß zwischeneinander; Punkte auf der Mittelebene eine Ausrichtung; übrige ein Maß zum Ursprung |
 | `"-rand"` / `"+rand"` | Abstand zur **Randkante der Skizzenfläche** in −u bzw. +u (für `v`: −v / +v). Nur für Skizzen auf Flächen (Flächenanker) – alle Bohrungen, Schnitte auf Flächen |
-| `{flaeche: <flaechenanker>}` | Abstand zu einer Fläche, die senkrecht zur Skizzenebene steht (z. B. Seitenfläche eines anderen Features); auch für Skizzen auf Standardebenen |
+| `{flaeche: <flaechenanker>}` | Abstand zur Kante der Skizzenfläche, die in dieser Seitenfläche liegt (die Fläche steht senkrecht zur Skizzenebene, z. B. Seitenfläche eines anderen Features). Nur für Skizzen auf Flächen, wie `rand` |
+
+*Nachgezogen bei der Umsetzung, 2026-10-24:* SolidWorks bemaßt nicht zu Flächen (Spike S17 Zeile 2: `AddHorizontalDimension2`
+und `AddDimension2` mit der Seitenfläche legen kein Maß an; versucht wurde nur die Fläche aus `IFeature.GetFaces`). Darum
+löst swki `{flaeche}` auf die Kante der Skizzenfläche auf, die in der genannten Seitenfläche liegt, und bemaßt dazu (Weg
+von Zeile 1). Die frühere Aussage „auch für Skizzen auf Standardebenen“ entfällt: `{flaeche}` geht wie `rand` nur in
+Skizzen auf Flächen (`validieren` lehnt es sonst ab); berührt die Seitenfläche die Skizzenfläche nicht, meldet der Bau
+`REFERENZ_NICHT_GEFUNDEN`. Basisskizzen auf Standardebenen lassen sich nicht zu Flächen anderer Features bemaßen.
 
 Was bemaßt wird:
 
@@ -100,6 +107,9 @@ zueinander, symmetrisch zur Mittellinie. Kürzt der Nutzer die Platte auf 150, b
   Vorhandene Bibliotheksteile werden nicht nachgerüstet.
 - **An:** Verhalten wie heute, mit einer Ausnahme: Lagemaße mit Bezug ≠ `ursprung` bekommen keine Gleichung (der
   Bezug trägt die Absicht; eine Gleichung würde ihn überschreiben).
+  *Nachgezogen bei der Umsetzung, 2026-10-24:* „Bezug ≠ `ursprung`“ meint `rand` und `flaeche`. Mit `gleichungen: true`
+  binden Lagemaße mit Bezug `ursprung`, die Paarabstände der Symmetrie und die Rechteckseiten von `mitte` wie bisher per
+  Ausdruck (Paarabstand = 2 × Koordinatenausdruck, Rechteckseite `=(mitte) ± (groesse)/2`).
 
 ## 5. Compiler
 
@@ -107,7 +117,7 @@ zueinander, symmetrisch zur Mittellinie. Kürzt der Nutzer die Platte auf 150, b
 
 - `Skizzierer.lage` bekommt den Bezug je Achse; der Maßwert ist eine Zahl (mm), nicht mehr ein Ausdruck.
 - Skizzen bleiben **voll bestimmt** (Pflicht, `SKIZZE_NICHT_BESTIMMT` wie heute).
-- Rechteck: Mittelpunkt als Skizzenpunkt (z. B. Konstruktionsdiagonale; Weg klärt Spike S17), Lage über die Mitte.
+- Rechteck: Kennpunkt und Lage je Fall, siehe Nachtrag in §5.2.
 - `bohrung`: `bezug` an die Kreise und die Senkungskreise weitergeben. `normbohrung`: `positionen_festlegen` mit Bezug.
 - Bauprotokoll: neues Feld `masse` je Knoten – Liste `{name, pfad, art, bezug, wert}`; `name` wie `D3@f2_positionen`,
   `pfad` der Spec-Pfad (`features[1].positionen[0][0]`, `features[0].skizze.elemente[0].rechteck.breite`), `art`
@@ -128,17 +138,37 @@ Keine Überbestimmung: Die Symmetrie legt den Partner fest. Nur ein Punkt je Paa
 auf beiden Achsen: ein Eckpunkt) bekommt die übrigen Lage- und Abstandsmaße; Randmaße auf der anderen Achse (Beispiel
 §3) nur am ersten Punkt.
 
+*Nachgezogen bei der Umsetzung, 2026-10-24 (Spike S17 Zeilen 4–5, Rulings 4, 4a, 6, 10):*
+
+- **Mittellinie:** Ihr Endpunkt liegt per `sgCOINCIDENT` auf der Randkante der Skizzenfläche. Skizzen ohne Skizzenfläche
+  (Standard- und Versatzebene) haben keine Randkante; dort bekommt die Mittellinie ein Längenmaß (Konstruktionsmaß).
+- **Rechteck** (Spike: Diagonale mit `sgATMIDDLE`, Seitenmittelpunkt über `CreatePoint` + `sgATMIDDLE`), festgelegt je
+  Fall. „Seitenbezug“ heißt je Achse `rand`, `flaeche` oder `ursprung` mit Mitte ≠ 0 (zugewandte bzw. nächste Seite),
+  „mitte“ heißt `mitte` oder `ursprung` mit Mitte auf 0:
+  - (a) beide Achsen Seitenbezug: die Ecke der zugewandten Seiten;
+  - (b) eine Achse Seitenbezug, die andere mitte: Mittelpunkt der zugewandten Seite, ein Kennpunkt mit beiden Achsen
+    (paarfähig);
+  - (c) beide Achsen mitte um (0, 0): zwei Seitenmittelpunkte (u über die waagrechte, v über die senkrechte Seite, je
+    eine Ausrichtung), keine Konstruktionslinie;
+  - (d) beide Achsen mitte, Mitte ≠ (0, 0): Mittelpunkt über die Diagonale (paarfähig). In Rotationsskizzen statt (d)
+    zwei Seitenmittelpunkte mit Maßen zum Ursprung, ohne Paare.
+  Die Diagonale kommt damit nur in (d) vor; Radius und Diagonale in Grundplatten sind so nie kombiniert.
+- **Verrundungen** der Rechteckecken wählt swki über das Linienpaar der Ecke (`seg[i-1]`, `seg[i]`), nicht über die
+  Koordinate: Nach der ersten Verrundung verschiebt `sgATMIDDLE` an der getrimmten Seite das Rechteck, erst nach allen
+  vier Verrundungen liegt der Seitenmittelpunkt wieder in der Mitte (live belegt, Fall b und c mit Radius).
+
 ### 5.3 `rand` und `flaeche`
 
 Bezugskante bzw. -fläche über die vorhandene Topologie (`swki/compiler/topologie.py`) suchen, in der Skizze wählen und
-Punkt (bzw. Rechteckseite) dazu bemaßen. Ob SolidWorks direkt zur Modellkante bemaßt oder eine konvertierte Kante
-braucht, klärt Spike S17. Bezug ist immer Geometrie, die im Baum **vor** dem Feature liegt.
+Punkt (bzw. Rechteckseite) dazu bemaßen. SolidWorks bemaßt direkt zur Modellkante, auch in der Positionsskizze des
+Bohrungsassistenten (Spike S17 Zeilen 1, 3, 4); zu Flächen bemaßt es nicht (§3, Nachtrag). Bezug ist immer Geometrie, die
+im Baum **vor** dem Feature liegt.
 
 ## 6. Validieren
 
 - Schema: `bezug` an den genannten Stellen; Werte wie §3.
-- Fehler: `rand` in einer Skizze auf Standard- oder Versatzebene (keine Skizzenfläche); `bezug` an `polygon`/`kontur`
-  (noch nicht unterstützt).
+- Fehler: `rand` oder `{flaeche}` in einer Skizze auf Standard- oder Versatzebene (keine Skizzenfläche, §3 Nachtrag);
+  `bezug` an `polygon`/`kontur` (noch nicht unterstützt).
 - Neuer Hinweis `art: bezug`: Lagekoordinate ≠ 0 in `bohrung`/`normbohrung`-Positionen oder in `rechteck`/`kreis`/
   `langloch` auf einer Skizzenfläche **ohne** Bezug auf dieser Achse – „Bemaßungsbezug angeben (mitte oder rand),
   sonst wird zum Ursprung bemaßt“. Nicht für Konturen, Mittellinien und Basisskizzen auf Standardebenen.
@@ -152,6 +182,9 @@ braucht, klärt Spike S17. Bezug ist immer Geometrie, die im Baum **vor** dem Fe
 - Neu, nur bei Gleichungen aus: `swki pruefen` meldet einen Befund, wenn das Modell Gleichungen oder globale Variablen
   enthält (`GLEICHUNGEN_VORHANDEN`) – fängt Handler, die `verknuepfe` umgehen. In Baugruppen nur am Baugruppendokument
   und an Eigenteilen; Normteile aus der Bibliothek tragen weiter ihre globalen Variablen (nicht nachgerüstet).
+  *Nachgezogen bei der Umsetzung, 2026-10-24:* Ein alter Lauf mit globalen Variablen bekommt bei erneutem `swki pruefen`
+  ebenfalls `GLEICHUNGEN_VORHANDEN`, ohne Ausnahme (sonst wäre die Invariante aufgeweicht). Abhilfe: `swki bauen`; die
+  Freigabe bleibt gültig.
 - Prüfer-Agent: keine Änderung.
 
 ## 8. `swki aenderungen`
@@ -173,6 +206,13 @@ braucht, klärt Spike S17. Bezug ist immer Geometrie, die im Baum **vor** dem Fe
   Nutzer fragen“.
 - Läufe aus der Zeit mit Gleichungen (Protokoll ohne `masse`): wie heute über globale Variablen.
 - Danach wie bisher: Spec ändern, validieren, Nutzer-OK, `swki freigeben`, `swki bauen --uebernommen`, prüfen.
+
+*Nachgezogen bei der Umsetzung, 2026-10-24:* `swki aenderungen` liefert je Datei `parameter` (nur Läufe ohne `masse`), `masse`
+(je geändertem Maß `{name, pfad, art, bezug, roh, vorzeichen, soll, ist, delta}`; fehlt das Maß, ist `ist` und `delta`
+`None`) und `vorschlaege`. Der Parametervorschlag `{parameter, neu}` hat den **Betrag** des Maßes und das **Vorzeichen des
+freigegebenen Parameters** (SolidWorks-Maße sind Beträge; bei Parameter 0 positiv), unabhängig vom Minus im Ausdruck
+(`=-P`); bei verschiedenen Werten `{parameter, konflikt: […]}`. Lagemaße erscheinen als `{pfad, bezug, delta}`, nie als
+Parameter. Konstruktions- und Skriptmaße ergeben keinen Vorschlag.
 
 ## 9. Skill `konstruieren` und `baugruppe`
 
@@ -197,6 +237,9 @@ Live, ein Wegwerf-Teil, Ergebnisse in die Spec nachziehen:
 6. `Parameter(name).SystemValue` in einer frisch geöffneten, von Hand geänderten Datei lesen (für §8).
 
 Jeder neue API-Aufruf vorher über `swki api methode` nachschlagen.
+
+*Nachgezogen bei der Umsetzung, 2026-10-24:* Ergebnisse und Abweichungen in
+[docs/bemassungsbezug/ergebnisse.md](../../bemassungsbezug/ergebnisse.md) §1.
 
 ## 11. Tests und Referenzen
 

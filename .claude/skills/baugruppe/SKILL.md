@@ -99,9 +99,10 @@ Befehle wie beim Teil (`.venv\Scripts\python.exe -m swki …`, JSON). Längen mm
   Fehlercode 47 in der Meldung) und löscht die Verknüpfung: Verknüpfung oder Reihenfolge nachbessern. Ist eine Komponente
   trotz angelegter Verknüpfungen über- oder unterbestimmt, meldet `swki pruefen` den Mangel `bestimmtheit`.
 - Eine fixierte Komponente ist ein Mangel, wenn sie nicht fixiert ist **oder** ihr Status überbestimmt ist.
-- Anforderungen als `parameter` (`wert: "=S"`); `pruefung`: `huellquader`, `masse_pruefen` (Messpunkte mit
-  `komponente`, bei `je_position` die Instanz `stift.1`), optional `masse` (kg). Kollision, Bestimmtheit, Stückliste
-  und Teilprüfungen laufen immer.
+- Anforderungen als `parameter` (`wert: "=S"`); Verknüpfungswerte stehen in SolidWorks als Zahl, nicht als Gleichung
+  (`gleichungen: true` im Kopf nur auf Wunsch des Nutzers; Lagen an Rand oder Mitte in den Teilen: Skill `konstruieren`,
+  Bemaßungsbezug). `pruefung`: `huellquader`, `masse_pruefen` (Messpunkte mit `komponente`, bei `je_position` die
+  Instanz `stift.1`), optional `masse` (kg). Kollision, Bestimmtheit, Stückliste und Teilprüfungen laufen immer.
 
 ## 3. Validieren, Freigabe
 - `swki validieren <baugruppe.yaml>` (prüft auch alle Teil-Specs, die Normteile und die Passung Normteil ↔ Bohrung)

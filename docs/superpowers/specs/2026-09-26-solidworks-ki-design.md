@@ -102,7 +102,7 @@ art: teil
 name: Formplatte_DS
 material: "1.2312"
 eigenschaften: {Benennung: Formplatte DS}
-parameter: {L: 296, B: 246, H: 46}          # werden SW-Gleichungen (globale Variablen)
+parameter: {L: 296, B: 246, H: 46}          # Anforderungsmaße; in SW Zahlen zum Bezug (Gleichungen nur mit gleichungen: true, siehe Bemaßungsbezug)
 features:
   - id: f1
     typ: extrusion
@@ -160,8 +160,9 @@ pruefung:
 
 Regeln:
 
-- Skizzen werden vollständig bemaßt und mit Beziehungen voll bestimmt; Parameter werden zu
-  SW-Gleichungen. Modelle bleiben in SolidWorks änderbar.
+- Skizzen werden vollständig bemaßt und mit Beziehungen voll bestimmt; Maße stehen als Zahlen zum Bezug (`bezug`), nicht
+  als SW-Gleichungen (Standard; einschaltbar mit `gleichungen: true`), siehe
+  [2026-10-23-bemassungsbezug-design.md](2026-10-23-bemassungsbezug-design.md). Modelle bleiben in SolidWorks änderbar.
 - Ebenen werden sprachunabhängig aufgelöst: zuerst Name, sonst die ersten drei Referenzebenen im Baum
   (Vorne, Oben, Rechts). Achsrichtungen: Vorne → +Z, Oben → +Y, Rechts → +X.
 - Kanten/Flächen: bevorzugt semantisch (`{feature, flaeche|auswahl}`), sonst Punkt-Anker `nahe`

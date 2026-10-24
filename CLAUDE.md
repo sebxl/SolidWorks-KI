@@ -1,8 +1,8 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse: docs/messstand/ergebnisse.md
-(davor Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen) – Ergebnisse: docs/bemassungsbezug/ergebnisse.md
+(davor Messstand und `huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
@@ -28,6 +28,11 @@ Stand: Messstand (Umbau 4 + 5) und `huellquader: auto` umgesetzt – Ergebnisse:
 - `swki validieren <spec>` → `swki freigeben <spec>` (nur nach ausdrücklichem OK des Nutzers) → `swki bauen <spec>`.
 - Anforderungsmaße als `parameter` führen; `validieren` meldet feste Zahlen in Features als `hinweise` (die Freigabe
   schützt sie nicht). `freigeben` legt `<spec>.freigegeben.yaml` ab – diese Kopie nie ändern.
+- Bemaßungsbezug: Lagen mit `bezug` (`mitte`, `-rand`/`+rand`, `ursprung`) an `rechteck`, `kreis`, `langloch`, `bohrung`,
+  `normbohrung`; Regeln und Bemaßungsstil im Skill `konstruieren`. Der Bezug ist Bauweg (nicht in der Freigabe-Prüfsumme).
+  SolidWorks bekommt Maße als Zahlen, keine Gleichungen und keine globalen Variablen; `gleichungen: true` (Top-Level, oder
+  `config/standard.yaml`) nur auf Wunsch des Nutzers. Neue Handler bemaßen über `Kontext.mass` (Maßprotokoll für
+  `swki aenderungen`).
 - Nach der Freigabe nur noch den Bauweg ändern (Features, Anker, Reihenfolge, Skripte); Parameter, Material, Eigenschaften und
   `pruefung` sind tabu (`swki bauen` verweigert sonst mit FREIGABE_VERALTET).
 - Was das Format nicht kann: `typ: skript` mit `luecke:` (Notausgang), nie still weglassen.
