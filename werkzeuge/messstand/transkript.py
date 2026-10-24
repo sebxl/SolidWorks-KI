@@ -72,6 +72,8 @@ def aufrufe(eintraege: list[dict]) -> list[dict]:
     liste = []
     for e in eintraege:
         t = _zeit(e)
+        if t is None:   # api-request-blob u. ä. wiederholen Blöcke ohne Zeitstempel
+            continue
         for b in _bloecke(e):
             if b.get("type") == "tool_use" and b.get("id") not in offen:
                 a = {"id": b["id"], "name": b.get("name", ""), "eingabe": b.get("input") or {}, "start": t,

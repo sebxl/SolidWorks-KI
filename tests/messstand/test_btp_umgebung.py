@@ -71,6 +71,17 @@ def test_protokolle_erst_nach_dem_ausgangslauf(tmp_path):
     assert ab["letzter_lauf"] == 3 and ab["phasen_s"] == {"teile": 20.0, "verknuepfen": 5.0}
 
 
+def test_aufrufe_ignorieren_bloecke_ohne_zeitstempel():
+    use = {"type": "tool_use", "id": "t1", "name": "Bash", "input": {"command": "x"}}
+    res = {"type": "tool_result", "tool_use_id": "t1", "content": "ok"}
+    e = [{"type": "assistant", "timestamp": "2026-10-24T10:00:00.000Z", "message": {"content": [use]}},
+         {"type": "user", "timestamp": "2026-10-24T10:00:30.000Z", "message": {"content": [res]}},
+         {"type": "api-request-blob", "message": {"content": [use]}},
+         {"type": "api-request-blob", "message": {"content": [res]}}]
+    a = transkript.aufrufe(e)
+    assert len(a) == 1 and a[0]["ende"] - a[0]["start"] == 30
+
+
 def test_neustart_eigene_kategorie():
     assert transkript.kategorie("Bash", {"command": "x -m werkzeuge.sw_neustart"}) == "neustart"
     assert transkript.kategorie("Bash", {"command": "x -m werkzeuge.inspiziere a"}) == "werkzeuge"
