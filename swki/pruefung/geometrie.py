@@ -287,12 +287,18 @@ def _bohrungs_ueberlappung(bohrungen: list, f: dict, d: float, tiefe: float | No
     return summe
 
 
+UEBER_MATERIAL = "Schnitt ragt über das Material hinaus"  # Grund von volumen_auto, den validieren als Befund meldet
+
+
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
     """Sollvolumen aus der Spezifikation, soweit analytisch möglich (Annahme: Schnitte liegen ganz im Material,
     Aufsätze überlappen nicht). Rückgabe (volumen, grund); volumen None = nicht berechenbar, grund sagt warum.
     Kennt Rundungen, Langloch, Kontur, Normbohrung mit Tiefe, Formschräge an einem Profil (swki.formschraege);
     Durchgänge (durch_alles, durch) nur auf der Fläche einer Extrusion mit fester Tiefe (`_dicke`);
-    bis_flaeche/versatz_von_flaeche sind nicht berechenbar."""
+    bis_flaeche/versatz_von_flaeche sind nicht berechenbar, ebenso ein Schnitt, der über das bisherige Material
+    hinausragt (BTP Durchgang 1)."""
+    from swki.pruefung.huellquader import schnitte_ausserhalb  # spät importiert (Kreisimport)
+
     p = spec.get("parameter", {})
     beitrag: dict[str, float] = {}
     nach_id = {f["id"]: f for f in spec["features"]}
@@ -361,4 +367,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             beitrag[f["id"]] = aus_feature(f, p).flaeche() * auswerten(f["breite"], p)
         else:
             return None, f"{f['id']}: {typ} nicht analytisch berechenbar"
+    if aussen := schnitte_ausserhalb(spec):
+        return None, (f"{aussen[0]}: {UEBER_MATERIAL} (auto zöge das ganze Profil ab) – Schnittprofil ins Material "
+                      "legen (z. B. Halbkreis-Kontur) oder Volumen angeben")
     return sum(beitrag.values()), "analytisch"

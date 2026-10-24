@@ -167,9 +167,13 @@ nicht erreicht. Der Hebel dagegen ist klein (offene Hebel, Punkt 1).
   DISPID-Cache (O6), Teile wiederverwenden (O5; die Teilephase der Prüfstation ist seit dem Bemaßungsbezug nur noch
   ~100 s), Fast Mode/effort des Hauptagenten (gestrichen).
 - **Offene Hebel** (nach Wirkung):
-  1. `volumen: auto` gegen Schnitte, die über das bisherige Material hinausragen: in `validieren` ablehnen
-     (Hüllquader der Aufsätze gegen Schnittprisma) – hätte den Stehlager-Fehlerpunkt dieses Durchgangs vor der
-     Freigabe verhindert; dazu die Grenze in den Skill.
+  1. ~~`volumen: auto` gegen Schnitte, die über das bisherige Material hinausragen~~ – **nachgezogen** (Nutzerauftrag
+     nach dem Goal, nicht gemessen): `volumen_auto` meldet einen Schnitt, dessen Box über die Box der vorher gebauten
+     Aufsätze hinausragt, als nicht berechenbar; `validieren` lehnt `volumen: auto` genau dann ab (Befund
+     `pruefung.volumen`), wenn das sonst rechenbar wäre – andere Gründe bleiben wie bisher ein Hinweis, damit die
+     Prüfstation-Vorlage (`fallschacht`, `schieber`: Schnitte ragen absichtlich ins Leere, `auto` dort ohnehin nicht
+     berechenbar) gültig bleibt. Skill `konstruieren` nennt die Grenze. Gegenprobe über 246 vorhandene Teil-Specs:
+     nur das Stehlager-Referenzteil (ohne Volumenprüfung) bekommt statt des falschen `auto`-Werts „nicht berechenbar“.
   2. Skill `baugruppe`: Instanzen (`je_position`, `stift.1`) und Grenzen von `volumen: auto` knapp erklären – der
      Stehlager-Agent suchte ~120 s im Quelltext.
   3. Prüfer: 22–84 s; Kurzbericht statt vollem Prüfbericht (O10 zweiter Teil), Frontmatter `omitClaudeMd`.

@@ -170,6 +170,10 @@ Alle Befehle: `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON, Exit 0 = ok)
   auf der er steht. Ausnahme: Wird seine Grundkante mitgeschrägt (Formschräge an einem `mittig`-Steg, der quer zur
   Platte skizziert ist), das Profil 1 mm in die Platte führen – sonst bleibt ein Keilspalt (2 Körper); `auto` zählt
   die Überlappung doppelt, bleibt bei 1 mm aber in der Toleranz.
+  Ebenso liegen Schnitte ganz im Material: ein Schnitt, der über das bisherige Material hinausragt (Lagerbohrung in
+  der Teilfuge als Vollkreis, Tasche über die Kante), zöge `auto` ganz ab – `validieren` meldet `auto` dann als nicht
+  berechenbar. Das Profil ins Material legen (Halbkreis als `kontur`) oder die Bohrung gleich in die Kontur des
+  Aufsatzes nehmen.
 
 ### Modellierregeln (kompakter Feature-Baum)
 Änderbarkeit zuerst, sonst so wenige Features wie möglich:
