@@ -7,6 +7,8 @@ Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen)
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
+  Längere Python-Schnipsel mit dem Write-Tool als Datei anlegen und `.venv\Scripts\python.exe <datei>` ausführen; nie
+  `python - <<'EOF' … || python - <<'EOF'` oder andere Befehle, die auf stdin warten (hängen bis zum 2-min-Zeitlimit).
 - SolidWorks-Version und Pfade stehen in `config/rechner.yaml` (pro Rechner, nicht im Git). Nie ein Jahr oder einen Pfad fest in Code schreiben.
   Pfade für Auftragsskripte ebenfalls dort: `blender`, `dateien: {<name>: <pfad>}`.
 - Einrichten eines Rechners: `powershell -ExecutionPolicy Bypass -File setup\einrichten.ps1`.
