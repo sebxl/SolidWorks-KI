@@ -10,7 +10,7 @@ from swki.baugruppe.kopplung import eingriff, in_baugruppe, kopplungen, teilkrei
 from swki.baugruppe.modell import Quelle, dokument_name
 from swki.compiler.anker import differenz, punkt_achse_abstand, skalar
 from swki.kaufteile.ortung import steigung
-from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
+from swki.pruefung.bewertung import beschreibung, eintrag, gleichungen_eintrag, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
 from swki.spec.ausdruck import auswerten
 from swki.spec.normen import groesse_text, norm_von, normmasse
@@ -49,6 +49,7 @@ class BaugruppenMesswerte:
     # Außengewinde von Kaufteilen: {teil (Instanz-ID), gruppe, instanz, groesse, laenge, tiefe, anfang (Ebene am
     # Gewindeanfang, Richtung zur Gewindespitze, Baugruppenkoordinaten)}
     aussengewinde: list[dict] = field(default_factory=list)
+    gleichungen: int = 0  # Gleichungen und globale Variablen des Baugruppendokuments (nicht der Komponenten)
 
 
 @dataclass
@@ -344,6 +345,8 @@ def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMessw
     pr = spec.get("pruefung", {})
     ergebnisse = [eintrag("rebuild", not m.rebuild_fehler, ist=m.rebuild_fehler, knoten=[]),
                   _verknuepfungen(spec, quellen, m), _bestimmtheit(spec, quellen, m)]
+    if (e := gleichungen_eintrag(spec, standard, m.gleichungen)) is not None:
+        ergebnisse.append(e)
 
     abweichend = _stueckliste_abweichungen(m.stueckliste, soll_stueckliste)
     ergebnisse.append(eintrag("stueckliste", not abweichend, ist=abweichend, knoten=[]))

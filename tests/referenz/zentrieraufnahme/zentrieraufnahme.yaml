@@ -3,7 +3,8 @@
 # (Aufsatz, kleiner, blind), Einführtasche mit Eckradius (Schnitt, kleiner, blind), Trichter-Durchbruch von der
 # Unterseite (Schnitt, groesser, durch_alles) und beidseitig verjüngter Steg (Aufsatz auf Ebene vorne, kleiner, mittig;
 # der Steg ragt 2 mm in die Platte). Platte L × B × H auf Ebene oben (wächst nach +Y), Mitte im Ursprung; (u, v) auf
-# Deck- und Unterseite: X = u, Z = −v.
+# Deck- und Unterseite: X = u, Z = −v. Bemaßungsbezug (Paket Bemaßungsbezug): Zapfen vom linken Rand und auf der
+# Mitte, Tasche und Trichter von den nächsten Rändern; die Koordinaten bleiben die freigegebenen Parameter.
 art: teil
 name: Zentrieraufnahme
 material: "1.0038"
@@ -45,19 +46,20 @@ features:
     typ: extrusion
     skizze:
       ebene: {feature: f1, flaeche: "+y"}
-      elemente: [{kreis: {mitte: ["=XZ", 0], durchmesser: "=DZ"}}]
+      elemente: [{kreis: {mitte: ["=XZ", 0], durchmesser: "=DZ", bezug: {u: "-rand", v: mitte}}}]
     ende: {typ: blind, tiefe: "=HZ", formschraege: {winkel: "=WZ", querschnitt: kleiner}}
   - id: tasche        # Einführtasche, wird zum Boden hin enger
     typ: schnitt
     skizze:
       ebene: {feature: f1, flaeche: "+y"}
-      elemente: [{rechteck: {mitte: ["=XT", "=VT"], breite: "=TL", hoehe: "=TB", radius: "=TR"}}]
+      elemente: [{rechteck: {mitte: ["=XT", "=VT"], breite: "=TL", hoehe: "=TB", radius: "=TR",
+                             bezug: {u: "+rand", v: "+rand"}}}]
     ende: {typ: blind, tiefe: "=TT", formschraege: {winkel: "=WT", querschnitt: kleiner}}
   - id: trichter      # Trichter, von der engen Unterseite aus skizziert, oben weit
     typ: schnitt
     skizze:
       ebene: {feature: f1, flaeche: "-y"}
-      elemente: [{kreis: {mitte: ["=XR", "=VR"], durchmesser: "=DR"}}]
+      elemente: [{kreis: {mitte: ["=XR", "=VR"], durchmesser: "=DR", bezug: {u: "+rand", v: "-rand"}}}]
     ende: {typ: durch_alles, formschraege: {winkel: "=WR", querschnitt: groesser}}
   - id: steg          # Steg auf Ebene vorne, zu beiden Seiten verjüngt
     typ: extrusion

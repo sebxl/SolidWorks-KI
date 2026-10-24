@@ -186,10 +186,10 @@ def _gleichungen(v, parameter: dict) -> list[tuple[str, str]]:
 
 
 def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter: dict,
-               gesetzt: dict[str, int] | None = None):
-    """Verknüpfung v anlegen (AddMate5, ein Versuch), als v.id benennen, neu aufbauen, Wert ggf. per Gleichung an die
-    Parameter binden. Grenzverknüpfungen mit min/max aus den Parametern (keine Gleichung möglich, Spike S13b). Jede
-    Ausnahme nach dem Anlegen löscht die neue Verknüpfung wieder.
+               gesetzt: dict[str, int] | None = None, gleichungen: bool = False):
+    """Verknüpfung v anlegen (AddMate5, ein Versuch), als v.id benennen, neu aufbauen, Wert bei `gleichungen` per
+    Gleichung an die Parameter binden. Grenzverknüpfungen mit min/max aus den Parametern (keine Gleichung möglich,
+    Spike S13b). Jede Ausnahme nach dem Anlegen löscht die neue Verknüpfung wieder.
 
     `gesetzt` (Verknüpfungs-ID → ausdrücklich festgelegte swMateAlign_e-Ausrichtung) reicht der Aufrufer durch alle
     Verknüpfungen: SolidWorks kehrt die Ausrichtung einer früheren Verknüpfung still um, wenn eine spätere widerspricht
@@ -218,11 +218,11 @@ def verknuepfe(asm, v, a: tuple[object, bool], b: tuple[object, bool], parameter
             raise BauFehler(VERKNUEPFUNG_FEHLER, f"Fehlercode {fc}", schritt="verknuepfung")
         if gesetzt:
             _pruefe_ausrichtungen(asm, v, gesetzt)  # vor der Gleichung: bei einer Umkehr bleibt keine Gleichung stehen
-        gleichungen = _gleichungen(v, parameter)
-        for name, ausdruck in gleichungen:
+        bindungen = _gleichungen(v, parameter) if gleichungen else []
+        for name, ausdruck in bindungen:
             if asm.GetEquationMgr.Add2(-1, f'"{name}@{v.id}" = {sw_ausdruck(ausdruck)}', True) < 0:
                 raise BauFehler(GLEICHUNG_FEHLER, f"Gleichung für {v.id} = {ausdruck} abgelehnt", schritt="gleichung")
-        if gleichungen:
+        if bindungen:
             sw.rebuild(asm)
     except _Umkehr:
         _loesche_still(asm, neu)

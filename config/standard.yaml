@@ -1,5 +1,6 @@
 # Projektweite Voreinstellungen (im Git)
 max_nachbesserungen: 3
+gleichungen: false  # Spec Bemaßungsbezug §4: keine globalen Variablen/Gleichungen; je Spec gleichungen: true
 bohrungsnorm: ISO   # Vorgabe für normbohrung (je Bohrung mit "norm" überschreibbar; Tabelle swki/wissen/bohrungsnormen.yaml)
 namensschema:
   datei: "{auftrag}_{name}"

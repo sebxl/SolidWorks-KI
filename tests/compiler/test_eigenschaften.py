@@ -1,6 +1,8 @@
 import pytest
 
-from swki.compiler.eigenschaften import eigenschaften_fuer, finde_material, material_passt, materialien
+from swki.compiler.eigenschaften import (
+    eigenschaften_fuer, finde_material, gleichungen_an, material_passt, materialien,
+)
 from swki.compiler.fehler import MATERIAL_UNBEKANNT, BauFehler
 
 XML = """<?xml version="1.0" encoding="UTF-16"?>
@@ -57,3 +59,13 @@ def test_eigenschaften_fuer():
     assert eigenschaften_fuer(spec, "A-1") == {
         "Ersteller": "Konstrukteur", "Auftrag": "A-1", "Material": "1.2312", "Benennung": "Platte",
     }
+
+
+def test_gleichungen_an_spec_vor_standard():
+    assert gleichungen_an({"gleichungen": True}, {"gleichungen": False}) is True
+    assert gleichungen_an({}, {"gleichungen": True}) is True
+    assert gleichungen_an({"gleichungen": False}, {"gleichungen": True}) is False
+
+
+def test_gleichungen_an_ohne_schluessel_ist_aus():
+    assert gleichungen_an({}, {}) is False

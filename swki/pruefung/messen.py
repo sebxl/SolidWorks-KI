@@ -8,11 +8,12 @@ from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.anker import (AnkerFehler, Flaeche, flaeche_in_richtung, laenge, punkt_achse_abstand, skalar,
                                  zylinder_durch_punkt, zylinder_zu_punkten)
-from swki.compiler.eigenschaften import lies_eigenschaften
+from swki.compiler.eigenschaften import gleichungen_an, lies_eigenschaften
 from swki.compiler.fehler import BauFehler
 from swki.compiler.kontext import FeatureErgebnis, Kontext
 from swki.compiler.topologie import flaechen, koerper, loese_flaeche, referenz_geometrie
 from swki.formschraege import TYPEN, extrusionsrichtung, schraege, seitenflaechen, skizzennormale
+from swki.konfig import lade_standard
 from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.normen import SW_BEFESTIGUNG
@@ -65,6 +66,11 @@ def rebuild_fehler(model) -> list[str]:
     except BauFehler as e:
         return [t.strip() for t in str(e).split(";")]
     return []
+
+
+def gleichungen_anzahl(model) -> int:
+    """Anzahl der Gleichungen und globalen Variablen des Dokuments (IEquationMgr.GetCount, Late Binding ohne "()")."""
+    return int(model.GetEquationMgr.GetCount)
 
 
 def lies_normbohrung(feature) -> dict:
@@ -321,7 +327,7 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
     Anker werden bewusst nicht neu aufgelöst: im fertigen Teil kann der Ankerpunkt weggeschnitten sein.
     """
     punkte = {k["id"]: k.get("punkte") or [] for k in protokoll["knoten"]}
-    ctx = Kontext(app, model, spec, spec_pfad, tol_mm)
+    ctx = Kontext(app, model, spec, spec_pfad, tol_mm, gleichungen=gleichungen_an(spec, lade_standard()))
     for f in spec["features"]:
         feature = model.FeatureByName(f["id"])
         if feature is not None:
@@ -414,4 +420,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         durchmesser=durchmesser(ctx, ctx.spec),
         verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app, ctx.spec),
         formschraegen=formschraegen(ctx, freigegeben or ctx.spec, ctx.spec),
+        gleichungen=gleichungen_anzahl(model),
     )

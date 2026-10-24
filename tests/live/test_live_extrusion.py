@@ -21,15 +21,15 @@ def _spec(*features, parameter=None):
 
 
 def test_extrusion_mit_parametern():
-    with gebautes_teil(_spec()) as (ctx, fehler, _):
+    with gebautes_teil({**_spec(), "gleichungen": True}) as (ctx, fehler, _):
         assert fehler is None
         assert sw.teilebox_mm(ctx.model) == pytest.approx([-50, 0, -30, 50, 20, 30], abs=1e-6)
         assert ctx.ergebnis("f1").richtung == (0.0, 1.0, 0.0)
-        # Parameter sind SW-Gleichungen: "L", "H", Breite = "L", Lage der linken Ecke u = 0 - L/2 (Maß ist der Betrag,
-        # daher negiert), Tiefe D1@f1 = "H"; Höhe 60 und Ecke v = -30 sind Zahlen und bekommen keine Gleichung
+        # Parameter sind SW-Gleichungen (gleichungen: true): "L", "H", Breite = "L", Tiefe D1@f1 = "H"; Höhe 60 ist eine
+        # Zahl. Das Rechteck um den Ursprung liegt über seine Seitenmitten (Bemaßungsbezug, Fall c) ohne Lagemaß
         gleichungen = ctx.model.GetEquationMgr
         assert [gleichungen.Equation(i) for i in range(gleichungen.GetCount)] == [
-            '"L" = 100', '"H" = 20', '"D1@f1_skizze" = "L"', '"D3@f1_skizze" = -(0 - ("L" / 2))', '"D1@f1" = "H"',
+            '"L" = 100', '"H" = 20', '"D1@f1_skizze" = "L"', '"D1@f1" = "H"',
         ]
         # L ändern (Property-Put nur per Invoke, S9a) → Teil wird länger
         dispid = gleichungen._oleobj_.GetIDsOfNames("Equation")
@@ -89,7 +89,7 @@ def test_skizze_auf_versetzter_ebene():
 def test_quadratisches_rechteck_mit_parametern():
     # Bei einem Quadrat legt CreateCornerRectangle selbst eine Beziehung "gleiche Länge" an (trotz AddToDB); das
     # Maß der zweiten Seite wäre dann überzählig und seine Gleichung scheiterte ("Gleichungen: Code 1", Befund 4a)
-    spec = {"art": "teil", "name": "T", "parameter": {"L": 20, "B": 20, "H": 20}, "features": [{
+    spec = {"art": "teil", "name": "T", "parameter": {"L": 20, "B": 20, "H": 20}, "gleichungen": True, "features": [{
         "id": "f1", "typ": "extrusion",
         "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": "=B"}}]},
         "ende": {"typ": "blind", "tiefe": "=H"},

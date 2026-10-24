@@ -55,7 +55,7 @@ def test_kreis_blind(typ, querschnitt):
 def test_tasche_mit_eckradius_und_gleichung():
     element = {"rechteck": {"mitte": [0, 0], "breite": 40, "hoehe": 30, "radius": 5}}
     f = _schraeg("schnitt", "kleiner", element)
-    with gebautes_teil(_spec(f)) as (ctx, fehler, _):
+    with gebautes_teil({**_spec(f), "gleichungen": True}) as (ctx, fehler, _):
         assert fehler is None
         k = querschnitt_koeffizienten(element, {})
         assert volumen_mm3(ctx.model) == pytest.approx(VOLL - volumen(k, 8, 10, "kleiner"), rel=1e-6)

@@ -94,7 +94,7 @@ def verzahnung(ctx, f: dict) -> FeatureErgebnis:
         konturen = geo.profil(mitte, ctx.wert(f.get("winkel", 0)))
     else:
         konturen = geo.profil(mitte, f.get("kopf", "+v"))
-    se = ebene_aufloesen(ctx, f["ebene"])
+    se = ebene_aufloesen(ctx, f["ebene"], f"{ctx.pfad(f['id'])}.ebene")
     skizze = profilskizze(ctx, se, konturen, f"{f['id']}_skizze")
     umkehren = bool(f.get("umkehren", False))
     sw.auswahl_leeren(ctx.model)
@@ -103,6 +103,6 @@ def verzahnung(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"verzahnung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    ctx.verknuepfe(f"D1@{f['id']}", f["breite"])
+    ctx.mass(f"D1@{f['id']}", f["breite"], f"{ctx.pfad(f['id'])}.breite", "tiefe")
     punkte = [modellpunkt(se.orientierung, *mitte, se.lage)] if isinstance(geo, Stirnrad) else []
     return FeatureErgebnis([feature], richtung=richtung(se, umkehren), punkte=punkte)

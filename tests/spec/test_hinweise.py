@@ -71,7 +71,7 @@ def test_hinweise_erst_feste_zahlen_dann_zusammenfassen():
     alle = hinweise(GUELTIG)
     fest = feste_masse(GUELTIG)
     assert alle[: len(fest)] == fest
-    assert [h["knoten"] for h in alle[len(fest):]] == [["f5"]]  # muster_linear mit festem Abstand 20
+    assert [h["knoten"] for h in alle[len(fest):] if h["art"] == "zusammenfassen"] == [["f5"]]  # muster_linear, Abstand 20
 
 
 def test_feste_masse_im_beispiel():

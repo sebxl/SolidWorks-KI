@@ -11,7 +11,7 @@ features:
     skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
     ende: {typ: blind, tiefe: "=H"}
   - {id: f2, typ: normbohrung, art: gewinde, groesse: M6, flaeche: {feature: f1, flaeche: "+y"},
-     positionen: [["=-XG", "=ZG"], ["=-XG", "=-ZG"]], tiefe: "=GT", gewindetiefe: "=GG"}
+     positionen: [["=-XG", "=ZG"], ["=-XG", "=-ZG"]], bezug: {u: mitte, v: mitte}, tiefe: "=GT", gewindetiefe: "=GG"}
 pruefung:
   huellquader: ["=L", "=H", "=B"]
   masse_pruefen:

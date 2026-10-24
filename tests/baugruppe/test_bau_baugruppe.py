@@ -120,10 +120,11 @@ def test_gesetzt_wird_ueber_alle_verknuepfungen_durchgereicht(umgebung, tmp_path
     _, pfad, _ = umgebung
     b, bg = _baulauf(pfad, tmp_path)
     alle = verknuepfungen(bg.spec, bg.quellen)
-    erhalten = []
+    erhalten, flaggen = [], []
 
-    def verknuepfe(asm, v, a, b_, parameter, gesetzt=None):
+    def verknuepfe(asm, v, a, b_, parameter, gesetzt=None, gleichungen=None):
         erhalten.append(gesetzt)
+        flaggen.append(gleichungen)
         return SimpleNamespace(Name=v.id)
 
     monkeypatch.setattr(bau, "_entitaet", lambda b_, seite: object())
@@ -131,6 +132,7 @@ def test_gesetzt_wird_ueber_alle_verknuepfungen_durchgereicht(umgebung, tmp_path
     assert bau._verknuepfe(b, alle) is None
     assert len(erhalten) == len(alle) > 1
     assert all(g is b.gesetzt for g in erhalten)
+    assert flaggen == [False] * len(alle)  # Vorgabe: keine Gleichungen
 
 
 def test_komponenten_datei_ist_die_von_swki_gespeicherte(umgebung, tmp_path, monkeypatch):
@@ -242,6 +244,23 @@ def test_schliessfehler_haelt_die_uebrigen_nicht_auf(umgebung, monkeypatch):
     assert [g.name for g in geschlossen] == ["asm", "teil2", "teil1"]  # Baugruppe zuerst, Teile rückwärts
     assert e.value.daten["fehler"]["code"] == "SCHLIESSEN_FEHLER" and "Titel nicht lesbar" in e.value.daten["fehler"]["meldung"]
     assert (lauf_ordner(r, "A", 1) / "protokoll.json").is_file() and lauf_datei(pfad, 1, "protokoll").is_file()
+
+
+@pytest.mark.parametrize(("gleichungen", "erwartet"), [(True, 1), (None, 0)])
+def test_globale_variablen_der_baugruppe_nur_mit_gleichungen(umgebung, monkeypatch, gleichungen, erwartet):
+    """gleichungen: true in der Baugruppen-Spec legt die globalen Variablen am Baugruppendokument an, ohne das Feld
+    (Vorgabe config/standard.yaml: aus) nicht (Spec Bemaßungsbezug §4)."""
+    from tests.baugruppe.beispiel import BAUGRUPPE, kopie
+
+    _, pfad, _ = umgebung
+    spec = kopie(BAUGRUPPE) | ({"gleichungen": gleichungen} if gleichungen is not None else {})
+    schreibe(pfad.parent, baugruppe=spec)
+    _bauen_mit_attrappen(umgebung, monkeypatch)
+    aufrufe = []
+    monkeypatch.setattr(bau, "globale_variablen", lambda model, parameter: aufrufe.append((model.name, parameter)))
+    with pytest.raises(BauAbbruch):  # Schließfehler der Attrappe; die Einfügephase ist da schon gelaufen
+        bau.bauen(pfad)
+    assert aufrufe == [("asm", BAUGRUPPE.get("parameter", {}))] * erwartet
 
 
 def test_schliessfehler_verdeckt_den_urspruenglichen_fehler_nicht(umgebung, monkeypatch):

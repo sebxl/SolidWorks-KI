@@ -118,3 +118,9 @@ def test_kopie_rueckfall_wenn_datei_nicht_zum_spec_passt(tmp_path):
     pfad.write_text("art: teil\nname: Andere Platte\n", encoding="utf-8")
     freigeben(pfad, SPEC)
     assert freigegebene_spec(pfad) == SPEC
+
+
+def test_gleichungen_aendert_pruefsumme_nicht():
+    assert pruefsumme(SPEC) == pruefsumme(SPEC | {"gleichungen": True})
+    baugruppe = {"art": "baugruppe", "name": "B", "parameter": {"L": 1}, "komponenten": [], "pruefung": {}}
+    assert pruefsumme(baugruppe) == pruefsumme(baugruppe | {"gleichungen": True})

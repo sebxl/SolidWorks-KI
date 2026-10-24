@@ -184,10 +184,29 @@ def test_baue_teil_dokument_schliessfehler_verdeckt_die_ursache_nicht(monkeypatc
 
 def test_baue_teil_dokument_laesst_bei_erwartetem_fehler_offen(monkeypatch):
     model, geschlossen, r = _teil_bau_attrappen(monkeypatch)
-    monkeypatch.setattr(bauen_modul, "Kontext", lambda *args: object())
+    monkeypatch.setattr(bauen_modul, "Kontext", lambda *args, **kw: object())
     monkeypatch.setattr(bauen_modul, "vorbereiten", lambda *args: None)
     erwartet = RuntimeError("Feature f2 gescheitert")
     monkeypatch.setattr(bauen_modul, "baue_features", lambda *args: erwartet)
     m, _, fehler = bauen_modul.baue_teil_dokument(None, r, {"toleranzen": {"anker_mm": 0.01}}, {"name": "x"},
                                                   Path("x.yaml"), "A", Protokoll("A", "x.yaml", 1, 2025))
     assert (m, fehler, geschlossen) == (model, erwartet, [])  # der Aufrufer speichert und schließt
+
+
+def _vorbereiten_zaehler(monkeypatch):
+    aufrufe = []
+    monkeypatch.setattr(bauen_modul, "globale_variablen", lambda model, parameter: aufrufe.append(parameter))
+    monkeypatch.setattr(bauen_modul, "setze_eigenschaften", lambda model, werte: None)
+    return aufrufe
+
+
+def test_vorbereiten_ohne_gleichungen_keine_globalen_variablen(monkeypatch):
+    aufrufe = _vorbereiten_zaehler(monkeypatch)
+    bauen_modul.vorbereiten(None, None, {"parameter": {"L": 100}}, "A", False)
+    assert aufrufe == []
+
+
+def test_vorbereiten_mit_gleichungen_legt_globale_variablen_an(monkeypatch):
+    aufrufe = _vorbereiten_zaehler(monkeypatch)
+    bauen_modul.vorbereiten(None, None, {"parameter": {"L": 100}}, "A", True)
+    assert aufrufe == [{"L": 100}]

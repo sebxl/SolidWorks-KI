@@ -2,7 +2,8 @@
 (Spec 2c §3; Aufrufkette wie S9b Baustein 21, Positionen laut Spike S10 Frage 2).
 
 Die erste Position wird per SelectByRay auf der Fläche gewählt; die übrigen kommen als Skizzenpunkte in die
-Positionsskizze, die danach voll bestimmt wird (Lagemaße zum Ursprung, per Gleichung an Parameter). Gewinde immer
+Positionsskizze, die danach voll bestimmt wird (Lagemaße nach `bezug`, im Maßprotokoll, per Gleichung an Parameter nur mit
+ctx.gleichungen). Gewinde immer
 kosmetisch, Größen und Normmaße aus swki/wissen/bohrungsnormen.yaml. Instanzen 1, 2, … in Reihenfolge der Positionen;
 ihre Achspunkte gehen ins Bauprotokoll (masse_pruefen).
 
@@ -11,7 +12,9 @@ FeatureManager.CreateDefinition(swFmHoleWzd) → InitializeHole → Vorselektion
 """
 
 import time
+from dataclasses import replace
 
+from swki.bemassung import MITTE, URSPRUNG, bezug_von
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler, zylinder_zu_punkten
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, BauFehler
@@ -97,6 +100,30 @@ def _neu_aufbauen_bis_vollstaendig(ctx, feature, fid: str, punkte: list, schlafe
         schlafe(_PAUSE_S)
 
 
+def skizzenebene_nach_bohrung(ctx, f: dict, se):
+    """Skizzenfläche für die Positionsskizze: mit Bezug (Kanten für Rand, Fläche, Mittellinie) nach HoleWizard5 neu
+    aufgelöst, wie Spike S17 Fall 4 sie las; Mehrdeutigkeit ist ein Baufehler. Wird dort keine Fläche mehr gefunden
+    (Anker {nahe} genau auf der Bohrung) oder liegt sie in einer anderen Ebene: mit Rand- oder Flächenbezug ein Baufehler
+    (die Kanten von vor dem Bohren gibt es nicht mehr), mit nur `mitte` die alte Ebene ohne Fläche (die Mittellinie
+    bekommt dann ihr Längenmaß, Ruling 4a)."""
+    bezuege = bezug_von(f).values()
+    if all(b == URSPRUNG for b in bezuege):
+        return se
+    try:
+        neu = ebene_aus_flaeche(loese_flaeche(ctx, f["flaeche"]))
+    except BauFehler as e:
+        if e.code != REFERENZ_NICHT_GEFUNDEN:
+            raise
+        neu = None
+    if neu is not None and neu.orientierung == se.orientierung and abs(neu.lage - se.lage) <= ctx.tol_mm:
+        return neu
+    if any(b not in (URSPRUNG, MITTE) for b in bezuege):
+        raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"normbohrung {f['id']}: Skizzenfläche nach dem Bohren nicht "
+                                                 "wiedergefunden – Anker {feature, flaeche} verwenden oder nahe-Punkt "
+                                                 "neben die Bohrungen legen", schritt="skizze")
+    return replace(se, flaeche=None)
+
+
 @handler("normbohrung")
 def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     norm = norm_von(f)
@@ -136,6 +163,7 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    positionen_festlegen(ctx, feature, se, f["positionen"], f"{f['id']}_positionen")
+    positionen_festlegen(ctx, feature, skizzenebene_nach_bohrung(ctx, f, se), f["positionen"], f"{f['id']}_positionen",
+                         f.get("bezug"), f"{ctx.pfad(f['id'])}.positionen")
     _neu_aufbauen_bis_vollstaendig(ctx, feature, f["id"], punkte)
     return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)
