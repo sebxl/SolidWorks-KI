@@ -88,4 +88,22 @@ unverändert, da der Bezug Bauweg ist.
 
 ## 3. Regression
 
-folgt
+Lauf 2026-10-24, Branch `bemassungsbezug` bei Commit 4ea2e6b: `python -m werkzeuge.live_frisch tests\referenz --zeit 1800`
+(SolidWorks frisch vor jedem Test). **11 von 11 OK** (exit 0).
+
+| Referenz | Dauer s | Spitze Private Bytes MB |
+|---|---|---|
+| buchse | 15,4 | 3367 |
+| formplatte_ds | 16,3 | 3373 |
+| auswerferhalteplatte | 19,3 | 3389 |
+| stehlager | 44,6 | 9903 |
+| linearschlitten | 153,1 | 9434 |
+| zahnstange | 18,4 | 3382 |
+| ritzelwelle | 23,2 | 3881 |
+| antriebswelle | 26,6 | 3928 |
+| zahnstangentrieb | 144,5 | 9469 |
+| motorhalter | 35,7 | 9059 |
+| zentrieraufnahme | 17,3 | 3371 |
+
+Alle Referenzen bauen ohne Gleichungen. Motorhalter-Grundplatte und Zentrieraufnahme bauen mit Bezügen. Die Freigaben
+sind unverändert gültig.
