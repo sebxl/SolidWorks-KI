@@ -248,3 +248,95 @@ Speicher je Durchgang gemittelt, dann die Anker. Ohne die §5.1-Wiederholung in 
   6,5 fehlen Hebel auf der Präzisionsseite: die nachgezogene `volumen: auto`-Prüfung (750668c, hätte den D1-Fehler vor
   der Freigabe abgefangen; in D2 nicht gemessen), eine Maßliste je Ansicht vor dem Schreiben der Spec (D2-Kamera) und
   der Hinweis gegen Heredoc-Rückfälle (Zeit, kein Score-Risiko).
+
+## Umbau 2 – Durchgang 3 und 4 (24.10.2026, Branch `btp-umbau-2`, Commit 17e4111)
+
+**Bogenregel (Schritt 0, Nutzer-Auftrag 24.10.):** Ab Umbau 2 entscheidet das **Mittel aus zwei Durchgängen** (Bogen
+§5.1, neuer Absatz); Wiederholungen nach §5.1 entfallen – jeder Lauf zählt, wie er ist. Neuer Befehl
+`-m werkzeuge.messstand btp-mittel <n> <m> --vergleich <k> <l>` (`btp.mittel`, Unit-Tests ohne SolidWorks; Commit
+295cff5). Er rechnet D1/D2 wie von Hand in D2 auf **6,49** nach.
+
+Umbau 2 (gebündelt, nur Skills und `CLAUDE.md`, kein Code; Commit 17e4111):
+
+| Teil | Inhalt | Anlass |
+|---|---|---|
+| Heredoc-Hänger | Skills `konstruieren`/`baugruppe` und `CLAUDE.md`: längere Python-Schnipsel als Datei (Write-Tool) und `.venv\Scripts\python.exe <datei>`; nie `python - <<'EOF' … \|\| python - <<'EOF'`, `python -` oder `cat` ohne Eingabe | d1-stehlager-1, d2-pruefstation-1: je ~2 min auf stdin |
+| Maßliste | Skill `konstruieren` §2: Pflichtschritt bei Zeichnung/Maßbild – jedes Maß jeder Ansicht mit Bezugskante als Kommentarblock am Kopf der Spec, jedes Maß muss in Parameter, Ausdruck oder Kommentar wieder auftauchen; ungleiche Maße eines Merkmals nicht still angleichen; §5: Steckbrief Zeile für Zeile gegen die Liste, bevor der Prüfer startet | D0 Kamera (M2-Höhen angeglichen), D2 Kamera (Maß 20,3 übersehen) |
+| Skill `baugruppe` | Instanzen (`je_position`, Reihenfolge, `instanz: je`, Normteil auf Normteil mit gleichem `je_position`, `stift.1` nur in `pruefung`) und Grenzen von `volumen: auto` (Lagerbohrung in der Teilfuge) | d1-stehlager-1: ~120 s Quelltextsuche |
+| 750668c (schon auf dem Branch) | `validieren` lehnt `volumen: auto` bei Schnitten über das bisherige Material ab | D1-Fehler Stehlager |
+
+Abnahme: Unit-Tests 1434 grün; Live-Regression `tests/referenz` 11/11 OK, dazu `tests/live/test_live_baugruppe.py`
+6/7 (nur der vorbestehende `test_manuelle_aenderung_an_der_baugruppe`); Log `MESSSTAND/regression-btp-u2.log`.
+Fallen nicht neu gebaut (der Umbau berührt weder `swki pruefen` noch `pruefer.md`/`pruefer_auftrag`; die
+Fallen-Aufträge D3/D4 sind bis auf den Durchgangsordner zeichengleich zu D2), aber je Durchgang 8 × 3 neu geprüft.
+
+| Lauf | Zeit s | Modell | Review | Prüfer | Werkzeug (durchlauf) | Tool-Aufrufe | Tokens gew. | Läufe | Fehlerpunkte | Speicher MB | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| d3-durchlicht-1 | 175 | 123 | – | 28 | 19 | 20 | 319975 | 1 | 0 | 3361 | ja |
+| d3-durchlicht-2 | 213 | 114 | – | 76 | 16 | 21 | 312856 | 1 | 0 | 3372 | ja |
+| d3-kamera-1 | 220 | 142 | – | 57 | 16 | 19 | 309186 | 1 | 0 | 3373 | ja |
+| d3-zentrieraufnahme-1 | 166 | 94 | 27 | 22 | 16 | 24 | 296036 | 1 | 0 | 3404 | ja |
+| d3-stehlager-1 | 336 | 234 | 40 | 18 | 35 | 38 | 503164 | 1 | 0 | 4589 | ja |
+| d3-pruefstation-1 | 454 | 124 | – | 71 | 237 | 33 | 681144 | 1 | 0 | 10587 | ja |
+| d4-durchlicht-1 | 198 | 127 | – | 49 | 17 | 19 | 290693 | 1 | 0 | 3329 | ja |
+| d4-durchlicht-2 | 180 | 111 | – | 48 | 17 | 19 | 267743 | 1 | 0 | 3360 | ja |
+| d4-kamera-1 | 205 | 145 | – | 36 | 17 | 21 | 319631 | 1 | 0 | 3350 | ja |
+| d4-zentrieraufnahme-1 | 148 | 85 | 22 | 19 | 17 | 24 | 258039 | 1 | 0 | 3358 | ja |
+| d4-stehlager-1 | 343 | 225 | 44 | 21 | 37 | 39 | 527641 | 1 | 0 | 6362 | ja |
+| d4-pruefstation-1 | 635 | 125 | – | 118 | 256 | 43 | 699087 | 1 | 0 | 11222 | ja |
+
+Fallen: D3 und D4 je 6 von 6 (alle 36 Fallen-Urteile Treffer), R1/R2 je 3× ok, keine unklaren Urteile.
+
+**Score** (`btp 3 --vergleich 1`, `btp 4 --vergleich 2`, `btp-mittel 3 4 --vergleich 1 2`):
+
+| Gruppe | D3 | D4 | **Mittel D3/D4** (Wert → Teilscore) | Mittel D1/D2 |
+|---|---|---|---|---|
+| Zeit Teile | 193 s → 3,31 | 181 s → 3,71 | 187 s → 3,51 | 200 s → 3,11 |
+| Zeit Stehlager | 336 s → 4,90 | 343 s → 4,80 | 340 s → 4,85 | 338 s → 4,87 |
+| Zeit Prüfstation | 454 s → 6,88 | 635 s → 6,24 | 544 s → 6,56 | 551 s → 6,54 |
+| Präzision erster Lauf | 0 → 10,0 | 0 → 10,0 | 0 → 10,0 | 1 → 7,0 |
+| Präzision Fallen | 6 → 10,0 | 6 → 10,0 | 6 → 10,0 | 6 → 10,0 |
+| Aufwand | 0,8 → 5,80 | 0,8 → 5,93 | 0,8 → 5,86 | 0,8 → 5,80 |
+| Robustheit | 10 587 MB → 4,74 | 11 222 MB → 4,18 | 10 904 MB → 4,46 | 11 046 MB → 4,33 |
+| **Score** | **7,2** | **7,1** | **7,17** | **6,49** |
+
+**Entscheidung: besser → übernommen** (Merge `btp-umbau-2` in `claude/btp-umbau-2-a44754`, 1756243). Mittel 7,17 ≥
+6,49 + 0,3, Präzision erster Lauf (10,0 gegen 7,0) und Fallen (10,0 gegen 10,0) nicht schlechter, keine Sperre, alle
+12 Läufe `richtig`. Einzeln: `btp 4 --vergleich 2` besser; `btp 3 --vergleich 1` 7,2 gegen 7,1 (nicht +0,3 gegen den
+günstigen D1 mit Wiederholung) – genau dafür entscheidet seit Schritt 0 das Mittel.
+
+**Woher der Gewinn kommt (+0,68):**
+- **Präzision erster Lauf** (+0,6 gewichtet): 12 von 12 Läufen ohne Fehlerpunkt, ohne Wiederholung. Kamera beide Male im
+  ersten Lauf richtig: M2-Höhen 20,25/20,22 getrennt geführt, Stecker samt 20,3 richtig (die Maßliste steht als
+  Kommentarblock in den Specs); Stehlager beide Male ohne `volumen: auto`-Falle. Vorbehalt: zwei Durchgänge je Stand
+  sind eine kleine Stichprobe; auch D1 hatte nach der Wiederholung 0 Fehlerpunkte.
+- **Zeit Teile** (+0,06): Kamera 267 → 212 s (keine Nachbesserungsrunde mehr), Zentrieraufnahme 183 → 157 s;
+  dagegen Durchlicht 151 → 192 s (Maßliste kostet ~10–25 s Modellzeit, dazu Prüfer-Streuung 28–76 s).
+- Stehlager unverändert (340 s): die Quelltextsuche ist weg (nur noch `grep` in den Normteiltabellen), die Modellzeit
+  bleibt aber bei ~230 s – Nachdenken über drei Teil-Specs, nicht Suche.
+- Prüfstation im Mittel unverändert: D3 454 s (bester bisheriger Wert), D4 635 s, davon 127 s ein stdin-Hänger
+  (leerer Python-Heredoc mit `|| true`), den der neue Hinweis **nicht** verhindert hat; Prüfer 71/118 s.
+
+### Eigene Entscheidungen in Umbau 2 (sonst hätte ich gefragt)
+
+| Entscheidung | Begründung |
+|---|---|
+| Mittelwert-Befehl als `btp-mittel` neben `btp`, Score mit zwei Nachkommastellen | `btp` bleibt für Einzeldurchgänge unverändert; 6,49 statt 6,5 zählt bei der +0,3-Schwelle |
+| Nicht richtig im Mittel = in einem der Durchgänge nicht richtig (Deckel 4,0) | Strengste Lesart der Sperre; trat nicht auf |
+| Bogenregel und `btp-mittel` direkt auf dem Optimierungs-Branch, Umbau 2 auf `btp-umbau-2` | Die Messregel gilt unabhängig vom Ausgang des Umbaus |
+| Maßliste nur Pflicht bei Zeichnung/Maßbild, nicht bei Beschreibungen | Die Fehler kamen aus Zeichnungen; Modellzeit der übrigen Aufgaben schonen |
+| Maßliste als Kommentarblock in der Spec, nicht nur „im Kopf“ | Prüfbar für Prüfer und Nutzer; die Freigabe-Kopie behält sie |
+| Live-Regression: `tests/referenz` und `test_live_baugruppe.py` | Umbau ändert keinen Code; 750668c berührt nur `validieren` (Unit-getestet) |
+| Fallen nicht neu gebaut | Goal-Auftrag Schritt 3: nur bei Änderung von `swki pruefen`/Prüferweg |
+| Fallen-Prüfer wie D1/D2 (`general-purpose`, Standardmodell, Prompt wortgleich, Urteil selbst schreiben), erst nach den sechs Läufen je Durchgang; höchstens 20 gleichzeitig (Limit der Sitzung), Rest nachgestartet | Vergleichbarkeit mit D1/D2; parallele Prüfer könnten die gemessene Modellzeit verfälschen |
+| Urteil F6-3 (D4) aus der Rückmeldung unverändert abgelegt; Fehlablagen unter `arbeit/MESSFALLE-F6/durchgang-3` und `-4` gelöscht | Zwei F6-Prüfer schrieben zuerst unter einen falschen Pfad, einer nur dorthin (Lehre im Goal-Auftrag) |
+| d4-pruefstation-1 ohne `--haenger` | Kein SolidWorks-Absturz oder Werkzeug-Zeitlimit von swki, sondern ein Shell-Aufruf des Agenten; kostet nur Zeit (wie D1/D2 gewertet) |
+
+**Offene Hebel nach Umbau 2:**
+1. **stdin-Hänger technisch verhindern** statt nur verbieten: ein PreToolUse-Hook, der `python -`/`python.exe -` mit
+   Heredoc oder ohne Eingabe ablehnt (der Hinweis allein half in d4-pruefstation-1 nicht; ~2 min je Vorfall).
+2. Prüfer-Streuung (18–118 s): Kurzbericht statt vollem Prüfbericht (O10), `omitClaudeMd`.
+3. Durchlicht-Modellzeit: die Maßliste lohnt bei Kamera mehr, als sie bei Durchlicht kostet; eine knappere Form (nur
+   Lagemaße) wäre zu prüfen, ohne die Präzision zu riskieren.
+4. Stehlager-Modellzeit ~230 s (drei neue Teil-Specs): Muster-Specs bzw. Teile-Vorlagen wären der nächste Hebel.
+5. Wie bisher: Teile wiederverwenden (O5), Prüfen im Baugruppenkontext.
