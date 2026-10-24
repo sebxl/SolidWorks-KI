@@ -170,7 +170,7 @@ ersetzt den Wert; er wird in `ergebnisse.md` und im Goal-Auftrag eingetragen.
 und ohne Abschaffung des Konstruktionsreviews +0,4 bis +0,85 über dem Ausgangswert; 6,5 verlangt die belegten Hebel
 (Schnellmodus in Bewegungsprüfung und Grundstellung, Verknüpfen ohne Neuaufzählung, Teile wiederverwenden,
 Einschraublänge als Prüfung, schlankerer Prüfer und Review) bei gleicher Präzision. Beispiel für 6,5: Prüfstation
-400 s (7,3), Teile 130 s (5,3), Stehlager 330 s (5,0), 1 Fehlerpunkt (7,0), 6 Fallen (10), Aufwand 0,9 (5,5),
+350 s (8,2), Teile 130 s (5,3), Stehlager 330 s (5,0), 1 Fehlerpunkt (7,0), 5 Fallen (7,0), Aufwand 0,9 (5,5),
 Speicher 13 GB (2,6).
 
 ## 8. Regeln für die /goal-Session
