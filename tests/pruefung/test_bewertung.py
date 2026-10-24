@@ -42,8 +42,8 @@ def test_alles_bestanden():
     bericht = bewerte(SPEC, _messwerte(), STANDARD)
     assert bericht["bestanden"] is True and bericht["maengel"] == []
     ids = [p["id"] for p in bericht["pruefungen"]]
-    assert ids == ["rebuild", "skizzen", "koerper", "huellquader", "volumen", "mass:Achsabstand", "schwerpunkt",
-                   "material", "eigenschaften"]
+    assert ids == ["rebuild", "skizzen", "koerper", "gleichungen", "huellquader", "volumen", "mass:Achsabstand",
+                   "schwerpunkt", "material", "eigenschaften"]
 
 
 def test_maengel_mit_knoten():

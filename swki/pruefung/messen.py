@@ -68,6 +68,11 @@ def rebuild_fehler(model) -> list[str]:
     return []
 
 
+def gleichungen_anzahl(model) -> int:
+    """Anzahl der Gleichungen und globalen Variablen des Dokuments (IEquationMgr.GetCount, Late Binding ohne "()")."""
+    return int(model.GetEquationMgr.GetCount)
+
+
 def lies_normbohrung(feature) -> dict:
     """Bohrungsassistent-Daten eines Features (IFeature.GetDefinition → IWizardHoleFeatureData2, beides ohne "()";
     Längen in mm). Spike S10, Frage 4: Type ist swWzdHoleTypes_e (Art und Ende zusammen), Depth liest immer 0; die Bohrungstiefe
@@ -415,4 +420,5 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         durchmesser=durchmesser(ctx, ctx.spec),
         verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app, ctx.spec),
         formschraegen=formschraegen(ctx, freigegeben or ctx.spec, ctx.spec),
+        gleichungen=gleichungen_anzahl(model),
     )
