@@ -106,7 +106,7 @@ class Probenbau:
         eigene = je.get(self.datei, {}) if self.ist_baugruppe else {}
         try:
             bg = Baugruppe(self._baugruppe_spec(eigene), self.specs, parameter=teil_werte,
-                           bohrungen=self.sim.get("bohrungen", False))
+                           bohrungen=self.sim.get("bohrungen", False), nur=self.sim.get("bauen"))
         except SchnellbauFehler as e:
             g.befunde = [f"Schnellbau: {e}"]
             g.zeiten["stufe0_s"] = round(time.perf_counter() - t0, 3)

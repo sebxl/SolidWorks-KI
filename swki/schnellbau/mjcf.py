@@ -1,7 +1,9 @@
 """Baugruppe + Simulations-Datei → MuJoCo-Modell (MJCF, Spec C1 §2).
 
-Simulations-Datei (YAML, Bauweg wie `bezug`, nicht Teil der Freigabe):
+Simulations-Datei (YAML, Bauweg wie `bezug`; als `pruefaufgabe.simulation` eines Optimierungsauftrags Teil des Raums,
+Spec C2 §2):
   komponenten: {id: {material: schlüssel}}   stoßende Eigenteile (fehlt: alle gebauten, Werkstoff "standard")
+  bauen: [id …], bohrungen (false)           nur für swki.optimierung: Ausschnitt der Baugruppe, Bohrungen mitbauen
   werkstoffe: {schlüssel: {mu: 0.35, e: 0.4, dichte: 7850}}   Reibwert, Stoßzahl, Dichte kg/m³
   werkstuecke: [{id, spec, lage: [x, y, z], material}]    freie Körper (Teil-Spec relativ zum Auftragsordner), mm
   zeitschritt_s (2e-5), kontakt_zeitkonstante_s (3e-4), schwerkraft ([0, -9.81, 0], Baugruppe y oben),

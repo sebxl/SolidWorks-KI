@@ -118,6 +118,15 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
 - SolidWorks bleibt der verbindliche Bau. Gleichheit beider Backends: `tests/schnellbau` (ohne SolidWorks, gegen
   `sw_referenz.json`) und live `-m werkzeuge.schnellbau_abgleich` nach Änderungen am Compiler oder am Schnellbau.
 
+## Optimierung (Stufe C2)
+- Autonome Optimierung einer Spec über den Skill `optimieren`: Block `optimierung` (`schema/optimierung.schema.json`,
+  Spec `docs/superpowers/specs/2026-10-25-optimierung-c2-design.md`), `swki optimiere <spec>` im Hintergrund, Claude
+  liest am Ende nur `plateau.md` (Grund ZIEL | PLATEAU | BUDGET | FEHLER). Bewertung während eines Laufs eingefroren.
+- Freigaberegel (Nutzer 25.10.2026): Die Freigabe des Auftrags gibt den Raum frei (Stellschrauben mit Rahmen, Ziel,
+  Szenarien, Nebenbedingungen); Ergebnisse im Raum ohne Rückfrage freigeben (`swki optimiere <spec> --uebernehmen` bzw.
+  `swki freigeben <spec> --im-raum`) und bauen. Formänderungen nur aus `erlaubte_formaenderungen`, sonst Rückfrage;
+  Prüfer bleibt Pflicht, Bericht an den Nutzer.
+
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,
   freigegebene Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach
