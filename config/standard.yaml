@@ -1,6 +1,7 @@
 # Projektweite Voreinstellungen (im Git)
 max_nachbesserungen: 3
 gleichungen: false  # Spec Bemaßungsbezug §4: keine globalen Variablen/Gleichungen; je Spec gleichungen: true
+wiederverwenden: true  # BTP Umbau 3: unveränderte Eigenteile einer Baugruppe aus einem früheren Lauf übernehmen (--alles-neu baut alle)
 bohrungsnorm: ISO   # Vorgabe für normbohrung (je Bohrung mit "norm" überschreibbar; Tabelle swki/wissen/bohrungsnormen.yaml)
 namensschema:
   datei: "{auftrag}_{name}"

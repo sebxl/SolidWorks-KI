@@ -345,3 +345,110 @@ günstigen D1 mit Wiederholung) – genau dafür entscheidet seit Schritt 0 das 
    Lagemaße) wäre zu prüfen, ohne die Präzision zu riskieren.
 4. Stehlager-Modellzeit ~230 s (drei neue Teil-Specs): Muster-Specs bzw. Teile-Vorlagen wären der nächste Hebel.
 5. Wie bisher: Teile wiederverwenden (O5), Prüfen im Baugruppenkontext.
+
+## Umbau 3 – Durchgang 5 und 6 (25.10.2026, Branch `btp-umbau-3`, Commit 6cfae5b)
+
+Umbau 3 (gebündelt, Branch `btp-umbau-3` ab `main` ff95658 mit Umbau 1 und 2):
+
+| Teil | Inhalt | Commits |
+|---|---|---|
+| 1 – Teile wiederverwenden (Recherche O5) | `swki/baugruppe/wiederverwendung.py`: Schlüssel je Eigenteil = SHA-256 über Teil-Spec (ganz, samt Dateiname), Skriptdateien, Import-Hülle von `swki.compiler.bauen` (AST, mit Importen in Funktionen außer in der Befehlsschicht `cli`/`aenderungen`/`compiler.bauen`; ohne `swki/baugruppe`), `swki/wissen/*.yaml`, `schema/teil.schema.json`, `config/standard.yaml` ohne Schalter und Prüfgrenzen, Auftrag, `sw_jahr`/`RevisionNumber`, Teilvorlage, Materialdatenbanken (nur bei `material`). Quelle nur ein Lauf desselben Auftrags mit Teilstatus ok, gleichem Schlüssel und Datei-SHA-256 = Protokoll; Teilmangel im Prüfbericht sperrt Schlüssel und Datei, ein Prüfer-Mangel am Teil die Datei. Bauen: zuletzt gescheiterte, dann neue/geänderte Teile zuerst, dann übernehmen (Kopie mit der Schreibweise der Quelle, SHA-Prüfung, unsichtbar öffnen, Kontext wie `swki pruefen` aus Datei und Quellprotokoll; Rückfall Neubau). Ausgabe `teile_gebaut`/`teile_wiederverwendet` (bauen, durchlauf, Messstand), `--alles-neu`, Schalter `wiederverwenden: true` | b9fba95, d39a670, 6cfae5b |
+| 2 – Teil-Specs parallel (Skill `baugruppe` §1) | Bei ≥ 2 neuen Eigenteilen: `schnittstellen.md` (Teile, Hauptmaße, Bezugsflächen, Bohrbilder, Feature-IDs, Normteile), je Teil ein Subagent (`claude`, ohne `model` = Modell der Sitzung) in einer Antwort, dann die Baugruppen-Spec; Änderungsaufgaben unverändert | d39a670 |
+
+**Abnahme vor der Messung:**
+- Unit-Tests 1505 grün (neu: 27 für `wiederverwendung`, 7 für den Teilbau, 2 Durchlauf, 1 Messstand), `swki api
+  pruefe-code` ohne Befund.
+- Live-Nachweis `tests/live/test_live_wiederverwendung.py` (neu, je Referenz-Baugruppe frisches SolidWorks): Stehlager,
+  Schlitten, Zahnstangentrieb, Motorhalter je OK – Durchlauf 1 baut alle Eigenteile, Durchlauf 2 übernimmt alle und
+  der Prüfbericht ist Wert für Wert gleich (ohne Laufnummer, Pfade, Bilder und die Laufzeit `dauer_s` der
+  Bewegungsläufe, Zahlen auf 1e-9); eine von Hand geänderte Datei löst `MANUELL_GEAENDERT` aus und `--verwerfen` holt
+  das Teil aus dem unveränderten Lauf 1; nach einer Parameteränderung wird genau dieses Teil neu gebaut. Der erste
+  Lauf fand einen echten Unterschied: kopierte Teile hießen `.sldprt` statt `.SLDPRT` (Stücklisten-Schlüssel) → die
+  Kopie behält die Schreibweise der Quelle (d39a670).
+- Prüfstation (Vorlage Lauf 28, `MESS-devu3-pruefstation`): Bauen 154 → 35 s (Teilephase 112,7 → 3,4 s), 23/23
+  übernommen, Prüfbericht Wert für Wert gleich; nach der BTP-Änderung (Referenz-Specs) nur `kamerahalter.yaml` neu, 22
+  übernommen, Bauen 45 s, bestanden. Log `MESSSTAND/dev-u3-pruefstation.log`.
+- Live-Regression `tests/referenz` 11/11 OK, `tests/live/test_live_baugruppe.py` 6/7 (nur der vorbestehende
+  `test_manuelle_aenderung_an_der_baugruppe`); Log `MESSSTAND/regression-btp-u3.log`.
+- Fallen nicht neu gebaut: Umbau 3 ändert weder `swki pruefen` noch `pruefer.md`/`pruefer_auftrag`; die
+  Fallen-Aufträge D5/D6 sind bis auf den Durchgangsordner zeichengleich zu D4 (mit `diff` geprüft). Je Durchgang 8 × 3
+  neu geprüft.
+
+| Lauf | Zeit s | Modell | Subagenten (Review, Teil-Specs) | Prüfer | Werkzeug (durchlauf) | Tool-Aufrufe | Tokens gew. | Läufe | Fehlerpunkte | Speicher MB | übernommen/gebaut | richtig |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| d5-durchlicht-1 | 169 | 117 | – | 29 | 19 | 20 | 312990 | 1 | 0 | 3322 | – | ja |
+| d5-durchlicht-2 | 150 | 107 | – | 24 | 16 | 18 | 298620 | 1 | 0 | 3374 | – | ja |
+| d5-kamera-1 | 197 | 155 | – | 20 | 16 | 23 | 317585 | 1 | 0 | 3375 | – | ja |
+| d5-zentrieraufnahme-1 | 232 | 161 | 29 | 20 | 17 | 23 | 282716 | 1 | 0 | 3371 | – | ja |
+| d5-stehlager-1 | 413 | 228 | 213 | 17 | 38 | 54 | 974970 | 1 | 0 | 4489 | 0/3 | ja |
+| d5-pruefstation-1 | 426 | 182 | – | 97 | 130 | 46 | 848504 | 1 | 0 | 5317 | **22/1** | ja |
+| (d5-pruefstation-2, zählt nicht) | 385 | 127 | – | 110 | 135 | 37 | 685181 | 1 | 0 | 5180 | 22/1 | ja |
+| d6-durchlicht-1 | 169 | 116 | – | 30 | 19 | 22 | 338645 | 1 | 0 | 3376 | – | ja |
+| d6-durchlicht-2 | 135 | 96 | – | 20 | 16 | 18 | 236546 | 1 | 0 | 3371 | – | ja |
+| d6-kamera-1 | 230 | 149 | – | 59 | 16 | 21 | 324403 | 1 | 0 | 3487 | – | ja |
+| d6-zentrieraufnahme-1 | 181 | 96 | 32 | 32 | 16 | 24 | 295194 | 1 | 0 | 3364 | – | ja |
+| d6-stehlager-1 | 361 | 190 | 209 | 17 | 36 | 53 | 962904 | 1 | 0 | 4594 | 0/3 | ja |
+| d6-pruefstation-1 | 348 | 147 | – | 58 | 128 | 42 | 715768 | 1 | 0 | 5288 | **22/1** | ja |
+
+Subagenten-Zeit überlappt beim Stehlager (drei Teil-Specs parallel); die Spalten summieren sich deshalb nicht zu
+`zeit_s`. Fallen: D5 und D6 je 6 von 6 (alle 36 Fallen-Urteile Treffer), R1/R2 je 3× ok, keine unklaren Urteile.
+
+**Score** (`btp 5 --vergleich 3`, `btp 6 --vergleich 4`, `btp-mittel 5 6 --vergleich 3 4`):
+
+| Gruppe | D5 | D6 | **Mittel D5/D6** (Wert → Teilscore) | Mittel D3/D4 |
+|---|---|---|---|---|
+| Zeit Teile | 196 s → 3,24 | 188 s → 3,49 | 192 s → 3,36 | 187 s → 3,51 |
+| Zeit Stehlager | 413 s → 3,86 | 361 s → 4,56 | 387 s → 4,21 | 340 s → 4,85 |
+| Zeit Prüfstation | 426 s → 6,98 | 348 s → 8,20 | 387 s → 7,55 | 544 s → 6,56 |
+| Präzision erster Lauf | 0 → 10,0 | 0 → 10,0 | 0 → 10,0 | 0 → 10,0 |
+| Präzision Fallen | 6 → 10,0 | 6 → 10,0 | 6 → 10,0 | 6 → 10,0 |
+| Aufwand | 1,1 → 4,74 | 1,0 → 4,87 | 1,0 → 4,80 | 0,8 → 5,86 |
+| Robustheit | 5 317 MB → 9,68 | 5 288 MB → 9,71 | 5 302 MB → 9,70 | 10 904 MB → 4,46 |
+| **Score** | **7,3** | **7,8** | **7,54** | **7,17** |
+
+**Entscheidung nach §5.1: besser** – Mittel 7,54 ≥ 7,17 + 0,3, Präzision erster Lauf (10,0) und Fallen (10,0) nicht
+schlechter, keine Sperre, alle 12 Läufe `richtig`, 0 Fehlerpunkte. Einzeln: `btp 6 --vergleich 4` besser (7,8 gegen
+7,1), `btp 5 --vergleich 3` 7,3 gegen 7,2 (nicht +0,3). Kein `git push`, kein Merge – ein PR nach `main` erst nach
+Rückfrage beim Nutzer (wie Umbau 2).
+
+**Zeitgewinn je Aufgabe (Mittel D5/D6 gegen D3/D4):**
+- **Prüfstation 544 → 387 s (−157 s)** – Teil 1: `durchlauf` 237/256 → 130/128 s; Teilephase des Messlaufs 13,0/12,3 s
+  statt ~117 s, **22 von 23 Eigenteilen übernommen**, nur `kamerahalter.yaml` gebaut (beide Durchgänge, d5-
+  pruefstation-2 ebenso; eine reine Kommentaränderung an `kamerasaeule.yaml` in d5-pruefstation-1 ließ den Schlüssel
+  gleich). Der Prüfer bleibt mit 58–110 s der größte Streuer.
+- **Robustheit 10,9 → 5,3 GB** – Nebenwirkung von Teil 1: übernommene Teile öffnen ohne Fenster (wie Norm- und
+  Kaufteile), die Prüfstation-Spitze fällt von ~10,6 auf ~5,3 GB.
+- **Stehlager 340 → 387 s (+47 s), Tokens ~500 k → ~970 k** – Teil 2 hilft nicht: Die Hauptsitzung brauchte vor den
+  Subagenten 124–150 s (beide Skills lesen, Schnittstellen festlegen – praktisch die ganze Konstruktionsarbeit), die drei
+  Teil-Subagenten liefen parallel 69–74 s (jeder liest Skill und Eingabe neu), danach Baugruppen-Spec und Review wie
+  vorher. Gespart ist die frühere Schreibrunde (~60–80 s), dazu kommen Startkosten und das zweite Lesen. Folge:
+  Aufwand-Teilscore 5,86 → 4,80 (fast nur Stehlager), Zeit Stehlager 4,85 → 4,21.
+- Teile (Durchlicht 192 → 156 s, Kamera 212 → 214 s, Zentrieraufnahme 157 → 206 s) – vom Umbau nicht berührt (Skill
+  `konstruieren` und Einzelteil-`bauen` unverändert); Streuung von Modell (96–161 s) und Prüfer (20–59 s).
+- **Empfindlichkeit:** Ohne Teil 2 (Stehlager und Aufwand wie D3/D4) läge das Mittel geschätzt bei ~7,65; ohne Teil 1
+  bliebe es unter 7,17. Der Gewinn kommt allein aus Teil 1.
+
+### Eigene Entscheidungen in Umbau 3 (sonst hätte ich gefragt)
+
+| Entscheidung | Begründung |
+|---|---|
+| Ganze Teil-Spec im Schlüssel (auch `pruefung`, nicht nur der vom Compiler gelesene Teil) | Vorsichtige Variante der Recherche; eine `pruefung`-Änderung braucht ohnehin eine neue Freigabe und kostet nur einen Teilbau |
+| Code-Hülle: AST mit Importen in Funktionen, außer in `swki.cli`, `swki.aenderungen`, `swki.compiler.bauen` | Ohne Funktions-Importe fehlen die Handler (`registry.alle_handler`) und `skizze`; mit allen käme über `_bauen` ganz `swki` (Baugruppe, Prüfen) hinein, und jede Prüf-Änderung baute alle Teile neu |
+| `config/standard.yaml` mit Sperrliste (`wiederverwenden`, `max_nachbesserungen`, `bewegung_schritte`, `speicher_grenze_mb`) statt Erlaubnisliste | Neue Schlüssel zählen automatisch mit (vorsichtig) |
+| Prüfer-Mangel sperrt nur die Datei, Teilmangel im Prüfbericht Schlüssel und Datei | Wie Recherche O5 (sporadischer Fehlbau); ein Prüfer-Mangel ändert in der Regel die Spec und damit den Schlüssel |
+| Übernommene Teile unsichtbar öffnen | Wie Norm- und Kaufteile; bis zum Schluss schließt nichts Sichtbares (Baugruppe zuerst, `schliesse` nimmt Mitgeschlossenes hin) – Ergebnis 5,3 statt 10,6 GB |
+| `durchlauf` meldet `teile_gebaut` als Liste, `teile_wiederverwendet` als Anzahl | Bei 23 Teilen bleibt die Ausgabe für den Agenten kurz; `bauen` nennt beide als Liste |
+| Schnittstellen in `schnittstellen.md` statt `plan.md` | Der Mess-Prompt verbietet „Pläne“ (gemeint ist der Plan-Skill); der Name vermeidet die Kollision |
+| Arbeitsordner `MESS-d5-*` vom 09.10. nach `<arbeitsordner>/_messstand-2026-10-09-arbeit/` verschoben | `vorbereiten 5 …` hätte sie gelöscht (Panne aus D0); die Messdaten unter `MESSSTAND/messstand-2026-10-09` sind unberührt |
+| d5-pruefstation-1 zählt trotz `lecks`-Befund, d5-pruefstation-2 nicht | Der Prüfer-Subagent läuft im Arbeitsverzeichnis der Goal-Sitzung und las per relativem Glob/Grep `schema/teil.schema.json`, `swki/compiler/skizze.py` bzw. den Skill `konstruieren` aus deren Worktree – dateigleich mit dem Lauf-Commit 6cfae5b, keine Referenz-Specs. Erst nach Bogen wiederholt (d5-pruefstation-2); der Wiederholer griff genauso zu → diese Zugriffsart als kein Leck entschieden (`lecks_entscheid` in `kpi.json`), der reguläre Lauf zählt, d6-pruefstation-1 ebenso. Mit dem Wiederholer statt des Originals läge D5 bei ~7,4 und das Mittel bei ~7,6 |
+| Fallen-Prüfer wie D3/D4 (Verweis-Prompt auf `auftrag-*.md`, Urteil selbst schreiben), 20 + 4 gestartet; je Durchgang zwei F6-Urteile vom falschen Pfad `MESSFALLE-F6/durchgang-<n>` an den richtigen verschoben, Fehlablage gelöscht | Vergleichbarkeit; dieselbe Fehlablage wie in D3/D4 |
+
+**Offene Hebel nach Umbau 3:**
+1. ~~**Teil 2 zurücknehmen**~~ – **erledigt** (Nutzer 25.10.2026, vor dem PR nach `main`): Abschnitt „Zwei oder mehr
+   neue Eigenteile“ aus Skill `baugruppe` §1 und die Zeile in `CLAUDE.md` entfernt; das Stehlager läuft wieder wie in
+   D3/D4 gemessen. Nicht neu gemessen; der Score 7,54 enthält Teil 2 noch (ohne ihn geschätzt ~7,65). Wenn wieder, dann
+   nur die Schnittstellenliste ohne Subagenten oder Subagenten mit fertigem Teil-Skelett statt Skill-Lektüre.
+2. Prüfer (20–110 s, größter Streuer bei Prüfstation und Kamera): Kurzbericht statt vollem Prüfbericht (O10).
+3. Prüfer-Subagenten lesen über relative Pfade aus dem Arbeitsverzeichnis der aufrufenden Sitzung (Leck-Befunde D5/D6):
+   im Messstand die Leck-Prüfung auf Referenz-Pfade beschränken oder den Prüfer-Prompt auf absolute Pfade festlegen.
+4. Verknüpfen (~23 s) und Prüfen (~70 s) sind jetzt der Werkzeug-Rest des Prüfstation-`durchlauf` (130 s).

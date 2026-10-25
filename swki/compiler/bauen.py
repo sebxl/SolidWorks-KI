@@ -123,7 +123,8 @@ def _bauen(args) -> dict:
     if art_der_datei(pfad) == "baugruppe":
         from swki.baugruppe.bau import bauen as baugruppe_bauen  # spät importiert (Kreisimport); Modul aus Task 8
 
-        return baugruppe_bauen(pfad, args.lauf, args.verwerfen, args.uebernommen)
+        return baugruppe_bauen(pfad, args.lauf, args.verwerfen, args.uebernommen,
+                               alles_neu=getattr(args, "alles_neu", False))
     return bauen(pfad, args.lauf, args.verwerfen, args.uebernommen)
 
 
@@ -131,6 +132,8 @@ def einrichten(subparsers) -> None:
     p = subparsers.add_parser("bauen", help="freigegebene Spezifikation in SolidWorks bauen (neuer Lauf)")
     p.add_argument("spec")
     p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Laufnummer ≥ 1 (Vorgabe: nächste freie)")
+    p.add_argument("--alles-neu", action="store_true",
+                   help="Baugruppe: auch unveränderte Eigenteile neu bauen statt aus einem früheren Lauf übernehmen")
     gruppe = p.add_mutually_exclusive_group()
     gruppe.add_argument("--verwerfen", action="store_true",
                         help="manuelle Änderungen am letzten Lauf ausdrücklich verwerfen (nur auf Anweisung des Nutzers)")

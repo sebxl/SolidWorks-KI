@@ -134,8 +134,13 @@ hängen bis zum 2-min-Zeitlimit.
 ## 4. Bauen, prüfen, Prüfer
 - Mit Bewegungen Standardweg `swki durchlauf <baugruppe.yaml> --neustart` (frisches SolidWorks vor Bauen und vor Prüfen;
   Bauabbruch kompakt: `code`, `meldung`, Knoten ≠ ok/übersprungen; Neustart abgelehnt → `schritt: neustart`, `vor`).
-- `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut alle Eigenteile frisch, holt die Normteile, kopiert sie in den Lauf, fügt ein,
-  verknüpft. Fehlercodes (die `meldung` nennt Komponente bzw. Verknüpfung):
+- `swki bauen <baugruppe.yaml>` (oder `swki durchlauf`, endet dann mit `schritt: bauen`): baut geänderte und neue
+  Eigenteile (zuletzt gescheiterte zuerst), übernimmt unveränderte aus einem früheren Lauf desselben Auftrags (gleicher
+  Schlüssel aus Teil-Spec, Skripten, Compiler-Code, SolidWorks-Version, Vorlage; Datei unverändert; kein Teilmangel),
+  holt die Normteile, kopiert sie in den Lauf, fügt ein, verknüpft. Ausgabe `teile_gebaut` (Liste) und
+  `teile_wiederverwendet` (bei `durchlauf` Anzahl); `--alles-neu` baut alle (Schalter `wiederverwenden` in
+  `config/standard.yaml`). `swki pruefen` misst jedes Teil weiter gegen die freigegebene Kopie. Fehlercodes (die
+  `meldung` nennt Komponente bzw. Verknüpfung):
   - `TEIL_BAU` (Knoten `<komponente>/<feature>`): Bauweg der Teil-Spec nachbessern.
   - `KOMPONENTE_FEHLER`: Einfügen oder Fixieren einer Komponente gescheitert (Komponente und Datei in der Meldung).
   - `VERKNUEPFUNG_FEHLER`, `REFERENZ_NICHT_GEFUNDEN`, `REFERENZ_MEHRDEUTIG` (Knoten `v<n>[.<i>]`): Referenz,

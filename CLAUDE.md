@@ -1,7 +1,7 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1 und 2, Score 4,9 → Mittel 7,17) – Ergebnisse:
+Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1–3, Score 4,9 → Mittel 7,54) – Ergebnisse:
 docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
 `huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
@@ -72,6 +72,9 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
 ## Baugruppen (Stufe 3b)
 - Baugruppen über den Skill `baugruppe`: Baugruppen-Spec nach `schema/baugruppe.schema.json` und Teil-Specs im selben
   Auftragsordner; **eine** Freigabe (`swki freigeben <baugruppe.yaml>`) für alles. Verknüpfungen sind Bauweg.
+- `swki bauen` übernimmt unveränderte Eigenteile aus einem früheren Lauf desselben Auftrags (Schlüssel und Datei-SHA-256,
+  `swki/baugruppe/wiederverwendung.py`) und baut geänderte zuerst; `--alles-neu` baut alle, Schalter `wiederverwenden`
+  in `config/standard.yaml`. `swki pruefen` misst trotzdem jedes Teil gegen die freigegebene Kopie.
 - Normteile kommen über `swki normteil hole` und werden in den Lauf-Ordner kopiert; die Baugruppe verweist nie auf die
   Bibliothek.
 - Die Spec ist die Quelle: `MANUELL_GEAENDERT` heißt, jemand hat gebaute Dateien geändert → `swki aenderungen`, Nutzer

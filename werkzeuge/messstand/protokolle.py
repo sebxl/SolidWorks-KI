@@ -28,7 +28,7 @@ def dateien(auftrag: Path) -> list[tuple[str, int, str, Path]]:
 
 def auswerten(auftrag: Path, ab_lauf: int | None = None) -> dict:
     """ab_lauf: nur Läufe ab dieser Nummer (Änderungsaufgabe: der Ausgangslauf zählt nicht)."""
-    laeufe = abbrueche = pruefmaengel = pruefer_urteile = pruefer_maengel = 0
+    laeufe = abbrueche = pruefmaengel = pruefer_urteile = pruefer_maengel = gebaut = wiederverwendet = 0
     letzter_pruefer: tuple[int, bool] | None = None
     phasen: dict[str, float] = {}
     for spec, n, art, p in dateien(auftrag):
@@ -43,6 +43,9 @@ def auswerten(auftrag: Path, ab_lauf: int | None = None) -> dict:
                 abbrueche += 1
             for k, v in (d.get("phasen") or {}).items():
                 phasen[k] = round(phasen.get(k, 0.0) + v, 1)
+            for t in (d.get("teile") or {}).values():   # Baugruppe: Eigenteile gebaut/übernommen (BTP Umbau 3)
+                wiederverwendet += bool(t.get("wiederverwendet"))
+                gebaut += not t.get("wiederverwendet")
         elif art == "pruefbericht":
             pruefmaengel += sum(1 for x in d.get("pruefungen", []) if x.get("ok") is False)
         else:
@@ -54,7 +57,8 @@ def auswerten(auftrag: Path, ab_lauf: int | None = None) -> dict:
     return {"laeufe": laeufe, "bauabbrueche": abbrueche, "pruefmaengel": pruefmaengel,
             "pruefer_urteile": pruefer_urteile, "pruefer_maengel": pruefer_maengel,
             "letzter_lauf": letzter_pruefer[0] if letzter_pruefer else None,
-            "pruefer_bestanden": bool(letzter_pruefer and letzter_pruefer[1]), "phasen_s": phasen}
+            "pruefer_bestanden": bool(letzter_pruefer and letzter_pruefer[1]), "phasen_s": phasen,
+            "teile_gebaut": gebaut, "teile_wiederverwendet": wiederverwendet}
 
 
 def ergebnisdatei(lauf_ordner: Path) -> Path | None:

@@ -170,3 +170,13 @@ def test_falle_aus_basis_mit_ersetzung(tmp_path, monkeypatch):
 def test_pruefauftrag_enthaelt_pruefer_anweisung_und_lauf(tmp_path):
     text = fallen.pruefauftrag("---\nname: pruefer\ntools: Read, Glob\n---\nDu prüfst unabhängig.", "Prüfe Lauf 1 von a.yaml.")
     assert "Du prüfst unabhängig." in text and "Prüfe Lauf 1 von a.yaml." in text and "name: pruefer" not in text
+
+
+def test_protokolle_zaehlen_gebaute_und_wiederverwendete_teile(tmp_path):
+    pk = tmp_path / "protokolle"
+    _schreibe(pk / "p.lauf-1.protokoll.json", json.dumps({"status": "ok", "teile": {"a.yaml": {}, "b.yaml": {}}}))
+    _schreibe(pk / "p.lauf-2.protokoll.json", json.dumps(
+        {"status": "ok", "teile": {"a.yaml": {"wiederverwendet": {"lauf": 1}}, "b.yaml": {}}}))
+    ab = protokolle.auswerten(tmp_path, ab_lauf=2)
+    assert ab["teile_gebaut"] == 1 and ab["teile_wiederverwendet"] == 1
+    assert protokolle.auswerten(tmp_path)["teile_gebaut"] == 3

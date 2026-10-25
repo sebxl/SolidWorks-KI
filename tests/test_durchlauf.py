@@ -176,7 +176,7 @@ def test_cli_option_neustart(monkeypatch):
     from swki import cli
 
     gesehen = {}
-    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False: gesehen.update(neustart=neustart) or {})
+    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False, alles_neu=False: gesehen.update(neustart=neustart) or {})
     assert cli.main(["durchlauf", "a.yaml", "--neustart"]) == 0 and gesehen == {"neustart": True}
     assert cli.main(["durchlauf", "a.yaml"]) == 0 and gesehen == {"neustart": False}
 
@@ -197,3 +197,19 @@ def test_pruefer_auftrag_nennt_jede_datei_und_verlangt_paralleles_lesen(tmp_path
                   lauf / "bilder" / "iso.png", lauf / "bilder" / "vorne.png", lauf / "steckbrief.txt"):
         assert str(datei) in text
     assert "parallel" in text
+
+
+def test_baugruppe_meldet_gebaute_und_wiederverwendete_teile_und_reicht_alles_neu_durch(schritte, monkeypatch, tmp_path):
+    import swki.compiler.bauen as cb
+
+    erhalten = []
+    monkeypatch.setattr(cb, "_bauen", lambda a: erhalten.append(a.alles_neu) or {
+        "lauf": 4, "dauer_s": 30.0, "teile_gebaut": ["kamerahalter.yaml"], "teile_wiederverwendet": ["a.yaml", "b.yaml"]})
+    erg = d.durchlauf(tmp_path / "bg.yaml", alles_neu=True)
+    assert erhalten == [True]
+    assert erg["teile_gebaut"] == ["kamerahalter.yaml"] and erg["teile_wiederverwendet"] == 2
+
+
+def test_einzelteil_ohne_teilebilanz(schritte, tmp_path):
+    erg = d.durchlauf(tmp_path / "a.yaml")
+    assert "teile_gebaut" not in erg and "teile_wiederverwendet" not in erg
