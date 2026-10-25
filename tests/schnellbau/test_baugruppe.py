@@ -85,3 +85,9 @@ def test_zahnstangentrieb_kopplungen_gemeldet_zahnstange_am_schlitten():
     assert bg.komp["zahnstange"].koerper == "schlitten"
     assert {x.komponente for x in bg.gelenke if x.typ == "dreh"} == {"ritzelwelle", "antriebswelle"}
     assert any("k1" in m and "Kopplung" in m for m in bg.meldungen)
+
+
+def test_nur_ein_ausschnitt_wird_gebaut():
+    bg = Baugruppe(REFERENZ / "schlitten" / "linearschlitten.yaml", nur=["schlitten"])
+    assert sorted(bg.komp) == ["grundplatte", "schlitten"]          # das fixierte Teil immer
+    assert [g.id for g in bg.gelenke] == ["g1"]
