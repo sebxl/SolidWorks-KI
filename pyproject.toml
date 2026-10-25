@@ -20,6 +20,9 @@ dependencies = [
 dev = ["pytest>=8"]
 messstand = ["numpy>=2.3", "scipy>=1.16", "trimesh>=4.8"]
 pdf = ["pymupdf>=1.26"]  # werkzeuge.pdf_seiten (Datenblätter lesen); swki braucht es nicht
+# swki schnellbau (Stufe C1): Spec ohne SolidWorks bauen (OpenCascade) und als MuJoCo-Modell; Versionen fest (build123d
+# bricht zwischen Versionen, MuJoCo ist nur je Version deterministisch). Nutzer-OK 25.10.2026.
+schnellbau = ["build123d==0.13.0", "mujoco==3.16.0", "optuna==5.0.0"]
 
 [tool.setuptools.packages.find]
 include = ["swki*"]
