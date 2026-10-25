@@ -11,6 +11,7 @@ Teil-/Baugruppenkoordinaten (x, y, z) → Maschine (X, Y, Z) = (x, −z, y) (pru
 """
 
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -128,6 +129,11 @@ def _partner(r: dict, bis: float | None) -> str | None:
     return p.rstrip("0123456789").rstrip("_")
 
 
+def _ort(r: dict) -> str:
+    """Ort ohne laufende Nummern der Kollisionsstücke (rutsche_trenn_3 → rutsche_trenn), damit Fehlerbilder Klassen sind."""
+    return re.sub(r"_?\d+\b", "", str(r.get("ort")))
+
+
 def fehlerbild(r: dict, ry: dict) -> str | None:
     e = r["ergebnis"]
     if e == "richtig":
@@ -139,14 +145,14 @@ def fehlerbild(r: dict, ry: dict) -> str | None:
             return f"Sprung über die Trennwand ({ein}→{ende}){nach}"
         y = r.get("y_frei")
         if y is not None and ry["trenn"][0] - 2 <= y <= ry["trenn"][1] + 2:
-            return f"Treffer auf die Trennwandkante (freier Landepunkt Y {y:.0f}){nach}"
+            return f"Treffer auf die Trennwandkante (freier Landepunkt ±2 mm an der Trennwand){nach}"
         p = _partner(r, r.get("t_ein"))
         if p == "keil":
             return f"Abprall am Keil in den falschen Kanal{nach}"
         return f"Flugbahn in den falschen Kanal (zuletzt {p or '–'}){nach}"
     if e == "daneben":
-        return f"daneben: {r.get('ort')} nach Kontakt mit {_partner(r, None) or '–'}{nach}"
-    return f"{e}: {r.get('ort')}{nach}"
+        return f"daneben: {_ort(r)} nach Kontakt mit {_partner(r, None) or '–'}{nach}"
+    return f"{e}: {_ort(r)}{nach}"
 
 
 def lauf(probe: dict, job: dict) -> dict:

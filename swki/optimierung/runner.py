@@ -200,8 +200,9 @@ class Runner:
                                           n_startup_trials=self.cfg["automatik"]["zufallsproben"] if phase == 0 else 0)
 
     def _pruner(self):
-        if self.anteil_ziel:
-            return optuna.pruners.WilcoxonPruner(p_threshold=0.1, n_startup_steps=self.paket)
+        if self.anteil_ziel:     # erst nach einem Drittel der Läufe: die Kennzahl ist ein Minimum über Szenarien
+            gesamt = sum(s["laeufe"] for s in self.a.szenarien)
+            return optuna.pruners.WilcoxonPruner(p_threshold=0.05, n_startup_steps=max(self.paket, gesamt // 3))
         return optuna.pruners.NopPruner()
 
     def verteilungen(self, phase: dict) -> dict:
