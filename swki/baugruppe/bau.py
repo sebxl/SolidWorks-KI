@@ -35,6 +35,7 @@ from swki.normteile import befehle as normteil_befehle
 from swki.normteile.bibliothek import bibliotheksordner, lies_eintrag
 from swki.normteile.fehler import NormteilFehler
 from swki.pruefung.messen import kontext_aus_datei, oeffne
+from swki.spec.freigabe import FreigabeFehler
 from swki.verbindung import verbinde
 
 TOL_PHASE = 1e-3  # Phasenfehler nach dem Drehen, Anteil der Teilung (Spec 4b §5.4.2)
@@ -364,7 +365,12 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     """alles_neu: auch unveränderte Eigenteile neu bauen (sonst nach `wiederverwenden` in config/standard.yaml)."""
     spec_pfad = spec_pfad.resolve()
     bg = lade_baugruppe(spec_pfad)
-    pruefe_freigabe_baugruppe(bg)
+    try:
+        pruefe_freigabe_baugruppe(bg)
+    except FreigabeFehler as e:
+        from swki.optimierung.raum import raum_hinweis  # spät importiert (Kreisimport)
+
+        raise raum_hinweis(spec_pfad, e) from e
     r, standard = lade_rechner(), lade_standard()
     if r.vorlage_baugruppe is None:
         raise SwkiFehler("config/rechner.yaml: vorlage_baugruppe fehlt (swki rechner init)")

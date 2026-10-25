@@ -16,7 +16,7 @@ from swki.compiler.kontext import Kontext
 from swki.compiler.protokoll import Protokoll
 from swki.compiler.registry import alle_handler
 from swki.konfig import lade_rechner, lade_standard
-from swki.spec.freigabe import pruefe_freigabe
+from swki.spec.freigabe import FreigabeFehler, pruefe_freigabe
 from swki.spec.laden import art_der_datei, lade_spec
 from swki.verbindung import verbinde
 
@@ -69,7 +69,12 @@ def baue_teil_dokument(app, r, standard: dict, spec: dict, spec_pfad: Path, auft
 def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec(spec_pfad)
-    pruefe_freigabe(spec_pfad, spec)
+    try:
+        pruefe_freigabe(spec_pfad, spec)
+    except FreigabeFehler as e:
+        from swki.optimierung.raum import raum_hinweis  # spät importiert (Kreisimport)
+
+        raise raum_hinweis(spec_pfad, e) from e
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
     if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):

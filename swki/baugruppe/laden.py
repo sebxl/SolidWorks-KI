@@ -102,6 +102,10 @@ def lade_baugruppe(pfad: Path) -> Baugruppe:
         quellen, teile, befunde = lade_quellen(spec, pfad.parent)
         if not befunde:
             befunde = plausibel_befunde(spec, quellen)
+        if not befunde and "optimierung" in spec:
+            from swki.optimierung.auftrag import auftrag_befunde  # spät importiert (Kreisimport)
+
+            befunde = auftrag_befunde(spec["optimierung"], pfad.parent, {**teile, pfad.name: spec}, pfad.name)
     if befunde:
         raise SpecFehler(befunde)
     return Baugruppe(pfad, spec, quellen, teile)

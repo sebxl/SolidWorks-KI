@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "swki/optimierung.schema.json",
+  "title": "Optimierungsauftrag (Block optimierung einer Teil- oder Baugruppen-Spec, Stufe C2)",
+  "description": "docs/superpowers/specs/2026-10-25-optimierung-c2-design.md §2. Längen in mm, Winkel in Grad wie die Parameter der Spec.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pruefaufgabe", "ziel", "stellschrauben", "szenarien"],
+  "properties": {
+    "variante": {"type": "string", "description": "Name der Form (Liste der versuchten Varianten)"},
+    "pruefaufgabe": {
+      "type": "object", "additionalProperties": false, "required": ["modul"],
+      "properties": {
+        "modul": {"type": "string", "pattern": "\\.py$", "description": "Prüfaufgabe, relativ zum Auftragsordner"},
+        "simulation": {"type": "string", "description": "Simulations-Datei (YAML), relativ zum Auftragsordner"}
+      }
+    },
+    "ziel": {
+      "type": "object", "additionalProperties": false, "required": ["kennzahl", "richtung", "zielwert"],
+      "properties": {
+        "kennzahl": {"type": "string", "minLength": 1},
+        "richtung": {"enum": ["max", "min"]},
+        "zielwert": {"type": "number"}
+      }
+    },
+    "stellschrauben": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/stellschraube"}},
+    "nebenbedingungen": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "kollision": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "toleranz_mm3": {"type": "number", "minimum": 0},
+            "ausnehmen": {"type": "array", "items": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2}},
+            "aus": {"type": "boolean", "description": "true: keine Kollisionsprüfung je Stellung"}
+          }
+        },
+        "bauraum": {
+          "type": "object", "additionalProperties": false, "required": ["min", "max"],
+          "properties": {"min": {"$ref": "#/$defs/punkt3"}, "max": {"$ref": "#/$defs/punkt3"}}
+        },
+        "kennzahlen": {"type": "array", "items": {"type": "string", "pattern": "^\\s*[A-Za-z_][A-Za-z0-9_:.]*\\s*(<=|>=)\\s*-?[0-9.]+(e-?[0-9]+)?\\s*$"}},
+        "anteil_ungueltig_max": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "szenarien": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/szenario"}},
+    "nachlauf": {
+      "type": "object", "additionalProperties": false, "required": ["laeufe"],
+      "properties": {"laeufe": {"type": "integer", "minimum": 1}}
+    },
+    "pruefstufe2": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "top_k": {"type": "integer", "minimum": 0},
+        "laeufe": {"type": "integer", "minimum": 1},
+        "zeitschritt_faktor": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "kontakt_faktor": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "szenarien": {"type": "array", "items": {"$ref": "#/$defs/szenario"}}
+      }
+    },
+    "budget": {
+      "type": "object", "additionalProperties": false,
+      "properties": {"proben": {"type": "integer", "minimum": 1}, "minuten": {"type": "number", "exclusiveMinimum": 0}}
+    },
+    "plateau": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "proben": {"type": "integer", "minimum": 1},
+        "minuten": {"type": "number", "exclusiveMinimum": 0},
+        "epsilon": {"type": "number", "minimum": 0}
+      }
+    },
+    "automatik": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "bereich_erweitern": {"type": "boolean"},
+        "sampler": {"type": "array", "minItems": 1, "items": {"enum": ["tpe", "tpe_multivariat", "qmc", "zufall"]}},
+        "mehrfachstart": {"type": "integer", "minimum": 0},
+        "zufallsproben": {"type": "integer", "minimum": 0, "description": "Zufallsproben vor TPE (Phase 1)"}
+      }
+    },
+    "start": {"type": "array", "maxItems": 20, "items": {"type": "object", "additionalProperties": {"type": "number"}}},
+    "erlaubte_formaenderungen": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "punkt3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "bereich": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+    "stellschraube": {
+      "type": "object", "additionalProperties": false, "required": ["name", "rahmen"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+        "spec": {"type": "string", "pattern": "\\.yaml$", "description": "Teil-Spec der Baugruppe (fehlt: die eigene Spec)"},
+        "parameter": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+        "ablauf": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$", "description": "Ablaufgröße, an jeden Lauf übergeben"},
+        "rahmen": {"$ref": "#/$defs/bereich", "description": "freigegebener Raum (Grenzen des Auftrags)"},
+        "bereich": {"$ref": "#/$defs/bereich", "description": "Startbereich der Suche (⊆ rahmen); fehlt: rahmen"},
+        "schritt": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "oneOf": [{"required": ["parameter"], "not": {"required": ["ablauf"]}},
+                {"required": ["ablauf"], "not": {"anyOf": [{"required": ["parameter"]}, {"required": ["spec"]}]}}]
+    },
+    "szenario": {
+      "type": "object", "additionalProperties": false, "required": ["name", "laeufe"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z0-9_.+-]+$"},
+        "laeufe": {"type": "integer", "minimum": 1},
+        "saat": {"type": "integer"},
+        "werte": {"type": "object"},
+        "streuung": {"type": "object", "additionalProperties": {"$ref": "#/$defs/bereich"}}
+      }
+    }
+  }
+}
