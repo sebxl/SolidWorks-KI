@@ -13,8 +13,11 @@ Stellschrauben. Optuna verändert nur `parameter` der Spec. Der Gewinner wird mi
 „1:1“ ist dann eine Eigenschaft des Aufbaus und hängt nicht an einer Übersetzung. Nachgewiesen wird es mit dem
 vorhandenen STL-Vergleich (`werkzeuge/messstand/vergleich.py`) und einer Gegenprobe-Simulation auf der SolidWorks-Geometrie.
 
-Erwartetes Tempo (Schätzung, im Spike zu messen): eine Optuna-Probe mit 200 Monte-Carlo-Läufen dauert rund 7–10 s Wandzeit
-auf den 16 Kernen dieses Rechners. Das sind etwa 400–500 Proben je Stunde, über Nacht 4000–5000. Mit SolidWorks sind es
+Tempo, **gemessen im Spike S-Schleife-1** ([Ergebnisse](2026-10-25-spike-s-schleife-1.md)): Eine Optuna-Probe mit
+192 Monte-Carlo-Läufen dauert 30–45 s auf diesem Rechner (8 Kerne/16 Threads). Das sind rund 100 simulierte Proben je
+Stunde, über Nacht etwa 1000; in Prüfstufe 0 verworfene Proben kosten 0,6 s. Die erste Schätzung (7–10 s, 400–500/h)
+war um den Faktor 3–4 zu optimistisch. Schnellbau und Zerlegung aus der Spec kosten nur 0,5 s je Probe; das Tempo
+bestimmt die Simulation. Mit SolidWorks sind es
 heute 4–10 min je Bau- und Prüfzyklus der Prüfstation, nur eine Instanz und 10–11 GB Speicher, also 6–15 Zyklen je
 Stunde, und das ohne Funktionsprüfung.
 
@@ -228,8 +231,8 @@ Optimierungsauftrag ─► funktionsmodell_<mechanismus>.py (MjSpec, Primitiven)
   - Prüft eine Liste kritischer Maße (Abgabekante, Keil-OK, Spalte) gegen `pruefbericht.json`, so wie in
     `sortierschritt/BERICHT.md` von Hand.
   - Alles Übrige ist ungeprüft: Hier entstanden die Tubus-, Schieberhöhen- und Stufenfehler.
-- **Zeit je Probe:** Modellbau einige ms; 200 Läufe × 0,5 s = 100 CPU-s → ≈ 7 s Wandzeit auf 16 Kernen, 400–500 Proben/h.
-  Das ist der schnellste Ansatz.
+- **Zeit je Probe:** Modellbau einige ms. Gemessen im Spike: 200 Läufe des Handmodells in 24 s (1,8 CPU-s je Lauf,
+  8 Kerne), also ≈ 140 Proben/h. Das ist der schnellste Ansatz.
 - **Vorteile:**
   - sofort machbar, die Bausteine gibt es schon (Messerkontur, Stirnformen, Kalibrierung, Energieprüfung);
   - Primitiven kollidieren am günstigsten und am robustesten;
@@ -264,7 +267,7 @@ Optimierungsauftrag ─► teile/*.py (build123d, von Claude) ─► STEP/STL �
     Funktionsflächen enger);
   - die Übersetzung selbst ist aber eine zweite Konstruktion, ein Fehler fällt erst nach dem SolidWorks-Bau auf.
 - **Zeit je Probe:** Schnellbau der geänderten Teile 0,2–2 s je Teil (Schätzung; veröffentlichte Zahlen gibt es nicht),
-  Zerlegung ms (2,5D) bis Sekunden (CoACD, zwischengespeichert), Simulation wie A → 8–12 s, 300–450 Proben/h.
+  Zerlegung ms (2,5D) bis Sekunden (CoACD, zwischengespeichert), Simulation wie C → 30–45 s, ≈ 100 Proben/h.
   Dazu kommt die Übersetzung am Ende: 5–20 min Agentenzeit je Teil plus Nachbesserungsrunden.
 - **Vorteile:**
   - beliebige Geometrie, auch Formen, die `swki` noch nicht kann;
@@ -345,10 +348,9 @@ optimierung:
 ```
 
 - **Zeit je Probe:**
-  - Schnellbau nur der Teile, deren Parameter sich ändern: 0,2–2 s je Teil (Schätzung, im Spike messen).
-  - 2,5D-Zerlegung im ms-Bereich, MjSpec-Kompilieren unter 1 s.
-  - Die Simulation dominiert mit ≈ 100 CPU-s bei 200 Läufen. Der Mehraufwand gegenüber A liegt geschätzt bei < 5 %,
-    also 7–10 s Wandzeit und 400–500 Proben/h.
+  - Gemessen im Spike: Schnellbau je Teil 0,4–52 ms, Zerlegung der geänderten Teile 0,4–0,7 s, Prüfstufe 0 0,1 s.
+  - Die Simulation dominiert: 192 Läufe ≈ 30–45 s (2,4–2,7 CPU-s je Lauf; 342 Kollisionsstücke statt der rund 40 des
+    Handmodells, gegenüber A rund 40 % mehr Rechenzeit je Lauf). Das ergibt ≈ 100 simulierte Proben/h.
   - Der SolidWorks-Nachbau des Gewinners ist ein normaler `swki durchlauf` mit 4–10 min.
 - **Vorteile:**
   - **Keine Übersetzung, kein Abschreiben.** Die Fehlerklasse aus §1.2 Punkt 1 verschwindet, weil Simulation und
@@ -383,8 +385,8 @@ optimierung:
 
 | Kriterium | A Funktionsmodell MuJoCo | B Code-CAD build123d | **C Eine Spec, zwei Backends** |
 |---|---|---|---|
-| Zeit je Optuna-Probe (200 Läufe, 16 Kerne) | ≈ 7 s | ≈ 8–12 s | ≈ 7–10 s |
-| Proben je Nacht (10 h) | ≈ 5000 | ≈ 3000–4500 | ≈ 4000–5000 |
+| Zeit je Optuna-Probe (≈ 200 Läufe, 8 Kerne) | ≈ 25 s (Handmodell gemessen: 1,8 CPU-s je Lauf) | ≈ 30–45 s | **30–45 s gemessen** (2,4–2,7 CPU-s je Lauf, Geometrie 0,5 s) |
+| Proben je Nacht (10 h) | ≈ 1400 | ≈ 1000 | ≈ 1000 (gemessen 101 simulierte/h) |
 | Weg nach SolidWorks | Werte übertragen (Tabelle) | Code übersetzen | **keiner nötig** (dieselbe Spec) |
 | 1:1-Nachweis | kritische Maße gegen Prüfbericht | STL-Vergleich nach dem Bau | STL-Vergleich + Lagevergleich + Gegenprobe; Abweichung nur durch Backend-Unterschied, über Referenz-Suite überwacht |
 | Fehlerklasse „von Hand abgeschrieben“ | bleibt | verschoben in die Übersetzung | entfällt |
@@ -404,8 +406,11 @@ Begründung:
 1. Das Ziel des Nutzers ist ein **1:1-Nachbau ohne Menschen dazwischen**. Das ist der Punkt, an dem die bisherigen
    Studien am meisten Zeit und Vertrauen gekostet haben, also die Abschreibfehler und die Nutzer-Freigabe jeder
    Geometrie. Nur C beseitigt diese Fehlerklasse grundsätzlich; A und B verlagern sie.
-2. **Das Tempo ist bei allen drei Ansätzen dasselbe**, weil die Simulation die Zeit bestimmt und nicht der Geometriebau.
-   Der Mehraufwand von C gegenüber A ist ein einmaliger Entwicklungsaufwand und kostet keine Laufzeit.
+2. **Das Tempo liegt bei allen drei Ansätzen in derselben Größenordnung**, weil die Simulation die Zeit bestimmt und
+   nicht der Geometriebau (gemessen 0,5 s von 30–45 s je Probe). C rechnet je Lauf rund 40 % länger als das Handmodell,
+   weil die Kollisionsgeometrie vollständig ist (342 statt rund 40 Stücke). Über eine gröbere Pfeilhöhe oder erklärte
+   Ersatzkörper im `simulation`-Block lässt sich das verringern. Der Mehraufwand von C ist vor allem einmalige
+   Entwicklung.
 3. C nutzt, was `swki` schon kann: das Format, das Claude zuverlässig schreibt, `validieren`, die Freigabe-Logik, die
    Bewegungsgrenzen und die Referenz-Suite als Prüfstein für das zweite Backend. B müsste das alles neu erfinden.
 4. Für ganze Montageanlagen braucht es ein Format, das mit der Zahl der Teile wächst, ohne dass die Handarbeit wächst.
@@ -431,6 +436,18 @@ Referenzstudie, etwa Fallschacht trocken. Determinismus gilt nur je Version und 
 Ergebnis festhalten.
 
 ## 7 Erster Spike: S-Schleife-1 „Weiche G1c aus der Spec“
+
+**Durchgeführt am 25.10.2026, Ergebnisse in [2026-10-25-spike-s-schleife-1.md](2026-10-25-spike-s-schleife-1.md).**
+M1–M6 erfüllt:
+- Schnellbau 235 ms für 10 Teile;
+- Volumen und Hüllquader gleich SolidWorks lauf-28;
+- STL p99 ≤ 0,039 mm;
+- Funktion gleich Handmodell innerhalb des 95-%-Bereichs;
+- Optuna findet 100 % in Probe 3;
+- nachgerechnet mit 1992 Läufen und halbem Zeitschritt bleibt sie ≥ 99,9 %.
+
+Die Tempo-Schätzung wurde korrigiert (oben). Nebenbefund: Rutsche und Weichenkeil in lauf-28 wurden am 23.10. von Hand
+geändert und entsprechen nicht mehr der freigegebenen Spec.
 
 ### 7.1 Ziel
 
