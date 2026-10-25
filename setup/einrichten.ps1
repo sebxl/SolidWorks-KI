@@ -31,7 +31,7 @@ Write-Host "== 1/5 Python-Umgebung des Projekts"
 $Python = Finde-Python
 $VenvPy = Join-Path $Projekt ".venv\Scripts\python.exe"
 if (-not (Test-Path $VenvPy)) { & $Python -m venv (Join-Path $Projekt ".venv"); Pruefe "venv anlegen" }
-& $VenvPy -m pip install --quiet -e "$Projekt[dev,pdf]"; Pruefe "pip install swki (mit dev, pdf)"
+& $VenvPy -m pip install --quiet -e "$Projekt[dev,pdf,schnellbau]"; Pruefe "pip install swki (mit dev, pdf, schnellbau)"
 
 Write-Host "== 2/5 Rechnerkonfiguration"
 New-Item -ItemType Directory -Force -Path $SwkiHome | Out-Null

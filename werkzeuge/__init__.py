@@ -14,4 +14,6 @@ Aufruf immer aus dem Repo-Wurzelordner: .venv\\Scripts\\python.exe -m werkzeuge.
 - kaufteil_vorpruefung Aufnahmeprüfung eines noch nicht freigegebenen Kaufteil-Eintrags, Ablage im Arbeitsordner
 - stdin_sperre         PreToolUse-Hook (.claude/settings.json): lehnt Bash-Befehle ab, die auf stdin warten
                        (`python -`, Python-Heredoc, `python`/`cat` ohne Eingabe)
+- schnellbau_abgleich  Referenz-Suite durch SolidWorks und den Schnellbau (Volumen, Hüllquader, STL je Eigenteil);
+                       schreibt tests/schnellbau/sw_referenz.json (SolidWorks frei, frischer Start je Referenz)
 """

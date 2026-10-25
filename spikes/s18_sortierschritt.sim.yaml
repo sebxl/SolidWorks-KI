@@ -1,0 +1,24 @@
+# Prototyp des Spec-Blocks "simulation" (docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md §4 C) für den
+# Sortierschritt der Prüfstation AP 6.8. Geometrie, Lage und Gelenke kommen allein aus pruefstation.yaml und den
+# Teil-Specs (freigegebene Kopien); hier steht nur, was die Simulation zusätzlich braucht: welche Komponenten stoßen,
+# Werkstoff (Schlüssel der Werkstofftabelle in simulation/sortierschritt-2026-10-18/skripte/modell.py MATERIAL),
+# Körper (welt = fest, sonst das Gelenk) und der Name, nach dem die Auswertung Kontaktpartner gruppiert.
+baugruppe: pruefstation.yaml
+pruefaufgabe: sortierschritt          # Zielfunktions-Baustein (simulation/sortierschritt-2026-10-18/skripte/sim.py)
+zerlegung_toleranz_mm: 0.01           # Pfeilhöhe konkaver Bögen in der Kollisionsgeometrie
+bohrungen: false                      # Bohrungen gehören nicht zur Kollisionsgeometrie (Ansatzflächen ohne Messerkontakt)
+komponenten:
+  pruefkanal:         {material: boden,  name: boden}
+  saphirglas:         {material: saphir, name: glas}
+  klemmleiste_links:  {material: wand,   name: wand_l}
+  klemmleiste_rechts: {material: wand,   name: wand_r}
+  durchlicht:         {material: alu,    name: durchlicht}
+  schieber:           {material: stirn,  name: schieber}
+  zwischenplatte:     {material: abs,    name: zwischenplatte}
+  weichenkeil:        {material: keil,   name: keil}
+  rutsche:            {material: abs,    name: rutsche_}
+  rutschentraeger:    {material: alu,    name: rutschentraeger}
+nur_lage: [durchlichtlasche, zylinderaufnahme]   # gebaut, damit Verknüpfungen lösbar sind; ohne Kollision
+gelenke:                              # Grenzverknüpfung → Körper/Gelenkname im MJCF der Prüfaufgabe
+  g1: {koerper: schieber, gelenk: hub}
+  g2: {koerper: keil, gelenk: weiche}

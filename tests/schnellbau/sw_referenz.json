@@ -1,0 +1,176 @@
+{
+ "auswerferhalteplatte/auswerferhalteplatte": {
+  "spec": "auswerferhalteplatte/auswerferhalteplatte.yaml",
+  "volumen": 692653.89,
+  "huellquader": [
+   246.0,
+   22.0,
+   156.0
+  ],
+  "quelle": "SolidWorks auswerferhalteplatte/auswerferhalteplatte.yaml lauf-1"
+ },
+ "buchse/buchse": {
+  "spec": "buchse/buchse.yaml",
+  "volumen": 37425.139,
+  "huellquader": [
+   50.0,
+   60.0,
+   50.0
+  ],
+  "quelle": "SolidWorks buchse/buchse.yaml lauf-1"
+ },
+ "motorhalter/grundplatte": {
+  "spec": "motorhalter/grundplatte.yaml",
+  "huellquader": [
+   160.0,
+   12.0,
+   100.0
+  ],
+  "quelle": "SolidWorks motorhalter/motorhalter.yaml lauf-1"
+ },
+ "motorhalter/motorbock": {
+  "spec": "motorhalter/motorbock.yaml",
+  "huellquader": [
+   75.0,
+   90.0,
+   60.0
+  ],
+  "quelle": "SolidWorks motorhalter/motorhalter.yaml lauf-1"
+ },
+ "schlitten/grundplatte": {
+  "spec": "schlitten/grundplatte.yaml",
+  "volumen": 597576.801,
+  "huellquader": [
+   300.0,
+   20.0,
+   100.0
+  ],
+  "quelle": "SolidWorks schlitten/linearschlitten.yaml lauf-1"
+ },
+ "schlitten/hebel": {
+  "spec": "schlitten/hebel.yaml",
+  "volumen": 9032.55,
+  "huellquader": [
+   60.0,
+   10.0,
+   16.0
+  ],
+  "quelle": "SolidWorks schlitten/linearschlitten.yaml lauf-1"
+ },
+ "schlitten/leiste": {
+  "spec": "schlitten/leiste.yaml",
+  "volumen": 144873.863,
+  "huellquader": [
+   300.0,
+   25.0,
+   20.0
+  ],
+  "quelle": "SolidWorks schlitten/linearschlitten.yaml lauf-1"
+ },
+ "schlitten/schlitten": {
+  "spec": "schlitten/schlitten.yaml",
+  "volumen": 118743.363,
+  "huellquader": [
+   80.0,
+   25.0,
+   60.0
+  ],
+  "quelle": "SolidWorks schlitten/linearschlitten.yaml lauf-1"
+ },
+ "stehlager/deckel": {
+  "spec": "stehlager/deckel.yaml",
+  "huellquader": [
+   90.0,
+   30.0,
+   50.0
+  ],
+  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-1"
+ },
+ "stehlager/grundplatte": {
+  "spec": "stehlager/grundplatte.yaml",
+  "volumen": 394188.054,
+  "huellquader": [
+   200.0,
+   20.0,
+   100.0
+  ],
+  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-1"
+ },
+ "stehlager/unterteil": {
+  "spec": "stehlager/unterteil.yaml",
+  "huellquader": [
+   160.0,
+   50.0,
+   60.0
+  ],
+  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-1"
+ },
+ "zahnstangentrieb/antriebswelle": {
+  "spec": "zahnstangentrieb/antriebswelle.yaml",
+  "volumen": 105798.187,
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zahnstangentrieb/grundplatte": {
+  "spec": "zahnstangentrieb/grundplatte.yaml",
+  "volumen": 597576.801,
+  "huellquader": [
+   300.0,
+   20.0,
+   100.0
+  ],
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zahnstangentrieb/lagerbock": {
+  "spec": "zahnstangentrieb/lagerbock.yaml",
+  "huellquader": [
+   40.0,
+   165.0,
+   20.0
+  ],
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zahnstangentrieb/leiste": {
+  "spec": "zahnstangentrieb/leiste.yaml",
+  "volumen": 144873.863,
+  "huellquader": [
+   300.0,
+   25.0,
+   20.0
+  ],
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zahnstangentrieb/ritzelwelle": {
+  "spec": "zahnstangentrieb/ritzelwelle.yaml",
+  "volumen": 57625.473,
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zahnstangentrieb/schlitten": {
+  "spec": "zahnstangentrieb/schlitten.yaml",
+  "huellquader": [
+   80.0,
+   25.0,
+   60.0
+  ],
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zahnstangentrieb/zahnstange": {
+  "spec": "zahnstangentrieb/zahnstange.yaml",
+  "volumen": 46366.372,
+  "huellquader": [
+   188.495559,
+   14.5,
+   20.0
+  ],
+  "quelle": "SolidWorks zahnstangentrieb/zahnstangentrieb.yaml lauf-4"
+ },
+ "zentrieraufnahme/zentrieraufnahme": {
+  "spec": "zentrieraufnahme/zentrieraufnahme.yaml",
+  "volumen": 315014.796,
+  "huellquader": [
+   160.0,
+   45.0,
+   100.0
+  ],
+  "quelle": "SolidWorks zentrieraufnahme/zentrieraufnahme.yaml lauf-1"
+ }
+}
