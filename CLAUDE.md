@@ -72,8 +72,6 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
 ## Baugruppen (Stufe 3b)
 - Baugruppen über den Skill `baugruppe`: Baugruppen-Spec nach `schema/baugruppe.schema.json` und Teil-Specs im selben
   Auftragsordner; **eine** Freigabe (`swki freigeben <baugruppe.yaml>`) für alles. Verknüpfungen sind Bauweg.
-- Mehrere neue Eigenteile: Schnittstellen in `schnittstellen.md`, Teil-Specs parallel über Subagenten (gleiches Modell), dann die
-  Baugruppen-Spec (Skill `baugruppe` §1).
 - `swki bauen` übernimmt unveränderte Eigenteile aus einem früheren Lauf desselben Auftrags (Schlüssel und Datei-SHA-256,
   `swki/baugruppe/wiederverwendung.py`) und baut geänderte zuerst; `--alles-neu` baut alle, Schalter `wiederverwenden`
   in `config/standard.yaml`. `swki pruefen` misst trotzdem jedes Teil gegen die freigegebene Kopie.

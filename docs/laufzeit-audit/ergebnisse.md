@@ -444,9 +444,10 @@ Rückfrage beim Nutzer (wie Umbau 2).
 | Fallen-Prüfer wie D3/D4 (Verweis-Prompt auf `auftrag-*.md`, Urteil selbst schreiben), 20 + 4 gestartet; je Durchgang zwei F6-Urteile vom falschen Pfad `MESSFALLE-F6/durchgang-<n>` an den richtigen verschoben, Fehlablage gelöscht | Vergleichbarkeit; dieselbe Fehlablage wie in D3/D4 |
 
 **Offene Hebel nach Umbau 3:**
-1. **Teil 2 zurücknehmen** (Skill `baugruppe` §1, „Zwei oder mehr neue Eigenteile“): in beiden Durchgängen langsamer
-   und doppelte Tokens. Wenn überhaupt, dann nur die Schnittstellenliste ohne Subagenten oder Subagenten mit fertigem
-   Teil-Skelett statt Skill-Lektüre.
+1. ~~**Teil 2 zurücknehmen**~~ – **erledigt** (Nutzer 25.10.2026, vor dem PR nach `main`): Abschnitt „Zwei oder mehr
+   neue Eigenteile“ aus Skill `baugruppe` §1 und die Zeile in `CLAUDE.md` entfernt; das Stehlager läuft wieder wie in
+   D3/D4 gemessen. Nicht neu gemessen; der Score 7,54 enthält Teil 2 noch (ohne ihn geschätzt ~7,65). Wenn wieder, dann
+   nur die Schnittstellenliste ohne Subagenten oder Subagenten mit fertigem Teil-Skelett statt Skill-Lektüre.
 2. Prüfer (20–110 s, größter Streuer bei Prüfstation und Kamera): Kurzbericht statt vollem Prüfbericht (O10).
 3. Prüfer-Subagenten lesen über relative Pfade aus dem Arbeitsverzeichnis der aufrufenden Sitzung (Leck-Befunde D5/D6):
    im Messstand die Leck-Prüfung auf Referenz-Pfade beschränken oder den Prüfer-Prompt auf absolute Pfade festlegen.
