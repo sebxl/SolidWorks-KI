@@ -1,7 +1,7 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1 und 2, Score 4,9 → Mittel 7,17) – Ergebnisse:
+Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1–3, Score 4,9 → Mittel 7,54) – Ergebnisse:
 docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
 `huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
