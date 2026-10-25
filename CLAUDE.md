@@ -105,6 +105,16 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
   den Skill `compiler-erweitern`.
 - Regressions-Suite enthält die Zentrieraufnahme (`tests/referenz/zentrieraufnahme/`).
 
+## Schnellbau und Simulation (Stufe C1)
+- Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,
+  Spec `docs/superpowers/specs/2026-10-25-schnellbau-c1-design.md`): `swki schnellbau teil <spec> [--setze N=w] [--stl]`,
+  `swki schnellbau mjcf <baugruppe> <sim.yaml> <aus.xml>` (Extra `schnellbau`: build123d, mujoco, optuna – Versionen fest).
+- Für Simulationen Geometrie nie aus Specs abschreiben, sondern über `swki.schnellbau` (Lage/Gelenke aus der
+  Baugruppen-Spec, konvexe Zerlegung, Trägheit aus der B-Rep). Was der Schnellbau nicht kann (skript, Drehungen im
+  Lagelöser, Kopplungen), meldet er (`SCHNELLBAU_NICHT_UNTERSTUETZT` bzw. `meldungen`) – nie still weglassen.
+- SolidWorks bleibt der verbindliche Bau. Gleichheit beider Backends: `tests/schnellbau` (ohne SolidWorks, gegen
+  `sw_referenz.json`) und live `-m werkzeuge.schnellbau_abgleich` nach Änderungen am Compiler oder am Schnellbau.
+
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,
   freigegebene Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach

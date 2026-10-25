@@ -424,9 +424,9 @@ bestätigt ist.
 
 | Stufe | Inhalt | Nutzen danach |
 |---|---|---|
-| C1 | Schnellbau für extrusion/schnitt/bohrung (glatt)/referenz; MJCF-Generator nur für fest + `grenze_abstand`; exakte 2,5D-Zerlegung | Prüfstations-Weiche aus der Spec simulierbar (Spike, §7) |
+| C1 ✔ (25.10.) | `swki.schnellbau`: alle Teil-Features außer skript (auch die von C3: verrundung, fase, muster, spiegeln, rotation, normbohrung, Formschräge, Verzahnung), exakte Zerlegung, Lage (Verschiebung) und Gelenke (Schub, Dreh) aus der Baugruppe, MJCF; Referenz-Suite durch beide Backends (`werkzeuge/schnellbau_abgleich.py`, `tests/schnellbau`) | 19 Teil-Specs der Referenz-Suite gleich SolidWorks (Volumen ≤ 2·10⁻⁶ %, Verzahnung ≤ 10⁻³ %; STL max ≤ 0,074 mm) |
 | C2 | Runner + Optuna (JournalStorage, Mehrprozess, WilcoxonPruner, Prüfstufen 0–2), Block `optimierung` im Schema | autonome innere Schleife |
-| C3 | verrundung, fase, muster, spiegeln, rotation, normbohrung, Kaufteil-STEP; Backend-Gleichheit über `tests/referenz` | alle Teile der Prüfstation |
+| C3 | Rest aus C1: Drehungen im Lagelöser, Normteile/Kaufteil-STEP im Modell, Kopplungen als Gleichheitsbedingung, Formschräge an `durch_alles`/`bis_flaeche` geprüft | alle Teile der Prüfstation |
 | C4 | Prüfstufen 3–4 automatisch (`swki durchlauf` des Gewinners, STL-Export, Gegenprobe), Bericht mit 3D-Wiedergabe aus dem Schnellbau | Schleife bis SolidWorks ohne Menschen |
 | C5 | äußere Schleife (Topologie-Varianten mit erlaubten Feature-Änderungen), Kalibrierung aus Versuchen (Ü13) übernehmen | Montageanlagen-Maßstab |
 
