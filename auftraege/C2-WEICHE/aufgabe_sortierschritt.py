@@ -160,7 +160,7 @@ def lauf(probe: dict, job: dict) -> dict:
     abstand = None
     if y is not None:
         lo, hi = ry["trenn"]
-        abstand = 0.0 if lo <= y <= hi else min(abs(y - lo), abs(y - hi))
+        abstand = 0.0 if lo <= y <= hi else round(min(abs(y - lo), abs(y - hi)), 3)
     return {"ergebnis": r["ergebnis"], "fehlerbild": fehlerbild(r, ry), "gueltig": r["sprung"] <= S.SPRUNG_MAX,
             "y_frei": y, "abstand_trennwand_mm": abstand, "ort": r.get("ort"), "seed": r.get("seed")}
 
