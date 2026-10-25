@@ -79,6 +79,10 @@ abgebildet. Ergebnisse sind Anteile mit 95-%-Wilson-Bereich, Lauf für Lauf dete
 | Stehlager | 336–343 s | 35–37 s | 4,6–6,4 GB |
 | Prüfstation AP 6.8 (Änderung) | 454–635 s | 237–256 s | 10,6–11,2 GB |
 
+Die Zeiten stammen von vor BTP Umbau 3 (PR #19, 25.10.2026). Seitdem übernimmt `swki bauen` unveränderte Eigenteile
+aus einem früheren Lauf. Das verkürzt den SolidWorks-Nachbau eines Optimierungsergebnisses, bei dem sich nur wenige
+Teile ändern, ändert aber nichts an der Größenordnung von Minuten je Zyklus.
+
 SolidWorks läuft in nur einer Instanz; die Prüfstation braucht vor Bauen und Prüfen einen frischen Start. 1000
 Iterationen wären 3–7 Tage reine Bauzeit, und eine Funktionsprüfung (Fallen, Schieben, Sortieren) liefert SolidWorks
 dabei gar nicht. **Für die Schleife taugt SolidWorks nur als letzter Schritt.**
