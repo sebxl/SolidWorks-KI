@@ -12,7 +12,7 @@
 
 ## Voraussetzung vor Task 1
 
-Dieser Branch ist von main abgezweigt, bevor PR #18–#21 kamen. **Vor dem ersten Code-Schritt** mit `mcp__ccd_host__sync_with_base_branch` abgleichen. Die App verweigert das, bis der Nutzer die Git-Quelle bestätigt hat (Help → Troubleshooting → Review Pinned Git Origins). Dieser Plan ist gegen origin/main b2401c9 geschrieben; alle Zeilen- und Funktionsangaben gelten dort.
+Erledigt am 2026-10-31: Der Branch ist mit origin/main ab61b21 abgeglichen (Merge 75a3995). Der Plan wurde gegen b2401c9 geschrieben; #22 (C2, `swki optimiere`) ändert `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki/spec/laden.py` und `swki/compiler/bauen.py` nur an anderen Stellen. Zwei Folgen: Die Weiche `aenderung` in `_freigeben` steht hinter dem Zweig `--im-raum`, und `_bauen` liest `hochstufen` mit `getattr(args, "hochstufen", False)`, weil `swki durchlauf` ein eigenes `Namespace` ohne dieses Feld übergibt.
 
 ## Präzisierungen gegenüber der Spec (vom Planer, bindend für diesen Plan)
 
