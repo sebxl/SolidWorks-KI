@@ -151,8 +151,10 @@ pruefung:
   masse_pruefen:
     - {was: "Randabstand Gewinde", von: {flaeche: {nahe: [-50, 0, 10], normale: [-1, 0, 0]}},
        zu: {punkt: [-38, 15, 20]}, soll: "=RA", tol: 0.01}
-  volumen_delta: {soll: auto, toleranz_prozent: 1}   # optional
+  volumen_delta: {soll: 1250, toleranz_prozent: 1}    # optional
 ```
+
+*Nachgezogen bei der Umsetzung, 2026-10-31:* `volumen_delta.soll` ist in Etappe 1 nur eine Zahl; `auto` entfällt (Plan, Präzisierung 2).
 
 ### 4.1 Punkt-Typen
 
@@ -178,6 +180,8 @@ in der Bestandskopie) und benutzen die Teil-Typen.
 
 - Fremde Features, Maße, Komponenten und Verknüpfungen werden mit ihrem **SolidWorks-Namen** aus der Bestandsaufnahme
   genannt (deutsch, wie im Baum).
+  *Nachgezogen bei der Umsetzung, 2026-10-31:* Maßname ist `IDimension.FullName` ohne das letzte `@…` (Dokument). Ein verknüpftes Maß heißt nach seiner Gruppe,
+  `Bohrung_D@Skizze3`, nicht `D1@Skizze3`; `Parameter` findet nur diesen Namen (S18b).
 - In neuen Features gelten die Anker der Teil-Spec. `{feature: <Name>, flaeche|auswahl: …}` löst einen Namen auf, der keine
   Punkt-ID ist, auf das fremde Feature (Kontext wie `kontext_aus_datei`, `swki/pruefung/messen.py`); Punkt-IDs dürfen keinen
   Featurenamen des Bestands tragen. `{nahe: […]}` geht immer (Modellkoordinaten des Bestands, mm).
@@ -189,6 +193,13 @@ in der Bestandskopie) und benutzen die Teil-Typen.
 Die Bestandsaufnahme markiert je Maß, ob es **gesteuert** ist (Gleichung, globale Variable, verknüpftes Maß,
 Konstruktionstabelle) oder **getrieben** (Referenzmaß, §3). Ebenso Unterdrückungszustände, die eine Konstruktionstabelle
 steuert.
+
+*Nachgezogen bei der Umsetzung, 2026-10-31:* Verknüpfte Maße sind treibend (Plan, Präzisierung 1): Es gibt kein führendes Maß, jedes Mitglied setzt alle (S18c), die
+übrigen stehen in `folgen`. `DrivenState` ist bei Gleichung und Referenzmaß gleich 1: Gesteuert ist, was links in einer Gleichung
+steht oder `IsDesignTableDimension` meldet; getrieben der Rest mit `DrivenState` 1 (S18b). `SetSystemValue3` meldet auf einem
+gesteuerten Maß Erfolg, der nächste Neuaufbau nimmt den Wert still zurück (S18c).
+**Offen:** Tabellengesteuerte Unterdrückungszustände lassen sich ohne Excel nicht lesen (S18b, Ergebnisse §1). Maße gehen ohne
+Excel.
 
 - Ein `mass`-Punkt auf ein gesteuertes Maß ist ein Befund `MASS_GESTEUERT` (`validieren`) mit der steuernden Quelle; die KI
   schreibt stattdessen einen `gleichung`-Punkt an der Quelle bzw. ändert das führende verknüpfte Maß. Ist die Quelle eine
@@ -209,6 +220,8 @@ steuert.
    Verknüpfungen existieren (`BESTAND_REFERENZ`); `alt` stimmt mit dem aufgenommenen Wert überein (`BESTAND_ALTWERT`);
    gesteuerte Maße (`MASS_GESTEUERT`); `folgen` vollständig und nicht zu viel (`FOLGEN_ABWEICHEND`, berechnet aus der
    Aufnahme); `loeschen` nennt alle Kinder (`KINDER_FEHLEN`).
+   *Nachgezogen bei der Umsetzung, 2026-10-31:* `GetChildren` kennt nur erklärte Abhängigkeiten. Die Rippe hängt geometrisch an der Tasche und steht dort nicht; `KINDER_FEHLEN`
+   ist darum eine Vorprüfung, den Rest fängt der Neuaufbau-Vergleich beim Bau (S18b, S18c).
 4. `feature`-Punkte: der Feature-Inhalt wird wie in einer Teil-Spec validiert (Schema, Normbohrungsgrößen, Bezüge, Hinweise
    `feste_zahl`/`bezug`).
 5. Jeder Punkt, der Geometrie ändern kann (`mass`, `gleichung`, `unterdruecken`, `aufheben`, `loeschen`, `feature`, `skript`,
@@ -241,6 +254,9 @@ Anker und `bezug` neuer Features, `nach`, die Skriptdateien und die Reihenfolge 
    (Abhängigkeiten aus der Datei gelesen, ohne das Original zu öffnen – Weg im Spike S18) mit relativer Ordnerstruktur; was
    außerhalb des Ordners des Originals liegt, unter `extern/` mit Zuordnung in `bestand.json`. Fehlende Referenzen →
    `BESTAND_REFERENZ_FEHLT` (Liste).
+   *Nachgezogen bei der Umsetzung, 2026-10-31:* `VersionHistory` liefert z. B. `18000[2025/268]`, Vergleich gegen `GetLatestSupportedFileVersion`.
+   `GetDocumentDependencies2(pfad, True, False, False)` geht ohne Öffnen (gespeicherte Pfade, Paare Titel/Pfad, `None` ohne
+   Referenz). Die schreibgeschützte Kopie öffnet still mit Warnung 2, `Save3` scheitert mit Fehler 2 (S18b).
 4. Erneutes `aufnehmen` derselben Datei: gleiche SHA-256 → vorhandene Aufnahme; andere → neue Aufnahme `bestand-<n+1>`
    (der Kollege hat weitergearbeitet); eine Spec auf die alte Aufnahme meldet `BESTAND_VERALTET`.
 
@@ -261,6 +277,11 @@ Die Kopie wird geöffnet und gelesen, nicht gespeichert:
   Bestimmtheit, statische Kollisionen.
 - Bilder Iso/Vorne/Oben/Rechts.
 
+*Nachgezogen bei der Umsetzung, 2026-10-31:* Werte je Konfiguration nur durch Umschalten lesen: `GetSystemValue3` mit Namen liefert 0 für nicht aktive Konfigurationen.
+Maße unterdrückter Features sind lesbar. Lage aus `IDimension.ReferencePoints` (Abweichung bis 0,1 mm). Die Bestandskopie bleibt die
+Vorher-Geometrie, eine eigene Ablage ist nicht nötig. Lesen geht unsichtbar (1,4 statt 5,3 s, kein Fenster mit 2,3 GB); nur die Bilder
+brauchen ein Fenster (S18b, S18d).
+
 Ausgabe kompakt (Zusammenfassung in JSON, Rohdaten in `bestand.json`), damit die KI die Zuordnung „das 40er Maß an der Bohrung“
 → `D2@Skizze4` trifft.
 
@@ -268,6 +289,9 @@ Ausgabe kompakt (Zusammenfassung in JSON, Rohdaten in `bestand.json`), damit die
 
 `swki bestand zeige <auftrag> (--mass <name> | --feature <name>)`: Bild der Bestandskopie mit hervorgehobenem Maß bzw. Feature
 (Weg im Spike). Für die Zuordnung und die Freigabe-Vorlage.
+
+*Nachgezogen bei der Umsetzung, 2026-10-31:* Feature: `Select2` genügt. Maß: Bloße Auswahl zeigt nichts. Im offenen Dokument Toggle 31 und 32 einschalten
+(`Extension.SetUserPreferenceToggle`), Ansicht zur Skizzenebene, `IAnnotation.Color` rot setzen, PNG, nicht speichern (S18e).
 
 ## 6. Bauen
 
@@ -281,6 +305,14 @@ Ausgabe kompakt (Zusammenfassung in JSON, Rohdaten in `bestand.json`), damit die
    gegengeprüft.
 4. Speichern **an Ort und Stelle** (kein Speichern unter neuem Namen; die interne Datei-ID bleibt – Spike S18a), Protokoll mit
    Maßprotokoll der Punkte (`Kontext.mass`), SHA-256 aller Dateien des Laufs.
+
+*Nachgezogen bei der Umsetzung, 2026-10-31:* Gemessene Fallen (S18c): Option `swThisConfiguration` trifft bei einem vor dem Umschalten geholten `IFeature` die alte
+Konfiguration, darum `SetSuppression2` nur mit `swSpecifyConfiguration` und Namen. Ein Feature, das in einer anderen Konfiguration
+als der ersten entsteht, ist in der ersten unterdrückt: Punkt `feature` hebt das in allen Konfigurationen auf. Doppelte Namen
+scheitern still, Namen zurücklesen. `ReorderFeature` (für `nach`) kann bei Rückgabe False den Baum geändert haben. Löschen mit
+`DeleteSelection2(3)`, Baum vorher/nachher vergleichen; eine Skizze mit Kind lässt sich so nicht löschen. Vor dem Speichern auf die
+aufgenommene aktive Konfiguration zurück, `Save3` übernimmt die gerade aktive. Handler laufen auf fremden Flächen (`normbohrung`
+mit Randbezug). `Save3` hält die Datei-ID; `SaveAs3` tut das gemessen ebenfalls (S18a), gespeichert wird trotzdem an Ort und Stelle.
 
 Schutzregeln im Code: swki öffnet und speichert nur Dateien unter `<arbeitsordner>/<auftrag>/lauf-<n>/`; die Bestandskopie wird
 nur zum Lesen geöffnet; das Original nie.
@@ -310,10 +342,16 @@ Je Konfiguration und Körper: **Differenz vorher/nachher** in denselben Modellko
 eine Verschiebung ist hier ein Fehler). Bevorzugter Weg: exakte Körper-Differenz an Kopien (`IBody2.Copy2`, `Operations2`
 Subtraktion in beide Richtungen; Spike S18d), Rückfall STL-Abstand (`werkzeuge/messstand/vergleich.py` ohne Ausrichtung).
 
+*Nachgezogen bei der Umsetzung, 2026-10-31:* Exakte Differenz trägt (S18d): unverändert leer ohne Splitter, Ø1-Bohrung auf 6 Stellen, Flächenversatz bis 0,05 µm, 0,05 s, an
+unsichtbaren Dokumenten. Der Körper ist genauer als die Toleranz; ob er sie überschreitet, entscheidet seine Dicke
+(`2·Volumen/Fläche`, kleinste Box-Kante). **Der STL-Rückfall ist nicht gleichwertig:** 0,03 mm Rauschen bei gleicher Geometrie, Ø1
+und 50 µm gehen darin unter, und STL-Export am unsichtbaren Dokument bringt SolidWorks zum Absturz. Er taugt nur als Hinweis, nicht als
+Nachweis der 0,01 mm.
+
 - Jeder Differenzkörper (bzw. jede abweichende Stelle über der Toleranz, Vorgabe 0,01 mm) muss vollständig in einem `bereich`
   liegen: `box` (achsparallel in Modellkoordinaten, mm) oder `features` (Hüllquader der Flächen dieser Features vorher und
   nachher, mit Toleranz). Sonst Mangel `bereich` mit Lage und Volumen der Abweichung.
-- `volumen_delta`: Soll aus den Bereichen, wenn analytisch bestimmbar (`auto`, z. B. Bohrungen), sonst als Zahl; optional.
+- `volumen_delta`: Soll als Zahl; optional. *Nachgezogen bei der Umsetzung, 2026-10-31:* `auto` entfällt in Etappe 1 (Plan, Präzisierung 2).
 - Bereiche ohne Differenz sind ein Mangel `punkt:<id>`, wenn der Punkt Geometrie ändern sollte.
 - Der Prüfbericht nennt je Differenz Lage, Hüllquader, Volumen und zugeordneten Bereich; dazu Vorher-/Nachher-Bilder derselben
   Ansichten und ein Bild mit den Differenzkörpern (wenn der Spike das hergibt).
@@ -328,6 +366,12 @@ bisher, Mängel mit Punkt-IDs oder Prüfungs-ID. Nachbessern, Abbruch ohne Forts
 ## 8. Etappe 2 – Baugruppen
 
 ### 8.1 Aufnahme und Lauf
+
+*Nachgezogen bei der Umsetzung, 2026-10-31:* S18g: Datei-Kopie aller Dateien reicht, die Datei neben der Baugruppe hat Vorrang. **Fehlt eine, lädt SolidWorks still vom
+gespeicherten Pfad, also vom Original (Warnung 0).** Darum nach dem Öffnen jeden `GetPathName` gegen den Lauf-Ordner prüfen. Nur
+das geänderte Teil speichern: Baugruppe und andere Teile bleiben byteweise gleich. Teil neben alter Baugruppe: nur Warnung 32. Mit
+`OpenDoc6`-Option 64 öffnen, sonst sind Komponenten leicht geladen und `GetModelDoc2` liefert `None`. Pack and Go ist über IDispatch
+nicht erreichbar und nicht nötig; `ReplaceReferencedDocument` geht, ändert aber die SHA-256 der Baugruppe.
 
 Wie §5–§7 mit der Hauptbaugruppe; alle referenzierten Dateien liegen in der Bestandskopie und im Lauf-Ordner. Die Kopie im Lauf
 verweist nur auf Dateien im Lauf-Ordner (Spike S18g). Nach dem Bau prüft swki je geänderter Datei die SHA-256 gegen die
@@ -394,6 +438,8 @@ Live, nur nach Freigabe durch den Nutzer und nie parallel zu einer anderen Solid
 
 - **S18a Datei-ID:** Teil kopieren, Kopie öffnen, Maß ändern, an Ort und Stelle speichern; eine Baugruppe, die auf das Original
   verweist, öffnet die zurückkopierte Datei ohne Warnung zur internen ID. Gegenprobe: „Speichern unter“ bricht das.
+  *Nachgezogen bei der Umsetzung, 2026-10-31:* Erster Teil bestätigt. Die Gegenprobe nicht: `SaveAs3` (neuer Name, anderer Ordner, Copy) erhält die ID ebenfalls; nur ein neu
+  angelegtes Dokument löst IdMismatch aus (Warnung Bit 1). Ergebnisse aller Zeilen: `docs/bestandsdateien/ergebnisse.md` §1.
 - **S18b Aufnahme:** `VersionHistory` ohne Öffnen; Abhängigkeiten einer Baugruppe ohne Öffnen; Baum, Maße mit Namen und Werten
   je Konfiguration, gesteuert/getrieben/verknüpft erkennen (auch über eine Konstruktionstabelle, ohne Excel zu starten),
   Gleichungsmanager, What's Wrong, externe Referenzen.
@@ -416,6 +462,7 @@ Live, nur nach Freigabe durch den Nutzer und nie parallel zu einer anderen Solid
 
 - **Musterteil** und **Musterbaugruppe** (S18f) als SolidWorks-2025-Dateien im Git (Ausnahme von „erzeugte SolidWorks-Dateien
   nicht ins Git“ wie `gm42-10.step`, damit SHA-256 und Aufnahme fest bleiben); das Erzeugungsskript bleibt die Quelle.
+  *Nachgezogen bei der Umsetzung, 2026-10-31:* Dritte Datei `gm42-10.SLDPRT` (Import der Test-STEP), die Baugruppe braucht sie. Das Muster hat zusätzlich ein Referenzmaß.
 - Änderungs-Spec Teil mit `mass` (frei und gesteuert über `gleichung`), `unterdruecken`, `feature` (Normbohrung mit Randbezug),
   `eigenschaft`; Baugruppe mit `komponente_neu` (Normteil ISO 4762), `verknuepfung_neu`, Teiländerung in der Baugruppe.
 - **Negativfälle:** falscher Altwert (`BESTAND_ALTWERT`); `mass` auf gesteuertes Maß (`MASS_GESTEUERT`); Bereich zu eng

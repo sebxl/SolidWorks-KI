@@ -1,0 +1,212 @@
+{
+ "start_mb": 2746,
+ "vorbereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.93,
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\orig\\Lagerdeckel.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\orig\\gm42-10.SLDPRT"
+  ]
+ },
+ "sekunden": 11.2,
+ "ende_mb": 4031,
+ "weg1_dateikopie": {
+  "abh_ohne_suche": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\orig\\Lagerdeckel.SLDPRT",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\orig\\gm42-10.SLDPRT"
+  ],
+  "abh_mit_suche": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\Lagerdeckel.SLDPRT",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\gm42-10.SLDPRT"
+  ],
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.88
+  },
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\gm42-10.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\Lagerdeckel.SLDPRT"
+  ],
+  "offen": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\Muster.SLDASM"
+  ],
+  "zustand": 1,
+  "modelldoc_da": false,
+  "teil_oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.74
+  },
+  "setzen": 0,
+  "teil_rebuild": true,
+  "teil_speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "baugruppe_dirty": false,
+  "sha_gleich": {
+   "Lagerdeckel.SLDPRT": false,
+   "Muster.SLDASM": true,
+   "gm42-10.SLDPRT": true
+  },
+  "orig_unveraendert": {
+   "Lagerdeckel.SLDPRT": true,
+   "Muster.SLDASM": true,
+   "gm42-10.SLDPRT": true
+  },
+  "erneut": {
+   "fehler": 0,
+   "warnungen": 32,
+   "s": 1.19,
+   "bits": {
+    "id_mismatch": false,
+    "needs_regen": true,
+    "fehlt": false
+   },
+   "komponenten": [
+    {
+     "name": "gm42-10-1",
+     "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\gm42-10.SLDPRT",
+     "unterdrueckt": 1,
+     "volumen": null
+    },
+    {
+     "name": "Lagerdeckel-1",
+     "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\Lagerdeckel.SLDPRT",
+     "unterdrueckt": 1,
+     "volumen": null
+    }
+   ],
+   "neuaufbau": true,
+   "whats_wrong": []
+  },
+  "sha_nach_nur_lesen": {
+   "Lagerdeckel.SLDPRT": false,
+   "Muster.SLDASM": true,
+   "gm42-10.SLDPRT": true
+  }
+ },
+ "weg1_baugruppe_speichern": {
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "geaendert": {
+   "Lagerdeckel.SLDPRT": false,
+   "Muster.SLDASM": true,
+   "gm42-10.SLDPRT": false
+  },
+  "abh_ohne_suche": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\Lagerdeckel.SLDPRT",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg1\\gm42-10.SLDPRT"
+  ]
+ },
+ "zurueckkopiert_neben_baugruppe": {
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.96,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\zurueck\\gm42-10.SLDPRT",
+    "unterdrueckt": 1,
+    "volumen": null
+   },
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\zurueck\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 1,
+    "volumen": null
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "weg2_pack_and_go": {
+  "methode": "Parameter nicht optional.",
+  "get": "Unzulässige Parameteranzahl."
+ },
+ "voll_laden": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.94,
+  "zustand": [
+   [
+    "gm42-10-1",
+    2,
+    true
+   ],
+   [
+    "Lagerdeckel-1",
+    2,
+    true
+   ]
+  ],
+  "standard_leicht": true
+ },
+ "weg3_ersetzen": {
+  "ersetzen": [
+   true,
+   true
+  ],
+  "sha_asm_gleich": false,
+  "abh_ohne_suche": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg3\\Lagerdeckel.SLDPRT",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg3\\gm42-10.SLDPRT"
+  ],
+  "offen": [],
+  "probe": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.89,
+   "bits": {
+    "id_mismatch": false,
+    "needs_regen": false,
+    "fehlt": false
+   },
+   "komponenten": [
+    {
+     "name": "Lagerdeckel-1",
+     "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg3\\Lagerdeckel.SLDPRT",
+     "unterdrueckt": 1,
+     "volumen": null
+    },
+    {
+     "name": "gm42-10-1",
+     "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\g\\weg3\\gm42-10.SLDPRT",
+     "unterdrueckt": 1,
+     "volumen": null
+    }
+   ],
+   "neuaufbau": true,
+   "whats_wrong": []
+  },
+  "orig_unveraendert": {
+   "Lagerdeckel.SLDPRT": true,
+   "Muster.SLDASM": true,
+   "gm42-10.SLDPRT": true
+  }
+ }
+}

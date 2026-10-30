@@ -1,0 +1,361 @@
+{
+ "start_mb": 3101,
+ "c1_lesen": {
+  "aktiv_diese": [
+   0.008
+  ],
+  "alle": [
+   0.008,
+   0.0
+  ],
+  "benannt_beide": [
+   0.008,
+   0.0
+  ],
+  "benannt_andere": [
+   0.0
+  ],
+  "aktiv_b_benannt_beide": [
+   0.0,
+   0.008
+  ],
+  "fase_d1": {
+   "Standard": 2.0,
+   "Variante B": 2.0
+  }
+ },
+ "sekunden": 31.0,
+ "ende_mb": 5444,
+ "c2_alle": {
+  "status": 0,
+  "rebuild": true,
+  "werte": {
+   "Standard": 9.0,
+   "Variante B": 9.0
+  },
+  "volumen": {
+   "Standard": 104829.381,
+   "Variante B": 105029.381
+  }
+ },
+ "c3_nur_b_von_standard": {
+  "status": 0,
+  "rebuild": true,
+  "werte": {
+   "Standard": 9.0,
+   "Variante B": 7.0
+  },
+  "volumen": {
+   "Standard": 104829.381,
+   "Variante B": 107849.381
+  },
+  "aktiv": "Standard"
+ },
+ "c3_nur_aktiv": {
+  "status": 0,
+  "werte": {
+   "Standard": 6.0,
+   "Variante B": 7.0
+  }
+ },
+ "c4_variable_option": {
+  "vorher": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ],
+  "index": 0,
+  "set_option": 0,
+  "ausgewertet": -1,
+  "status": -1,
+  "rebuild": true,
+  "nachher": [
+   "\"L\" = 110",
+   "\"D1@Skizze1\" = \"L\""
+  ],
+  "d1": {
+   "Standard": 110.0,
+   "Variante B": 110.0
+  },
+  "volumen": {
+   "Standard": 118219.381,
+   "Variante B": 118439.381
+  }
+ },
+ "c4_variable_put": {
+  "status": 0,
+  "ausgewertet": -1,
+  "rebuild": true,
+  "nachher": [
+   "\"L\" = 120",
+   "\"D1@Skizze1\" = \"L\""
+  ],
+  "d1": {
+   "Standard": 120.0,
+   "Variante B": 120.0
+  },
+  "volumen": {
+   "Standard": 130199.381,
+   "Variante B": 130439.381
+  },
+  "fehler": []
+ },
+ "c4_gleichung": {
+  "set": 1,
+  "ausgewertet": -1,
+  "rebuild": true,
+  "nachher": [
+   "\"L\" = 120",
+   "\"D1@Skizze1\" = \"L\" + 5"
+  ],
+  "d1": {
+   "Standard": 125.0,
+   "Variante B": 125.0
+  }
+ },
+ "c5_gesteuert": {
+  "status": 0,
+  "direkt": [
+   0.09
+  ],
+  "rebuild": true,
+  "nach_rebuild": {
+   "Standard": 100.0,
+   "Variante B": 100.0
+  }
+ },
+ "c5_getrieben": {
+  "status": 3,
+  "rebuild": true,
+  "werte": {
+   "Standard": 50.0,
+   "Variante B": 50.0
+  }
+ },
+ "c6_verknuepft": {
+  "parameter_d1": false,
+  "parameter_name": true,
+  "status": 0,
+  "rebuild": true,
+  "s3": {
+   "Standard": 10.0,
+   "Variante B": 10.0
+  },
+  "s4": {
+   "Standard": 10.0,
+   "Variante B": 10.0
+  },
+  "volumen": {
+   "Standard": 105108.407,
+   "Variante B": 105308.407
+  }
+ },
+ "c7_unterdruecken": {
+  "alt_diese": true,
+  "aktiv": "Variante B",
+  "nach_alt": {
+   "Standard": true,
+   "Variante B": false
+  },
+  "nach_aufheben_alle": {
+   "Standard": false,
+   "Variante B": false
+  },
+  "neu_diese": true,
+  "nach_neu": {
+   "Standard": false,
+   "Variante B": true
+  },
+  "volumen": {
+   "Standard": 106239.381,
+   "Variante B": 107444.69
+  },
+  "alle": true,
+  "nach_alle": {
+   "Standard": true,
+   "Variante B": true
+  },
+  "volumen_alle": {
+   "Standard": 107244.69,
+   "Variante B": 107444.69
+  },
+  "benannt": true,
+  "nach_benannt": {
+   "Standard": false,
+   "Variante B": true
+  },
+  "volumen_benannt": {
+   "Standard": 106239.381,
+   "Variante B": 107444.69
+  },
+  "fehler": [],
+  "eltern_unterdruecken": true,
+  "eltern_folgen": {
+   "Aufsatz-Linear austragen1": {
+    "Standard": true,
+    "Variante B": false
+   },
+   "Schnitt-Linear austragen1": {
+    "Standard": true,
+    "Variante B": false
+   },
+   "Fase1": {
+    "Standard": true,
+    "Variante B": true
+   },
+   "Verstärkungsrippe1": {
+    "Standard": false,
+    "Variante B": false
+   }
+  }
+ },
+ "c8_schnitt_0": {
+  "auswahl": true,
+  "geloescht": true,
+  "weg": [
+   "Schnitt-Linear austragen2"
+  ],
+  "rebuild": true,
+  "fehler": [],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_schnitt_absorbiert": {
+  "auswahl": true,
+  "geloescht": true,
+  "weg": [
+   "Skizze3",
+   "Schnitt-Linear austragen2"
+  ],
+  "rebuild": true,
+  "fehler": [],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_skizze_0": {
+  "auswahl": true,
+  "geloescht": false,
+  "weg": [],
+  "rebuild": true,
+  "fehler": [],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_skizze_kinder": {
+  "auswahl": true,
+  "geloescht": false,
+  "weg": [],
+  "rebuild": true,
+  "fehler": [],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_skizze_beides": {
+  "auswahl": true,
+  "geloescht": false,
+  "weg": [],
+  "rebuild": true,
+  "fehler": [],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_aufsatz_0": {
+  "auswahl": true,
+  "geloescht": true,
+  "weg": [
+   "Aufsatz-Linear austragen1",
+   "Fase1"
+  ],
+  "rebuild": false,
+  "fehler": [
+   {
+    "feature": "Skizze2",
+    "code": 1,
+    "warnung": true
+   },
+   {
+    "feature": "Schnitt-Linear austragen1",
+    "code": 1,
+    "warnung": false
+   },
+   {
+    "feature": "Skizze3",
+    "code": 1,
+    "warnung": true
+   },
+   {
+    "feature": "Schnitt-Linear austragen2",
+    "code": 1,
+    "warnung": false
+   },
+   {
+    "feature": "Skizze4",
+    "code": 1,
+    "warnung": true
+   },
+   {
+    "feature": "Schnitt-Linear austragen3",
+    "code": 1,
+    "warnung": false
+   },
+   {
+    "feature": "Verstärkungsrippe1",
+    "code": 1,
+    "warnung": false
+   }
+  ],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_aufsatz_kinder": {
+  "auswahl": true,
+  "geloescht": true,
+  "weg": [
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Fase1"
+  ],
+  "rebuild": false,
+  "fehler": [
+   {
+    "feature": "Verstärkungsrippe1",
+    "code": 1,
+    "warnung": false
+   }
+  ],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ },
+ "c8_schnitt_kinder_absorbiert": {
+  "auswahl": true,
+  "geloescht": true,
+  "weg": [
+   "Skizze3",
+   "Schnitt-Linear austragen2"
+  ],
+  "rebuild": true,
+  "fehler": [],
+  "gleichungen": [
+   "\"L\"= 100",
+   "\"D1@Skizze1\" = \"L\""
+  ]
+ }
+}

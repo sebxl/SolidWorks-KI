@@ -1,0 +1,213 @@
+{
+ "start_mb": 440,
+ "c9_in_variante_b": {
+  "unterdrueckt": {
+   "Standard": true,
+   "Variante B": false
+  },
+  "aktiv": "Variante B",
+  "volumen": {
+   "Standard": 106239.381,
+   "Variante B": 106233.2
+  },
+  "standard_nach_force": 106239.381,
+  "aufheben_alle": true,
+  "unterdrueckt_danach": {
+   "Standard": false,
+   "Variante B": false
+  },
+  "volumen_danach": {
+   "Standard": 106033.2,
+   "Variante B": 106233.2
+  }
+ },
+ "sekunden": 29.8,
+ "ende_mb": 2437,
+ "c9_normbohrung": {
+  "s": 6.56,
+  "punkte": [
+   [
+    -38.0,
+    24.0,
+    20.0
+   ],
+   [
+    -38.0,
+    -24.0,
+    20.0
+   ]
+  ],
+  "baum": [
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1",
+   "neu1"
+  ],
+  "v0": {
+   "Standard": 106239.381,
+   "Variante B": 106439.381
+  },
+  "massprotokoll": {
+   "neu1": [
+    {
+     "name": "D1@neu1_positionen",
+     "pfad": "features[0].positionen[0][0]",
+     "art": "lage",
+     "bezug": "-rand",
+     "roh": "=-50+RA",
+     "vorzeichen": 1,
+     "wert": 12.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@neu1_positionen",
+     "pfad": "features[0].positionen[0][1]",
+     "art": "paarabstand",
+     "bezug": "mitte",
+     "roh": 48,
+     "vorzeichen": 1,
+     "wert": 48.0,
+     "einheit": "mm"
+    }
+   ]
+  },
+  "volumen": {
+   "Standard": 105827.019,
+   "Variante B": 106027.019
+  },
+  "fehler": [],
+  "typ": "HoleWzd"
+ },
+ "c10_umbenennen": {
+  "name": "Gewinde M6 Deckel",
+  "gefunden": true,
+  "doppelt": "Verstärkungsrippe1",
+  "baum": [
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1",
+   "Gewinde M6 Deckel"
+  ]
+ },
+ "c11_verschieben": {
+  "nach_schnitt3": true,
+  "baum_1": [
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Gewinde M6 Deckel",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1"
+  ],
+  "rebuild_1": true,
+  "volumen_gleich": true,
+  "vor_tasche": true,
+  "baum_2": [
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Gewinde M6 Deckel",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1"
+  ],
+  "ans_ende": true,
+  "baum_3": [
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1",
+   "Gewinde M6 Deckel"
+  ],
+  "unmoeglich": false,
+  "baum_4": [
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Fase1",
+   "Gewinde M6 Deckel"
+  ],
+  "rebuild": false,
+  "fehler": [
+   {
+    "feature": "Verstärkungsrippe1",
+    "code": 1,
+    "warnung": false
+   }
+  ]
+ },
+ "c12_speichern": {
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "aktiv_vorher": "Variante B",
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.74
+  },
+  "aktiv_nachher": "Variante B",
+  "baum": [
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1",
+   "Gewinde M6 Deckel"
+  ],
+  "volumen": {
+   "Standard": 105377.019,
+   "Variante B": 106027.019
+  },
+  "fehler": []
+ }
+}

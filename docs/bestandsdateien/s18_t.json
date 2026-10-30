@@ -1,0 +1,102 @@
+{
+ "start_mb": 430,
+ "einfuegen": {
+  "vorher_hat_tabelle": false,
+  "vorher_get": true,
+  "einfuegen": true,
+  "nachher_hat_tabelle": true,
+  "baum": [
+   "Tabellen",
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1"
+  ],
+  "ordner": [
+   "Kommentare|CommentsFolder",
+   "Favoriten|FavoriteFolder",
+   "Historie|HistoryFolder",
+   "Auswahlsätze|SelectionSetFolder",
+   "Sensoren|SensorFolder",
+   "Konstruktionsordner|DocsFolder",
+   "Beschriftungen|DetailCabinet",
+   "Oberflächenkörper|SurfaceBodyFolder",
+   "Volumenkörper|SolidBodyFolder",
+   "Beleuchtung und Kameras|EnvFolder",
+   "Markierungen|InkMarkupFolder",
+   "Gleichungen|EqnFolder",
+   "1.0038 (S235JRG2)|MaterialFolder",
+   "Ebene vorne|RefPlane"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "sekunden": 16.6,
+ "ende_mb": 3152,
+ "lesen": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.73
+  },
+  "hat_tabelle": true,
+  "masse": {
+   "Standard": {
+    "wert": [
+     0.008
+    ],
+    "tabelle": true,
+    "driven": 2,
+    "readonly": 0
+   },
+   "Variante B": {
+    "wert": [
+     0.006
+    ],
+    "tabelle": true,
+    "driven": 2,
+    "readonly": 0
+   }
+  },
+  "anderes_mass": {
+   "tabelle": false
+  },
+  "excel": [
+   1,
+   1
+  ],
+  "typen": [
+   "Chamfer",
+   "CommentsFolder",
+   "ConfigTableFolder",
+   "DetailCabinet",
+   "DocsFolder",
+   "EnvFolder",
+   "EqnFolder",
+   "Extrusion",
+   "FavoriteFolder",
+   "HistoryFolder",
+   "ICE",
+   "InkMarkupFolder",
+   "MaterialFolder",
+   "OriginProfileFeature",
+   "ProfileFeature",
+   "RefPlane",
+   "Rib",
+   "SelectionSetFolder",
+   "SensorFolder",
+   "SolidBodyFolder",
+   "SurfaceBodyFolder"
+  ]
+ }
+}

@@ -31,7 +31,7 @@ Erledigt am 2026-10-31: Der Branch ist mit origin/main ab61b21 abgeglichen (Merg
 - Vor jedem neuen SolidWorks-API-Aufruf `swki api methode <Interface.Member>` bzw. `swki api enum <Name>`; Parameteranzahl und Enum-Werte aus dem Index sind verbindlich; nur Aufrufe aus SW 2025 (`swki api pruefe-code` ohne Befund).
 - Die API rechnet in Metern und Radiant, Spezifikationen und Ausgaben in mm und Grad.
 - Keine englischen Feature-/Ebenennamen; nie ein SW-Jahr oder einen Pfad fest in Code.
-- Original nur lesen, nie in SolidWorks öffnen. swki öffnet und speichert nur unter `<arbeitsordner>/<auftrag>/`; die Bestandskopie nur lesend; gespeichert wird nur in `lauf-<n>/`, an Ort und Stelle (`Save3`, nie `SaveAs3`, sonst ändert sich die Datei-ID).
+- Original nur lesen, nie in SolidWorks öffnen. swki öffnet und speichert nur unter `<arbeitsordner>/<auftrag>/`; die Bestandskopie nur lesend; gespeichert wird nur in `lauf-<n>/`, an Ort und Stelle (`Save3`; `SaveAs3` hält die Datei-ID zwar auch, S18a, schreibt aber woandershin).
 - swki räumt nichts auf: keine neuen Gleichungen oder globalen Variablen, kein Umbenennen, kein Bestimmen fremder Skizzen, außer ein Punkt verlangt es.
 - Live-Läufe nur nach Freigabe durch den Nutzer und nie parallel zu einer anderen SolidWorks-Arbeit; Live-Tests einzeln mit `tests\live_einzeln.py`.
 - Bestandsdateien bekommen nie das Namensschema `<auftrag>_<name>`.
@@ -96,15 +96,17 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
 
 ## Abhängigkeiten vom Spike S18 (Task 1)
 
-| Spike | Entscheidet | Standardweg dieses Plans |
+| Spike | Entscheidet | Weg (gemessen 2026-10-31, `docs/bestandsdateien/ergebnisse.md` §1) |
 |---|---|---|
-| S18a | Datei-ID beim Speichern an Ort und Stelle | `IModelDoc2.Save3` (3 Parameter) |
-| S18b | Externe Referenzen ohne Öffnen; verknüpfte, tabellengesteuerte Maße erkennen | `ISldWorks.GetDocumentDependencies2`; `IDimension.IsDesignTableDimension`, `IDimension.DrivenState`, `IDisplayDimension.GetLinkedText` |
-| S18c | Setzen je Konfiguration, Löschen, Handler auf fremder Fläche | `IDimension.SetSystemValue3` mit `swSetValue_InAllConfigurations` = 2 bzw. `_InSpecificConfigurations` = 3; `IFeature.SetSuppression2` (3 Parameter) |
-| S18d | Differenz | `IBody2.Copy2` + `Operations2(SWBODYCUT = 15902)` beidseitig; Rückfall STL |
-| S18e | Bild mit hervorgehobenem Maß | Auswahl des Maßes, dann `sw.speichere(kopie=True)` |
-| S18f | Musterdateien | §Task 1 |
-| S18g | Baugruppe | nur Erkenntnis für den Plan Etappe 2 |
+| S18a | Datei-ID beim Speichern an Ort und Stelle | `IModelDoc2.Save3(1, e, w)`, Baugruppe findet die Datei ohne IdMismatch. `SaveAs3` hält die ID ebenfalls, Save3 bleibt trotzdem der Weg. Prüfgröße: Warnung Bit 1 |
+| S18b | Externe Referenzen ohne Öffnen; verknüpfte, tabellengesteuerte Maße erkennen | `GetDocumentDependencies2(pfad, True, False, False)` an der Kopie; `IsDesignTableDimension`, `HasDesignTable`, `IsLinked`, `GetLinkedText`. **Abweichung:** `DrivenState` = 1 bei Gleichung und Referenzmaß, gesteuert aus der linken Gleichungsseite. `GetSystemValue3` mit Namen nur für die aktive Konfiguration brauchbar, also umschalten. `IsReferenceDim`, `GetDesignTable is None` taugen nicht. Maß-Name verknüpft: `Bohrung_D@Skizze3` |
+| S18c | Setzen je Konfiguration, Löschen, Handler auf fremder Fläche | `SetSystemValue3` mit 2 bzw. 3 und BSTR-Array; `SetEquationAndConfigurationOption(i, text, 2, None)`; `SetSuppression2` **nur mit Option 2/3** (Option 1 trifft bei altem `IFeature` die falsche Konfiguration); `DeleteSelection2(3)`; `ReorderFeature(name, ziel, 3)`; Handler laufen. Neue Features in allen Konfigurationen aufheben, Status und Rückgaben nicht glauben, nachmessen |
+| S18d | Differenz | `Copy2(True)` + `r, code = Operations2(15902, werkzeug, 0)` beidseitig an unsichtbaren Dokumenten; unverändert `(None, 0)`. Toleranz über die Körperdicke. STL nur als Hinweis (Rauschen 0,03 mm, unsichtbar Absturz) |
+| S18e | Bild mit hervorgehobenem Maß | Toggle 31, 32, Ansicht zur Skizzenebene, `IAnnotation.Color` rot, `sw.speichere(kopie=True)`, nicht speichern; Feature: `Select2` |
+| S18f | Musterdateien | erzeugt, zusätzlich `gm42-10.SLDPRT` und Referenzmaß `D5@Skizze2` |
+| S18g | Baugruppe | Datei-Kopie, Option 64, jeden `GetPathName` prüfen (fehlende Datei lädt still vom Original), nur Geändertes speichern; Pack and Go über IDispatch nicht erreichbar |
+
+Folgen im Schema `bestand.json`: `werte[k]` ist auch bei unterdrückten Features eine Zahl, Code bleibt robust gegen `null`. `punkte` weichen bis 0,1 mm ab. `kinder` nennt nur erklärte Abhängigkeiten.
 
 Weicht ein Weg ab, zieht Task 1 die Spec und diesen Abschnitt nach, bevor der betroffene Task beginnt. Fällt die exakte Differenz aus, ändert sich nur `koerper_differenz` (Task 8).
 

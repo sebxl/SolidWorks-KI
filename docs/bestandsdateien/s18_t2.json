@@ -1,0 +1,57 @@
+{
+ "start_mb": 432,
+ "lesen": {
+  "excel_vor": 0,
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 4.92
+  },
+  "hat": true,
+  "tabelle_mass": true,
+  "excel_nach_oeffnen": 0,
+  "ohne_attach": {
+   "spalten": -2,
+   "zeilen": -2
+  },
+  "excel_nach_zaehlen": 0,
+  "kopf": [
+   "",
+   "",
+   ""
+  ],
+  "excel_nach_kopf": 0
+ },
+ "sekunden": 19.3,
+ "ende_mb": 1010,
+ "sichtbar": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.72
+  },
+  "mehr_mb": 2278,
+  "umschalten_2x_s": 0.543,
+  "masse_laufen_s": 0.9,
+  "anzahl": 35,
+  "referenzpunkte_s": 3.081,
+  "skizzenstatus_s": 1.314,
+  "lies_s": 5.32,
+  "aktiv_danach": "Standard"
+ },
+ "unsichtbar": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.04
+  },
+  "mehr_mb": 0,
+  "umschalten_2x_s": 0.051,
+  "masse_laufen_s": 0.097,
+  "anzahl": 35,
+  "referenzpunkte_s": 0.259,
+  "skizzenstatus_s": 0.104,
+  "lies_s": 1.37,
+  "aktiv_danach": "Standard"
+ }
+}
