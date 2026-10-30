@@ -87,7 +87,7 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
  "skizzen": {"Skizze4": 2},
  "masse": [{"name": "D2@Skizze4", "feature": "Skizze4", "werte": {"Standard": 40.0, "Variante B": null}, "einheit": "mm",
             "zustand": "treibend", "quelle": null, "gruppe": null, "punkte": [[-10.0, 0.0, 20.0]]}],
- "neuaufbau": [{"feature": "Fase3", "code": 12, "warnung": false}],
+ "neuaufbau": [{"konfiguration": "Standard", "feature": "Fase3", "code": 12, "warnung": false}],
  "geometrie": {"Standard": {"koerper": 1, "volumen": 12345.6, "box": [0,0,0,1,1,1], "schwerpunkt": [0,0,0]}},
  "tabelle": false}
 ```
