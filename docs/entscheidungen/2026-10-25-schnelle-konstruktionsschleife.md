@@ -161,7 +161,8 @@ Der Mensch schreibt nur den **Optimierungsauftrag**:
 Er gibt den Auftrag einmal frei und bekommt am Ende das Ergebnis mit Bericht und 3D-Wiedergabe. Dazwischen greift er
 nicht ein.
 
-**Offene Regel (Entscheidung des Nutzers nötig):**
+**Entschieden:** Nutzer 25.10.2026 (Raum-Freigabe), 30.10.2026 verschärft: Die Schleife läuft im Raum ohne Rückfrage,
+gebaut wird erst nach seinem OK (Design C2 §6). Der ursprüngliche Vorschlag:
 
 - Heute darf `swki freigeben` nur nach ausdrücklichem OK laufen. Eine Ausnahme gilt nur für Messstand-Aufträge `MESS-*`.
 - Eine autonome Schleife ändert aber `parameter`, und genau die schützt die Freigabe.
@@ -425,7 +426,7 @@ bestätigt ist.
 | Stufe | Inhalt | Nutzen danach |
 |---|---|---|
 | C1 ✔ (25.10.) | `swki.schnellbau`: alle Teil-Features außer skript (auch die von C3: verrundung, fase, muster, spiegeln, rotation, normbohrung, Formschräge, Verzahnung), exakte Zerlegung, Lage (Verschiebung) und Gelenke (Schub, Dreh) aus der Baugruppe, MJCF; Referenz-Suite durch beide Backends (`werkzeuge/schnellbau_abgleich.py`, `tests/schnellbau`) | 19 Teil-Specs der Referenz-Suite gleich SolidWorks (Volumen ≤ 2·10⁻⁶ %, Verzahnung ≤ 10⁻³ %; STL max ≤ 0,074 mm) |
-| C2 | Runner + Optuna (JournalStorage, Mehrprozess, WilcoxonPruner, Prüfstufen 0–2), Block `optimierung` im Schema | autonome innere Schleife |
+| C2 ✔ (25.10.) | Runner + Optuna (JournalStorage, Mehrprozess, WilcoxonPruner, Prüfstufen 0–2), Block `optimierung` im Schema, Raum-Freigabe mit OK des Nutzers vor dem Bau (`swki optimiere --uebernehmen`, `swki freigeben --im-raum`), Skill `optimieren` | autonome innere Schleife; Abnahme Weiche G1c: PLATEAU 0,984 (G1) → Eingriff ≈ 4 k Tokens → ZIEL (G1c), 163 Proben/h ([Abnahme](2026-10-25-c2-abnahme.md)) |
 | C3 | Rest aus C1: Drehungen im Lagelöser, Normteile/Kaufteil-STEP im Modell, Kopplungen als Gleichheitsbedingung, Formschräge an `durch_alles`/`bis_flaeche` geprüft | alle Teile der Prüfstation |
 | C4 | Prüfstufen 3–4 automatisch (`swki durchlauf` des Gewinners, STL-Export, Gegenprobe), Bericht mit 3D-Wiedergabe aus dem Schnellbau | Schleife bis SolidWorks ohne Menschen |
 | C5 | äußere Schleife (Topologie-Varianten mit erlaubten Feature-Änderungen), Kalibrierung aus Versuchen (Ü13) übernehmen | Montageanlagen-Maßstab |

@@ -19,7 +19,8 @@
                                                            {"type": "integer", "minimum": 1}]}},
     "bewegungen": {"type": "array", "items": {"$ref": "#/$defs/bewegung"}},
     "pruefung": {"$ref": "#/$defs/pruefung"},
-    "max_nachbesserungen": {"type": "integer", "minimum": 1}
+    "max_nachbesserungen": {"type": "integer", "minimum": 1},
+    "optimierung": {"type": "object", "description": "Optimierungsauftrag (Stufe C2), geprüft nach schema/optimierung.schema.json"}
   },
   "$defs": {
     "wert": {"oneOf": [{"type": "number"}, {"type": "string", "pattern": "^=.+"}]},

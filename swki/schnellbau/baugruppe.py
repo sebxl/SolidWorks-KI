@@ -70,9 +70,12 @@ class _Seite:
 
 class Baugruppe:
     def __init__(self, spec: dict | Path, ordner: Path | None = None, parameter: dict | None = None,
-                 ohne: dict | None = None, bohrungen: bool = False, freigegeben: bool = False):
+                 ohne: dict | None = None, bohrungen: bool = False, freigegeben: bool = False,
+                 nur: list | None = None):
         """spec: Baugruppen-Spec (dict oder Pfad); ordner: Auftragsordner der Teil-Specs (Standard: Ordner der Spec);
-        parameter {teil-datei: {NAME: wert}}; ohne {teil-datei: [feature-id]}; freigegeben: *.freigegeben.yaml lesen."""
+        parameter {teil-datei: {NAME: wert}}; ohne {teil-datei: [feature-id]}; freigegeben: *.freigegeben.yaml lesen;
+        nur: nur diese Eigenteile bauen (und das fixierte), die übrigen wie Normteile übergehen (Simulation eines
+        Ausschnitts; freie Achsen bleiben in der modellierten Lage)."""
         if not isinstance(spec, dict):
             ordner = ordner or Path(spec).parent
             spec = lade(spec)
@@ -84,7 +87,7 @@ class Baugruppe:
         self.komp: dict[str, Komponente] = {}
         for k in spec["komponenten"]:
             q = k["quelle"]
-            if "teil" not in q:
+            if "teil" not in q or (nur is not None and k["id"] not in nur and not k.get("fixiert")):
                 continue
             datei = q["teil"]
             pfad = self.ordner / (datei.replace(".yaml", ".freigegeben.yaml") if freigegeben else datei)
