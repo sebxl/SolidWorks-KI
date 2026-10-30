@@ -291,7 +291,7 @@ Ausgabe kompakt (Zusammenfassung in JSON, Rohdaten in `bestand.json`), damit die
 (Weg im Spike). Für die Zuordnung und die Freigabe-Vorlage.
 
 *Nachgezogen bei der Umsetzung, 2026-10-31:* Feature: `Select2` genügt. Maß: Bloße Auswahl zeigt nichts. Im offenen Dokument Toggle 31 und 32 einschalten
-(`Extension.SetUserPreferenceToggle`), Ansicht zur Skizzenebene, `IAnnotation.Color` rot setzen, PNG, nicht speichern (S18e).
+(`Extension.SetUserPreferenceToggle`), Ansicht zur Skizzenebene, `IAnnotation.Color` rot setzen, PNG, nicht speichern (S18e, Lauf `e2`). Auswahl allein hebt das Maß nur schwach hervor.
 
 ## 6. Bauen
 
@@ -309,7 +309,9 @@ Ausgabe kompakt (Zusammenfassung in JSON, Rohdaten in `bestand.json`), damit die
 *Nachgezogen bei der Umsetzung, 2026-10-31:* Gemessene Fallen (S18c): Option `swThisConfiguration` trifft bei einem vor dem Umschalten geholten `IFeature` die alte
 Konfiguration, darum `SetSuppression2` nur mit `swSpecifyConfiguration` und Namen. Ein Feature, das in einer anderen Konfiguration
 als der ersten entsteht, ist in der ersten unterdrückt: Punkt `feature` hebt das in allen Konfigurationen auf. Doppelte Namen
-scheitern still, Namen zurücklesen. `ReorderFeature` (für `nach`) kann bei Rückgabe False den Baum geändert haben. Löschen mit
+scheitern still, Namen zurücklesen. `ReorderFeature` (für `nach`) beschädigt bei Rückgabe False die aktive Konfiguration dauerhaft (Feature-Reihenfolge gilt je
+Konfiguration, Fehler und Volumen ändern sich nur dort, `Save3` meldet Erfolg, in anderen Konfigurationen ist nichts zu sehen): Lauf
+abbrechen; vor dem Speichern Fehler, Volumen und Baum in allen Konfigurationen prüfen (`c3`). Löschen mit
 `DeleteSelection2(3)`, Baum vorher/nachher vergleichen; eine Skizze mit Kind lässt sich so nicht löschen. Vor dem Speichern auf die
 aufgenommene aktive Konfiguration zurück, `Save3` übernimmt die gerade aktive. Handler laufen auf fremden Flächen (`normbohrung`
 mit Randbezug). `Save3` hält die Datei-ID; `SaveAs3` tut das gemessen ebenfalls (S18a), gespeichert wird trotzdem an Ort und Stelle.

@@ -5,7 +5,7 @@ ein modaler Dialog COM hängen lassen kann; Zwischenstände stehen nach jedem Sc
 Geöffnet werden nur Kopien der selbst erzeugten Musterdateien unter <arbeitsordner>/S18/.
 
 Aufruf (SolidWorks offen, frei): timeout 300 ..\\..\\..\\.venv\\Scripts\\python.exe -m spikes.s18_bestand <zeile>
-Zeilen: b a c c2 d e g t t2 (t, t2: Konstruktionstabelle, eigene Läufe; vor c2, d, t2 SolidWorks neu starten).
+Zeilen: b a c c2 c3 d e e2 g t t2 (t, t2: Konstruktionstabelle, eigene Läufe; vor c2, c3, d, t2 SolidWorks neu starten).
 
 API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
   ISldWorks.VersionHistory(1), .GetDocumentDependencies2(4: Document, Traverseflag, Searchflag, AddReadOnlyInfo),
@@ -33,6 +33,13 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
     .Check3, .GetBodyBox(0), .GetMassProperties(1), .Display3(3)
   IPackAndGo: über IDispatch nicht erreichbar, siehe zeile_g
   ICustomPropertyManager.GetAll3(5)
+  IAnnotation.Color (Get/Put), .Select3(2: Append, Data), .Visible, .GetName(0)
+  ISelectionMgr.CreateSelectData(0), .GetSelectedObjectCount2(1: Mark), .GetSelectedObjectType3(2: Index, Mark)
+  ISldWorks.DocumentVisible(2: Visible, Type)
+  IModelDocExtension.SetUserPreferenceToggle(3: UserPref, UserPrefOption, Value; swDisplayAnnotations 31,
+    swDisplayFeatureDimensions 32), .GetUserPreferenceInteger(2: swUnitSystem 263), .HasDesignTable(0)
+  IConfigurationManager.ActiveConfiguration (Property-Get), .AddConfiguration2(7)
+  IFeature.GetFirstSubFeature(0), .GetNextSubFeature(0), .GetSpecificFeature2(0); ISketch.GetConstrainedStatus(0)
 """
 
 import hashlib
@@ -636,6 +643,78 @@ def zeile_c(app) -> None:
         alle_zu(app)
 
 
+def je_konfiguration(model) -> dict:
+    """Baum, Neuaufbau, Fehler und Volumen je Konfiguration; fehlerliste() allein sieht nur die aktive."""
+    aktiv = model.ConfigurationManager.ActiveConfiguration.Name
+    aus: dict = {"aktiv": aktiv}
+    for k in model.GetConfigurationNames:
+        model.ShowConfiguration2(k)
+        z = {"rebuild": model.EditRebuild3, "fehler": fehlerliste(model), "volumen": volumen(model),
+             "rippe_unterdrueckt": unterdrueckt(model, "Verstärkungsrippe1")}
+        model.ForceRebuild3(False)
+        z |= {"nach_force": {"fehler": fehlerliste(model), "volumen": volumen(model)}, "baum": baumnamen(model)}
+        aus[k] = z
+    model.ShowConfiguration2(aktiv)
+    aus["baum"] = baumnamen(model)
+    return aus
+
+
+def unterskizzen(feature) -> list:
+    aus, s = [], feature.GetFirstSubFeature
+    while s is not None:
+        spez = s.GetSpecificFeature2
+        aus.append({"name": s.Name, "typ": s.GetTypeName2,
+                    "status": spez.GetConstrainedStatus if s.GetTypeName2 == "ProfileFeature" else None})
+        s = s.GetNextSubFeature
+    return aus
+
+
+def zeile_c3(app) -> None:
+    """Prüft die Vermutung aus c11/c12: Beschädigt ein fehlgeschlagenes ReorderFeature still eine Konfiguration?"""
+    from swki.compiler.handler.normbohrung import normbohrung
+    from swki.compiler.kontext import Kontext
+    lauf = Lauf(app, "c3")
+    basis = frisch("c3")
+    alle_zu(app)
+
+    def bohrung(m, o):
+        f = {"id": "neu1", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [45, 0, 20]},
+             "positionen": [["=-50+RA", 24], ["=-50+RA", -24]], "bezug": {"u": "-rand", "v": "mitte"}, "tiefe": 10}
+        ctx = Kontext(app, m, {"parameter": {"RA": 12}, "features": [f]}, o / "spec.yaml", 0.01)
+        ctx.knoten = "neu1"
+        normbohrung(ctx, f)
+        return m.FeatureByName("neu1")
+
+    def fall(name: str, mit_bohrung: bool, fehlschlag: bool, aktiv_beim_speichern: str, gute_zuege: bool = False) -> None:
+        o = bestuecke(basis / name, TEIL)
+        m, _ = oeffne(app, o / TEIL)
+        d: dict = {"vorher": je_konfiguration(m)}
+        if mit_bohrung:
+            d["unterskizzen"] = unterskizzen(bohrung(m, o))
+            d["nach_bohrung"] = je_konfiguration(m)
+        if gute_zuege:
+            d["guter_zug"] = m.Extension.ReorderFeature("neu1", "Schnitt-Linear austragen3", 3)
+            d["ans_ende"] = m.Extension.ReorderFeature("neu1", "", 1)
+        if fehlschlag:
+            d["unmoeglich"] = m.Extension.ReorderFeature("Verstärkungsrippe1", "Skizze1", 2)
+            d["baum_direkt"] = baumnamen(m)
+            d["nach_zug"] = je_konfiguration(m)
+        m.ShowConfiguration2(aktiv_beim_speichern)
+        d["speichern"] = speichern(m)
+        lauf[name] = d
+        alle_zu(app)
+        m, s = oeffne(app, o / TEIL)
+        d["oeffnen"] = s
+        d["nach_oeffnen"] = je_konfiguration(m)
+        lauf[name] = d
+        alle_zu(app)
+
+    fall("kontrolle_bohrung_b", True, False, "Variante B", gute_zuege=True)
+    fall("wie_c11", True, True, "Variante B", gute_zuege=True)
+    fall("nur_fehlschlag_b", False, True, "Variante B")
+    fall("nur_fehlschlag_standard", False, True, "Standard")
+
+
 def zeile_c2(app) -> None:
     """Eigener Lauf: c9 schlug nach c1 bis c8 bei 5,4 GB Private Bytes mit RPC_E_DISCONNECTED fehl, frisch nie."""
     from swki.compiler.handler.normbohrung import normbohrung
@@ -964,6 +1043,63 @@ def zeile_e(app) -> None:
     alle_zu(app)
 
 
+def zeile_e2(app) -> None:
+    """Zweiter Anlauf zu e: Beschriftungen an, Ansicht zur Skizzenebene, Auswahl auf beiden Wegen, dann Farbe."""
+    from swki.compiler import sw
+    from swki.pruefung.bilder import _aufnahme
+    lauf = Lauf(app, "e2")
+    basis = frisch("e2")
+    alle_zu(app)
+    o = bestuecke(basis / "k", TEIL)
+    m, s = oeffne(app, o / TEIL)
+    m._FlagAsMethod("ViewZoomtofit2")
+    d = {"oeffnen": s, "toggles": [m.Extension.SetUserPreferenceToggle(31, 0, True),
+                                   m.Extension.SetUserPreferenceToggle(32, 0, True)], "flag_vor": m.GetSaveFlag}
+
+    def bild(name: str) -> str:
+        pfad = basis / f"{name}.png"
+        sw.speichere(m, pfad, kopie=True)
+        return str(pfad)
+
+    def anzeige(feature: str, name: str):
+        f = m.FeatureByName(feature)
+        dd = f.GetFirstDisplayDimension
+        while dd is not None and massname(dd.GetDimension2(0)) != name:
+            dd = f.GetNextDisplayDimension(dd)
+        return dd
+
+    with _aufnahme(app, m):
+        m.ShowNamedView2("", 1)  # vorne: Blick auf die Skizzenebene der Platte
+        m.ViewZoomtofit2()
+        d["a_ohne_auswahl"] = bild("a_ohne_auswahl")
+        d["selectbyid"] = m.Extension.SelectByID2(f"D2@Skizze3@{TEIL}", "DIMENSION", 0, 0, 0, False, 0, callout_leer(), 0)
+        d["auswahl_anzahl_typ"] = [m.SelectionManager.GetSelectedObjectCount2(-1), m.SelectionManager.GetSelectedObjectType3(1, -1)]
+        d["b_selectbyid"] = bild("b_selectbyid")
+        m.ClearSelection2(True)
+        ann = anzeige("Skizze3", "D2@Skizze3").GetAnnotation
+        d["select3_leer"] = ann.Select3(False, callout_leer())
+        m.ClearSelection2(True)
+        d["select3_daten"] = ann.Select3(False, m.SelectionManager.CreateSelectData)
+        d["c_select3"] = bild("c_select3")
+        m.ClearSelection2(True)
+        d["farbe_alt"] = ann.Color
+        ann.Color = 0x0000FF
+        d["farbe_neu"] = ann.Color
+        d["d_farbe"] = bild("d_farbe")
+        # Maß eines Features in der Isometrie
+        m.ShowNamedView2("", 7)
+        m.ViewZoomtofit2()
+        ann2 = anzeige(TAB, f"D1@{TAB}").GetAnnotation
+        ann2.Color = 0x0000FF
+        d["e_feature_mass"] = bild("e_feature_mass")
+        d["flag_nach"] = m.GetSaveFlag
+        d["fehler"] = fehlerliste(m)
+    lauf["bilder"] = d
+    alle_zu(app)
+    vorher = sha(MUSTER / TEIL)
+    lauf["kopie_unveraendert"] = sha(o / TEIL) == vorher
+
+
 # ---------------------------------------------------------------------------------------------------- Zeile g
 
 
@@ -1189,7 +1325,8 @@ def _excel_prozesse() -> int:
     return sum("EXCEL" in z.upper() for z in aus.splitlines())
 
 
-ZEILEN = {"a": zeile_a, "b": zeile_b, "c": zeile_c, "c2": zeile_c2, "d": zeile_d, "e": zeile_e, "g": zeile_g, "t": zeile_t, "t2": zeile_t2}
+ZEILEN = {"a": zeile_a, "b": zeile_b, "c": zeile_c, "c2": zeile_c2, "c3": zeile_c3, "d": zeile_d, "e": zeile_e, "e2": zeile_e2,
+          "g": zeile_g, "t": zeile_t, "t2": zeile_t2}
 
 
 def main() -> None:
