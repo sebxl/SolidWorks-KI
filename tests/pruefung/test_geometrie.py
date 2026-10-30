@@ -38,7 +38,9 @@ def _extr(fid, typ, elemente, tiefe):
 def test_volumen_klotz_mit_tasche_und_bohrungen():
     spec = {"parameter": {"L": 100}, "features": [
         _extr("f1", "extrusion", [{"rechteck": {"mitte": [0, 0], "breite": "=L", "hoehe": 60}}], 20),
-        _extr("f2", "schnitt", [{"kreis": {"mitte": [0, 0], "durchmesser": 10}}], 5),
+        {**_extr("f2", "schnitt", [{"kreis": {"mitte": [0, 0], "durchmesser": 10}}], 5),   # Tasche von der Deckfläche
+         "skizze": {"ebene": {"feature": "f1", "flaeche": "+y"},
+                    "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 10}}]}},
         {"id": "f3", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[1, 1], [2, 2]],
          "durchmesser": 4, "tiefe": 10, "senkung": {"durchmesser": 6, "tiefe": 2}},
         {"id": "f4", "typ": "muster_linear", "features": ["f3"], "richtung1": {"achse": "x", "abstand": 10, "anzahl": 3}},
@@ -315,3 +317,30 @@ def test_volumen_bohrungen_von_beiden_seiten_ohne_beruehrung_ueberlappen_nicht()
     a = lambda d: math.pi * d * d / 4
     assert volumen_auto(_platte15_mit(oben, unten, andere))[0] == pytest.approx(
         64 * 54 * 15 - a(6) * 5 - a(4) * 6 - a(4) * 15)
+
+
+# Schnitt über das bisherige Material hinaus (BTP Durchgang 1, Stehlager): auto zöge das ganze Profil ab, obwohl nur ein
+# Teil im Material liegt → nicht berechenbar (validieren lehnt auto dann ab), statt eines falschen Sollvolumens.
+def _lagerkoerper(schnitt_elemente):
+    return {"parameter": {"D": 40, "H": 50}, "features": [
+        {"id": "f1", "typ": "extrusion", "skizze": {"ebene": "vorne", "elemente": [
+            {"rechteck": {"mitte": [0, 25], "breite": 90, "hoehe": "=H"}}]}, "ende": {"typ": "mittig", "tiefe": 50}},
+        {"id": "f2", "typ": "schnitt", "skizze": {"ebene": "vorne", "elemente": schnitt_elemente},
+         "ende": {"typ": "mittig", "tiefe": 50}}]}
+
+
+def test_volumen_schnitt_ueber_das_material_hinaus_nicht_berechenbar():
+    volumen, grund = volumen_auto(_lagerkoerper([{"kreis": {"mitte": [0, "=H"], "durchmesser": "=D"}}]))
+    assert volumen is None and "f2" in grund and "über das Material" in grund
+
+
+def test_volumen_schnitt_tiefer_als_das_material_nicht_berechenbar():
+    spec = _lagerkoerper([{"kreis": {"mitte": [0, 25], "durchmesser": 10}}])
+    spec["features"][1]["ende"]["tiefe"] = 60   # mittig 60 durch einen 50 tiefen Körper
+    assert volumen_auto(spec)[0] is None
+
+
+def test_volumen_halbkreis_im_material_bleibt_berechenbar():
+    halbkreis = {"kontur": {"start": [-20, 50], "segmente": [{"bogen": [20, 50], "mitte": [0, 50]}, {"linie": [-20, 50]}]}}
+    volumen, grund = volumen_auto(_lagerkoerper([halbkreis]))
+    assert grund == "analytisch" and volumen == pytest.approx(90 * 50 * 50 - math.pi * 20**2 / 2 * 50)

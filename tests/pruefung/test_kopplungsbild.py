@@ -12,12 +12,20 @@ from swki.pruefung.bilder import kopplungsbild
 class _App:
     def __init__(self):
         self.werte = {6: 1}
+        self.double = {bilder.SW_VIEW_ANIMATION_SPEED: 0.5}
+        self.CommandInProgress = False
 
     def GetUserPreferenceIntegerValue(self, wert_id):
         return self.werte[wert_id]
 
     def SetUserPreferenceIntegerValue(self, wert_id, wert):
         self.werte[wert_id] = wert
+
+    def GetUserPreferenceDoubleValue(self, wert_id):
+        return self.double[wert_id]
+
+    def SetUserPreferenceDoubleValue(self, wert_id, wert):
+        self.double[wert_id] = wert
 
 
 class _Komp:
@@ -97,3 +105,20 @@ def test_komponenten_werden_auch_bei_fehler_wieder_eingeblendet(aufnahme, monkey
     with pytest.raises(RuntimeError):
         kopplungsbild(_App(), _Modell([], uebrige), Path("x.png"), (1.0, 0.0, 0.0), [_Komp("a"), _Komp("b")], uebrige)
     assert uebrige[0].Visible == 1
+
+
+def test_aufnahme_ohne_animation_mit_grafik_und_danach_wie_vorher(monkeypatch):
+    # BTP Umbau 1: Bilder entstehen auch innerhalb von sw.schnell(); während der Aufnahme Screen capture, keine
+    # Ansichtsanimation, CommandInProgress aus und Grafik an – danach wieder wie vorgefunden
+    app, uebrige = _App(), []
+    model = _Modell([], uebrige)
+    model.ActiveView = SimpleNamespace(EnableGraphicsUpdate=False)
+    app.CommandInProgress = True
+    waehrend = []
+    monkeypatch.setattr(bilder.sw, "speichere", lambda m, pfad, kopie=False: waehrend.append(
+        (app.werte[6], app.double[bilder.SW_VIEW_ANIMATION_SPEED], app.CommandInProgress,
+         model.ActiveView.EnableGraphicsUpdate)))
+    bilder.iso_bild(app, model, Path("x.png"))
+    assert waehrend == [(0, 0.0, False, True)]
+    assert (app.werte[6], app.double[bilder.SW_VIEW_ANIMATION_SPEED], app.CommandInProgress,
+            model.ActiveView.EnableGraphicsUpdate) == (1, 0.5, True, False)

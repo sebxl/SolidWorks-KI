@@ -176,6 +176,40 @@ def test_cli_option_neustart(monkeypatch):
     from swki import cli
 
     gesehen = {}
-    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False: gesehen.update(neustart=neustart) or {})
+    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False, alles_neu=False: gesehen.update(neustart=neustart) or {})
     assert cli.main(["durchlauf", "a.yaml", "--neustart"]) == 0 and gesehen == {"neustart": True}
     assert cli.main(["durchlauf", "a.yaml"]) == 0 and gesehen == {"neustart": False}
+
+
+def test_pruefer_auftrag_nennt_jede_datei_und_verlangt_paralleles_lesen(tmp_path):
+    # BTP Umbau 1 (Recherche O10): Dateien statt Ordner, damit der Prüfer alles in einer Runde liest
+    (tmp_path / "eingabe").mkdir()
+    (tmp_path / "eingabe" / "massbild.png").write_bytes(b"")
+    (tmp_path / "aufgabe.md").write_text("x", encoding="utf-8")
+    (tmp_path / "a.freigegeben.yaml").write_text("x", encoding="utf-8")
+    lauf = tmp_path / "lauf-3"
+    (lauf / "bilder").mkdir(parents=True)
+    (lauf / "steckbrief.txt").write_text("x", encoding="utf-8")
+    bericht = {"datei": str(lauf / "a.sldprt"),
+               "bilder": {"iso": str(lauf / "bilder" / "iso.png"), "vorne": str(lauf / "bilder" / "vorne.png")}}
+    text = d.pruefer_auftrag(tmp_path / "a.yaml", 3, bericht)
+    for datei in (tmp_path / "eingabe" / "massbild.png", tmp_path / "aufgabe.md", tmp_path / "a.freigegeben.yaml",
+                  lauf / "bilder" / "iso.png", lauf / "bilder" / "vorne.png", lauf / "steckbrief.txt"):
+        assert str(datei) in text
+    assert "parallel" in text
+
+
+def test_baugruppe_meldet_gebaute_und_wiederverwendete_teile_und_reicht_alles_neu_durch(schritte, monkeypatch, tmp_path):
+    import swki.compiler.bauen as cb
+
+    erhalten = []
+    monkeypatch.setattr(cb, "_bauen", lambda a: erhalten.append(a.alles_neu) or {
+        "lauf": 4, "dauer_s": 30.0, "teile_gebaut": ["kamerahalter.yaml"], "teile_wiederverwendet": ["a.yaml", "b.yaml"]})
+    erg = d.durchlauf(tmp_path / "bg.yaml", alles_neu=True)
+    assert erhalten == [True]
+    assert erg["teile_gebaut"] == ["kamerahalter.yaml"] and erg["teile_wiederverwendet"] == 2
+
+
+def test_einzelteil_ohne_teilebilanz(schritte, tmp_path):
+    erg = d.durchlauf(tmp_path / "a.yaml")
+    assert "teile_gebaut" not in erg and "teile_wiederverwendet" not in erg

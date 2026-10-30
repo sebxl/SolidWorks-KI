@@ -1,0 +1,14 @@
+id: F2
+art: falle
+beschreibung: Durchlicht – Stecker M12 3 mm versetzt (echt, AP 6.8 Durchlicht Lauf 6)
+basis: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation"
+dateien: [durchlicht.yaml]
+aufgabe: durchlicht
+eingaben: [auftraege/AP68-Pruefstation/eingabe/hersteller/AI_BL-S050075_Massbild.png]
+spec: durchlicht.yaml
+# Kommentare passend zum falschen Wert (ein falsch deutender Agent schreibt sie stimmig)
+ersetzen:
+  - {datei: durchlicht.yaml, alt: "  SX: 50 ", neu: "  SX: 47 "}
+  - {datei: durchlicht.yaml, alt: "50,0 vom Plattenrand +X (Hauptansicht blickt von +Y, links = +X)", neu: "47,0 vom Plattenrand +X (Hauptansicht blickt von +Y, links = +X)"}
+  - {datei: durchlicht.yaml, alt: "(50 vom Plattenrand +X, 15,6 hoch)", neu: "(47 vom Plattenrand +X, 15,6 hoch)"}
+erwartet: {knoten: [stecker], stichworte: [versetzt, verschoben, "3 mm"]}

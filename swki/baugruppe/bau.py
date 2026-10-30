@@ -5,11 +5,12 @@ protokollieren. Der Lauf-Ordner ist in sich geschlossen; die Bibliothek wird nur
 import shutil
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
-from swki.aenderungen import pruefe_unveraendert, pruefsummen, vermerke_befund
+from swki.aenderungen import pruefe_unveraendert, pruefsummen, sha256_datei, vermerke_befund
 from swki.auftrag import auftrag_name, dateiname, lauf_belegt, lauf_datei, lauf_ordner, naechster_lauf
-from swki.baugruppe import sw_baugruppe
+from swki.baugruppe import sw_baugruppe, wiederverwendung
 from swki.baugruppe.aufloesen import Instanz, Verknuepfung, basis, instanzen, verknuepfungen
 from swki.baugruppe.bewegung import TOL_WINKEL_GRAD, bewegungen
 from swki.baugruppe.fehler import (GRUNDSTELLUNG_FEHLER, KOMPONENTE_FEHLER, SCHLIESSEN_FEHLER, TEIL_BAU,
@@ -34,6 +35,7 @@ from swki.normteile import befehle as normteil_befehle
 from swki.normteile.bibliothek import bibliotheksordner, lies_eintrag
 from swki.normteile.fehler import NormteilFehler
 from swki.pruefung.messen import kontext_aus_datei, oeffne
+from swki.spec.freigabe import FreigabeFehler
 from swki.verbindung import verbinde
 
 TOL_PHASE = 1e-3  # Phasenfehler nach dem Drehen, Anteil der Teilung (Spec 4b §5.4.2)
@@ -53,28 +55,90 @@ class Baulauf:
     dateien: dict = field(default_factory=dict)      # "teil:<datei>" | "normteil:…" | "kaufteil:…" | "baugruppe" → Pfad
     komponenten: dict = field(default_factory=dict)  # Instanz-ID → IComponent2 (aus AddComponent5, nie über GetComponents)
     gesetzt: dict = field(default_factory=dict)      # Verknüpfungs-ID → ausdrücklich gesetzte Ausrichtung, ein Dict je Lauf
+    handles: dict = field(default_factory=dict)      # Verknüpfungs-ID → IFeature aller angelegten Verknüpfungen (BTP Umbau 1)
 
 
-def _baue_teile(b: Baulauf, r) -> Exception | None:
-    for datei, teil_spec in b.bg.teile.items():
-        tp = Protokoll(b.auftrag, datei, b.protokoll.lauf, r.sw_jahr)
-        model, ctx, fehler = baue_teil_dokument(b.app, r, b.standard, teil_spec, b.bg.pfad.parent / datei, b.auftrag, tp)
-        b.offen.append(model)
-        b.kontexte[datei] = ctx
-        ziel = b.ordner / dokument_name(b.bg.quellen[b.bg.komponente_von(datei)], b.auftrag, b.standard)
-        try:
-            sw.speichere(model, ziel)  # auch nach einem Fehler: Teilstand zur Diagnose
-            b.dateien[f"teil:{datei}"] = ziel
-        except Exception as e:
-            fehler = fehler or e
-        tp.status = "fehler" if fehler else "ok"
-        tp.fehler = fehler_dict(fehler) if fehler else None
-        b.protokoll.teile[datei] = tp.als_dict()
-        if fehler is not None:
-            knoten = next((k.id for k in tp.knoten if k.status == "fehler"), "speichern")
-            f = fehler_dict(fehler)
-            return BauFehler(TEIL_BAU, f"{b.bg.komponente_von(datei)}/{knoten}: {f['code']} – {f['meldung']}", schritt="teil")
+def _teil_ziel(b: Baulauf, datei: str) -> Path:
+    return b.ordner / dokument_name(b.bg.quellen[b.bg.komponente_von(datei)], b.auftrag, b.standard)
+
+
+def _baue_teil(b: Baulauf, r, datei: str, schluessel: str) -> Exception | None:
+    tp = Protokoll(b.auftrag, datei, b.protokoll.lauf, r.sw_jahr)
+    model, ctx, fehler = baue_teil_dokument(b.app, r, b.standard, b.bg.teile[datei], b.bg.pfad.parent / datei,
+                                            b.auftrag, tp)
+    b.offen.append(model)
+    b.kontexte[datei] = ctx
+    ziel = _teil_ziel(b, datei)
+    try:
+        sw.speichere(model, ziel)  # auch nach einem Fehler: Teilstand zur Diagnose
+        b.dateien[f"teil:{datei}"] = ziel
+    except Exception as e:
+        fehler = fehler or e
+    tp.status = "fehler" if fehler else "ok"
+    tp.fehler = fehler_dict(fehler) if fehler else None
+    b.protokoll.teile[datei] = {**tp.als_dict(), "schluessel": schluessel}
+    if fehler is not None:
+        knoten = next((k.id for k in tp.knoten if k.status == "fehler"), "speichern")
+        f = fehler_dict(fehler)
+        return BauFehler(TEIL_BAU, f"{b.bg.komponente_von(datei)}/{knoten}: {f['code']} – {f['meldung']}", schritt="teil")
     return None
+
+
+def _uebernimm_teil(b: Baulauf, datei: str, q: wiederverwendung.Quelle, schluessel: str) -> bool:
+    """Datei der Quelle in den Lauf kopieren, Prüfsumme prüfen, ohne Fenster öffnen (wie Norm-/Kaufteile) und den
+    Kontext wie swki pruefen aus Datei und Quellprotokoll aufbauen. False → neu bauen (z. B. gleichnamiges Dokument
+    schon offen)."""
+    beginn, gestartet = time.perf_counter(), datetime.now().isoformat(timespec="seconds")
+    ziel = _teil_ziel(b, datei)
+    # Schreibweise der Quelle (.SLDPRT wie nach SaveAs), sonst trägt die Baugruppe andere Komponentennamen
+    kopie = b.ordner / q.pfad.name if q.pfad.name.lower() == ziel.name.lower() else ziel
+    kopie.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(q.pfad, kopie)
+    if sha256_datei(kopie) != q.sha256:
+        return False
+    model = None
+    try:
+        model = oeffne(b.app, kopie, sichtbar=False)
+        ctx = kontext_aus_datei(b.app, model, b.bg.teile[datei], b.bg.pfad.parent / datei,
+                                b.standard["toleranzen"]["anker_mm"], q.protokoll)
+    except Exception:
+        if model is not None:
+            try:
+                sw.schliesse(b.app, model)
+            except Exception:
+                pass
+        return False
+    b.offen.append(model)
+    b.kontexte[datei] = ctx
+    b.dateien[f"teil:{datei}"] = ziel
+    b.protokoll.teile[datei] = {**q.protokoll, "lauf": b.protokoll.lauf, "gestartet": gestartet,
+                                "dauer_s": round(time.perf_counter() - beginn, 3),
+                                "phasen": {"wiederverwenden": round(time.perf_counter() - beginn, 3)},
+                                "schluessel": schluessel, "wiederverwendet": {"lauf": q.lauf, "datei_sha256": q.sha256}}
+    return True
+
+
+def _baue_teile(b: Baulauf, r, wiederverwenden: bool = True) -> Exception | None:
+    """Eigenteile ohne Quelle zuerst bauen (zuletzt gescheiterte vorn), dann unveränderte aus einem früheren Lauf
+    übernehmen (BTP Umbau 3); Abbruch beim ersten Fehler. Das Protokoll steht am Ende in Spec-Reihenfolge."""
+    umg = wiederverwendung.umgebung(b.app, r, b.standard, b.auftrag)
+    schluessel = {d: wiederverwendung.schluessel(s, d, b.bg.pfad.parent, umg) for d, s in b.bg.teile.items()}
+    plan = wiederverwendung.plane(r, b.auftrag, b.bg.pfad, schluessel)
+    folge = plan.zu_bauen(list(b.bg.teile), wiederverwenden)
+    fehler = None
+    for datei in folge + ([d for d in b.bg.teile if d not in folge] if wiederverwenden else []):
+        if datei not in folge and _uebernimm_teil(b, datei, plan.quellen[datei], schluessel[datei]):
+            continue
+        if (fehler := _baue_teil(b, r, datei, schluessel[datei])) is not None:
+            break
+    b.protokoll.teile = {d: b.protokoll.teile[d] for d in b.bg.teile if d in b.protokoll.teile}
+    return fehler
+
+
+def teile_bilanz(protokoll: Protokoll) -> dict:
+    """Gebaute und wiederverwendete Eigenteile (Spec-Reihenfolge) für die Ausgabe von bauen/durchlauf."""
+    wieder = [d for d, t in protokoll.teile.items() if t.get("wiederverwendet")]
+    return {"teile_gebaut": [d for d in protokoll.teile if d not in wieder], "teile_wiederverwendet": wieder}
 
 
 def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
@@ -94,7 +158,7 @@ def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
         b.protokoll.normteile[q.schluessel] = {"bibliothek": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
                                                "pruefsumme": eintrag.get("pruefsumme")}
         b.dateien[f"normteil:{q.schluessel}"] = ziel
-        model = oeffne(b.app, ziel)
+        model = oeffne(b.app, ziel, sichtbar=False)  # ohne Fenster: ~1,7 GB weniger je Normteil (BTP Umbau 1)
         b.offen.append(model)
         b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
     return None
@@ -115,7 +179,7 @@ def _hole_kaufteile(b: Baulauf, tol_mm: float) -> Exception | None:
                                                "pruefsumme": ergebnis["pruefsumme"],
                                                "gewinde_modell": ergebnis["gewinde_modell"], **angaben_fuer_bericht(q.eintrag)}
         b.dateien[f"kaufteil:{q.schluessel}"] = ziel
-        model = oeffne(b.app, ziel)
+        model = oeffne(b.app, ziel, sichtbar=False)
         b.offen.append(model)
         b.kontexte[q.schluessel] = kontext_aus_datei(b.app, model, q.spec, ziel.with_suffix(".yaml"), tol_mm, {"knoten": []})
     return None
@@ -224,7 +288,7 @@ def _kopple(b: Baulauf, v: Verknuepfung):
     """Kopplung anlegen (Spec 4b §5.4.3): Übersetzung aus den Teilkreisen, Richtung nach sw_baugruppe.REVERSE."""
     a, gegen = (verzahnung_der_seite(b.bg.quellen, s).geo for s in (v.a, v.b))
     return sw_baugruppe.kopple(b.asm, v, _entitaet_kopplung(b, v.a), _entitaet_kopplung(b, v.b), *teilkreise(a, gegen),
-                               sw_baugruppe.REVERSE[v.typ])
+                               sw_baugruppe.REVERSE[v.typ], b.handles)
 
 
 def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
@@ -247,7 +311,7 @@ def _verknuepfe(b: Baulauf, alle: list[Verknuepfung]) -> Exception | None:
                     else:
                         feature = sw_baugruppe.verknuepfe(b.asm, v, _entitaet(b, v.a), _entitaet(b, v.b),
                                                           b.bg.spec.get("parameter", {}), b.gesetzt,
-                                                          gleichungen_an(b.bg.spec, b.standard))
+                                                          gleichungen_an(b.bg.spec, b.standard), b.handles)
                     knoten.sw_name = feature.Name
                 except Exception as e:
                     if isinstance(e, BauFehler) and str(e).startswith(f"{v.id} "):
@@ -268,7 +332,8 @@ def _grundstellung(b: Baulauf) -> Exception | None:
         for bw in bewegungen(b.bg.spec, b.standard):
             with b.protokoll.knoten_lauf(f"grundstellung:{bw.name}", "grundstellung"):
                 try:
-                    grenze = {f.Name.lower(): f for f in sw_baugruppe.verknuepfungen(b.asm)}.get(bw.grenze.lower())
+                    grenze = b.handles.get(bw.grenze) or {f.Name.lower(): f for f in
+                                                          sw_baugruppe.verknuepfungen(b.asm)}.get(bw.grenze.lower())
                     if grenze is None:
                         raise BauFehler(GRUNDSTELLUNG_FEHLER, f"Grenze {bw.grenze} nicht gefunden", schritt="grundstellung")
                     ist = sw_baugruppe.grenzwert(grenze, bw.art)
@@ -295,10 +360,17 @@ def _schliesse_alle(b: Baulauf) -> BauFehler | None:
     return erster
 
 
-def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False) -> dict:
+def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False,
+          alles_neu: bool = False) -> dict:
+    """alles_neu: auch unveränderte Eigenteile neu bauen (sonst nach `wiederverwenden` in config/standard.yaml)."""
     spec_pfad = spec_pfad.resolve()
     bg = lade_baugruppe(spec_pfad)
-    pruefe_freigabe_baugruppe(bg)
+    try:
+        pruefe_freigabe_baugruppe(bg)
+    except FreigabeFehler as e:
+        from swki.optimierung.raum import raum_hinweis  # spät importiert (Kreisimport)
+
+        raise raum_hinweis(spec_pfad, e) from e
     r, standard = lade_rechner(), lade_standard()
     if r.vorlage_baugruppe is None:
         raise SwkiFehler("config/rechner.yaml: vorlage_baugruppe fehlt (swki rechner init)")
@@ -317,7 +389,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     fehler = None
     try:
         with protokoll.phase("teile"):
-            fehler = _baue_teile(b, r)
+            fehler = _baue_teile(b, r, bool(standard.get("wiederverwenden")) and not alles_neu)
         if fehler is None:
             with protokoll.phase("normteile"):
                 fehler = _hole_normteile(b, r, standard["toleranzen"]["anker_mm"])
@@ -341,7 +413,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
             else:
                 _ueberspringe_verknuepfungen(b, alle_verknuepfungen)
         if fehler is None and b.asm is not None and bg.spec.get("bewegungen"):
-            with protokoll.phase("grundstellung"):
+            with protokoll.phase("grundstellung"), sw.schnell(b.app, b.asm):
                 fehler = _grundstellung(b)
         if b.asm is not None:
             with protokoll.phase("speichern"):
@@ -369,7 +441,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     protokoll.schreibe(lauf_datei(spec_pfad, lauf, "protokoll"))
     ergebnis = {
         "status": protokoll.status, "art": "baugruppe", "auftrag": auftrag, "lauf": lauf, "ordner": str(ordner),
-        "dateien": protokoll.dateien,
+        "dateien": protokoll.dateien, **teile_bilanz(protokoll),
         "knoten": [{"id": k.id, "status": k.status, "sw_name": k.sw_name} for k in protokoll.knoten],
         "fehler": protokoll.fehler, "dauer_s": protokoll.dauer_s,
     }

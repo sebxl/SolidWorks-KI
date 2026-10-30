@@ -40,6 +40,10 @@ def pruefsumme(spec: dict, teile: dict[str, str] | None = None) -> str:
     kern = dict(spec) if spec.get("art") == "kaufteil" else {feld: spec.get(feld) for feld in felder}
     if spec.get("art") == "baugruppe":
         kern |= {feld: spec[feld] for feld in OPTIONAL_BAUGRUPPE if feld in spec}
+    if "optimierung" in spec and spec.get("art") != "kaufteil":  # Raum ändern = neu freigeben (Spec C2 §6)
+        from swki.optimierung.auftrag import raum_felder  # spät importiert (Kreisimport)
+
+        kern["optimierung"] = raum_felder(spec)
     if teile is not None:
         kern["teile"] = teile
     text = json.dumps(kern, sort_keys=True, ensure_ascii=False, separators=(",", ":"))

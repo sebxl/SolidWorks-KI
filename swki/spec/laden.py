@@ -15,6 +15,7 @@ from swki.compiler.anker import RICHTUNGEN
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.formschraege import feste_tiefe, grenze_kleiner, quer_zur_richtung, schraege, skizzennormale
 from swki.konfig import PROJEKT
+from swki.pruefung.geometrie import UEBER_MATERIAL, volumen_auto
 from swki.pruefung.huellquader import huellquader_auto, seitenpunkt
 from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.konturen import eckradien, kontur_punkte
@@ -60,12 +61,19 @@ def schema_befunde(spec: dict, erwartet: str = "teil") -> list[dict]:
     datei = SCHEMA_ORDNER / f"{art}.schema.json"
     if art != erwartet or not datei.exists():
         return [{"pfad": "art", "meldung": f"Art {art!r} wird hier nicht unterstützt (erwartet {erwartet!r})"}]
+    befunde = _schema_pruefen(datei, spec, [])
+    if isinstance(spec.get("optimierung"), dict):  # eigenes Schema (Teil und Baugruppe, Stufe C2)
+        befunde += _schema_pruefen(SCHEMA_ORDNER / "optimierung.schema.json", spec["optimierung"], ["optimierung"])
+    return sorted(befunde, key=lambda b: b["pfad"])
+
+
+def _schema_pruefen(datei: Path, daten: dict, vor: list) -> list[dict]:
     validator = Draft202012Validator(json.loads(datei.read_text(encoding="utf-8")))
     befunde = []
-    for fehler in validator.iter_errors(spec):
+    for fehler in validator.iter_errors(daten):
         genau = best_match(fehler.context) if fehler.context else fehler
-        befunde.append({"pfad": _pfad(genau.absolute_path), "meldung": genau.message})
-    return sorted(befunde, key=lambda b: b["pfad"])
+        befunde.append({"pfad": _pfad([*vor, *genau.absolute_path]), "meldung": genau.message})
+    return befunde
 
 
 def art_der_datei(pfad: Path) -> str | None:
@@ -379,7 +387,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
         if ref not in ids:
             befunde.append({"pfad": _pfad(pfad), "meldung": f"Verweis auf unbekanntes Feature {ref!r}"})
 
-    for pfad, schluessel, roh in _werte({k: v for k, v in spec.items() if k != "parameter"}, []):
+    for pfad, schluessel, roh in _werte({k: v for k, v in spec.items() if k not in ("parameter", "optimierung")}, []):
         try:
             wert = auswerten(roh, parameter)
         except AusdruckFehler as e:
@@ -441,6 +449,12 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
             befunde.append({"pfad": "pruefung.huellquader",
                             "meldung": f"huellquader: auto ist hier nicht berechenbar ({grund}) – Kanten [X, Y, Z] "
                                        "angeben"})
+    if spec.get("pruefung", {}).get("volumen", {}).get("soll") == "auto" and not befunde:
+        # sonst rechenbar, aber ein Schnitt ragt über das Material: auto wäre falsch (BTP Durchgang 1); andere Gründe
+        # bleiben ein Hinweis (Prüfung ohne Urteil), wie bisher
+        v, grund = volumen_auto(spec)
+        if v is None and UEBER_MATERIAL in grund:
+            befunde.append({"pfad": "pruefung.volumen", "meldung": f"volumen: auto ist hier falsch ({grund})"})
     return befunde
 
 
@@ -450,6 +464,10 @@ def lade_spec(pfad: Path) -> dict:
     befunde = schema_befunde(spec)
     if not befunde:
         befunde = plausibel_befunde(spec, pfad.parent)
+    if not befunde and "optimierung" in spec:
+        from swki.optimierung.auftrag import auftrag_befunde  # spät importiert (Kreisimport)
+
+        befunde = auftrag_befunde(spec["optimierung"], pfad.parent, {pfad.name: spec}, pfad.name)
     if befunde:
         raise SpecFehler(befunde)
     return spec

@@ -23,23 +23,34 @@ class SwMechanik:
         self.antriebe: dict[str, object] = {}  # Bewegung → treibende Verknüpfung
         self._namen = {k.Name2: iid for iid, k in komponenten.items()}
         self._teileboxen: dict[str, list[float] | None] = {}  # Instanz-ID → Teilebox (mm), beim 1. zustand() gelesen
+        self._mates: dict[str, object] | None = None  # Name → IFeature aller Verknüpfungen (BTP Umbau 1), siehe _handles
+
+    def _handles(self) -> dict[str, object]:
+        """Alle Verknüpfungen als Handles, einmal aus dem Baum gelesen statt bei jeder Stellung; neue treibende
+        Verknüpfungen trägt verknuepfe ein, nach Unterdrücken und Löschen wird neu gelesen."""
+        if self._mates is None:
+            self._mates = {f.Name: f for f in sw_baugruppe.verknuepfungen(self.asm)}
+        return self._mates
 
     def halte(self, b: Bewegung, wert: float) -> None:
         if b.name not in self.antriebe:
             v = self.grenzen[b.grenze]
-            self.antriebe[b.name] = sw_baugruppe.treibe(self.asm, v, self.entitaet(v.a), self.entitaet(v.b), wert)
+            self.antriebe[b.name] = sw_baugruppe.treibe(self.asm, v, self.entitaet(v.a), self.entitaet(v.b), wert,
+                                                        self._handles())
         if (meldung := self.stelle(b, wert)) is not None:
             raise StellungFehler(b.name, wert, meldung)
 
     def stelle(self, b: Bewegung, wert: float) -> str | None:
-        return sw_baugruppe.stelle(self.asm, self.antriebe[b.name], b.art, wert)
+        return sw_baugruppe.stelle(self.asm, self.antriebe[b.name], b.art, wert, list(self._handles().values()))
 
     def loese(self, b: Bewegung) -> None:
         if (antrieb := self.antriebe.pop(b.name, None)) is not None:
+            self._mates = None
             sw_baugruppe.loesche(self.asm, antrieb)
 
     def unterdruecke(self, b: Bewegung, ja: bool) -> None:
-        namen = {f.Name.lower(): f for f in sw_baugruppe.verknuepfungen(self.asm)}
+        namen = {n.lower(): f for n, f in self._handles().items()}
+        self._mates = None   # Handle nach SetSuppression2 nicht belegt: danach neu lesen
         sw_baugruppe.unterdruecke(self.asm, namen[b.grenze.lower()], ja)
 
     def status(self) -> dict[str, int]:

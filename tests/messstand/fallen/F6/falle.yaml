@@ -1,0 +1,10 @@
+id: F6
+art: falle
+beschreibung: Prüfstation – Zylinderhalter mit M5 × 16, nur 8 mm Einschraubung in Alu < 2·d (echt, AP 6.8 Prüfstation Lauf 26)
+basis: "{arbeitsordner}/MESSSTAND/vorlagen/pruefstation"
+spec: pruefstation.yaml
+ersetzen:
+  - datei: pruefstation.yaml
+    alt: '{id: schraube_zh, quelle: {normteil: "ISO 4762 M5x20"}, je_position: {komponente: zylinderhalter, feature: f4}}   # v5: 12 Einschraubung (≥ 2·d im Alu, Prüfer Lauf 26), Spitze bündig'
+    neu: '{id: schraube_zh, quelle: {normteil: "ISO 4762 M5x16"}, je_position: {komponente: zylinderhalter, feature: f4}}'
+erwartet: {knoten: [schraube_zh], stichworte: [einschraub]}

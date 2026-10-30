@@ -1,12 +1,16 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen) – Ergebnisse: docs/bemassungsbezug/ergebnisse.md
-(davor Messstand und `huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1–3, Score 4,9 → Mittel 7,54) – Ergebnisse:
+docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
+`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
 - Python immer über `.venv\Scripts\python.exe`, swki über `.venv\Scripts\python.exe -m swki …` (Ausgabe JSON).
+  Längere Python-Schnipsel mit dem Write-Tool als Datei anlegen und `.venv\Scripts\python.exe <datei>` ausführen; nie
+  `python - <<'EOF' … || python - <<'EOF'` oder andere Befehle, die auf stdin warten (hängen bis zum 2-min-Zeitlimit).
+  Der PreToolUse-Hook `werkzeuge/stdin_sperre.py` (`.claude/settings.json`) lehnt solche Bash-Befehle ab.
 - SolidWorks-Version und Pfade stehen in `config/rechner.yaml` (pro Rechner, nicht im Git). Nie ein Jahr oder einen Pfad fest in Code schreiben.
   Pfade für Auftragsskripte ebenfalls dort: `blender`, `dateien: {<name>: <pfad>}`.
 - Einrichten eines Rechners: `powershell -ExecutionPolicy Bypass -File setup\einrichten.ps1`.
@@ -68,6 +72,9 @@ Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen)
 ## Baugruppen (Stufe 3b)
 - Baugruppen über den Skill `baugruppe`: Baugruppen-Spec nach `schema/baugruppe.schema.json` und Teil-Specs im selben
   Auftragsordner; **eine** Freigabe (`swki freigeben <baugruppe.yaml>`) für alles. Verknüpfungen sind Bauweg.
+- `swki bauen` übernimmt unveränderte Eigenteile aus einem früheren Lauf desselben Auftrags (Schlüssel und Datei-SHA-256,
+  `swki/baugruppe/wiederverwendung.py`) und baut geänderte zuerst; `--alles-neu` baut alle, Schalter `wiederverwenden`
+  in `config/standard.yaml`. `swki pruefen` misst trotzdem jedes Teil gegen die freigegebene Kopie.
 - Normteile kommen über `swki normteil hole` und werden in den Lauf-Ordner kopiert; die Baugruppe verweist nie auf die
   Bibliothek.
 - Die Spec ist die Quelle: `MANUELL_GEAENDERT` heißt, jemand hat gebaute Dateien geändert → `swki aenderungen`, Nutzer
@@ -101,6 +108,26 @@ Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen)
   den Skill `compiler-erweitern`.
 - Regressions-Suite enthält die Zentrieraufnahme (`tests/referenz/zentrieraufnahme/`).
 
+## Schnellbau und Simulation (Stufe C1)
+- Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,
+  Spec `docs/superpowers/specs/2026-10-25-schnellbau-c1-design.md`): `swki schnellbau teil <spec> [--setze N=w] [--stl]`,
+  `swki schnellbau mjcf <baugruppe> <sim.yaml> <aus.xml>` (Extra `schnellbau`: build123d, mujoco, optuna – Versionen fest).
+- Für Simulationen Geometrie nie aus Specs abschreiben, sondern über `swki.schnellbau` (Lage/Gelenke aus der
+  Baugruppen-Spec, konvexe Zerlegung, Trägheit aus der B-Rep). Was der Schnellbau nicht kann (skript, Drehungen im
+  Lagelöser, Kopplungen), meldet er (`SCHNELLBAU_NICHT_UNTERSTUETZT` bzw. `meldungen`) – nie still weglassen.
+- SolidWorks bleibt der verbindliche Bau. Gleichheit beider Backends: `tests/schnellbau` (ohne SolidWorks, gegen
+  `sw_referenz.json`) und live `-m werkzeuge.schnellbau_abgleich` nach Änderungen am Compiler oder am Schnellbau.
+
+## Optimierung (Stufe C2)
+- Autonome Optimierung einer Spec über den Skill `optimieren`: Block `optimierung` (`schema/optimierung.schema.json`,
+  Spec `docs/superpowers/specs/2026-10-25-optimierung-c2-design.md`), `swki optimiere <spec>` im Hintergrund, Claude
+  liest am Ende nur `plateau.md` (Grund ZIEL | PLATEAU | BUDGET | FEHLER). Bewertung während eines Laufs eingefroren.
+- Freigaberegel (Nutzer 25.10. und 30.10.2026): Die Freigabe des Auftrags gibt den Raum frei (Stellschrauben mit Rahmen,
+  Ziel, Szenarien, Nebenbedingungen); darin läuft die Schleife ohne Rückfrage. Formänderungen nur aus
+  `erlaubte_formaenderungen`, sonst Rückfrage. Der SolidWorks-Bau eines Ergebnisses läuft nie automatisch:
+  `swki optimiere <spec> --uebernehmen` schreibt die Werte und die Freigabe-Vorlage, gebaut wird erst nach
+  ausdrücklichem OK des Nutzers (dann `swki freigeben <spec> --im-raum`). Prüfer bleibt Pflicht, Bericht an den Nutzer.
+
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,
   freigegebene Spezifikation, Prüfbericht, Screenshots) → Urteil unverändert (nur das JSON-Objekt, ohne Code-Fences) nach
@@ -116,6 +143,9 @@ Stand: Bemaßungsbezug umgesetzt (Maße zur Kante bzw. Mitte, keine Gleichungen)
 - KPI-Messung der KI-Konstruktion: `-m werkzeuge.messstand` (Spec `docs/superpowers/specs/2026-10-09-messstand-design.md`,
   Ergebnisse `docs/messstand/ergebnisse.md`, Daten unter `<arbeitsordner>/MESSSTAND/`). Läufe je Aufgabe in eigenem
   Worktree ohne `docs/`/Referenzen; Freigabe ohne Rückfrage **nur** in Messstand-Aufträgen `MESS-*` (Nutzer 09.10.2026).
+- Bewertungsbogen BTP (Tempo und Präzision): `docs/superpowers/specs/2026-10-23-bewertungsbogen-design.md`, Ablauf
+  `docs/laufzeit-audit/goal-auftrag.md`; Score `-m werkzeuge.messstand btp <n>`, Entscheidung über einen Umbau nach dem
+  Mittel aus zwei Durchgängen (`btp-mittel`).
 
 ## Git
 - Kein `git push` ohne Rückfrage.

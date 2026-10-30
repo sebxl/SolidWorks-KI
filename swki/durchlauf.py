@@ -48,20 +48,26 @@ def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
 
     ordner = spec_pfad.parent
     kopien = ", ".join(str(p) for p in sorted(ordner.glob("*.freigegeben.yaml")))
-    bilder = sorted({str(Path(b).parent) for b in (bericht.get("bilder") or {}).values()})
+    # Dateien statt Ordner, damit der Prüfer alles in einer Runde liest (BTP Umbau 1, Recherche O10)
+    eingabe = [p for p in sorted((ordner / "eingabe").rglob("*")) if p.is_file()] if (ordner / "eingabe").is_dir() else []
+    if (ordner / "aufgabe.md").exists():
+        eingabe.append(ordner / "aufgabe.md")
+    bilder = sorted({str(b) for b in (bericht.get("bilder") or {}).values()})
     laufordner = Path(bericht["datei"]).parent if bericht.get("datei") else None
     steck = laufordner / "steckbrief.txt" if laufordner and (laufordner / "steckbrief.txt").exists() else None
-    teile = [f"Prüfe Lauf {lauf} von {spec_pfad.name}.", f"Eingabe des Nutzers: {ordner / 'eingabe'} (und aufgabe.md, falls vorhanden).",
+    teile = [f"Prüfe Lauf {lauf} von {spec_pfad.name}.",
+             f"Eingabe des Nutzers: {', '.join(map(str, eingabe)) or ordner / 'eingabe'}.",
              f"Freigegebene Spezifikation(en): {kopien}.", f"Prüfbericht: {lauf_datei(spec_pfad, lauf, 'pruefbericht')}."]
     if bilder:
         teile.append(f"Screenshots: {', '.join(bilder)}.")
     if steck:
         teile.append(f"Geometrie-Steckbrief: {steck} (Lage und Vorzeichen zuerst daran prüfen).")
-    teile.append("Antworte nur mit dem JSON-Urteil.")
+    teile.append("Lies alle genannten Dateien in deiner ersten Antwort parallel. Antworte nur mit dem JSON-Urteil.")
     return " ".join(teile)
 
 
-def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = None, neustart: bool = False) -> dict:
+def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = None, neustart: bool = False,
+              alles_neu: bool = False) -> dict:
     from swki.compiler.bauen import BauAbbruch, _bauen
     from swki.pruefung.befehle import pruefen, status
     from swki.spec.befehle import _freigeben, _validieren
@@ -89,7 +95,8 @@ def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = No
     if neustart and (abbruch := _neustart(erg, "bauen")):
         return abbruch
     try:
-        b = _bauen(Namespace(spec=str(spec_pfad), lauf=None, verwerfen=False, uebernommen=False))
+        b = _bauen(Namespace(spec=str(spec_pfad), lauf=None, verwerfen=False, uebernommen=False,
+                             alles_neu=alles_neu))
     except BauAbbruch as e:
         d, f = e.daten, e.daten.get("fehler") or {}
         return {**erg, "schritt": "bauen", "lauf": d.get("lauf"), "code": f.get("code"), "meldung": f.get("meldung"),
@@ -97,6 +104,8 @@ def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = No
     except SwkiFehler as e:
         return {**erg, "schritt": "bauen", "fehler": str(e), **getattr(e, "daten", {})}
     erg |= {"lauf": b["lauf"], "bau_s": b.get("dauer_s")}
+    if "teile_gebaut" in b:   # Baugruppe: welche Eigenteile neu gebaut, wie viele übernommen (BTP Umbau 3)
+        erg |= {"teile_gebaut": b["teile_gebaut"], "teile_wiederverwendet": len(b["teile_wiederverwendet"])}
     if neustart and (abbruch := _neustart(erg, "pruefen")):
         return abbruch
     try:
@@ -121,4 +130,7 @@ def einrichten(subparsers) -> None:
     p.add_argument("--max", type=ganzzahl_ab(0, "--max"), help="maximale Nachbesserungen laut Anweisung im Chat")
     p.add_argument("--neustart", action="store_true",
                    help="SolidWorks vor dem Bauen und vor dem Prüfen frisch starten (Baugruppen mit Bewegungen)")
-    p.set_defaults(func=lambda a: durchlauf(Path(a.spec), a.freigeben, a.max, neustart=a.neustart))
+    p.add_argument("--alles-neu", action="store_true",
+                   help="Baugruppe: auch unveränderte Eigenteile neu bauen statt aus einem früheren Lauf übernehmen")
+    p.set_defaults(func=lambda a: durchlauf(Path(a.spec), a.freigeben, a.max, neustart=a.neustart,
+                                            alles_neu=a.alles_neu))

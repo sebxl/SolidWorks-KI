@@ -11,6 +11,9 @@ from typing import Callable
 URSPRUNG = "ursprung"
 MITTE = "mitte"
 _NULL_MM = 1e-6  # Lage, unterhalb der eine Rechteckseite oder -mitte als auf 0 liegend gilt
+# Paare und Lagen auf 0 im Maßplan nur bei rechnerischer Gleichheit, nie in der Ankertoleranz: sonst zieht eine
+# Symmetrie zwei Punkte mit 20,25/20,22 auf eine Höhe (BTP Durchgang 0, Kamera)
+GLEICH_MM = 1e-6
 
 
 def _alle_ursprung() -> dict[int, str | dict]:

@@ -9,7 +9,8 @@ $ErrorActionPreference = "Stop"
 $Projekt = Split-Path -Parent $PSScriptRoot
 $SwkiHome = Join-Path $env:USERPROFILE ".swki"
 $McpRepo = "https://github.com/andrewbartels1/SolidworksMCP-python.git"
-$McpCommit = "600624fc93dad959600366bd0f3d281e4eeeacf5"
+# Upstream hat main umgeschrieben: e8d1cdd ist baugleich (gleicher Tree) mit dem früheren Pin 600624f
+$McpCommit = "e8d1cddca3fd537973433714fb7578889b36322b"
 
 function Pruefe([string]$Schritt) {
     if ($LASTEXITCODE -ne 0) { throw "Fehlgeschlagen: $Schritt (Exit-Code $LASTEXITCODE)" }
@@ -31,7 +32,7 @@ Write-Host "== 1/5 Python-Umgebung des Projekts"
 $Python = Finde-Python
 $VenvPy = Join-Path $Projekt ".venv\Scripts\python.exe"
 if (-not (Test-Path $VenvPy)) { & $Python -m venv (Join-Path $Projekt ".venv"); Pruefe "venv anlegen" }
-& $VenvPy -m pip install --quiet -e "$Projekt[dev,pdf]"; Pruefe "pip install swki (mit dev, pdf)"
+& $VenvPy -m pip install --quiet -e "$Projekt[dev,pdf,schnellbau]"; Pruefe "pip install swki (mit dev, pdf, schnellbau)"
 
 Write-Host "== 2/5 Rechnerkonfiguration"
 New-Item -ItemType Directory -Force -Path $SwkiHome | Out-Null
@@ -49,7 +50,8 @@ if (-not $OhneMcp) {
     Write-Host "== 4/5 MCP-Server SolidworksMCP-python @ $McpCommit"
     $McpDir = Join-Path $SwkiHome "SolidworksMCP-python"
     if (-not (Test-Path (Join-Path $McpDir ".git"))) { git clone --quiet $McpRepo $McpDir; Pruefe "git clone" }
-    git -C $McpDir fetch --quiet origin; Pruefe "git fetch"
+    # Commit gezielt holen: ein Fetch der Branches erreicht ihn nicht mehr, sobald Upstream die Historie umschreibt
+    git -C $McpDir fetch --quiet origin $McpCommit; Pruefe "git fetch"
     git -C $McpDir checkout --quiet $McpCommit; Pruefe "git checkout"
     $McpPy = Join-Path $McpDir ".venv\Scripts\python.exe"
     if (-not (Test-Path $McpPy)) { & $Python -m venv (Join-Path $McpDir ".venv"); Pruefe "MCP-venv anlegen" }

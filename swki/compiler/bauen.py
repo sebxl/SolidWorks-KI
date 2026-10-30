@@ -16,7 +16,7 @@ from swki.compiler.kontext import Kontext
 from swki.compiler.protokoll import Protokoll
 from swki.compiler.registry import alle_handler
 from swki.konfig import lade_rechner, lade_standard
-from swki.spec.freigabe import pruefe_freigabe
+from swki.spec.freigabe import FreigabeFehler, pruefe_freigabe
 from swki.spec.laden import art_der_datei, lade_spec
 from swki.verbindung import verbinde
 
@@ -69,7 +69,12 @@ def baue_teil_dokument(app, r, standard: dict, spec: dict, spec_pfad: Path, auft
 def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec(spec_pfad)
-    pruefe_freigabe(spec_pfad, spec)
+    try:
+        pruefe_freigabe(spec_pfad, spec)
+    except FreigabeFehler as e:
+        from swki.optimierung.raum import raum_hinweis  # spät importiert (Kreisimport)
+
+        raise raum_hinweis(spec_pfad, e) from e
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
     if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):
@@ -123,7 +128,8 @@ def _bauen(args) -> dict:
     if art_der_datei(pfad) == "baugruppe":
         from swki.baugruppe.bau import bauen as baugruppe_bauen  # spät importiert (Kreisimport); Modul aus Task 8
 
-        return baugruppe_bauen(pfad, args.lauf, args.verwerfen, args.uebernommen)
+        return baugruppe_bauen(pfad, args.lauf, args.verwerfen, args.uebernommen,
+                               alles_neu=getattr(args, "alles_neu", False))
     return bauen(pfad, args.lauf, args.verwerfen, args.uebernommen)
 
 
@@ -131,6 +137,8 @@ def einrichten(subparsers) -> None:
     p = subparsers.add_parser("bauen", help="freigegebene Spezifikation in SolidWorks bauen (neuer Lauf)")
     p.add_argument("spec")
     p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Laufnummer ≥ 1 (Vorgabe: nächste freie)")
+    p.add_argument("--alles-neu", action="store_true",
+                   help="Baugruppe: auch unveränderte Eigenteile neu bauen statt aus einem früheren Lauf übernehmen")
     gruppe = p.add_mutually_exclusive_group()
     gruppe.add_argument("--verwerfen", action="store_true",
                         help="manuelle Änderungen am letzten Lauf ausdrücklich verwerfen (nur auf Anweisung des Nutzers)")

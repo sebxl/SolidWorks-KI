@@ -37,6 +37,10 @@ Die fünf Messstand-Aufgaben bleiben unverändert (vergleichbar mit Durchgang 0�
   neue Freigabe nötig) **und eine Bauweg-Änderung an einer Verschraubung** (Schraubenlänge). Die genaue Änderung legt
   die Einrichtung fest (§6, Schritt 1) und wählt sie so, dass sie zwei Teile, eine Normteilgröße und mindestens eine
   Verknüpfung berührt und die Bewegungsprüfung mitläuft.
+- **Festgelegt (24.10.2026):** Vorgabe A12 neu ± 20 statt ± 15 (Kamerahalter `HUB` 30 → 40) und Schenkel B des
+  Kamerahalters 12 statt 10 dick (`TB`), Kameraverschraubung mit gleicher Einschraubtiefe (`schraube_kam` M3 × 10 →
+  M3 × 12). Text: `tests/messstand/aufgaben/pruefstation/aufgabe.md`; Vorlage und Referenz-Specs unter
+  `<arbeitsordner>/MESSSTAND/vorlagen/` (Stand Lauf 28, eingefroren 24.10.).
 - Ablauf im Lauf wie im Betrieb: Skill `baugruppe`, Spec ändern, validieren, freigeben (erlaubt, `MESS-*`),
   `swki durchlauf --neustart`, Prüfer, `swki bericht`.
 - Referenz: dieselbe Änderung einmal von Hand korrekt umgesetzt, gebaut, geprüft, STL der Baugruppe.
@@ -118,6 +122,8 @@ ein Fehlerpunkt im Durchgang bzw. 5 von 6 Fallen.
 
 ### 5.1 Entscheidung je Umbau
 
+Ein Umbau darf mehrere Optimierungen bündeln (Recherche §5.1: die meisten liegen einzeln unter +0,3).
+
 **Besser** = Gesamtscore ≥ aktueller Stand + 0,3 **und** Präzision erster Lauf und Präzision Fallen nicht schlechter
 **und** keine Sperre. Dann wird der Umbau neuer Stand (Merge in den Optimierungs-Branch). Sonst verwerfen.
 
@@ -126,6 +132,15 @@ ein Fehlerpunkt im Durchgang bzw. 5 von 6 Fallen.
   wiederholt, der Wiederholungslauf zählt. Begründung steht im Ergebnis.
 - Die Präzision darf nicht schlechter werden, auch wenn die Zeit stark gewinnt (Vorgabe des Nutzers: Tempo und
   Präzision sind beide Hauptziel).
+
+**Ab Umbau 2: Mittel aus zwei Durchgängen** (Nutzer 24.10.2026). Jeder Umbau wird in zwei Durchgängen gemessen; der
+Score kommt aus dem Mittel: je Aufgabe Mittel der Zeiten (Zeit Teile aus den gemittelten Aufgabenzeiten), Fehlerpunkte,
+Fallen (Treffer − Fehlalarme), Aufwand und Speicher (+ Hänger) je Durchgang gemittelt, dann die Anker; eine Aufgabe, die
+in einem Durchgang nicht `richtig` ist, setzt den Deckel. Verglichen wird mit dem Mittel des aktuellen Stands
+(Umbau 1: D1/D2 = 6,49), „besser“ wie oben (Mittel ≥ Stand + 0,3, Präzisionsgruppen im Mittel nicht schlechter, keine
+Sperre). **Wiederholungen nach §5.1 entfallen dann** – jeder Lauf zählt, wie er ist. Befehl:
+`-m werkzeuge.messstand btp-mittel <n> <n+1> --vergleich <k> <k+1>`. Begründung: ein einzelner Deutungsfehler des
+Agenten verschob D1/D2 um ~1 Punkt (D1 7,1, D2 6,1 auf demselben Stand); ein Durchgang allein entscheidet zufällig.
 
 ### 5.2 Abbruch
 
@@ -160,10 +175,12 @@ Aufwand je Durchgang geschätzt: 6 Läufe ~45 min (Prüfstation ~20 min), Ausgan
 Gewichtet: 0,15·4,6 + 0,10·4,5 + 0,25·4,8 + 0,20·6,1 + 0,20·7,0 + 0,05·5,0 + 0,05·1,5 = **5,3**. Durchgang 0
 ersetzt den Wert; er wird in `ergebnisse.md` und im Goal-Auftrag eingetragen.
 
-**Zielscore 7,0.** Ein Beispiel, das 7,0 ergibt: Prüfstation 300 s (9,0), Teile 100 s (6,2), Stehlager 250 s (6,1),
-1 Fehlerpunkt (7,0), 5 Fallen (7,0), Aufwand 0,8 (6,0), Speicher 12 GB (3,5). Die Prüfstation trägt das meiste: die
-Hebel 1–5 des Audits bringen ihre Werkzeugzeit von ~14 min auf ~4 min. Bei den Teilen geht es unter ~100 s nur
-über die Modellseite (Runden, Prüfer). Realistisch nach 5 Umbauten: 6,5–7,0.
+**Zielscore 6,5** (Nutzer 24.10.2026, nach der Recherche; ursprünglich 7,0). Die Recherche erwartet ohne Fast Mode
+und ohne Abschaffung des Konstruktionsreviews +0,4 bis +0,85 über dem Ausgangswert; 6,5 verlangt die belegten Hebel
+(Schnellmodus in Bewegungsprüfung und Grundstellung, Verknüpfen ohne Neuaufzählung, Teile wiederverwenden,
+Einschraublänge als Prüfung, schlankerer Prüfer und Review) bei gleicher Präzision. Beispiel für 6,5: Prüfstation
+350 s (8,2), Teile 130 s (5,3), Stehlager 330 s (5,0), 1 Fehlerpunkt (7,0), 5 Fallen (7,0), Aufwand 0,9 (5,5),
+Speicher 13 GB (2,6).
 
 ## 8. Regeln für die /goal-Session
 
@@ -177,17 +194,21 @@ Hebel 1–5 des Audits bringen ihre Werkzeugzeit von ~14 min auf ~4 min. Bei den
   das nicht, siehe Audit B9).
 - Keine Änderung an Konstruktionsregeln, Freigabe-Schutz, Prüfungen gegen die freigegebene Kopie oder Schwellen von
   `swki pruefen`, um Zeit zu sparen. Prüfungen dürfen schneller, nicht schwächer werden.
+- **Konstruktionsreview** (Skills `konstruieren`/`baugruppe`): läuft in den Messläufen wie im Betrieb. Er darf
+  schlanker werden (Modell, effort, Geltungsbereich: z. B. kein Review bei reinen Maß-, Schraubenlängen- oder
+  Normteiländerungen), aber **nicht entfallen** (Nutzer 24.10.2026).
+- **Fast Mode und effort des Hauptagenten** sind nicht Teil des Bogens (Kostenfrage, Nutzer 24.10.2026): kein Umbau
+  darf sie ändern; Messläufe laufen mit dem Betriebsstandard.
 - Kein `git push`; Merge nach `main` nur nach Rückfrage beim Nutzer.
 - Jeder Durchgang: Ergebnis-Tabelle, Teilscores, Entscheidung mit Begründung in `docs/laufzeit-audit/ergebnisse.md`.
 
-## 9. Offen beim Nutzer (vor der Einrichtung)
+## 9. Entscheidungen des Nutzers vor der Einrichtung (24.10.2026)
 
-1. **Basis-Stand:** Die Prüfstation braucht das Kaufteil Festo ADNM-25-A-P-A-52Z1-82Z2, das nur auf
-   `ap68-pruefstation` liegt (dcc5fed). Entweder `ap68-pruefstation` vorher nach `main` mergen und `btp` ab `main`,
-   oder `btp` ab `ap68-pruefstation`.
-2. **Paket Bemaßungsbezug** (Branch `bemassungsbezug`, Plan fertig) schaltet die Gleichungen ab (Audit B2, −110 s je
-   Prüfstation-Zyklus) und ändert den Bauweg. Entweder zuerst umsetzen und danach Einrichtung und Durchgang 0, oder als
-   einer der 5 Umbauten in der /goal-Session.
+1. `ap68-pruefstation` ist nach `main` gemergt (602dc8f); `btp` setzt auf `main` auf.
+2. Paket Bemaßungsbezug ist vor der Einrichtung umgesetzt und gemergt; Referenz, Fallen und Durchgang 0 entstehen
+   auf diesem Stand.
+3. Review, Fast Mode, Zielscore: siehe §7 und §8. Die Recherche (`docs/laufzeit-audit/recherche.md`) ist Startpunkt
+   der Umbau-Wahl.
 
 ## 10. Was dem Ausführenden überlassen ist
 

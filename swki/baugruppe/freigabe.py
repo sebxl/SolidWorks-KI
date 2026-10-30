@@ -19,10 +19,18 @@ def teil_summen(bg: Baugruppe) -> dict[str, str]:
     return {datei: pruefsumme(spec) for datei, spec in bg.teile.items()} | kaufteil_summen(bg)
 
 
-def freigeben_baugruppe(bg: Baugruppe, zeitpunkt: str | None = None) -> dict:
+def freigeben_baugruppe(bg: Baugruppe, zeitpunkt: str | None = None, zusatz: dict | None = None) -> dict:
+    """zusatz: weitere Angaben im Eintrag der Baugruppe (Raum-Freigabe, Spec C2 §6); mit Block `optimierung` wird der
+    Raum (Raum-Prüfsumme) eingetragen, sofern zusatz ihn nicht schon mitbringt."""
     teile = {datei: freigeben(bg.pfad.parent / datei, spec, zeitpunkt) for datei, spec in bg.teile.items()}
-    zusatz = {"kaufteile": kaufteil_summen(bg)} if kaufteil_summen(bg) else None
-    return {**freigeben(bg.pfad, bg.spec, zeitpunkt, teile=teil_summen(bg), zusatz=zusatz), "teile": teile}
+    zusatz = dict(zusatz or {})
+    if kaufteil_summen(bg):
+        zusatz["kaufteile"] = kaufteil_summen(bg)
+    if "optimierung" in bg.spec and "raum" not in zusatz:
+        from swki.optimierung.raum import raum_eintrag  # spät importiert (Kreisimport)
+
+        zusatz["raum"] = raum_eintrag(bg.spec, bg.pfad, bg.teile, kaufteil_summen(bg))
+    return {**freigeben(bg.pfad, bg.spec, zeitpunkt, teile=teil_summen(bg), zusatz=zusatz or None), "teile": teile}
 
 
 def pruefe_freigabe_baugruppe(bg: Baugruppe) -> dict:
