@@ -77,3 +77,9 @@ def test_kollision_je_stellung(schlitten, tmp_path):
         ("grund", "leiste_rechts", "schlitten"), ("g1=220mm", "leiste_rechts", "schlitten")}
     assert breit.kollisionen[0]["mm3"] == pytest.approx(10 * 25 * 80)
     assert pb.baue({"SB": 60.0, "HL": 60.0, "HUB": 290.0}).gueltig   # Hub über die Grundplatte hinaus: frei
+
+
+def test_ausgangsstand_ist_die_spec_nicht_die_erste_probe(schlitten, tmp_path):
+    pb = _bau(schlitten, tmp_path)
+    erste = pb.baue({"SB": 70.0, "HL": 60.0, "HUB": 220.0})     # erste Probe schneidet: bleibt eine Kollision
+    assert not erste.gueltig and pb.grund_meldung == []

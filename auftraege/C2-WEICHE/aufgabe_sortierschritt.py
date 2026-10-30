@@ -6,39 +6,24 @@ modell.py, ablauf.py; nur gelesen, wie Spike S-Schleife-1 `spikes/s18_sim.py`). 
 (modell.geometrie) und die Lage der Rutschenkanäle (modell.r_y, R_XI0, R_RS, R_ZO, R_ZU) – beides aus der Probe, also
 aus den Specs. Fehlschläge werden klassifiziert (Fehlerbilder), Läufe mit Energiezuwachs sind ungültig.
 
-Pfad der Studie: config/rechner.yaml `dateien: {sortierschritt_skripte: …}`, sonst der Hauptcheckout.
+Pfad der Studie: config/rechner.yaml `dateien: {sortierschritt_skripte: …}`.
 Teil-/Baugruppenkoordinaten (x, y, z) → Maschine (X, Y, Z) = (x, −z, y) (pruefstation.yaml Kopf).
 """
 
 import math
 import re
 import sys
-from pathlib import Path
 
 import numpy as np
 
+from swki.konfig import lade_rechner
 
-def _skripte() -> Path:
-    try:
-        from swki.konfig import lade_rechner
-        p = lade_rechner().dateien.get("sortierschritt_skripte")
-        if p:
-            return Path(p)
-    except Exception:
-        pass
-    return Path(r"C:\Users\User\Documents\Projekte\SolidWorks-KI\auftraege\AP68-Pruefstation\simulation"
-                r"\sortierschritt-2026-10-18\skripte")
-
-
-SKRIPTE = _skripte()
+SKRIPTE = lade_rechner().dateien["sortierschritt_skripte"]
 if str(SKRIPTE) not in sys.path:
     sys.path.insert(0, str(SKRIPTE))
 import modell as M  # noqa: E402
 import sim as S  # noqa: E402
 
-VS = SKRIPTE.parent.parent / "v-schieber-2026-10-16" / "skripte"
-ABHAENGIGKEITEN = [str(SKRIPTE / "sim.py"), str(SKRIPTE / "modell.py"), str(SKRIPTE / "ablauf.py"),
-                   str(VS / "messer.py"), str(VS / "modell.py"), str(Path(S.D1_DATEI).resolve())]
 DT, TC = 1e-5, 1.5e-4                        # wie Spike M4/M5
 TAN60 = math.tan(math.radians(60))
 _geladen = None

@@ -74,6 +74,18 @@ def je_datei(schrauben: list[Stellschraube], werte: dict) -> dict[str, dict]:
     return out
 
 
+def auf_schritt(wert: float, lo: float, schritt: float | None) -> bool:
+    if not schritt:
+        return True
+    k = (wert - lo) / schritt
+    return abs(k - round(k)) <= 1e-6
+
+
+def abhaengigkeiten(block: dict, ordner: Path) -> list[Path]:
+    """Weitere Dateien der Bewertung (pruefaufgabe.abhaengigkeiten), relativ zum Auftragsordner oder absolut."""
+    return [ordner / d for d in block.get("pruefaufgabe", {}).get("abhaengigkeiten", [])]
+
+
 def _b(pfad: str, meldung: str) -> dict:
     return {"pfad": pfad, "meldung": meldung}
 
@@ -112,17 +124,26 @@ def auftrag_befunde(block: dict, ordner: Path, specs: dict[str, dict], eigene: s
         elif not lo <= wert <= hi:
             befunde.append(_b(f"{q}.rahmen", f"Wert {wert:g} von {s['parameter']} liegt nicht im rahmen "
                                              f"[{lo:g}, {hi:g}]"))
+        elif not auf_schritt(wert, lo, s.get("schritt")):
+            befunde.append(_b(f"{q}.schritt", f"Wert {wert:g} von {s['parameter']} liegt nicht auf dem schritt "
+                                              f"{s['schritt']:g} ab {lo:g}"))
     rahmen = {s["name"]: s["rahmen"] for s in block.get("stellschrauben", [])}
+    schritt = {s["name"]: s.get("schritt") for s in block.get("stellschrauben", [])}
     for i, punkt in enumerate(block.get("start", [])):
         for name, wert in punkt.items():
             if name not in rahmen:
                 befunde.append(_b(f"{p}.start[{i}].{name}", f"{name!r} ist keine Stellschraube"))
             elif not rahmen[name][0] <= wert <= rahmen[name][1]:
                 befunde.append(_b(f"{p}.start[{i}].{name}", f"{wert:g} liegt nicht im rahmen {rahmen[name]}"))
+            elif not auf_schritt(wert, rahmen[name][0], schritt[name]):
+                befunde.append(_b(f"{p}.start[{i}].{name}", f"{wert:g} liegt nicht auf dem schritt {schritt[name]:g}"))
     for feld in ("modul", "simulation"):
         datei = block.get("pruefaufgabe", {}).get(feld)
         if datei and not (ordner / datei).is_file():
             befunde.append(_b(f"{p}.pruefaufgabe.{feld}", f"{ordner / datei} fehlt"))
+    for i, pfad in enumerate(abhaengigkeiten(block, ordner)):
+        if not pfad.is_file():
+            befunde.append(_b(f"{p}.pruefaufgabe.abhaengigkeiten[{i}]", f"{pfad} fehlt"))
     for liste in ("szenarien",):
         szen = [s["name"] for s in block.get(liste, [])] + [s["name"] for s in
                                                              block.get("pruefstufe2", {}).get("szenarien", [])]
@@ -146,14 +167,17 @@ def raum_felder(spec: dict) -> dict:
 
 
 def raum(spec: dict, ordner: Path) -> dict:
-    """Der freigegebene Raum des Blocks: raum_felder und SHA-256 von Prüfaufgabe und Simulations-Datei (fehlende
-    Dateien als None)."""
+    """Der freigegebene Raum des Blocks: raum_felder und SHA-256 von Prüfaufgabe, Simulations-Datei und Abhängigkeiten
+    (fehlende Dateien als None)."""
     r = raum_felder(spec)
     pa = r.get("pruefaufgabe", {})
     for feld in ("modul", "simulation"):
         if feld in pa:
             pfad = ordner / pa[feld]
             pa[f"{feld}_sha256"] = sha256_datei(pfad) if pfad.is_file() else None
+    if pa.get("abhaengigkeiten"):
+        pa["abhaengigkeiten_sha256"] = [sha256_datei(d) if d.is_file() else None
+                                        for d in abhaengigkeiten(spec["optimierung"], ordner)]
     return r
 
 

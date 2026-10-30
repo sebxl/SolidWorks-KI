@@ -1,10 +1,13 @@
-"""Freigaberegel für autonome Schleifen (Spec C2 §6, vom Nutzer am 25.10.2026 bestätigt).
+"""Freigaberegel für autonome Schleifen (Spec C2 §6, Nutzer 25.10. und 30.10.2026).
 
-Die Freigabe eines Optimierungsauftrags gibt den Raum frei. `swki freigeben` legt dazu im Eintrag der Spec mit dem
-Block `optimierung` die Raum-Prüfsumme ab: die Prüfsumme der Anforderungen mit maskierten Werten der Stellschrauben-
-Parameter (Baugruppe: auch die der Teil-Specs), zusammen mit dem Raum (auftrag.raum, mit SHA-256 der Prüfaufgabe).
-`freigeben_im_raum` gibt ein Ergebnis im Raum ohne Rückfrage frei: Raum-Prüfsumme gleich, jede Stellschraube im
-`rahmen` (und auf dem `schritt`), Spec gültig. Der Nachweis (Werte vorher/nachher, Quelle) steht im Eintrag `im_raum`.
+Die Freigabe eines Optimierungsauftrags gibt den Raum frei: Darin läuft die Schleife ohne Rückfrage. Gebaut wird ein
+Ergebnis aber erst nach ausdrücklichem OK des Nutzers. `swki freigeben` legt dazu im Eintrag der Spec mit dem Block
+`optimierung` die Raum-Prüfsumme ab: die Prüfsumme der Anforderungen mit maskierten Werten der Stellschrauben-Parameter
+(Baugruppe: auch die der Teil-Specs), zusammen mit dem Raum (auftrag.raum, mit SHA-256 der Bewertung).
+`freigeben_im_raum` setzt dieses OK voraus und stellt sicher, dass es nur das Ergebnis deckt: Raum-Prüfsumme gleich,
+Freigabe-Kopie unverändert, jede Stellschraube im `rahmen` (und auf dem `schritt`), Features hinzu oder weg nur mit
+`erlaubte_formaenderungen`, Spec gültig. Der Nachweis (Werte vorher/nachher, Formänderungen, Quelle) steht im Eintrag
+`im_raum`.
 """
 
 import hashlib
@@ -13,8 +16,10 @@ import math
 from datetime import datetime
 from pathlib import Path
 
-from swki.optimierung.auftrag import maskiert, raum, stellschrauben
-from swki.spec.freigabe import FreigabeFehler, freigabe_eintrag, freigeben, freigegebene_spec, pruefsumme
+from swki.optimierung.auftrag import auf_schritt, maskiert, raum, stellschrauben
+from swki.optimierung.bericht import formaenderungen
+from swki.spec.freigabe import (FreigabeFehler, freigabe_eintrag, freigeben, freigegebene_spec, kopie_pfad,
+                                pruefsumme)
 from swki.spec.laden import SpecFehler, art_der_datei, lade_spec, lade_yaml
 
 
@@ -41,6 +46,12 @@ def raum_summe(spec: dict, pfad: Path, teile: dict[str, dict] | None = None, kau
         teil_summen |= kaufteile or {}
     kern = maskiert(spec, namen.get(pfad.name, []))
     return _sha({"anforderungen": pruefsumme(kern, teil_summen), "raum": raum(spec, pfad.parent)})
+
+
+def raum_summe_datei(pfad: Path) -> str:
+    """Raum-Prüfsumme des jetzigen Stands einer Spec-Datei (wirft FreigabeFehler SPEC_UNGUELTIG)."""
+    spec, teile, kaufteile, _ = _laden(pfad)
+    return raum_summe(spec, pfad, teile, kaufteile)
 
 
 def raum_eintrag(spec: dict, pfad: Path, teile: dict[str, dict] | None = None, kaufteile: dict | None = None) -> dict:
@@ -74,11 +85,9 @@ def _werte_pruefen(pfad: Path, block: dict, aktuell: dict[str, dict]) -> dict:
         if not isinstance(wert, (int, float)) or not lo - 1e-9 <= wert <= hi + 1e-9:
             raise FreigabeFehler("AUSSERHALB_RAUM", f"{s.datei}: {s.parameter} = {wert!r} liegt nicht im rahmen "
                                                     f"[{lo:g}, {hi:g}] der Stellschraube {s.name}. Nutzer fragen.")
-        if s.schritt:
-            k = (wert - lo) / s.schritt
-            if abs(k - round(k)) > 1e-6:
-                raise FreigabeFehler("AUSSERHALB_RAUM", f"{s.datei}: {s.parameter} = {wert:g} liegt nicht auf dem "
-                                                        f"Schritt {s.schritt:g} ab {lo:g} (Stellschraube {s.name})")
+        if not auf_schritt(wert, lo, s.schritt):
+            raise FreigabeFehler("AUSSERHALB_RAUM", f"{s.datei}: {s.parameter} = {wert:g} liegt nicht auf dem "
+                                                    f"Schritt {s.schritt:g} ab {lo:g} (Stellschraube {s.name})")
         kopie = pfad.parent / s.datei
         try:
             vorher = freigegebene_spec(kopie).get("parameter", {}).get(s.parameter)
@@ -89,9 +98,28 @@ def _werte_pruefen(pfad: Path, block: dict, aktuell: dict[str, dict]) -> dict:
     return nachweis
 
 
+def _kopien_pruefen(pfad: Path, dateien: list[str]) -> None:
+    """Freigabe-Kopien unverändert? Sie sind das Soll für Prüfer und Sollvolumen; --im-raum überschreibt sie."""
+    for d in dateien:
+        spec_pfad = pfad.parent / d
+        eintrag, kopie = freigabe_eintrag(spec_pfad), kopie_pfad(spec_pfad)
+        if eintrag is None or not kopie.is_file():
+            continue
+        if hashlib.sha256(kopie.read_text(encoding="utf-8").encode("utf-8")).hexdigest() != eintrag.get("kopie_sha256"):
+            raise FreigabeFehler("KOPIE_GEAENDERT", f"{kopie.name} wurde nach der Freigabe geändert. Nutzer fragen.")
+
+
+def _form_pruefen(pfad: Path, block: dict) -> dict:
+    """Formänderungen gegenüber der Freigabe; Features hinzu oder weg nur, wenn der Auftrag welche erlaubt."""
+    form = formaenderungen(pfad.parent, pfad.name)
+    if any("hinzu" in a or "weg" in a for a in form.values()) and not block.get("erlaubte_formaenderungen"):
+        raise FreigabeFehler("FORM_GEAENDERT", f"Formänderung ohne erlaubte_formaenderungen: {form}. Nutzer fragen.")
+    return form
+
+
 def pruefe_im_raum(pfad: Path) -> dict:
-    """Liegt der jetzige Stand im freigegebenen Raum? Wirft FreigabeFehler (RAUM_FEHLT, AUSSERHALB_RAUM,
-    SPEC_UNGUELTIG, RAUM_GEAENDERT); sonst {"im_raum": True, "werte": Nachweis}."""
+    """Liegt der jetzige Stand im freigegebenen Raum? Wirft FreigabeFehler (RAUM_FEHLT, AUSSERHALB_RAUM, KOPIE_GEAENDERT,
+    FORM_GEAENDERT, SPEC_UNGUELTIG, RAUM_GEAENDERT); sonst {"im_raum": True, "werte": …, "formaenderungen": …}."""
     eintrag = freigabe_eintrag(pfad)
     roh = lade_yaml(pfad)
     if eintrag is None or "raum" not in eintrag or "optimierung" not in roh:
@@ -103,21 +131,22 @@ def pruefe_im_raum(pfad: Path) -> dict:
             aktuell[s.datei] = lade_yaml(pfad.parent / s.datei)
     werte = _werte_pruefen(pfad, roh["optimierung"], aktuell)
     spec, teile, kaufteile, _ = _laden(pfad)
+    _kopien_pruefen(pfad, [pfad.name, *(teile or {})])
     if raum_summe(spec, pfad, teile, kaufteile) != eintrag["raum"]["pruefsumme"]:
         raise FreigabeFehler("RAUM_GEAENDERT", f"{pfad.name}: Anforderungen außerhalb der Stellschrauben oder der Raum "
                                                "(Ziel, Szenarien, Rahmen, Prüfaufgabe …) wurden nach der Freigabe "
                                                "geändert. Nutzer fragen und neu freigeben.")
-    return {"im_raum": True, "werte": werte}
+    return {"im_raum": True, "werte": werte, "formaenderungen": _form_pruefen(pfad, spec["optimierung"])}
 
 
 def freigeben_im_raum(pfad: Path, quelle: str | None = None) -> dict:
-    """Gibt ein Ergebnis im Raum frei (ohne Rückfrage, Spec C2 §6); quelle: z. B. der Optimierungslauf."""
+    """Gibt ein Ergebnis im Raum frei, nur nach ausdrücklichem OK des Nutzers (Spec C2 §6); quelle: der Lauf."""
     geprueft = pruefe_im_raum(pfad)
     spec, teile, kaufteile, bg = _laden(pfad)
     alt = freigabe_eintrag(pfad)
     jetzt = datetime.now().isoformat(timespec="seconds")
-    nachweis = {"werte": geprueft["werte"], "zeitpunkt": jetzt, "quelle": quelle,
-                "basis_pruefsumme": alt["pruefsumme"]}
+    nachweis = {"werte": geprueft["werte"], "formaenderungen": geprueft["formaenderungen"], "zeitpunkt": jetzt,
+                "quelle": quelle, "basis_pruefsumme": alt["pruefsumme"]}
     zusatz = {"raum": alt["raum"], "im_raum": nachweis}
     if bg is not None:
         from swki.baugruppe.freigabe import freigeben_baugruppe  # spät importiert (Kreisimport)
@@ -137,7 +166,7 @@ def raum_hinweis(pfad: Path, fehler: FreigabeFehler) -> FreigabeFehler:
     except (FreigabeFehler, SpecFehler, OSError):
         return fehler
     neu = FreigabeFehler("FREIGABE_VERALTET", f"{fehler} Die Änderung liegt im freigegebenen Raum des "
-                                               f"Optimierungsauftrags: swki freigeben {pfad.name} --im-raum (ohne "
-                                               "Rückfrage, Spec C2 §6), dann bauen.")
+                                               "Optimierungsauftrags. Dem Nutzer die Freigabe-Vorlage zeigen; nach "
+                                               f"seinem OK: swki freigeben {pfad.name} --im-raum, dann bauen.")
     neu.daten["im_raum"] = True
     return neu

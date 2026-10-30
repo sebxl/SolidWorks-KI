@@ -10,8 +10,8 @@ import yaml
 from swki.optimierung.auswertung import grenzanschlaege
 
 NAECHSTER_SCHRITT = {
-    "ZIEL": "Gewinner übernehmen: swki optimiere <spec> --uebernehmen (gibt im Raum frei), dann swki durchlauf <spec> "
-            "--neustart, Prüfer, Bericht an den Nutzer.",
+    "ZIEL": "Gewinner übernehmen: swki optimiere <spec> --uebernehmen (schreibt die Werte und die Freigabe-Vorlage), "
+            "Vorlage dem Nutzer zeigen. Gebaut wird erst nach seinem ausdrücklichen OK.",
     "PLATEAU": "Eine Formvariante aus erlaubte_formaenderungen als Spec-Änderung (variante neu benennen) ODER bereich im "
                "rahmen ändern ODER abbrechen/annehmen; dann swki validieren und swki optimiere neu starten.",
     "BUDGET": "Budget erschöpft: Ergebnis annehmen (falls gut genug) oder Budget erhöhen und neu starten.",
@@ -204,6 +204,47 @@ def plateau_md(s: dict) -> str:
     zeilen.append("**Rahmen:** " + ", ".join(f"{k} {v}" for k, v in s["rahmen"].items()))
     zeilen += ["", f"**Nächster Schritt:** {s['naechster_schritt']}", ""]
     return "\n".join(zeilen)
+
+
+def freigabe_vorlage(s: dict, probe: dict, spec_name: str, geschrieben: dict, nachweis: dict | None,
+                     ablauf: dict) -> str:
+    """Vorlage für das OK des Nutzers: was gebaut würde, worauf das Ergebnis beruht, was danach zu tun ist."""
+    stufe2 = (s.get("bester") or {}).get("stufe2") if (s.get("bester") or {}).get("nr") == probe["nr"] else None
+    z = [f"# Freigabe-Vorlage – {spec_name}", "",
+         f"**Lauf:** {s['lauf']}, Ende {s['grund']}, Probe {probe['nr']} · Variante: {s.get('variante') or '–'}",
+         f"**Ziel:** {s['ziel']['kennzahl']} {'≥' if s['ziel']['richtung'] == 'max' else '≤'} "
+         f"{s['ziel']['zielwert']:g}; Probe: {probe['wert']} in {probe.get('laeufe')} Läufen",
+         "**Prüfstufe 2:** " + ("nicht gerechnet" if not stufe2 else
+                                f"{'bestanden' if stufe2['bestanden'] else 'NICHT bestanden'} ({stufe2['wert']}, "
+                                f"belastbar: {stufe2['belastbar']})"),
+         "**Raum:** " + ("im freigegebenen Raum" if nachweis else "keine Raum-Freigabe, normale Freigabe nötig"), "",
+         "## Geänderte Maße"]
+    werte = (nachweis or {}).get("werte", {})
+    for datei, par in geschrieben.items():
+        for name, wert in par.items():
+            vorher = werte.get(datei, {}).get(name, {}).get("vorher", "–")
+            z.append(f"- {datei}: {name}: {vorher} → {wert:g}")
+    if ablauf:
+        z += ["", "## Ablaufgrößen (an die Steuerung)"] + [f"- {k}: {v:g}" for k, v in ablauf.items()]
+    form = s.get("formaenderungen") or {}
+    z += ["", "## Formänderungen gegenüber der Freigabe"]
+    z += [f"- {d}: " + ", ".join(f"{k} {v}" for k, v in a.items()) for d, a in form.items()] or ["- keine"]
+    if probe.get("fehlerbilder"):
+        z += ["", "## Fehlerbilder der Probe"] + [f"- {k}: {v:.1%}" for k, v in probe["fehlerbilder"].items()]
+    z += ["", "## Nach dem OK des Nutzers", "",
+          f"`swki freigeben {spec_name} --im-raum --quelle <Lauf und Probe>` (ohne Raum-Freigabe: `swki freigeben "
+          f"{spec_name}`), dann `swki durchlauf {spec_name} --neustart`, Prüfer, Bericht.", ""]
+    return "\n".join(z)
+
+
+def frueher_fehler(spec: Path, lauf: Path, detail: str) -> dict:
+    """Status für einen Fehler vor dem Start der Schleife (Prüfaufgabe nicht ladbar, Bewertung geändert)."""
+    s = {"grund": "FEHLER", "detail": detail, "spec": str(spec), "lauf": lauf.name, "lauf_ordner": str(lauf),
+         "raum_freigegeben": False, "proben": {"gesamt": 0}, "bester": None, "naechster_schritt": NAECHSTER_SCHRITT["FEHLER"]}
+    (lauf / "status.json").write_text(json.dumps(s, indent=1, ensure_ascii=False), encoding="utf-8")
+    (lauf / "plateau.md").write_text(f"# FEHLER – {spec.name}, {lauf.name}\n\n**Grund:** {detail}\n\n"
+                                     f"**Nächster Schritt:** {s['naechster_schritt']}\n", encoding="utf-8")
+    return s
 
 
 def schreibe(s: dict, lauf: Path) -> None:

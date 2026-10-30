@@ -122,10 +122,11 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
 - Autonome Optimierung einer Spec über den Skill `optimieren`: Block `optimierung` (`schema/optimierung.schema.json`,
   Spec `docs/superpowers/specs/2026-10-25-optimierung-c2-design.md`), `swki optimiere <spec>` im Hintergrund, Claude
   liest am Ende nur `plateau.md` (Grund ZIEL | PLATEAU | BUDGET | FEHLER). Bewertung während eines Laufs eingefroren.
-- Freigaberegel (Nutzer 25.10.2026): Die Freigabe des Auftrags gibt den Raum frei (Stellschrauben mit Rahmen, Ziel,
-  Szenarien, Nebenbedingungen); Ergebnisse im Raum ohne Rückfrage freigeben (`swki optimiere <spec> --uebernehmen` bzw.
-  `swki freigeben <spec> --im-raum`) und bauen. Formänderungen nur aus `erlaubte_formaenderungen`, sonst Rückfrage;
-  Prüfer bleibt Pflicht, Bericht an den Nutzer.
+- Freigaberegel (Nutzer 25.10. und 30.10.2026): Die Freigabe des Auftrags gibt den Raum frei (Stellschrauben mit Rahmen,
+  Ziel, Szenarien, Nebenbedingungen); darin läuft die Schleife ohne Rückfrage. Formänderungen nur aus
+  `erlaubte_formaenderungen`, sonst Rückfrage. Der SolidWorks-Bau eines Ergebnisses läuft nie automatisch:
+  `swki optimiere <spec> --uebernehmen` schreibt die Werte und die Freigabe-Vorlage, gebaut wird erst nach
+  ausdrücklichem OK des Nutzers (dann `swki freigeben <spec> --im-raum`). Prüfer bleibt Pflicht, Bericht an den Nutzer.
 
 ## Prüfen und Nachbessern (Stufe 2)
 - Ablauf komplett im Skill `konstruieren`: `swki bauen` → `swki pruefen <spec>` → Prüfer-Agent `pruefer` (nur Eingabe,

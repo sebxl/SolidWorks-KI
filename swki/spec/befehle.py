@@ -54,7 +54,7 @@ def _freigeben(args) -> dict:
         original = pfad.name.removesuffix(_KOPIE_ENDUNG) + ".yaml"
         raise FreigabeFehler("FREIGABE_KOPIE", f"{pfad.name} ist die Freigabe-Kopie; freigegeben wird die "
                                                f"Spezifikation selbst ({original})")
-    if args.im_raum:
+    if getattr(args, "im_raum", False):  # swki durchlauf ruft ohne diese Option
         from swki.optimierung.raum import freigeben_im_raum  # spät importiert (Kreisimport)
 
         return {"kopie": str(kopie_pfad(pfad)), **freigeben_im_raum(pfad, quelle=args.quelle)}
@@ -82,7 +82,7 @@ def einrichten(subparsers) -> None:
     p = subparsers.add_parser("freigeben", help="Anforderungen freigeben (schreibt freigabe.json)")
     p.add_argument("spec")
     p.add_argument("--im-raum", action="store_true",
-                   help="Ergebnis im freigegebenen Raum des Optimierungsauftrags freigeben (ohne Rückfrage, nur "
-                        "Stellschrauben im Rahmen; sonst RAUM_GEAENDERT/AUSSERHALB_RAUM)")
+                   help="Ergebnis im freigegebenen Raum des Optimierungsauftrags freigeben (nach ausdrücklichem OK "
+                        "des Nutzers; nur Stellschrauben im Rahmen, sonst RAUM_GEAENDERT/AUSSERHALB_RAUM)")
     p.add_argument("--quelle", help="Nachweis: woher die Werte stammen (z. B. Optimierungslauf)")
     p.set_defaults(func=_freigeben)

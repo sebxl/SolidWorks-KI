@@ -111,3 +111,48 @@ def test_fortsetzen(tmp_path):
     (tmp_path / "auftrag" / "aufgabe_rampe.py").write_text("# anders\n" + AUFGABE_RAMPE, encoding="utf-8")
     with pytest.raises(Ende):
         Runner(lies_auftrag(lade_spec(pfad), pfad), tmp_path / "arbeit" / "optimierung-1", kerne=2, fortsetzen=True)
+
+
+def test_sterbender_arbeitsprozess_endet_mit_fehler(tmp_path):
+    aufgabe = AUFGABE_RAMPE.replace("    p = probe[", "    import os\n    os._exit(3)\n    p = probe[")
+    s = _runner(tmp_path, aufgabe=aufgabe).starte()
+    assert s["grund"] == "FEHLER" and "Arbeitsprozess" in s["detail"]
+    assert (tmp_path / "arbeit" / "optimierung-1" / "status.json").is_file()
+
+
+def test_ohne_start_beginnt_die_studie_mit_den_werten_der_spec(tmp_path):
+    spec = rampe(start=[], budget={"proben": 1}, pruefstufe2={"top_k": 0},
+                 ziel={"kennzahl": "min_anteil_richtig", "richtung": "max", "zielwert": 2.0})
+    spec["features"][0]["ende"]["tiefe"] = "=B-H+1"                      # bei den meisten Zufallswerten unbaubar
+    spec["optimierung"]["stellschrauben"][0].update(rahmen=[29, 80], bereich=[29, 80])
+    s = _runner(tmp_path, spec).starte()
+    assert s["grund"] == "BUDGET", s["detail"]
+    zeile = json.loads((tmp_path / "arbeit" / "optimierung-1" / "proben.jsonl").read_text(encoding="utf-8"))
+    assert zeile["werte"]["H"] == 30.0
+
+
+def test_nachlauf_vollstaendig_und_ohne_pruner(tmp_path):
+    aufgabe = AUFGABE_RAMPE
+    spec = rampe(nachlauf={"laeufe": 48}, pruefstufe2={"top_k": 0, "laeufe": 48},
+                 stellschrauben=[{"name": "H", "parameter": "H", "rahmen": [5, 80]},
+                                 {"name": "v0", "ablauf": "v0", "rahmen": [0.0, 1.0]}],
+                 szenarien=[{"name": "trocken", "laeufe": 24, "werte": {"mu": 0.4}},
+                            {"name": "geoelt", "laeufe": 48, "werte": {"mu": 0.2}}],
+                 start=[{"H": 80.0, "v0": 1.0}])
+    s = _runner(tmp_path, spec, aufgabe).starte()
+    zeile = json.loads((tmp_path / "arbeit" / "optimierung-1" / "proben.jsonl").read_text(encoding="utf-8")
+                       .splitlines()[0])
+    assert zeile["zaehler"] == {"trocken": [48, 48], "geoelt": [48, 48]}, s["detail"]
+
+
+def test_abgewertete_probe_setzt_den_besten_zurueck(tmp_path):
+    aufgabe = AUFGABE_RAMPE.replace('    neigung = math.atan2', '    if probe["genauigkeit"]:\n'
+                                    '        return {"ergebnis": "liegt", "gueltig": True, "ueber": 0.0}\n'
+                                    '    neigung = math.atan2')
+    spec = rampe(budget={"proben": 2}, pruefstufe2={"top_k": 0},
+                 stellschrauben=[{"name": "H", "parameter": "H", "rahmen": [5, 80]},
+                                 {"name": "v0", "ablauf": "v0", "rahmen": [0.0, 1.0]}],
+                 start=[{"H": 80.0, "v0": 1.0}, {"H": 79.0, "v0": 1.0}])
+    r = _runner(tmp_path, spec, aufgabe)
+    s = r.starte()
+    assert s["grund"] == "BUDGET" and s["bester"] is None and r.fortschritt.bester is None, s["detail"]

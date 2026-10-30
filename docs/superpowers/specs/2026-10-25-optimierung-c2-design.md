@@ -3,7 +3,7 @@
 Stand 25.10.2026. Grundlage: Entscheidung [2026-10-25-schnelle-konstruktionsschleife.md](../../entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md)
 (§3 Rahmen, §3.2 zwei Ebenen, §3.3 Prüfstufen, §6 C2), Spike S-Schleife-1 (`spikes/s18_optuna.py`, Lehren M5), Stufe C1
 (`swki.schnellbau`). Ausbaustufe 1: Claude in einer Sitzung startet die Schleife und greift nur an ihrem Ende ein.
-Freigaberegel vom Nutzer am 25.10.2026 bestätigt („Das passt so“), §6.
+Freigaberegel §6 vom Nutzer am 25.10.2026 bestätigt, am 30.10.2026 verschärft.
 
 ## 1 Ziel
 
@@ -20,7 +20,8 @@ Ausbaustufe 2 (Runner ruft `claude -p`, nur skizziert §8).
 ```yaml
 optimierung:
   variante: "G1: Trennwand vorn, ohne Fangwand und Keilwangen"   # Name der Form (Liste versuchter Varianten)
-  pruefaufgabe: {modul: aufgabe_sortierschritt.py, simulation: weiche.sim.yaml}  # relativ zum Auftragsordner
+  pruefaufgabe: {modul: aufgabe_sortierschritt.py, simulation: weiche.sim.yaml,   # relativ zum Auftragsordner
+                 abhaengigkeiten: [hilfe.py, daten/startlagen.json]}               # weitere Dateien der Bewertung
   ziel: {kennzahl: min_anteil_richtig, richtung: max, zielwert: 0.99}
   stellschrauben:                       # Geometrie: Verweis auf einen Zahlen-Parameter; Ablauf: an jeden Lauf
     - {name: T,  spec: rutsche.yaml,     parameter: T,  rahmen: [176, 196], bereich: [180, 196]}
@@ -37,7 +38,7 @@ optimierung:
   nachlauf: {laeufe: 192}               # Proben ab Zielwert bis zu so vielen Läufen je Szenario (Lehre M5: Sättigung)
   pruefstufe2: {top_k: 3, laeufe: 384, zeitschritt_faktor: 0.5, kontakt_faktor: 0.5,
                 szenarien: [{name: io_v0.05_mu+30, laeufe: 192, werte: {...}}]}
-  budget: {proben: 300, minuten: 120}
+  budget: {proben: 300, minuten: 120, lauf_s: 900}     # lauf_s: kein Lauf fertig seit … → FEHLER
   plateau: {proben: 20, minuten: 30, epsilon: 0.005}
   automatik: {bereich_erweitern: true, sampler: [tpe, qmc, tpe_multivariat], mehrfachstart: 3}
   start: [{T: 193.5, YS: 218.5}]        # höchstens 20 Startpunkte (enqueue_trial), keine Zahlen je Probe
@@ -45,10 +46,11 @@ optimierung:
 ```
 
 `validieren` prüft zusätzlich: Stellschrauben verweisen auf vorhandene Specs/Parameter mit einer Zahl (kein Ausdruck),
-`bereich` ⊆ `rahmen`, Startwert und Startpunkte im Rahmen, Namen eindeutig, Modul und Simulations-Datei vorhanden,
-Szenario-Namen eindeutig, `ziel.kennzahl` vorhanden.
+`bereich` ⊆ `rahmen`, Spec-Wert und Startpunkte im Rahmen und auf dem `schritt`, Namen eindeutig, Modul, Simulations-Datei
+und Abhängigkeiten vorhanden, Szenario-Namen eindeutig, `ziel.kennzahl` vorhanden. Ohne `start` beginnt die Studie mit den
+Werten der Spec.
 
-**Raum** (Teil der Freigabe, §6): `pruefaufgabe` (mit SHA-256 von Modul und Simulations-Datei), `ziel`, `stellschrauben`
+**Raum** (Teil der Freigabe, §6): `pruefaufgabe` (mit SHA-256 von Modul, Simulations-Datei und Abhängigkeiten), `ziel`, `stellschrauben`
 ohne `bereich`, `nebenbedingungen`, `szenarien`, `nachlauf`, `pruefstufe2`, `erlaubte_formaenderungen`.
 **Bauweg der Schleife** (frei änderbar): `variante`, `bereich`, `budget`, `plateau`, `automatik`, `start`.
 
@@ -81,7 +83,8 @@ Parameterstand), `proben/` (Probe-Dateien, nach der Probe gelöscht außer Top-k
 Je Probe (Optuna ask/tell, ein Prozess-Pool mit `kerne` Arbeitern für die Läufe):
 1. **Prüfstufe 0**: Werte in die Specs (im Speicher), `validieren` der geänderten Specs (Schema + Plausibilität),
    Schnellbau der Baugruppe, Kollision je Gelenk-Endstellung (Körper samt Kindern verschoben bzw. gedreht, Schnittvolumen
-   gegen alle anderen Körper, `ausnehmen`), Bauraum. Verletzt → `set_constraint` > 0, Wert = schlechtester, keine
+   gegen alle anderen Körper, `ausnehmen`; Paare, die sich schon mit den Werten der Spec schneiden, sind ausgenommen und
+   werden gemeldet), Bauraum. Verletzt → `set_constraint` > 0, Wert = schlechtester, keine
    Simulation (0,5 s).
 2. **Prüfstufe 1**: Läufe aller Szenarien verschränkt in Paketen zu 2 · `kerne`; nach jedem Paket meldet der Runner je
    Lauf 1/0 (richtig) an Schritt = Laufindex, `WilcoxonPruner` bricht schlechte Proben ab. Läufe mit `gueltig: false`
@@ -98,7 +101,8 @@ Ende (genau ein Grund):
   Optuna-Studie im selben Journal, die alle bisherigen Proben übernimmt (`add_trial`, ohne Neurechnen) und als
   **Mehrfachstart** die besten `mehrfachstart` Proben leicht versetzt neu ansetzt.
 - `BUDGET`: `budget.proben` oder `budget.minuten` erreicht.
-- `FEHLER`: Bewertung geändert, Prüfaufgabe wirft, Startprobe nicht baubar, Abbruch.
+- `FEHLER`: Bewertung geändert, Prüfaufgabe wirft oder ist nicht ladbar, Arbeitsprozess abgestürzt, kein Lauf fertig
+  seit `budget.lauf_s`, Startprobe nicht baubar, Abbruch. Auch dann entstehen `status.json` und `plateau.md`.
 
 **Prüfstufe 2** (Top-k bei PLATEAU/BUDGET, der Kandidat bei Zielwert): alle Szenarien mit `pruefstufe2.laeufe`
 und verkleinertem Zeitschritt/Kontakt-Zeitkonstante, dazu die Worst-Case-Szenarien. Bestanden, wenn die Kennzahl den
@@ -106,23 +110,31 @@ Zielwert hält und jeder Szenario-Anteil im 95-%-Wilson-Bereich der Prüfstufe 1
 
 ## 5 Bewertung eingefroren
 
-`bewertung.json` hält die SHA-256 von Raum, Prüfaufgabe, Simulations-Datei und Runner-Code. Vor jeder Probe und in jeder
-Phase wird neu gerechnet; eine Abweichung beendet die Studie mit `FEHLER` (`BEWERTUNG_GEAENDERT`). `--fortsetzen <n>`
-setzt einen abgebrochenen Lauf nur mit gleicher Bewertung fort.
+`bewertung.json` hält die SHA-256 von Raum, Prüfaufgabe, Simulations-Datei, Abhängigkeiten und Runner-Code sowie die
+Raum-Prüfsumme des Laufs. Vor jeder Probe werden die Dateien neu gerechnet (der Raum selbst ist im Speicher fest); eine
+Abweichung beendet die Studie mit `FEHLER` (`BEWERTUNG_GEAENDERT`). `--fortsetzen <n>` setzt einen abgebrochenen Lauf nur
+mit gleicher Bewertung fort.
 
 ## 6 Freigaberegel für autonome Schleifen (Nutzer 25.10.2026)
 
 - Die Freigabe des Optimierungsauftrags gibt den **Raum** frei. `swki freigeben` speichert dazu je Spec eine
   **Raum-Prüfsumme**: die Prüfsumme der Anforderungen mit maskierten Werten der Stellschrauben-Parameter, plus Raum
   (§2). Die gewöhnliche Prüfsumme deckt den Raum mit ab (Raum ändern = neu freigeben).
-- Ein Ergebnis innerhalb des Raums gilt als freigegeben: `swki freigeben --im-raum <spec>` (ohne Rückfrage) prüft
-  (1) Raum-Prüfsummen unverändert, (2) jede Stellschraube im `rahmen` (und auf dem `schritt`), (3) `validieren`, und
-  schreibt dann neue Freigabe-Kopien und Prüfsummen mit Nachweis (`im_raum`: Werte vorher/nachher, Optimierungslauf).
-  `swki optimiere uebernehmen <spec> [--lauf n] [--probe k]` schreibt die Gewinnerwerte in die Specs (Kommentare
-  bleiben) und ruft dasselbe. `swki bauen` meldet bei `FREIGABE_VERALTET`, ob die Änderung im Raum liegt.
+- Innerhalb des Raums läuft die Schleife ohne Rückfrage (Schnellbau, Simulation, Optuna, Plateau-Eingriffe).
+- **Nichts baut ohne OK des Nutzers in SolidWorks** (Nutzer 30.10.2026: „Ich würde gerne eine ‚fertige‘ Baugruppe immer
+  erst freigeben bevor sie vollständig in Solidworks konstruiert wird.“; ersetzt die Regel vom 25.10., nach der ein
+  Ergebnis im Raum ohne Rückfrage gebaut werden durfte).
+- `swki optimiere <spec> --uebernehmen [--lauf n] [--probe k]` gibt nichts frei. Es prüft den Lauf (`LAUF_ANDERER_RAUM`:
+  Raum-Prüfsumme des Laufs ≠ jetzt; `FORM_GEAENDERT`: Specs ≠ Stand des Laufs, Stellschrauben ausgenommen;
+  `PROBE_NICHT_ZULAESSIG`: Nebenbedingung verletzt oder in Prüfstufe 2 abgewertet), schreibt dann die Werte in die Specs
+  (Kommentare bleiben) und legt `<lauf>/freigabe_vorlage.md` an. `swki bauen` verweigert bis dahin mit `FREIGABE_VERALTET`
+  und nennt, ob die Änderung im Raum liegt.
+- `swki freigeben <spec> --im-raum` läuft nach dem OK des Nutzers. Es prüft (1) Raum-Prüfsummen unverändert, (2) jede
+  Stellschraube im `rahmen` und auf dem `schritt`, (3) Freigabe-Kopien unverändert, (4) Features hinzu oder weg nur mit
+  `erlaubte_formaenderungen`, (5) `validieren`, und schreibt neue Freigabe-Kopien und Prüfsummen mit Nachweis (`im_raum`:
+  Werte vorher/nachher, Formänderungen, Quelle). Es belegt nicht, dass das Ziel erreicht ist; das steht in der Vorlage.
 - Formänderungen (Features hinzufügen/entfernen) sind Bauweg; erlaubt nur, wenn `erlaubte_formaenderungen` sie nennt,
-  sonst Rückfrage (Regel für Claude im Skill `optimieren`; der Runner listet Formänderungen gegenüber der Freigabe-Kopie
-  in `status.json`). Neue Parameter ändern die Prüfsumme und brauchen immer eine neue Freigabe.
+  sonst Rückfrage. Neue Parameter ändern die Prüfsumme und brauchen immer eine neue Freigabe.
 - Der Prüfer bleibt am Ende Pflicht, der Bericht geht an den Nutzer.
 
 ## 7 Ausgabe für Claude

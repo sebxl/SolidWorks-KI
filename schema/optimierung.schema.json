@@ -12,7 +12,9 @@
       "type": "object", "additionalProperties": false, "required": ["modul"],
       "properties": {
         "modul": {"type": "string", "pattern": "\\.py$", "description": "Prüfaufgabe, relativ zum Auftragsordner"},
-        "simulation": {"type": "string", "description": "Simulations-Datei (YAML), relativ zum Auftragsordner"}
+        "simulation": {"type": "string", "description": "Simulations-Datei (YAML), relativ zum Auftragsordner"},
+        "abhaengigkeiten": {"type": "array", "items": {"type": "string", "minLength": 1},
+                            "description": "weitere Dateien der Bewertung (Hilfsmodule, Daten), relativ zum Auftragsordner oder absolut; Teil des Raums"}
       }
     },
     "ziel": {
@@ -60,7 +62,8 @@
     },
     "budget": {
       "type": "object", "additionalProperties": false,
-      "properties": {"proben": {"type": "integer", "minimum": 1}, "minuten": {"type": "number", "exclusiveMinimum": 0}}
+      "properties": {"proben": {"type": "integer", "minimum": 1}, "minuten": {"type": "number", "exclusiveMinimum": 0},
+                     "lauf_s": {"type": "number", "exclusiveMinimum": 0, "description": "kein Lauf fertig seit so vielen Sekunden → FEHLER"}}
     },
     "plateau": {
       "type": "object", "additionalProperties": false,

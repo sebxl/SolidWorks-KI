@@ -47,6 +47,10 @@ def test_schema_verlangt_ziel_und_stellschrauben():
     ({"pruefaufgabe": {"modul": "fehlt.py"}}, "fehlt.py"),
     ({"szenarien": [{"name": "a", "laeufe": 4, "werte": {}}, {"name": "a", "laeufe": 4, "werte": {}}]}, "doppelt"),
     ({"stellschrauben": [{"name": "H", "spec": "andere.yaml", "parameter": "H", "rahmen": [5, 80]}]}, "andere.yaml"),
+    ({"stellschrauben": [{"name": "H", "parameter": "H", "rahmen": [5, 80], "schritt": 0.7}], "start": []}, "schritt"),
+    ({"stellschrauben": [{"name": "H", "parameter": "H", "rahmen": [5, 80], "schritt": 0.5}],
+      "start": [{"H": 10.2}]}, "start[0].H"),
+    ({"pruefaufgabe": {"modul": "aufgabe_rampe.py", "abhaengigkeiten": ["fehlt.dat"]}}, "fehlt.dat"),
 ])
 def test_plausibilitaet(tmp_path, aenderung, text):
     with pytest.raises(SpecFehler) as e:

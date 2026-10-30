@@ -4,8 +4,9 @@ Stücke für die Prüfaufgabe (Zerlegung je Teil und Parameterstand zwischengesp
 
 Gebaut wird aus einer Kopie der Specs im Lauf-Ordner (`specs/`), damit eine Studie eine feste Form hat. Eine Teil-Spec
 mit Block wird als Baugruppe aus einer fixierten Komponente gerechnet (Komponente = Dateiname ohne Endung).
-Kollision: je Paar von Komponenten verschiedener Körper bzw. jedes Paar, das im Ausgangsstand frei ist (Paare, die
-sich schon im freigegebenen Stand schneiden – verschraubt, eingepresst –, nimmt der Ausgangsstand aus und meldet sie).
+Kollision: jedes Paar von Komponenten, das im Ausgangsstand frei ist. Der Ausgangsstand ist die Spec mit ihren eigenen
+Werten, nicht die erste Probe: Paare, die sich dort schon schneiden (verschraubt, eingepresst), werden ausgenommen und
+gemeldet. Für Gelenk-Endstellungen zählen nur Paare aus bewegtem und festem Teil.
 """
 
 import copy
@@ -64,7 +65,7 @@ class Probenbau:
         self.kollision = neben.get("kollision", {})
         self.toleranz = self.kollision.get("toleranz_mm3", 0.01)
         self.ausnehmen = {frozenset(p) for p in self.kollision.get("ausnehmen", [])}
-        self.grund_paare: set | None = None      # im Ausgangsstand schon geschnittene Paare (aus der ersten Probe)
+        self.grund_paare: set | None = None      # im Ausgangsstand (Werte der Spec) schon geschnittene Paare
         self.grund_meldung: list = []
         self.zerlegungen = {"neu": 0, "cache": 0}
         self._paare: dict = {}                   # (Stellung, a, Stand a, b, Stand b) → Schnittvolumen
@@ -173,7 +174,22 @@ class Probenbau:
         return {kid: _sha({"spec": self._teilspec(k.datei), "werte": je.get(k.datei, {}), "t": k.t})
                 for kid, k in bg.komp.items()}
 
+    def _ausgangsstand(self) -> None:
+        """Paare, die sich schon mit den Werten der Spec schneiden."""
+        bg = Baugruppe(self._baugruppe_spec({}), self.specs, bohrungen=self.sim.get("bohrungen", False),
+                       nur=self.sim.get("bauen"))
+        solids, ids = bg.solids(), sorted(bg.komp)
+        self.grund_paare = set()
+        for i, a in enumerate(ids):
+            for b in ids[i + 1:]:
+                v = self._schnitt(solids[a], solids[b])
+                if v > self.toleranz:
+                    self.grund_paare.add(frozenset((a, b)))
+                    self.grund_meldung.append({"a": a, "b": b, "mm3": round(v, 3)})
+
     def _kollisionen(self, bg: Baugruppe, je: dict) -> list[dict]:
+        if self.grund_paare is None:
+            self._ausgangsstand()
         ids = sorted(bg.komp)
         stand = self._schluessel(bg, je)
 
@@ -184,15 +200,6 @@ class Probenbau:
             return self._paare[k]
 
         stellungen = self.stellungen(bg)
-        if self.grund_paare is None:            # Ausgangsstand = erste gebaute Probe (Startpunkt der Studie)
-            self.grund_paare = set()
-            name, solids, _ = stellungen[0]
-            for i, a in enumerate(ids):
-                for b in ids[i + 1:]:
-                    v = schnitt(name, solids, a, b)
-                    if v > self.toleranz:
-                        self.grund_paare.add(frozenset((a, b)))
-                        self.grund_meldung.append({"a": a, "b": b, "mm3": round(v, 3)})
         out = []
         for name, solids, bewegt in stellungen:
             for i, a in enumerate(ids):

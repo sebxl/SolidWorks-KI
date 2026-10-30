@@ -17,7 +17,8 @@ import shutil
 import time
 import traceback
 import warnings
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 
 import optuna
@@ -29,14 +30,14 @@ from optuna.trial import TrialState, create_trial
 
 from swki.konfig import PROJEKT
 from swki.optimierung import arbeiter
-from swki.optimierung.auftrag import Auftrag, raum
+from swki.optimierung.auftrag import Auftrag, abhaengigkeiten, raum
 from swki.optimierung.auswertung import (Fortschritt, belastbar, erweitere, fehlerbilder, grenzanschlaege, kennzahlen,
                                          verletzung, zaehler)
 from swki.optimierung.probe import Probenbau
 
 GRUENDE = ("ZIEL", "PLATEAU", "BUDGET", "FEHLER")
 STANDARD = {
-    "budget": {"proben": 300, "minuten": 120},
+    "budget": {"proben": 300, "minuten": 120, "lauf_s": 900},
     "plateau": {"proben": 20, "minuten": None, "epsilon": 0.0},
     "automatik": {"bereich_erweitern": True, "sampler": ["tpe", "qmc", "tpe_multivariat"], "mehrfachstart": 3,
                   "zufallsproben": 10},
@@ -87,6 +88,8 @@ class Runner:
         self.paket = 2 * self.kerne
         self.rahmen = {s.name: s.rahmen for s in auftrag.stellschrauben}
         self.schritt = {s.name: s.schritt for s in auftrag.stellschrauben}
+        alle = [*auftrag.szenarien, *self.cfg["pruefstufe2"].get("szenarien", [])]
+        self.szen_nr = {s["name"]: i for i, s in enumerate(alle)}   # fest: Saat und Schritt je Szenario
         lauf.mkdir(parents=True, exist_ok=True)
         (lauf / "proben").mkdir(exist_ok=True)
         if not fortsetzen:
@@ -132,21 +135,19 @@ class Runner:
         if self.a.simulation is not None:
             shutil.copy2(self.a.simulation, b / self.a.simulation.name)
 
-    def _abhaengigkeiten(self) -> list[Path]:
-        return [Path(p) if Path(p).is_absolute() else self.a.ordner / p
-                for p in getattr(self.modul, "ABHAENGIGKEITEN", [])]
-
     def _quellen(self) -> list[Path]:
-        q = [self.a.modul, *self._abhaengigkeiten(), *code_dateien()]
+        q = [self.a.modul, *abhaengigkeiten(self.a.block, self.a.ordner), *code_dateien()]
         return q + ([self.a.simulation] if self.a.simulation is not None else [])
 
     def _bewertung(self) -> dict:
+        from swki.optimierung.raum import raum_summe_datei
         r = raum({"optimierung": self.a.block}, self.a.ordner)
         teile = {"raum": hashlib.sha256(json.dumps(r, sort_keys=True, default=str).encode()).hexdigest(),
                  "dateien": _sha_dateien(self._quellen()),
                  "versionen": {"optuna": optuna.__version__, **self._versionen()}}
         return {"sha256": hashlib.sha256(json.dumps(teile, sort_keys=True).encode()).hexdigest(), **teile,
-                "modul": str(self.a.modul), "abhaengigkeiten": [str(p) for p in self._abhaengigkeiten()]}
+                "raum_summe": raum_summe_datei(self.a.spec_pfad), "modul": str(self.a.modul),
+                "abhaengigkeiten": [str(p) for p in abhaengigkeiten(self.a.block, self.a.ordner)]}
 
     @staticmethod
     def _versionen() -> dict:
@@ -231,13 +232,23 @@ class Runner:
             for werte in phase.get("starts", []):
                 st.enqueue_trial(werte, skip_if_exists=True)
         if i == 0 and not st.trials:
-            for werte in self.a.block.get("start", []):
+            for werte in self.a.block.get("start", []) or [self._spec_werte()]:
                 st.enqueue_trial(werte)
         return st
 
+    def _spec_werte(self) -> dict:
+        """Werte der Stellschrauben in der Spec: Startpunkt, wenn der Auftrag keinen nennt."""
+        out = {}
+        for s in self.a.stellschrauben:
+            if s.datei is not None:
+                spec = yaml.safe_load((self.specs / s.datei).read_text(encoding="utf-8"))
+                out[s.name] = float(spec["parameter"][s.parameter])
+        return out
+
     # --- Läufe ------------------------------------------------------------------------------------------------------
-    def _basisjobs(self, szen: dict, i: int, n: int, erster: int = 0) -> list[dict]:
+    def _basisjobs(self, szen: dict, n: int, erster: int = 0) -> list[dict]:
         key = (szen["name"], n, erster)
+        i = self.szen_nr[szen["name"]]
         if key not in self._jobs_cache:
             jobs = self.modul.jobs(szen, n, szen.get("saat", i + 1), erster)
             self._jobs_cache[key] = [dict(j, szenario=szen["name"], _schritt=i * 100000 + erster + k)
@@ -247,8 +258,8 @@ class Runner:
     def jobs(self, werte: dict, szenarien: list, n_je: dict, erster: dict | None = None) -> list[dict]:
         """Läufe aller Szenarien, verschränkt (frühe Pakete decken jedes Szenario ab); Ablaufgrößen im Job."""
         ablauf = {s.ablauf: werte[s.name] for s in self.a.stellschrauben if s.ablauf and s.name in werte}
-        listen = [[dict(j, **ablauf) for j in self._basisjobs(s, i, n_je[s["name"]], (erster or {}).get(s["name"], 0))]
-                  for i, s in enumerate(szenarien)]
+        listen = [[dict(j, **ablauf) for j in self._basisjobs(s, n_je[s["name"]], (erster or {}).get(s["name"], 0))]
+                  for s in szenarien]
         out = []
         for k in range(max((len(x) for x in listen), default=0)):
             out += [x[k] for x in listen if k < len(x)]
@@ -268,9 +279,7 @@ class Runner:
                 i, job = next(it)
             except StopIteration:
                 return
-            self.pool.apply_async(arbeiter.lauf, ((str(probe_pfad), job),),
-                                  callback=lambda r, i=i: q.put((i, r, None)),
-                                  error_callback=lambda e, i=i: q.put((i, None, e)))
+            self.pool.submit(arbeiter.lauf, (str(probe_pfad), job)).add_done_callback(lambda f, i=i: q.put((i, f)))
             offen += 1
 
         def melde(j: int) -> None:
@@ -281,11 +290,17 @@ class Runner:
         for _ in range(self.kerne + 2):
             schicke()
         while offen:
-            i, r, e = q.get()
+            try:
+                i, f = q.get(timeout=self.cfg["budget"]["lauf_s"])
+            except queue.Empty:
+                raise Ende("FEHLER", f"seit {self.cfg['budget']['lauf_s']} s kein Lauf fertig (budget.lauf_s)") from None
             offen -= 1
+            e = f.exception()
+            if isinstance(e, BrokenProcessPool):
+                raise Ende("FEHLER", f"Arbeitsprozess abgestürzt: {e}")
             if e is not None:
                 raise Ende("FEHLER", f"Prüfaufgabe {self.a.modul.name} wirft in lauf(): {type(e).__name__}: {e}")
-            erg[i] = r
+            erg[i] = f.result()
             while pruefen and not stop and gemeldet in erg:
                 melde(gemeldet)
                 gemeldet += 1
@@ -360,11 +375,11 @@ class Runner:
                 zeile.update(status="abgebrochen", wert=None, zulaessig=False, laeufe=len(erg),
                              vorlaeufig=_r(wert, 4))
             else:
-                if self.nachlauf and self.a.erreicht(wert) and max(n_je.values()) < self.nachlauf:
+                if self.nachlauf and self.a.erreicht(wert) and min(n_je.values()) < self.nachlauf:
                     erster = dict(n_je)
                     n2 = {s: max(0, self.nachlauf - n) for s, n in n_je.items()}
                     jobs2 = self.jobs(werte, [s for s in self.a.szenarien if n2[s["name"]]], n2, erster)
-                    erg2, _ = self.rechne(pfad, jobs2, trial)
+                    erg2, _ = self.rechne(pfad, jobs2)           # ohne Pruner: der Nachlauf wird nicht gekappt
                     for name, ls in self.je_szenario(jobs2, erg2).items():
                         laeufe.setdefault(name, []).extend(ls)
                     erg = {**erg, **{len(jobs) + i: r for i, r in erg2.items()}}
@@ -400,7 +415,10 @@ class Runner:
         gen = {"zeitschritt_faktor": c["zeitschritt_faktor"], "kontakt_faktor": c["kontakt_faktor"]}
         g = self.pb.baue(dict(zeile["werte"]), gen)
         if not g.gueltig:
-            return {"bestanden": False, "grund": "Prüfstufe 0 nicht bestanden", "stufe0": g.stufe0()}
+            erg2 = {"bestanden": False, "abgewertet": True, "belastbar": False, "wert": None,
+                    "grund": "Prüfstufe 0 nicht bestanden", "stufe0": g.stufe0()}
+            self.stufe2[zeile["nr"]] = erg2
+            return erg2
         pfad = self.lauf / "proben" / f"stufe2_{zeile['nr']:04d}.json"
         self._schreibe_probe(pfad, g)
         n = c["laeufe"] or 2 * max(s["laeufe"] for s in self.a.szenarien)
@@ -511,6 +529,8 @@ class Runner:
                 if s2["bestanden"]:
                     return "ZIEL", (f"Probe {zeile['nr']} erreicht {self.kennzahl} {zeile['wert']:g} "
                                     f"(Ziel {self.a.ziel['zielwert']:g}) und besteht Prüfstufe 2 ({s2['wert']:g})")
+                rest = self.bester()                  # abgewertet: Vergleichswert zurück auf den besten verbliebenen
+                self.fortschritt.bester = None if rest is None else (rest["nr"], rest["wert"])
             self._zustand()
             if self.fortschritt.stillstand(zeile["nr"], self.zeit()):
                 m = self.automatik(self.phasen[i])
@@ -534,7 +554,8 @@ class Runner:
         self._t0 = time.perf_counter()
         grund, detail = "FEHLER", ""
         try:
-            with Pool(self.kerne, initializer=arbeiter.init, initargs=(str(self.modul_pfad), str(self.a.ordner))) as pool:
+            with ProcessPoolExecutor(self.kerne, initializer=arbeiter.init,
+                                     initargs=(str(self.modul_pfad), str(self.a.ordner))) as pool:
                 self.pool = pool
                 try:
                     grund, detail = self._schleife()

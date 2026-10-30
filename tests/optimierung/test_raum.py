@@ -1,5 +1,6 @@
-"""Freigaberegel für autonome Schleifen (Spec C2 §6, Nutzer 25.10.2026): die Freigabe gibt den Raum frei; ein Ergebnis
-im Raum wird ohne Rückfrage freigegeben (`swki freigeben --im-raum`), alles andere nicht."""
+"""Freigaberegel für autonome Schleifen (Spec C2 §6): die Freigabe gibt den Raum frei, die Schleife läuft darin ohne
+Rückfrage; gebaut wird erst nach ausdrücklichem OK des Nutzers (`swki freigeben --im-raum` prüft dann, dass nur
+Stellschrauben im Rahmen geändert sind)."""
 
 import json
 import shutil
@@ -44,7 +45,7 @@ def test_freigabe_speichert_raum(freigegeben):
     assert len(e["raum"]["pruefsumme"]) == 64
 
 
-def test_ergebnis_im_raum_wird_ohne_rueckfrage_freigegeben(freigegeben, capsys):
+def test_ergebnis_im_raum_wird_nach_ok_freigegeben(freigegeben, capsys):
     _setze(freigegeben, lambda s: s["parameter"].update(H=42.5))
     with pytest.raises(FreigabeFehler):
         pruefe_freigabe(freigegeben, lade_spec(freigegeben))
@@ -164,5 +165,54 @@ def test_bauen_nennt_den_raum(freigegeben):
         pruefe_freigabe(freigegeben, lade_spec(freigegeben))
     neu = raum_hinweis(freigegeben, e.value)
     assert neu.daten == {"code": "FREIGABE_VERALTET", "im_raum": True} and "--im-raum" in str(neu)
+    assert "Nutzer" in str(neu) and "ohne Rückfrage" not in str(neu)
     _setze(freigegeben, lambda s: s["parameter"].update(L=50))
     assert raum_hinweis(freigegeben, e.value) is e.value
+
+
+# --- Form und Freigabe-Kopie ------------------------------------------------------------------------------------------
+NEUES_FEATURE = {"id": "f2", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "-y"},
+                 "positionen": [[20, 0]], "durchmesser": 5, "durch": True}
+
+
+def test_nicht_erlaubte_formaenderung_verweigert(freigegeben):
+    _setze(freigegeben, lambda s: s["features"].append(NEUES_FEATURE))
+    with pytest.raises(FreigabeFehler) as e:
+        freigeben_im_raum(freigegeben)
+    assert e.value.daten["code"] == "FORM_GEAENDERT"
+
+
+def test_erlaubte_formaenderung_steht_im_nachweis(tmp_path, capsys):
+    pfad = lege_an(tmp_path, rampe(erlaubte_formaenderungen=["Bohrung in der Rampe"]))
+    assert _cli(capsys, "freigeben", str(pfad))["_code"] == 0
+    _setze(pfad, lambda s: s["features"].append(NEUES_FEATURE))
+    assert freigeben_im_raum(pfad)["im_raum"]["formaenderungen"] == {"rampe.yaml": {"hinzu": ["f2"]}}
+
+
+def test_veraenderte_freigabe_kopie_verweigert(freigegeben):
+    kopie = freigegeben.with_name("rampe.freigegeben.yaml")
+    kopie.write_text(kopie.read_text(encoding="utf-8") + "# von Hand\n", encoding="utf-8")
+    _setze(freigegeben, lambda s: s["parameter"].update(H=40))
+    with pytest.raises(FreigabeFehler) as e:
+        freigeben_im_raum(freigegeben)
+    assert e.value.daten["code"] == "KOPIE_GEAENDERT"
+
+
+def test_abhaengigkeit_der_pruefaufgabe_gehoert_zum_raum(tmp_path, capsys):
+    pfad = lege_an(tmp_path, rampe(pruefaufgabe={"modul": "aufgabe_rampe.py", "abhaengigkeiten": ["hilfe.py"]}))
+    (tmp_path / "hilfe.py").write_text("x = 1\n", encoding="utf-8")
+    assert _cli(capsys, "freigeben", str(pfad))["_code"] == 0
+    assert pruefe_im_raum(pfad)["im_raum"] is True
+    (tmp_path / "hilfe.py").write_text("x = 2\n", encoding="utf-8")
+    with pytest.raises(FreigabeFehler) as e:
+        pruefe_im_raum(pfad)
+    assert e.value.daten["code"] == "RAUM_GEAENDERT"
+
+
+def test_freigeben_vom_durchlauf_aufgerufen(tmp_path):
+    """swki durchlauf ruft _freigeben mit einem Namespace nur aus spec (Regression, Review C2)."""
+    from argparse import Namespace
+
+    from swki.spec.befehle import _freigeben
+    pfad = lege_an(tmp_path)
+    assert _freigeben(Namespace(spec=str(pfad)))["raum"]["stellschrauben"]["H"] == [5.0, 80.0]
