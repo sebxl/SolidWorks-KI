@@ -16,6 +16,7 @@ from swki.bestand.ablage import bestand_ordner, lauf_kopie, pruefe_kopie
 from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
 from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, lade_aenderung
 from swki.bestand.sw_bestand import _geometrie, _schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
+from swki.bestand.vergleich import neue_fehler
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.ablauf import durchlaufe
@@ -33,13 +34,6 @@ _TOL_VOLUMEN_MM3, _TOL_VOLUMEN_ANTEIL = 0.01, 1e-6  # Rauschen der Massenberechn
 def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
     """Features, deren Fehler die Datei in dieser Konfiguration schon hatte. Warnungen zählen nicht."""
     return {e["feature"] for e in aufnahme["neuaufbau"] if e["konfiguration"] == konfiguration and not e["warnung"]}
-
-
-def neue_fehler(fehler: list[dict], aufnahme: dict, konfiguration: str) -> list[str]:
-    """Was die Aufnahme nicht kennt, als Tripel (Konfiguration, Feature, Code): Auch ein anderer Code am selben Feature ist neu."""
-    bekannt = {(e["konfiguration"], e["feature"], e["code"]) for e in aufnahme["neuaufbau"] if not e["warnung"]}
-    return [f"{e['feature']}: Code {e['code']}" for e in fehler
-            if not e["warnung"] and (konfiguration, e["feature"], e["code"]) not in bekannt]
 
 
 def _pruefe_baum(k: str, ist: list[str], aufnahme: dict, geloescht: set[str]) -> None:
