@@ -166,7 +166,7 @@ Etappe 1 (Teile):
 | `gleichung` | `variable` oder `gleichung`, `alt`, `neu` | ändert eine globale Variable bzw. die rechte Seite einer vorhandenen Gleichung |
 | `unterdruecken`, `aufheben` | `feature`, `konfigurationen?` | Unterdrückungszustand |
 | `loeschen` | `feature`, `kinder?` | löscht das Feature; `kinder` nennt mitgelöschte Features ausdrücklich |
-| `feature` | `name`, `feature` | neues Feature: Inhalt wie ein Eintrag in `features` einer Teil-Spec (alle vorhandenen Handler), eingefügt am Ende des Baums oder nach `nach: <Featurename>` |
+| `feature` | `name`, `feature` | neues Feature: Inhalt wie ein Eintrag in `features` einer Teil-Spec (alle vorhandenen Handler außer `skript`, Notausgang ist der Punkt `skript`), eingefügt am Ende des Baums oder nach `nach: <Featurename>` |
 | `material` | `neu` | Material (Name der SW-Materialdatenbank) |
 | `eigenschaft` | `name`, `neu` (`null` = entfernen), `konfiguration?` | benutzerdefinierte Eigenschaft |
 | `skript` | `datei`, `luecke` | Notausgang wie bei Teilen (`bauen(ctx)`, AST-Prüfung) |
@@ -316,7 +316,9 @@ abbrechen; vor dem Speichern Fehler, Volumen und Baum in allen Konfigurationen p
 aufgenommene aktive Konfiguration zurück, `Save3` übernimmt die gerade aktive. Handler laufen auf fremden Flächen (`normbohrung`
 mit Randbezug). `Save3` hält die Datei-ID; `SaveAs3` tut das gemessen ebenfalls (S18a), gespeichert wird trotzdem an Ort und Stelle.
 `ReorderFeature` wirkt auch bei Erfolg nur in der aktiven Konfiguration, `nach` läuft deshalb je Konfiguration. `material` setzt je
-Konfiguration über den Namen, `""` träfe nur die aktive. Nach einem Fehler wird nie gespeichert, anders als beim Teil.
+Konfiguration über den Namen, `""` träfe nur die aktive. Nach einem Fehler wird nie gespeichert, anders als beim Teil. Vor dem
+Speichern muss jedes Bestandsfeature noch da sein, außer ein `loeschen`-Punkt hat es genommen, das gilt auch für Skripte. `alt` wird
+je Konfiguration gegengeprüft, auch bei Gleichungen.
 
 Schutzregeln im Code: swki öffnet und speichert nur Dateien unter `<arbeitsordner>/<auftrag>/lauf-<n>/`; die Bestandskopie wird
 nur zum Lesen geöffnet; das Original nie.

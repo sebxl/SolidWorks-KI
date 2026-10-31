@@ -88,25 +88,33 @@ class Dim:
 
 
 class Gleichungen:
-    def __init__(self, zeilen):
+    """`zeilen[i]["je"]`: abweichender Stand je Konfiguration, {Konfiguration: {"text", "wert"}}; Setzen in allen löscht ihn."""
+
+    def __init__(self, zeilen, teil=None):
         self.zeilen = [dict(z) for z in zeilen]  # {"text", "global", "wert"}
+        self.teil = teil
         self.gesetzt = []
+
+    def _stand(self, i, feld):
+        z = self.zeilen[i]
+        return z.get("je", {}).get(self.teil.aktiv if self.teil else None, {}).get(feld, z[feld])
 
     @property
     def GetCount(self):
         return len(self.zeilen)
 
     def Equation(self, i):
-        return self.zeilen[i]["text"]
+        return self._stand(i, "text")
 
     def GlobalVariable(self, i):
         return self.zeilen[i]["global"]
 
     def Value(self, i):
-        return self.zeilen[i]["wert"]
+        return self._stand(i, "wert")
 
     def SetEquationAndConfigurationOption(self, i, text, option, namen):
         self.gesetzt.append((i, text, option, namen))
+        self.zeilen[i].pop("je", None)
         self.zeilen[i]["text"] = text
         rechts = text.split("=", 1)[1].strip()
         if rechts.replace(".", "", 1).isdigit():
@@ -194,7 +202,7 @@ class Teil:
         self.aktiv = aktiv or self.konfigurationen[0]
         self.ordnung: dict[str, list[Feat]] = {k: [] for k in self.konfigurationen}
         self.masse: dict[str, Dim] = {}
-        self.gleichungen = Gleichungen([])
+        self.gleichungen = Gleichungen([], self)
         self.fehler: dict[str, list] = {}
         self.volumen: dict[str, float] = dict.fromkeys(self.konfigurationen, 1000.0)
         self.eigenschaften: dict[str, dict] = {}
@@ -304,7 +312,8 @@ def teil_aus(aufnahme: dict, pfad=None) -> Teil:
     for m in aufnahme["masse"]:
         teil.masse[m["name"]] = Dim(teil, {k: (v or 0.0) / 1000 for k, v in m["werte"].items()})
     teil.gleichungen = Gleichungen([{"text": g["text"], "global": g["global"],
-                                     "wert": aufnahme["variablen"].get(g["links"], 0.0)} for g in aufnahme["gleichungen"]])
+                                     "wert": aufnahme["variablen"].get(g["links"], 0.0)} for g in aufnahme["gleichungen"]],
+                                   teil)
     teil.loescht_mit = {n: f["kinder"] for n, f in daten.items()}
     for e in aufnahme["neuaufbau"]:
         teil.fehler.setdefault(e["konfiguration"], []).append((e["feature"], e["code"], e["warnung"]))

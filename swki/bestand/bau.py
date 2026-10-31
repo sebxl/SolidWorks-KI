@@ -35,10 +35,22 @@ def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
     return {e["feature"] for e in aufnahme["neuaufbau"] if e["konfiguration"] == konfiguration and not e["warnung"]}
 
 
-def _pruefe_baum(k: str, ist: list[str], aufnahme: dict) -> None:
-    """Reihenfolge der gebliebenen Features gegen die Aufnahme: Neue stehen am Ende oder hinter `nach`, Gelöschte fehlen; ein
-    verschobenes Bestandsfeature sieht sonst nichts (S18c3: die Rippe steht vorn, kein Fehler in der anderen Konfiguration)."""
+def neue_fehler(fehler: list[dict], aufnahme: dict, konfiguration: str) -> list[str]:
+    """Was die Aufnahme nicht kennt, als Tripel (Konfiguration, Feature, Code): Auch ein anderer Code am selben Feature ist neu."""
+    bekannt = {(e["konfiguration"], e["feature"], e["code"]) for e in aufnahme["neuaufbau"] if not e["warnung"]}
+    return [f"{e['feature']}: Code {e['code']}" for e in fehler
+            if not e["warnung"] and (konfiguration, e["feature"], e["code"]) not in bekannt]
+
+
+def _pruefe_baum(k: str, ist: list[str], aufnahme: dict, geloescht: set[str]) -> None:
+    """Der Baum gegen die Aufnahme. Jedes Bestandsfeature muss noch da sein, außer ein `loeschen`-Punkt hat es genommen: Auch ein
+    Skript darf keines verschwinden lassen, und ein anderer Name zählt als verschwunden. Die Reihenfolge der gebliebenen muss
+    stimmen, neue stehen am Ende oder hinter `nach`; ein verschobenes Bestandsfeature sieht sonst nichts (S18c3: die Rippe
+    steht vorn, kein Fehler in der anderen Konfiguration)."""
     soll = aufnahme["reihenfolge"][k]
+    if fehlt := [n for n in soll if n not in ist and n not in geloescht]:
+        raise BauFehler(REBUILD_FEHLER, f"Konfiguration {k}: Bestandsfeature fehlt, kein loeschen-Punkt nennt es: "
+                                        f"{', '.join(fehlt)}", schritt="stand")
     gemeinsam = set(ist) & set(soll)
     if [n for n in ist if n in gemeinsam] != [n for n in soll if n in gemeinsam]:
         raise BauFehler(REBUILD_FEHLER, f"Konfiguration {k}: Reihenfolge der Features weicht von der Aufnahme ab", schritt="stand")
@@ -53,48 +65,61 @@ def _pruefe_volumen(k: str, volumen: float | None, aufnahme: dict, betroffen: se
                         schritt="stand")
 
 
-def pruefe_stand(model, aufnahme: dict, liste: list[dict]) -> None:
+def pruefe_stand(model, aufnahme: dict, liste: list[dict], geloescht: set[str]) -> None:
     """Fehler, Baum und Volumen in **allen** Konfigurationen, unmittelbar vor dem Speichern (S18c3): `whats_wrong` und der Baum
-    sehen nur die aktive. Neu ist, was in der Aufnahme nicht stand; auch ein anderer Code am selben Feature. Die aktive
-    Konfiguration kommt zuletzt und bleibt für `Save3` stehen (Plan Review Focus 4)."""
+    sehen nur die aktive. `geloescht`: was die `loeschen`-Punkte genommen haben. Die aktive Konfiguration kommt zuletzt und
+    bleibt für `Save3` stehen (Plan Review Focus 4)."""
     aktiv = aufnahme["aktiv"]
-    bekannt = {(e["konfiguration"], e["feature"], e["code"]) for e in aufnahme["neuaufbau"] if not e["warnung"]}
     betroffen = {k for p in liste if p["typ"] in GEOMETRIE_TYPEN for k in punkte._konfigurationen(p, aufnahme)}
     namen = None
     for k in [*(x for x in aufnahme["konfigurationen"] if x != aktiv), aktiv]:
         _schalte(model, k)
         ok = model.EditRebuild3
-        fehler = [e for e in whats_wrong(model) if not e["warnung"]]
-        neu = [f"{e['feature']}: Code {e['code']}" for e in fehler if (k, e["feature"], e["code"]) not in bekannt]
-        if neu or not (ok or fehler):
+        fehler = whats_wrong(model)
+        neu = neue_fehler(fehler, aufnahme, k)
+        if neu or not (ok or any(not e["warnung"] for e in fehler)):
             raise BauFehler(REBUILD_FEHLER, f"Konfiguration {k}: {'; '.join(neu) or 'EditRebuild3 meldet Fehler'}", schritt="stand")
         ist = [f.Name for f in baum_features(model)]
         if namen is not None and set(ist) != namen:
             raise BauFehler(REBUILD_FEHLER, f"Konfiguration {k}: andere Features als in den übrigen", schritt="stand")
         namen = set(ist)
-        _pruefe_baum(k, ist, aufnahme)
+        _pruefe_baum(k, ist, aufnahme, geloescht)
         _pruefe_volumen(k, _geometrie(model)["volumen"], aufnahme, betroffen)
 
 
-def _wende_punkte_an(app, model, spec: dict, spec_pfad: Path, tol_mm: float, aufnahme: dict, protokoll: Protokoll):
+def _pruefe_neuaufbau(ctx, aufnahme: dict) -> None:
+    """Nach jedem Punkt. `sw.rebuild` kennt nur Featurenamen, damit Handler bekannte Fehler übergehen; ein neuer Code am selben
+    Feature muss aber beim Punkt auffallen, ein späterer Punkt könnte das Feature unterdrücken und den Fehler verstecken."""
+    sw.rebuild(ctx.model)
+    if neu := neue_fehler(whats_wrong(ctx.model), aufnahme, aufnahme["aktiv"]):
+        raise BauFehler(REBUILD_FEHLER, "; ".join(neu), schritt="rebuild")
+
+
+def _wende_punkte_an(app, model, spec: dict, spec_pfad: Path, tol_mm: float, aufnahme: dict, protokoll: Protokoll,
+                     geloescht: set[str]):
+    """Sammelt in `geloescht`, was `loeschen`-Punkte genommen haben; sie prüfen selbst, dass das erlaubt war."""
     ctx = punkte.kontext(app, model, spec, spec_pfad, tol_mm)
 
     def rufe(knoten: Knoten, p: dict) -> None:
-        knoten.sw_name = ", ".join(punkte.punkt_handler(p["typ"])(ctx, p, aufnahme)) or None
+        namen = punkte.punkt_handler(p["typ"])(ctx, p, aufnahme)
+        knoten.sw_name = ", ".join(namen) or None
+        if p["typ"] == "loeschen":
+            geloescht.update(namen)
         if (ergebnis := ctx.ergebnisse.get(p["id"])) is not None:
             knoten.punkte = [list(q) for q in ergebnis.punkte] or None
 
-    return durchlaufe(ctx, protokoll, spec["punkte"], rufe, lambda c: sw.rebuild(c.model))
+    return durchlaufe(ctx, protokoll, spec["punkte"], rufe, lambda c: _pruefe_neuaufbau(c, aufnahme))
 
 
 def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: float, aufnahme: dict, protokoll: Protokoll,
                            pfad: Path) -> Exception | None:
     """Der erste Fehler oder None; gespeichert ist die Datei nur bei None."""
+    geloescht: set[str] = set()
     try:
         with protokoll.phase("bauen"), sw.bekannte_fehler(bekannte_fehler_in(aufnahme, aufnahme["aktiv"])):
-            if fehler := _wende_punkte_an(app, model, spec, spec_pfad, tol_mm, aufnahme, protokoll):
+            if fehler := _wende_punkte_an(app, model, spec, spec_pfad, tol_mm, aufnahme, protokoll, geloescht):
                 return fehler
-            pruefe_stand(model, aufnahme, spec["punkte"])
+            pruefe_stand(model, aufnahme, spec["punkte"], geloescht)
         with protokoll.phase("speichern"):
             speichere_an_ort(model, pfad)
     except Exception as e:  # jeder Fehler (auch COM) heißt: nicht speichern
@@ -139,11 +164,15 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     pfad = lauf_kopie(kopie, ordner)
     with protokoll.phase("vorbereiten"):
         model = oeffne(app, pfad)
+    fehler = None
     try:
         fehler = _aendere_und_speichere(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], aufnahme, protokoll, pfad)
         protokoll.lizenz = lizenz(app, model)
     finally:
-        sw.schliesse(app, model)  # ohne Speichern; nach einem Fehler bleibt die unveränderte Kopie
+        try:
+            sw.schliesse(app, model)  # ohne Speichern; nach einem Fehler bleibt die unveränderte Kopie
+        except Exception as e:  # darf den Baufehler nicht verdecken, und ohne einen steht er im Protokoll
+            fehler = fehler or e
     if fehler is None:
         protokoll.dateien = {"teil": str(pfad)}
         protokoll.sha256 = pruefsummen(ordner, [pfad])

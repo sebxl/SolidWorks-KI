@@ -79,7 +79,8 @@ def fremde_namen(spec: dict) -> list[str]:
 def kontext(app, model, spec: dict, spec_pfad: Path, tol_mm: float) -> Kontext:
     """Kontext wie beim Teil, `feature`-Punkte als Features, fremde Features unter ihrem Namen (Spec §4.2). Gleichungen sind
     aus: swki legt in fremden Dateien keine an."""
-    features = [{"id": p["id"], **p["feature"]} for p in spec["punkte"] if p["typ"] == "feature"]
+    features = [{"id": p["id"], **p["feature"]} if p["typ"] == "feature" else {"id": p["id"], "typ": "skript", "datei": p["datei"]}
+                for p in spec["punkte"] if p["typ"] in ("feature", "skript")]  # auch Skripte bemaßen, `ctx.pfad` muss sie kennen
     ctx = Kontext(app, model, {"parameter": spec.get("parameter", {}), "features": features}, spec_pfad, tol_mm,
                   gleichungen=False)
     for name in fremde_namen(spec):
@@ -167,11 +168,11 @@ def mass(ctx, p: dict, aufnahme: dict) -> list[str]:
     status = _dimension(model, name).SetSystemValue3(_si(neu, einheit), *wo)
     if status != SW_WERT_ERFOLG:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Maß {name}: SolidWorks lehnt {neu} ab (Status {status})", schritt="setzen")
-    falsch = {k: v for k, v in _je_konfiguration(ctx, aufnahme, konfigurationen, messen).items()
-              if v is not None and not _nahe(v, neu)}
-    if falsch:
+    lesbar = {k: v for k, v in _je_konfiguration(ctx, aufnahme, konfigurationen, messen).items() if v is not None}
+    falsch = {k: v for k, v in lesbar.items() if not _nahe(v, neu)}
+    if falsch or not lesbar:  # einzelne None sind erlaubt, aber ein echter Messwert muss `neu` belegen
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Maß {name} steht nach dem Neuaufbau nicht auf {neu} "
-                                               f"({_werte_text(falsch)}) – gesteuert?", schritt="nachmessen")
+                                               f"({_werte_text(falsch) or 'nicht lesbar'}) – gesteuert?", schritt="nachmessen")
     ctx.mass(name, p["neu"], f"punkte[{p['id']}].neu", "winkel" if einheit == "Grad" else "groesse")
     return [name]
 
@@ -181,6 +182,18 @@ def _gleichung_index(gleichungen, links: str) -> int:
         if links_von(gleichungen.Equation(i)) == links:
             return i
     raise BauFehler(BESTAND_REFERENZ, f"Eine Gleichung für {links!r} gibt es in der Datei nicht", schritt="referenz")
+
+
+def _gleichung_stand(ctx, aufnahme: dict, links: str) -> dict[str, tuple[str, float]]:
+    """(Text, Wert) in jeder Konfiguration: Gesetzt wird in allen, also wird auch in allen gegengeprüft; der Kollege kann in
+    einer Konfiguration einen eigenen Wert führen."""
+
+    def messen(_):
+        mgr = ctx.model.GetEquationMgr
+        i = _gleichung_index(mgr, links)
+        return mgr.Equation(i), float(mgr.Value(i))
+
+    return _je_konfiguration(ctx, aufnahme, aufnahme["konfigurationen"], messen)
 
 
 def _setze_gleichung(ctx, aufnahme: dict, links: str, rechts: str, stimmt: Callable) -> None:
@@ -201,28 +214,27 @@ def _setze_gleichung(ctx, aufnahme: dict, links: str, rechts: str, stimmt: Calla
 
 
 def _variable(ctx, p: dict, aufnahme: dict) -> list[str]:
-    name, gleichungen = p["variable"], ctx.model.GetEquationMgr
-    i = _gleichung_index(gleichungen, name)
-    if abhaengig := namen_in(rechte_seite(gleichungen.Equation(i))):
-        genannt = ", ".join(f'"{n}"' for n in abhaengig)
-        raise BauFehler(GLEICHUNG_FEHLER, f"Variable {name} hängt von {genannt} ab: Setzen ersetzte den Ausdruck "
-                                          f"{rechte_seite(gleichungen.Equation(i))!r}. Stattdessen einen gleichung-Punkt auf "
-                                          "den Ausdruck schreiben", schritt="alt")
-    ist = float(gleichungen.Value(i))
-    if not _nahe(ist, p["alt"]):
-        raise BauFehler(BESTAND_ALTWERT, f"Variable {name}: alt {p['alt']} stimmt nicht mit der Datei überein ({ist})",
-                        schritt="alt")
+    name = p["variable"]
+    stand = _gleichung_stand(ctx, aufnahme, name)
+    abhaengig = {k: namen_in(rechte_seite(text)) for k, (text, _) in stand.items()}
+    if genannt := sorted({f'"{n}"' for namen in abhaengig.values() for n in namen}):
+        wo = ", ".join(k for k, namen in abhaengig.items() if namen)
+        raise BauFehler(GLEICHUNG_FEHLER, f"Variable {name} hängt von {', '.join(genannt)} ab ({wo}): Setzen ersetzte den "
+                                          "Ausdruck. Stattdessen einen gleichung-Punkt auf den Ausdruck schreiben", schritt="alt")
+    if abweichend := {k: wert for k, (_, wert) in stand.items() if not _nahe(wert, p["alt"])}:
+        raise BauFehler(BESTAND_ALTWERT, f"Variable {name}: alt {p['alt']} stimmt nicht mit der Datei überein "
+                                         f"({_werte_text(abweichend)})", schritt="alt")
     neu = ctx.wert(p["neu"])
     _setze_gleichung(ctx, aufnahme, name, f"{neu:.15g}", lambda mgr, k: _nahe(float(mgr.Value(k)), neu))
     return [name]
 
 
 def _gleichung(ctx, p: dict, aufnahme: dict) -> list[str]:
-    links, gleichungen = p["gleichung"], ctx.model.GetEquationMgr
-    ist = rechte_seite(gleichungen.Equation(_gleichung_index(gleichungen, links)))
-    if not gleicher_ausdruck(ist, p["alt"]):
-        raise BauFehler(BESTAND_ALTWERT, f"Gleichung {links}: alt {p['alt']!r} stimmt nicht mit der Datei überein ({ist!r})",
-                        schritt="alt")
+    links = p["gleichung"]
+    rechts = {k: rechte_seite(text) for k, (text, _) in _gleichung_stand(ctx, aufnahme, links).items()}
+    if abweichend := {k: text for k, text in rechts.items() if not gleicher_ausdruck(text, p["alt"])}:
+        raise BauFehler(BESTAND_ALTWERT, f"Gleichung {links}: alt {p['alt']!r} stimmt nicht mit der Datei überein "
+                                         f"({_werte_text(abweichend)})", schritt="alt")
     _setze_gleichung(ctx, aufnahme, links, p["neu"],
                      lambda mgr, k: gleicher_ausdruck(rechte_seite(mgr.Equation(k)), p["neu"]))
     return [links]
@@ -310,12 +322,13 @@ def _benenne(neue: list, fid: str, name: str) -> dict[str, str]:
     return umbenannt
 
 
-def _protokoll_nachziehen(ctx, fid: str, umbenannt: dict[str, str]) -> None:
-    """Maßnamen enthalten die Skizze, `Parameter` fände sie sonst nicht mehr; Handler kennen nur ihren Pfad in `features`."""
+def _protokoll_nachziehen(ctx, fid: str, ziel: str, umbenannt: dict[str, str]) -> None:
+    """Maßnamen enthalten die Skizze, `Parameter` fände sie sonst nicht mehr; Handler kennen nur ihren Pfad in `features`,
+    in der Spec steht er unter `ziel`."""
     for m in ctx.masse.get(fid, ()):
         kurz, _, ort = m["name"].rpartition("@")
         m["name"] = f"{kurz}@{umbenannt.get(ort, ort)}"
-        m["pfad"] = m["pfad"].replace(ctx.pfad(fid), f"punkte[{fid}].feature", 1)
+        m["pfad"] = m["pfad"].replace(ctx.pfad(fid), ziel, 1)
 
 
 def _in_allen_aufheben(ctx, ergebnis: FeatureErgebnis, neue: list, aufnahme: dict) -> None:
@@ -372,7 +385,7 @@ def feature(ctx, p: dict, aufnahme: dict) -> list[str]:
         ergebnis = funktion(ctx, inhalt)
     ctx.ergebnisse[fid] = ergebnis
     neue = [f for f in baum_features(ctx.model) if f.Name not in vorher]
-    _protokoll_nachziehen(ctx, fid, _benenne(neue, fid, p["name"]))
+    _protokoll_nachziehen(ctx, fid, f"punkte[{fid}].feature", _benenne(neue, fid, p["name"]))
     _in_allen_aufheben(ctx, ergebnis, neue, aufnahme)
     namen = [f.Name for f in neue]
     if "nach" in p:
@@ -412,5 +425,6 @@ def eigenschaft(ctx, p: dict, aufnahme: dict) -> list[str]:
 def skript(ctx, p: dict, aufnahme: dict) -> list[str]:
     """Notausgang: Ein Eingriff in ein fremdes Feature darf nichts liefern und benennt nichts um (Präzisierung 6)."""
     ergebnis = fuehre_aus(ctx, {"id": p["id"], "datei": p["datei"]})
+    _protokoll_nachziehen(ctx, p["id"], f"punkte[{p['id']}]", {})
     features = ergebnis if isinstance(ergebnis, (list, tuple)) else [] if ergebnis is None else [ergebnis]
     return [f.Name for f in features]

@@ -349,6 +349,16 @@ def test_feature_punkt_schema_befund_am_punkt_pfad(tmp_path):
     assert [b["pfad"] for b in befunde] == ["punkte[2].feature"]
 
 
+def test_feature_punkt_verbietet_inneres_skript(tmp_path):
+    """Review: Der Teil-Handler nennt die Rückgabe nach der ID, ein fremdes Feature wäre umbenannt. Notausgang ist der Punkt."""
+    (tmp_path / "s.py").write_text("def bauen(ctx):\n    pass\n", encoding="utf-8")
+    spec = copy.deepcopy(BASIS)
+    spec["punkte"][2]["feature"] = {"typ": "skript", "datei": "s.py", "luecke": "x"}
+    befunde, _ = feature_befunde(spec, AUFNAHME, tmp_path)
+    treffer = [b for b in befunde if b["pfad"] == "punkte[2].feature.typ"]
+    assert len(treffer) == 1 and "Punkt" in treffer[0]["meldung"] and "skript" in treffer[0]["meldung"]
+
+
 def test_feature_punkt_ohne_features_hat_keine_befunde(tmp_path):
     assert feature_befunde(punkte({"id": "m", "typ": "material", "neu": "x"}), AUFNAHME, tmp_path) == ([], [])
 

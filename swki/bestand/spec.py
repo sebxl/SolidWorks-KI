@@ -340,6 +340,9 @@ def feature_befunde(spec: dict, aufnahme: dict, ordner: Path) -> tuple[list[dict
     befunde, teil_features = [], []
     for i, p in feature_punkte:
         inhalt = copy.deepcopy(p["feature"])
+        if inhalt.get("typ") == "skript":  # der Teil-Handler nennt die Rückgabe nach der ID, auch ein fremdes Feature
+            befunde.append(_befund(f"punkte[{i}].feature.typ", "typ: skript ist in einem feature-Punkt verboten: Der Notausgang "
+                                   "ist der Punkt typ: skript mit luecke"))
         for pfad, ref in list(_referenzen(inhalt, [])):
             if ref in punkt_ids:
                 continue  # Punkt-ID: früheres Feature (Reihenfolge prüft plausibel_befunde)

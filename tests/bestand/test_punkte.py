@@ -137,6 +137,17 @@ def test_mass_nicht_lesbarer_wert_ist_keine_abweichung():
     assert dim.gesetzt == [(0.045, 2, None)]
 
 
+def test_mass_ohne_jeden_messwert_gilt_nicht_als_bestaetigt():
+    """Einzelne `None` sind erlaubt, aber mindestens ein echter Messwert muss `neu` belegen."""
+    a = _aufnahme()
+    teil = teil_aus(a)
+    dim = teil.masse["D2@Skizze4"]
+    lesen = dim.GetSystemValue3
+    dim.GetSystemValue3 = lambda o, n: (None,) if dim.gesetzt else lesen(o, n)
+    with pytest.raises(BauFehler, match="nach dem Neuaufbau"):
+        _anwenden(teil, MASS | {"konfigurationen": ["Standard"]}, a)
+
+
 def test_mass_gibt_es_nicht_mehr(aufnahme):
     teil = teil_aus(aufnahme)
     del teil.masse["D2@Skizze4"]
@@ -162,6 +173,25 @@ def test_variable_altwert_live(aufnahme):
     with pytest.raises(BauFehler) as e:
         _anwenden(teil, VARIABLE, aufnahme)
     assert e.value.code == BESTAND_ALTWERT and teil.gleichungen.gesetzt == []
+
+
+def test_variable_altwert_in_anderer_konfiguration(aufnahme):
+    """Review: Geschrieben wird in allen Konfigurationen, also wird `alt` auch in allen gelesen. Der Wert des Kollegen in
+    Variante B darf nicht ohne Sperre verschwinden."""
+    teil = teil_aus(aufnahme)
+    teil.gleichungen.zeilen[0]["je"] = {"Variante B": {"wert": 120.0}}
+    with pytest.raises(BauFehler) as e:
+        _anwenden(teil, VARIABLE, aufnahme)
+    assert e.value.code == BESTAND_ALTWERT and "Variante B" in str(e.value) and "120" in str(e.value)
+    assert teil.gleichungen.gesetzt == [] and teil.aktiv == aufnahme["aktiv"]
+
+
+def test_variable_abhaengig_nur_in_anderer_konfiguration(aufnahme):
+    teil = teil_aus(aufnahme)
+    teil.gleichungen.zeilen[0]["je"] = {"Variante B": {"text": '"L" = "M" * 2', "wert": 100.0}}
+    with pytest.raises(BauFehler) as e:
+        _anwenden(teil, VARIABLE, aufnahme)
+    assert e.value.code == GLEICHUNG_FEHLER and '"M"' in str(e.value) and teil.gleichungen.gesetzt == []
 
 
 def test_variable_abhaengig_wird_nicht_still_ueberschrieben(aufnahme):
@@ -194,6 +224,14 @@ def test_gleichung_altwert_live(aufnahme):
     with pytest.raises(BauFehler) as e:
         _anwenden(teil, GLEICHUNG | {"alt": '"D1@Skizze1" + 6'}, aufnahme)
     assert e.value.code == BESTAND_ALTWERT
+
+
+def test_gleichung_altwert_in_anderer_konfiguration(aufnahme):
+    teil = teil_aus(aufnahme)
+    teil.gleichungen.zeilen[2]["je"] = {"Variante B": {"text": '"D3@Skizze2" = "D1@Skizze1" + 9'}}
+    with pytest.raises(BauFehler) as e:
+        _anwenden(teil, GLEICHUNG, aufnahme)
+    assert e.value.code == BESTAND_ALTWERT and "Variante B" in str(e.value) and teil.gleichungen.gesetzt == []
 
 
 def test_gleichung_fehlt(aufnahme):
@@ -506,6 +544,26 @@ def test_skript_rueckgabe_behaelt_namen(tmp_path, aufnahme):
     ctx = kontext(SimpleNamespace(), teil, _spec(p), tmp_path / "aenderung.yaml", 0.01)
     assert punkt_handler("skript")(ctx, p, aufnahme) == ["Fase3"]
     assert teil.feature("Fase3") is not None
+
+
+def test_skript_kann_bemassen(tmp_path, aufnahme, monkeypatch):
+    """Review: `ctx.skizze` fragt über `_massziel` nach `ctx.pfad(ctx.knoten)`; das Maß muss dem Punkt zugeordnet sein."""
+    from swki.compiler.handler import skript as skript_modul
+    from swki.compiler.skizze import _massziel
+
+    def skizziere(ctx, ebene, elemente, name):
+        ziel, art = _massziel(ctx, None, "groesse")
+        ctx.mass(f"D1@{name}", 5, ziel, art)
+        return "Skizze", "Ebene"
+
+    monkeypatch.setattr(skript_modul, "skizziere", skizziere)
+    p = _skript(tmp_path, 'def bauen(ctx):\n    ctx.skizze("oben", [])\n    return None\n')
+    teil = teil_aus(aufnahme)
+    ctx = kontext(SimpleNamespace(), teil, _spec(FEATURE, p), tmp_path / "aenderung.yaml", 0.01)
+    ctx.knoten = "p6"
+    assert punkt_handler("skript")(ctx, p, aufnahme) == []
+    m = ctx.masse["p6"][0]
+    assert (m["name"], m["pfad"], m["art"]) == ("D1@p6_skizze", "punkte[p6]", "skript")
 
 
 def test_handler_skript_des_compilers_bleibt_streng(tmp_path, aufnahme):

@@ -203,6 +203,106 @@ def test_anderer_code_am_bekannten_feature_ist_neu(lauf):
     assert lauf.teil.gespeichert == []
 
 
+def test_anderer_code_bricht_beim_punkt_ab(lauf):
+    """Review: Sonst liefe der nächste Punkt weiter, und unterdrückt er das Feature, verschwindet der Fehler ungesehen."""
+    lauf.aufnahme["neuaufbau"] = [{"konfiguration": "Standard", "feature": "Fase3", "code": 12, "warnung": False}]
+    lauf.schreibe(MASS, UNTERDRUECKEN)
+
+    def code_wechselt(teil):
+        teil.bei_neuaufbau = lambda t: (t.fehler.__setitem__("Standard", [("Fase3", 1, False)])
+                                        if t.masse["D2@Skizze4"].gesetzt else None)
+
+    lauf.vor_teil = code_wechselt
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(lauf.spec_pfad)
+    d = e.value.daten
+    assert d["fehler"]["punkt"] == "p1" and d["fehler"]["code"] == REBUILD_FEHLER and "Fase3: Code 1" in d["fehler"]["meldung"]
+    assert [(k["id"], k["status"]) for k in d["knoten"]] == [("p1", "fehler"), ("p3", "uebersprungen")]
+    assert lauf.teil.unterdrueckungen == [] and lauf.teil.gespeichert == []
+
+
+def test_bekannter_code_laeuft_auch_nach_jedem_punkt_durch(lauf):
+    lauf.aufnahme["neuaufbau"] = [{"konfiguration": "Standard", "feature": "Fase3", "code": 12, "warnung": False}]
+    lauf.schreibe(MASS, VARIABLE)
+    assert bau.bauen(lauf.spec_pfad)["status"] == "ok"
+
+
+def _skript_datei(lauf, text: str) -> str:
+    ordner = lauf.spec_pfad.parent / "skripte"
+    ordner.mkdir(exist_ok=True)
+    (ordner / "s.py").write_text(text, encoding="utf-8")
+    return "skripte/s.py"
+
+
+def test_skript_punkt_benennt_bestandsfeature_um_speichert_nicht(lauf):
+    """Review: Auch ein Skript darf kein Bestandsfeature verschwinden lassen, ein neuer Name zählt als verschwunden."""
+    p = {"id": "p6", "typ": "skript", "luecke": "x",
+         "datei": _skript_datei(lauf, 'def bauen(ctx):\n    ctx.model.FeatureByName("Fase3").Name = "Anders"\n')}
+    lauf.schreibe(p)
+    with pytest.raises(BauAbbruch, match="Fase3") as e:
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.teil.gespeichert == [] and e.value.daten["dateien"] == {}
+
+
+def test_skript_punkt_loescht_bestandsfeature_speichert_nicht(lauf):
+    p = {"id": "p6", "typ": "skript", "luecke": "x", "datei": _skript_datei(lauf, (
+        'def bauen(ctx):\n    ctx.model.FeatureByName("Verrundung1").Select2(False, 0)\n'
+        "    ctx.model.Extension.DeleteSelection2(0)\n"))}
+    lauf.schreibe(p)
+    with pytest.raises(BauAbbruch, match="Verrundung1"):
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.teil.gespeichert == []
+
+
+def test_inneres_skript_im_feature_punkt_verliert_kein_bestandsfeature(lauf):
+    """Die Probe aus dem Review: Der Teil-Handler nennt die Rückgabe des Skripts nach der ID, `Fase3` wäre weg. `swki bauen`
+    validiert nicht, also fängt es der Stand ab, auch wenn `feature_befunde` den Punkt schon sperrt."""
+    p = {"id": "p5", "typ": "feature", "name": "Neu",
+         "feature": {"typ": "skript", "datei": _skript_datei(lauf, 'def bauen(ctx):\n    return ctx.model.FeatureByName("Fase3")\n'),
+                     "luecke": "x"}}
+    lauf.schreibe(p)
+    with pytest.raises(BauAbbruch, match="Fase3"):
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.teil.gespeichert == []
+
+
+def test_loeschen_mit_kindern_und_skizze_bleibt_erlaubt(lauf):
+    """Gegenprobe: Was ein `loeschen`-Punkt nimmt, fehlt zu Recht, auch die aufgenommene Skizze, die kein Punkt nennt."""
+    lauf.schreibe({"id": "p1", "typ": "loeschen", "feature": "Bohrung2", "kinder": ["Fase3", "Verrundung1"]})
+    assert bau.bauen(lauf.spec_pfad)["status"] == "ok"
+    assert lauf.teil.gespeichert == ["Standard"] and lauf.teil.feature("Skizze4") is None
+
+
+def test_schliessfehler_verdeckt_den_baufehler_nicht(lauf):
+    lauf.schreibe(MASS)
+
+    def kaputt(teil):
+        teil.Save3 = lambda o, e, w: False
+
+    lauf.vor_teil = kaputt
+
+    def schliesse(titel):
+        raise OSError("Schließen kaputt")
+
+    lauf.app.CloseDoc = schliesse
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(lauf.spec_pfad)
+    assert e.value.daten["fehler"]["code"] == SPEICHERN_FEHLGESCHLAGEN
+    assert lauf.protokoll()["status"] == "fehler"
+
+
+def test_schliessfehler_nach_dem_speichern_steht_im_protokoll(lauf):
+    lauf.schreibe(MASS)
+
+    def schliesse(titel):
+        raise OSError("Schließen kaputt")
+
+    lauf.app.CloseDoc = schliesse
+    with pytest.raises(BauAbbruch, match="Schließen kaputt"):
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.protokoll()["status"] == "fehler"
+
+
 def test_reorder_fehlschlag_speichert_nie(lauf, monkeypatch):
     """S18c3: False beschädigt die Konfiguration dauerhaft, `Save3` meldete trotzdem Erfolg."""
     from swki.compiler.kontext import FeatureErgebnis

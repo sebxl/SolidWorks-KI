@@ -136,7 +136,12 @@ def test_bau_mass_und_normbohrung(auftrag, tmp_path):
               {"id": "p5", "typ": "feature", "was": "Gewinde", "name": "Gewinde M6 Deckel", "feature": NORMBOHRUNG,
                "nach": "Schnitt-Linear austragen3"},
               {"id": "p6", "typ": "material", "neu": "1.4301"},
-              {"id": "p7", "typ": "eigenschaft", "name": "Revision", "neu": "B"}]
+              {"id": "p7", "typ": "eigenschaft", "name": "Revision", "neu": "B"},
+              {"id": "p8", "typ": "skript", "datei": "skripte/p8.py", "luecke": "Skizze bemaßen (Review: ctx.pfad)"}]
+    skript = tmp_path / auftrag / "skripte" / "p8.py"
+    skript.parent.mkdir(parents=True)
+    skript.write_text('def bauen(ctx):\n    ctx.skizze({"nahe": [45, 0, 20]}, [{"kreis": {"mitte": [45, 10], "durchmesser": 3}}])\n',
+                      encoding="utf-8")
     aus = bau.bauen(_aenderung(tmp_path, auftrag, a, punkte))
 
     datei = Path(aus["dateien"]["teil"])
@@ -167,6 +172,7 @@ def test_bau_mass_und_normbohrung(auftrag, tmp_path):
     knoten = {k["id"]: k for k in protokoll["knoten"]}
     assert len(knoten["p5"]["punkte"]) == 2 and knoten["p1"]["masse"][0]["wert"] == 9
     assert all(m["name"].endswith("@Gewinde M6 Deckel Skizze") for m in knoten["p5"]["masse"] if m["art"] == "lage")
+    assert {m["pfad"] for m in knoten["p8"]["masse"]} == {"punkte[p8]"} and "p8_skizze" in features
 
 
 def test_bau_mit_variante_b_aktiv(auftrag, tmp_path):
