@@ -115,11 +115,17 @@ class Umgebung:
         if pruefung:
             spec["pruefung"] = pruefung
         self.spec_pfad.write_text(yaml.safe_dump(spec, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        for punkt in punkte:
+            if punkt["typ"] == "skript":
+                datei = self.spec_pfad.parent / punkt["datei"]
+                datei.parent.mkdir(exist_ok=True)
+                datei.write_text("def bauen(ctx):\n    return []\n", encoding="utf-8")
         if freigeben:
             spec_modul.freigeben(self.spec_pfad)
         fehler = None if status == "ok" else {"code": "REBUILD_FEHLER", "meldung": "kaputt"}
         protokoll = {"status": status, "fehler": fehler, "dauer_s": 1.0, "gestartet": "2026-10-31T10:00:00", "knoten": list(knoten),
-                     "dateien": {"teil": str(self.teil)} if status == "ok" else {}, "sha256": {self.teil.name: hashlib.sha256(GEAENDERT).hexdigest()}}
+                     "dateien": {"teil": str(self.teil)} if status == "ok" else {}, "sha256": {self.teil.name: hashlib.sha256(GEAENDERT).hexdigest()},
+                     "bestand": {"sha256": self.aufnahme["datei"]["sha256"], "aufnahme": 1}}
         ziel = lauf_datei(self.spec_pfad, 1, "protokoll")
         ziel.parent.mkdir(exist_ok=True)
         ziel.write_text(json.dumps(protokoll), encoding="utf-8")
@@ -229,6 +235,28 @@ def test_teil_fehlt(u):
     with pytest.raises(SwkiFehler, match="fehlt"):
         modul.pruefen(spec)
     assert u.geoeffnet == []
+
+
+def test_lauf_aus_anderer_aufnahme_wird_nicht_geprueft(u):
+    """Die Spec zog auf eine neuere Aufnahme um, der Lauf baut auf der alten auf: Der Vergleich gegen die neue wäre sinnlos."""
+    spec = u.schreibe()
+    datei = lauf_datei(spec, 1, "protokoll")
+    protokoll = json.loads(datei.read_text(encoding="utf-8"))
+    datei.write_text(json.dumps({**protokoll, "bestand": {"sha256": "0" * 64, "aufnahme": 1}}), encoding="utf-8")
+    with pytest.raises(BestandFehler) as e:
+        modul.pruefen(spec)
+    assert e.value.daten["code"] == BESTAND_VERALTET and e.value.daten["lauf"] == 1 and u.geoeffnet == []
+
+
+def test_lauf_ohne_vermerk_der_aufnahme_wird_nicht_geprueft(u):
+    spec = u.schreibe()
+    datei = lauf_datei(spec, 1, "protokoll")
+    protokoll = json.loads(datei.read_text(encoding="utf-8"))
+    del protokoll["bestand"]
+    datei.write_text(json.dumps(protokoll), encoding="utf-8")
+    with pytest.raises(BestandFehler) as e:
+        modul.pruefen(spec)
+    assert e.value.daten["code"] == BESTAND_VERALTET and u.geoeffnet == []
 
 
 def test_ohne_freigabe_kein_pruefen(u):

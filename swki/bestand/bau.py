@@ -14,7 +14,7 @@ from swki.auftrag import auftrag_name, lauf_belegt, lauf_datei, lauf_ordner, nae
 from swki.bestand import punkte
 from swki.bestand.ablage import bestand_ordner, lauf_kopie, pruefe_kopie
 from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
-from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, lade_aenderung
+from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, lade_aenderung
 from swki.bestand.sw_bestand import _geometrie, _schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
 from swki.bestand.vergleich import neue_fehler
 from swki.cli import SwkiFehler
@@ -152,6 +152,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     ordner = lauf_ordner(r, auftrag, lauf)
     protokoll = Protokoll(auftrag, spec_pfad.name, lauf, r.sw_jahr)
     protokoll.hochgestuft = aelter
+    protokoll.bestand = bestand_kennung(spec)
     beginn = time.perf_counter()
 
     app = verbinde(r.sw_jahr)

@@ -1,7 +1,7 @@
 """Änderungs-Spec `art: aenderung` (Spec Bestandsdateien §4): Laden, Prüfsumme, validieren, freigeben.
 
-`lade_aenderung` prüft ohne SolidWorks und ohne Aufnahme: Schema und Plausibilität der Spec selbst. `validieren` prüft
-danach gegen die Bestandsaufnahme (`bestand.json`, Spec §4.4 Punkt 2 bis 6): `befunde_gegen_aufnahme` für Namen, Altwerte,
+`lade_aenderung` prüft ohne SolidWorks und ohne Aufnahme: Schema und Plausibilität der Spec selbst. `validieren` und `freigeben`
+prüfen danach gegen die Bestandsaufnahme (`bestand.json`, Spec §4.4 Punkt 2 bis 6): `befunde_gegen_aufnahme` für Namen, Altwerte,
 gesteuerte Maße, Folgen, Kinder und Bereiche, `feature_befunde` für den Inhalt neuer Features. Die Aufnahme selbst (fehlt,
 passt nicht zur `sha256`, ist nicht mehr die jüngste) ist eine Ausnahme (`BestandFehler`), kein Befund.
 
@@ -239,8 +239,10 @@ def _punkt_befunde(p: dict, pfad: str, aufnahme: dict, namen: dict, ordner: Path
                                    "auf seine Anweisung geht die Änderung über einen skript-Punkt mit luecke",
                                    MASS_GESTEUERT))
         if typ != "loeschen" and (text := _steuernde_gleichung(p["feature"], aufnahme)) is not None:
+            # kein Punkt-Weg (Spec §4.3): Ein gleichung-Punkt änderte den Zustand, `konfigurationen` ließe den Wechsel nicht zu
             befunde.append(_befund(f"{pfad}.feature", f"Die Gleichung {text} steuert die Unterdrückung von {p['feature']!r}, der Neuaufbau "
-                                   "nähme den Punkt zurück: stattdessen die Gleichung mit einem gleichung-Punkt ändern", MASS_GESTEUERT))
+                                   "nähme den Punkt zurück. Dem Nutzer die Gleichung nennen und ihn fragen; nicht über einen gleichung- "
+                                   "oder skript-Punkt umgehen", MASS_GESTEUERT))
         if typ == "loeschen":
             for k, n in enumerate(p.get("kinder", [])):
                 if n not in features:
@@ -404,16 +406,42 @@ def aufnahme_zu(spec: dict, pfad: Path) -> dict:
     return aufnahme
 
 
-def validieren(pfad: Path) -> dict:
-    """`swki validieren` für art: aenderung: Schema und Plausibilität, dann die Prüfung gegen die Aufnahme (§4.4). Alle
-    Befunde auf einmal (`SpecFehler`). `folgen`: die aus der Aufnahme berechneten Folgemaße je `mass`-/`gleichung`-Punkt,
-    zum Eintragen in die Spec und für die Freigabe-Vorlage."""
+def bestand_kennung(spec: dict) -> dict:
+    """Der Stand, aus dem ein Lauf dieser Spec gebaut wird. Steht als `bestand` im Protokoll."""
+    return {"sha256": spec["bestand"]["sha256"], "aufnahme": spec["bestand"]["aufnahme"]}
+
+
+def pruefe_lauf_bestand(spec: dict, protokoll: dict, lauf: int) -> None:
+    """Der Lauf muss aus dem Stand gebaut sein, auf den die Spec jetzt zeigt. Zieht die Spec auf eine neue Aufnahme um, passen Spec,
+    Aufnahme und Original wieder zueinander (`aufnahme_zu` und die Gegenprobe am Original schweigen), nur der alte Lauf nicht:
+    Ihm fehlt die Arbeit des Kollegen. Ein Protokoll ohne Vermerk zählt genauso, seine Herkunft ist unbekannt."""
+    ist, soll = protokoll.get("bestand"), bestand_kennung(spec)
+    if ist == soll:
+        return
+
+    def stand(b: dict) -> str:
+        return f"Aufnahme {b['aufnahme']} ({b['sha256'][:8]})"
+
+    raise BestandFehler(BESTAND_VERALTET, f"Lauf {lauf} ist aus {stand(ist) if ist else 'unbekanntem Stand (kein Vermerk im Protokoll)'} "
+                        f"gebaut, die Spec zeigt auf {stand(soll)}: Dem Lauf fehlt womöglich die Arbeit des Kollegen. Neu bauen: "
+                        "swki bauen", lauf=lauf, protokoll=ist, spec=soll)
+
+
+def _geprueft(pfad: Path) -> tuple[dict, dict, list[dict]]:
+    """(Spec, Aufnahme, Hinweise) nach der vollen Prüfung; alle Befunde auf einmal (`SpecFehler`)."""
     spec = lade_aenderung(pfad)
     aufnahme = aufnahme_zu(spec, pfad)
     befunde = befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
     feature_b, hinweise = feature_befunde(spec, aufnahme, pfad.parent)
     if befunde or feature_b:
         raise SpecFehler(befunde + feature_b)
+    return spec, aufnahme, hinweise
+
+
+def validieren(pfad: Path) -> dict:
+    """`swki validieren` für art: aenderung: Schema und Plausibilität, dann die Prüfung gegen die Aufnahme (§4.4). `folgen`: die
+    aus der Aufnahme berechneten Folgemaße je `mass`-/`gleichung`-Punkt, zum Eintragen in die Spec und für die Freigabe-Vorlage."""
+    spec, aufnahme, hinweise = _geprueft(pfad)
     aelter = bool(aufnahme["datei"].get("version_aelter"))
     if aelter:
         hinweise.append({"art": "version_aelter", "pfad": "bestand",
@@ -426,6 +454,7 @@ def validieren(pfad: Path) -> dict:
 
 
 def freigeben(pfad: Path) -> dict:
-    """Freigabe der Anforderungen – nur nach ausdrücklichem OK des Nutzers."""
-    spec = lade_aenderung(pfad)
+    """Freigabe der Anforderungen – nur nach ausdrücklichem OK des Nutzers. Prüft voll wie `validieren`: Der Weg `swki freigeben`,
+    `swki bauen --hochstufen` führt an `swki validieren` vorbei, und `bauen` prüft die Punkte nicht gegen die Aufnahme."""
+    spec = _geprueft(pfad)[0]
     return {"spec": str(pfad), "art": "aenderung", "kopie": str(kopie_pfad(pfad)), **spec_freigeben(pfad, spec)}

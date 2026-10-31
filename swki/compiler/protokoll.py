@@ -45,6 +45,7 @@ class Protokoll:
     kaufteile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Schlüssel → {"kaufteil", "cache", "gebaut", …}
     lizenz: dict | None = None  # Bestandsdatei: {"sitzung": {"typ", "name"}, "datei": {"typ", "name"}} (swLicenseType_e)
     hochgestuft: bool = False  # Bestandsdatei: ältere Datei mit --hochstufen auf das aktuelle SW-Jahr gespeichert
+    bestand: dict | None = None  # Bestandsdatei: {"sha256", "aufnahme"}, aus diesem Stand ist der Lauf gebaut
 
     @contextmanager
     def phase(self, name: str):

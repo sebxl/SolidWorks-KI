@@ -154,8 +154,8 @@ def _compiler_aenderungen(seit: str) -> list[str]:
 
 
 def _ausgabe_fuer_bericht(spec_pfad: Path, alle: list[dict]) -> dict | None:
-    """Ausgabeliste im Bericht einer Änderung: nur, wenn der letzte Lauf bestanden ist. Ein Fehler (Lauf-Datei verändert, Freigabe
-    veraltet) steht im Bericht, er bricht ihn nicht ab. Es wird nichts kopiert."""
+    """Ausgabeliste im Bericht einer Änderung: nur, wenn der letzte Lauf bestanden ist. Ein Fehler (`BESTAND_VERALTET`, Lauf-Datei
+    verändert, Freigabe veraltet) steht im Bericht, er bricht ihn nicht ab. Es wird nichts kopiert."""
     if not (alle and alle[-1]["bestanden"]):
         return None
     from swki.bestand.ausgabe import ausgabe_liste  # spät importiert (Kreisimport)

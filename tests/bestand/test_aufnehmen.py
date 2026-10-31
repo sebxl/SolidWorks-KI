@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from swki.bestand import befehle, sw_bestand
-from swki.bestand.ablage import bestand_ordner, lade_aufnahme
+from swki.bestand.ablage import aufnahmen, bestand_ordner, lade_aufnahme
 from swki.bestand.fehler import (BESTAND_NICHT_LESBAR, BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT,
                                  BESTAND_VERSION_NEUER, BestandFehler)
 from swki.bestand.sw_bestand import leite_masse, links_von, lies_bestand, massname, whats_wrong
@@ -110,7 +110,29 @@ def test_externe_referenz_erst_im_offenen_dokument_lehnt_ab(umgebung):
     with pytest.raises(BestandFehler) as e:
         befehle.aufnehmen(umgebung.original, "a1")
     assert e.value.daten["code"] == BESTAND_REFERENZ_EXTERN
-    assert umgebung.app.geschlossen and not (bestand_ordner(umgebung.r, "a1", 1) / "bestand.json").exists()
+    assert umgebung.app.geschlossen and not bestand_ordner(umgebung.r, "a1", 1).exists()  # auch nicht die schreibgeschützte Kopie
+
+
+def test_abgelehnte_neue_fassung_laesst_die_alte_aufnahme_gelten(umgebung):
+    """Der Ordner `bestand-2` machte sonst jede Spec auf Aufnahme 1 zu `BESTAND_VERALTET`, ohne dass es eine Aufnahme 2 gäbe."""
+    befehle.aufnehmen(umgebung.original, "a1")
+    umgebung.original.write_bytes(b"jetzt verknuepft")
+    umgebung.gelesen["externe_referenzen"] = ["D:\\Kunde\\Anderes.SLDPRT"]
+    with pytest.raises(BestandFehler):
+        befehle.aufnehmen(umgebung.original, "a1")
+    assert aufnahmen(umgebung.r, "a1") == [1] and lade_aufnahme(umgebung.r, "a1", 1)["aktiv"] == "Standard"
+
+
+def test_nachgeholtes_lesen_mit_ablehnung_laesst_nichts_stehen(umgebung):
+    """Die Kopie stammt aus einem Absturz: Auch sie ist keine fertige Aufnahme, abgelehnt bleibt abgelehnt."""
+    umgebung.lesefehler = RuntimeError("COM weg")
+    with pytest.raises(RuntimeError):
+        befehle.aufnehmen(umgebung.original, "a1")
+    umgebung.lesefehler = None
+    umgebung.gelesen["externe_referenzen"] = ["D:\\Kunde\\Anderes.SLDPRT"]
+    with pytest.raises(BestandFehler):
+        befehle.aufnehmen(umgebung.original, "a1")
+    assert not bestand_ordner(umgebung.r, "a1", 1).exists()
 
 
 def test_original_fehlt_ohne_solidworks(umgebung):
@@ -133,7 +155,8 @@ def test_schliesst_auch_bei_fehler(umgebung):
     with pytest.raises(RuntimeError):
         befehle.aufnehmen(umgebung.original, "a1")
     assert umgebung.app.geschlossen == ["Lagerdeckel.SLDPRT"]
-    assert not (bestand_ordner(umgebung.r, "a1", 1) / "bestand.json").exists()
+    ordner = bestand_ordner(umgebung.r, "a1", 1)
+    assert not (ordner / "bestand.json").exists() and (ordner / "Lagerdeckel.SLDPRT").is_file()  # nachholbar
 
 
 def test_gescheiterte_aufnahme_wird_nachgeholt(umgebung):

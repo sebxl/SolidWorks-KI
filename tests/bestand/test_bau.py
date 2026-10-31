@@ -21,12 +21,13 @@ from swki.compiler.bauen import BauAbbruch
 from swki.compiler.fehler import REBUILD_FEHLER, SPEICHERN_FEHLGESCHLAGEN, BauFehler
 from swki.konfig import Rechner
 from swki.spec.freigabe import FreigabeFehler
+from swki.spec.freigabe import freigeben as freigabe_ohne_pruefung
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
 from tests.bestand.sw_attrappe import Teil, teil_aus
 
 INHALT = b"bestandskopie"
 MASS = {"id": "p1", "typ": "mass", "was": "Abstand", "mass": "D2@Skizze4", "alt": 40, "neu": 45}
-VARIABLE = {"id": "p2", "typ": "gleichung", "variable": "L", "alt": 100, "neu": 110}
+VARIABLE = {"id": "p2", "typ": "gleichung", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1", "D3@Skizze2"]}
 UNTERDRUECKEN = {"id": "p3", "typ": "unterdruecken", "feature": "Fase3"}
 
 
@@ -81,6 +82,11 @@ class Lauf:
             spec_modul.freigeben(self.spec_pfad)
         return self.spec_pfad
 
+    def alte_freigabe(self, *punkte):
+        """Eine Spec, die `swki freigeben` heute abweist, mit Freigabe (aus der Zeit vor dieser Prüfung): Der Bau schützt sich selbst."""
+        self.schreibe(*punkte, freigeben=False)
+        freigabe_ohne_pruefung(self.spec_pfad, spec_modul.lade_aenderung(self.spec_pfad))
+
     def protokoll(self, lauf=1) -> dict:
         return json.loads(lauf_datei(self.spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
 
@@ -109,6 +115,17 @@ def test_bau_startet_ab_bestand_und_speichert_an_ort(lauf):
     assert (lauf_ordner(lauf.r, "A", 1) / "protokoll.json").is_file()
     assert p["knoten"][0]["masse"][0]["name"] == "D2@Skizze4" and p["knoten"][0]["sw_name"] == "D2@Skizze4"
     assert p["knoten"][0]["sw_namen"] == ["D2@Skizze4"]  # die Liste trennt, was `sw_name` mit ", " verbindet
+
+
+def test_bau_vermerkt_die_aufnahme(lauf):
+    """Spec §9: Ein Lauf gehört zu genau einer Aufnahme; auch ein Abbruch trägt sie."""
+    lauf.schreibe(MASS)
+    bau.bauen(lauf.spec_pfad)
+    assert lauf.protokoll()["bestand"] == {"sha256": lauf.sha, "aufnahme": 1}
+    lauf.vor_teil = lambda teil: setattr(teil, "bei_neuaufbau", lambda t: t.fehler.__setitem__(t.aktiv, [("Fase3", 7, False)]))
+    with pytest.raises(BauAbbruch):
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.protokoll(2)["bestand"] == {"sha256": lauf.sha, "aufnahme": 1}
 
 
 def test_bau_folgt_der_spec_reihenfolge(lauf):
@@ -261,7 +278,7 @@ def test_inneres_skript_im_feature_punkt_verliert_kein_bestandsfeature(lauf):
     p = {"id": "p5", "typ": "feature", "name": "Neu",
          "feature": {"typ": "skript", "datei": _skript_datei(lauf, 'def bauen(ctx):\n    return ctx.model.FeatureByName("Fase3")\n'),
                      "luecke": "x"}}
-    lauf.schreibe(p)
+    lauf.alte_freigabe(p)
     with pytest.raises(BauAbbruch, match="Fase3"):
         bau.bauen(lauf.spec_pfad)
     assert lauf.teil.gespeichert == []
@@ -535,7 +552,7 @@ def test_code_eines_bestandfehlers_steht_im_protokoll(lauf):
 def test_kontextfehler_schliesst_das_dokument(lauf):
     p = {"id": "p5", "typ": "feature", "name": "Neu",
          "feature": {"typ": "fase", "kanten": {"feature": "Weg", "auswahl": "alle_kanten"}}}
-    lauf.schreibe(p)
+    lauf.alte_freigabe(p)
     with pytest.raises(BauAbbruch):
         bau.bauen(lauf.spec_pfad)
     assert lauf.geschlossen and lauf.teil.gespeichert == []

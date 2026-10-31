@@ -19,7 +19,7 @@ from swki.bestand.ablage import bestand_ordner, pruefe_kopie, vorher_kopie
 from swki.bestand.differenz import DifferenzFehler, alle_feature_boxen, bewerte_bereiche, in_konfigurationen, koerper_differenz
 from swki.bestand.feature_messung import bewerte, messart, teil_spec
 from swki.bestand.punkte import fremde_namen
-from swki.bestand.spec import aufnahme_zu, lade_aenderung
+from swki.bestand.spec import aufnahme_zu, lade_aenderung, pruefe_lauf_bestand
 from swki.bestand.sw_bestand import lies_bestand
 from swki.bestand.vergleich import vergleiche
 from swki.cli import SwkiFehler
@@ -195,6 +195,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         raise SwkiFehler(f"Lauf {lauf} von {auftrag} hat kein Protokoll")
     protokoll = json.loads(protokoll_datei.read_text(encoding="utf-8"))
     pruefe_lauf_gebaut(protokoll, lauf)
+    pruefe_lauf_bestand(spec, protokoll, lauf)  # BESTAND_VERALTET
     ordner, teil = lauf_ordner(r, auftrag, lauf), Path(protokoll["dateien"]["teil"])
     if not teil.exists():
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")

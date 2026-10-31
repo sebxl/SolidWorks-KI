@@ -50,6 +50,13 @@ def _ort(box: list[float]) -> str:
     return ", ".join(f"{achse} {box[i]:g}…{box[i + 3]:g}" for i, achse in enumerate("xyz"))
 
 
+def _bereich_text(a: dict) -> str:
+    """`bereich_offen`: Der Körper liegt vielleicht in diesem Bereich, nachgewiesen ist es nicht."""
+    if a.get("bereich") is not None:
+        return f"Bereich {a['bereich']}"
+    return f"nicht sicher im Bereich {a['bereich_offen']}" if a.get("bereich_offen") is not None else "in keinem Bereich"
+
+
 def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protokoll: dict | None) -> list[str]:
     """Abschnitt für `art: aenderung` (Spec Bestandsdateien §9): Punkte mit Folgen, Differenzen, Ausgabeliste, Lizenz."""
     bestand = spec["bestand"]
@@ -67,8 +74,7 @@ def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protok
             zeilen.append(f"- {konfiguration}: nicht nachgewiesen: {offen[konfiguration]}")
         elif not liste:
             zeilen.append(f"- {konfiguration}: keine Abweichung")
-        zeilen += [f"- {konfiguration}: {a['art']} {a['volumen']:g} mm³ bei {_ort(a['box'])}, "
-                   + (f"Bereich {a['bereich']}" if a.get("bereich") is not None else "in keinem Bereich") for a in liste]
+        zeilen += [f"- {konfiguration}: {a['art']} {a['volumen']:g} mm³ bei {_ort(a['box'])}, {_bereich_text(a)}" for a in liste]
     zeilen += ["", "### Ausgabe", ""]
     if ausgabe is None:
         zeilen.append("- Ausgabe erst nach bestandenem Lauf (geprüft und vom Prüfer abgenommen)")

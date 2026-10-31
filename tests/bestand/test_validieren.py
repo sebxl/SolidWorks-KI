@@ -10,10 +10,10 @@ import yaml
 from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.fehler import (BESTAND_ALTWERT, BESTAND_EINHEIT, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BESTAND_VERALTET,
                                  BEREICH_FEHLT, FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
-from swki.bestand.spec import befunde_gegen_aufnahme, feature_befunde, validieren
+from swki.bestand.spec import befunde_gegen_aufnahme, feature_befunde, freigeben, validieren
 from swki.cli import main
 from swki.konfig import Rechner
-from swki.spec.freigabe import pruefsumme
+from swki.spec.freigabe import FreigabeFehler, pruefe_freigabe, pruefsumme
 from swki.spec.laden import SpecFehler
 from tests.bestand.beispiel_aufnahme import AUFNAHME, SHA, aufnahme
 
@@ -251,6 +251,9 @@ def test_gleichung_steuert_die_unterdrueckung(typ, links):
     """Sonst nähme der nächste Neuaufbau den Punkt zurück; `validieren` sagt es vor dem Bau, an der Quelle."""
     (b,) = befunde_gegen_aufnahme(punkte({"id": "u1", "typ": typ, "feature": "Fase3"}), _mit_gleichung(links))
     assert (b["pfad"], b["code"]) == ("punkte[0].feature", MASS_GESTEUERT) and "Gleichung" in b["meldung"]
+    assert '"suppressed"' in b["meldung"] and "Nutzer" in b["meldung"]
+    # Kein Punkt-Weg in Etappe 1: Ein gleichung-Punkt endete im Mangel `konfigurationen`, den kein Nachbessern behebt
+    assert "nicht über einen gleichung- oder skript-Punkt" in b["meldung"]
 
 
 def test_gleichung_rechts_steuert_die_unterdrueckung_nicht():
@@ -531,6 +534,65 @@ def test_version_aelter_ist_hinweis(umg):
     assert erg["gueltig"] is True and erg["version_aelter"] is True
     (h,) = [h for h in erg["hinweise"] if h["art"] == "version_aelter"]
     assert "--hochstufen" in h["meldung"]
+
+
+# --- freigeben: dieselbe Prüfung, sonst liefe die Spec am Weg `swki freigeben`, `swki bauen --hochstufen` ungeprüft durch ---
+
+def test_freigabe_weiche_legt_kopie_an(umg, capsys):
+    pfad = _schreibe(umg, BASIS)
+    assert main(["freigeben", str(pfad)]) == 0
+    erg = json.loads(capsys.readouterr().out)
+    assert erg["art"] == "aenderung" and erg["pruefsumme"] == pruefsumme(BASIS)
+    assert (umg.ordner / "aenderung.freigegeben.yaml").is_file()
+    eintrag = json.loads((umg.ordner / "freigabe.json").read_text(encoding="utf-8"))["aenderung.yaml"]
+    assert eintrag["pruefsumme"] == pruefsumme(BASIS)
+    assert pruefe_freigabe(pfad, BASIS) == eintrag
+
+
+def test_nach_der_freigabe_aendert_bauweg_nichts_anforderung_schon(umg):
+    pfad = _schreibe(umg, BASIS)
+    freigeben(pfad)
+    bauweg = copy.deepcopy(BASIS)
+    bauweg["punkte"][2]["feature"].update(bezug={"u": "+rand", "v": "mitte"}, flaeche={"nahe": [1, 30, 20]})
+    pruefe_freigabe(pfad, bauweg)  # Bauweg geändert: keine Ausnahme
+    anders = copy.deepcopy(BASIS)
+    anders["bestand"]["sha256"] = "0" * 64
+    with pytest.raises(FreigabeFehler) as e:
+        pruefe_freigabe(pfad, anders)
+    assert e.value.daten["code"] == "FREIGABE_VERALTET"
+
+
+def test_freigeben_weist_gleichung_in_zoll_datei_ab(umg):
+    """Der Bau setzte `neu` sonst als Zoll."""
+    schreibe_aufnahme(umg.r, "a1", 1, aufnahme(einheitensystem=3))
+    pfad = _schreibe(umg, punkte({"id": "g1", "typ": "gleichung", "variable": "L", "alt": 100, "neu": 110,
+                                  "folgen": ["D1@Skizze1", "D3@Skizze2"]}))
+    with pytest.raises(SpecFehler) as e:
+        freigeben(pfad)
+    assert codes(e.value.daten["befunde"]) == [BESTAND_EINHEIT]
+    assert not (umg.ordner / "freigabe.json").exists() and not (umg.ordner / "aenderung.freigegeben.yaml").exists()
+
+
+def test_freigeben_weist_gesteuerte_unterdrueckung_ab(umg):
+    schreibe_aufnahme(umg.r, "a1", 1, _mit_gleichung("Fase3"))
+    with pytest.raises(SpecFehler) as e:
+        freigeben(_schreibe(umg, punkte({"id": "u1", "typ": "aufheben", "feature": "Fase3"})))
+    assert codes(e.value.daten["befunde"]) == [MASS_GESTEUERT]
+
+
+def test_freigeben_prueft_auch_neue_features(umg):
+    spec = copy.deepcopy(BASIS)
+    spec["punkte"][2]["feature"]["groesse"] = "M999"
+    with pytest.raises(SpecFehler):
+        freigeben(_schreibe(umg, spec))
+    assert not (umg.ordner / "freigabe.json").exists()
+
+
+def test_freigeben_auf_veralteter_aufnahme(umg):
+    schreibe_aufnahme(umg.r, "a1", 2, aufnahme(datei={**AUFNAHME["datei"], "sha256": "0" * 64}))
+    with pytest.raises(BestandFehler) as e:
+        freigeben(_schreibe(umg, BASIS))
+    assert e.value.daten["code"] == BESTAND_VERALTET and not (umg.ordner / "freigabe.json").exists()
 
 
 def test_validieren_weiche(umg, capsys):

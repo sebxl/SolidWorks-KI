@@ -113,6 +113,7 @@ def test_verknuepfte_gleichungen_lehnt_aufnehmen_ab(auftrag):
         befehle.aufnehmen(kollege, auftrag)
     assert e.value.daten["code"] == BESTAND_REFERENZ_EXTERN
     assert [Path(p).name for p in e.value.daten["referenzen"]] == [datei.name], e.value.daten
+    assert not bestand_ordner(r, auftrag, 1).exists()  # die Referenz zeigt sich erst im offenen Dokument, die Kopie geht wieder weg
 
 
 TASCHE = "D1@Schnitt-Linear austragen1"

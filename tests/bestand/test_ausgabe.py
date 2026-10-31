@@ -7,12 +7,14 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from swki import aenderungen as aenderungen_modul
 from swki.aenderungen import sha256_datei
 from swki.auftrag import lauf_datei, lauf_ordner
 from swki.bestand import ausgabe as modul
 from swki.bestand import bau
+from swki.bestand import spec as spec_modul
 from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, BESTAND_UNBEKANNT, BESTAND_VERALTET,
                                  LAUF_NICHT_BESTANDEN, BestandFehler)
@@ -67,6 +69,18 @@ class Ausgabe(Lauf):
 
     def ausgabe_ordner(self):
         return self.arbeit / "A" / "ausgabe"
+
+    def umziehen(self, inhalt=b"Stand des Kollegen"):
+        """Der Kollege hat weitergearbeitet: Aufnahme 2 vom neuen Original, die Spec zieht um und ist neu freigegeben, kein neuer Lauf.
+        Rückgabe: die neue SHA-256."""
+        sha = hashlib.sha256(inhalt).hexdigest()
+        self.original.write_bytes(inhalt)
+        schreibe_aufnahme(self.r, "A", 2, {**self.aufnahme, "datei": {**self.aufnahme["datei"], "sha256": sha}})
+        spec = yaml.safe_load(self.spec_pfad.read_text(encoding="utf-8"))
+        spec["bestand"].update(sha256=sha, aufnahme=2)
+        self.spec_pfad.write_text(yaml.safe_dump(spec, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        spec_modul.freigeben(self.spec_pfad)
+        return sha
 
 
 @pytest.fixture
@@ -274,6 +288,48 @@ def test_ausgabe_nicht_auf_veralteter_aufnahme(u):
     assert e.value.daten["code"] == BESTAND_VERALTET and not u.ausgabe_ordner().exists()
 
 
+def test_alter_lauf_nach_umzug_der_spec(u):
+    """Original, Aufnahme und Spec passen wieder zueinander, nur der Lauf nicht: Ihm fehlt die Arbeit des Kollegen, und
+    `_original_warnung` schweigt, weil das Original zu Aufnahme 2 passt."""
+    u.voll()
+    spec = u.gebaut()
+    u.umziehen()
+    for aufruf in (modul.ausgabe, modul.ausgabe_liste):
+        with pytest.raises(BestandFehler) as e:
+            aufruf(spec)
+        d = e.value.daten
+        assert d["code"] == BESTAND_VERALTET and d["lauf"] == 1
+        assert d["protokoll"]["aufnahme"] == 1 and d["spec"]["aufnahme"] == 2
+    assert not u.ausgabe_ordner().exists()
+
+
+def test_alter_lauf_nach_umzug_auch_mit_lauf_nummer(u):
+    u.voll()
+    spec = u.gebaut()
+    u.umziehen()
+    with pytest.raises(BestandFehler) as e:
+        modul.ausgabe(spec, 1)
+    assert e.value.daten["code"] == BESTAND_VERALTET and not u.ausgabe_ordner().exists()
+
+
+def test_lauf_passend_zur_umgezogenen_spec_geht_aus(u):
+    u.voll()
+    spec = u.gebaut()
+    sha = u.umziehen()
+    u.aendere_protokoll(lambda p: p.update(bestand={"sha256": sha, "aufnahme": 2}))
+    assert [d["datei"] for d in modul.ausgabe(spec)["dateien"]] == ["Lagerdeckel.SLDPRT"]
+
+
+def test_lauf_ohne_vermerk_der_aufnahme(u):
+    """Ein älterer Lauf: Woher er stammt, ist unbekannt."""
+    u.voll()
+    spec = u.gebaut()
+    u.aendere_protokoll(lambda p: p.pop("bestand"))
+    with pytest.raises(BestandFehler) as e:
+        modul.ausgabe(spec)
+    assert e.value.daten["code"] == BESTAND_VERALTET and e.value.daten["protokoll"] is None and not u.ausgabe_ordner().exists()
+
+
 def test_ausgabe_braucht_die_freigabe(u):
     u.voll()
     spec = u.gebaut()
@@ -304,7 +360,7 @@ def test_cli_ausgabe(u, monkeypatch):
 # --- Status, Bericht, swki aenderungen ---
 
 def test_status_und_bericht_mit_aenderung(u):
-    punkt = {**MASS, "folgen": ["D5@Skizze5"]}
+    punkt = {"id": "p1", "typ": "mass", "was": "Spalt", "mass": "D1@S5", "alt": 8, "neu": 9, "folgen": ["D2@S6"]}
     spec = u.gebaut(punkt)
     st = befehle.status(spec)
     assert st["empfehlung"] == "bestanden" and st["laeufe"][0]["bestanden"] is True
@@ -313,7 +369,7 @@ def test_status_und_bericht_mit_aenderung(u):
     text = (spec.parent / "bericht.md").read_text(encoding="utf-8")
     assert erg["status"] == "bestanden" and erg["bericht"] == str(spec.parent / "bericht.md")
     assert "# Bericht Lagerdeckel_Rev (Auftrag A)" in text and "## Änderung am Bestand" in text
-    assert "| p1 | mass | Abstand: D2@Skizze4: 40 → 45 | D5@Skizze5 |" in text  # Punkt mit Alt- und Neuwert und Folgen
+    assert "| p1 | mass | Spalt: D1@S5: 8 → 9 | D2@S6 |" in text  # Punkt mit Alt- und Neuwert und Folgen
     assert "Standard" in text and "hinzu" in text and "500" in text and "x -40…-30" in text  # Differenz mit Lage und Volumen
     assert "Variante B: keine Abweichung" in text
     assert "Lagerdeckel.SLDPRT" in text and str(u.original) in text  # Ausgabeliste mit Originalpfad
@@ -342,6 +398,25 @@ def test_bericht_nennt_nur_duenne_abweichung_nicht_nachgewiesen(u):
     befehle.bericht(spec)
     text = (spec.parent / "bericht.md").read_text(encoding="utf-8")
     assert "- Standard: nicht nachgewiesen: nur im Mittel dünn" in text and "in keinem Bereich" in text
+
+
+def test_bericht_nennt_bereich_offen_nicht_sicher(u):
+    """Der Körper liegt vielleicht im Bereich: „in keinem Bereich“ wäre so falsch wie „Bereich 0“."""
+    zeile = {**DIFFERENZEN["Standard"][0], "bereich": None, "bereich_offen": 0}
+    spec = u.gebaut(bestanden=False, urteil=None, differenzen={"Standard": [zeile]},
+                    pruefungen=[{"id": "bereich", "ok": None, "konfiguration": "Standard", "ist": [zeile], "hinweis": "Boxen decken nicht"}])
+    befehle.bericht(spec)
+    text = (spec.parent / "bericht.md").read_text(encoding="utf-8")
+    assert "nicht sicher im Bereich 0" in text and "in keinem Bereich" not in text
+
+
+def test_bericht_nach_umzug_nennt_den_grund(u):
+    u.voll()
+    spec = u.gebaut()
+    u.umziehen()
+    assert befehle.bericht(spec)["status"] == "bestanden"
+    text = (spec.parent / "bericht.md").read_text(encoding="utf-8")
+    assert "Ausgabeliste nicht ermittelt" in text and "Aufnahme 1" in text and "Aufnahme 2" in text
 
 
 def test_bericht_ohne_bestandenen_lauf_nennt_keine_ausgabe(u):

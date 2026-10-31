@@ -32,7 +32,8 @@ genannten Punkte. Der **Präzisionsschutz** weist das nach. Fünf Regeln gelten 
   (`MASS_GESTEUERT`), tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen. Dem Nutzer die Tabelle nennen; nur auf seine
   Anweisung geht es über `skript`.
 - **Gleichungsgesteuerte Unterdrückung:** Steht das Feature links in einer Gleichung, weist `validieren` `unterdruecken` und `aufheben` ab (`MASS_GESTEUERT`, Meldung nennt
-  die Gleichung). An der Quelle ändern: `gleichung`-Punkt. Nennt eine Gleichung das Feature nur rechts, steuert sie es nicht.
+  die Gleichung). Etappe 1 hat dafür keinen Punkt-Weg: dem Nutzer die Gleichung nennen und ihn fragen, nicht über einen `gleichung`- oder `skript`-Punkt umgehen. Ein `gleichung`-Punkt
+  änderte den Zustand ohne erlaubenden Punkt und endete im Mangel `konfigurationen`, den kein Nachbessern behebt. Nennt eine Gleichung das Feature nur rechts, steuert sie es nicht.
 
 ## 2. Aufnehmen
 
@@ -108,16 +109,17 @@ pruefung?:
   Längenänderung wandert. Ein Körper über zwei Bereiche passt in keinen. Solche Punkte bekommen einen gemeinsamen Bereich, oder der Nutzer entscheidet.
 - `features`-Bereiche passen für ein Feature, das nur verschwindet oder sich ändert, Boxen überall sonst. Berührt ein Körper mehrere Features eines Bereichs, müssen deren Boxen ihn
   decken: Berühren sie sich nicht, ist das Mangel `bereich`; bleibt nur eine Ecke seines Hüllquaders frei, `ok: None` mit `bereich_offen` in `differenzen`.
+- Ein Feature samt Kind, das seitlich übersteht: gleich eine Box nehmen, der `features`-Bereich ergibt sonst `ok: None`.
 
 ## 5. Validieren, Freigabe
 
-`swki validieren <spec>` bis `gueltig`. `hinweise` wie beim Teil abarbeiten.
+`swki validieren <spec>` bis `gueltig`. `hinweise` wie beim Teil abarbeiten. `swki freigeben` prüft genauso und weist bei Befunden ab.
 
 | Befund | Vorgehen |
 |---|---|
 | `BESTAND_REFERENZ` | Name aus der Aufnahme nehmen |
 | `BESTAND_ALTWERT` | Zuordnung falsch oder Wert anders als genannt: Ziel neu prüfen, sonst den Nutzer fragen |
-| `MASS_GESTEUERT` | an der Quelle ändern; Tabelle: §1 |
+| `MASS_GESTEUERT` | Maß: an der Quelle ändern; Tabelle und gleichungsgesteuerte Unterdrückung: §1, Nutzer fragen |
 | `BESTAND_EINHEIT` | §1, `einheit` nennt die Einheit der Datei |
 | `FOLGEN_ABWEICHEND` | die `erwartet`-Liste prüfen und eintragen |
 | `KINDER_FEHLEN` | `fehlen` in `kinder` eintragen, in der Freigabe-Vorlage nennen |
@@ -148,7 +150,7 @@ Anforderung: Nutzer fragen, neue Freigabe. Wiederholt sich eine Lücke, Skill `c
 | Code | Vorgehen |
 |---|---|
 | `BESTAND_ABWEICHEND` | jemand hat die Bestandskopie verändert: Nutzer fragen, die Kopie bleibt unberührt |
-| `BESTAND_VERALTET`, `BESTAND_UNBEKANNT` | Spec auf die jüngste Aufnahme stellen, `alt`-Werte neu prüfen, neue Freigabe |
+| `BESTAND_VERALTET`, `BESTAND_UNBEKANNT` | Spec auf die jüngste Aufnahme stellen, `alt`-Werte neu prüfen, neue Freigabe. Nennt die Meldung einen Lauf: er ist aus einem anderen Stand gebaut, §7 |
 | `BESTAND_VERSION_AELTER` / `BESTAND_VERSION_NEUER` | §5 / Datei stammt aus neuerem SolidWorks: Nutzer informieren |
 | `MANUELL_GEAENDERT` | wie Skill `konstruieren` §5 |
 | Mängel `bereich`, `masse`, `baum`, `konfigurationen` | etwas hat sich außerhalb der Punkte geändert: Bauweg korrigieren, Lage aus `differenzen` im Prüfbericht |
@@ -164,3 +166,5 @@ Nach `bestanden`: `swki bestand ausgabe <spec> [--lauf n]` kopiert die geändert
 - `BESTAND_ORIGINAL_GEAENDERT`: Das Original ist neuer als die Aufnahme, Zurückkopieren überschriebe Arbeit des Kollegen. Nutzer fragen, ggf. neu aufnehmen.
 - `BESTAND_NICHT_LESBAR`: Das Original fehlt oder ist gesperrt, ob es sich geändert hat, ist unbekannt. Die Ausgabe warnt nur, den Nutzer vor dem Zurückkopieren fragen.
 - `LAUF_NICHT_BESTANDEN`: Ausgegeben wird nur ein Lauf mit bestandenen Code-Prüfungen und Prüfer-Urteil.
+- `BESTAND_VERALTET`: Es gibt eine neuere Aufnahme, oder der Lauf ist aus einem anderen Stand gebaut, als die Spec nennt (Spec umgezogen, älterer Lauf ohne Vermerk). Dem Lauf fehlt womöglich die
+  Arbeit des Kollegen, `ausgabe` und `pruefen` verweigern ihn. Neu bauen und prüfen. `swki bericht` läuft trotzdem und nennt den Grund unter „Ausgabe“.

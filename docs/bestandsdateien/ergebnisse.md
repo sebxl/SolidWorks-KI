@@ -226,7 +226,8 @@ Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`
 ### Abschlussreview (live, 2026-10-31)
 
 - **`VersionHistory` und `GetDocumentDependencies2` laufen am Originalpfad, nur lesend, bewusst vor der Kopie:** Eine neuere oder referenzierende Datei hinterlässt so keine
-  Aufnahme. Beide öffnen kein Dokument (Zeile b, `GetDocuments` bleibt leer); `OpenDoc6` läuft nur an der Kopie.
+  Aufnahme. Beide öffnen kein Dokument (Zeile b, `GetDocuments` bleibt leer); `OpenDoc6` läuft nur an der Kopie. Zeigt sich die Referenz erst im offenen Dokument (Gleichungsdatei, nächster
+  Punkt), entfernt `aufnehmen` `bestand-<n>/` samt schreibgeschützter Kopie wieder; der Ordner machte sonst jede Spec auf die Aufnahme davor zu `BESTAND_VERALTET`.
 - **Mit einer Datei verknüpfte Gleichungen sieht nur `IEquationMgr`:** An einer verknüpften Kopie des Musters liefern `GetDocumentDependencies2` und
   `ListExternalFileReferences` beide nichts, `LinkToFile` True und `FilePath` den gespeicherten Pfad. Vorher `False` und `""`. Gesetzt wird `FilePath` vor `LinkToFile`, wie der Index verlangt. Die Probe steht in `test_verknuepfte_gleichungen_lehnt_aufnehmen_ab`.
 - **Einheiten:** `swUnitSystem_e`: 1 CGS, 2 MKS, 3 IPS, 4 Custom, 5 MMGS. Kopie des Musters im offenen Dokument auf IPS gestellt (`SetUserPreferenceInteger(263, 0, 3)`, nicht gespeichert):
@@ -256,6 +257,8 @@ Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`
 
 - **Abnahme an einer echten Kollegen-Datei** (Spec §12): Die Datei stellt der Nutzer bereit; Kennzahlen kommen hierher.
 - Tabellengesteuerte Unterdrückungszustände ohne Excel erkennen (siehe Zeile b, Entscheidung F4).
+- **`"$STATE@Fase1"`:** Die Probe im Abschlussreview sah nur, dass `Add2` die Schreibweise annimmt und sie einmal nichts aufhob. Das braucht eine saubere eigene Probe (frisches Dokument, beide
+  Richtungen, Neuaufbau). Steuert sie doch, muss `validieren` sie erkennen; heute sähe es sie nicht, und der Neuaufbau nähme einen `unterdruecken`-Punkt zurück.
 - Externe Referenzen außer abgeleitetem Teil und Gleichungsdatei (gespiegelt, im Kontext): `GetDocumentDependencies2` nur am abgeleiteten Teil gemessen. Verhalten bei geändertem Basisteil
   nicht geprüft; Etappe 1 lehnt solche Teile ab.
 - **Laufzeit großer Dateien:** Aufnahme, Differenz und Prüfung nur bis 23 Flächen gemessen.

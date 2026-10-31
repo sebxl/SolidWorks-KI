@@ -7,7 +7,7 @@ from pathlib import Path
 
 from swki.bestand import ausgabe
 from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, kopiere_original, lade_aufnahme, pruefe_format,
-                                 schreibe_aufnahme, sha_original)
+                                 schreibe_aufnahme, sha_original, verwirf_aufnahme)
 from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
 from swki.bestand.spec import einheit_text
 from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_mass)
@@ -71,8 +71,9 @@ def _lies_kopie(app, kopie: Path, ordner: Path) -> dict:
 
 
 def aufnehmen(original: Path, auftrag: str) -> dict:
-    """Spec §5.1/5.2. Prüfungen ohne Öffnen vor der Kopie, damit eine abgelehnte Datei keine Aufnahme hinterlässt. Ob zu lesen
-    ist, entscheidet das fehlende `bestand.json`, nicht `neu`: Scheiterte das Lesen, liegt die Kopie schon da."""
+    """Spec §5.1/5.2. Prüfungen ohne Öffnen vor der Kopie, damit eine abgelehnte Datei keine Aufnahme hinterlässt; zeigt sich die
+    Referenz erst im offenen Dokument, wird der Ordner wieder entfernt. Ob zu lesen ist, entscheidet das fehlende `bestand.json`, nicht
+    `neu`: Scheiterte das Lesen, liegt die Kopie schon da und das Lesen lässt sich nachholen."""
     pruefe_format(original)
     sha_original(original)  # BESTAND_NICHT_LESBAR, bevor SolidWorks gefragt wird
     r = lade_rechner()
@@ -86,7 +87,13 @@ def aufnehmen(original: Path, auftrag: str) -> dict:
     ordner = bestand_ordner(r, auftrag, nummer)
     if (ordner / AUFNAHME_DATEI).is_file():
         return zusammenfassung(auftrag, nummer, lade_aufnahme(r, auftrag, nummer), ordner, neu=False)
-    daten = {**_lies_kopie(app, kopie["pfad"], ordner), "sw_jahr": r.sw_jahr,
+    try:
+        gelesen = _lies_kopie(app, kopie["pfad"], ordner)
+    except BestandFehler as e:
+        if e.daten["code"] == BESTAND_REFERENZ_EXTERN:  # abgelehnt, auch wenn die Kopie aus einem abgebrochenen Versuch stammt
+            verwirf_aufnahme(ordner)
+        raise
+    daten = {**gelesen, "sw_jahr": r.sw_jahr,
              "datei": {"name": kopie["pfad"].name, "original": str(pfad), "sha256": kopie["sha256"], "versionen": versionen,
                        "version_aelter": aelter}}
     schreibe_aufnahme(r, auftrag, nummer, daten)

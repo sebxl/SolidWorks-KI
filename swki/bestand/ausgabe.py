@@ -2,7 +2,8 @@
 `<arbeitsordner>/<auftrag>/ausgabe/`, unter dem Originalnamen. Zurückkopiert wird nie von swki: Der Nutzer tut es selbst.
 
 Ausgegeben wird nur, was `protokoll.dateien` als Ergebnis des Laufs nennt, nie etwas, das sonst im Lauf-Ordner liegt (Vorher-Kopie,
-Bilder). Jede Datei muss noch die geprüfte sein (SHA-256 aus dem Bauprotokoll) und im Lauf-Ordner liegen. „Geändert“ heißt: andere
+Bilder). Der Lauf muss aus dem Stand gebaut sein, auf den die Spec zeigt (`protokoll.bestand`), sonst fehlte ihm die Arbeit des
+Kollegen. Jede Datei muss noch die geprüfte sein (SHA-256 aus dem Bauprotokoll) und im Lauf-Ordner liegen. „Geändert“ heißt: andere
 SHA-256 als die Bestandskopie. Das Original wird nur gelesen (SHA-256), nie geöffnet oder beschrieben.
 
 Auf Warnungen wird trotzdem kopiert (`warnungen: [{code, meldung}]`): Das Original kann inzwischen neuer sein, gesperrt oder weg, und
@@ -17,7 +18,7 @@ from swki.auftrag import auftrag_name, lauf_datei, lauf_ordner
 from swki.bestand.ablage import bestand_ordner
 from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, LAUF_NICHT_BESTANDEN,
                                  BestandFehler)
-from swki.bestand.spec import aufnahme_zu, lade_aenderung
+from swki.bestand.spec import aufnahme_zu, lade_aenderung, pruefe_lauf_bestand
 from swki.cli import SwkiFehler
 from swki.konfig import Rechner, lade_rechner
 from swki.pruefung.schleife import lies_laeufe
@@ -124,6 +125,7 @@ def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
     r, auftrag = lade_rechner(), auftrag_name(spec_pfad)
     lauf = _bestandener_lauf(spec_pfad, auftrag, lauf)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
+    pruefe_lauf_bestand(spec, protokoll, lauf)  # BESTAND_VERALTET
     ordner = lauf_ordner(r, auftrag, lauf)
     aufnahme = {**aufnahme_zu(spec, spec_pfad), "nummer": spec["bestand"]["aufnahme"]}  # BESTAND_UNBEKANNT, BESTAND_VERALTET
     original = Path(aufnahme["datei"]["original"])
@@ -144,8 +146,9 @@ def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
 
 
 def ausgabe_liste(spec_pfad: Path, lauf: int | None = None) -> dict:
-    """Was `ausgabe` täte, ohne etwas zu schreiben (für den Bericht). Fehler wie bei `ausgabe`: `LAUF_NICHT_BESTANDEN`, Lauf-Datei
-    verändert, Freigabe veraltet."""
+    """Was `ausgabe` täte, ohne etwas zu schreiben (für den Bericht). Fehler wie bei `ausgabe`: `LAUF_NICHT_BESTANDEN`,
+    `BESTAND_VERALTET` (neuere Aufnahme, oder der Lauf ist aus einem anderen Stand gebaut, als die Spec nennt), Lauf-Datei verändert,
+    Freigabe veraltet."""
     return _plane(spec_pfad, lauf)[0]
 
 

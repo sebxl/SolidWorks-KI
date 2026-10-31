@@ -6,7 +6,7 @@ import yaml
 
 from swki.bestand.spec import bauweg_frei, freigeben, lade_aenderung
 from swki.cli import main
-from swki.spec.freigabe import FreigabeFehler, pruefe_freigabe, pruefsumme
+from swki.spec.freigabe import pruefsumme
 from swki.spec.laden import SpecFehler, art_der_datei, plausibel_befunde
 
 SHA = "9a1c" * 16
@@ -282,18 +282,7 @@ def test_max_nachbesserungen_aendert_pruefsumme_nicht():
 
 # --- validieren, freigeben ---
 
-# validieren gegen die Aufnahme (Ausgabe, Weiche): tests/bestand/test_validieren.py
-
-
-def test_freigabe_weiche_legt_kopie_an(tmp_path, capsys):
-    pfad = _schreibe(tmp_path, BEISPIEL)
-    assert main(["freigeben", str(pfad)]) == 0
-    erg = json.loads(capsys.readouterr().out)
-    assert erg["art"] == "aenderung" and erg["pruefsumme"] == pruefsumme(BEISPIEL)
-    assert (tmp_path / "aenderung.freigegeben.yaml").is_file()
-    eintrag = json.loads((tmp_path / "freigabe.json").read_text(encoding="utf-8"))["aenderung.yaml"]
-    assert eintrag["pruefsumme"] == pruefsumme(BEISPIEL)
-    assert pruefe_freigabe(pfad, BEISPIEL) == eintrag
+# validieren und freigeben gegen die Aufnahme (Ausgabe, Weiche): tests/bestand/test_validieren.py
 
 
 def test_validieren_weiche_meldet_befunde(tmp_path, capsys):
@@ -301,18 +290,6 @@ def test_validieren_weiche_meldet_befunde(tmp_path, capsys):
     del spec["punkte"][0]["alt"]
     assert main(["validieren", str(_schreibe(tmp_path, spec))]) == 1
     assert json.loads(capsys.readouterr().out)["befunde"]
-
-
-def test_nach_der_freigabe_aendert_bauweg_nichts_anforderung_schon(tmp_path):
-    pfad = _schreibe(tmp_path, BEISPIEL)
-    freigeben(pfad)
-    bauweg = spec_mit_feature(bezug={"u": "+rand", "v": "mitte"}, flaeche={"nahe": [1, 30, 20]})
-    pruefe_freigabe(pfad, bauweg)  # Bauweg geändert: keine Ausnahme
-    anders = copy.deepcopy(BEISPIEL)
-    anders["bestand"]["sha256"] = "0" * 64
-    with pytest.raises(FreigabeFehler) as e:
-        pruefe_freigabe(pfad, anders)
-    assert e.value.daten["code"] == "FREIGABE_VERALTET"
 
 
 def test_freigeben_verweigert_ungueltige_spec(tmp_path):

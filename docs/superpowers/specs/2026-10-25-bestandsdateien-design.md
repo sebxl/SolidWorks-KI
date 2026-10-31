@@ -202,6 +202,8 @@ gesteuerten Maß Erfolg, der nächste Neuaufbau nimmt den Wert still zurück (S1
 **Offen:** Tabellengesteuerte Unterdrückungszustände lassen sich ohne Excel nicht lesen (S18b, Ergebnisse §1). Maße gehen ohne
 Excel.
 *Nachgezogen bei der Umsetzung, 2026-10-31 (Abschlussreview):* Steht das Feature links in einer Gleichung, ist `unterdruecken`/`aufheben` ebenfalls `MASS_GESTEUERT`.
+Dafür gibt es in Etappe 1 keinen Punkt-Weg: Der Vergleich `konfigurationen` lässt einen Wechsel des Unterdrückungszustands nur aus `unterdruecken`/`aufheben` zu, ein `gleichung`-Punkt
+endete in einem Mangel, den kein Nachbessern behebt. Die Meldung nennt die Gleichung, die KI fragt den Nutzer und umgeht den Befund nicht über einen `gleichung`- oder `skript`-Punkt.
 
 - Ein `mass`-Punkt auf ein gesteuertes Maß ist ein Befund `MASS_GESTEUERT` (`validieren`) mit der steuernden Quelle; die KI
   schreibt stattdessen einen `gleichung`-Punkt an der Quelle bzw. ändert das führende verknüpfte Maß. Ist die Quelle eine
@@ -238,6 +240,9 @@ Excel.
 `swki freigeben <aenderung.yaml>` nur nach ausdrücklichem OK des Nutzers. Die Freigabe-Vorlage zeigt je Punkt in Worten, was
 sich ändert, den Altwert, die Folgeänderungen, die Konfigurationen und die Bereiche, dazu je `mass`-Punkt ein Bild mit
 hervorgehobenem Maß (`swki bestand zeige`, §5.3).
+
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Abschlussreview):* `freigeben` prüft voll wie §4.4 und verweigert bei Befunden: `swki bauen` prüft die Punkte nicht gegen die Aufnahme, und
+der Weg für ältere Dateien (`swki freigeben`, `swki bauen --hochstufen`) führt an `swki validieren` vorbei.
 
 Grundsatz der Prüfsumme: **Was geändert wird und wo sich die Geometrie ändern darf, ist Anforderung; wie swki es erreicht, ist
 Bauweg.** Geschützt sind `bestand`, `parameter`, alle Punkte (außer Bauweg-Feldern), `bereiche`, `pruefung`. Bauweg sind die
@@ -439,6 +444,10 @@ für die Baugruppe.
    Zurückkopieren würde Arbeit des Kollegen überschreiben.
 4. Der Nutzer kopiert selbst zurück. swki schreibt nie außerhalb des Arbeitsordners.
 
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Abschlussreview):* Der Bau schreibt `bestand: {sha256, aufnahme}` ins Protokoll. `ausgabe` und `pruefen` verweigern mit `BESTAND_VERALTET` einen
+Lauf, der nicht zu `bestand` der Spec passt oder das Feld nicht trägt: Zieht die Spec auf eine neue Aufnahme um, passt das Original wieder zur Aufnahme und die Warnung aus Schritt 3
+schweigt, dem alten Lauf fehlt aber die Arbeit des Kollegen.
+
 `swki bericht` nennt Punkte, Folgeänderungen, Differenzen, Prüfer-Urteil, Ausgabeliste und „Wirkung auf Baugruppen nicht
 geprüft“, wo zutreffend.
 
@@ -453,7 +462,7 @@ geprüft“, wo zutreffend.
 | `BESTAND_VERSION_AELTER` | `swki bauen` an einer Datei aus älterem SW-Jahr ohne `--hochstufen` |
 | `BESTAND_REFERENZ_FEHLT` | referenzierte Datei nicht gefunden |
 | `BESTAND_REFERENZ_EXTERN` | Teil mit externen Referenzen (Etappe 1) |
-| `BESTAND_UNBEKANNT`, `BESTAND_VERALTET` | keine bzw. nicht die neueste Aufnahme zur Spec |
+| `BESTAND_UNBEKANNT`, `BESTAND_VERALTET` | keine bzw. nicht die neueste Aufnahme zur Spec; `BESTAND_VERALTET` auch für einen Lauf aus einem anderen Stand als dem der Spec (§9) |
 | `BESTAND_ABWEICHEND` | Bestandskopie verändert |
 | `BESTAND_ORIGINAL_GEAENDERT` | Original seit der Aufnahme geändert (Warnung bei `ausgabe`) |
 | `BESTAND_LIZENZ` | Lauf nicht mit einer Vollversion oder Lizenz unbekannt (Warnung bei `ausgabe`) |

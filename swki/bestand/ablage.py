@@ -84,6 +84,15 @@ def kopiere_original(r: Rechner, auftrag: str, original: Path) -> dict:
     return {"nummer": nummer, "pfad": ziel, "sha256": sha, "neu": True}
 
 
+def verwirf_aufnahme(ordner: Path) -> None:
+    """Eine Aufnahme ohne `bestand.json` entfernen, deren Datei erst nach dem Kopieren abgelehnt wurde: Der Ordner zählte sonst als
+    neueste Aufnahme. Die Kopie ist schreibgeschützt, unter Windows ginge sie sonst nicht weg."""
+    kopie = _kopie_in(ordner)
+    if kopie is not None:
+        os.chmod(kopie, stat.S_IWRITE)
+    shutil.rmtree(ordner)
+
+
 def lade_aufnahme(r: Rechner, auftrag: str, nummer: int) -> dict:
     pfad = bestand_ordner(r, auftrag, nummer) / AUFNAHME_DATEI
     if not pfad.is_file():
