@@ -161,8 +161,8 @@ Anforderung: Nutzer fragen, neue Freigabe. Wiederholt sich eine Lücke, Skill `c
 Nach `bestanden`: `swki bestand ausgabe <spec> [--lauf n]` kopiert die geänderten Dateien unter Originalnamen nach `<arbeitsordner>/<auftrag>/ausgabe/` und listet sie mit Originalpfad. Dann
 `swki bericht <spec>`. Dem Nutzer nennen: Ausgabepfad, Originalpfad, Punkte, Prüfer-Urteil, Warnungen, „Wirkung auf Baugruppen nicht geprüft“.
 
-- `BESTAND_LIZENZ`: Rechner A läuft laut API als Student, die Datei trägt das mit. Ob sie sich beim Kollegen mit Vollversion so verwenden lässt, ist nicht gemessen. Vor dem Rückweg an einen
-  Kollegen mit dem Nutzer klären.
+- `BESTAND_LIZENZ`: Der Lauf lief nicht mit einer Vollversion, das kommt nur auf Rechner A vor (Student, nur zum Testen). Die Firmenrechner haben Vollversionen. Ob eine so gespeicherte Datei
+  beim Kollegen anders erscheint, ist nicht gemessen; eine solche Ausgabe nicht ohne Rückfrage an einen Kollegen geben.
 - `BESTAND_ORIGINAL_GEAENDERT`: Das Original ist neuer als die Aufnahme, Zurückkopieren überschriebe Arbeit des Kollegen. Nutzer fragen, ggf. neu aufnehmen.
 - `BESTAND_NICHT_LESBAR`: Das Original fehlt oder ist gesperrt, ob es sich geändert hat, ist unbekannt. Die Ausgabe warnt nur, den Nutzer vor dem Zurückkopieren fragen.
 - `LAUF_NICHT_BESTANDEN`: Ausgegeben wird nur ein Lauf mit bestandenen Code-Prüfungen und Prüfer-Urteil.

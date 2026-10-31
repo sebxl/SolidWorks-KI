@@ -1,11 +1,15 @@
-"""S18f: Musterteil *Lagerdeckel* und Musterbaugruppe *Muster* in „fremdem" Stil (Spec Bestandsdateien §11/§12).
+"""Musterteil *Lagerdeckel* und Musterbaugruppe *Muster* in „fremdem" Stil (Spec Bestandsdateien §11/§12, Spike S18f).
 
 Bewusst über die rohe API, ohne swki.compiler: Der Bestand soll aussehen wie die Datei eines Kollegen – Namen wie von
 SolidWorks vergeben, globale Variable mit Gleichung, verknüpftes Maßpaar, zwei Konfigurationen, unterbestimmte Skizze, ein
-Feature-Typ, den swki nicht kennt (Rippe). Dieses Skript ist die Quelle der Dateien in tests/referenz/bestand/muster/.
+Feature-Typ, den swki nicht kennt (Rippe). Von hier stammen die Dateien in tests/referenz/bestand/muster/.
 
-Gebaut wird im Arbeitsordner (<arbeitsordner>/S18/muster/), nur fertige Dateien werden kopiert. Modell (mm): Platte in der
-Ebene vorne, X -50…50, Y -30…30, Z 0…20; Oberseite Z = 20.
+SolidWorks öffnet keine neueren Dateien und stuft ältere hoch, die Dateien im Git taugen also nur für ihr Jahr (`sw_jahr` in
+bestand.json). Jedes andere Jahr erzeugt sich die Muster einmal selbst nach <arbeitsordner>/BESTAND-MUSTER/<jahr>/, nicht ins Git.
+Neu eingecheckt wird von Hand, samt bestand.json und `sha256` in lagerdeckel_rev.yaml.
+
+Gebaut wird in <arbeitsordner>/BESTAND-MUSTER/<jahr>/bau/, nur fehlerfrei nachgeprüfte Dateien werden kopiert. Modell (mm):
+Platte in der Ebene vorne, X -50…50, Y -30…30, Z 0…20; Oberseite Z = 20.
 
 Soll-Volumen: Platte 120000, Tasche 50×30×8 = -12000, zwei Bohrungen Ø8×20 = -2010,62, Rippe 3×30×5 = +450,
 Fase 2×2/2×100 = -200 → Standard 106239,38 mm³, Variante B (ohne Fase) 106439,38 mm³.
@@ -22,7 +26,7 @@ API (swki api methode, Parameterzahl laut Index):
   ICustomPropertyManager.Add3(4) (swCustomInfoText = 30, swCustomPropertyReplaceValue = 2)
   IAssemblyDoc.AddComponent5(8), .FixComponent(0), .AddMate5(15)
 
-Aufruf (SolidWorks offen, frei): ..\\..\\..\\.venv\\Scripts\\python.exe -m spikes.s18_muster
+Aufruf (SolidWorks offen, frei): .venv\\Scripts\\python.exe -m werkzeuge.bestand_muster
 """
 
 import json
@@ -35,8 +39,12 @@ import win32com.client
 
 from swki.compiler.eigenschaften import finde_material  # nur die Namenssuche in der Materialdatenbank
 from swki.kaufteile.sw_kaufteil import importiere
-from swki.konfig import PROJEKT, lade_rechner
+from swki.konfig import PROJEKT, Rechner, lade_rechner
 from swki.verbindung import byref_long, byref_str, callout_leer, mm, r8_array, verbinde
+
+MUSTER_GIT = PROJEKT / "tests" / "referenz" / "bestand" / "muster"
+DATEIEN = ("Lagerdeckel.SLDPRT", "gm42-10.SLDPRT", "Muster.SLDASM")
+SOLL_VOLUMEN = {"Standard": 106239.38, "Variante B": 106439.38}  # mm³, Rechnung im Modulkopf
 
 SW_INPUT_DIM_VAL_ON_CREATE = 10   # swUserPreferenceToggle_e
 SW_SAVEAS_SILENT = 1              # swSaveAsOptions_e
@@ -369,11 +377,44 @@ def nachpruefen(app, ordner: Path) -> dict:
     return d
 
 
+def abweichungen(n: dict) -> list[str]:
+    """Was am Ergebnis von `nachpruefen` gegen ein Muster spricht; eine andere Vorlage oder ein neues Jahr zeigt sich hier."""
+    aus = []
+    for k, soll in SOLL_VOLUMEN.items():
+        ist = n.get(k)
+        if ist is None:
+            aus.append(f"Konfiguration {k} fehlt")
+        elif not ist["neuaufbau"] or ist["whats_wrong"]:
+            aus.append(f"{k}: Neuaufbau {ist['neuaufbau']}, What's Wrong {ist['whats_wrong']}")
+        elif abs(ist["volumen"] - soll) > 0.02:
+            aus.append(f"{k}: Volumen {ist['volumen']} statt {soll} mm³")
+    b = n["baugruppe"]
+    if n["oeffnen_baugruppe"]["fehler"] or not b["neuaufbau"] or b["whats_wrong"] or len(b["komponenten"]) != 2:
+        aus.append(f"Baugruppe: {n['oeffnen_baugruppe']}, {b}")
+    return aus
+
+
+class MusterFehlt(RuntimeError):
+    pass
+
+
+def muster_ordner(r: Rechner) -> Path:
+    """Ordner der Muster für das SolidWorks-Jahr dieses Rechners: die Dateien im Git oder die hier erzeugten."""
+    aufnahme = json.loads((MUSTER_GIT.parent / "bestand.json").read_text(encoding="utf-8"))
+    if r.sw_jahr == aufnahme["sw_jahr"]:
+        return MUSTER_GIT
+    ordner = r.arbeitsordner / "BESTAND-MUSTER" / str(r.sw_jahr)
+    fehlt = [n for n in DATEIEN if not (ordner / n).is_file()]
+    if fehlt:
+        raise MusterFehlt(f"Muster für SolidWorks {r.sw_jahr} fehlen ({', '.join(fehlt)}): -m werkzeuge.bestand_muster ausführen")
+    return ordner
+
+
 def main() -> None:
     r = lade_rechner()
     app = verbinde(r.sw_jahr)
-    ordner = r.arbeitsordner / "S18" / "muster"
-    ziel = PROJEKT / "tests" / "referenz" / "bestand" / "muster"
+    ziel = r.arbeitsordner / "BESTAND-MUSTER" / str(r.sw_jahr)
+    ordner = ziel / "bau"
     if ordner.exists():
         shutil.rmtree(ordner)
     ordner.mkdir(parents=True)
@@ -389,10 +430,13 @@ def main() -> None:
     finally:
         app.SetUserPreferenceToggle(SW_INPUT_DIM_VAL_ON_CREATE, alt)
     d["sekunden"] = round(time.monotonic() - t0, 1)
-    ziel.mkdir(parents=True, exist_ok=True)
-    for name in ("Lagerdeckel.SLDPRT", "gm42-10.SLDPRT", "Muster.SLDASM"):
-        shutil.copy2(ordner / name, ziel / name)
+    d["abweichungen"] = abweichungen(d["nachpruefen"])
     print(json.dumps(d, indent=1, ensure_ascii=False, default=str))
+    if d["abweichungen"]:
+        raise SystemExit(f"Kein Muster für SolidWorks {r.sw_jahr}, nichts übernommen: {d['abweichungen']}")
+    for name in DATEIEN:
+        shutil.copy2(ordner / name, ziel / name)
+    print(f"Muster für SolidWorks {r.sw_jahr} in {ziel}")
 
 
 if __name__ == "__main__":
