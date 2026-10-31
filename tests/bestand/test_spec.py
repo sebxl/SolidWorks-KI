@@ -4,7 +4,7 @@ import json
 import pytest
 import yaml
 
-from swki.bestand.spec import bauweg_frei, freigeben, lade_aenderung, validieren
+from swki.bestand.spec import bauweg_frei, freigeben, lade_aenderung
 from swki.cli import main
 from swki.spec.freigabe import FreigabeFehler, pruefe_freigabe, pruefsumme
 from swki.spec.laden import SpecFehler, art_der_datei, plausibel_befunde
@@ -282,10 +282,7 @@ def test_max_nachbesserungen_aendert_pruefsumme_nicht():
 
 # --- validieren, freigeben ---
 
-def test_validieren_gibt_pruefsumme_und_keine_hinweise(tmp_path):
-    erg = validieren(_schreibe(tmp_path, BEISPIEL))
-    assert erg["gueltig"] is True and erg["art"] == "aenderung" and erg["name"] == "Lagerdeckel_Rev"
-    assert erg["pruefsumme"] == pruefsumme(BEISPIEL) and erg["hinweise"] == [] and erg["punkte"] == 6
+# validieren gegen die Aufnahme (Ausgabe, Weiche): tests/bestand/test_validieren.py
 
 
 def test_freigabe_weiche_legt_kopie_an(tmp_path, capsys):
@@ -297,13 +294,6 @@ def test_freigabe_weiche_legt_kopie_an(tmp_path, capsys):
     eintrag = json.loads((tmp_path / "freigabe.json").read_text(encoding="utf-8"))["aenderung.yaml"]
     assert eintrag["pruefsumme"] == pruefsumme(BEISPIEL)
     assert pruefe_freigabe(pfad, BEISPIEL) == eintrag
-
-
-def test_validieren_weiche(tmp_path, capsys):
-    pfad = _schreibe(tmp_path, BEISPIEL)
-    assert main(["validieren", str(pfad)]) == 0
-    erg = json.loads(capsys.readouterr().out)
-    assert erg["gueltig"] is True and erg["art"] == "aenderung"
 
 
 def test_validieren_weiche_meldet_befunde(tmp_path, capsys):
