@@ -148,6 +148,10 @@ Referenz `tests/referenz/bestand/lagerdeckel_rev.yaml`, sechs Punkte, Lauf 1 ohn
   Achsen gegen `positionen` (Toleranz 0,01 mm). `masse_pruefen` kennt keinen Messpunkt auf einer Bohrungsachse, `{punkt}` gegen eine
   Fläche prüft nur die Fläche. Live belegt: Normbohrung (auch versetzt als Mangel), Formschräge, Stirnrad; Zahnstange nur als Baustein
   des Teils.
+- **`RPC_E_DISCONNECTED` beim ersten Bau nach `sw_neustart`, jetzt nachstellbar:** Referenz Lauf 2 brach in p5 (Normbohrung) ab, SolidWorks lief weiter,
+  nichts gespeichert, kein Dokument offen. Probe, je Versuch Neustart und dann ein Bau: ok, Fehler, ok, ok. Ohne Neustart lief derselbe Bau sofort durch
+  (Lauf 3). Das passt zum Fall aus Task 6 (erster Bau der Sitzung, unter 1 GB) und widerspricht dem dortigen Schluss, es sei nicht wiederholbar. Ursache
+  offen; Stelle im Punkt `feature`. Trifft auch `swki durchlauf --neustart`. Ein Fehlversuch zählt als Lauf.
 - **Eine Variable, eine Folge:** Das Muster hat nur `"D1@Skizze1" = "L"`, ein `gleichung`-Punkt auf `L` hat genau eine Folge. Die zweite
   Folge der Referenz kommt aus dem verknüpften Maß (`Bohrung_D@Skizze4`).
 - **S18a am Ergebnis (`test_datei_id_bleibt`):** Ausgabe neben einer Kopie der Musterbaugruppe: kein IdMismatch, keine fehlende
