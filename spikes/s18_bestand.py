@@ -61,7 +61,7 @@ from swki.verbindung import byref_long, byref_str, byref_variant, callout_leer, 
 
 R = lade_rechner()
 S18 = R.arbeitsordner / "S18"
-MUSTER = PROJEKT / "tests" / "referenz" / "bestand" / "muster"  # stammt aus spikes/s18_muster.py
+MUSTER = PROJEKT / "tests" / "referenz" / "bestand" / "muster"  # stammt aus werkzeuge/bestand_muster.py
 ERGEBNIS = PROJEKT / "docs" / "bestandsdateien"
 TEIL, ASM, STEPTEIL = "Lagerdeckel.SLDPRT", "Muster.SLDASM", "gm42-10.SLDPRT"
 SW_OPEN_SILENT, SW_OPEN_READONLY = 1, 2

@@ -5,7 +5,7 @@ Spec: [2026-10-25-bestandsdateien-design.md](../superpowers/specs/2026-10-25-bes
 
 ## 1. Spike S18 (2026-10-31, live)
 
-Rechner A, SW 2025 (33.5.0, Lizenztyp 2 = Student), Skripte `spikes/s18_muster.py`, `spikes/s18_bestand.py`, Rohdaten
+Rechner A, SW 2025 (33.5.0, Lizenztyp 2 = Student), Skripte `werkzeuge/bestand_muster.py` (damals `spikes/s18_muster.py`), `spikes/s18_bestand.py`, Rohdaten
 `docs/bestandsdateien/s18_<zeile>.json`. Alles an selbst erzeugten Dateien unter `<arbeitsordner>/S18/`. Zeit und Speicher je
 Lauf: Sekunden, Private Bytes vorher → nachher (mit sichtbaren Fenstern, wenn nicht anders genannt). Maße in mm, Volumen in mm³.
 
@@ -255,7 +255,9 @@ Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`
 
 ### Offen
 
-- **Abnahme an einer echten Kollegen-Datei** (Spec §12): Die Datei stellt der Nutzer bereit; Kennzahlen kommen hierher.
+- **Abnahme an einer echten Kollegen-Datei** (Spec §12): Stand 2026-10-31 gibt es keine; die Datei stellt der Nutzer bereit, Kennzahlen kommen hierher.
+- **SW 2026:** Die Firmenrechner laufen mit SW 2026 und Vollversion (Nutzer 2026-10-31), alles hier ist unter SW 2025 gemessen. Ablauf:
+  [inbetriebnahme-firmenrechner.md](inbetriebnahme-firmenrechner.md).
 - Tabellengesteuerte Unterdrückungszustände ohne Excel erkennen (siehe Zeile b, Entscheidung F4).
 - **`"$STATE@Fase1"`:** Die Probe im Abschlussreview sah nur, dass `Add2` die Schreibweise annimmt und sie einmal nichts aufhob. Das braucht eine saubere eigene Probe (frisches Dokument, beide
   Richtungen, Neuaufbau). Steuert sie doch, muss `validieren` sie erkennen; heute sähe es sie nicht, und der Neuaufbau nähme einen `unterdruecken`-Punkt zurück.
@@ -265,8 +267,8 @@ Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`
 - **Mehrkörper:** Differenz nur an `gm42-10` (2 Körper, unverändert) gemessen; Änderungen an einem Mehrkörperteil sind nicht gelaufen.
 - **Abgeleitete Konfigurationen:** Das Muster hat nur Konfigurationen auf gleicher Ebene; `GetConfigurationNames`, Umschalten und `alle` sind an Kind-Konfigurationen nicht gemessen.
 - **What's-Wrong-Dialog an einer Datei mit Fehlern:** Das Muster öffnet fehlerfrei. Ob `OpenDoc6` Silent und das Lesen an einer Datei mit Neuaufbau-Fehlern ohne Dialog durchlaufen, ist nicht gemessen.
-- Die Datei läuft hier durch eine **Student-Lizenz** (Lizenztyp 2). Ob eine so gespeicherte Datei beim Kollegen mit Vollversion
-  anders erscheint (Wasserzeichen, Hinweis), lässt sich auf diesem Rechner nicht messen; `Save3` und ID-Probe sagen dazu nichts.
+- Rechner A ist eine **Student-Lizenz** (Lizenztyp 2), die Firmenrechner nicht. Für den Firmenbetrieb ist die Frage damit erledigt. Offen bleibt nur, wie eine auf
+  Rechner A gespeicherte Datei bei einer Vollversion erscheint (Wasserzeichen, Hinweis); `BESTAND_LIZENZ` warnt dort weiter.
 
 ## Offene Kleinigkeiten aus den Reviews
 

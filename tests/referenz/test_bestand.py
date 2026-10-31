@@ -16,8 +16,9 @@ from swki.bestand import befehle
 from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.spec import validieren
 from swki.durchlauf import durchlauf
-from swki.konfig import Rechner
+from swki.konfig import Rechner, lade_rechner
 from swki.spec.normen import bohrspitze_grad, normmasse
+from werkzeuge.bestand_muster import muster_ordner
 
 ORDNER = Path(__file__).parent / "bestand"
 SPEC = ORDNER / "lagerdeckel_rev.yaml"
@@ -56,7 +57,7 @@ def test_aufnahme_gehoert_zum_muster_und_nennt_keinen_rechner():
 
 
 def test_volumen_delta_aus_rechnung():
-    """Unabhängig vom Lauf aus den Maßen des Musters (`spikes/s18_muster.py`) und den Parametern: Die Verlängerung trägt in Standard die
+    """Unabhängig vom Lauf aus den Maßen des Musters (`werkzeuge/bestand_muster.py`) und den Parametern: Die Verlängerung trägt in Standard die
     Fase (2 × 2 / 2 auf 10 mm), Variante B hat keine; alles andere ist in beiden gleich."""
     s = _spec()
     p = s["parameter"]
@@ -75,13 +76,15 @@ def test_volumen_delta_aus_rechnung():
 
 @pytest.mark.sw
 def test_referenz_lagerdeckel(auftrag, tmp_path):
-    """Spec §12: die ganze Revision über `swki durchlauf`, enge Bereiche; das Urteil des Prüfers bleibt dem Referenzlauf vorbehalten."""
+    """Spec §12: die ganze Revision über `swki durchlauf`, enge Bereiche; das Urteil des Prüfers bleibt dem Referenzlauf vorbehalten.
+    In einem anderen SolidWorks-Jahr als dem der Dateien im Git läuft sie am dort erzeugten Muster, nur die Prüfsumme ändert sich."""
     ziel = tmp_path / auftrag
     ziel.mkdir()
-    shutil.copy2(SPEC, ziel)
-    shutil.copytree(ORDNER / "eingabe", ziel / "eingabe")
+    muster = muster_ordner(lade_rechner()) / "Lagerdeckel.SLDPRT"
     spec = ziel / SPEC.name
-    befehle.aufnehmen(ORDNER / "muster" / "Lagerdeckel.SLDPRT", auftrag)
+    spec.write_text(SPEC.read_text(encoding="utf-8").replace(_spec()["bestand"]["sha256"], sha256_datei(muster)), encoding="utf-8")
+    shutil.copytree(ORDNER / "eingabe", ziel / "eingabe")
+    befehle.aufnehmen(muster, auftrag)
     erg = durchlauf(spec, freigeben=True)
     assert erg["schritt"] == "fertig" and erg["pruefung"]["bestanden"] is True, erg
     assert erg["pruefung"]["ohne_urteil"] == [] and "Vorher-Bilder" in erg["pruefer_auftrag"]

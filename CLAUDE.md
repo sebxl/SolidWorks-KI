@@ -115,7 +115,10 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
   nur Teile.
 - Das Original nur lesen, nie in SolidWorks öffnen. Ausgabe im Arbeitsordner unter dem Originalnamen; zurück kopiert der Nutzer.
 - Nichts aufräumen: Punkte nennt der Nutzer, alles andere bleibt, wie der Kollege es gebaut hat.
-- Regressions-Suite enthält den Lagerdeckel (`tests/referenz/bestand/`, Muster als SolidWorks-Dateien im Git).
+- Regressions-Suite enthält den Lagerdeckel (`tests/referenz/bestand/`, Muster als SolidWorks-Dateien im Git). Die Muster gelten nur
+  für ihr SW-Jahr; jedes andere Jahr erzeugt sie mit `-m werkzeuge.bestand_muster` im Arbeitsordner, nicht im Git.
+- Firmenrechner: SW 2026, Vollversion; Dateien von dort kann Rechner A (SW 2025, Student) nicht bearbeiten. Dort noch nicht in
+  Betrieb, Ablauf: `docs/bestandsdateien/inbetriebnahme-firmenrechner.md`.
 
 ## Schnellbau und Simulation (Stufe C1)
 - Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,

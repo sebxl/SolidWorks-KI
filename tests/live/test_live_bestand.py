@@ -20,14 +20,13 @@ from swki.bestand.spec import freigeben, validieren
 from swki.bestand.sw_bestand import _geometrie, bstr_array, lies_bestand, whats_wrong
 from swki.compiler import sw
 from swki.compiler.bauen import BauAbbruch
-from swki.konfig import PROJEKT, lade_rechner
+from swki.konfig import lade_rechner
 from swki.pruefung.messen import oeffne
 from swki.spec.laden import SpecFehler
 from swki.verbindung import byref_long, verbinde
+from werkzeuge.bestand_muster import muster_ordner
 
 pytestmark = pytest.mark.sw
-REFERENZ = PROJEKT / "tests" / "referenz" / "bestand"
-MUSTER = REFERENZ / "muster" / "Lagerdeckel.SLDPRT"
 AUFTRAG = "LIVE-BESTAND"
 SW_UNTERDRUECKEN, SW_BENANNT = 0, 3  # swFeatureSuppressionAction_e, swInConfigurationOpts_e
 SW_DOC_BAUGRUPPE = 2  # swDocumentTypes_e
@@ -36,12 +35,16 @@ SW_WARNUNG_ID, SW_WARNUNG_REFERENZ_FEHLT = 1, 1048576  # swFileLoadWarning_e: Id
 SW_KOMPONENTE_ID_FALSCH = 5  # swComponentSuppressionState_e.swComponentInternalIdMismatch
 
 
+def muster() -> Path:
+    return muster_ordner(lade_rechner()) / "Lagerdeckel.SLDPRT"
+
+
 def test_aufnahme_musterteil(auftrag):
     r = lade_rechner()
-    sha = sha256_datei(MUSTER)
-    aus = befehle.aufnehmen(MUSTER, auftrag)
+    sha = sha256_datei(muster())
+    aus = befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(r, auftrag, 1)
-    assert sha256_datei(MUSTER) == sha == a["datei"]["sha256"]
+    assert sha256_datei(muster()) == sha == a["datei"]["sha256"]
     assert a["datei"]["version_aelter"] is False and a["sw_jahr"] == r.sw_jahr
     assert (a["konfigurationen"], a["aktiv"]) == (["Standard", "Variante B"], "Standard") and a["tabelle"] is False
     assert a["einheitensystem"] == 5 and a["material"].startswith("1.0038") and a["externe_referenzen"] == []
@@ -76,7 +79,7 @@ def test_aufnahme_musterteil(auftrag):
     assert a["geometrie"]["Standard"]["koerper"] == 1 and a["geometrie"]["Standard"]["box"][3] == pytest.approx(50.0)
 
     ordner = bestand_ordner(r, auftrag, 1)
-    kopie = ordner / MUSTER.name
+    kopie = ordner / muster().name
     assert sha256_datei(kopie) == sha and not kopie.stat().st_mode & stat.S_IWRITE
     assert {p.name for p in (ordner / "bilder").iterdir()} == {"iso.png", "vorne.png", "oben.png", "rechts.png"}
 
@@ -86,7 +89,7 @@ def test_aufnahme_musterteil(auftrag):
     assert Path(f["bild"]).stat().st_size > 0
     assert sha256_datei(kopie) == sha
 
-    assert befehle.aufnehmen(MUSTER, auftrag)["neu"] is False
+    assert befehle.aufnehmen(muster(), auftrag)["neu"] is False
 
 
 def test_verknuepfte_gleichungen_lehnt_aufnehmen_ab(auftrag):
@@ -95,8 +98,8 @@ def test_verknuepfte_gleichungen_lehnt_aufnehmen_ab(auftrag):
     r = lade_rechner()
     ordner = r.arbeitsordner / auftrag / "verknuepft"
     ordner.mkdir(parents=True)
-    kollege = ordner / MUSTER.name
-    shutil.copy2(MUSTER, kollege)
+    kollege = ordner / muster().name
+    shutil.copy2(muster(), kollege)
     datei = ordner / "gleichungen.txt"
     datei.write_text('"L"= 100\n"D1@Skizze1" = "L"\n', encoding="utf-8")
     app = verbinde(r.sw_jahr)
@@ -156,10 +159,10 @@ def _lies_lauf(datei: Path) -> dict:
 def test_bau_mass_und_normbohrung(auftrag, tmp_path):
     """Brief Step 8: alle Punktarten, die den Kern tragen; die Lauf-Datei wird neu geöffnet und gelesen."""
     r = lade_rechner()
-    sha = sha256_datei(MUSTER)
-    befehle.aufnehmen(MUSTER, auftrag)
+    sha = sha256_datei(muster())
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(r, auftrag, 1)
-    kopie = bestand_ordner(r, auftrag, 1) / MUSTER.name
+    kopie = bestand_ordner(r, auftrag, 1) / muster().name
     punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer", "mass": TASCHE, "alt": 8, "neu": 9},
               {"id": "p2", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1"]},
               {"id": "p3", "typ": "mass", "was": "Beide Bohrungen", "mass": "Bohrung_D@Skizze3", "alt": 8, "neu": 9,
@@ -177,8 +180,8 @@ def test_bau_mass_und_normbohrung(auftrag, tmp_path):
     aus = bau.bauen(_aenderung(tmp_path, auftrag, a, punkte))
 
     datei = Path(aus["dateien"]["teil"])
-    assert aus["status"] == "ok" and datei.name == MUSTER.name  # Teil heißt wie das Original
-    assert sha256_datei(MUSTER) == sha and sha256_datei(kopie) == sha and sha256_datei(datei) != sha
+    assert aus["status"] == "ok" and datei.name == muster().name  # Teil heißt wie das Original
+    assert sha256_datei(muster()) == sha and sha256_datei(kopie) == sha and sha256_datei(datei) != sha
     n = _lies_lauf(datei)
     assert n["aktiv"] == "Standard" and n["neuaufbau"] == [] and n["variablen"] == {"L": 110.0}
     assert len(n["gleichungen"]) == len(a["gleichungen"])  # keine neuen Gleichungen
@@ -199,7 +202,7 @@ def test_bau_mass_und_normbohrung(auftrag, tmp_path):
     assert n["geometrie"]["Standard"]["volumen"] == pytest.approx(n["geometrie"]["Variante B"]["volumen"], abs=0.01)
 
     protokoll = json.loads((datei.parent / "protokoll.json").read_text(encoding="utf-8"))
-    assert protokoll["sha256"] == {MUSTER.name: sha256_datei(datei)}
+    assert protokoll["sha256"] == {muster().name: sha256_datei(datei)}
     assert protokoll["lizenz"]["sitzung"]["name"].startswith("swLicenseType_")
     knoten = {k["id"]: k for k in protokoll["knoten"]}
     assert len(knoten["p5"]["punkte"]) == 2 and knoten["p1"]["masse"][0]["wert"] == 9
@@ -211,9 +214,9 @@ def test_bau_mit_variante_b_aktiv(auftrag, tmp_path):
     """Plan Review Focus 4 und S18c: Ein Feature aus Variante B wäre in Standard unterdrückt, gespeichert wird Variante B."""
     r = lade_rechner()
     app = verbinde(r.sw_jahr)
-    quelle = r.arbeitsordner / auftrag / "quelle" / MUSTER.name
+    quelle = r.arbeitsordner / auftrag / "quelle" / muster().name
     quelle.parent.mkdir(parents=True)
-    shutil.copy2(MUSTER, quelle)
+    shutil.copy2(muster(), quelle)
     model = oeffne(app, quelle, sichtbar=False)
     try:
         model.ShowConfiguration2("Variante B")
@@ -234,8 +237,8 @@ def test_bau_mit_variante_b_aktiv(auftrag, tmp_path):
 
 def test_unmoeglicher_zug_speichert_nicht(auftrag, tmp_path):
     """S18c3: Vor die Grundplatte lässt sich die Bohrung nicht ziehen. Die Datei im Lauf bleibt die unveränderte Kopie."""
-    sha = sha256_datei(MUSTER)
-    befehle.aufnehmen(MUSTER, auftrag)
+    sha = sha256_datei(muster())
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     punkte = [{"id": "p1", "typ": "feature", "name": "Gewinde M6", "feature": NORMBOHRUNG, "nach": "Skizze1"},
               {"id": "p2", "typ": "unterdruecken", "feature": "Fase1"}]
@@ -244,17 +247,17 @@ def test_unmoeglicher_zug_speichert_nicht(auftrag, tmp_path):
     d = e.value.daten
     assert d["fehler"]["punkt"] == "p1" and d["dateien"] == {}
     assert [k["status"] for k in d["knoten"]] == ["fehler", "uebersprungen"]
-    assert sha256_datei(Path(d["ordner"]) / MUSTER.name) == sha
+    assert sha256_datei(Path(d["ordner"]) / muster().name) == sha
 
 
 def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
     """Brief Step 8. Bestand und Lauf heißen gleich (Plan Review Focus 1), die Fase verschwindet nur in Standard. Der Skript-Punkt gibt
     seine Skizze zurück: Sie ist ein neues Feature, das nur das Protokoll erklärt."""
     r = lade_rechner()
-    sha = sha256_datei(MUSTER)
-    befehle.aufnehmen(MUSTER, auftrag)
+    sha = sha256_datei(muster())
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(r, auftrag, 1)
-    kopie = bestand_ordner(r, auftrag, 1) / MUSTER.name
+    kopie = bestand_ordner(r, auftrag, 1) / muster().name
     punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer", "mass": TASCHE, "alt": 8, "neu": 9},
               {"id": "p2", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1"]},
               {"id": "p3", "typ": "unterdruecken", "was": "Fase weg", "feature": "Fase1", "konfigurationen": ["Standard"]},
@@ -278,9 +281,9 @@ def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
     assert all(e["ok"] is True for e in b["pruefungen"])
     assert next(e for e in b["pruefungen"] if e["id"] == "punkt:p6")["hinweis"].startswith("Notausgang")
     assert len({e["id"] for e in b["pruefungen"] if e["id"].startswith("punkt:")}) == 6
-    vorher = datei.parent / "vergleich" / f"vorher_{MUSTER.name}"
+    vorher = datei.parent / "vergleich" / f"vorher_{muster().name}"
     assert b["vorher"] == str(vorher) and sha256_datei(vorher) == sha and sha256_datei(datei) == sha_lauf
-    assert sha256_datei(kopie) == sha and sha256_datei(MUSTER) == sha and pruefe_unveraendert(r, auftrag, spec) is None
+    assert sha256_datei(kopie) == sha and sha256_datei(muster()) == sha and pruefe_unveraendert(r, auftrag, spec) is None
     assert verbinde(r.sw_jahr).GetDocuments in (None, ())
     assert {Path(p).name for p in b["bilder"].values()} == {"iso.png", "vorne.png", "oben.png", "rechts.png"}
     assert all(Path(p).stat().st_size for p in [*b["bilder"].values(), *b["bilder_vorher"].values()])
@@ -307,7 +310,7 @@ def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
 
 def test_verschobene_flaeche_5_um_liegt_unter_der_toleranz(auftrag, tmp_path):
     """S18d an `swki pruefen`: Der Körper ist exakt da, zählt aber nicht; `punkt` meldet, dass im Bereich nichts geschah."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     punkte = [{"id": "p1", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 100.005, "folgen": ["D1@Skizze1"]}]
     spec = _aenderung(tmp_path, auftrag, a, punkte, box=([-60, -40, -1], [-40, 40, 30]))
@@ -324,7 +327,7 @@ def test_verschobene_flaeche_5_um_liegt_unter_der_toleranz(auftrag, tmp_path):
 def test_sichel_einer_versetzten_bohrung(auftrag, tmp_path, neu, ok):
     """S18d an `swki pruefen`, die Fläche live: Je Richtung eine Sichel, 4 mm breit, Dicke `2·2V/A`. 20 µm sind ein Mangel, 4 µm lassen sich
     über die Kante nicht beweisen und bleiben offen."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     punkte = [{"id": "p1", "typ": "mass", "was": "Bohrung versetzt", "mass": "D2@Skizze3", "alt": 40, "neu": neu}]
     spec = _aenderung(tmp_path, auftrag, a, punkte, box=([40, -40, -1], [60, 40, 30]))  # neben der Bohrung
@@ -342,7 +345,7 @@ def test_sichel_einer_versetzten_bohrung(auftrag, tmp_path, neu, ok):
 
 def test_feature_bereich_aus_den_flaechen_vorher(auftrag, tmp_path):
     """Die Fase hat nachher keine Flächen mehr, ihr Bereich kommt aus dem Vorher-Dokument; Variante B ändert sich nicht."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     punkte = [{"id": "p1", "typ": "unterdruecken", "was": "Fase weg", "feature": "Fase1"}]
     spec = _aenderung(tmp_path, auftrag, a, punkte, features=["Fase1"])
@@ -359,7 +362,7 @@ def test_aktive_konfiguration_bleibt_unterdrueckte_skizze_stoert_nicht(auftrag):
     app = verbinde(lade_rechner().sw_jahr)
     ordner = lade_rechner().arbeitsordner / auftrag
     ordner.mkdir(parents=True)
-    kopie = shutil.copy2(MUSTER, ordner / MUSTER.name)
+    kopie = shutil.copy2(muster(), ordner / muster().name)
     model = oeffne(app, Path(kopie), sichtbar=False, nur_lesen=True)
     try:
         assert model.IsOpenedReadOnly
@@ -375,7 +378,7 @@ def test_aktive_konfiguration_bleibt_unterdrueckte_skizze_stoert_nicht(auftrag):
         assert d["geometrie"]["Variante B"]["volumen"] > d["geometrie"]["Standard"]["volumen"]
     finally:
         sw.schliesse(app, model)
-    assert sha256_datei(Path(kopie)) == sha256_datei(MUSTER)
+    assert sha256_datei(Path(kopie)) == sha256_datei(muster())
 
 
 # ------------------------------------------------------------------------------------------------------ Negativfälle, S18a
@@ -390,7 +393,7 @@ def _geprueft_abgenommen(spec: Path) -> None:
 
 def test_versetzte_gewindebohrung_ist_ein_mangel(auftrag, tmp_path):
     """Die Messung sieht die Achse, nicht das Protokoll: Ein Skript schiebt die fertige Bohrung, der Handler hatte sie richtig gesetzt."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     skript = tmp_path / auftrag / "skripte" / "p2.py"
     skript.parent.mkdir(parents=True)
@@ -408,7 +411,7 @@ def test_versetzte_gewindebohrung_ist_ein_mangel(auftrag, tmp_path):
 
 def test_formschraege_und_verzahnung_werden_gemessen(auftrag, tmp_path):
     """Dieselben Bausteine wie beim Teil, je Konfiguration. Das Rad steht abseits, ein eigener Körper: Hier zählt nur die Messung."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     schraeg = {"typ": "schnitt", "skizze": {"ebene": {"feature": "Aufsatz-Linear austragen1", "flaeche": "+z"},
                                             "elemente": [{"kreis": {"mitte": [38, 12], "durchmesser": 8}}]},
@@ -429,7 +432,7 @@ def test_formschraege_und_verzahnung_werden_gemessen(auftrag, tmp_path):
 
 def test_validieren_weist_altwert_und_gesteuertes_mass_ab(auftrag, tmp_path):
     """Spec §12, gegen die echte Aufnahme des Musters."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     faelle = {"altwert": ({"mass": "D2@Skizze4", "alt": 41, "neu": 45}, BESTAND_ALTWERT),
               "gesteuert": ({"mass": "D1@Skizze1", "alt": 100, "neu": 110}, MASS_GESTEUERT)}
@@ -443,7 +446,7 @@ def test_validieren_weist_altwert_und_gesteuertes_mass_ab(auftrag, tmp_path):
 def test_aenderung_in_allen_statt_in_einer_konfiguration(auftrag, tmp_path):
     """Spec §12: Der Punkt nennt nur Standard, ein Skript zieht Variante B mit. Herbeigeführt über den Notausgang, denn `mass` selbst
     trifft richtig. Baum, Bereich und Punkt stimmen, nur `masse` sieht es."""
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     skript = tmp_path / auftrag / "skripte" / "p2.py"
     skript.parent.mkdir(parents=True)
@@ -461,8 +464,8 @@ def test_aenderung_in_allen_statt_in_einer_konfiguration(auftrag, tmp_path):
 def test_original_geaendert_warnt_bei_der_ausgabe(auftrag, tmp_path):
     """Spec §12, §9: Das Original gilt als Datei des Kollegen, hier eine Kopie im Testordner. Ändert es sich nach der Aufnahme, wird trotzdem
     ausgegeben, aber gewarnt; zuvor bleibt die Warnung aus."""
-    original = tmp_path / MUSTER.name
-    shutil.copy2(MUSTER, original)
+    original = tmp_path / muster().name
+    shutil.copy2(muster(), original)
     befehle.aufnehmen(original, auftrag)
     a = lade_aufnahme(lade_rechner(), auftrag, 1)
     spec = _aenderung(tmp_path, auftrag, a, [{"id": "p1", "typ": "eigenschaft", "name": "Revision", "neu": "B"}])
@@ -478,7 +481,7 @@ def test_datei_id_bleibt(auftrag, tmp_path):
     """S18a am Ergebnis: Die Ausgabe-Datei liegt neben einer Kopie der Musterbaugruppe. Sie öffnet ohne ID-Warnung und ohne Neuaufbau-
     Fehler, die Komponente lädt aus dieser Kopie und trägt die Änderung."""
     r = lade_rechner()
-    befehle.aufnehmen(MUSTER, auftrag)
+    befehle.aufnehmen(muster(), auftrag)
     a = lade_aufnahme(r, auftrag, 1)
     punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer", "mass": TASCHE, "alt": 8, "neu": 9}]
     spec = _aenderung(tmp_path, auftrag, a, punkte)
@@ -488,8 +491,8 @@ def test_datei_id_bleibt(auftrag, tmp_path):
     ordner = r.arbeitsordner / auftrag / "baugruppe"
     ordner.mkdir()
     for name in ("Muster.SLDASM", "gm42-10.SLDPRT"):
-        shutil.copy2(MUSTER.parent / name, ordner)
-    shutil.copy2(datei["ausgabe"], ordner / MUSTER.name)
+        shutil.copy2(muster().parent / name, ordner)
+    shutil.copy2(datei["ausgabe"], ordner / muster().name)
 
     app = verbinde(r.sw_jahr)
     fehler, warnungen = byref_long(), byref_long()
@@ -506,4 +509,4 @@ def test_datei_id_bleibt(auftrag, tmp_path):
         assert volumen == pytest.approx(a["geometrie"]["Standard"]["volumen"] - 1500 + 90, abs=0.1)
     finally:
         sw.schliesse(app, asm)
-    assert sha256_datei(MUSTER) == a["datei"]["sha256"]
+    assert sha256_datei(muster()) == a["datei"]["sha256"]
