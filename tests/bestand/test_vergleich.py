@@ -312,7 +312,7 @@ def test_masse_neuer_features_fehlen_vorher_ohne_mangel():
                           "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False})
     for k in n["konfigurationen"]:
         n["reihenfolge"][k].append("Gewinde M6")
-    p = {"id": "p3", "typ": "feature", "name": "Gewinde M6", "feature": {"typ": "normbohrung"}}
+    p = {"id": "p3", "typ": "feature", "name": "Gewinde M6", "feature": {"typ": "bohrung"}}
     nur_ok(vergleich(spec(p), n))
 
 
@@ -345,7 +345,7 @@ def _neues_feature(a: dict, name: str, nach: str | None = None) -> dict:
     return a
 
 
-PUNKT_FEATURE = {"id": "p3", "typ": "feature", "name": "Gewinde M6", "feature": {"typ": "normbohrung"}}
+PUNKT_FEATURE = {"id": "p3", "typ": "feature", "name": "Gewinde M6", "feature": {"typ": "bohrung"}}
 
 
 def test_baum_neues_feature_erlaubt_nur_mit_punkt():

@@ -204,6 +204,16 @@ def _zeige(model, konfiguration: str) -> None:
     model.EditRebuild3
 
 
+def in_konfigurationen(model, konfigurationen: list[str], messe) -> dict:
+    """`messe()` je Konfiguration, die aktive steht danach wieder da, auch nach einem Fehler."""
+    aus = {}
+    with _aktive_zurueck([model]):
+        for k in konfigurationen:
+            _zeige(model, k)
+            aus[k] = messe()
+    return aus
+
+
 def _minus(ziele: list, werkzeuge: list) -> list:
     """Alle Ziele minus alle Werkzeuge, nur an Kopien (S18d: `Operations2` verbraucht beide Körper, auch wenn nichts getroffen wird)."""
     rest = [k.Copy2(True) for k in ziele]

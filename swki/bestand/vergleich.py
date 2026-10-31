@@ -23,6 +23,7 @@ Annahmen, die live noch zu bestätigen sind (Task 11):
 
 from dataclasses import dataclass, field
 
+from swki.bestand.feature_messung import messart, nicht_gemessen
 from swki.bestand.folgen import folgen_von, gleicher_ausdruck, kinder_von, rechte_seite
 from swki.compiler.eigenschaften import material_passt
 from swki.pruefung.bewertung import eintrag
@@ -81,6 +82,7 @@ class _Vergleich:
     parameter: dict
     skript_gelaufen: frozenset[str] = frozenset()   # Punkt-IDs der Skripte, die laut Protokoll durchliefen
     skript_features: frozenset[str] = frozenset()   # was ihr `bauen(ctx)` zurückgab
+    feature_messung: dict = field(default_factory=dict)  # Punkt-ID → Ergebnis von `feature_messung.bewerte`
     konfigurationen: list[str] = field(init=False)  # die beiden Aufnahmen gemeinsam haben, in der Reihenfolge des Bestands
     geloescht: set[str] = field(init=False)         # was `loeschen`-Punkte nehmen dürfen
     masse_vorher: dict[str, dict] = field(init=False)
@@ -202,9 +204,13 @@ def _punkt_feature(p: dict, c: _Vergleich) -> dict:
     f = c.features_nachher.get(name)
     if f is not None and (unterdrueckt := sorted(k for k, v in f["unterdrueckt"].items() if v)):
         probleme.append(f"{name} ist unterdrückt ({', '.join(unterdrueckt)})")
+    gemessen, messbar = c.feature_messung.get(p["id"]), messart(p["feature"]) is not None
+    werte = {"ist": gemessen["ist"], "soll": gemessen["soll"]} if gemessen else {"ist": probleme}
+    if messbar:  # sonst belegt der Eintrag nur, dass das Feature da ist
+        probleme = probleme + (gemessen["fehler"] if gemessen else [f"{name}: nicht gemessen"])
     if probleme:
-        return eintrag(pid, False, ist=probleme, knoten=[p["id"]], hinweis="; ".join(probleme))
-    return eintrag(pid, True, ist=[], knoten=[p["id"]])
+        return eintrag(pid, False, **werte, knoten=[p["id"]], hinweis="; ".join(probleme))
+    return eintrag(pid, True, **werte, knoten=[p["id"]], **({} if messbar else {"hinweis": nicht_gemessen(p["feature"])}))
 
 
 def _punkt_material(p: dict, c: _Vergleich) -> dict:
@@ -520,11 +526,12 @@ def _externe_referenzen(c: _Vergleich) -> dict:
 
 
 def vergleiche(spec: dict, vorher: dict, nachher: dict, parameter: dict, skript_features: frozenset[str] = frozenset(),
-               skript_gelaufen: frozenset[str] = frozenset()) -> list[dict]:
+               skript_gelaufen: frozenset[str] = frozenset(), feature_messung: dict | None = None) -> list[dict]:
     """§7.1: Einträge `punkt:<id>` je Punkt, dann `baum`, `masse`, `gleichungen`, `konfigurationen`, `eigenschaften`,
     `material`, `neuaufbau`, `skizzen`, `externe_referenzen`. `parameter`: die Parameter der Spec für Ausdrücke wie `=A_neu`.
-    Aus dem Protokoll: `skript_features`, was `bauen(ctx)` zurückgab, `skript_gelaufen`, die Punkt-IDs der durchgelaufenen Skripte."""
-    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features)
+    Aus dem Protokoll: `skript_features`, was `bauen(ctx)` zurückgab, `skript_gelaufen`, die Punkt-IDs der durchgelaufenen Skripte.
+    `feature_messung`: `swki.bestand.feature_messung.bewerte`, ein messbares Feature ohne Messung ist ein Mangel."""
+    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features, feature_messung or {})
     return [_punkt(p, c) for p in c.punkte] + [
         _baum(c), _masse(c), _gleichungen(c), _konfigurationen(c), _eigenschaften(c), _material(c), _neuaufbau(c), _skizzen(c),
         _externe_referenzen(c)]

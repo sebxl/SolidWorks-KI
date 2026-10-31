@@ -393,6 +393,51 @@ def test_referenz_lagerdeckel(auftrag, tmp_path):
     assert all(x["bereich"] is not None for d in b["differenzen"].values() for x in d)
     delta = next(e for e in b["pruefungen"] if e["id"] == "volumen_delta")
     assert delta["ist"]["Variante B"] - delta["ist"]["Standard"] == pytest.approx(20, abs=0.01)  # die Fase auf der Verlängerung
+    gewinde = next(e for e in b["pruefungen"] if e["id"] == "punkt:p5")
+    assert gewinde["soll"] == {"art": "gewinde", "groesse": "M6", "tiefe": 10, "gewindetiefe": 8, "positionen": [[-38, 24], [-38, -24]]}
+    for k in ("Standard", "Variante B"):
+        ist = gewinde["ist"][k]
+        assert (ist["groesse"], ist["tiefe"], ist["gewindetiefe"]) == ("M6", 10, 8), k
+        assert sorted(ist["positionen"]) == [[-38, -24], [-38, 24]], k
+
+
+def test_versetzte_gewindebohrung_ist_ein_mangel(auftrag, tmp_path):
+    """Die Messung sieht die Achse, nicht das Protokoll: Ein Skript schiebt die fertige Bohrung, der Handler hatte sie richtig gesetzt."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    skript = tmp_path / auftrag / "skripte" / "p2.py"
+    skript.parent.mkdir(parents=True)
+    skript.write_text('def bauen(ctx):\n    mass = ctx.model.Parameter("D1@Gewinde M6 Deckel Skizze")\n'
+                      '    mass.SetSystemValue3(mass.SystemValue + 0.001, 2, None)\n', encoding="utf-8")
+    punkte = [{"id": "p1", "typ": "feature", "was": "Gewinde", "name": "Gewinde M6 Deckel", "feature": NORMBOHRUNG},
+              {"id": "p2", "typ": "skript", "datei": "skripte/p2.py", "luecke": "Testfall: Bohrung versetzen"}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte)
+    bau.bauen(spec)
+    b = pruefen(spec)
+    e = next(x for x in b["pruefungen"] if x["id"] == "punkt:p1")
+    assert e["ok"] is False and "Standard: Position" in e["hinweis"] and "Variante B: Position" in e["hinweis"], e
+    assert (e["ist"]["Standard"]["groesse"], e["ist"]["Standard"]["gewindetiefe"]) == ("M6", 8)  # Größe und Tiefe stimmen, nur die Lage nicht
+
+
+def test_formschraege_und_verzahnung_werden_gemessen(auftrag, tmp_path):
+    """Dieselben Bausteine wie beim Teil, je Konfiguration. Das Rad steht abseits, ein eigener Körper: Hier zählt nur die Messung."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    schraeg = {"typ": "schnitt", "skizze": {"ebene": {"feature": "Aufsatz-Linear austragen1", "flaeche": "+z"},
+                                            "elemente": [{"kreis": {"mitte": [38, 12], "durchmesser": 8}}]},
+               "ende": {"typ": "blind", "tiefe": 5, "formschraege": {"winkel": 5, "querschnitt": "kleiner"}}}
+    rad = {"typ": "verzahnung", "art": "stirnrad", "ebene": "vorne", "mitte": [200, 0], "modul": 2, "zaehne": 20, "breite": 10,
+           "zahndickenabmass": -0.05}
+    punkte = [{"id": "p1", "typ": "feature", "was": "Schräge Tasche", "name": "Tasche schräg", "feature": schraeg},
+              {"id": "p2", "typ": "feature", "was": "Rad", "name": "Rad", "feature": rad}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte, box=([-60, -40, -1], [260, 60, 30]))
+    bau.bauen(spec)
+    b = pruefen(spec)
+    e = {x["id"]: x for x in b["pruefungen"]}
+    assert e["punkt:p1"]["ok"] is True, e["punkt:p1"]
+    assert e["punkt:p1"]["ist"] == {"Standard": [5.0], "Variante B": [5.0]} and e["punkt:p1"]["soll"] == {"winkel": 5, "querschnitt": "kleiner"}
+    assert e["punkt:p2"]["ok"] is True, e["punkt:p2"]
+    assert e["punkt:p2"]["ist"]["Variante B"]["zaehne"] == 20 and e["punkt:p2"]["ist"]["Standard"]["kopfkreis"] == pytest.approx(44, abs=0.2)
 
 
 def test_validieren_weist_altwert_und_gesteuertes_mass_ab(auftrag, tmp_path):

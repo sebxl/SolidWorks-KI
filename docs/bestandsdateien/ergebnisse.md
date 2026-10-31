@@ -143,8 +143,11 @@ Referenz `tests/referenz/bestand/lagerdeckel_rev.yaml`, sechs Punkte, Lauf 1 ohn
 - **Differenzkörper können verschmelzen (überlegt, nicht gemessen):** Fase unterdrückt und `L` zugleich ergäbe vermutlich einen Körper über
   beide Stellen, die Fase läuft bis an die rechte Stirnfläche. Er passte in keinen engen Bereich. Die Referenz unterdrückt deshalb die
   Rippe. Für echte Dateien: Stoßen zwei Punkte aneinander, brauchen sie einen gemeinsamen Bereich.
-- **`masse_pruefen` misst keine Bohrungsachse:** Die Spec kennt nur `punkt`, `flaeche` und `feature` + `flaeche`. Die Lage der neuen
-  Gewinde belegen die zwei engen Bereiche (±0,5 mm); `{punkt}` gegen eine Fläche prüft nur die Fläche.
+- **Prüfer, Lauf 1 nicht bestanden:** `punkt:p5` belegte nur, dass das Feature da ist; Gewindegröße und -tiefe zeigen weder Differenz noch
+  Bild. Neue Features werden seither gegen die freigegebene Kopie gemessen, je Konfiguration (`swki/bestand/feature_messung.py`),
+  Achsen gegen `positionen` (Toleranz 0,01 mm). `masse_pruefen` kennt keinen Messpunkt auf einer Bohrungsachse, `{punkt}` gegen eine
+  Fläche prüft nur die Fläche. Live belegt: Normbohrung (auch versetzt als Mangel), Formschräge, Stirnrad; Zahnstange nur als Baustein
+  des Teils.
 - **Eine Variable, eine Folge:** Das Muster hat nur `"D1@Skizze1" = "L"`, ein `gleichung`-Punkt auf `L` hat genau eine Folge. Die zweite
   Folge der Referenz kommt aus dem verknüpften Maß (`Bohrung_D@Skizze4`).
 - **S18a am Ergebnis (`test_datei_id_bleibt`):** Ausgabe neben einer Kopie der Musterbaugruppe: kein IdMismatch, keine fehlende

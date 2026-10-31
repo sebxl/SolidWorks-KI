@@ -343,6 +343,10 @@ nur zum Lesen geöffnet; das Original nie.
 | `externe_referenzen` | keine neuen; keine, die aus dem Lauf-Ordner herauszeigen |
 | `pruefung.masse_pruefen` | wie bei Teilen |
 
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Task 10, Prüfer):* `punkt:<id>` eines `feature`-Punkts misst gegen die freigegebene Kopie wie beim Teil, je Konfiguration, und
+trägt `ist`/`soll`: Normbohrung (Größe, Tiefe, Gewindetiefe, Anzahl, Achsen gegen `positionen`), Verzahnung, Formschräge. Ohne Messung ist ein messbarer Typ
+nicht bestanden. Andere Typen bleiben ungemessen, der Eintrag nennt das. Ein Gewinde sieht man weder in der Differenz noch im Bild.
+
 ### 7.2 Geometrie
 
 Je Konfiguration und Körper: **Differenz vorher/nachher** in denselben Modellkoordinaten (keine Ausrichtung wie im Messstand –

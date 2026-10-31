@@ -27,6 +27,7 @@ from swki.pruefung.befehle import LaufFehler
 from swki.pruefung.geometrie import Messgeometrie
 from swki.pruefung.schleife import empfehlung, lies_laeufe
 from swki.spec.freigabe import FreigabeFehler
+from swki.spec.normen import SW_BEFESTIGUNG, SW_END_BLIND, SW_NORM
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
 
 INHALT = b"bestandskopie"
@@ -280,6 +281,26 @@ def test_messpunkt_loest_alle_drei_namen_auf(u, monkeypatch):
     model = SimpleNamespace(FeatureByName=features.get)
     ctx = modul._messkontext(None, model, spec, Path("x.yaml"), 0.1)
     assert {n: e.features for n, e in ctx.ergebnisse.items()} == {"p2": ["NEU"], "Gewinde M6": ["NEU"], "Fase3": ["ALT"]}
+
+
+def test_neue_normbohrung_wird_gegen_die_freigabe_gemessen(u, monkeypatch):
+    """Der Referenz-Prüfer, Lauf 1: `punkt:<id>` belegte nur, dass das Feature da ist. Die Abweichung in einer Konfiguration ist ein Mangel."""
+    f = {"typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [45, 0, 20]}, "positionen": [[-38, 24]], "tiefe": 10,
+         "gewindetiefe": 8}
+    neu = {"id": "p2", "typ": "feature", "name": "Gewinde M6", "feature": f}
+    for k in u.nachher["konfigurationen"]:
+        u.nachher["reihenfolge"][k].append("Gewinde M6")
+    u.nachher["features"].append({"name": "Gewinde M6", "typ": "HoleWzd", "eltern": [], "kinder": [], "unter": [], "tabelle": False,
+                                  "unterdrueckt": {"Standard": False, "Variante B": False}})
+    ist = {"typ": 0, "befestigung": SW_BEFESTIGUNG["gewinde"], "norm": SW_NORM["ISO"], "groesse": "M6", "ende": SW_END_BLIND, "tiefe": 10.0,
+           "gewindetiefe": 8.0, "positionen": 1, "achsen": [((-38.0, 24.0, 15.0), (0.0, 0.0, 1.0))]}
+    monkeypatch.setattr(modul, "in_konfigurationen", lambda model, konfigurationen, messe: {
+        "Standard": {"Gewinde M6": ist}, "Variante B": {"Gewinde M6": {**ist, "gewindetiefe": 7.0}}})
+    b = modul.pruefen(u.schreibe(punkte=(MASS, neu)))
+    e = next(x for x in b["pruefungen"] if x["id"] == "punkt:p2")
+    assert e["ok"] is False and "Variante B: gewindetiefe: ist 7 statt 8" in e["hinweis"]
+    assert e["soll"]["gewindetiefe"] == 8 and e["ist"]["Standard"]["positionen"] == [[-38.0, 24.0]]
+    assert "punkt:p2" in [m["pruefung"] for m in b["maengel"]]
 
 
 def test_messpunkt_feature_fehlt_ist_mangel(u):
