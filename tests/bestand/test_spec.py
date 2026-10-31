@@ -173,14 +173,48 @@ def test_bauweg_aendert_pruefsumme_nicht():
     assert pruefsumme(a) == pruefsumme(b)
 
 
-def test_bauweg_nach_ebene_kanten_und_skript_datei_aendern_pruefsumme_nicht():
+def test_bauweg_nach_flaechenanker_kanten_und_skript_datei_aendern_pruefsumme_nicht():
     a = spec_mit_feature(kanten={"nahe": [0, 0, 0]}, skizze={"ebene": {"feature": "X", "flaeche": "+z"}, "elemente": []})
     b = copy.deepcopy(a)
     b["punkte"][2]["nach"] = "Fase3"
     b["punkte"][2]["feature"]["kanten"] = {"nahe": [9, 9, 9]}
-    b["punkte"][2]["feature"]["skizze"]["ebene"] = "vorne"
+    b["punkte"][2]["feature"]["skizze"]["ebene"] = {"nahe": [1, 2, 3]}  # Wechsel zwischen zwei Flächenankern
     b["punkte"][5]["datei"] = "skripte/anders.py"
     assert pruefsumme(a) == pruefsumme(b)
+
+
+def _mit_skizze(ebene, typ="extrusion", **rest):
+    spec = copy.deepcopy(BEISPIEL)
+    spec["punkte"][2]["feature"] = {"typ": typ, "skizze": {"ebene": ebene, "elemente": []}, **rest}
+    return spec
+
+
+@pytest.mark.parametrize("a,b", [
+    ({"versatz": {"ebene": "oben", "abstand": 10}}, {"versatz": {"ebene": "oben", "abstand": 11}}),
+    ({"versatz": {"ebene": "oben", "abstand": 10}}, {"versatz": {"ebene": "vorne", "abstand": 10}}),
+    ("vorne", "oben"),
+    ("vorne", {"versatz": {"ebene": "vorne", "abstand": 10}}),
+])
+def test_ebene_der_skizze_ausser_flaechenanker_ist_anforderung(a, b):
+    assert pruefsumme(_mit_skizze(a)) != pruefsumme(_mit_skizze(b))
+
+
+def test_flaechenanker_als_ebene_ist_bauweg_standardebene_nicht():
+    assert pruefsumme(_mit_skizze({"nahe": [0, 0, 0]})) == pruefsumme(_mit_skizze({"feature": "X", "flaeche": "+z"}))
+    assert pruefsumme(_mit_skizze({"nahe": [0, 0, 0]})) != pruefsumme(_mit_skizze("vorne"))
+
+
+def test_ebene_eines_referenz_features_ist_anforderung():
+    a = {"typ": "referenz", "ebene": {"basis": "oben", "abstand": 10}}
+    b = {"typ": "referenz", "ebene": {"basis": "oben", "abstand": 12}}
+    spec_a, spec_b = copy.deepcopy(BEISPIEL), copy.deepcopy(BEISPIEL)
+    spec_a["punkte"][2]["feature"], spec_b["punkte"][2]["feature"] = a, b
+    assert pruefsumme(spec_a) != pruefsumme(spec_b)
+
+
+def test_groesse_der_normbohrung_aendert_pruefsumme():
+    anders = spec_mit_feature(groesse="M8")
+    assert pruefsumme(anders) != pruefsumme(BEISPIEL)
 
 
 def test_reihenfolge_der_punkte_aendert_pruefsumme_nicht():

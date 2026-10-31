@@ -17,12 +17,22 @@ from swki.spec.laden import SpecFehler, _pfad, _werte, lade_yaml, schema_befunde
 
 PRUEF_FELDER = ("art", "name", "bestand", "parameter", "bereiche", "pruefung")
 # Bauweg in den Punkten: Anker und Bezug neuer Features, Einfügestelle, Skriptdatei (Reihenfolge: nach id sortiert)
-BAUWEG_SCHLUESSEL = frozenset({"nach", "bezug", "flaeche", "ebene", "kanten"})
+BAUWEG_SCHLUESSEL = frozenset({"nach", "bezug", "flaeche", "kanten"})
+
+
+def _ist_flaechenanker(wert) -> bool:
+    return isinstance(wert, dict) and ("feature" in wert or "nahe" in wert)
+
+
+def _ist_bauweg(schluessel: str, wert) -> bool:
+    """`ebene` ist nur Bauweg, wenn sie ein Flächenanker ist (Dict mit feature oder nahe). Standardebene, versatz, basis,
+    abstand und umkehren legen fest, wo das Feature entsteht, und bleiben Anforderung."""
+    return schluessel in BAUWEG_SCHLUESSEL or (schluessel == "ebene" and _ist_flaechenanker(wert))
 
 
 def _ohne_bauweg(obj):
     if isinstance(obj, dict):
-        return {k: _ohne_bauweg(v) for k, v in obj.items() if k not in BAUWEG_SCHLUESSEL}
+        return {k: _ohne_bauweg(v) for k, v in obj.items() if not _ist_bauweg(k, v)}
     if isinstance(obj, list):
         return [_ohne_bauweg(v) for v in obj]
     return obj
