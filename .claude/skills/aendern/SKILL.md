@@ -24,25 +24,28 @@ genannten Punkte. Der **Präzisionsschutz** weist das nach. Fünf Regeln gelten 
 - **Eigene swki-Konstruktionen:** Die Spec ist die Quelle, Skill `konstruieren` bzw. `baugruppe`.
 - **Fremde Baugruppen** kommen in Etappe 2 (`BESTAND_FORMAT`): dem Nutzer diese Grenze nennen; Skill `baugruppe` baut sie nicht nach. **Dateien ohne
   Baum** (STEP, IGES) gibt es hier nicht; Kaufteile bleiben nur lesen.
-- **Teile mit externen Referenzen** (abgeleitet, gespiegelt, im Kontext, verknüpfte Gleichungsdatei) lehnt `aufnehmen` ab
-  (`BESTAND_REFERENZ_EXTERN` mit Liste): dem Nutzer nennen.
+- **Teile mit externen Referenzen** (abgeleitet, gespiegelt, im Kontext) lehnt `aufnehmen` ab (`BESTAND_REFERENZ_EXTERN` mit Liste): dem Nutzer nennen.
+- **Mit einer Datei verknüpfte Gleichungen** gehören dazu: Ein `gleichung`-Punkt schriebe womöglich die Datei des Kollegen zurück. Die Liste nennt die Gleichungsdatei.
+- **Einheiten:** Maße rechnet swki in jeder Datei in mm und Grad. Gleichungen und Variablen rechnen in der Einheit der Datei (`einheitensystem` der Ausgabe). Ist das nicht
+  MMGS, weist `validieren` jeden `gleichung`-Punkt ab (`BESTAND_EINHEIT`): dem Nutzer die Einheit nennen; nur auf seine Anweisung geht es über `skript`.
 - **Konstruktionstabelle** (`tabelle: true`): Tabellenmaße und alle `unterdruecken`/`aufheben`-Punkte der Datei sperrt `validieren`
   (`MASS_GESTEUERT`), tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen. Dem Nutzer die Tabelle nennen; nur auf seine
   Anweisung geht es über `skript`.
-- **Gleichungsgesteuerte Unterdrückung erkennt swki nicht.** Vor einem `unterdruecken`/`aufheben`-Punkt die `gleichungen` in `bestand.json`
-  lesen; nennt eine das Feature, den Nutzer fragen.
+- **Gleichungsgesteuerte Unterdrückung:** Steht das Feature links in einer Gleichung, weist `validieren` `unterdruecken` und `aufheben` ab (`MASS_GESTEUERT`, Meldung nennt
+  die Gleichung). An der Quelle ändern: `gleichung`-Punkt. Nennt eine Gleichung das Feature nur rechts, steuert sie es nicht.
 
 ## 2. Aufnehmen
 
 1. Ordner `auftraege/<auftrag>/`, die Punkte des Nutzers wörtlich nach `eingabe/aufgabe.md` (der Prüfer liest sie). Ein Teil je Auftrag.
 2. `swki bestand aufnehmen <pfad> --auftrag <auftrag>`; `<auftrag>` ist genau der Ordnername.
 
-Die Ausgabe nennt `sha256`, `aufnahme`, Konfigurationen, Variablen, `tabelle`, Features und je Maß Name, Wert, `zustand` (`treibend`,
+Die Ausgabe nennt `sha256`, `aufnahme`, Konfigurationen, Variablen, `tabelle`, `einheitensystem`, Features und je Maß Name, Wert, `zustand` (`treibend`,
 `gesteuert`, `getrieben`), dazu `skizzen_offen`, `neuaufbau`, `bilder`, `bestand_json` (Rohdaten: Quelle, Gruppe, `punkte` = Modelllage des Maßes).
 Bilder ansehen. Fehler in `neuaufbau` und offene Skizzen gehören dem Kollegen: dem Nutzer nennen, sie bleiben. `version_aelter: true` siehe §5.
 Hat der Kollege weitergearbeitet (andere SHA-256), entsteht `bestand-<n+1>` und die Spec zieht auf die neue Aufnahme um (`BESTAND_VERALTET`).
-`BESTAND_ANDERE_DATEI`: Ein Auftrag nimmt genau eine Datei auf, für die zweite einen neuen Auftrag anlegen. `BESTAND_NICHT_LESBAR`: Das Original fehlt oder
-ist gesperrt, den Nutzer fragen.
+`BESTAND_ANDERE_DATEI`: Ein Auftrag nimmt genau eine Datei auf, für die zweite einen neuen Auftrag anlegen. `BESTAND_NICHT_LESBAR`: Das Original fehlt oder ist gesperrt, die
+Kopie weicht vom Original ab (speichert gerade jemand?), SolidWorks findet keinen Versionsverlauf (keine SolidWorks-Datei?) oder kann eine Konfiguration nicht aktivieren. Die
+Meldung nennt den Fall, den Nutzer fragen.
 
 ## 3. Punkte zuordnen
 
@@ -103,7 +106,8 @@ pruefung?:
 - Alte und neue Lage gehören beide hinein (Bohrung wandert: alte plus neue Stelle). Zwei Punkte an einer Stelle teilen sich einen Bereich.
 - Vermutung, nicht gemessen: Differenzkörper verschmelzen, wenn zwei Punkte aneinanderstoßen, etwa eine Fase an einer Kante, die zugleich durch eine
   Längenänderung wandert. Ein Körper über zwei Bereiche passt in keinen. Solche Punkte bekommen einen gemeinsamen Bereich, oder der Nutzer entscheidet.
-- `features`-Bereiche passen für ein Feature, das nur verschwindet oder sich ändert, Boxen überall sonst.
+- `features`-Bereiche passen für ein Feature, das nur verschwindet oder sich ändert, Boxen überall sonst. Berührt ein Körper mehrere Features eines Bereichs, müssen deren Boxen ihn
+  decken: Berühren sie sich nicht, ist das Mangel `bereich`; bleibt nur eine Ecke seines Hüllquaders frei, `ok: None` mit `bereich_offen` in `differenzen`.
 
 ## 5. Validieren, Freigabe
 
@@ -114,13 +118,14 @@ pruefung?:
 | `BESTAND_REFERENZ` | Name aus der Aufnahme nehmen |
 | `BESTAND_ALTWERT` | Zuordnung falsch oder Wert anders als genannt: Ziel neu prüfen, sonst den Nutzer fragen |
 | `MASS_GESTEUERT` | an der Quelle ändern; Tabelle: §1 |
+| `BESTAND_EINHEIT` | §1, `einheit` nennt die Einheit der Datei |
 | `FOLGEN_ABWEICHEND` | die `erwartet`-Liste prüfen und eintragen |
 | `KINDER_FEHLEN` | `fehlen` in `kinder` eintragen, in der Freigabe-Vorlage nennen |
 | `BEREICH_FEHLT` | Bereich ergänzen |
 
 **Freigabe-Vorlage** (eine Nachricht): je Punkt **Stelle** in Worten, **alt → neu**, **Folgen** (Maße, die mitgehen; mitgelöschte Features), **Konfigurationen**,
 **Bereich** und bei fremden Maßen und Features ein **Bild** aus `swki bestand zeige`. Dazu „Selbst entschieden“, offene Skizzen und Fehler im Bestand. Bei einer älteren Datei fragt die Vorlage das Hochstufen
-ausdrücklich: „Darf die Datei hochgestuft werden? Sie ist danach nur noch mit SolidWorks ≥ <Jahr> lesbar, das lässt sich nicht rückgängig machen.“ Ohne ausdrückliches OK wird nichts freigegeben. Ein OK gilt für den ganzen Auftrag. Nach dem OK: `swki durchlauf <spec> --freigeben`.
+ausdrücklich: „Darf die Datei hochgestuft werden? Sie ist danach nur noch mit SolidWorks ≥ <Jahr> lesbar, das lässt sich nicht rückgängig machen.“ Ohne ausdrückliches OK wird nichts freigegeben. Ein OK gilt für alle Punkte des Auftrags; das Hochstufen braucht ein eigenes ausdrückliches OK, das Auftrags-OK deckt es nicht. Nach dem OK: `swki durchlauf <spec> --freigeben`.
 
 Die Prüfsumme schützt `bestand`, `parameter`, Punkte, `bereiche` und `pruefung`. Bauweg bleiben Anker, `bezug`, `nach`, Skriptdateien und die Reihenfolge der Punkte.
 Ältere Datei: `swki durchlauf` baut sie nicht. Nach dem OK zum Hochstufen `swki freigeben <spec>`, `swki bauen <spec> --hochstufen`, `swki pruefen <spec>`, `swki status <spec>`.
@@ -132,7 +137,7 @@ Material, Neuaufbau, Skizzen, externe Referenzen, Differenz je Konfiguration, `f
 `pruefung.fehlgeschlagen`, `pruefung.ohne_urteil`).
 
 **`ok: None` heißt nicht nachgewiesen und ist nicht bestanden.** Es steht als `nicht_nachgewiesen` in `maengel`. Die Ursache klären (Skript gibt ein Feature nicht zurück, Wert nicht
-lesbar, dünner Körper außerhalb der Bereiche), bis der Nachweis steht; ein Bereich oder Soll wird dafür nicht passend gemacht.
+lesbar, dünner Körper außerhalb der Bereiche, Körper, den die Feature-Boxen nicht ganz decken), bis der Nachweis steht; ein Bereich oder Soll wird dafür nicht passend gemacht.
 
 Nach bestandenen Code-Prüfungen den Prüfer-Agenten (`subagent_type: pruefer`, `model: sonnet`) mit `pruefer_auftrag` aus der Ausgabe unverändert starten; der Auftrag nennt die
 **Vorher-Bilder**, ohne sie sieht der Prüfer keine Änderung. Das JSON-Urteil unverändert nach `auftraege/<auftrag>/protokolle/<spec>.lauf-<n>.pruefer.json`, dann `swki status <spec>`.
@@ -157,5 +162,5 @@ Nach `bestanden`: `swki bestand ausgabe <spec> [--lauf n]` kopiert die geändert
 - `BESTAND_LIZENZ`: Rechner A läuft laut API als Student, die Datei trägt das mit. Ob sie sich beim Kollegen mit Vollversion so verwenden lässt, ist nicht gemessen. Vor dem Rückweg an einen
   Kollegen mit dem Nutzer klären.
 - `BESTAND_ORIGINAL_GEAENDERT`: Das Original ist neuer als die Aufnahme, Zurückkopieren überschriebe Arbeit des Kollegen. Nutzer fragen, ggf. neu aufnehmen.
-- `BESTAND_NICHT_LESBAR`: Das Original lässt sich nicht lesen, ob es sich geändert hat, ist unbekannt. Vor dem Zurückkopieren mit dem Nutzer prüfen.
+- `BESTAND_NICHT_LESBAR`: Das Original fehlt oder ist gesperrt, ob es sich geändert hat, ist unbekannt. Die Ausgabe warnt nur, den Nutzer vor dem Zurückkopieren fragen.
 - `LAUF_NICHT_BESTANDEN`: Ausgegeben wird nur ein Lauf mit bestandenen Code-Prüfungen und Prüfer-Urteil.

@@ -97,6 +97,7 @@ def _wende_punkte_an(app, model, spec: dict, spec_pfad: Path, tol_mm: float, auf
     def rufe(knoten: Knoten, p: dict) -> None:
         namen = punkte.punkt_handler(p["typ"])(ctx, p, aufnahme)
         knoten.sw_name = ", ".join(namen) or None
+        knoten.sw_namen = list(namen) or None
         if p["typ"] == "loeschen":
             geloescht.update(namen)
         if (ergebnis := ctx.ergebnisse.get(p["id"])) is not None:

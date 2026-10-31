@@ -20,7 +20,7 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
   IDisplayDimension.GetDimension2(1), .IsLinked, .GetLinkedText(0), .GetAnnotation(0); IAnnotation.Color
   IDimension.FullName, .GetType(0: swDimensionParamType_e Linear 0, Angular 1, Integer 2), .DrivenState (swDimensionDriven
     1), .IsDesignTableDimension(0), .GetSystemValue3(2: swSetValue_InThisConfiguration 1), .ReferencePoints
-  IEquationMgr.GetCount(0), .Equation(Index), .GlobalVariable(Index), .Value(Index)
+  IEquationMgr.GetCount(0), .Equation(Index), .GlobalVariable(Index), .Value(Index), .LinkToFile, .FilePath
   ISketch.ModelToSketchTransform; IMathVector.MultiplyTransform(1); IModelView.Scale2
   IModelDoc2.Save3(3: swSaveAsOptions_Silent 1); ISldWorks.GetCurrentLicenseType(0); IModelDocExtension.GetLicenseType(0)
 """
@@ -30,7 +30,7 @@ import re
 from pathlib import Path
 
 from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_REFERENZ, BESTAND_VERSION_NEUER, BestandFehler
-from swki.bestand.folgen import rechte_seite
+from swki.bestand.folgen import rechte_seite, vergleichsname
 from swki.compiler import sw
 from swki.compiler.fehler import SPEICHERN_FEHLGESCHLAGEN, BauFehler
 from swki.compiler.topologie import koerper
@@ -87,13 +87,6 @@ def _quelle(gleichung: dict, variablen: set[str]) -> dict:
     return {"art": "gleichung", "name": gleichung["links"]}
 
 
-def _schluessel(name: str) -> str:
-    """Vergleichsform der Maßnamen aus Gleichungen und `FullName`: ohne Dokument, ohne Groß-/Kleinschreibung."""
-    if re.search(r"@[^@]*\.(part|assembly)$", name, re.IGNORECASE):
-        name = massname(name)
-    return name.casefold()
-
-
 def leite_masse(roh: list[dict], gleichungen: list[dict]) -> list[dict]:
     """`masse` aus gelesenen Rohdaten (rein). `roh` je Maß: `name`, `feature`, `werte`, `einheit`, `punkte`, `driven`
     (DrivenState), `tabelle` (IsDesignTableDimension), `verknuepft` (Gruppenname oder None).
@@ -102,10 +95,10 @@ def leite_masse(roh: list[dict], gleichungen: list[dict]) -> list[dict]:
     treibend. Eine Gruppe verknüpfter Maße hat einen Wert: Ist ein Mitglied gesteuert, sind es alle (Partner ließen sich
     sonst setzen, und der Neuaufbau dreht den Wert still zurück, S18c)."""
     variablen = {g["links"] for g in gleichungen if g["global"]}
-    links = {_schluessel(g["links"]): g for g in gleichungen}
+    links = {vergleichsname(g["links"]): g for g in gleichungen}
     aus = []
     for m in roh:
-        g = links.get(_schluessel(m["name"]))
+        g = links.get(vergleichsname(m["name"]))
         if g is not None:
             zustand, quelle = "gesteuert", _quelle(g, variablen)
         elif m["tabelle"]:
@@ -278,6 +271,13 @@ def _datei_referenzen(model) -> list[str]:
     return list(ausgaben[0].value or ())
 
 
+def _gleichungsdatei(model) -> list[str]:
+    """Spec §3: Mit einer Datei verknüpfte Gleichungen sind eine externe Referenz, ein `gleichung`-Punkt schriebe sonst womöglich die
+    Datei des Kollegen zurück. Auch ohne lesbaren Pfad bleibt die Liste nicht leer, sonst fiele die Ablehnung still weg."""
+    gleichungen = model.GetEquationMgr
+    return [gleichungen.FilePath or "verknüpfte Gleichungsdatei, Pfad nicht lesbar"] if gleichungen.LinkToFile else []
+
+
 def _geometrie(model) -> dict:
     """Körper, Volumen (mm³), Hüllquader, Schwerpunkt (mm) der aktiven Konfiguration; ohne Volumenkörper `None`."""
     mp = model.Extension.CreateMassProperty2
@@ -303,7 +303,7 @@ def lies_bestand(app, model) -> dict:
                "materialien": {k: material_von(model, k) for k in konfigurationen},
                "eigenschaften": {"datei": _eigenschaften(model, ""),
                                  "konfiguration": {k: _eigenschaften(model, k) for k in konfigurationen}},
-               "externe_referenzen": _datei_referenzen(model), "gleichungen": gleichungen, "variablen": variablen,
+               "externe_referenzen": _datei_referenzen(model) + _gleichungsdatei(model), "gleichungen": gleichungen, "variablen": variablen,
                "skizzen": skizzenstatus(model), "tabelle": tabelle}
     neuaufbau, reihenfolge, geometrie, roh = [], {}, {}, {}
     try:

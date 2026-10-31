@@ -22,10 +22,11 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
   IPartDoc.GetBodies2(2), IFeature.GetFaces(0), IFace2.GetBox(0)
 """
 
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
+from itertools import combinations, pairwise, product
 
 from swki.bestand.spec import GEOMETRIE_TYPEN
 from swki.bestand.sw_bestand import _schalte
@@ -82,11 +83,38 @@ def _beruehrt(box: list[float], bereich: list[float], toleranz: float) -> bool:
     return all(box[i] <= bereich[i + 3] + toleranz and box[i + 3] >= bereich[i] - toleranz for i in range(3))
 
 
-def _im_bereich(box: list[float], boxen: list[list[float]], toleranz: float) -> bool:
-    """`box` liegt in der Vereinigung der Boxen, die sie berühren. Ein gelöschter Schnitt samt Fase ist ein Differenzkörper, zwei Fasen an
-    beiden Enden erlauben aber keine Tasche in der Mitte: Der Hüllquader aller Features eines Bereichs wäre zu weit."""
+def _abschnitte(lo: float, hi: float, schnitte: set[float]) -> list[tuple[float, float]]:
+    punkte = sorted({lo, hi, *(c for c in schnitte if lo < c < hi)})
+    return list(pairwise(punkte)) or [(lo, hi)]
+
+
+def _gedeckt(box: list[float], boxen: list[list[float]], toleranz: float) -> bool:
+    """`box` liegt ganz in der Vereinigung der Boxen. Exakt: Deren Kanten zerlegen sie in Zellen, und jede Zelle liegt in einer Box oder
+    ragt aus allen heraus."""
+    weit = [[b[i] - toleranz for i in range(3)] + [b[i] + toleranz for i in range(3, 6)] for b in boxen]
+    achsen = [_abschnitte(box[i], box[i + 3], {c for b in weit for c in (b[i], b[i + 3])}) for i in range(3)]
+    return all(any(_innen([x[0], y[0], z[0], x[1], y[1], z[1]], b, 0) for b in weit) for x, y, z in product(*achsen))
+
+
+def _im_bereich(box: list[float], boxen: list[list[float]], toleranz: float) -> bool | None:
+    """Liegt der Körper mit dem Hüllquader `box` in den Boxen eines Bereichs? Ein gelöschter Schnitt samt Fase ist ein Differenzkörper, zwei
+    Fasen an beiden Enden erlauben aber keine Tasche in der Mitte: Der Hüllquader aller Features eines Bereichs wäre zu weit.
+
+    `True`: Die Boxen, die er berührt, decken `box`, das beweist es. `False`: Er ragt über ihren Hüllquader hinaus, oder sie hängen nicht
+    zusammen (paarweise berührend), dann läge etwas dazwischen. `None`: Sie hängen zusammen, decken `box` aber nicht. Ob der Körper in der
+    freien Ecke liegt oder nur sein Hüllquader, lässt sich aus achsparallelen Boxen nicht sagen."""
     beruehrt = [b for b in boxen if _beruehrt(box, b, toleranz)]
-    return bool(beruehrt) and _innen(box, reduce(_vereine, beruehrt), toleranz)
+    if not beruehrt or not _innen(box, reduce(_vereine, beruehrt), toleranz):
+        return False
+    if _gedeckt(box, beruehrt, toleranz):
+        return True
+    return None if all(_beruehrt(a, b, toleranz) for a, b in combinations(beruehrt, 2)) else False
+
+
+def _am_besten(stand: Iterable[bool | None]) -> bool | None:
+    """Der beste Stand über mehrere Körper oder Bereiche; ohne Eintrag `False`."""
+    liste = list(stand)
+    return True if True in liste else None if None in liste else False
 
 
 def _gilt_in(punkt: dict, konfiguration: str) -> bool:
@@ -108,26 +136,35 @@ def _lage(box: list[float]) -> str:
 
 
 def _zeile(a: Abweichung, passend: list, toleranz: float) -> dict:
-    return {"art": a.art, "box": a.box, "volumen": a.volumen, "flaeche": a.flaeche, "dicke": round(dicke(a), 6),
-            "bereich": next((i for i, boxen in passend if _im_bereich(a.box, boxen, toleranz)), None),
+    """`bereich`: der erste, in dem die Abweichung nachweislich liegt. `bereich_offen`: sonst der erste, in dem sie liegen kann."""
+    stand = [(i, _im_bereich(a.box, boxen, toleranz)) for i, boxen in passend]
+    sicher = next((i for i, s in stand if s is True), None)
+    return {"art": a.art, "box": a.box, "volumen": a.volumen, "flaeche": a.flaeche, "dicke": round(dicke(a), 6), "bereich": sicher,
+            "bereich_offen": None if sicher is not None else next((i for i, s in stand if s is None), None),
             "unter_toleranz": _kante(a) < toleranz, "duenn": _kante(a) >= toleranz and dicke(a) < toleranz}
+
+
+def _offen_text(x: dict, k: str) -> str:
+    lage = f"{x['art']} {x['volumen']:g} mm³ bei {_lage(x['box'])}"
+    if x["bereich_offen"] is not None:
+        return f"{lage} liegt vielleicht in Bereich {x['bereich_offen']}: Dessen Feature-Boxen decken den Hüllquader nicht ganz ({k}), nicht nachgewiesen"
+    return f"{lage} liegt in keinem Bereich, ist nur im Mittel dünner als die Toleranz ({k}), nicht nachgewiesen"
 
 
 def _in_konfiguration(k: str, liste: list[Abweichung] | str, bereiche: list, toleranz: float) -> dict:
     """Ein Bereich gilt nur in den Konfigurationen seiner Punkte: Sonst erlaubte ein Punkt für Standard dieselbe Stelle in Variante B.
-    Außerhalb der Bereiche ist eine Abweichung ein Mangel; was nur im Mittel dünn ist, bleibt nicht nachgewiesen (`dicke`)."""
+    Außerhalb der Bereiche ist eine Abweichung ein Mangel; was nur im Mittel dünn ist (`dicke`) oder vielleicht in einem Bereich liegt
+    (`_im_bereich`), bleibt nicht nachgewiesen."""
     if isinstance(liste, str):
         return eintrag("bereich", None, konfiguration=k, ist=[], knoten=[], hinweis=f"Differenz in {k} nicht nachgewiesen: {liste}")
     passend = [(i, boxen) for i, punkte, boxen in bereiche if any(_gilt_in(p, k) for p in punkte)]
     ist = [_zeile(a, passend, toleranz) for a in liste]
     draussen = [x for x in ist if x["bereich"] is None and not x["unter_toleranz"]]
-    if mangel := [x for x in draussen if not x["duenn"]]:
+    if mangel := [x for x in draussen if not x["duenn"] and x["bereich_offen"] is None]:
         return eintrag("bereich", False, konfiguration=k, ist=ist, knoten=[], hinweis="; ".join(
             f"{x['art']} {x['volumen']:g} mm³ bei {_lage(x['box'])} liegt in keinem Bereich ({k})" for x in mangel))
     if draussen:
-        return eintrag("bereich", None, konfiguration=k, ist=ist, knoten=[], hinweis="; ".join(
-            f"{x['art']} {x['volumen']:g} mm³ bei {_lage(x['box'])} liegt in keinem Bereich, ist nur im Mittel dünner als die Toleranz "
-            f"({k}), nicht nachgewiesen" for x in draussen))
+        return eintrag("bereich", None, konfiguration=k, ist=ist, knoten=[], hinweis="; ".join(_offen_text(x, k) for x in draussen))
     return eintrag("bereich", True, konfiguration=k, ist=ist, knoten=[])
 
 
@@ -145,11 +182,16 @@ def _wirkung(p: dict, abweichungen: dict, bereiche: list, toleranz: float) -> di
     if not meine and p["typ"] != "skript":
         return eintrag(pid, False, knoten=[p["id"]], hinweis=f"Punkt {p['id']} steht in keinem Bereich")
     gefunden = [a for liste in eigene.values() if not isinstance(liste, str) for a in liste]
-    leer = [i for i, boxen in meine if not any(_im_bereich(a.box, boxen, toleranz) for a in gefunden)]
-    if not leer:
+    stand = {i: _am_besten(_im_bereich(a.box, boxen, toleranz) for a in gefunden) for i, boxen in meine}
+    leer = [i for i, s in stand.items() if s is False]
+    vielleicht = [i for i, s in stand.items() if s is None]
+    if not leer and not vielleicht:
         return eintrag(pid, True, knoten=[p["id"]])
     if offen := [k for k, a in eigene.items() if isinstance(a, str)]:
         return eintrag(pid, None, knoten=[p["id"]], hinweis=f"Wirkung nicht nachgewiesen, Differenz fehlt in {', '.join(offen)}")
+    if not leer:
+        return eintrag(pid, None, knoten=[p["id"]], hinweis="Wirkung nicht nachgewiesen, eine Abweichung liegt nur vielleicht im Bereich "
+                       f"{', '.join(str(i) for i in vielleicht)}")
     return eintrag(pid, False, knoten=[p["id"]], hinweis=f"Punkt {p['id']}: keine Abweichung im Bereich "
                    f"{', '.join(str(i) for i in leer)}, er hat dort nichts bewirkt")
 

@@ -27,7 +27,7 @@ def test_abweichung_im_bereich_ok():
     e = bewerte_bereiche(SPEC_BOX, a, {})
     assert alle_ok(e)
     assert bereich(e)[0]["ist"][0] | {"dicke": None} == {
-        "art": "entfernt", "box": IM_BEREICH, "volumen": 500.0, "flaeche": None, "dicke": None, "bereich": 0,
+        "art": "entfernt", "box": IM_BEREICH, "volumen": 500.0, "flaeche": None, "dicke": None, "bereich": 0, "bereich_offen": None,
         "unter_toleranz": False, "duenn": False}
 
 
@@ -209,6 +209,60 @@ def test_features_bereich_erlaubt_nichts_zwischen_den_features(mitte):
     links = Abweichung("hinzu", boxen["FaseL"], 30.0, 200.0)
     e = _bereich_ok(spec, [links, Abweichung("entfernt", mitte, 1000.0, 600.0)], boxen)
     assert e["ok"] is False and [x["bereich"] for x in e["ist"]] == [0, None]
+
+
+def _features_spec(*namen):
+    return {"punkte": [{"id": "p1", "typ": "unterdruecken"}], "bereiche": [{"punkte": ["p1"], "features": list(namen)}]}
+
+
+def test_koerper_ueber_zwei_entfernte_features_ist_mangel():
+    """Er berührt beide Fasen und liegt in ihrem Hüllquader, alles dazwischen wäre aber mitgeändert (Abschlussreview)."""
+    boxen = {"FaseL": [-50, -30, 18, -48, 30, 20], "FaseR": [48, -30, 18, 50, 30, 20]}
+    e = _bereich_ok(_features_spec("FaseL", "FaseR"), [Abweichung("entfernt", [-50, -5, 18, 50, 5, 20], 2000.0, 1200.0)], boxen)
+    assert e["ok"] is False and (e["ist"][0]["bereich"], e["ist"][0]["bereich_offen"]) == (None, None)
+
+
+WINKEL = {"Boden": [0, 0, 0, 10, 10, 2], "Wand": [0, 0, 2, 2, 10, 10]}
+UEBER_ECK = Abweichung("entfernt", [0, 0, 0, 10, 10, 10], 240.0, 500.0)
+
+
+def test_nicht_gedeckte_ecke_ist_nicht_nachgewiesen():
+    """Zwei Boxen über Eck: Der Körper kann der Winkel sein oder der volle Würfel, aus den Hüllquadern lässt sich das nicht sagen."""
+    e = _bereich_ok(_features_spec("Boden", "Wand"), [UEBER_ECK], WINKEL)
+    assert e["ok"] is None and "nicht nachgewiesen" in e["hinweis"] and "Bereich 0" in e["hinweis"]
+    assert (e["ist"][0]["bereich"], e["ist"][0]["bereich_offen"]) == (None, 0)
+
+
+def test_wirkung_im_zweifel_ist_nicht_nachgewiesen():
+    [e] = [x for x in bewerte_bereiche(_features_spec("Boden", "Wand"), {"Standard": [UEBER_ECK]}, WINKEL) if x["id"] == "punkt:p1"]
+    assert e["ok"] is None and "nicht nachgewiesen" in e["hinweis"]
+
+
+def test_sicherer_bereich_geht_vor_zweifel():
+    spec = {"punkte": [{"id": "p1", "typ": "unterdruecken"}, {"id": "p2", "typ": "mass"}],
+            "bereiche": [{"punkte": ["p1"], "features": ["Boden", "Wand"]}, {"punkte": ["p2"], "box": {"min": [-1, -1, -1], "max": [11, 11, 11]}}]}
+    e = _bereich_ok(spec, [UEBER_ECK], WINKEL)
+    assert e["ok"] is True and (e["ist"][0]["bereich"], e["ist"][0]["bereich_offen"]) == (1, None)
+
+
+def test_kette_die_den_koerper_deckt_ist_nachgewiesen():
+    """Gedeckt ist bewiesen, ob sich das erste und das letzte Glied berühren, zählt dann nicht."""
+    boxen = {"A": [0, 0, 0, 10, 10, 10], "B": [10, 0, 0, 20, 10, 10], "C": [20, 0, 0, 30, 10, 10]}
+    assert _bereich_ok(_features_spec("A", "B", "C"), [Abweichung("entfernt", [5, 0, 0, 25, 10, 10], 2000.0, 1000.0)], boxen)["ok"] is True
+
+
+def test_koerper_in_einer_box_darf_getrennte_boxen_beruehren():
+    """Liegt er ganz in der Tasche, ändert es nichts, dass er oben an zwei Fasen stößt, die sich nicht berühren."""
+    boxen = {"Tasche": [0, 0, 0, 30, 10, 10], "FaseL": [0, 0, 10, 2, 10, 12], "FaseR": [28, 0, 10, 30, 10, 12]}
+    a = Abweichung("entfernt", [0, 2, 2, 30, 8, 10], 2880.0, 1000.0)
+    assert _bereich_ok(_features_spec("Tasche", "FaseL", "FaseR"), [a], boxen)["ok"] is True
+
+
+def test_luecke_in_den_gedeckten_boxen_ist_nicht_gedeckt():
+    """Zwei überlappende Boxen, die eine dritte nicht schließt: Was dazwischen liegt, ist in keiner."""
+    boxen = {"A": [0, 0, 0, 10, 4, 10], "B": [0, 6, 0, 10, 10, 10], "C": [0, 0, 0, 2, 10, 10]}
+    e = _bereich_ok(_features_spec("A", "B", "C"), [Abweichung("entfernt", [0, 0, 0, 10, 10, 10], 840.0, 900.0)], boxen)
+    assert e["ok"] is False  # A und B berühren sich nicht
 
 
 @pytest.mark.parametrize("von", [-20, -19.995])

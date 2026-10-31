@@ -15,11 +15,11 @@ import json
 from pathlib import Path
 
 from swki.auftrag import auftrag_name, lauf_datei, lauf_ordner, laeufe
-from swki.bestand.ablage import bestand_ordner, lade_aufnahme, pruefe_kopie, vorher_kopie
+from swki.bestand.ablage import bestand_ordner, pruefe_kopie, vorher_kopie
 from swki.bestand.differenz import DifferenzFehler, alle_feature_boxen, bewerte_bereiche, in_konfigurationen, koerper_differenz
 from swki.bestand.feature_messung import bewerte, messart, teil_spec
 from swki.bestand.punkte import fremde_namen
-from swki.bestand.spec import lade_aenderung
+from swki.bestand.spec import aufnahme_zu, lade_aenderung
 from swki.bestand.sw_bestand import lies_bestand
 from swki.bestand.vergleich import vergleiche
 from swki.cli import SwkiFehler
@@ -114,8 +114,7 @@ def _skript_lauf(spec: dict, protokoll: dict) -> tuple[frozenset[str], frozenset
     knoten = {k["id"]: k for k in protokoll.get("knoten", [])}
     gelaufen = [knoten[p["id"]] for p in spec["punkte"]
                 if p["typ"] == "skript" and knoten.get(p["id"], {}).get("status") == "ok"]
-    return (frozenset(n for k in gelaufen if k.get("sw_name") for n in k["sw_name"].split(", ")),
-            frozenset(k["id"] for k in gelaufen))
+    return frozenset(n for k in gelaufen for n in k.get("sw_namen") or ()), frozenset(k["id"] for k in gelaufen)
 
 
 _RANG = {False: 0, None: 1, True: 2}
@@ -199,9 +198,8 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     ordner, teil = lauf_ordner(r, auftrag, lauf), Path(protokoll["dateien"]["teil"])
     if not teil.exists():
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")
-    nummer = spec["bestand"]["aufnahme"]
-    vorher = lade_aufnahme(r, auftrag, nummer)
-    kopie = bestand_ordner(r, auftrag, nummer) / vorher["datei"]["name"]
+    vorher = aufnahme_zu(spec, spec_pfad)  # BESTAND_UNBEKANNT, BESTAND_VERALTET
+    kopie = bestand_ordner(r, auftrag, spec["bestand"]["aufnahme"]) / vorher["datei"]["name"]
     pruefe_kopie(vorher, kopie)  # BESTAND_ABWEICHEND
     vorher_pfad = vorher_kopie(kopie, ordner)
 

@@ -14,7 +14,7 @@ from swki.aenderungen import pruefe_unveraendert, sha256_datei
 from swki.auftrag import lauf_datei
 from swki.bestand import ausgabe, bau, befehle
 from swki.bestand.ablage import bestand_ordner, lade_aufnahme
-from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_ORIGINAL_GEAENDERT, MASS_GESTEUERT
+from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_ORIGINAL_GEAENDERT, BESTAND_REFERENZ_EXTERN, MASS_GESTEUERT, BestandFehler
 from swki.bestand.pruefen import pruefen
 from swki.bestand.spec import freigeben, validieren
 from swki.bestand.sw_bestand import _geometrie, bstr_array, lies_bestand, whats_wrong
@@ -87,6 +87,32 @@ def test_aufnahme_musterteil(auftrag):
     assert sha256_datei(kopie) == sha
 
     assert befehle.aufnehmen(MUSTER, auftrag)["neu"] is False
+
+
+def test_verknuepfte_gleichungen_lehnt_aufnehmen_ab(auftrag):
+    """Spec §3: Eine Kopie des Musters wird mit einer Gleichungsdatei verknüpft (`LinkToFile` wirkt erst nach `FilePath`, laut Index). Die
+    Aufnahme lehnt sie ab und nennt die Datei."""
+    r = lade_rechner()
+    ordner = r.arbeitsordner / auftrag / "verknuepft"
+    ordner.mkdir(parents=True)
+    kollege = ordner / MUSTER.name
+    shutil.copy2(MUSTER, kollege)
+    datei = ordner / "gleichungen.txt"
+    datei.write_text('"L"= 100\n"D1@Skizze1" = "L"\n', encoding="utf-8")
+    app = verbinde(r.sw_jahr)
+    model = oeffne(app, kollege, sichtbar=False)
+    try:
+        gleichungen = model.GetEquationMgr
+        gleichungen.FilePath = str(datei)
+        gleichungen.LinkToFile = True
+        fehler, warnungen = byref_long(), byref_long()
+        assert model.Save3(sw.SW_SAVEAS_SILENT, fehler, warnungen) and not fehler.value, fehler.value
+    finally:
+        sw.schliesse(app, model)
+    with pytest.raises(BestandFehler) as e:
+        befehle.aufnehmen(kollege, auftrag)
+    assert e.value.daten["code"] == BESTAND_REFERENZ_EXTERN
+    assert [Path(p).name for p in e.value.daten["referenzen"]] == [datei.name], e.value.daten
 
 
 TASCHE = "D1@Schnitt-Linear austragen1"

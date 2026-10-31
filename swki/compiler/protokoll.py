@@ -17,6 +17,7 @@ class Knoten:
     status: str = "offen"  # offen | ok | fehler | uebersprungen
     dauer_s: float = 0.0
     sw_name: str | None = None
+    sw_namen: list[str] | None = None  # Bestandsdatei: dieselben Namen einzeln, ein Featurename darf ein Komma enthalten
     fehler: dict | None = None
     punkte: list | None = None  # Bohrungsinstanzen: Achspunkte (mm), für die Prüfung
     masse: list[dict] | None = None  # Maßprotokoll: [{"name", "pfad", "art", "bezug", "roh", "vorzeichen", "wert", "einheit"}]

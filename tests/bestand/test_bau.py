@@ -108,6 +108,7 @@ def test_bau_startet_ab_bestand_und_speichert_an_ort(lauf):
     assert p["sha256"] == {"Lagerdeckel.SLDPRT": sha256_datei(ziel)} and p["dateien"] == {"teil": str(ziel)}
     assert (lauf_ordner(lauf.r, "A", 1) / "protokoll.json").is_file()
     assert p["knoten"][0]["masse"][0]["name"] == "D2@Skizze4" and p["knoten"][0]["sw_name"] == "D2@Skizze4"
+    assert p["knoten"][0]["sw_namen"] == ["D2@Skizze4"]  # die Liste trennt, was `sw_name` mit ", " verbindet
 
 
 def test_bau_folgt_der_spec_reihenfolge(lauf):

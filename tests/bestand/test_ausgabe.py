@@ -13,8 +13,9 @@ from swki.aenderungen import sha256_datei
 from swki.auftrag import lauf_datei, lauf_ordner
 from swki.bestand import ausgabe as modul
 from swki.bestand import bau
-from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, LAUF_NICHT_BESTANDEN,
-                                 BestandFehler)
+from swki.bestand.ablage import schreibe_aufnahme
+from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, BESTAND_UNBEKANNT, BESTAND_VERALTET,
+                                 LAUF_NICHT_BESTANDEN, BestandFehler)
 from swki.cli import SwkiFehler
 from swki.pruefung import befehle
 from swki.pruefung.schleife import empfehlung
@@ -245,6 +246,32 @@ def test_ausgabe_verweigert_nach_manueller_aenderung_des_laufs(u):
     with pytest.raises(SwkiFehler) as e:
         modul.ausgabe(spec)
     assert e.value.daten["code"] == "MANUELL_GEAENDERT" and not u.ausgabe_ordner().exists()
+
+
+def test_gescheiterte_gegenprobe_laesst_keine_kopie_liegen(u, monkeypatch):
+    u.voll()
+    spec = u.gebaut()
+    monkeypatch.setattr(modul.shutil, "copy2", lambda quelle, ziel: Path(ziel).write_bytes(b"halb"))
+    with pytest.raises(SwkiFehler, match="weicht"):
+        modul.ausgabe(spec)
+    assert not (u.ausgabe_ordner() / "Lagerdeckel.SLDPRT").exists()
+
+
+def test_ausgabe_spec_passt_nicht_zur_aufnahme(u):
+    spec = u.gebaut()
+    schreibe_aufnahme(u.r, "A", 1, {**u.aufnahme, "datei": {**u.aufnahme["datei"], "sha256": "0" * 64}})
+    with pytest.raises(BestandFehler) as e:
+        modul.ausgabe(spec)
+    assert e.value.daten["code"] == BESTAND_UNBEKANNT and not u.ausgabe_ordner().exists()
+
+
+def test_ausgabe_nicht_auf_veralteter_aufnahme(u):
+    """Der Kollege hat weitergearbeitet und die Datei ist neu aufgenommen: Der alte Lauf überschriebe seine Arbeit."""
+    spec = u.gebaut()
+    schreibe_aufnahme(u.r, "A", 2, u.aufnahme)
+    with pytest.raises(BestandFehler) as e:
+        modul.ausgabe(spec)
+    assert e.value.daten["code"] == BESTAND_VERALTET and not u.ausgabe_ordner().exists()
 
 
 def test_ausgabe_braucht_die_freigabe(u):

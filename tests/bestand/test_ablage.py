@@ -39,6 +39,23 @@ def test_kopie_liest_original_nur_und_ist_schreibgeschuetzt(r, tmp_path):
     assert not os.access(k["pfad"], os.W_OK)
 
 
+@pytest.mark.parametrize("schreibschutz", [False, True])
+def test_kopie_weicht_vom_original_ab(r, tmp_path, monkeypatch, schreibschutz):
+    """Das Original ändert sich beim Kopieren (Kollege speichert) oder das Kopieren ist kaputt: Es bleibt nichts liegen, auch nicht, wenn
+    `copy2` den Schreibschutz des Originals mitgebracht hat."""
+    original = _datei(tmp_path / "kunde", "Deckel.SLDPRT", b"abc")
+
+    def kopiere(quelle, ziel):
+        Path(ziel).write_bytes(b"halb")
+        if schreibschutz:
+            os.chmod(ziel, stat.S_IREAD)
+
+    monkeypatch.setattr(ablage.shutil, "copy2", kopiere)
+    with pytest.raises(BestandFehler) as e:
+        kopiere_original(r, "a1", original)
+    assert e.value.daten["code"] == BESTAND_NICHT_LESBAR and aufnahmen(r, "a1") == []
+
+
 def test_gleiche_datei_keine_neue_aufnahme(r, tmp_path):
     original = _datei(tmp_path / "kunde", "Deckel.SLDPRT", b"abc")
     erste = kopiere_original(r, "a1", original)

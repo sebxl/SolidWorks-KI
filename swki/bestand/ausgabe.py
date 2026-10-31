@@ -14,10 +14,10 @@ from pathlib import Path
 
 from swki.aenderungen import AenderungFehler, sha256_datei
 from swki.auftrag import auftrag_name, lauf_datei, lauf_ordner
-from swki.bestand.ablage import bestand_ordner, lade_aufnahme
+from swki.bestand.ablage import bestand_ordner
 from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, LAUF_NICHT_BESTANDEN,
                                  BestandFehler)
-from swki.bestand.spec import lade_aenderung
+from swki.bestand.spec import aufnahme_zu, lade_aenderung
 from swki.cli import SwkiFehler
 from swki.konfig import Rechner, lade_rechner
 from swki.pruefung.schleife import lies_laeufe
@@ -125,8 +125,7 @@ def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
     lauf = _bestandener_lauf(spec_pfad, auftrag, lauf)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
     ordner = lauf_ordner(r, auftrag, lauf)
-    nummer = spec["bestand"]["aufnahme"]
-    aufnahme = {**lade_aufnahme(r, auftrag, nummer), "nummer": nummer}
+    aufnahme = {**aufnahme_zu(spec, spec_pfad), "nummer": spec["bestand"]["aufnahme"]}  # BESTAND_UNBEKANNT, BESTAND_VERALTET
     original = Path(aufnahme["datei"]["original"])
 
     dateien, unveraendert = [], []
@@ -161,5 +160,6 @@ def ausgabe(spec_pfad: Path, lauf: int | None = None) -> dict:
         ziel.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(quelle / d["datei"], ziel)
         if sha256_datei(ziel) != d["sha256"]:
+            ziel.unlink()  # eine fehlerhafte Kopie darf niemand zurückkopieren
             raise SwkiFehler(f"Die Kopie {ziel} weicht von {d['datei']} im Lauf ab – nicht zurückkopieren")
     return plan

@@ -44,6 +44,11 @@ def test_abweichung_in_einer_konfiguration_ist_ein_fehler(abweichung, text):
     assert e["fehler"] == [f"Variante B: {text}"]
 
 
+def test_ohne_messung_ist_nichts_belegt():
+    """Keine Konfiguration gemessen: Das ist ein Fehler, kein leeres Bestanden."""
+    assert bewerte(SPEC, {}, TOLERANZEN)["p5"]["fehler"] == ["nicht gemessen"]
+
+
 def test_achse_versetzt_ist_ein_fehler():
     achsen = [((-38.02, 24.0, 12.0), ACHSE), ((-38.0, -24.0, 12.0), ACHSE)]
     e = _bewerte(standard=_ist(achsen=achsen))

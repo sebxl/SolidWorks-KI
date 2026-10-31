@@ -11,6 +11,7 @@ from collections import defaultdict, deque
 
 _LINKS = re.compile(r'^\s*"[^"]*"\s*=(.*)$', re.DOTALL)
 _NAME = re.compile(r'"([^"]+)"')
+_DOKUMENT = re.compile(r"@[^@]*\.(part|assembly)$", re.IGNORECASE)
 
 
 def rechte_seite(text: str) -> str:
@@ -22,6 +23,11 @@ def rechte_seite(text: str) -> str:
 def namen_in(ausdruck: str) -> list[str]:
     """Namen in Anführungszeichen, also die Größen, von denen ein Ausdruck abhängt."""
     return _NAME.findall(ausdruck)
+
+
+def vergleichsname(name: str) -> str:
+    """Vergleichsform der Namen aus Gleichungen, `FullName` und dem Baum: ohne Dokument, ohne Groß-/Kleinschreibung."""
+    return _DOKUMENT.sub("", name).casefold()
 
 
 def gleicher_ausdruck(a: str, b: str) -> bool:

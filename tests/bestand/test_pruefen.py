@@ -18,7 +18,7 @@ from swki.auftrag import lauf_datei, lauf_ordner
 from swki.bestand import ablage, pruefen as modul
 from swki.bestand import spec as spec_modul
 from swki.bestand.differenz import Abweichung, DifferenzFehler
-from swki.bestand.fehler import BESTAND_ABWEICHEND, BestandFehler
+from swki.bestand.fehler import BESTAND_ABWEICHEND, BESTAND_UNBEKANNT, BESTAND_VERALTET, BestandFehler
 from swki.cli import SwkiFehler
 from swki.compiler.anker import AnkerFehler
 from swki.konfig import Rechner
@@ -246,6 +246,22 @@ def test_geaenderte_bestandskopie_bricht_ab(u):
     assert e.value.daten["code"] == BESTAND_ABWEICHEND and u.geoeffnet == []
 
 
+def test_spec_passt_nicht_zur_aufnahme(u):
+    spec = u.schreibe()
+    ablage.schreibe_aufnahme(u.r, "A", 1, {**u.aufnahme, "datei": {**u.aufnahme["datei"], "sha256": "0" * 64}})
+    with pytest.raises(BestandFehler) as e:
+        modul.pruefen(spec)
+    assert e.value.daten["code"] == BESTAND_UNBEKANNT and u.geoeffnet == []
+
+
+def test_nicht_gegen_eine_veraltete_aufnahme(u):
+    spec = u.schreibe()
+    ablage.schreibe_aufnahme(u.r, "A", 2, u.aufnahme)
+    with pytest.raises(BestandFehler) as e:
+        modul.pruefen(spec)
+    assert e.value.daten["code"] == BESTAND_VERALTET and u.geoeffnet == []
+
+
 def test_mangel_aus_vergleich_und_bereich(u):
     u.nachher["masse"][4]["werte"]["Standard"] = 44.0  # D2@Skizze4
     u.abweichungen["Variante B"] = [Abweichung("hinzu", [10.0, 10.0, 10.0, 20.0, 20.0, 20.0], 7.0)]
@@ -392,27 +408,34 @@ def _neu(u, name):
 
 def test_skript_durchgelaufen_besteht_und_erklaert_seine_features(u):
     _neu(u, "p8_skizze")
-    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_name": "p8_skizze"}]))
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_namen": ["p8_skizze"]}]))
     assert b["bestanden"] is True, b["maengel"]
     e = next(x for x in b["pruefungen"] if x["id"] == "punkt:p8")
     assert e["ok"] is True and e["hinweis"] == "Notausgang, Nachweis über Bereiche, masse_pruefen und Prüfer"
 
 
+def test_featurename_mit_komma_bleibt_ein_name(u):
+    _neu(u, "Nut, links")
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_name": "Nut, links",
+                                                                 "sw_namen": ["Nut, links"]}]))
+    assert b["bestanden"] is True, b["maengel"]
+
+
 def test_skript_ohne_protokoll_knoten_ist_nicht_nachgewiesen(u):
-    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "offen", "sw_name": None}]))
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "offen", "sw_namen": None}]))
     assert [(m["pruefung"], m["nicht_nachgewiesen"]) for m in b["maengel"]] == [("punkt:p8", True)]
 
 
 def test_neues_feature_das_das_skript_nicht_zurueckgab_bleibt_offen(u):
     _neu(u, "Fremd")
-    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_name": None}]))
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_namen": None}]))
     assert [(m["pruefung"], m["nicht_nachgewiesen"]) for m in b["maengel"]] == [("baum", True)]
 
 
 def test_skript_ohne_differenz_im_bereich_ist_mangel(u):
     u.abweichungen = {"Standard": [], "Variante B": []}
     u.nachher["masse"] = copy.deepcopy(u.aufnahme["masse"])
-    b = modul.pruefen(u.schreibe(punkte=(SKRIPT,), knoten=[{"id": "p8", "status": "ok", "sw_name": None}]))
+    b = modul.pruefen(u.schreibe(punkte=(SKRIPT,), knoten=[{"id": "p8", "status": "ok", "sw_namen": None}]))
     assert [(m["pruefung"], m["nicht_nachgewiesen"]) for m in b["maengel"]] == [("punkt:p8", False)]
 
 

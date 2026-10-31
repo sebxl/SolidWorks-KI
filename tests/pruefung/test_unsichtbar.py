@@ -47,6 +47,17 @@ def test_oeffne_sichtbar_wie_bisher():
     assert app.log == [("oeffne", "a.sldprt", 1)]
 
 
+class _Gleicher(_App):
+    def OpenDoc6(self, pfad, typ, optionen, konfig, fehler, warnungen):  # noqa: N802 (SolidWorks-Name)
+        fehler.value = 65536  # swFileLoadError_e.swFileWithSameTitleAlreadyOpen
+        return None
+
+
+def test_gleichnamiges_dokument_wird_im_klartext_gemeldet():
+    with pytest.raises(messen.PruefFehler, match="gleichnamiges Dokument"):
+        messen.oeffne(_Gleicher(), Path("a.sldprt"))
+
+
 class _Tot:
     @property
     def GetTitle(self):  # noqa: N802 (SolidWorks-Name)

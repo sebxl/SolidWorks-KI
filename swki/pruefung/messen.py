@@ -25,6 +25,7 @@ SW_DOC_ASSEMBLY = 2
 SW_OPEN_SILENT = 1  # swOpenDocOptions_e
 SW_OPEN_READONLY = 2
 SW_WARNUNG_BEREITS_OFFEN = 128  # swFileLoadWarning_AlreadyOpen
+SW_FEHLER_GLEICHER_TITEL = 65536  # swFileLoadError_e.swFileWithSameTitleAlreadyOpen
 
 
 class PruefFehler(SwkiFehler):
@@ -51,6 +52,9 @@ def oeffne(app, pfad: Path, sichtbar: bool = True, nur_lesen: bool = False):
         finally:
             app.DocumentVisible(True, typ)
     if model is None:
+        if fehler.value & SW_FEHLER_GLEICHER_TITEL:
+            raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen: In SolidWorks ist schon ein gleichnamiges Dokument offen, auch aus einem "
+                              "anderen Ordner – bitte schließen und erneut prüfen")
         raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen (Fehler {fehler.value})")
     if warnungen.value & SW_WARNUNG_BEREITS_OFFEN:
         raise PruefFehler(f"{pfad.name} ist bereits in SolidWorks geöffnet – bitte schließen und erneut prüfen")

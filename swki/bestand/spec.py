@@ -15,9 +15,9 @@ from pathlib import Path
 
 from swki.auftrag import auftrag_name
 from swki.bestand.ablage import aufnahmen, lade_aufnahme
-from swki.bestand.fehler import (BEREICH_FEHLT, BESTAND_ALTWERT, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BESTAND_VERALTET,
-                                 FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
-from swki.bestand.folgen import folgen_von, gleicher_ausdruck, kinder_von, rechte_seite
+from swki.bestand.fehler import (BEREICH_FEHLT, BESTAND_ALTWERT, BESTAND_EINHEIT, BESTAND_REFERENZ, BESTAND_UNBEKANNT,
+                                 BESTAND_VERALTET, FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
+from swki.bestand.folgen import folgen_von, gleicher_ausdruck, kinder_von, rechte_seite, vergleichsname
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.konfig import lade_rechner
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
@@ -32,6 +32,13 @@ BAUWEG_SCHLUESSEL = frozenset({"nach", "bezug", "flaeche", "kanten"})
 # Punkte, die Geometrie ändern können: jeder steht in mindestens einem Bereich (Spec §4.4 Punkt 5)
 GEOMETRIE_TYPEN = frozenset({"mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "skript"})
 _TOL_ALT = 1e-6  # mm bzw. Grad: Rauschen beim Lesen aus SolidWorks
+SW_MMGS = 5  # swUnitSystem_e.swUnitSystem_MMGS
+EINHEITENSYSTEME = {1: "CGS (cm, g, s)", 2: "MKS (m, kg, s)", 3: "IPS (Zoll, lb, s)", 4: "benutzerdefiniert", SW_MMGS: "MMGS (mm, g, s)"}
+
+
+def einheit_text(nummer: int) -> str:
+    """Einheitensystem der Aufnahme (swUnitSystem_e) in Worten."""
+    return EINHEITENSYSTEME.get(nummer, f"unbekannt ({nummer})")
 
 
 def _ist_flaechenanker(wert) -> bool:
@@ -165,6 +172,19 @@ def _folgen_befund(punkt: dict, pfad: str, erwartet: list[str]) -> list[dict]:
                     f"[{', '.join(erwartet)}]", FOLGEN_ABWEICHEND, erwartet=erwartet)]
 
 
+def _einheit_befund(pfad: str, nummer: int) -> dict:
+    """Gleichungen und globale Variablen rechnen in der Einheit der Datei: `alt` wäre falsch verglichen, `neu` falsch gesetzt."""
+    einheit = einheit_text(nummer)
+    return _befund(pfad, f"Die Datei rechnet in {einheit}, nicht in mm: Werte eines gleichung-Punkts gälten in dieser Einheit. Dem Nutzer "
+                         "nennen; nur auf seine Anweisung geht die Änderung über einen skript-Punkt mit luecke", BESTAND_EINHEIT, einheit=einheit)
+
+
+def _steuernde_gleichung(feature: str, aufnahme: dict) -> str | None:
+    """Text der Gleichung, die links dieses Feature nennt: Sie setzt die Unterdrückung bei jedem Neuaufbau."""
+    name = vergleichsname(feature)
+    return next((g["text"] for g in aufnahme.get("gleichungen", []) if vergleichsname(g["links"]) == name), None)
+
+
 def _punkt_befunde(p: dict, pfad: str, aufnahme: dict, namen: dict, ordner: Path | None) -> list[dict]:
     """Befunde eines Punkts gegen die Aufnahme: Namen, Altwert, gesteuerte Maße, Folgen, Kinder, Skriptdatei."""
     masse, features, konfigurationen = namen["masse"], namen["features"], aufnahme["konfigurationen"]
@@ -172,6 +192,8 @@ def _punkt_befunde(p: dict, pfad: str, aufnahme: dict, namen: dict, ordner: Path
 
     if typ in ("mass", "unterdruecken", "aufheben", "eigenschaft"):
         befunde += _konfig_befunde(p, pfad, konfigurationen)
+    if typ == "gleichung" and aufnahme["einheitensystem"] != SW_MMGS:
+        befunde.append(_einheit_befund(pfad, aufnahme["einheitensystem"]))
 
     if typ == "mass":
         m = masse.get(p["mass"])
@@ -216,6 +238,9 @@ def _punkt_befunde(p: dict, pfad: str, aufnahme: dict, namen: dict, ordner: Path
                                    "steuern kann und sich ohne Excel nicht lesen lässt: dem Nutzer die Tabelle nennen; nur "
                                    "auf seine Anweisung geht die Änderung über einen skript-Punkt mit luecke",
                                    MASS_GESTEUERT))
+        if typ != "loeschen" and (text := _steuernde_gleichung(p["feature"], aufnahme)) is not None:
+            befunde.append(_befund(f"{pfad}.feature", f"Die Gleichung {text} steuert die Unterdrückung von {p['feature']!r}, der Neuaufbau "
+                                   "nähme den Punkt zurück: stattdessen die Gleichung mit einem gleichung-Punkt ändern", MASS_GESTEUERT))
         if typ == "loeschen":
             for k, n in enumerate(p.get("kinder", [])):
                 if n not in features:
@@ -249,7 +274,8 @@ def _punkt_befunde(p: dict, pfad: str, aufnahme: dict, namen: dict, ordner: Path
 def befunde_gegen_aufnahme(spec: dict, aufnahme: dict, ordner: Path | None = None) -> list[dict]:
     """Spec §4.4 Punkt 3 und 5 (ohne SolidWorks): genannte Maße, Features, Variablen, Konfigurationen (`BESTAND_REFERENZ`),
     `alt` (`BESTAND_ALTWERT`), gesteuerte und getriebene Maße sowie tabellengesteuerte Unterdrückung (`MASS_GESTEUERT`),
-    `folgen` (`FOLGEN_ABWEICHEND`), `kinder` (`KINDER_FEHLEN`), Bereiche (`BEREICH_FEHLT`). `ordner` (Auftragsordner)
+    `folgen` (`FOLGEN_ABWEICHEND`), `kinder` (`KINDER_FEHLEN`), Bereiche (`BEREICH_FEHLT`), `gleichung`-Punkte in einer Datei
+    ohne mm (`BESTAND_EINHEIT`). `ordner` (Auftragsordner)
     gibt die Skriptdateien frei zur Prüfung; ohne ihn wird nur ihr Pfad geprüft. Der Inhalt neuer Features:
     `feature_befunde`."""
     punkte = spec["punkte"]

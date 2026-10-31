@@ -9,6 +9,7 @@ from swki.bestand import ausgabe
 from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, kopiere_original, lade_aufnahme, pruefe_format,
                                  schreibe_aufnahme, sha_original)
 from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
+from swki.bestand.spec import einheit_text
 from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_mass)
 from swki.cli import ganzzahl_ab
 from swki.compiler import sw
@@ -41,7 +42,7 @@ def zusammenfassung(auftrag: str, nummer: int, a: dict, ordner: Path, neu: bool)
     offen = {n.rsplit("/", 1)[-1]: s for n, s in a["skizzen"].items() if s != VOLL_BESTIMMT}
     return {"auftrag": auftrag, "aufnahme": nummer, "neu": neu, "datei": a["datei"]["name"], "sha256": a["datei"]["sha256"],
             "version_aelter": a["datei"]["version_aelter"], "konfigurationen": a["konfigurationen"], "aktiv": a["aktiv"],
-            "tabelle": a["tabelle"],
+            "tabelle": a["tabelle"], "einheitensystem": einheit_text(a["einheitensystem"]),
             "zaehler": {"konfigurationen": len(a["konfigurationen"]), "features": len(a["features"]), "masse": len(a["masse"]),
                         "gleichungen": len(a["gleichungen"]), "variablen": len(a["variablen"]),
                         "neuaufbau": len(a["neuaufbau"])},

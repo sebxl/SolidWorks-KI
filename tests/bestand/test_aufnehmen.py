@@ -175,6 +175,12 @@ def test_zusammenfassung_kompakt():
     assert {"name": "Bohrung2", "typ": "Cut"} in aus["features"]
     text = json.dumps(aus, ensure_ascii=False)
     assert "punkte" not in text and "eigenschaften" not in text and "quelle" not in text
+    assert aus["einheitensystem"] == "MMGS (mm, g, s)"
+
+
+def test_zusammenfassung_nennt_die_dokumenteinheit():
+    a = {**json.loads(json.dumps(AUFNAHME)), "einheitensystem": 3}
+    assert "Zoll" in befehle.zusammenfassung("a1", 1, a, Path("C:/arbeit/a1/bestand-1"), neu=True)["einheitensystem"]
 
 
 # ------------------------------------------------------------------------------------------- Ableitung (rein)
@@ -299,7 +305,7 @@ class Modell:
         self.GetConfigurationNames = ("Standard", "Variante B", "Variante C")
         self.Extension = Erweiterung()
         self.Extension.modell = self
-        self.GetEquationMgr = SimpleNamespace(GetCount=0)
+        self.GetEquationMgr = SimpleNamespace(GetCount=0, LinkToFile=False, FilePath="")
 
     @property
     def ConfigurationManager(self):
@@ -330,6 +336,21 @@ def byref(monkeypatch):
     monkeypatch.setattr(sw_bestand, "byref_variant", lambda: SimpleNamespace(value=None))
     monkeypatch.setattr(sw_bestand, "byref_long", lambda: SimpleNamespace(value=0))
     monkeypatch.setattr(sw_bestand, "byref_str", lambda: SimpleNamespace(value=""))
+
+
+@pytest.mark.parametrize("pfad, soll", [("D:\\Kunde\\gleichungen.txt", "D:\\Kunde\\gleichungen.txt"),
+                                        ("", "verknüpfte Gleichungsdatei, Pfad nicht lesbar")])
+def test_verknuepfte_gleichungen_sind_externe_referenz(byref, pfad, soll):
+    """Spec §3: Ein gleichung-Punkt könnte sonst die Datei des Kollegen zurückschreiben; auch ohne lesbaren Pfad bleibt die Liste nicht leer."""
+    model = Modell()
+    model.GetEquationMgr = SimpleNamespace(GetCount=0, LinkToFile=True, FilePath=pfad)
+    assert lies_bestand(None, model)["externe_referenzen"] == [soll]
+
+
+def test_unverknuepfte_gleichungen_sind_keine_referenz(byref):
+    model = Modell()
+    model.GetEquationMgr = SimpleNamespace(GetCount=0, LinkToFile=False, FilePath="D:\\Kunde\\export.txt")
+    assert lies_bestand(None, model)["externe_referenzen"] == []
 
 
 def test_aktive_konfiguration_bleibt_und_steht_vorn(byref):

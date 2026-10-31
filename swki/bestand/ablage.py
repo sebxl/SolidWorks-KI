@@ -74,6 +74,12 @@ def kopiere_original(r: Rechner, auftrag: str, original: Path) -> dict:
     ziel = bestand_ordner(r, auftrag, nummer) / original.name
     ziel.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(original, ziel)
+    if sha256_datei(ziel) != sha:
+        os.chmod(ziel, stat.S_IWRITE)  # `copy2` bringt den Schreibschutz des Originals mit, löschen ginge sonst nicht
+        ziel.unlink()
+        ziel.parent.rmdir()  # eben angelegt, eine abgelehnte Datei hinterlässt keine Aufnahme
+        raise BestandFehler(BESTAND_NICHT_LESBAR, f"Die Kopie von {original.name} weicht vom Original ab – speichert gerade ein Kollege "
+                                                  "die Datei?", pfad=str(original))
     os.chmod(ziel, stat.S_IREAD)
     return {"nummer": nummer, "pfad": ziel, "sha256": sha, "neu": True}
 

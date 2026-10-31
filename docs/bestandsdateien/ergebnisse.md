@@ -223,6 +223,18 @@ Stand: Commit „Bestandsdateien Etappe 1: Skill, Regeln, Ergebnisse“, Rechner
 
 Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`, damit `tests/live_einzeln.py tests/referenz` ihn mitnimmt; die Suite davor sah ihn nicht.
 
+### Abschlussreview (live, 2026-10-31)
+
+- **`VersionHistory` und `GetDocumentDependencies2` laufen am Originalpfad, nur lesend, bewusst vor der Kopie:** Eine neuere oder referenzierende Datei hinterlässt so keine
+  Aufnahme. Beide öffnen kein Dokument (Zeile b, `GetDocuments` bleibt leer); `OpenDoc6` läuft nur an der Kopie.
+- **Mit einer Datei verknüpfte Gleichungen sieht nur `IEquationMgr`:** An einer verknüpften Kopie des Musters liefern `GetDocumentDependencies2` und
+  `ListExternalFileReferences` beide nichts, `LinkToFile` True und `FilePath` den gespeicherten Pfad. Vorher `False` und `""`. Gesetzt wird `FilePath` vor `LinkToFile`, wie der Index verlangt. Die Probe steht in `test_verknuepfte_gleichungen_lehnt_aufnehmen_ab`.
+- **Einheiten:** `swUnitSystem_e`: 1 CGS, 2 MKS, 3 IPS, 4 Custom, 5 MMGS. Kopie des Musters im offenen Dokument auf IPS gestellt (`SetUserPreferenceInteger(263, 0, 3)`, nicht gespeichert):
+  `Value` von `L` bleibt 100, nach dem Neuaufbau steht `D1@Skizze1` auf 2,54 m, also 100 Zoll. Gleichungen rechnen in der Einheit der Datei. `BESTAND_EINHEIT` selbst ist als Unit-Test belegt.
+- **Gleichung auf eine Unterdrückung (Kopie des Musters, sichtbar, nicht gespeichert):** `"Fase1" = "suppressed"` wirkt, `"unsuppressed"` hebt wieder auf, der Text steht so im Gleichungsmanager. Am
+  unsichtbaren Dokument lieferte derselbe `Add2`-Aufruf −1, nicht weiter untersucht. Wird die Gleichung gelöscht, bleibt das Feature unterdrückt. `"Fase1@Lagerdeckel.Part" = "unsuppressed"` und
+  `"$STATE@Fase1" = "unsuppressed"` nimmt `Add2` an, sie hoben die Unterdrückung nicht auf. `validieren` erkennt das Feature links ohne Dokument und ohne Groß-/Kleinschreibung, `$STATE@` nicht.
+
 ### Folgen für die Tasks
 
 - **Task 5 (Aufnahme):** Werte durch Umschalten lesen, Dubletten zusammenlegen, `zustand` wie oben ableiten, Namen ohne letztes
@@ -244,8 +256,11 @@ Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`
 
 - **Abnahme an einer echten Kollegen-Datei** (Spec §12): Die Datei stellt der Nutzer bereit; Kennzahlen kommen hierher.
 - Tabellengesteuerte Unterdrückungszustände ohne Excel erkennen (siehe Zeile b, Entscheidung F4).
-- Externe Referenzen außer abgeleitetem Teil (gespiegelt, im Kontext, Gleichungsdatei): `GetDocumentDependencies2` nur am
-  abgeleiteten Teil gemessen. Verhalten bei geändertem Basisteil nicht geprüft; Etappe 1 lehnt solche Teile ab.
-- Differenz an großen Teilen: Laufzeit und Speicher nur bis 23 Flächen gemessen.
+- Externe Referenzen außer abgeleitetem Teil und Gleichungsdatei (gespiegelt, im Kontext): `GetDocumentDependencies2` nur am abgeleiteten Teil gemessen. Verhalten bei geändertem Basisteil
+  nicht geprüft; Etappe 1 lehnt solche Teile ab.
+- **Laufzeit großer Dateien:** Aufnahme, Differenz und Prüfung nur bis 23 Flächen gemessen.
+- **Mehrkörper:** Differenz nur an `gm42-10` (2 Körper, unverändert) gemessen; Änderungen an einem Mehrkörperteil sind nicht gelaufen.
+- **Abgeleitete Konfigurationen:** Das Muster hat nur Konfigurationen auf gleicher Ebene; `GetConfigurationNames`, Umschalten und `alle` sind an Kind-Konfigurationen nicht gemessen.
+- **What's-Wrong-Dialog an einer Datei mit Fehlern:** Das Muster öffnet fehlerfrei. Ob `OpenDoc6` Silent und das Lesen an einer Datei mit Neuaufbau-Fehlern ohne Dialog durchlaufen, ist nicht gemessen.
 - Die Datei läuft hier durch eine **Student-Lizenz** (Lizenztyp 2). Ob eine so gespeicherte Datei beim Kollegen mit Vollversion
   anders erscheint (Wasserzeichen, Hinweis), lässt sich auf diesem Rechner nicht messen; `Save3` und ID-Probe sagen dazu nichts.

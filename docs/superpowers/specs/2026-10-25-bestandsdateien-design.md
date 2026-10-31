@@ -201,6 +201,7 @@ steht oder `IsDesignTableDimension` meldet; getrieben der Rest mit `DrivenState`
 gesteuerten Maß Erfolg, der nächste Neuaufbau nimmt den Wert still zurück (S18c).
 **Offen:** Tabellengesteuerte Unterdrückungszustände lassen sich ohne Excel nicht lesen (S18b, Ergebnisse §1). Maße gehen ohne
 Excel.
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Abschlussreview):* Steht das Feature links in einer Gleichung, ist `unterdruecken`/`aufheben` ebenfalls `MASS_GESTEUERT`.
 
 - Ein `mass`-Punkt auf ein gesteuertes Maß ist ein Befund `MASS_GESTEUERT` (`validieren`) mit der steuernden Quelle; die KI
   schreibt stattdessen einen `gleichung`-Punkt an der Quelle bzw. ändert das führende verknüpfte Maß. Ist die Quelle eine
@@ -228,6 +229,9 @@ Excel.
 5. Jeder Punkt, der Geometrie ändern kann (`mass`, `gleichung`, `unterdruecken`, `aufheben`, `loeschen`, `feature`, `skript`,
    Komponenten-Punkte), steht in mindestens einem `bereich` (`BEREICH_FEHLT`).
 6. Dateiversion (§5.1) als Befund bzw. Hinweis.
+
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Abschlussreview):* Gleichungen und globale Variablen rechnen in der Einheit der Datei. Ist das Einheitensystem nicht MMGS, ist jeder
+`gleichung`-Punkt ein Befund `BESTAND_EINHEIT` mit der Dokumenteinheit, `aufnehmen` nennt sie. Maße betrifft das nicht, sie gehen in Metern an SolidWorks.
 
 ### 4.5 Freigabe
 
@@ -368,6 +372,10 @@ Abweichung darin liegen, Berühren reicht nicht. `punkt:<id>` eines `skript`-Pun
 Differenz liegt; ohne Bereich ändert er keine Geometrie. Neue Features, die `bauen(ctx)` zurückgibt, gelten in `baum` als erklärt. Das Bild mit
 Differenzkörpern entfällt in Etappe 1: Differenzliste und Vorher-/Nachher-Bilder genügen.
 
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Abschlussreview):* Decken die berührten Feature-Boxen den Hüllquader des Körpers, liegt er im Bereich. Sonst ist er ein Mangel, wenn er
+über ihren Hüllquader ragt oder sich zwei von ihnen nicht berühren (ein Körper über zwei entfernte Features hätte alles dazwischen mitgeändert), und `ok: None`, wenn nur eine Ecke
+frei bleibt: Ob dort Körper liegt, zeigen achsparallele Boxen nicht.
+
 - Jeder Differenzkörper (bzw. jede abweichende Stelle über der Toleranz, Vorgabe 0,01 mm) muss vollständig in einem `bereich`
   liegen: `box` (achsparallel in Modellkoordinaten, mm) oder `features` (Hüllquader der Flächen dieser Features vorher und
   nachher, mit Toleranz). Sonst Mangel `bereich` mit Lage und Volumen der Abweichung.
@@ -439,6 +447,8 @@ geprüft“, wo zutreffend.
 | Code | Wann |
 |---|---|
 | `BESTAND_FORMAT` | Endung nicht `.sldprt` (bzw. `.sldasm` ab Etappe 2) |
+| `BESTAND_ANDERE_DATEI` | Auftrag hat schon eine andere Datei aufgenommen |
+| `BESTAND_NICHT_LESBAR` | Original fehlt oder ist gesperrt, Kopie weicht vom Original ab, kein Versionsverlauf, Konfiguration nicht aktivierbar (bei `ausgabe` Warnung) |
 | `BESTAND_VERSION_NEUER` | Datei in neuerem SW-Jahr gespeichert |
 | `BESTAND_VERSION_AELTER` | `swki bauen` an einer Datei aus älterem SW-Jahr ohne `--hochstufen` |
 | `BESTAND_REFERENZ_FEHLT` | referenzierte Datei nicht gefunden |
@@ -446,7 +456,9 @@ geprüft“, wo zutreffend.
 | `BESTAND_UNBEKANNT`, `BESTAND_VERALTET` | keine bzw. nicht die neueste Aufnahme zur Spec |
 | `BESTAND_ABWEICHEND` | Bestandskopie verändert |
 | `BESTAND_ORIGINAL_GEAENDERT` | Original seit der Aufnahme geändert (Warnung bei `ausgabe`) |
-| Befunde `validieren` | `BESTAND_REFERENZ`, `BESTAND_ALTWERT`, `MASS_GESTEUERT`, `FOLGEN_ABWEICHEND`, `KINDER_FEHLEN`, `BEREICH_FEHLT` |
+| `BESTAND_LIZENZ` | Lauf nicht mit einer Vollversion oder Lizenz unbekannt (Warnung bei `ausgabe`) |
+| `LAUF_NICHT_BESTANDEN` | `ausgabe` eines Laufs ohne bestandene Code-Prüfungen und Prüfer-Urteil |
+| Befunde `validieren` | `BESTAND_REFERENZ`, `BESTAND_ALTWERT`, `BESTAND_EINHEIT`, `MASS_GESTEUERT`, `FOLGEN_ABWEICHEND`, `KINDER_FEHLEN`, `BEREICH_FEHLT` |
 | Mängel `pruefen` | `punkt:<id>`, `baum`, `masse`, `gleichungen`, `konfigurationen`, `neuaufbau`, `skizzen`, `externe_referenzen`, `bereich`, Etappe 2 §8.3 |
 
 Ein Prüfmangel ist ein Fehler im Bauweg oder in der Spec: Die KI passt keine Bereiche oder Sollwerte an Messwerte an; hält sie

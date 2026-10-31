@@ -114,7 +114,7 @@ def bewerte(spec: dict, gemessen: dict[str, dict], toleranzen: dict) -> dict[str
     for punkt, f in zip(feature_punkte(spec), teil_spec(spec)["features"]):
         if (art := messart(f)) is None:
             continue
-        soll, ist, fehler = _soll(art, f, p), {}, []
+        soll, ist, fehler = _soll(art, f, p), {}, [] if gemessen else ["nicht gemessen"]
         for k, werte in gemessen.items():
             wert = werte.get(punkt["name"], "nicht gemessen")
             if isinstance(wert, dict):

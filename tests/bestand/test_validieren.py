@@ -8,8 +8,8 @@ import pytest
 import yaml
 
 from swki.bestand.ablage import schreibe_aufnahme
-from swki.bestand.fehler import (BESTAND_ALTWERT, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BESTAND_VERALTET, BEREICH_FEHLT,
-                                 FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
+from swki.bestand.fehler import (BESTAND_ALTWERT, BESTAND_EINHEIT, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BESTAND_VERALTET,
+                                 BEREICH_FEHLT, FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
 from swki.bestand.spec import befunde_gegen_aufnahme, feature_befunde, validieren
 from swki.cli import main
 from swki.konfig import Rechner
@@ -88,6 +88,30 @@ def test_gesteuert_nennt_die_quelle():
     assert "Variable" in meldung and "L" in meldung
     spec = punkte({"id": "m1", "typ": "mass", "mass": "D8@Skizze9", "alt": 4, "neu": 5})
     assert "Konstruktionstabelle" in befunde_gegen_aufnahme(spec, AUFNAHME)[0]["meldung"]
+
+
+GLEICHUNG_L = {"id": "g1", "typ": "gleichung", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1", "D3@Skizze2"]}
+GLEICHUNG_D3 = {"id": "g1", "typ": "gleichung", "gleichung": "D3@Skizze2", "alt": '"D1@Skizze1" + 5', "neu": '"D1@Skizze1" + 6'}
+
+
+@pytest.mark.parametrize("punkt", [GLEICHUNG_L, GLEICHUNG_D3], ids=["variable", "gleichung"])
+@pytest.mark.parametrize("nummer, text", [(1, "CGS"), (2, "MKS"), (3, "Zoll"), (4, "benutzerdefiniert")])
+def test_gleichung_in_datei_ohne_mm(punkt, nummer, text):
+    """`alt` und `neu` gelten dort in der Einheit der Datei, Spec und Skill versprechen mm."""
+    a = aufnahme(einheitensystem=nummer)
+    (b,) = befunde_gegen_aufnahme(punkte(punkt), a)
+    assert (b["pfad"], b["code"]) == ("punkte[0]", BESTAND_EINHEIT) and text in b["meldung"] and text in b["einheit"]
+
+
+@pytest.mark.parametrize("punkt", [GLEICHUNG_L, GLEICHUNG_D3], ids=["variable", "gleichung"])
+def test_gleichung_in_mm_ohne_befund(punkt):
+    assert befunde_gegen_aufnahme(punkte(punkt), AUFNAHME) == []
+
+
+def test_mass_punkt_rechnet_in_jeder_datei_in_mm():
+    """`SetSystemValue3` nimmt Meter, das Einheitensystem spielt keine Rolle."""
+    spec = punkte({"id": "m1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": 45})
+    assert befunde_gegen_aufnahme(spec, aufnahme(einheitensystem=3)) == []
 
 
 def test_verknuepftes_mass_ist_setzbar():
@@ -214,6 +238,29 @@ def test_loeschen_unbekanntes_kind():
     spec = punkte({"id": "l1", "typ": "loeschen", "feature": "Verrundung1", "kinder": ["Nichts"]})
     assert [(b["pfad"], b["code"]) for b in befunde_gegen_aufnahme(spec, AUFNAHME)] == \
         [("punkte[0].kinder[0]", BESTAND_REFERENZ)]
+
+
+def _mit_gleichung(links: str) -> dict:
+    gleichungen = [*AUFNAHME["gleichungen"], {"index": 3, "text": f'"{links}" = "suppressed"', "links": links, "global": False}]
+    return aufnahme(gleichungen=gleichungen)
+
+
+@pytest.mark.parametrize("typ", ["unterdruecken", "aufheben"])
+@pytest.mark.parametrize("links", ["Fase3", "fase3", "Fase3@Lagerdeckel.Part"])
+def test_gleichung_steuert_die_unterdrueckung(typ, links):
+    """Sonst nähme der nächste Neuaufbau den Punkt zurück; `validieren` sagt es vor dem Bau, an der Quelle."""
+    (b,) = befunde_gegen_aufnahme(punkte({"id": "u1", "typ": typ, "feature": "Fase3"}), _mit_gleichung(links))
+    assert (b["pfad"], b["code"]) == ("punkte[0].feature", MASS_GESTEUERT) and "Gleichung" in b["meldung"]
+
+
+def test_gleichung_rechts_steuert_die_unterdrueckung_nicht():
+    a = aufnahme(gleichungen=[*AUFNAHME["gleichungen"], {"index": 3, "text": '"Fase4" = "Fase3"', "links": "Fase4", "global": False}])
+    assert befunde_gegen_aufnahme(punkte({"id": "u1", "typ": "unterdruecken", "feature": "Fase3"}), a) == []
+
+
+def test_gleichung_sperrt_loeschen_nicht():
+    spec = punkte({"id": "u1", "typ": "loeschen", "feature": "Fase3", "kinder": ["Verrundung1"]})
+    assert befunde_gegen_aufnahme(spec, _mit_gleichung("Fase3")) == []
 
 
 def test_tabelle_sperrt_unterdruecken():
