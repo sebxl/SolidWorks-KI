@@ -11,21 +11,30 @@ import pytest
 import yaml
 
 from swki.aenderungen import pruefe_unveraendert, sha256_datei
-from swki.bestand import bau, befehle
+from swki.auftrag import lauf_datei
+from swki.bestand import ausgabe, bau, befehle
 from swki.bestand.ablage import bestand_ordner, lade_aufnahme
+from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_ORIGINAL_GEAENDERT, MASS_GESTEUERT
 from swki.bestand.pruefen import pruefen
 from swki.bestand.spec import freigeben, validieren
-from swki.bestand.sw_bestand import bstr_array, lies_bestand
+from swki.bestand.sw_bestand import _geometrie, bstr_array, lies_bestand, whats_wrong
 from swki.compiler import sw
 from swki.compiler.bauen import BauAbbruch
+from swki.durchlauf import durchlauf
 from swki.konfig import PROJEKT, lade_rechner
 from swki.pruefung.messen import oeffne
+from swki.spec.laden import SpecFehler
 from swki.verbindung import byref_long, verbinde
 
 pytestmark = pytest.mark.sw
-MUSTER = PROJEKT / "tests" / "referenz" / "bestand" / "muster" / "Lagerdeckel.SLDPRT"
+REFERENZ = PROJEKT / "tests" / "referenz" / "bestand"
+MUSTER = REFERENZ / "muster" / "Lagerdeckel.SLDPRT"
 AUFTRAG = "LIVE-BESTAND"
 SW_UNTERDRUECKEN, SW_BENANNT = 0, 3  # swFeatureSuppressionAction_e, swInConfigurationOpts_e
+SW_DOC_BAUGRUPPE = 2  # swDocumentTypes_e
+SW_OEFFNEN_STILL_VOLL = 1 | 64  # swOpenDocOptions_Silent | OverrideDefaultLoadLightweight (S18g: sonst GetModelDoc2 = None)
+SW_WARNUNG_ID, SW_WARNUNG_REFERENZ_FEHLT = 1, 1048576  # swFileLoadWarning_e: IdMismatch, MissingExternalReferences
+SW_KOMPONENTE_ID_FALSCH = 5  # swComponentSuppressionState_e.swComponentInternalIdMismatch
 
 
 def _aufraeumen(pfad: Path) -> None:
@@ -101,9 +110,8 @@ NORMBOHRUNG = {"typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche
                "positionen": [["=-50+RA", 24], ["=-50+RA", -24]], "bezug": {"u": "-rand", "v": "mitte"}, "tiefe": 10, "gewindetiefe": 8}
 
 
-def _aenderung(tmp_path, auftrag: str, a: dict, punkte: list[dict], name="aenderung", box=([-60, -40, -1], [70, 40, 30]),
-               pruefung=None, features=None) -> Path:
-    """Spec im Auftragsordner, validiert und für diesen Test freigegeben."""
+def _schreibe_spec(tmp_path, auftrag: str, a: dict, punkte: list[dict], name="aenderung", box=([-60, -40, -1], [70, 40, 30]),
+                   pruefung=None, features=None) -> Path:
     pfad = tmp_path / auftrag / f"{name}.yaml"
     pfad.parent.mkdir(exist_ok=True)
     spec = {"art": "aenderung", "name": "Lagerdeckel_Rev",
@@ -114,6 +122,12 @@ def _aenderung(tmp_path, auftrag: str, a: dict, punkte: list[dict], name="aender
     if features:
         spec["bereiche"] = [{"punkte": [p["id"] for p in punkte], "features": features}]
     pfad.write_text(yaml.safe_dump(spec, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return pfad
+
+
+def _aenderung(tmp_path, auftrag: str, a: dict, punkte: list[dict], **optionen) -> Path:
+    """Spec im Auftragsordner, validiert und für diesen Test freigegeben."""
+    pfad = _schreibe_spec(tmp_path, auftrag, a, punkte, **optionen)
     validieren(pfad)
     freigeben(pfad)
     return pfad
@@ -351,3 +365,113 @@ def test_aktive_konfiguration_bleibt_unterdrueckte_skizze_stoert_nicht(auftrag):
     finally:
         sw.schliesse(app, model)
     assert sha256_datei(Path(kopie)) == sha256_datei(MUSTER)
+
+
+# ---------------------------------------------------------------------------------------------- Referenz, Negativfälle, S18a
+
+def _geprueft_abgenommen(spec: Path) -> None:
+    """Lauf bauen und prüfen, ohne Mangel; das Urteil des Prüfers steht hier als Datei da."""
+    nummer = bau.bauen(spec)["lauf"]
+    b = pruefen(spec)
+    assert b["maengel"] == [] and b["bestanden"] is True, b["maengel"]
+    lauf_datei(spec, nummer, "pruefer").write_text(json.dumps({"bestanden": True, "maengel": []}), encoding="utf-8")
+
+
+def test_referenz_lagerdeckel(auftrag, tmp_path):
+    """Spec §12: die ganze Revision über `swki durchlauf`, enge Bereiche; das Urteil des Prüfers bleibt dem Referenzlauf vorbehalten."""
+    ziel = tmp_path / auftrag
+    ziel.mkdir()
+    shutil.copy2(REFERENZ / "lagerdeckel_rev.yaml", ziel)
+    shutil.copytree(REFERENZ / "eingabe", ziel / "eingabe")
+    spec = ziel / "lagerdeckel_rev.yaml"
+    befehle.aufnehmen(MUSTER, auftrag)
+    erg = durchlauf(spec, freigeben=True)
+    assert erg["schritt"] == "fertig" and erg["pruefung"]["bestanden"] is True, erg
+    assert erg["pruefung"]["ohne_urteil"] == [] and "Vorher-Bilder" in erg["pruefer_auftrag"]
+    b = json.loads(lauf_datei(spec, erg["lauf"], "pruefbericht").read_text(encoding="utf-8"))
+    assert {k: len(d) for k, d in b["differenzen"].items()} == {"Standard": 7, "Variante B": 7}
+    assert all(x["bereich"] is not None for d in b["differenzen"].values() for x in d)
+    delta = next(e for e in b["pruefungen"] if e["id"] == "volumen_delta")
+    assert delta["ist"]["Variante B"] - delta["ist"]["Standard"] == pytest.approx(20, abs=0.01)  # die Fase auf der Verlängerung
+
+
+def test_validieren_weist_altwert_und_gesteuertes_mass_ab(auftrag, tmp_path):
+    """Spec §12, gegen die echte Aufnahme des Musters."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    faelle = {"altwert": ({"mass": "D2@Skizze4", "alt": 41, "neu": 45}, BESTAND_ALTWERT),
+              "gesteuert": ({"mass": "D1@Skizze1", "alt": 100, "neu": 110}, MASS_GESTEUERT)}
+    for name, (mass, code) in faelle.items():
+        pfad = _schreibe_spec(tmp_path, auftrag, a, [{"id": "p1", "typ": "mass", "was": name, **mass}], name=name)
+        with pytest.raises(SpecFehler) as e:
+            validieren(pfad)
+        assert [b.get("code") for b in e.value.daten["befunde"]] == [code], name
+
+
+def test_aenderung_in_allen_statt_in_einer_konfiguration(auftrag, tmp_path):
+    """Spec §12: Der Punkt nennt nur Standard, ein Skript zieht Variante B mit. Herbeigeführt über den Notausgang, denn `mass` selbst
+    trifft richtig. Baum, Bereich und Punkt stimmen, nur `masse` sieht es."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    skript = tmp_path / auftrag / "skripte" / "p2.py"
+    skript.parent.mkdir(parents=True)
+    skript.write_text(f'def bauen(ctx):\n    ctx.model.Parameter("{TASCHE}").SetSystemValue3(0.009, 2, None)\n', encoding="utf-8")
+    punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer, nur Standard", "mass": TASCHE, "alt": 8, "neu": 9,
+               "konfigurationen": ["Standard"]},
+              {"id": "p2", "typ": "skript", "datei": "skripte/p2.py", "luecke": "Testfall: alle Konfigurationen"}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte)
+    bau.bauen(spec)
+    b = pruefen(spec)
+    assert b["bestanden"] is False and [m["pruefung"] for m in b["maengel"]] == ["masse"], b["maengel"]
+    assert TASCHE in b["maengel"][0]["beschreibung"] and "Variante B: 8 → 9" in b["maengel"][0]["beschreibung"]
+
+
+def test_original_geaendert_warnt_bei_der_ausgabe(auftrag, tmp_path):
+    """Spec §12, §9: Das Original gilt als Datei des Kollegen, hier eine Kopie im Testordner. Ändert es sich nach der Aufnahme, wird trotzdem
+    ausgegeben, aber gewarnt; zuvor bleibt die Warnung aus."""
+    original = tmp_path / MUSTER.name
+    shutil.copy2(MUSTER, original)
+    befehle.aufnehmen(original, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    spec = _aenderung(tmp_path, auftrag, a, [{"id": "p1", "typ": "eigenschaft", "name": "Revision", "neu": "B"}])
+    _geprueft_abgenommen(spec)
+    assert BESTAND_ORIGINAL_GEAENDERT not in [w["code"] for w in ausgabe.ausgabe(spec)["warnungen"]]
+    original.write_bytes(original.read_bytes() + b"Kollege")
+    erg = ausgabe.ausgabe(spec)
+    assert BESTAND_ORIGINAL_GEAENDERT in [w["code"] for w in erg["warnungen"]]
+    assert sha256_datei(Path(erg["dateien"][0]["ausgabe"])) == erg["dateien"][0]["sha256"] != sha256_datei(original)
+
+
+def test_datei_id_bleibt(auftrag, tmp_path):
+    """S18a am Ergebnis: Die Ausgabe-Datei liegt neben einer Kopie der Musterbaugruppe. Sie öffnet ohne ID-Warnung und ohne Neuaufbau-
+    Fehler, die Komponente lädt aus dieser Kopie und trägt die Änderung."""
+    r = lade_rechner()
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(r, auftrag, 1)
+    punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer", "mass": TASCHE, "alt": 8, "neu": 9}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte)
+    _geprueft_abgenommen(spec)
+    [datei] = ausgabe.ausgabe(spec)["dateien"]
+
+    ordner = r.arbeitsordner / auftrag / "baugruppe"
+    ordner.mkdir()
+    for name in ("Muster.SLDASM", "gm42-10.SLDPRT"):
+        shutil.copy2(MUSTER.parent / name, ordner)
+    shutil.copy2(datei["ausgabe"], ordner / MUSTER.name)
+
+    app = verbinde(r.sw_jahr)
+    fehler, warnungen = byref_long(), byref_long()
+    asm = app.OpenDoc6(str(ordner / "Muster.SLDASM"), SW_DOC_BAUGRUPPE, SW_OEFFNEN_STILL_VOLL, "", fehler, warnungen)
+    assert asm is not None, fehler.value
+    try:
+        assert warnungen.value & (SW_WARNUNG_ID | SW_WARNUNG_REFERENZ_FEHLT) == 0, warnungen.value
+        komponenten = {k.Name2: k for k in asm.GetComponents(True)}
+        for k in komponenten.values():
+            assert Path(k.GetPathName).parent == ordner and k.GetSuppression2 != SW_KOMPONENTE_ID_FALSCH, k.Name2
+        assert asm.EditRebuild3 and whats_wrong(asm) == []
+        volumen = _geometrie(komponenten["Lagerdeckel-1"].GetModelDoc2)["volumen"]
+        # Tasche 1 mm tiefer: 50 × 30 × 1 weniger, die Rippe wächst 3 × 30 × 1 mit
+        assert volumen == pytest.approx(a["geometrie"]["Standard"]["volumen"] - 1500 + 90, abs=0.1)
+    finally:
+        sw.schliesse(app, asm)
+    assert sha256_datei(MUSTER) == a["datei"]["sha256"]

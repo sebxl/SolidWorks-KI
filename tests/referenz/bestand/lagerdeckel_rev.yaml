@@ -1,0 +1,63 @@
+# Referenz Bestandsdateien: Revision des Musterteils Lagerdeckel (Spec Bestandsdateien §12), Auftrag laut eingabe/aufgabe.md.
+# Rippe statt Fase beim Unterdrücken: Die Fase läuft bis an die rechte Stirnfläche, ihr Differenzkörper hinge am Körper der
+# neuen Länge und läge in keinem engen Bereich.
+art: aenderung
+name: Lagerdeckel_Rev
+bestand:
+  datei: Lagerdeckel.SLDPRT
+  sha256: 048eed278335b233c4501421fbf24f4cd05edbb9d10ed82b093a3348daa484c8
+  aufnahme: 1
+parameter: {L_neu: 110, A_neu: 45, D_neu: 9, RA: 12, YG: 24, TG: 10, TGW: 8}
+punkte:
+  - id: p1
+    was: "Rechte Bohrung 5 mm nach außen"
+    typ: mass
+    mass: "D2@Skizze4"
+    alt: 40
+    neu: "=A_neu"
+  - id: p2
+    was: "Deckel 10 mm länger, nach rechts"
+    typ: gleichung
+    variable: L
+    alt: 100
+    neu: "=L_neu"
+    folgen: ["D1@Skizze1"]
+  - id: p3
+    was: "Beide Bohrungen Ø 9"
+    typ: mass
+    mass: "Bohrung_D@Skizze3"
+    alt: 8
+    neu: "=D_neu"
+    folgen: ["Bohrung_D@Skizze4"]
+  - id: p4
+    was: "Rippe in der Tasche entfällt"
+    typ: unterdruecken
+    feature: "Verstärkungsrippe1"
+  - id: p5
+    was: "Zwei Gewinde M6 an der linken Kante"
+    typ: feature
+    name: "Gewinde M6 Deckel"
+    feature: {typ: normbohrung, art: gewinde, groesse: M6, flaeche: {nahe: [45, 0, 20]},
+              positionen: [["=-50+RA", "=YG"], ["=-50+RA", "=-YG"]], bezug: {u: "-rand", v: mitte}, tiefe: "=TG",
+              gewindetiefe: "=TGW"}
+  - id: p6
+    was: "Revision B"
+    typ: eigenschaft
+    name: Revision
+    neu: "B"
+bereiche:
+  - {punkte: [p1, p3], box: {min: [35.5, -20, 0], max: [50, -10, 20]}}   # rechte Bohrung: alt Ø 8 bei 40, neu Ø 9 bei 45
+  - {punkte: [p3], box: {min: [-45, 10, 0], max: [-35, 20, 20]}}         # linke Bohrung
+  - {punkte: [p2], box: {min: [50, -30, 0], max: [60, 30, 20]}}          # die Verlängerung, die linke Seite bleibt
+  - {punkte: [p4], features: ["Verstärkungsrippe1"]}
+  - {punkte: [p5], box: {min: [-41, 21, 8], max: [-35, 27, 20]}}         # je M6 ein enger Bereich: Lage auf ±0,5 mm belegt
+  - {punkte: [p5], box: {min: [-41, -27, 8], max: [-35, -21, 20]}}
+pruefung:
+  masse_pruefen:
+    - {was: "Länge", von: {flaeche: {nahe: [-50, 0, 10], normale: [-1, 0, 0]}}, zu: {flaeche: {nahe: [60, 0, 10], normale: [1, 0, 0]}},
+       soll: "=L_neu", tol: 0.01}
+    - {was: "Linke Kante bleibt", von: {flaeche: {nahe: [-50, 0, 10], normale: [-1, 0, 0]}}, zu: {punkt: ["=-50+RA", "=YG", 20]},
+       soll: "=RA", tol: 0.01}
+    - {was: "Dicke", von: {feature: "Aufsatz-Linear austragen1", flaeche: "+z"}, zu: {punkt: [0, 0, 0]}, soll: 20, tol: 0.01}
+  # Rechnung in tests/referenz/test_bestand.py: Mitte aus Variante B (10603,57) und Standard (10583,57, die Fase kürzt die Verlängerung um 20)
+  volumen_delta: {soll: 10593.57, toleranz_prozent: 0.2}

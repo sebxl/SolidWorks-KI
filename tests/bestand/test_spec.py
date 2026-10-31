@@ -24,7 +24,7 @@ BEISPIEL = {
         {"id": "p3", "was": "Zwei Gewinde M6 für den Deckel ergänzen", "typ": "feature", "name": "Gewinde M6 Deckel",
          "feature": {"typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [0, 30, 20]},
                      "positionen": [["=-50+RA", 15], ["=-50+RA", -15]], "bezug": {"u": "-rand", "v": "mitte"},
-                     "tiefe": 10}},
+                     "tiefe": 10, "gewindetiefe": 8}},
         {"id": "p4", "typ": "material", "neu": "1.4301"},
         {"id": "p5", "typ": "eigenschaft", "name": "Revision", "neu": "B"},
         {"id": "p6", "typ": "skript", "datei": "skripte/p6_endbedingung.py",

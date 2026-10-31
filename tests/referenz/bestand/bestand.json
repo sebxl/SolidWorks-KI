@@ -1,0 +1,888 @@
+{
+  "version": 1,
+  "konfigurationen": [
+    "Standard",
+    "Variante B"
+  ],
+  "aktiv": "Standard",
+  "einheitensystem": 5,
+  "material": "1.0038 (S235JRG2)",
+  "materialien": {
+    "Standard": "1.0038 (S235JRG2)",
+    "Variante B": "1.0038 (S235JRG2)"
+  },
+  "eigenschaften": {
+    "datei": {
+      "Benennung": "Lagerdeckel",
+      "Revision": "A"
+    },
+    "konfiguration": {
+      "Standard": {},
+      "Variante B": {
+        "Bemerkung": "ohne Fase"
+      }
+    }
+  },
+  "externe_referenzen": [],
+  "gleichungen": [
+    {
+      "index": 0,
+      "text": "\"L\"= 100",
+      "links": "L",
+      "global": true
+    },
+    {
+      "index": 1,
+      "text": "\"D1@Skizze1\" = \"L\"",
+      "links": "D1@Skizze1",
+      "global": false
+    }
+  ],
+  "variablen": {
+    "L": 100.0
+  },
+  "skizzen": {
+    "Skizze1": 3,
+    "Aufsatz-Linear austragen1/Skizze1": 3,
+    "Skizze2": 3,
+    "Schnitt-Linear austragen1/Skizze2": 3,
+    "Skizze3": 3,
+    "Schnitt-Linear austragen2/Skizze3": 3,
+    "Skizze4": 3,
+    "Schnitt-Linear austragen3/Skizze4": 3,
+    "Skizze5": 2,
+    "Verstärkungsrippe1/Skizze5": 2
+  },
+  "tabelle": false,
+  "features": [
+    {
+      "name": "Ebene vorne",
+      "typ": "RefPlane",
+      "eltern": [],
+      "kinder": [
+        "Skizze1",
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Ebene oben",
+      "typ": "RefPlane",
+      "eltern": [],
+      "kinder": [],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Ebene rechts",
+      "typ": "RefPlane",
+      "eltern": [],
+      "kinder": [
+        "Verstärkungsrippe1",
+        "Skizze5"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Ursprung",
+      "typ": "OriginProfileFeature",
+      "eltern": [
+        "Ebene vorne"
+      ],
+      "kinder": [
+        "Skizze1",
+        "Aufsatz-Linear austragen1",
+        "Schnitt-Linear austragen2",
+        "Skizze2",
+        "Skizze4",
+        "Skizze3",
+        "Schnitt-Linear austragen3",
+        "Schnitt-Linear austragen1"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Skizze1",
+      "typ": "ProfileFeature",
+      "eltern": [
+        "Ebene vorne",
+        "Ursprung"
+      ],
+      "kinder": [
+        "Aufsatz-Linear austragen1"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Aufsatz-Linear austragen1",
+      "typ": "Extrusion",
+      "eltern": [
+        "Skizze1",
+        "Ebene vorne",
+        "Ursprung"
+      ],
+      "kinder": [
+        "Schnitt-Linear austragen2",
+        "Skizze2",
+        "Skizze4",
+        "Skizze3",
+        "Fase1",
+        "Schnitt-Linear austragen3",
+        "Schnitt-Linear austragen1"
+      ],
+      "unter": [
+        "Skizze1"
+      ],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Skizze2",
+      "typ": "ProfileFeature",
+      "eltern": [
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "kinder": [
+        "Schnitt-Linear austragen1"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Schnitt-Linear austragen1",
+      "typ": "ICE",
+      "eltern": [
+        "Skizze2",
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "kinder": [],
+      "unter": [
+        "Skizze2"
+      ],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Skizze3",
+      "typ": "ProfileFeature",
+      "eltern": [
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "kinder": [
+        "Schnitt-Linear austragen2"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Schnitt-Linear austragen2",
+      "typ": "ICE",
+      "eltern": [
+        "Skizze3",
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "kinder": [],
+      "unter": [
+        "Skizze3"
+      ],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Skizze4",
+      "typ": "ProfileFeature",
+      "eltern": [
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "kinder": [
+        "Schnitt-Linear austragen3"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Schnitt-Linear austragen3",
+      "typ": "ICE",
+      "eltern": [
+        "Skizze4",
+        "Aufsatz-Linear austragen1",
+        "Ursprung"
+      ],
+      "kinder": [],
+      "unter": [
+        "Skizze4"
+      ],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Skizze5",
+      "typ": "ProfileFeature",
+      "eltern": [
+        "Ebene rechts"
+      ],
+      "kinder": [
+        "Verstärkungsrippe1"
+      ],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Verstärkungsrippe1",
+      "typ": "Rib",
+      "eltern": [
+        "Skizze5",
+        "Ebene rechts"
+      ],
+      "kinder": [],
+      "unter": [
+        "Skizze5"
+      ],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": false
+      },
+      "tabelle": false
+    },
+    {
+      "name": "Fase1",
+      "typ": "Chamfer",
+      "eltern": [
+        "Aufsatz-Linear austragen1"
+      ],
+      "kinder": [],
+      "unter": [],
+      "unterdrueckt": {
+        "Standard": false,
+        "Variante B": true
+      },
+      "tabelle": false
+    }
+  ],
+  "reihenfolge": {
+    "Standard": [
+      "Ebene vorne",
+      "Ebene oben",
+      "Ebene rechts",
+      "Ursprung",
+      "Skizze1",
+      "Aufsatz-Linear austragen1",
+      "Skizze2",
+      "Schnitt-Linear austragen1",
+      "Skizze3",
+      "Schnitt-Linear austragen2",
+      "Skizze4",
+      "Schnitt-Linear austragen3",
+      "Skizze5",
+      "Verstärkungsrippe1",
+      "Fase1"
+    ],
+    "Variante B": [
+      "Ebene vorne",
+      "Ebene oben",
+      "Ebene rechts",
+      "Ursprung",
+      "Skizze1",
+      "Aufsatz-Linear austragen1",
+      "Skizze2",
+      "Schnitt-Linear austragen1",
+      "Skizze3",
+      "Schnitt-Linear austragen2",
+      "Skizze4",
+      "Schnitt-Linear austragen3",
+      "Skizze5",
+      "Verstärkungsrippe1",
+      "Fase1"
+    ]
+  },
+  "masse": [
+    {
+      "name": "D1@Skizze1",
+      "feature": "Skizze1",
+      "werte": {
+        "Standard": 100.0,
+        "Variante B": 100.0
+      },
+      "einheit": "mm",
+      "zustand": "gesteuert",
+      "quelle": {
+        "art": "variable",
+        "name": "L"
+      },
+      "gruppe": null,
+      "punkte": [
+        [
+          -50.0,
+          30.0,
+          0.1
+        ],
+        [
+          50.0,
+          30.0,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "D2@Skizze1",
+      "feature": "Skizze1",
+      "werte": {
+        "Standard": 60.0,
+        "Variante B": 60.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          50.0,
+          -30.0,
+          0.1
+        ],
+        [
+          50.0,
+          30.0,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "D3@Skizze1",
+      "feature": "Skizze1",
+      "werte": {
+        "Standard": 50.0,
+        "Variante B": 50.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -50.0,
+          -30.0,
+          0.1
+        ],
+        [
+          0.0,
+          0.0,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "D4@Skizze1",
+      "feature": "Skizze1",
+      "werte": {
+        "Standard": 30.0,
+        "Variante B": 30.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -50.0,
+          -30.0,
+          0.1
+        ],
+        [
+          0.0,
+          0.0,
+          0.1
+        ]
+      ]
+    },
+    {
+      "name": "D1@Aufsatz-Linear austragen1",
+      "feature": "Aufsatz-Linear austragen1",
+      "werte": {
+        "Standard": 20.0,
+        "Variante B": 20.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          50.0,
+          30.1,
+          0.0
+        ],
+        [
+          50.0,
+          30.1,
+          20.0
+        ]
+      ]
+    },
+    {
+      "name": "D1@Skizze2",
+      "feature": "Skizze2",
+      "werte": {
+        "Standard": 50.0,
+        "Variante B": 50.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -25.0,
+          15.0,
+          20.1
+        ],
+        [
+          25.0,
+          15.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D2@Skizze2",
+      "feature": "Skizze2",
+      "werte": {
+        "Standard": 30.0,
+        "Variante B": 30.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          25.0,
+          -15.0,
+          20.1
+        ],
+        [
+          25.0,
+          15.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D3@Skizze2",
+      "feature": "Skizze2",
+      "werte": {
+        "Standard": 25.0,
+        "Variante B": 25.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -25.0,
+          -15.0,
+          20.1
+        ],
+        [
+          0.0,
+          0.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D4@Skizze2",
+      "feature": "Skizze2",
+      "werte": {
+        "Standard": 15.0,
+        "Variante B": 15.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -25.0,
+          -15.0,
+          20.1
+        ],
+        [
+          0.0,
+          0.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D5@Skizze2",
+      "feature": "Skizze2",
+      "werte": {
+        "Standard": 50.0,
+        "Variante B": 50.0
+      },
+      "einheit": "mm",
+      "zustand": "getrieben",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -25.0,
+          -15.0,
+          20.1
+        ],
+        [
+          25.0,
+          -15.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D1@Schnitt-Linear austragen1",
+      "feature": "Schnitt-Linear austragen1",
+      "werte": {
+        "Standard": 8.0,
+        "Variante B": 8.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          25.0,
+          15.1,
+          20.0
+        ],
+        [
+          25.0,
+          15.1,
+          12.0
+        ]
+      ]
+    },
+    {
+      "name": "Bohrung_D@Skizze3",
+      "feature": "Skizze3",
+      "werte": {
+        "Standard": 8.0,
+        "Variante B": 8.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": "Bohrung_D",
+      "punkte": [
+        [
+          -40.0,
+          15.0,
+          20.1
+        ],
+        [
+          -40.0,
+          15.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D2@Skizze3",
+      "feature": "Skizze3",
+      "werte": {
+        "Standard": 40.0,
+        "Variante B": 40.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -40.0,
+          15.0,
+          20.1
+        ],
+        [
+          0.0,
+          0.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D3@Skizze3",
+      "feature": "Skizze3",
+      "werte": {
+        "Standard": 15.0,
+        "Variante B": 15.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -40.0,
+          15.0,
+          20.1
+        ],
+        [
+          0.0,
+          0.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "Bohrung_D@Skizze4",
+      "feature": "Skizze4",
+      "werte": {
+        "Standard": 8.0,
+        "Variante B": 8.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": "Bohrung_D",
+      "punkte": [
+        [
+          40.0,
+          -15.0,
+          20.1
+        ],
+        [
+          40.0,
+          -15.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D2@Skizze4",
+      "feature": "Skizze4",
+      "werte": {
+        "Standard": 40.0,
+        "Variante B": 40.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          40.0,
+          -15.0,
+          20.1
+        ],
+        [
+          0.0,
+          0.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D3@Skizze4",
+      "feature": "Skizze4",
+      "werte": {
+        "Standard": 15.0,
+        "Variante B": 15.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          40.0,
+          -15.0,
+          20.1
+        ],
+        [
+          0.0,
+          0.0,
+          20.1
+        ]
+      ]
+    },
+    {
+      "name": "D1@Verstärkungsrippe1",
+      "feature": "Verstärkungsrippe1",
+      "werte": {
+        "Standard": 3.0,
+        "Variante B": 3.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -1.5,
+          0.0,
+          17.1
+        ],
+        [
+          1.5,
+          0.0,
+          17.1
+        ]
+      ]
+    },
+    {
+      "name": "D1@Fase1",
+      "feature": "Fase1",
+      "werte": {
+        "Standard": 2.0,
+        "Variante B": 2.0
+      },
+      "einheit": "mm",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -0.1,
+          30.0,
+          18.0
+        ],
+        [
+          -0.1,
+          30.0,
+          20.0
+        ]
+      ]
+    },
+    {
+      "name": "D2@Fase1",
+      "feature": "Fase1",
+      "werte": {
+        "Standard": 45.0,
+        "Variante B": 45.0
+      },
+      "einheit": "Grad",
+      "zustand": "treibend",
+      "quelle": null,
+      "gruppe": null,
+      "punkte": [
+        [
+          -0.1,
+          37.071,
+          10.929
+        ],
+        [
+          -0.1,
+          30.0,
+          8.0
+        ]
+      ]
+    }
+  ],
+  "neuaufbau": [],
+  "geometrie": {
+    "Standard": {
+      "koerper": 1,
+      "volumen": 106239.381,
+      "box": [
+        -50.0,
+        -30.0,
+        0.0,
+        50.0,
+        30.0,
+        20.0
+      ],
+      "schwerpunkt": [
+        -0.0,
+        -0.055221,
+        9.323776
+      ]
+    },
+    "Variante B": {
+      "koerper": 1,
+      "volumen": 106439.381,
+      "box": [
+        -50.0,
+        -30.0,
+        0.0,
+        50.0,
+        30.0,
+        20.0
+      ],
+      "schwerpunkt": [
+        -0.0,
+        0.0,
+        9.342584
+      ]
+    }
+  },
+  "sw_jahr": 2025,
+  "datei": {
+    "name": "Lagerdeckel.SLDPRT",
+    "original": "Lagerdeckel.SLDPRT",
+    "sha256": "048eed278335b233c4501421fbf24f4cd05edbb9d10ed82b093a3348daa484c8",
+    "versionen": [
+      "18000[2025/268]"
+    ],
+    "version_aelter": false
+  }
+}

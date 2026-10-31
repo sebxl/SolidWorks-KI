@@ -134,6 +134,22 @@ Wegwerf.
 - **Bilanz:** `koerper_differenz` vergleicht die Summe der Differenzkörper mit der Volumenänderung beider Stände; ein stilles leeres
   Ergebnis wäre sonst ein falsches „ok". Flächenkörper sieht `Operations2` hier nicht, sie machen die Konfiguration „nicht nachgewiesen".
 
+### Nachträge aus Task 10 (live, 2026-10-31)
+
+Referenz `tests/referenz/bestand/lagerdeckel_rev.yaml`, sechs Punkte, Lauf 1 ohne Mangel, 12,8 s Bau, 21 Prüfungen.
+
+- **Volumen vorab gerechnet, gemessen auf 0,001 genau:** Variante B +10603,567, Standard +10583,567 mm³. Die Differenz sind die 20 mm³
+  der Fase auf der Verlängerung, `volumen_delta` trägt darum die Mitte mit 0,2 %.
+- **Differenzkörper verschmelzen:** Fase unterdrückt und `L` zugleich ergäbe einen Körper über beide Stellen, die Fase läuft bis an die
+  rechte Stirnfläche. Er passte in keinen engen Bereich. Die Referenz unterdrückt deshalb die Rippe. Für echte Dateien: Stoßen zwei
+  Punkte aneinander, brauchen sie einen gemeinsamen Bereich.
+- **`masse_pruefen` misst keine Bohrungsachse:** Die Spec kennt nur `punkt`, `flaeche` und `feature` + `flaeche`. Die Lage der neuen
+  Gewinde belegen die zwei engen Bereiche (±0,5 mm); `{punkt}` gegen eine Fläche prüft nur die Fläche.
+- **Eine Variable, eine Folge:** Das Muster hat nur `"D1@Skizze1" = "L"`, ein `gleichung`-Punkt auf `L` hat genau eine Folge. Die zweite
+  Folge der Referenz kommt aus dem verknüpften Maß (`Bohrung_D@Skizze4`).
+- **S18a am Ergebnis (`test_datei_id_bleibt`):** Ausgabe neben einer Kopie der Musterbaugruppe: kein IdMismatch, keine fehlende
+  Referenz, Neuaufbau ohne Fehler, neues Volumen in der Komponente.
+
 ### Folgen für die Tasks
 
 - **Task 5 (Aufnahme):** Werte durch Umschalten lesen, Dubletten zusammenlegen, `zustand` wie oben ableiten, Namen ohne letztes

@@ -132,7 +132,8 @@ punkte:
     typ: feature                       # neues Feature über die vorhandenen Handler
     name: "Gewinde M6 Deckel"
     feature: {typ: normbohrung, art: gewinde, groesse: M6, flaeche: {nahe: [0, 30, 20]},
-              positionen: [["=-50+RA", 15], ["=-50+RA", -15]], bezug: {u: "-rand", v: mitte}, tiefe: 10}
+              positionen: [["=-50+RA", 15], ["=-50+RA", -15]], bezug: {u: "-rand", v: mitte}, tiefe: 10,
+              gewindetiefe: 8}
   - id: p4
     typ: material
     neu: "1.4301"

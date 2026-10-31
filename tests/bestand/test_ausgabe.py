@@ -295,6 +295,28 @@ def test_status_und_bericht_mit_aenderung(u):
     assert not u.ausgabe_ordner().exists()  # der Bericht kopiert nichts
 
 
+def test_bericht_sagt_nicht_nachgewiesen_statt_keine_abweichung(u):
+    """Eine gescheiterte Differenz hinterlässt eine leere Liste: Das ist kein Nachweis, dass sich nichts geändert hat."""
+    hinweis = "Differenz in Variante B nicht nachgewiesen: Flächenkörper"
+    spec = u.gebaut(bestanden=False, urteil=None, differenzen={"Standard": [], "Variante B": []},
+                    pruefungen=[{"id": "bereich", "ok": True, "konfiguration": "Standard", "ist": []},
+                                {"id": "bereich", "ok": None, "konfiguration": "Variante B", "ist": [], "hinweis": hinweis}])
+    befehle.bericht(spec)
+    text = (spec.parent / "bericht.md").read_text(encoding="utf-8")
+    assert "- Standard: keine Abweichung" in text
+    assert f"- Variante B: nicht nachgewiesen: {hinweis}" in text and "Variante B: keine Abweichung" not in text
+
+
+def test_bericht_nennt_nur_duenne_abweichung_nicht_nachgewiesen(u):
+    """Abweichungen stehen da, die Konfiguration ist trotzdem nicht nachgewiesen: beides gehört in den Bericht."""
+    zeile = {**DIFFERENZEN["Standard"][0], "bereich": None, "duenn": True}
+    spec = u.gebaut(bestanden=False, urteil=None, differenzen={"Standard": [zeile]},
+                    pruefungen=[{"id": "bereich", "ok": None, "konfiguration": "Standard", "ist": [zeile], "hinweis": "nur im Mittel dünn"}])
+    befehle.bericht(spec)
+    text = (spec.parent / "bericht.md").read_text(encoding="utf-8")
+    assert "- Standard: nicht nachgewiesen: nur im Mittel dünn" in text and "in keinem Bereich" in text
+
+
 def test_bericht_ohne_bestandenen_lauf_nennt_keine_ausgabe(u):
     spec = u.gebaut(urteil=None)
     befehle.bericht(spec)

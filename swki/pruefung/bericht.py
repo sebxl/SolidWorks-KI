@@ -60,10 +60,13 @@ def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protok
     differenzen = letzter.get("differenzen")
     if not differenzen:
         zeilen.append("- nicht geprüft")
+    offen = {e["konfiguration"]: e.get("hinweis", "") for e in letzter.get("pruefungen", [])
+             if e["id"] == "bereich" and e["ok"] is None}
     for konfiguration, liste in (differenzen or {}).items():
-        if not liste:
+        if konfiguration in offen:  # eine leere Liste aus gescheiterter Differenz ist kein Nachweis
+            zeilen.append(f"- {konfiguration}: nicht nachgewiesen: {offen[konfiguration]}")
+        elif not liste:
             zeilen.append(f"- {konfiguration}: keine Abweichung")
-            continue
         zeilen += [f"- {konfiguration}: {a['art']} {a['volumen']:g} mm³ bei {_ort(a['box'])}, "
                    + (f"Bereich {a['bereich']}" if a.get("bereich") is not None else "in keinem Bereich") for a in liste]
     zeilen += ["", "### Ausgabe", ""]
