@@ -100,13 +100,14 @@ def _neu_aufbauen_bis_vollstaendig(ctx, feature, fid: str, punkte: list, schlafe
         schlafe(_PAUSE_S)
 
 
-def skizzenebene_nach_bohrung(ctx, f: dict, se):
+def skizzenebene_in_positionsskizze(ctx, f: dict, se):
     """Skizzenfläche für die Positionsskizze: mit Bezug (Kanten für Rand, Fläche, Mittellinie) neu aufgelöst, und zwar in der
     offenen Skizze: Eine früher geholte Fläche trennt SolidWorks beim Öffnen, Schließen oder nächsten Neuaufbau
     (RPC_E_DISCONNECTED, spikes/s18_trennung.py). Der Körper ist dort auf den Stand vor der Bohrung zurückgerollt, die
-    Kanten sind die der ungebohrten Fläche. Mehrdeutigkeit ist ein Baufehler. Wird keine Fläche gefunden oder liegt sie in
-    einer anderen Ebene: mit Rand- oder Flächenbezug ein Baufehler, mit nur `mitte` die alte Ebene ohne Fläche (die
-    Mittellinie bekommt dann ihr Längenmaß, Ruling 4a)."""
+    Kanten sind die der ungebohrten Fläche, ein Anker `{nahe}` genau auf einer Bohrung trifft sie also. Mehrdeutigkeit ist ein
+    Baufehler. Bleibt als Absicherung: Wird keine Fläche gefunden oder liegt sie in einer anderen Ebene, ist das mit Rand- oder
+    Flächenbezug ein Baufehler, mit nur `mitte` gilt die alte Ebene ohne Fläche (die Mittellinie bekommt dann ihr Längenmaß,
+    Ruling 4a)."""
     bezuege = bezug_von(f).values()
     if all(b == URSPRUNG for b in bezuege):
         return se
@@ -119,9 +120,9 @@ def skizzenebene_nach_bohrung(ctx, f: dict, se):
     if neu is not None and neu.orientierung == se.orientierung and abs(neu.lage - se.lage) <= ctx.tol_mm:
         return neu
     if any(b not in (URSPRUNG, MITTE) for b in bezuege):
-        raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"normbohrung {f['id']}: Skizzenfläche nach dem Bohren nicht "
-                                                 "wiedergefunden – Anker {feature, flaeche} verwenden oder nahe-Punkt "
-                                                 "neben die Bohrungen legen", schritt="skizze")
+        raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"normbohrung {f['id']}: Skizzenfläche in der Positionsskizze nicht "
+                                                 "wiedergefunden – Anker {feature, flaeche} verwenden",
+                        schritt="skizze")
     return replace(se, flaeche=None)
 
 
@@ -164,7 +165,7 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"normbohrung {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    positionen_festlegen(ctx, feature, lambda: skizzenebene_nach_bohrung(ctx, f, se), f["positionen"],
+    positionen_festlegen(ctx, feature, lambda: skizzenebene_in_positionsskizze(ctx, f, se), f["positionen"],
                          f"{f['id']}_positionen", f.get("bezug"), f"{ctx.pfad(f['id'])}.positionen")
     _neu_aufbauen_bis_vollstaendig(ctx, feature, f["id"], punkte)
     return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)

@@ -54,32 +54,32 @@ def _ebene(lage: float):
 def test_positionsskizze_ohne_bezug_behaelt_die_flaeche(monkeypatch):
     monkeypatch.setattr(nb, "loese_flaeche", lambda ctx, anker: pytest.fail("nicht neu auflösen"))
     alt = _ebene(20.0)
-    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK}, alt) is alt
-    assert nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "ursprung"}},
+    assert nb.skizzenebene_in_positionsskizze(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK}, alt) is alt
+    assert nb.skizzenebene_in_positionsskizze(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "ursprung"}},
                                         alt) is alt
 
 
-def test_positionsskizze_mit_bezug_loest_die_flaeche_nach_dem_bohren_neu_auf(monkeypatch):
+def test_positionsskizze_mit_bezug_loest_die_flaeche_in_der_offenen_skizze_neu_auf(monkeypatch):
     neu = Flaeche("ebene", (0.0, 20.0, 0.0), normale=(0.0, 1.0, 0.0), objekt=object())
     monkeypatch.setattr(nb, "loese_flaeche", lambda ctx, anker: neu)
-    se = nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
+    se = nb.skizzenebene_in_positionsskizze(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
                                       _ebene(20.0))
     assert se.flaeche is neu
 
 
+# Absicherung: In der offenen Skizze ist die Bohrung zurückgerollt, der Anker trifft dort sonst die Fläche von vor dem Bohren
 _OHNE_PASSENDE_NEUE = [
-    lambda ctx, anker: Flaeche("ebene", (0.0, 12.0, 0.0), normale=(0.0, 1.0, 0.0)),  # andere Ebene (Senkungsgrund)
-    lambda ctx, anker: (_ for _ in ()).throw(BauFehler("REFERENZ_NICHT_GEFUNDEN", "keine Fläche")),  # {nahe} im Loch
+    lambda ctx, anker: Flaeche("ebene", (0.0, 12.0, 0.0), normale=(0.0, 1.0, 0.0)),  # andere Ebene
+    lambda ctx, anker: (_ for _ in ()).throw(BauFehler("REFERENZ_NICHT_GEFUNDEN", "keine Fläche")),
 ]
 
 
 @pytest.mark.parametrize("loese", _OHNE_PASSENDE_NEUE)
 def test_positionsskizze_nur_mitte_ohne_passende_neue_flaeche_ohne_skizzenflaeche(monkeypatch, loese):
-    """Nur mitte: die alte Ebene ohne Fläche (die Kanten von vor dem Bohren gibt es nicht mehr) – die Mittellinie
-    bekommt dann ihr Längenmaß (Ruling 4a)."""
+    """Nur mitte: die alte Ebene ohne Fläche – die Mittellinie bekommt dann ihr Längenmaß (Ruling 4a)."""
     monkeypatch.setattr(nb, "loese_flaeche", loese)
     alt = _ebene(20.0)
-    se = nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"v": "mitte"}}, alt)
+    se = nb.skizzenebene_in_positionsskizze(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"v": "mitte"}}, alt)
     assert se.flaeche is None and (se.objekt, se.orientierung, se.lage) == (alt.objekt, "oben", 20.0)
 
 
@@ -88,10 +88,11 @@ def test_positionsskizze_nur_mitte_ohne_passende_neue_flaeche_ohne_skizzenflaech
 def test_positionsskizze_rand_ohne_passende_neue_flaeche_ist_ein_baufehler(monkeypatch, loese, bezug):
     monkeypatch.setattr(nb, "loese_flaeche", loese)
     with pytest.raises(BauFehler) as e:
-        nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"id": "f2", "flaeche": _DECK, "bezug": bezug},
+        nb.skizzenebene_in_positionsskizze(SimpleNamespace(tol_mm=0.1), {"id": "f2", "flaeche": _DECK, "bezug": bezug},
                                      _ebene(20.0))
     assert e.value.code == "REFERENZ_NICHT_GEFUNDEN" and "f2" in str(e.value)
-    assert "Skizzenfläche nach dem Bohren nicht wiedergefunden" in str(e.value) and "nahe-Punkt" in str(e.value)
+    assert "Skizzenfläche in der Positionsskizze nicht wiedergefunden" in str(e.value)
+    assert "nahe-Punkt" not in str(e.value)
 
 
 def test_positionsskizze_mehrdeutige_flaeche_ist_ein_baufehler(monkeypatch):
@@ -100,7 +101,7 @@ def test_positionsskizze_mehrdeutige_flaeche_ist_ein_baufehler(monkeypatch):
 
     monkeypatch.setattr(nb, "loese_flaeche", loese)
     with pytest.raises(BauFehler) as e:
-        nb.skizzenebene_nach_bohrung(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
+        nb.skizzenebene_in_positionsskizze(SimpleNamespace(tol_mm=0.1), {"flaeche": _DECK, "bezug": {"u": "-rand"}},
                                      _ebene(20.0))
     assert e.value.code == "REFERENZ_MEHRDEUTIG"
 

@@ -206,8 +206,22 @@ sofort oder nach bis zu 3 s fragen, Skizze schließen) kam in 39 Proben keine Tr
 0,3 %. Der Wächter auf der frischen Fläche: 30-mal lebend bis `ForceRebuild3`. Gegenprobe auf demselben Code, nur die Ebene wieder vor dem Öffnen geholt (`--fall voll_alt`):
 4 Abbrüche in 10 Läufen. Keine Wiederholung, kein Abfangen: Ein Bau, der abbricht, speichert weiter nichts.
 
-Ein Anker `{nahe}` genau auf der Bohrung findet die Fläche jetzt, weil die Bohrung in der offenen Skizze zurückgerollt ist. Die Zweige „keine Fläche gefunden“ in
-`skizzenebene_nach_bohrung` bleiben als Absicherung.
+Ein Anker `{nahe}` genau auf der Bohrung findet die Fläche jetzt, weil die Bohrung in der offenen Skizze zurückgerollt ist (live: `test_nahe_anker_genau_auf_einer_bohrung`).
+Die Zweige „keine Fläche gefunden“ in `skizzenebene_in_positionsskizze` (vormals `skizzenebene_nach_bohrung`) bleiben als Absicherung.
+
+### Gesamtregression (Task 11, live, 2026-10-31)
+
+Stand: Commit „Bestandsdateien Etappe 1: Skill, Regeln, Ergebnisse“, Rechner A, jeder Test der Suite auf frischem SolidWorks (`-m werkzeuge.live_frisch tests/referenz`).
+
+| Lauf | Ergebnis |
+|---|---|
+| `pytest` | 2179 bestanden, 185 abgewählt (`sw`) |
+| `swki api pruefe-code` | ohne Befund, `max_jahr` 2025 |
+| Regressions-Suite | 12 von 12, darunter Lagerdeckel 38,5 s, 3440 MB Spitze; größte Spitze Zahnstangentrieb 6262 MB, 88,4 s; Motorhalter mit der Herstellerdatei |
+| `-m werkzeuge.schnellbau_abgleich --ohne-json` | alle Eigenteile `richtig`, nicht gespiegelt, Volumenabweichung höchstens 0,0008 %; Formplatte ohne Vergleich (`f10` ist `skript`, `SCHNELLBAU_NICHT_UNTERSTUETZT`, kein Gegenstück vorgesehen) |
+| Live `test_live_bestand`, `test_live_bemassungsbezug`, `test_live_normbohrung` | 32 von 32 |
+
+Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`, damit `tests/live_einzeln.py tests/referenz` ihn mitnimmt; die Suite davor sah ihn nicht.
 
 ### Folgen für die Tasks
 
@@ -228,6 +242,7 @@ Ein Anker `{nahe}` genau auf der Bohrung findet die Fläche jetzt, weil die Bohr
 
 ### Offen
 
+- **Abnahme an einer echten Kollegen-Datei** (Spec §12): Die Datei stellt der Nutzer bereit; Kennzahlen kommen hierher.
 - Tabellengesteuerte Unterdrückungszustände ohne Excel erkennen (siehe Zeile b, Entscheidung F4).
 - Externe Referenzen außer abgeleitetem Teil (gespiegelt, im Kontext, Gleichungsdatei): `GetDocumentDependencies2` nur am
   abgeleiteten Teil gemessen. Verhalten bei geändertem Basisteil nicht geprüft; Etappe 1 lehnt solche Teile ab.

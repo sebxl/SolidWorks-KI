@@ -102,14 +102,14 @@ def kopie(lauf: str) -> Path:
 
 def wache_an(spur: Spur) -> None:
     from swki.compiler.handler import normbohrung as modul
-    original = modul.skizzenebene_nach_bohrung
+    original = modul.skizzenebene_in_positionsskizze
 
     def mit_wache(ctx, f, se):
         neu = original(ctx, f, se)
         spur.bewacht, spur.fenster = neu.flaeche.objekt, True
         return neu
 
-    modul.skizzenebene_nach_bohrung = mit_wache
+    modul.skizzenebene_in_positionsskizze = mit_wache
 
 
 def alter_weg() -> None:

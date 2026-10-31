@@ -1,9 +1,10 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Tempo-Optimierung nach Bewertungsbogen BTP (Umbau 1–3, Score 4,9 → Mittel 7,54) – Ergebnisse:
-docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
-`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+Stand: Bestandsdateien Etappe 1 (fremde Teile gezielt ändern, Abnahme an einer echten Kollegen-Datei offen) – Ergebnisse:
+docs/bestandsdateien/ergebnisse.md (davor Tempo-Optimierung nach Bewertungsbogen BTP, Umbau 1–3, Score 4,9 → Mittel 7,54:
+docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
+`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Bestandsdateien Etappe 2 (Baugruppen), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
@@ -23,7 +24,7 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
 - Vor jedem neuen SolidWorks-API-Aufruf im Code: `swki api methode <Interface.Member>` bzw. `swki api enum <Name>` nachschlagen. Nicht raten. Parameteranzahl und Enum-Werte aus dem Index sind verbindlich.
 - Die API rechnet in Metern und Radiant. Spezifikationen und Ausgaben an den Nutzer in mm und Grad.
 - Die Oberfläche ist deutsch: keine englischen Feature-/Ebenennamen verwenden; Ebenen über Position im Feature-Baum finden.
-- Nur Dokumente anfassen, die selbst angelegt wurden. Nur im Arbeitsordner speichern (`arbeitsordner` aus `config/rechner.yaml`). Nie in Kundenordner oder Bibliotheks-Originale schreiben.
+- Nur Dokumente anfassen, die selbst angelegt oder über `swki bestand aufnehmen` als Arbeitskopie aufgenommen wurden. Nur im Arbeitsordner speichern (`arbeitsordner` aus `config/rechner.yaml`). Nie in Kundenordner oder Bibliotheks-Originale schreiben.
 - Normteile: `swki normteil` kopiert selbst gebaute und geprüfte Teile in die `normteilbibliothek` (config/rechner.yaml) – sonst nichts dorthin schreiben.
 - Compiler-Code nur mit API-Aufrufen, die in SW 2025 verfügbar sind (`swki api pruefe-code`).
 
@@ -108,6 +109,14 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
   den Skill `compiler-erweitern`.
 - Regressions-Suite enthält die Zentrieraufnahme (`tests/referenz/zentrieraufnahme/`).
 
+## Bestandsdateien (fremde Dateien ändern)
+- Fremde Teile (Datei eines Kollegen, nicht von swki) nur über den Skill `aendern`: `swki bestand aufnehmen` → Punkte zuordnen →
+  Spec `art: aenderung` → `swki validieren` → Nutzer-OK → `swki durchlauf --freigeben` → Prüfer → `swki bestand ausgabe`. Etappe 1:
+  nur Teile.
+- Das Original nur lesen, nie in SolidWorks öffnen. Ausgabe im Arbeitsordner unter dem Originalnamen; zurück kopiert der Nutzer.
+- Nichts aufräumen: Punkte nennt der Nutzer, alles andere bleibt, wie der Kollege es gebaut hat.
+- Regressions-Suite enthält den Lagerdeckel (`tests/referenz/bestand/`, Muster als SolidWorks-Dateien im Git).
+
 ## Schnellbau und Simulation (Stufe C1)
 - Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,
   Spec `docs/superpowers/specs/2026-10-25-schnellbau-c1-design.md`): `swki schnellbau teil <spec> [--setze N=w] [--stl]`,
@@ -149,8 +158,9 @@ docs/laufzeit-audit/ergebnisse.md (davor Bemaßungsbezug: docs/bemassungsbezug/e
 
 ## Git
 - Kein `git push` ohne Rückfrage.
-- Erzeugte SolidWorks-Dateien kommen nicht ins Git (einzige Ausnahme: Test-STEP
-  `tests/referenz/motorhalter/muster/gm42-10.step`, interne Testdatei). Herstellerdateien (STEP, Datenblätter) nie ins Git.
+- Erzeugte SolidWorks-Dateien kommen nicht ins Git (Ausnahmen: Test-STEP
+  `tests/referenz/motorhalter/muster/gm42-10.step`, interne Testdatei; Musterdateien `tests/referenz/bestand/muster/`).
+  Herstellerdateien (STEP, Datenblätter) nie ins Git.
 
 ## Tests
 - `.venv\Scripts\python.exe -m pytest` (ohne SolidWorks), `… -m sw` (mit geöffnetem SolidWorks).

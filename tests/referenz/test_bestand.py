@@ -1,22 +1,28 @@
-"""Referenz Bestandsdateien (Musterteil Lagerdeckel) ohne SolidWorks: gültig gegen die eingecheckte Aufnahme, Sollwerte aus eigener
-Rechnung. Der Live-Lauf steht in `tests/live/test_live_bestand.py`, `bestand.json` ist die Aufnahme des Musters ohne Rechnerpfad."""
+"""Referenz Bestandsdateien (Musterteil Lagerdeckel): ohne SolidWorks gültig gegen die eingecheckte Aufnahme, Sollwerte aus eigener
+Rechnung, `bestand.json` ist die Aufnahme des Musters ohne Rechnerpfad. Der Live-Lauf `test_referenz_lagerdeckel` gehört zur
+Regressions-Suite (`tests/live_einzeln.py tests/referenz`); Negativfälle in `tests/live/test_live_bestand.py`."""
 
 import json
 import math
 import shutil
+import stat
 from pathlib import Path
 
 import pytest
 import yaml
 
 from swki.aenderungen import sha256_datei
+from swki.auftrag import lauf_datei
+from swki.bestand import befehle
 from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.spec import validieren
-from swki.konfig import Rechner
+from swki.durchlauf import durchlauf
+from swki.konfig import Rechner, lade_rechner
 from swki.spec.normen import bohrspitze_grad, normmasse
 
 ORDNER = Path(__file__).parent / "bestand"
 SPEC = ORDNER / "lagerdeckel_rev.yaml"
+AUFTRAG = "REF-BESTAND"
 
 
 def _aufnahme() -> dict:
@@ -66,3 +72,43 @@ def test_volumen_delta_aus_rechnung():
     soll = s["pruefung"]["volumen_delta"]
     assert soll["soll"] == pytest.approx((variante_b + standard) / 2, abs=0.01)
     assert abs(variante_b - standard) / 2 < soll["soll"] * soll["toleranz_prozent"] / 100
+
+
+def _aufraeumen(pfad: Path) -> None:
+    for p in pfad.rglob("*"):
+        if p.is_file():
+            p.chmod(stat.S_IWRITE)  # Bestandskopien sind schreibgeschützt
+    shutil.rmtree(pfad, ignore_errors=True)
+
+
+@pytest.fixture
+def auftrag():
+    pfad = lade_rechner().arbeitsordner / AUFTRAG
+    _aufraeumen(pfad)
+    yield AUFTRAG
+    _aufraeumen(pfad)
+
+
+@pytest.mark.sw
+def test_referenz_lagerdeckel(auftrag, tmp_path):
+    """Spec §12: die ganze Revision über `swki durchlauf`, enge Bereiche; das Urteil des Prüfers bleibt dem Referenzlauf vorbehalten."""
+    ziel = tmp_path / auftrag
+    ziel.mkdir()
+    shutil.copy2(SPEC, ziel)
+    shutil.copytree(ORDNER / "eingabe", ziel / "eingabe")
+    spec = ziel / SPEC.name
+    befehle.aufnehmen(ORDNER / "muster" / "Lagerdeckel.SLDPRT", auftrag)
+    erg = durchlauf(spec, freigeben=True)
+    assert erg["schritt"] == "fertig" and erg["pruefung"]["bestanden"] is True, erg
+    assert erg["pruefung"]["ohne_urteil"] == [] and "Vorher-Bilder" in erg["pruefer_auftrag"]
+    b = json.loads(lauf_datei(spec, erg["lauf"], "pruefbericht").read_text(encoding="utf-8"))
+    assert {k: len(d) for k, d in b["differenzen"].items()} == {"Standard": 7, "Variante B": 7}
+    assert all(x["bereich"] is not None for d in b["differenzen"].values() for x in d)
+    delta = next(e for e in b["pruefungen"] if e["id"] == "volumen_delta")
+    assert delta["ist"]["Variante B"] - delta["ist"]["Standard"] == pytest.approx(20, abs=0.01)  # die Fase auf der Verlängerung
+    gewinde = next(e for e in b["pruefungen"] if e["id"] == "punkt:p5")
+    assert gewinde["soll"] == {"art": "gewinde", "groesse": "M6", "tiefe": 10, "gewindetiefe": 8, "positionen": [[-38, 24], [-38, -24]]}
+    for k in ("Standard", "Variante B"):
+        ist = gewinde["ist"][k]
+        assert (ist["groesse"], ist["tiefe"], ist["gewindetiefe"]) == ("M6", 10, 8), k
+        assert sorted(ist["positionen"]) == [[-38, -24], [-38, 24]], k

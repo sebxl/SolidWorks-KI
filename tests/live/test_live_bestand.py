@@ -20,7 +20,6 @@ from swki.bestand.spec import freigeben, validieren
 from swki.bestand.sw_bestand import _geometrie, bstr_array, lies_bestand, whats_wrong
 from swki.compiler import sw
 from swki.compiler.bauen import BauAbbruch
-from swki.durchlauf import durchlauf
 from swki.konfig import PROJEKT, lade_rechner
 from swki.pruefung.messen import oeffne
 from swki.spec.laden import SpecFehler
@@ -367,7 +366,7 @@ def test_aktive_konfiguration_bleibt_unterdrueckte_skizze_stoert_nicht(auftrag):
     assert sha256_datei(Path(kopie)) == sha256_datei(MUSTER)
 
 
-# ---------------------------------------------------------------------------------------------- Referenz, Negativfälle, S18a
+# ------------------------------------------------------------------------------------------------------ Negativfälle, S18a
 
 def _geprueft_abgenommen(spec: Path) -> None:
     """Lauf bauen und prüfen, ohne Mangel; das Urteil des Prüfers steht hier als Datei da."""
@@ -375,30 +374,6 @@ def _geprueft_abgenommen(spec: Path) -> None:
     b = pruefen(spec)
     assert b["maengel"] == [] and b["bestanden"] is True, b["maengel"]
     lauf_datei(spec, nummer, "pruefer").write_text(json.dumps({"bestanden": True, "maengel": []}), encoding="utf-8")
-
-
-def test_referenz_lagerdeckel(auftrag, tmp_path):
-    """Spec §12: die ganze Revision über `swki durchlauf`, enge Bereiche; das Urteil des Prüfers bleibt dem Referenzlauf vorbehalten."""
-    ziel = tmp_path / auftrag
-    ziel.mkdir()
-    shutil.copy2(REFERENZ / "lagerdeckel_rev.yaml", ziel)
-    shutil.copytree(REFERENZ / "eingabe", ziel / "eingabe")
-    spec = ziel / "lagerdeckel_rev.yaml"
-    befehle.aufnehmen(MUSTER, auftrag)
-    erg = durchlauf(spec, freigeben=True)
-    assert erg["schritt"] == "fertig" and erg["pruefung"]["bestanden"] is True, erg
-    assert erg["pruefung"]["ohne_urteil"] == [] and "Vorher-Bilder" in erg["pruefer_auftrag"]
-    b = json.loads(lauf_datei(spec, erg["lauf"], "pruefbericht").read_text(encoding="utf-8"))
-    assert {k: len(d) for k, d in b["differenzen"].items()} == {"Standard": 7, "Variante B": 7}
-    assert all(x["bereich"] is not None for d in b["differenzen"].values() for x in d)
-    delta = next(e for e in b["pruefungen"] if e["id"] == "volumen_delta")
-    assert delta["ist"]["Variante B"] - delta["ist"]["Standard"] == pytest.approx(20, abs=0.01)  # die Fase auf der Verlängerung
-    gewinde = next(e for e in b["pruefungen"] if e["id"] == "punkt:p5")
-    assert gewinde["soll"] == {"art": "gewinde", "groesse": "M6", "tiefe": 10, "gewindetiefe": 8, "positionen": [[-38, 24], [-38, -24]]}
-    for k in ("Standard", "Variante B"):
-        ist = gewinde["ist"][k]
-        assert (ist["groesse"], ist["tiefe"], ist["gewindetiefe"]) == ("M6", 10, 8), k
-        assert sorted(ist["positionen"]) == [[-38, -24], [-38, 24]], k
 
 
 def test_versetzte_gewindebohrung_ist_ein_mangel(auftrag, tmp_path):

@@ -211,8 +211,9 @@ Rebuild-Fehler prüfen → beim ersten Fehler anhalten (Knoten-ID, Schritt, Fehl
 speichern in `%USERPROFILE%\.swki\arbeit\<auftrag>\lauf-<n>\` → Protokoll schreiben.
 Jeder Lauf baut frisch.
 
-Schutzregeln im Code: nur selbst angelegte Dokumente anfassen und schließen; nur im Arbeitsordner
-speichern; Bibliotheks-Normteile nur kopieren, nie verändern.
+Schutzregeln im Code: nur selbst angelegte oder über `swki bestand aufnehmen` als Arbeitskopie aufgenommene
+Dokumente anfassen und schließen (das Original einer Bestandsdatei wird nur gelesen, nie in SolidWorks geöffnet); nur im
+Arbeitsordner speichern; Bibliotheks-Normteile nur kopieren, nie verändern.
 
 ## 6. Prüfung und Nachbesserung
 
@@ -334,6 +335,7 @@ Normteil-Vorauswahl, Tool-/Skill-Routing. Vor Einsatz klären, welche Daten an T
 | 4b | Verzahnung (Feature `verzahnung`: Evolventen-Stirnrad, Zahnstange) und Kopplungen (Zahnrad-, Zahnstangenverknüpfung), Sollweg je Stellung – Design: [2026-10-05-stufe-4b-verzahnung-kopplungen-design.md](2026-10-05-stufe-4b-verzahnung-kopplungen-design.md) | Teil-Referenzen *Zahnstange*, *Ritzelwelle*, *Antriebswelle* und Referenz *Zahnstangentrieb* bestehen (Code-Prüfungen und Prüfer), fünf Negativfälle; Buchse, Formplatte, Auswerferhalteplatte, Stehlager, Linearschlitten bestehen weiter |
 | 4c | Mechanische Kopplungen: Nut- und Kurvenverknüpfung | Referenz offen (allgemeine Konstruktion, z. B. Kulisse mit Nut oder Nocken mit Stößel) |
 | Formschräge | Option `formschraege` an Extrusion und Schnitt (Richtung über den Querschnitt, Prüfung der Seitenflächen) – Design: [2026-10-07-formschraege-design.md](2026-10-07-formschraege-design.md) | Referenz *Zentrieraufnahme* besteht (Code-Prüfungen und Prüfer), zwei Negativfälle; bisherige Referenzen bestehen weiter |
+| Bestandsdateien | Fremde SolidWorks-Dateien gezielt ändern: Arbeitskopie, Bestandsaufnahme, Änderungs-Spec `art: aenderung`, Bau an der Kopie, Vorher/Nachher-Prüfung (Präzisionsschutz), Ausgabe unter dem Originalnamen; Etappe 1 Teile, Etappe 2 Baugruppen – Design: [2026-10-25-bestandsdateien-design.md](2026-10-25-bestandsdateien-design.md) | Etappe 1: Referenz *Lagerdeckel* besteht (Code-Prüfungen und Prüfer), Negativfälle, Datei-ID belegt, Abnahme an einer echten Kollegen-Datei; Etappe 2: Musterbaugruppe; bisherige Referenzen bestehen weiter |
 | 5 | Zeitauswertung + Jev; optional `swki` als MCP; Blech, Schweiß, Flächen, Formschräge an beliebigen Flächen (eigenes Feature), Zeichnungen | je Erweiterung eigene Referenz |
 
 ## 12. Tests
