@@ -28,9 +28,9 @@ from swki.kaufteile.bewertung import TOL_MASS
 from swki.kaufteile.sw_kaufteil import alle_flaechen, messpunkt
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.befehle import pruefe_lauf_gebaut, schreibe_pruefbericht
-from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
+from swki.pruefung.bewertung import beschreibung, mass_eintrag, messpunkt_schluessel
 from swki.pruefung.bilder import screenshots
-from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
+from swki.pruefung.geometrie import Messgeometrie
 from swki.pruefung.messen import messgeometrie, oeffne
 from swki.spec.ausdruck import auswerten
 from swki.spec.freigabe import pruefe_freigabe
@@ -74,28 +74,38 @@ def _messpunkte(app, model, spec: dict, spec_pfad: Path, tol_mm: float) -> dict[
     return aus
 
 
-def _masse_pruefen(spec: dict, punkte: dict[str, Messgeometrie | str]) -> list[dict]:
-    """`mass:<was>` wie beim Teil; `soll` darf ein Ausdruck sein."""
-    aus = []
-    for mp in _masse_vorgaben(spec):
-        pid, soll, tol = f"mass:{mp['was']}", auswerten(mp["soll"], spec.get("parameter", {})), mp.get("tol", TOL_MASS)
-        von, zu = punkte.get(messpunkt_schluessel(mp["von"])), punkte.get(messpunkt_schluessel(mp["zu"]))
-        knoten = sorted({x["feature"] for x in (mp["von"], mp["zu"]) if "feature" in x})
-        if not isinstance(von, Messgeometrie) or not isinstance(zu, Messgeometrie):
-            fehler = next((x for x in (von, zu) if isinstance(x, str)), "Messpunkt fehlt")
-            aus.append(eintrag(pid, False, soll=soll, hinweis=fehler, knoten=knoten))
-            continue
-        try:
-            ist = round(abstand(von, zu), 6)
-        except NichtMessbar as e:
-            aus.append(eintrag(pid, False, soll=soll, hinweis=str(e), knoten=knoten))
-            continue
-        aus.append(eintrag(pid, abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
-    return aus
+def _masse_pruefen(spec: dict, punkte: dict[str, Messgeometrie | str], konfiguration: str) -> list[dict]:
+    """`mass:<was>` wie beim Teil, gemessen in der aktiven Konfiguration; `soll` darf ein Ausdruck sein."""
+    return [mass_eintrag(mp, punkte, auswerten(mp["soll"], spec.get("parameter", {})), mp.get("tol", TOL_MASS),
+                         sorted({x["feature"] for x in (mp["von"], mp["zu"]) if "feature" in x}), konfiguration=konfiguration)
+            for mp in _masse_vorgaben(spec)]
+
+
+def _skript_lauf(spec: dict, protokoll: dict) -> tuple[frozenset[str], frozenset[str]]:
+    """Aus dem Protokoll: (Features, die `bauen(ctx)` zurückgab; Punkt-IDs der durchgelaufenen Skripte)."""
+    knoten = {k["id"]: k for k in protokoll.get("knoten", [])}
+    gelaufen = [knoten[p["id"]] for p in spec["punkte"]
+                if p["typ"] == "skript" and knoten.get(p["id"], {}).get("status") == "ok"]
+    return (frozenset(n for k in gelaufen if k.get("sw_name") for n in k["sw_name"].split(", ")),
+            frozenset(k["id"] for k in gelaufen))
+
+
+_RANG = {False: 0, None: 1, True: 2}
+
+
+def _ein_eintrag_je_punkt(pruefungen: list[dict]) -> list[dict]:
+    """`punkt:<id>` kommt aus `vergleiche` (Wert, Zustand) und aus `bewerte_bereiche` (Wirkung): ein Eintrag, der schlechtere Wert gilt."""
+    aus: dict[str, dict] = {}
+    for i, e in enumerate(pruefungen):
+        schluessel = e["id"] if e["id"].startswith("punkt:") else str(i)
+        alt = aus.get(schluessel)
+        aus[schluessel] = e if alt is None else {**alt, **e} if _RANG[e["ok"]] < _RANG[alt["ok"]] else {**e, **alt}
+    return list(aus.values())
 
 
 def bewerte_aenderung(pruefungen: list[dict]) -> dict:
     """`bestanden` nur, wenn jeder Eintrag `ok: True` trägt: `None` steht als `nicht_nachgewiesen` in `maengel`."""
+    pruefungen = _ein_eintrag_je_punkt(pruefungen)
     maengel = [{"pruefung": e["id"], "knoten": e.get("knoten", []), "beschreibung": beschreibung(e),
                 "nicht_nachgewiesen": e["ok"] is None} for e in pruefungen if e["ok"] is not True]
     return {"bestanden": not maengel, "maengel": maengel, "pruefungen": pruefungen}
@@ -174,7 +184,8 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     vorher["datei"] = {**vorher["datei"], "ordner": str(kopie.parent)}  # für `externe_referenzen`
     nachher = {**nachher, "datei": {"name": teil.name, "ordner": str(ordner)}}
     bereiche = bewerte_bereiche(spec, abweichungen, boxen, volumen_prozent=standard["toleranzen"]["volumen_prozent"])
-    pruefungen = vergleiche(spec, vorher, nachher, spec.get("parameter", {})) + bereiche + _masse_pruefen(spec, punkte)
+    pruefungen = (vergleiche(spec, vorher, nachher, spec.get("parameter", {}), *_skript_lauf(spec, protokoll)) + bereiche
+                  + _masse_pruefen(spec, punkte, nachher["aktiv"]))
     bericht = {"auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil), "vorher": str(vorher_pfad),
                **bewerte_aenderung(pruefungen),
                "differenzen": {e["konfiguration"]: e["ist"] for e in bereiche if e["id"] == "bereich"},

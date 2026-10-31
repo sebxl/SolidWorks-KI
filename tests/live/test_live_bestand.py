@@ -2,6 +2,7 @@
 Original und wird nur gelesen, geöffnet und gespeichert wird nur unter dem Arbeitsordner."""
 
 import json
+import math
 import shutil
 import stat
 from pathlib import Path
@@ -222,8 +223,8 @@ def test_unmoeglicher_zug_speichert_nicht(auftrag, tmp_path):
 
 
 def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
-    """Brief Step 8. Bestand und Lauf heißen gleich (Plan Review Focus 1), die Fase verschwindet nur in Standard. Ohne Skript-Punkt:
-    Sein `ok: None` bestünde nie."""
+    """Brief Step 8. Bestand und Lauf heißen gleich (Plan Review Focus 1), die Fase verschwindet nur in Standard. Der Skript-Punkt gibt
+    seine Skizze zurück: Sie ist ein neues Feature, das nur das Protokoll erklärt."""
     r = lade_rechner()
     sha = sha256_datei(MUSTER)
     befehle.aufnehmen(MUSTER, auftrag)
@@ -233,7 +234,12 @@ def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
               {"id": "p2", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1"]},
               {"id": "p3", "typ": "unterdruecken", "was": "Fase weg", "feature": "Fase1", "konfigurationen": ["Standard"]},
               {"id": "p4", "typ": "feature", "was": "Gewinde", "name": "Gewinde M6 Deckel", "feature": NORMBOHRUNG},
-              {"id": "p5", "typ": "eigenschaft", "name": "Revision", "neu": "B"}]
+              {"id": "p5", "typ": "eigenschaft", "name": "Revision", "neu": "B"},
+              {"id": "p6", "typ": "skript", "datei": "skripte/p6.py", "luecke": "Hilfsskizze"}]
+    skript = tmp_path / auftrag / "skripte" / "p6.py"
+    skript.parent.mkdir(parents=True)
+    skript.write_text('def bauen(ctx):\n    return ctx.skizze({"nahe": [45, 0, 20]}, [{"kreis": {"mitte": [45, 10], "durchmesser": 3}}])[0]\n',
+                      encoding="utf-8")
     pruefung = {"masse_pruefen": [
         {"was": "Randabstand", "von": {"flaeche": {"nahe": [-50, 0, 10], "normale": [-1, 0, 0]}}, "zu": {"punkt": ["=-50+RA", 24, 20]},
          "soll": "=RA"},
@@ -245,6 +251,8 @@ def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
     b = pruefen(spec)
     assert b["maengel"] == [] and b["bestanden"] is True, b["maengel"]
     assert all(e["ok"] is True for e in b["pruefungen"])
+    assert next(e for e in b["pruefungen"] if e["id"] == "punkt:p6")["hinweis"].startswith("Notausgang")
+    assert len({e["id"] for e in b["pruefungen"] if e["id"].startswith("punkt:")}) == 6
     vorher = datei.parent / "vergleich" / f"vorher_{MUSTER.name}"
     assert b["vorher"] == str(vorher) and sha256_datei(vorher) == sha and sha256_datei(datei) == sha_lauf
     assert sha256_datei(kopie) == sha and sha256_datei(MUSTER) == sha and pruefe_unveraendert(r, auftrag, spec) is None
@@ -253,6 +261,7 @@ def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
     assert all(Path(p).stat().st_size for p in [*b["bilder"].values(), *b["bilder_vorher"].values()])
     masse = {e["id"]: e for e in b["pruefungen"] if e["id"].startswith("mass:")}
     assert masse["mass:Randabstand"]["ist"] == pytest.approx(12) and masse["mass:Dicke"]["ist"] == pytest.approx(20)
+    assert masse["mass:Dicke"]["konfiguration"] == "Standard"
 
     # Volumen unabhängig von den Differenzkörpern: Die Aufnahmen beider Stände müssen zur Differenz passen
     n = _lies_lauf(datei)
@@ -284,6 +293,26 @@ def test_verschobene_flaeche_5_um_liegt_unter_der_toleranz(auftrag, tmp_path):
     assert d[0]["unter_toleranz"] is True and d[0]["dicke"] == pytest.approx(0.005, abs=1e-5) and d[0]["bereich"] is None
     assert [e["ok"] for e in b["pruefungen"] if e["id"] == "bereich"] == [True, True]
     assert [m["pruefung"] for m in b["maengel"]] == ["punkt:p1"]
+
+
+@pytest.mark.parametrize("neu, ok", [(40.02, False), (40.004, None)])
+def test_sichel_einer_versetzten_bohrung(auftrag, tmp_path, neu, ok):
+    """S18d an `swki pruefen`, die Fläche live: Je Richtung eine Sichel, 4 mm breit, Dicke `2·2V/A`. 20 µm sind ein Mangel, 4 µm lassen sich
+    über die Kante nicht beweisen und bleiben offen."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    punkte = [{"id": "p1", "typ": "mass", "was": "Bohrung versetzt", "mass": "D2@Skizze3", "alt": 40, "neu": neu}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte, box=([40, -40, -1], [60, 40, 30]))  # neben der Bohrung
+    bau.bauen(spec)
+    b = pruefen(spec)
+    versatz, d = neu - 40, b["differenzen"]["Standard"]
+    assert sorted(x["art"] for x in d) == ["entfernt", "hinzu"]
+    for x in d:
+        assert x["volumen"] == pytest.approx(8 * versatz * 20, rel=0.01)
+        assert x["flaeche"] == pytest.approx(math.pi * 8 * 20, abs=1)  # zwei Halbzylinder und zwei Sicheln als Stirnflächen
+        assert x["dicke"] == pytest.approx(4 * versatz / math.pi, rel=0.02)
+        assert min(x["box"][i + 3] - x["box"][i] for i in range(3)) > 3
+    assert [e["ok"] for e in b["pruefungen"] if e["id"] == "bereich"] == [ok, ok]
 
 
 def test_feature_bereich_aus_den_flaechen_vorher(auftrag, tmp_path):

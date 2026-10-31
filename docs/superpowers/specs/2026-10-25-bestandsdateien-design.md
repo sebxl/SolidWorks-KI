@@ -354,6 +354,15 @@ unsichtbaren Dokumenten. Der Körper ist genauer als die Toleranz; ob er sie üb
 und 50 µm gehen darin unter, und STL-Export am unsichtbaren Dokument bringt SolidWorks zum Absturz. Er taugt nur als Hinweis, nicht als
 Nachweis der 0,01 mm.
 
+*Nachgezogen bei der Umsetzung, 2026-10-31 (Task 8):* Unter der Toleranz liegt ein Körper nur, wenn seine kleinste Box-Kante darunter liegt;
+sie allein beweist die Dicke. `2·2·Volumen/Fläche` schätzt die größte Dicke einer dünnen Schicht aus dem Mittel (Sichel, Keil), gilt aber für
+den ganzen Körper, ein Buckel an einer dünnen Schicht verschwindet darin: Ein Körper außerhalb aller Bereiche, der nur so dünn erscheint,
+ergibt `ok: None`, sonst Mangel `bereich`. Ein `features`-Bereich prüft gegen die Vereinigung der Feature-Boxen, die den Körper berühren,
+nicht gegen den Hüllquader aller Features, zwei Fasen an beiden Enden erlauben keine Tasche dazwischen. Je Bereich eines Punkts muss eine
+Abweichung darin liegen, Berühren reicht nicht. `punkt:<id>` eines `skript`-Punkts ist ok, wenn das Skript durchlief und je Bereich eine
+Differenz liegt; ohne Bereich ändert er keine Geometrie. Neue Features, die `bauen(ctx)` zurückgibt, gelten in `baum` als erklärt. Das Bild mit
+Differenzkörpern entfällt in Etappe 1: Differenzliste und Vorher-/Nachher-Bilder genügen.
+
 - Jeder Differenzkörper (bzw. jede abweichende Stelle über der Toleranz, Vorgabe 0,01 mm) muss vollständig in einem `bereich`
   liegen: `box` (achsparallel in Modellkoordinaten, mm) oder `features` (Hüllquader der Flächen dieser Features vorher und
   nachher, mit Toleranz). Sonst Mangel `bereich` mit Lage und Volumen der Abweichung.

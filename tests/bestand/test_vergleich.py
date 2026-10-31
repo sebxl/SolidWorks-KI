@@ -812,6 +812,24 @@ def test_skript_punkt_neue_features_sind_nicht_nachgewiesen():
     assert vergleich(spec(p), n)["baum"]["ok"] is False
 
 
+def test_skript_durchgelaufen_ist_ok_mit_hinweis():
+    p = {"id": "p6", "typ": "skript", "datei": "skripte/p6.py", "luecke": "x"}
+    e = eintraege(vergleiche(spec(p), kopie(), kopie(), {}, skript_gelaufen=frozenset({"p6"})))
+    assert e["punkt:p6"]["ok"] is True and e["punkt:p6"]["hinweis"] == "Notausgang, Nachweis über Bereiche, masse_pruefen und Prüfer"
+
+
+def test_skript_features_gelten_als_erklaert():
+    """Was `bauen(ctx)` zurückgab, samt Unterfeatures; alles andere bleibt nicht nachgewiesen."""
+    n = _neues_feature(_neues_feature(kopie(), "Nut"), "Irgendwas")
+    feature(n, "Nut")["unter"] = ["Skizze Nut"]
+    n["reihenfolge"]["Standard"].append("Skizze Nut")
+    p = {"id": "p6", "typ": "skript", "datei": "skripte/p6.py", "luecke": "x"}
+    e = eintraege(vergleiche(spec(p), VORHER, n, {}, skript_features=frozenset({"Nut"})))
+    assert e["baum"]["ok"] is None and e["baum"]["ungeklaert"] == ["Irgendwas"]
+    e = eintraege(vergleiche(spec(p), VORHER, n, {}, skript_features=frozenset({"Nut", "Irgendwas"})))
+    assert e["baum"]["ok"] is True
+
+
 def test_eingaben_bleiben_unveraendert():
     v, n = kopie(), kopie()
     setze(n, "D2@Skizze4", "Standard", 45.0)

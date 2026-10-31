@@ -28,7 +28,7 @@ def test_abweichung_im_bereich_ok():
     assert alle_ok(e)
     assert bereich(e)[0]["ist"][0] | {"dicke": None} == {
         "art": "entfernt", "box": IM_BEREICH, "volumen": 500.0, "flaeche": None, "dicke": None, "bereich": 0,
-        "unter_toleranz": False}
+        "unter_toleranz": False, "duenn": False}
 
 
 def test_abweichung_ausserhalb_ist_mangel():
@@ -115,11 +115,31 @@ def test_wirkung_zaehlt_nur_in_den_konfigurationen_des_punkts():
     assert [x["ok"] for x in bewerte_bereiche(spec, a, {}) if x["id"] == "punkt:p1"] == [False]
 
 
-@pytest.mark.parametrize("punkt", [{"id": "p1", "typ": "skript"}, {"id": "p1", "typ": "material"}, {"id": "p1", "typ": "eigenschaft"},
+@pytest.mark.parametrize("punkt", [{"id": "p1", "typ": "material"}, {"id": "p1", "typ": "eigenschaft"},
                                    {"id": "p1", "typ": "feature", "feature": {"typ": "referenz"}}])
 def test_punkte_ohne_pflicht_zur_wirkung(punkt):
     spec = {"punkte": [punkt], "bereiche": SPEC_BOX["bereiche"]}
     assert alle_ok(bewerte_bereiche(spec, {"Standard": []}, {}))
+
+
+SKRIPT = {"id": "p1", "typ": "skript"}
+
+
+def test_skript_ohne_bereich_aendert_keine_geometrie():
+    e = bewerte_bereiche({"punkte": [SKRIPT], "bereiche": []}, {"Standard": []}, {})
+    assert [(x["id"], x["ok"]) for x in e] == [("bereich", True), ("punkt:p1", True)]
+
+
+def test_skript_schuldet_je_bereich_eine_differenz():
+    spec = {"punkte": [SKRIPT], "bereiche": SPEC_BOX["bereiche"]}
+    assert [x["ok"] for x in bewerte_bereiche(spec, {"Standard": []}, {}) if x["id"] == "punkt:p1"] == [False]
+    a = {"Standard": [Abweichung("hinzu", IM_BEREICH, 5.0)]}
+    assert [x["ok"] for x in bewerte_bereiche(spec, a, {}) if x["id"] == "punkt:p1"] == [True]
+
+
+def test_anderer_punkt_ohne_bereich_ist_mangel():
+    e = bewerte_bereiche({"punkte": [{"id": "p1", "typ": "mass"}], "bereiche": []}, {"Standard": []}, {})
+    assert [x["ok"] for x in e if x["id"] == "punkt:p1"] == [False]
 
 
 def test_fehlercode_ist_nicht_nachgewiesen():
@@ -132,6 +152,91 @@ def test_fehlercode_uebersteht_keinen_nachweis_der_wirkung_anderswo():
     """Die Wirkung ist in Variante B nachgewiesen, der Bereich in Standard bleibt offen."""
     e = bewerte_bereiche(SPEC_BOX, {"Standard": "Fehler", "Variante B": [Abweichung("hinzu", IM_BEREICH, 5.0)]}, {})
     assert [(x["id"], x["ok"]) for x in e] == [("bereich", None), ("bereich", True), ("punkt:p1", True)]
+
+
+# Proben aus dem Review: Grundsatz Fehlalarm statt falsches ok
+
+def _bereich_ok(spec, liste, boxen=None, k="Standard"):
+    return next(x for x in bewerte_bereiche(spec, {k: liste}, boxen or {}) if x["id"] == "bereich")
+
+
+IM = Abweichung("hinzu", IM_BEREICH, 500.0, 700.0)
+ZWEI_BEREICHE = {"punkte": [{"id": "p1", "typ": "mass"}, {"id": "p2", "typ": "mass"}],
+                 "bereiche": [SPEC_BOX["bereiche"][0], {"punkte": ["p2"], "box": {"min": [-20, 0, 0], "max": [10, 40, 20]}}]}
+
+
+@pytest.mark.parametrize("name, box, volumen, flaeche", [
+    ("Schicht 1 µm auf 100 × 60 plus Buckel 2 × 3 × 3", [0, 0, 20, 100, 60, 23.001], 24.0, 12030.0),
+    ("Schicht 0,5 µm plus Stufe 0,1 mm auf 10 × 10", [0, 0, 20, 100, 60, 20.1005], 13.0, 12000.0),
+    ("flacher Kegel, Spitze 14 µm", [-20, -20, 20, 20, 20, 25], 5.864, 2513.3),
+    ("schräge Schicht 3 µm", [0, 0, 0, 100, 60, 5], 18.0, 12000.0)])
+def test_nur_im_mittel_duenn_ist_nicht_nachgewiesen(name, box, volumen, flaeche):
+    """Das Mittel gilt für den ganzen Körper, ein Buckel verschwindet darin; beweisen kann nur die Kante."""
+    a = Abweichung("hinzu", box, volumen, flaeche)
+    assert dicke(a) < 0.01, name
+    e = _bereich_ok(SPEC_BOX, [IM, a])
+    assert e["ok"] is None and "nicht nachgewiesen" in e["hinweis"] and "mm³" in e["hinweis"]
+    assert [(x["unter_toleranz"], x["duenn"]) for x in e["ist"]] == [(False, False), (False, True)]
+
+
+def test_nur_im_mittel_duenn_im_bereich_ist_ok():
+    a = Abweichung("hinzu", IM_BEREICH, 5.0, 12000.0)
+    assert _bereich_ok(SPEC_BOX, [a])["ok"] is True
+
+
+def test_mangel_geht_vor_nicht_nachgewiesen():
+    duenn = Abweichung("hinzu", [0, 0, 20, 100, 60, 23], 24.0, 12030.0)
+    dick = Abweichung("entfernt", DRAUSSEN, 12.5)
+    e = _bereich_ok(SPEC_BOX, [duenn, dick])
+    assert e["ok"] is False and "12.5" in e["hinweis"] and "24" not in e["hinweis"]
+
+
+def test_kante_unter_toleranz_ist_sicher():
+    a = Abweichung("hinzu", [0, 0, 20, 100, 60, 20.009], 54.0, 12000.0)
+    assert _bereich_ok(SPEC_BOX, [IM, a])["ok"] is True
+
+
+def test_koerper_ueber_zwei_bereiche_addiert_nicht():
+    ueber = Abweichung("hinzu", [-30, 10, 10, 0, 20, 20], 500.0, 700.0)
+    assert _bereich_ok(ZWEI_BEREICHE, [ueber])["ok"] is False
+
+
+@pytest.mark.parametrize("mitte", [[-5, -5, 10, 5, 5, 20], [-5, -5, 18, 5, 5, 20]])
+def test_features_bereich_erlaubt_nichts_zwischen_den_features(mitte):
+    """Zwei Fasen an beiden Enden: Der Hüllquader aller Features enthielte die Tasche in der Mitte."""
+    spec = {"punkte": [{"id": "p1", "typ": "unterdruecken"}], "bereiche": [{"punkte": ["p1"], "features": ["FaseL", "FaseR"]}]}
+    boxen = {"FaseL": [-50, -30, 18, -48, 30, 20], "FaseR": [48, -30, 18, 50, 30, 20]}
+    links = Abweichung("hinzu", boxen["FaseL"], 30.0, 200.0)
+    e = _bereich_ok(spec, [links, Abweichung("entfernt", mitte, 1000.0, 600.0)], boxen)
+    assert e["ok"] is False and [x["bereich"] for x in e["ist"]] == [0, None]
+
+
+@pytest.mark.parametrize("von", [-20, -19.995])
+def test_beruehrung_ist_keine_wirkung(von):
+    """Der Körper von p2 grenzt an den Bereich von p1 (auch mit 5 µm Luft): p1 hat nichts bewirkt."""
+    a = {"Standard": [Abweichung("hinzu", [von, 10, 10, -10, 20, 20], 500.0, 700.0)]}
+    e = {x["id"]: x["ok"] for x in bewerte_bereiche(ZWEI_BEREICHE, a, {})}
+    assert e == {"bereich": True, "punkt:p1": False, "punkt:p2": True}
+
+
+def test_jeder_bereich_des_punkts_braucht_eine_abweichung():
+    zweiter = {"punkte": ["p1"], "box": {"min": [30, 0, 0], "max": [50, 40, 20]}}
+    spec = {"punkte": [{"id": "p1", "typ": "mass"}], "bereiche": [SPEC_BOX["bereiche"][0], zweiter]}
+    [e] = [x for x in bewerte_bereiche(spec, {"Standard": [IM]}, {}) if x["id"] == "punkt:p1"]
+    assert e["ok"] is False and "Bereich 1" in e["hinweis"]
+
+
+def test_features_bereich_ohne_flaechen_faellt_nicht_still_weg():
+    """Der zweite Bereich hat keine Flächen: Er bleibt ein Bereich ohne Differenz."""
+    leer = {"punkte": ["p1"], "features": ["Skizze1"]}
+    spec = {"punkte": [{"id": "p1", "typ": "mass"}], "bereiche": [SPEC_BOX["bereiche"][0], leer]}
+    assert [x["ok"] for x in bewerte_bereiche(spec, {"Standard": [IM]}, {}) if x["id"] == "punkt:p1"] == [False]
+
+
+def test_abweichung_nur_in_fremder_konfiguration():
+    spec = {"punkte": [{"id": "p1", "typ": "mass", "konfigurationen": ["Standard"]}], "bereiche": SPEC_BOX["bereiche"]}
+    e = {(x["id"], x.get("konfiguration")): x["ok"] for x in bewerte_bereiche(spec, {"Standard": [], "Variante B": [IM]}, {})}
+    assert e == {("bereich", "Standard"): True, ("bereich", "Variante B"): False, ("punkt:p1", None): False}
 
 
 def _mit_delta(soll, **mehr) -> dict:

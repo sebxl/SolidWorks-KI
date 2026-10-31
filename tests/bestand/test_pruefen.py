@@ -106,7 +106,7 @@ class Umgebung:
         self.bilder.append((model.GetTitle, ordner))
         return {"iso": str(ordner / "iso.png")}
 
-    def schreibe(self, punkte=(MASS,), bereiche=None, pruefung=None, status="ok", freigeben=True):
+    def schreibe(self, punkte=(MASS,), bereiche=None, pruefung=None, status="ok", freigeben=True, knoten=()):
         spec = {"art": "aenderung", "name": "Lagerdeckel_Rev",
                 "bestand": {"datei": self.kopie.name, "sha256": self.aufnahme["datei"]["sha256"], "aufnahme": 1},
                 "parameter": {"RA": 12}, "punkte": list(punkte),
@@ -117,7 +117,7 @@ class Umgebung:
         if freigeben:
             spec_modul.freigeben(self.spec_pfad)
         fehler = None if status == "ok" else {"code": "REBUILD_FEHLER", "meldung": "kaputt"}
-        protokoll = {"status": status, "fehler": fehler, "dauer_s": 1.0, "gestartet": "2026-10-31T10:00:00", "knoten": [],
+        protokoll = {"status": status, "fehler": fehler, "dauer_s": 1.0, "gestartet": "2026-10-31T10:00:00", "knoten": list(knoten),
                      "dateien": {"teil": str(self.teil)} if status == "ok" else {}, "sha256": {self.teil.name: hashlib.sha256(GEAENDERT).hexdigest()}}
         ziel = lauf_datei(self.spec_pfad, 1, "protokoll")
         ziel.parent.mkdir(exist_ok=True)
@@ -134,7 +134,7 @@ def test_pruefen_besteht(u):
     b = modul.pruefen(u.schreibe())
     assert b["bestanden"] is True and b["maengel"] == [] and b["lauf"] == 1 and b["datei"] == str(u.teil)
     ids = [e["id"] for e in b["pruefungen"]]
-    assert "punkt:p1" in ids and "baum" in ids and ids.count("bereich") == 2
+    assert ids.count("punkt:p1") == 1 and "baum" in ids and ids.count("bereich") == 2
     assert b["differenzen"]["Standard"][0]["volumen"] == 500.0 and b["differenzen"]["Variante B"][0]["bereich"] == 0
     assert b["bilder"] == {"iso": str(u.lauf_ordner / "bilder" / "iso.png")}
     assert b["bilder_vorher"] == {"iso": str(u.lauf_ordner / "vergleich" / "bilder" / "iso.png")}
@@ -257,7 +257,7 @@ def test_masse_pruefen_soll_als_ausdruck(u):
     pruefung = {"masse_pruefen": [{"was": "Randabstand", "von": {"punkt": [0, 0, 0]}, "zu": {"punkt": ["=RA", 0, 0]}, "soll": "=RA"}]}
     b = modul.pruefen(u.schreibe(pruefung=pruefung))
     e = next(x for x in b["pruefungen"] if x["id"] == "mass:Randabstand")
-    assert e["ok"] is True and e["ist"] == 12.0 and e["soll"] == 12 and e["tol"] == 0.01
+    assert e["ok"] is True and e["ist"] == 12.0 and e["soll"] == 12 and e["tol"] == 0.01 and e["konfiguration"] == "Standard"
 
 
 def test_masse_pruefen_abweichung_ist_mangel(u):
@@ -338,6 +338,61 @@ def test_mangel_ist_nachgewiesen(u):
     u.abweichungen["Standard"] = [Abweichung("hinzu", [10.0, 10.0, 10.0, 20.0, 20.0, 20.0], 7.0)]
     b = modul.pruefen(u.schreibe())
     assert [m["nicht_nachgewiesen"] for m in b["maengel"]] == [False]
+
+
+@pytest.mark.parametrize("oks, ok", [((True, False), False), ((False, True), False), ((True, None), None), ((None, False), False),
+                                     ((None, True), None), ((True, True), True)])
+def test_ein_eintrag_je_punkt_der_schlechtere_gilt(oks, ok):
+    a, b = oks
+    davor, danach = {"id": "baum", "ok": True}, {"id": "bereich", "ok": True}
+    roh = [{"id": "punkt:p1", "ok": a, "ist": "Wert", "knoten": ["p1"]}, davor, danach, {"id": "punkt:p1", "ok": b, "knoten": ["p1"]}]
+    b = modul.bewerte_aenderung(roh)
+    assert [e["id"] for e in b["pruefungen"]] == ["punkt:p1", "baum", "bereich"]
+    assert b["pruefungen"][0]["ok"] is ok and b["pruefungen"][0]["ist"] == "Wert" and len(b["maengel"]) == (ok is not True)
+
+
+def test_schlechtere_wirkung_bringt_ihren_hinweis_mit(u):
+    """`vergleiche` sagt ok, die Differenz nicht: Der Mangel nennt, warum."""
+    u.abweichungen = {"Standard": [], "Variante B": []}
+    b = modul.pruefen(u.schreibe())
+    [m] = b["maengel"]
+    assert m["pruefung"] == "punkt:p1" and "keine Abweichung" in m["beschreibung"]
+
+
+SKRIPT = {"id": "p8", "typ": "skript", "datei": "skripte/p8.py", "luecke": "x"}
+
+
+def _neu(u, name):
+    u.nachher["features"].append({"name": name, "typ": "ProfileFeature", "eltern": [], "kinder": [], "unter": [],
+                                  "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False})
+    for reihe in u.nachher["reihenfolge"].values():
+        reihe.append(name)
+
+
+def test_skript_durchgelaufen_besteht_und_erklaert_seine_features(u):
+    _neu(u, "p8_skizze")
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_name": "p8_skizze"}]))
+    assert b["bestanden"] is True, b["maengel"]
+    e = next(x for x in b["pruefungen"] if x["id"] == "punkt:p8")
+    assert e["ok"] is True and e["hinweis"] == "Notausgang, Nachweis über Bereiche, masse_pruefen und Prüfer"
+
+
+def test_skript_ohne_protokoll_knoten_ist_nicht_nachgewiesen(u):
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "offen", "sw_name": None}]))
+    assert [(m["pruefung"], m["nicht_nachgewiesen"]) for m in b["maengel"]] == [("punkt:p8", True)]
+
+
+def test_neues_feature_das_das_skript_nicht_zurueckgab_bleibt_offen(u):
+    _neu(u, "Fremd")
+    b = modul.pruefen(u.schreibe(punkte=(MASS, SKRIPT), knoten=[{"id": "p8", "status": "ok", "sw_name": None}]))
+    assert [(m["pruefung"], m["nicht_nachgewiesen"]) for m in b["maengel"]] == [("baum", True)]
+
+
+def test_skript_ohne_differenz_im_bereich_ist_mangel(u):
+    u.abweichungen = {"Standard": [], "Variante B": []}
+    u.nachher["masse"] = copy.deepcopy(u.aufnahme["masse"])
+    b = modul.pruefen(u.schreibe(punkte=(SKRIPT,), knoten=[{"id": "p8", "status": "ok", "sw_name": None}]))
+    assert [(m["pruefung"], m["nicht_nachgewiesen"]) for m in b["maengel"]] == [("punkt:p8", False)]
 
 
 def test_nur_gemeinsame_konfigurationen(u):

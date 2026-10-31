@@ -10,7 +10,7 @@ from swki.compiler.anker import punkt_achse_abstand, skalar
 from swki.compiler.eigenschaften import material_passt
 from swki.kaufteile.eintrag import eigenschaften
 from swki.kaufteile.ortung import TOL_WINKEL_GRAD, einheit, gewinde_modelle, winkel_grad
-from swki.pruefung.bewertung import beschreibung, eintrag, messpunkt_schluessel
+from swki.pruefung.bewertung import beschreibung, eintrag, mass_eintrag
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
 
 TOL_HUELLQUADER = 0.1      # mm, Vorgabe (Spec 3c §4.4)
@@ -128,21 +128,8 @@ def _gewinde(gruppe: str, w: dict, m: KaufteilMesswerte) -> dict:
 
 
 def _masse_pruefen(pr: dict, m: KaufteilMesswerte) -> list[dict]:
-    ergebnisse = []
-    for mp in pr.get("masse_pruefen", []):
-        pid, soll, tol = f"mass:{mp['was']}", mp["soll"], mp.get("tol", TOL_MASS)
-        von, zu = m.messpunkte.get(messpunkt_schluessel(mp["von"])), m.messpunkte.get(messpunkt_schluessel(mp["zu"]))
-        if not isinstance(von, Messgeometrie) or not isinstance(zu, Messgeometrie):
-            fehler = next((x for x in (von, zu) if isinstance(x, str)), "Messpunkt fehlt")
-            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=fehler, beleg=_beleg(mp), knoten=[]))
-            continue
-        try:
-            ist = round(abstand(von, zu), 6)
-        except NichtMessbar as e:
-            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=str(e), beleg=_beleg(mp), knoten=[]))
-            continue
-        ergebnisse.append(eintrag(pid, abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, beleg=_beleg(mp), knoten=[]))
-    return ergebnisse
+    return [mass_eintrag(mp, m.messpunkte, mp["soll"], mp.get("tol", TOL_MASS), [], beleg=_beleg(mp))
+            for mp in pr.get("masse_pruefen", [])]
 
 
 def _durchmesser(pr: dict, m: KaufteilMesswerte) -> list[dict]:

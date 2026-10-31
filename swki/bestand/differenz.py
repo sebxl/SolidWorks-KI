@@ -38,8 +38,6 @@ from swki.verbindung import in_mm, in_mm3
 SW_BODY_CUT = 15902        # swBodyOperationType_e.SWBODYCUT
 TOL_VOLUMEN = 0.01         # mm³: Rauschen der Massenberechnung, wie im Bau
 _TOL_VOLUMEN_ANTEIL = 1e-6
-# Ein `skript`-Punkt kann Geometrie ändern, muss aber nicht (Punkt-Typen, die keine Wirkung schulden)
-WIRKUNG_TYPEN = GEOMETRIE_TYPEN - {"skript"}
 
 
 class DifferenzFehler(SwkiFehler):
@@ -54,15 +52,21 @@ class Abweichung:
     flaeche: float | None = None  # Oberfläche in mm²; ohne sie zählt nur der Hüllquader
 
 
-def dicke(a: Abweichung) -> float:
-    """Obere Schätzung der größten Dicke in mm; unter der Toleranz zählt die Abweichung nicht.
+def _kante(a: Abweichung) -> float:
+    return min(a.box[i + 3] - a.box[i] for i in range(3))
 
-    Die kleinste Box-Kante ist sicher, denn dünner als sie ist der Körper überall, trifft aber nur achsparallele Schichten: Die Sichel
-    einer versetzten Bohrung ist 4 mm breit. `2·V/A` ist die mittlere Dicke einer dünnen Schicht, die größte kann darüber liegen
-    (S18d, Bohrung 20 µm versetzt: Sichel 12,7 µm im Mittel, 20 µm an der stärksten Stelle; Keil: das Doppelte). Darum zählt die doppelte
-    mittlere Dicke. Eine gleichmäßige schräge Schicht oder ein Ring gilt so schon ab 5 µm als Abweichung, das ist ein Fehlalarm, kein
-    falsches `ok`. Grenze: Eine dünne Schicht, die mit einem Buckel zusammenhängt, verdünnt dessen Mittel, gemessen ist so etwas nicht."""
-    kante = min(a.box[i + 3] - a.box[i] for i in range(3))
+
+def dicke(a: Abweichung) -> float:
+    """Schätzung der Dicke in mm, keine Schranke: Nur die kleinste Box-Kante ist sicher, dünner als sie ist der Körper überall. Sie trifft
+    aber nur achsparallele Schichten, die Sichel einer versetzten Bohrung ist 4 mm breit. Darum zählt daneben `2·2V/A`: `2V/A` ist die
+    mittlere Dicke einer dünnen Schicht, die größte kann bis zum Doppelten darüber liegen (S18d, Bohrung 20 µm versetzt: Sichel 12,7 µm im
+    Mittel, 20 µm an der stärksten Stelle; Keil: das Doppelte).
+
+    Das Mittel gilt für den ganzen Körper: Ein Buckel, der an einer dünnen Schicht hängt, verschwindet darin (1 µm auf 100 × 60 plus
+    2 × 3 × 3 mm: 0,008). Unter der Toleranz liegt darum nur, was die Kante beweist (`unter_toleranz`); was nur das Mittel dünn zeigt,
+    bleibt außerhalb der Bereiche nicht nachgewiesen (`duenn`, `ok: None`). Gleichmäßige schräge Schichten und Ringe laufen also in eine
+    Rückfrage, das ist ein Fehlalarm, kein falsches `ok`."""
+    kante = _kante(a)
     return min(kante, 4 * a.volumen / a.flaeche) if a.flaeche else kante
 
 
@@ -78,57 +82,76 @@ def _beruehrt(box: list[float], bereich: list[float], toleranz: float) -> bool:
     return all(box[i] <= bereich[i + 3] + toleranz and box[i + 3] >= bereich[i] - toleranz for i in range(3))
 
 
+def _im_bereich(box: list[float], boxen: list[list[float]], toleranz: float) -> bool:
+    """`box` liegt in der Vereinigung der Boxen, die sie berühren. Ein gelöschter Schnitt samt Fase ist ein Differenzkörper, zwei Fasen an
+    beiden Enden erlauben aber keine Tasche in der Mitte: Der Hüllquader aller Features eines Bereichs wäre zu weit."""
+    beruehrt = [b for b in boxen if _beruehrt(box, b, toleranz)]
+    return bool(beruehrt) and _innen(box, reduce(_vereine, beruehrt), toleranz)
+
+
 def _gilt_in(punkt: dict, konfiguration: str) -> bool:
     k = punkt.get("konfigurationen", "alle")
     return k == "alle" or konfiguration in k
 
 
-def _bereiche(spec: dict, feature_boxen: dict[str, list[float]]) -> list[tuple[int, list[dict], list[float]]]:
-    """(Index, Punkte, Hüllquader) je Bereich. Ein `features`-Bereich ist ein Hüllquader über alle seine Features (Spec §7.2: Ein
-    gelöschter Schnitt samt Fase ist ein Differenzkörper). Hat keines Flächen, kann er nichts erklären und entfällt."""
+def _bereiche(spec: dict, feature_boxen: dict[str, list[float]]) -> list[tuple[int, list[dict], list[list[float]]]]:
+    """(Index, Punkte, Boxen) je Bereich: die eine `box` oder je Feature mit Flächen eine. Ein `features`-Bereich ohne Flächen hat keine
+    Boxen; er erklärt keine Abweichung und bleibt für `_wirkung` ein Bereich ohne Differenz."""
     punkte = {p["id"]: p for p in spec["punkte"]}
-    aus = []
-    for i, b in enumerate(spec["bereiche"]):
-        boxen = [[*b["box"]["min"], *b["box"]["max"]]] if "box" in b else [feature_boxen[n] for n in b["features"] if n in feature_boxen]
-        if boxen:
-            aus.append((i, [punkte[pid] for pid in b["punkte"] if pid in punkte], reduce(_vereine, boxen)))
-    return aus
+    return [(i, [punkte[pid] for pid in b["punkte"] if pid in punkte],
+             [[*b["box"]["min"], *b["box"]["max"]]] if "box" in b else [feature_boxen[n] for n in b["features"] if n in feature_boxen])
+            for i, b in enumerate(spec["bereiche"])]
 
 
 def _lage(box: list[float]) -> str:
     return ", ".join(f"{achse} {box[i]:g}…{box[i + 3]:g}" for i, achse in enumerate("xyz"))
 
 
+def _zeile(a: Abweichung, passend: list, toleranz: float) -> dict:
+    return {"art": a.art, "box": a.box, "volumen": a.volumen, "flaeche": a.flaeche, "dicke": round(dicke(a), 6),
+            "bereich": next((i for i, boxen in passend if _im_bereich(a.box, boxen, toleranz)), None),
+            "unter_toleranz": _kante(a) < toleranz, "duenn": _kante(a) >= toleranz and dicke(a) < toleranz}
+
+
 def _in_konfiguration(k: str, liste: list[Abweichung] | str, bereiche: list, toleranz: float) -> dict:
-    """Ein Bereich gilt nur in den Konfigurationen seiner Punkte: Sonst erlaubte ein Punkt für Standard dieselbe Stelle in Variante B."""
+    """Ein Bereich gilt nur in den Konfigurationen seiner Punkte: Sonst erlaubte ein Punkt für Standard dieselbe Stelle in Variante B.
+    Außerhalb der Bereiche ist eine Abweichung ein Mangel; was nur im Mittel dünn ist, bleibt nicht nachgewiesen (`dicke`)."""
     if isinstance(liste, str):
         return eintrag("bereich", None, konfiguration=k, ist=[], knoten=[], hinweis=f"Differenz in {k} nicht nachgewiesen: {liste}")
-    passend = [(i, box) for i, punkte, box in bereiche if any(_gilt_in(p, k) for p in punkte)]
-    ist = [{"art": a.art, "box": a.box, "volumen": a.volumen, "flaeche": a.flaeche, "dicke": round(dicke(a), 6),
-            "bereich": next((i for i, box in passend if _innen(a.box, box, toleranz)), None),
-            "unter_toleranz": dicke(a) < toleranz} for a in liste]
+    passend = [(i, boxen) for i, punkte, boxen in bereiche if any(_gilt_in(p, k) for p in punkte)]
+    ist = [_zeile(a, passend, toleranz) for a in liste]
     draussen = [x for x in ist if x["bereich"] is None and not x["unter_toleranz"]]
-    if draussen:
+    if mangel := [x for x in draussen if not x["duenn"]]:
         return eintrag("bereich", False, konfiguration=k, ist=ist, knoten=[], hinweis="; ".join(
-            f"{x['art']} {x['volumen']:g} mm³ bei {_lage(x['box'])} liegt in keinem Bereich ({k})" for x in draussen))
+            f"{x['art']} {x['volumen']:g} mm³ bei {_lage(x['box'])} liegt in keinem Bereich ({k})" for x in mangel))
+    if draussen:
+        return eintrag("bereich", None, konfiguration=k, ist=ist, knoten=[], hinweis="; ".join(
+            f"{x['art']} {x['volumen']:g} mm³ bei {_lage(x['box'])} liegt in keinem Bereich, ist nur im Mittel dünner als die Toleranz "
+            f"({k}), nicht nachgewiesen" for x in draussen))
     return eintrag("bereich", True, konfiguration=k, ist=ist, knoten=[])
 
 
 def _schuldet_wirkung(p: dict) -> bool:
     """Spec §7.2: „wenn der Punkt Geometrie ändern sollte“. Bezugsgeometrie hat kein Volumen."""
-    return p["typ"] in WIRKUNG_TYPEN and not (p["typ"] == "feature" and p["feature"]["typ"] == "referenz")
+    return p["typ"] in GEOMETRIE_TYPEN and not (p["typ"] == "feature" and p["feature"]["typ"] == "referenz")
 
 
 def _wirkung(p: dict, abweichungen: dict, bereiche: list, toleranz: float) -> dict:
-    """Eine Abweichung irgendwo im Bereich genügt, auch unter der Toleranz, und nur in einer der Konfigurationen des Punkts:
-    `unterdruecken` in `alle` hat in einer Konfiguration, in der das Feature schon unterdrückt ist, nichts zu tun."""
-    pid, boxen = f"punkt:{p['id']}", [box for _, punkte, box in bereiche if p in punkte]
-    eigene = {k: a for k, a in abweichungen.items() if _gilt_in(p, k)}
-    if any(_beruehrt(a.box, box, toleranz) for liste in eigene.values() if not isinstance(liste, str) for a in liste for box in boxen):
+    """Spec §7.2, Bereiche ohne Differenz sind ein Mangel: In jedem Bereich des Punkts muss eine Abweichung liegen, nicht nur daran
+    grenzen, auch unter der Toleranz. Eine Konfiguration des Punkts genügt: `unterdruecken` in `alle` hat dort, wo das Feature schon
+    unterdrückt ist, nichts zu tun. Ein `skript`-Punkt ohne Bereich ändert keine Geometrie, jeder andere schuldet sie."""
+    pid, eigene = f"punkt:{p['id']}", {k: a for k, a in abweichungen.items() if _gilt_in(p, k)}
+    meine = [(i, boxen) for i, punkte, boxen in bereiche if p in punkte]
+    if not meine and p["typ"] != "skript":
+        return eintrag(pid, False, knoten=[p["id"]], hinweis=f"Punkt {p['id']} steht in keinem Bereich")
+    gefunden = [a for liste in eigene.values() if not isinstance(liste, str) for a in liste]
+    leer = [i for i, boxen in meine if not any(_im_bereich(a.box, boxen, toleranz) for a in gefunden)]
+    if not leer:
         return eintrag(pid, True, knoten=[p["id"]])
     if offen := [k for k, a in eigene.items() if isinstance(a, str)]:
         return eintrag(pid, None, knoten=[p["id"]], hinweis=f"Wirkung nicht nachgewiesen, Differenz fehlt in {', '.join(offen)}")
-    return eintrag(pid, False, knoten=[p["id"]], hinweis=f"Punkt {p['id']}: keine Abweichung in seinem Bereich, er hat nichts bewirkt")
+    return eintrag(pid, False, knoten=[p["id"]], hinweis=f"Punkt {p['id']}: keine Abweichung im Bereich "
+                   f"{', '.join(str(i) for i in leer)}, er hat dort nichts bewirkt")
 
 
 def _volumen_delta(soll_block: dict, abweichungen: dict, prozent: float) -> dict:
@@ -152,7 +175,7 @@ def _volumen_delta(soll_block: dict, abweichungen: dict, prozent: float) -> dict
 def bewerte_bereiche(spec: dict, abweichungen: dict[str, list[Abweichung] | str], feature_boxen: dict[str, list[float]],
                      toleranz: float = 0.01, volumen_prozent: float = 0.5) -> list[dict]:
     """Einträge `bereich` je Konfiguration (mit `konfiguration`; `ist` nennt jede Abweichung mit Lage, Volumen, zugeordnetem Bereich),
-    `punkt:<id>` je Punkt, der Geometrie ändern soll, und `volumen_delta`, wenn die Spec es nennt. `abweichungen` trägt statt der Liste
+    `punkt:<id>` je Punkt, der Geometrie ändern kann, und `volumen_delta`, wenn die Spec es nennt. `abweichungen` trägt statt der Liste
     einen Fehlertext, wo die Differenz scheiterte; solche Einträge bleiben `ok: None`. `volumen_prozent`: Vorgabe für
     `toleranz_prozent`."""
     bereiche = _bereiche(spec, feature_boxen)

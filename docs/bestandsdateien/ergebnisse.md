@@ -127,10 +127,10 @@ Wegwerf.
   Abweichung, ein zerschnittener Körper braucht keinen Sonderfall. Der Enum kennt `swBodyOperationDisjointBodies` (5) und
   `swBodyOperationNoIntersect` (1067), beide kamen hier nicht vor; ein Code ungleich 0 heißt „nicht nachgewiesen".
 - **Differenz geht auch an nur lesend geöffneten Dokumenten** (`Copy2`, `Operations2`, `GetMassProperties`).
-- **Toleranz:** Unter der Toleranz liegt eine Abweichung, wenn `min(kleinste Box-Kante, 2 · 2·Volumen/Fläche)` darunter liegt. `2V/A`
-  ist nur die mittlere Dicke, die größte liegt bis zum Doppelten darüber: Sichel 20 µm (Zeile d) im Mittel 12,7 µm, eine Sichel von
-  12 µm käme mit `2V/A` allein durch. Die kleinste Box-Kante allein träfe nur achsparallele Schichten. Folge: Gleichmäßige schräge Schichten
-  und Ringe zählen schon ab 5 µm, das ist ein Fehlalarm, kein falsches „ok". Live: Fläche +5 µm: Volumen 5,99, Dicke 0,005, zählt nicht.
+- **Toleranz:** Sicher unter der Toleranz ist nur eine kleinste Box-Kante darunter. `dicke` schätzt daneben `2 · 2·Volumen/Fläche`: `2V/A` ist
+  die mittlere Dicke, die größte liegt bis zum Doppelten darüber (Sichel 20 µm aus Zeile d: im Mittel 12,7 µm). Das Mittel gilt aber für den
+  ganzen Körper: 1 µm auf 100 × 60 plus Buckel 2 × 3 × 3 mm ergibt 0,008. Außerhalb aller Bereiche heißt „nur im Mittel dünn" darum
+  `ok: None`. Live: Fläche +5 µm: Volumen 5,99, Dicke 0,005, zählt nicht. Sichel 20 µm: Fläche und Dicke wie gerechnet, Mangel; 4 µm: offen.
 - **Bilanz:** `koerper_differenz` vergleicht die Summe der Differenzkörper mit der Volumenänderung beider Stände; ein stilles leeres
   Ergebnis wäre sonst ein falsches „ok". Flächenkörper sieht `Operations2` hier nicht, sie machen die Konfiguration „nicht nachgewiesen".
 

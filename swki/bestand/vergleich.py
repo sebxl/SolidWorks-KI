@@ -16,7 +16,7 @@ Annahmen, die live noch zu bestätigen sind (Task 11):
   False→True; Aufheben nur das Feature und seine eigenen Skizzen, nur True→False (die Kinder bleiben unterdrückt).
 - Neue Features erklärt nur ein `feature`-Punkt: sein `name`, die Namen, die `_neuer_name` im Bau daraus macht (`Name Skizze`,
   `Name Senkung`, `Name Senkung Skizze`), und die Unterfeatures (`unter`) des neuen Features. Bei `skript`-Punkten bleiben unerklärbare neue
-  Features `ok: None`.
+  Features `ok: None`, außer `bauen(ctx)` hat sie zurückgegeben (`skript_features`, aus dem Protokoll).
 - Optional trägt `datei.ordner` in beiden Aufnahmen den Ordner der Datei (setzt der Aufrufer); nur damit lassen sich externe
   Referenzen über den Pfad (relativ zum Ordner) vergleichen.
 """
@@ -79,6 +79,8 @@ class _Vergleich:
     vorher: dict
     nachher: dict
     parameter: dict
+    skript_gelaufen: frozenset[str] = frozenset()   # Punkt-IDs der Skripte, die laut Protokoll durchliefen
+    skript_features: frozenset[str] = frozenset()   # was ihr `bauen(ctx)` zurückgab
     konfigurationen: list[str] = field(init=False)  # die beiden Aufnahmen gemeinsam haben, in der Reihenfolge des Bestands
     geloescht: set[str] = field(init=False)         # was `loeschen`-Punkte nehmen dürfen
     masse_vorher: dict[str, dict] = field(init=False)
@@ -229,6 +231,9 @@ def _punkt_eigenschaft(p: dict, c: _Vergleich) -> dict:
 
 
 def _punkt_skript(p: dict, c: _Vergleich) -> dict:
+    """Die Wirkung selbst ist nicht prüfbar: Durchgelaufen heißt hier ok, die Differenz je Bereich verlangt `bewerte_bereiche`."""
+    if p["id"] in c.skript_gelaufen:
+        return eintrag(f"punkt:{p['id']}", True, knoten=[p["id"]], hinweis="Notausgang, Nachweis über Bereiche, masse_pruefen und Prüfer")
     return eintrag(f"punkt:{p['id']}", None, knoten=[p["id"]],
                    hinweis="Notausgang-Skript: Wirkung nicht prüfbar, sie zeigt sich in den übrigen Prüfungen und der Differenz")
 
@@ -258,9 +263,10 @@ def _abgeleitet(x: str, name: str) -> bool:
 
 
 def _erklaerte(c: _Vergleich) -> set[str]:
-    """Neue Namen, die ein `feature`-Punkt erklärt: sein Name, die abgeleiteten und die Unterfeatures (`unter`) davon."""
+    """Neue Namen, die ein `feature`-Punkt erklärt: sein Name, die abgeleiteten und die Unterfeatures (`unter`) davon; ebenso, was ein
+    Skript laut Protokoll zurückgab."""
     punkte = c.punkte_vom_typ("feature")
-    namen = {p["name"] for p in punkte}
+    namen = {p["name"] for p in punkte} | c.skript_features
     gebaut = {n for reihe in c.nachher["reihenfolge"].values() for n in reihe}
     namen |= {n for n in gebaut if any(_abgeleitet(n, p["name"]) for p in punkte)}
     return namen | {u for f in c.nachher["features"] if f["name"] in namen for u in f.get("unter", ())}
@@ -268,8 +274,8 @@ def _erklaerte(c: _Vergleich) -> set[str]:
 
 def _baum(c: _Vergleich) -> dict:
     """Gleiche Features in gleicher Reihenfolge, Typ und Eltern wie im Bestand, außer neuen und gelöschten. Neue Features
-    erklärt nur ein `feature`-Punkt (`_erklaerte`); der Notausgang `skript` kann beliebige erzeugen: Was nicht erklärbar ist, bleibt
-    dann `ok: None` (`ungeklaert`), ohne `skript` ist es ein Mangel."""
+    erklärt ein `feature`-Punkt oder die Rückgabe eines Skripts (`_erklaerte`); der Notausgang `skript` kann beliebige erzeugen: Was nicht
+    erklärbar ist, bleibt dann `ok: None` (`ungeklaert`), ohne `skript` ist es ein Mangel."""
     v, n = c.vorher, c.nachher
     alt = {x for reihe in v["reihenfolge"].values() for x in reihe}
     erklaert, skript = _erklaerte(c), bool(c.punkte_vom_typ("skript"))
@@ -513,10 +519,12 @@ def _externe_referenzen(c: _Vergleich) -> dict:
     return eintrag("externe_referenzen", True, ist=[], knoten=[])
 
 
-def vergleiche(spec: dict, vorher: dict, nachher: dict, parameter: dict) -> list[dict]:
+def vergleiche(spec: dict, vorher: dict, nachher: dict, parameter: dict, skript_features: frozenset[str] = frozenset(),
+               skript_gelaufen: frozenset[str] = frozenset()) -> list[dict]:
     """§7.1: Einträge `punkt:<id>` je Punkt, dann `baum`, `masse`, `gleichungen`, `konfigurationen`, `eigenschaften`,
-    `material`, `neuaufbau`, `skizzen`, `externe_referenzen`. `parameter`: die Parameter der Spec für Ausdrücke wie `=A_neu`."""
-    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter)
+    `material`, `neuaufbau`, `skizzen`, `externe_referenzen`. `parameter`: die Parameter der Spec für Ausdrücke wie `=A_neu`.
+    Aus dem Protokoll: `skript_features`, was `bauen(ctx)` zurückgab, `skript_gelaufen`, die Punkt-IDs der durchgelaufenen Skripte."""
+    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features)
     return [_punkt(p, c) for p in c.punkte] + [
         _baum(c), _masse(c), _gleichungen(c), _konfigurationen(c), _eigenschaften(c), _material(c), _neuaufbau(c), _skizzen(c),
         _externe_referenzen(c)]
