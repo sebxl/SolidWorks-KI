@@ -361,7 +361,6 @@ def test_baum_neue_skizze_des_features_und_seine_unterfeatures():
     n = _neues_feature(kopie(), "Gewinde M6")
     _neues_feature(n, "Gewinde M6 Skizze")
     _neues_feature(n, "Gewinde M6 Senkung Skizze")
-    _neues_feature(n, "Gewinde M6 2")
     _neues_feature(n, "Bohrungsgewinde1")
     feature(n, "Gewinde M6")["unter"] = ["Skizze6", "Bohrungsgewinde1"]  # behalten den SolidWorks-Namen
     _neues_feature(n, "Skizze6")
@@ -382,6 +381,18 @@ def test_baum_verirrte_neue_features_neben_dem_feature_punkt_sind_mangel():
     assert vergleich(spec(PUNKT_FEATURE), n)["baum"]["ok"] is False
     n = _neues_feature(kopie(), "Schnitt-Linear2")  # nur ein mass-Punkt
     assert vergleich(spec({"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": 40}), n)["baum"]["ok"] is False
+
+
+def test_baum_abgeleitete_namen_sind_genau_die_vier_formen():
+    """Review Fix 2: Eine Sequenz, kein Beutel: Name, Name Skizze, Name Senkung, Name Senkung Skizze."""
+    for erlaubt in ("Gewinde M6 Skizze", "Gewinde M6 Senkung", "Gewinde M6 Senkung Skizze"):
+        n = _neues_feature(_neues_feature(kopie(), "Gewinde M6"), erlaubt)
+        assert vergleich(spec(PUNKT_FEATURE), n)["baum"]["ok"] is True, erlaubt
+    for verirrt in ("Gewinde M6 7", "Gewinde M6 Skizze 2", "Gewinde M6 Senkung Senkung", "Gewinde M6 Skizze Senkung",
+                    "Gewinde M6 Skizze Skizze", "Gewinde M6 "):
+        n = _neues_feature(_neues_feature(kopie(), "Gewinde M6"), verirrt)
+        e = vergleich(spec(PUNKT_FEATURE), n)["baum"]
+        assert e["ok"] is False and verirrt.strip() in e["hinweis"], verirrt
 
 
 def test_baum_feature_punkt_mit_vorhandenem_namen():

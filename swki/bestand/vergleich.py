@@ -247,15 +247,14 @@ def _punkt(p: dict, c: _Vergleich) -> dict:
 
 # ------------------------------------------------------------------------------------------------------------------ Baum
 
-_ABGELEITET = {"Skizze", "Senkung"}  # Endungen der Handler-IDs, die `_neuer_name` im Bau in den Namen übernimmt
+# Endungen, die `_neuer_name` im Bau aus den Handler-IDs `_positionen`/`_skizze`, `_senkung`, `_senkung_skizze` macht (genau diese
+# vier Formen samt `Name` selbst; kein Handler hängt Ziffern an, das tut nur das Notausgang-Skript)
+_ABGELEITET = {"Skizze", "Senkung", "Senkung Skizze"}
 
 
 def _abgeleitet(x: str, name: str) -> bool:
-    """„Name Skizze", „Name Senkung Skizze", „Name 2": was `_neuer_name` im Bau aus den Handler-IDs eines Features macht."""
-    if not x.startswith(f"{name} "):
-        return False
-    rest = x[len(name) + 1:].split(" ")
-    return all(t in _ABGELEITET or t.isdigit() for t in rest)
+    """„Name Skizze", „Name Senkung", „Name Senkung Skizze": was `_neuer_name` im Bau aus den Handler-IDs eines Features macht."""
+    return x.startswith(f"{name} ") and x[len(name) + 1:] in _ABGELEITET
 
 
 def _erklaerte(c: _Vergleich) -> set[str]:
