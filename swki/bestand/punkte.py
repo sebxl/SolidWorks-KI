@@ -30,7 +30,7 @@ from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_REFERENZ, KINDER_FEHLEN
 from swki.bestand.folgen import gleicher_ausdruck, namen_in, rechte_seite
 from swki.bestand.spec import _nahe
 from swki.bestand.sw_bestand import (SW_BENANNTE_KONFIGURATIONEN, _eigenschaften, _schalte, _wert, baum_features, bstr_array,
-                                     links_von, material_von, unterdrueckt)
+                                     links_von, material_von, unter_namen, unterdrueckt)
 from swki.compiler import sw
 from swki.compiler.eigenschaften import SW_CUSTOM_INFO_TEXT, SW_CUSTOM_PROPERTY_REPLACE_VALUE, finde_material
 from swki.compiler.fehler import (FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, MATERIAL_UNBEKANNT, UNBEKANNTER_TYP, BauFehler)
@@ -102,15 +102,6 @@ def _konfigurationen(p: dict, aufnahme: dict) -> list[str]:
 
 def _baum(model) -> list[str]:
     return [f.Name for f in baum_features(model)]
-
-
-def _unter_namen(feature) -> list[str]:
-    """Unterfeatures: aufgenommene Skizzen, beim Bohrungsassistenten auch Gewinde (Sonde Task 6)."""
-    aus, u = [], feature.GetFirstSubFeature
-    while u is not None:
-        aus.append(u.Name)
-        u = u.GetNextSubFeature
-    return aus
 
 
 def _frisch(ctx) -> None:
@@ -275,7 +266,7 @@ def loeschen(ctx, p: dict, aufnahme: dict) -> list[str]:
     model, name = ctx.model, p["feature"]
     feature = _feature(model, name)
     genannt = {name, *p.get("kinder", ())}
-    erlaubt = genannt | {u for n in genannt if (f := model.FeatureByName(n)) is not None for u in _unter_namen(f)}
+    erlaubt = genannt | {u for n in genannt if (f := model.FeatureByName(n)) is not None for u in unter_namen(f)}
     vorher = _baum(model)
     gehalten = {s: {f.Name for f in e.features} for s, e in ctx.ergebnisse.items()}
     sw.auswahl_leeren(model)
@@ -354,7 +345,7 @@ def _verschiebe(ctx, p: dict, ergebnis: FeatureErgebnis, neue: set[str], aufnahm
     """`ReorderFeature` wirkt nur in der aktiven Konfiguration (Sonde Task 6), also in jeder einzeln. False beschädigt sie
     dauerhaft, `Save3` meldet trotzdem Erfolg (S18c3): sofort abbrechen, der Lauf wird nie gespeichert."""
     ziel = p["nach"]
-    unter_ziel = _unter_namen(_feature(ctx.model, ziel))
+    unter_ziel = unter_namen(_feature(ctx.model, ziel))
     namen = [f.Name for f in ergebnis.features]
 
     def messen(k):

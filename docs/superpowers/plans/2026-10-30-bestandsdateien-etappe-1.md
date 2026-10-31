@@ -83,7 +83,7 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
  "externe_referenzen": [],
  "gleichungen": [{"index": 0, "text": "\"D1@Skizze1\" = \"L\" * 2", "links": "D1@Skizze1", "global": false}],
  "variablen": {"L": 100.0},
- "features": [{"name": "Bohrung2", "typ": "Cut", "eltern": ["Skizze4"], "kinder": ["Fase3"],
+ "features": [{"name": "Bohrung2", "typ": "Cut", "eltern": ["Skizze4"], "kinder": ["Fase3"], "unter": [],
                "unterdrueckt": {"Standard": false, "Variante B": false}, "tabelle": false}],
  "skizzen": {"Skizze4": 2},
  "masse": [{"name": "D2@Skizze4", "feature": "Skizze4", "werte": {"Standard": 40.0, "Variante B": null}, "einheit": "mm",
@@ -93,7 +93,7 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
  "tabelle": false}
 ```
 
-`zustand`: `treibend` | `gesteuert` | `getrieben`. `quelle` bei gesteuert: `{"art": "gleichung"|"variable"|"tabelle", "name": …}`. `gruppe`: Name des gemeinsamen Werts verknüpfter Maße. `werte[k]` ist auch bei unterdrückten Features eine Zahl (S18b); `null` nur, wenn SolidWorks nichts liefert. Zusätzlich `reihenfolge` je Konfiguration und `einheitensystem` (Task 5). `material` ist der Wert der aktiven Konfiguration, `materialien` nennt alle (Task 6). Einheiten mm, Grad, mm³.
+`zustand`: `treibend` | `gesteuert` | `getrieben`. `quelle` bei gesteuert: `{"art": "gleichung"|"variable"|"tabelle", "name": …}`. `gruppe`: Name des gemeinsamen Werts verknüpfter Maße. `werte[k]` ist auch bei unterdrückten Features eine Zahl (S18b); `null` nur, wenn SolidWorks nichts liefert. `unter` nennt die Unterfeatures eines Features (`GetFirstSubFeature`; Skizzen, beim Bohrungsassistenten auch Gewinde), der Vergleich erkennt daran die Unterfeatures eines neuen Features. Zusätzlich `reihenfolge` je Konfiguration und `einheitensystem` (Task 5). `material` ist der Wert der aktiven Konfiguration, `materialien` nennt alle (Task 6). Einheiten mm, Grad, mm³.
 
 ## Abhängigkeiten vom Spike S18 (Task 1)
 

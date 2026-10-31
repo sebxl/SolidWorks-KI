@@ -384,13 +384,30 @@ def test_whats_wrong(monkeypatch):
 def test_unterdrueckung_je_konfiguration_einzeln_gefragt():
     """Live gemessen: IsSuppressed2 liefert in Dokumentreihenfolge, die Reihenfolge der übergebenen Namen zählt nicht."""
     class Feature:
-        Name, GetTypeName2, GetParents, GetChildren = "Fase1", "Chamfer", None, None
+        Name, GetTypeName2, GetParents, GetChildren, GetFirstSubFeature = "Fase1", "Chamfer", None, None, None
 
         def IsSuppressed2(self, art, namen):
             return tuple(u for k, u in (("Standard", False), ("Variante B", True)) if k in namen.value)
 
     d = sw_bestand._feature_eintrag(Feature(), ["Variante B", "Standard"], False)
     assert d["unterdrueckt"] == {"Variante B": True, "Standard": False}
+    assert d["unter"] == []
+
+
+def test_unterfeatures_stehen_beim_feature():
+    """Der Vergleich erkennt daran, welche neuen Features zu einem feature-Punkt gehören (Bohrungsassistent: Skizzen, Gewinde)."""
+    class Sub:
+        def __init__(self, name, nach=None):
+            self.Name, self.GetNextSubFeature = name, nach
+
+    class Feature:
+        Name, GetTypeName2, GetParents, GetChildren = "Bohrung", "HoleWzd", None, None
+        GetFirstSubFeature = Sub("Skizze6", Sub("Bohrungsgewinde1"))
+
+        def IsSuppressed2(self, art, namen):
+            return (False,)
+
+    assert sw_bestand._feature_eintrag(Feature(), ["Standard"], False)["unter"] == ["Skizze6", "Bohrungsgewinde1"]
 
 
 def test_externe_referenzen_paare():

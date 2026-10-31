@@ -2,17 +2,23 @@
 
 Reine Logik über zwei Aufnahmen im Format `bestand.json` (Bestandskopie und Lauf, beide von `lies_bestand` gelesen), ohne
 SolidWorks. Die Einträge haben das Format `swki.pruefung.bewertung.eintrag`; `ok: False` ist ein Mangel, `ok: None` heißt
-„nicht prüfbar" (kein Mangel, aber auch kein Nachweis). Geprüft wird je Konfiguration; die Unterschiede, die die Punkte der
-Änderungs-Spec erlauben, sind ausdrücklich ausgenommen, alles andere ist ein Mangel.
+„nicht nachgewiesen" (kein Mangel, aber auch kein Bestanden). Grundsatz: Ein Fehlalarm kostet eine Rückfrage, ein falsches
+`ok: True` die Datei des Kollegen. Geprüft wird je Konfiguration; die Unterschiede, die die Punkte der Änderungs-Spec erlauben,
+sind ausdrücklich ausgenommen, alles andere ist ein Mangel.
+
+`None` als Wert heißt: Lesen gescheitert (auch unterdrückte Maße liefern Zahlen, S18b). Es ist nie „keine Änderung", sondern
+macht den Eintrag `ok: None`; ein vorhandener Mangel hat Vorrang.
 
 Annahmen, die live noch zu bestätigen sind (Task 11):
-- Folgeänderungen eines `mass`-Punkts dürfen in jeder Konfiguration auftreten, der Punkt selbst nur in seinen genannten.
-- Das Unterdrücken eines Features nimmt seine Kinder und die Skizzen der betroffenen Features mit (S18c: Grundplatte → Tasche,
-  Fase).
-- Sind neue Features nicht über `name` zu erkennen (Unterfeatures des Bohrungsassistenten behalten SolidWorks-Namen), gelten sie
-  als erlaubt, solange ein `feature`-Punkt existiert; der Eintrag `baum` nennt sie unter `unbenannt`.
-- Optional trägt `datei.ordner` in beiden Aufnahmen den Ordner der Datei (setzt der Aufrufer); nur dann kann
-  `externe_referenzen` erkennen, dass eine Referenz aus dem Lauf-Ordner herauszeigt.
+- Folgen eines `mass`-Punkts (Gruppenpartner, Gleichungsfolgen) gelten nur in den Konfigurationen des Punkts; ein Gruppenpartner
+  muss dort den Zielwert tragen. `gleichung`-Punkte wirken auf alle Konfigurationen.
+- Unterdrücken nimmt Kinder und die Skizzen mit, deren Kinder alle betroffen sind (S18c: Grundplatte → Tasche, Fase), nur
+  False→True; Aufheben nur das Feature und seine eigenen Skizzen, nur True→False (die Kinder bleiben unterdrückt).
+- Neue Features erklärt nur ein `feature`-Punkt: sein `name`, die Namen, die `_neuer_name` im Bau daraus macht (`Name Skizze`,
+  `Name Senkung`, `Name 2`), und die Unterfeatures (`unter`) des neuen Features. Bei `skript`-Punkten bleiben unerklärbare neue
+  Features `ok: None`.
+- Optional trägt `datei.ordner` in beiden Aufnahmen den Ordner der Datei (setzt der Aufrufer); nur damit lassen sich externe
+  Referenzen über den Pfad (relativ zum Ordner) vergleichen.
 """
 
 from dataclasses import dataclass, field
@@ -95,22 +101,18 @@ class _Vergleich:
         return [p for p in self.punkte if p["typ"] in typen]
 
 
+def _eigene_skizzen(namen: set[str], vorher: dict) -> set[str]:
+    """Skizzen, die Eltern der genannten Features sind und kein Kind außerhalb davon haben (eine geteilte Skizze geht nicht mit)."""
+    features = {f["name"]: f for f in vorher["features"]}
+    return {e for n in namen for e in features.get(n, {}).get("eltern", ())
+            if features.get(e, {}).get("typ") == "ProfileFeature" and set(features[e].get("kinder", ())) <= namen}
+
+
 def _geloeschte(punkte: list[dict], vorher: dict) -> set[str]:
     """Features, die verschwinden dürfen: die der `loeschen`-Punkte samt `kinder` und die Skizzen, die dann kein anderes Kind
     mehr haben (`DeleteSelection2(3)` nimmt die aufgenommene Skizze mit, S18c)."""
     weg = {n for p in punkte if p["typ"] == "loeschen" for n in (p["feature"], *p.get("kinder", ()))}
-    features = {f["name"]: f for f in vorher["features"]}
-    for n in sorted(weg):
-        for e in features.get(n, {}).get("eltern", ()):
-            if features.get(e, {}).get("typ") == "ProfileFeature" and set(features[e].get("kinder", ())) <= weg:
-                weg.add(e)
-    return weg
-
-
-def _skizzen_von(namen: set[str], vorher: dict) -> set[str]:
-    """Skizzen, die Eltern der genannten Features sind."""
-    features = {f["name"]: f for f in vorher["features"]}
-    return {e for n in namen for e in features.get(n, {}).get("eltern", ()) if features.get(e, {}).get("typ") == "ProfileFeature"}
+    return weg | _eigene_skizzen(weg, vorher)
 
 
 def _materialien(aufnahme: dict) -> dict[str, str]:
@@ -120,20 +122,23 @@ def _materialien(aufnahme: dict) -> dict[str, str]:
 # ---------------------------------------------------------------------------------------------------------------- Punkte
 
 def _punkt_mass(p: dict, c: _Vergleich) -> dict:
+    """Das Maß steht in den genannten Konfigurationen auf `neu`, ebenso jeder Gruppenpartner (verknüpfte Maße teilen den Wert).
+    Falsch hat Vorrang; ein nicht lesbarer Wert ist `None`, nie „stimmt"."""
     pid, neu = f"punkt:{p['id']}", auswerten(p["neu"], c.parameter)
     m = c.masse_nachher.get(p["mass"])
     if m is None:
         return eintrag(pid, False, soll=neu, hinweis=f"Maß {p['mass']} fehlt nach der Änderung", knoten=[p["id"]])
-    ist = {k: m["werte"].get(k) for k in c.konfig(p)}
-    lesbar = {k: v for k, v in ist.items() if v is not None}
-    falsch = {k: v for k, v in lesbar.items() if not _gleich(v, neu)}
+    konfigurationen = c.konfig(p)
+    ist = {k: m["werte"].get(k) for k in konfigurationen}
+    gruppe = c.masse_vorher.get(p["mass"], {}).get("gruppe")
+    partner = sorted(n for n, v in c.masse_vorher.items() if gruppe and v.get("gruppe") == gruppe and n != p["mass"])
+    werte = {p["mass"]: ist} | {n: {k: c.masse_nachher.get(n, {"werte": {}})["werte"].get(k) for k in konfigurationen}
+                                for n in partner}
+    falsch = [f"{n} steht auf {v:g} ({k})" for n, vs in werte.items() for k, v in vs.items() if v is not None and not _gleich(v, neu)]
     if falsch:
-        return eintrag(pid, False, ist=ist, soll=neu, knoten=[p["id"]],
-                       hinweis=f"Maß {p['mass']} steht auf " + ", ".join(f"{v:g} ({k})" for k, v in falsch.items())
-                       + f" statt {neu:g}")
-    if not lesbar:
-        return eintrag(pid, None, ist=ist, soll=neu, knoten=[p["id"]],
-                       hinweis=f"Maß {p['mass']} ist in den genannten Konfigurationen nicht lesbar")
+        return eintrag(pid, False, ist=ist, soll=neu, knoten=[p["id"]], hinweis="; ".join(falsch) + f" statt {neu:g}")
+    if unlesbar := [f"{n} ({k})" for n, vs in werte.items() for k, v in vs.items() if v is None]:
+        return eintrag(pid, None, ist=ist, soll=neu, knoten=[p["id"]], hinweis="Nicht lesbar: " + ", ".join(unlesbar))
     return eintrag(pid, True, ist=ist, soll=neu, knoten=[p["id"]])
 
 
@@ -146,7 +151,7 @@ def _punkt_gleichung(p: dict, c: _Vergleich) -> dict:
     else:
         text = next((g["text"] for g in c.nachher["gleichungen"] if g["links"] == p["gleichung"]), None)
         ist = None if text is None else rechte_seite(text)
-        ok = ist is not None and gleicher_ausdruck(ist, p["neu"])
+        ok = ist is not None and gleicher_ausdruck(ist, str(p["neu"]))
         daten = {"ist": ist, "soll": p["neu"], "hinweis": f"Gleichung {p['gleichung']} lautet {ist!r} statt {p['neu']!r}"}
     if ok:
         daten.pop("hinweis")
@@ -159,11 +164,13 @@ def _punkt_unterdruecken(p: dict, c: _Vergleich) -> dict:
     if f is None:
         return eintrag(pid, False, soll=soll, hinweis=f"Feature {p['feature']} fehlt nach der Änderung", knoten=[p["id"]])
     ist = {k: f["unterdrueckt"].get(k) for k in c.konfig(p)}
-    falsch = [k for k, v in ist.items() if v is not None and v != soll]
     zustand = "unterdrückt" if soll else "aufgehoben"
-    if falsch:
+    if falsch := [k for k, v in ist.items() if v is not None and v != soll]:
         return eintrag(pid, False, ist=ist, soll=soll, knoten=[p["id"]],
                        hinweis=f"{p['feature']} ist nicht {zustand} ({', '.join(falsch)})")
+    if unlesbar := [k for k, v in ist.items() if v is None]:
+        return eintrag(pid, None, ist=ist, soll=soll, knoten=[p["id"]],
+                       hinweis=f"Unterdrückung von {p['feature']} nicht lesbar ({', '.join(unlesbar)})")
     return eintrag(pid, True, ist=ist, soll=soll, knoten=[p["id"]])
 
 
@@ -177,8 +184,8 @@ def _punkt_loeschen(p: dict, c: _Vergleich) -> dict:
 
 def _punkt_feature(p: dict, c: _Vergleich) -> dict:
     pid, name = f"punkt:{p['id']}", p["name"]
-    probleme = []
     alt = {n for k in c.vorher["reihenfolge"].values() for n in k}
+    probleme = [f"{name} gibt es schon im Bestand"] if name in alt else []
     for k in c.konfigurationen:
         reihe = c.nachher["reihenfolge"].get(k, [])
         if name not in reihe:
@@ -240,17 +247,34 @@ def _punkt(p: dict, c: _Vergleich) -> dict:
 
 # ------------------------------------------------------------------------------------------------------------------ Baum
 
-def _erklaert(name: str, c: _Vergleich) -> bool:
-    """Gehört ein neues Feature zu einem `feature`-Punkt? Der Name oder „Name Skizze" usw. (`_neuer_name` im Bau)."""
-    return any(name == p["name"] or name.startswith(f"{p['name']} ") for p in c.punkte_vom_typ("feature"))
+_ABGELEITET = {"Skizze", "Senkung"}  # Endungen der Handler-IDs, die `_neuer_name` im Bau in den Namen übernimmt
+
+
+def _abgeleitet(x: str, name: str) -> bool:
+    """„Name Skizze", „Name Senkung Skizze", „Name 2": was `_neuer_name` im Bau aus den Handler-IDs eines Features macht."""
+    if not x.startswith(f"{name} "):
+        return False
+    rest = x[len(name) + 1:].split(" ")
+    return all(t in _ABGELEITET or t.isdigit() for t in rest)
+
+
+def _erklaerte(c: _Vergleich) -> set[str]:
+    """Neue Namen, die ein `feature`-Punkt erklärt: sein Name, die abgeleiteten und die Unterfeatures (`unter`) davon."""
+    punkte = c.punkte_vom_typ("feature")
+    namen = {p["name"] for p in punkte}
+    gebaut = {n for reihe in c.nachher["reihenfolge"].values() for n in reihe}
+    namen |= {n for n in gebaut if any(_abgeleitet(n, p["name"]) for p in punkte)}
+    return namen | {u for f in c.nachher["features"] if f["name"] in namen for u in f.get("unter", ())}
 
 
 def _baum(c: _Vergleich) -> dict:
-    """Gleiche Features in gleicher Reihenfolge, Typ und Eltern wie im Bestand, außer neuen und gelöschten."""
+    """Gleiche Features in gleicher Reihenfolge, Typ und Eltern wie im Bestand, außer neuen und gelöschten. Neue Features
+    erklärt nur ein `feature`-Punkt (`_erklaerte`); der Notausgang `skript` kann beliebige erzeugen: Was nicht erklärbar ist, bleibt
+    dann `ok: None` (`ungeklaert`), ohne `skript` ist es ein Mangel."""
     v, n = c.vorher, c.nachher
     alt = {x for reihe in v["reihenfolge"].values() for x in reihe}
-    lenient = bool(c.punkte_vom_typ("feature", "skript"))
-    probleme, unbenannt = [], set()
+    erklaert, skript = _erklaerte(c), bool(c.punkte_vom_typ("skript"))
+    probleme, ungeklaert = [], set()
     for k in c.konfigurationen:
         vor, nach = v["reihenfolge"].get(k, []), n["reihenfolge"].get(k, [])
         soll = [x for x in vor if x not in c.geloescht]
@@ -258,10 +282,11 @@ def _baum(c: _Vergleich) -> dict:
             probleme.append({"konfiguration": k, "art": "fehlt", "features": fehlt})
         elif (ist := [x for x in nach if x in set(soll)]) != soll:
             probleme.append({"konfiguration": k, "art": "reihenfolge", "soll": soll, "ist": ist})
-        neu = [x for x in nach if x not in alt]
-        unbenannt |= {x for x in neu if lenient and not _erklaert(x, c)}
-        if unerlaubt := [x for x in neu if not lenient and not _erklaert(x, c)]:
-            probleme.append({"konfiguration": k, "art": "neu", "features": unerlaubt})
+        if unerklaert := [x for x in nach if x not in alt and x not in erklaert]:
+            if skript:
+                ungeklaert |= set(unerklaert)
+            else:
+                probleme.append({"konfiguration": k, "art": "neu", "features": unerklaert})
     for f in v["features"]:
         g = c.features_nachher.get(f["name"])
         if g is None:
@@ -273,16 +298,20 @@ def _baum(c: _Vergleich) -> dict:
             probleme.append({"art": "eltern", "feature": f["name"], "soll": eltern, "ist": sorted(g["eltern"])})
     if probleme:
         betroffen = sorted({x for q in probleme for x in q.get("features", [q.get("feature")]) if x})
-        return eintrag("baum", False, ist=probleme, knoten=[], unbenannt=sorted(unbenannt),
+        return eintrag("baum", False, ist=probleme, knoten=[], ungeklaert=sorted(ungeklaert),
                        hinweis="Baum weicht vom Bestand ab: " + (", ".join(betroffen) or "Reihenfolge"))
-    return eintrag("baum", True, ist=[], knoten=[], unbenannt=sorted(unbenannt))
+    if ungeklaert:
+        return eintrag("baum", None, ist=[], knoten=[], ungeklaert=sorted(ungeklaert),
+                       hinweis="Neue Features, die kein feature-Punkt erklärt (Skript?): " + ", ".join(sorted(ungeklaert)))
+    return eintrag("baum", True, ist=[], knoten=[], ungeklaert=[])
 
 
 # ------------------------------------------------------------------------------------------------------------------ Maße
 
 def _erlaubte_masse(c: _Vergleich) -> dict[str, set[str] | None]:
-    """Maß → Konfigurationen, in denen es sich ändern darf (`None` = in allen): das Maß eines `mass`-Punkts nur in seinen
-    genannten, die Folgen in allen; bei `gleichung` auch die linke Seite selbst."""
+    """Maß → Konfigurationen, in denen es sich ändern darf (`None` = in allen). Ein `mass`-Punkt wirkt in seinen genannten
+    Konfigurationen (Ziel und Folgen), ein `gleichung`-Punkt in allen (SolidWorks setzt sie in allen Konfigurationen); bei
+    `gleichung` darf auch die linke Seite selbst abweichen."""
     aus: dict[str, set[str] | None] = {}
 
     def erlaube(name: str, konfigurationen: set[str] | None) -> None:
@@ -292,58 +321,67 @@ def _erlaubte_masse(c: _Vergleich) -> dict[str, set[str] | None]:
             aus[name] = aus.get(name, set()) | konfigurationen
 
     for p in c.punkte:
+        wo = set(c.konfig(p)) if p["typ"] == "mass" else None
         if p["typ"] == "mass":
-            erlaube(p["mass"], set(c.konfig(p)))
+            erlaube(p["mass"], wo)
         elif p["typ"] == "gleichung":
             erlaube(p.get("variable") or p["gleichung"], None)
         for name in folgen_von(p, c.vorher):
-            erlaube(name, None)
+            erlaube(name, wo)
     return aus
 
 
 def _masse(c: _Vergleich) -> dict:
+    """Alle nicht getriebenen Maße außer den erlaubten. `None` auf einer Seite heißt: Lesen gescheitert, also nicht
+    nachgewiesen (`ok: None`), und zwar ausnahmslos, auch bei unterdrückten Features und Punkt-Zielen. Zustand und Gruppe
+    eines Maßes dürfen sich nicht ändern."""
     erlaubt = _erlaubte_masse(c)
-    vorher_features = {f["name"]: f for f in c.vorher["features"]}
     alt_features = {x for reihe in c.vorher["reihenfolge"].values() for x in reihe}
-    abweichungen, fehlt, unlesbar, getrieben = [], [], [], []
+    abweichungen, fehlt, unlesbar, getrieben, umgestuft = [], [], [], [], []
     for name, m in c.masse_vorher.items():
         n = c.masse_nachher.get(name)
         if n is None:
             if m["feature"] not in c.geloescht:
                 fehlt.append(name)
             continue
+        for feld in ("zustand", "gruppe"):
+            if m.get(feld) != n.get(feld):
+                umgestuft.append({"name": name, "feld": feld, "vorher": m.get(feld), "nachher": n.get(feld)})
+        ist_getrieben = m.get("zustand") == "getrieben"
+        frei = erlaubt.get(name, set())
         verschieden = {}
         for k in c.konfigurationen:
             a, b = m["werte"].get(k), n["werte"].get(k)
-            if a is not None and b is not None and not _gleich(a, b):  # None auf einer Seite ist keine Änderung (Focus 5)
+            if a is None or b is None:
+                if not ist_getrieben:
+                    unlesbar.append({"name": name, "konfiguration": k})
+            elif not _gleich(a, b):
                 verschieden[k] = (a, b)
-        if m.get("zustand") == "getrieben":
+        if ist_getrieben:
             if verschieden:
                 getrieben.append({"name": name, "vorher": {k: a for k, (a, _) in verschieden.items()},
                                   "nachher": {k: b for k, (_, b) in verschieden.items()}})
             continue
-        frei = erlaubt.get(name, set())
         abweichungen += [{"name": name, "konfiguration": k, "vorher": a, "nachher": b}
                          for k, (a, b) in verschieden.items() if frei is not None and k not in frei]
-        unterdrueckt = any(vorher_features.get(m["feature"], {}).get("unterdrueckt", {}).values())
-        if (name not in erlaubt and not unterdrueckt and m["feature"] not in c.geloescht
-                and all(m["werte"].get(k) is None or n["werte"].get(k) is None for k in c.konfigurationen)):
-            unlesbar.append(name)
-    an_bestand = sorted(n for n, m in c.masse_nachher.items() if n not in c.masse_vorher and m["feature"] in alt_features)
+    an_bestand = sorted(x for x, m in c.masse_nachher.items() if x not in c.masse_vorher and m["feature"] in alt_features)
     teile = []
     if abweichungen:
         teile.append("geändert: " + ", ".join(f"{a['name']} ({a['konfiguration']}: {a['vorher']:g} → {a['nachher']:g})"
                                               for a in abweichungen))
+    if umgestuft:
+        teile.append("Zustand/Gruppe geändert: " + ", ".join(f"{u['name']} ({u['feld']})" for u in umgestuft))
     if fehlt:
         teile.append("fehlen: " + ", ".join(fehlt))
     if an_bestand:
         teile.append("neu an Bestandsfeatures: " + ", ".join(an_bestand))
-    daten = {"ist": abweichungen, "fehlen": fehlt, "neu_am_bestand": an_bestand, "getrieben": getrieben, "knoten": []}
+    daten = {"ist": abweichungen, "fehlen": fehlt, "neu_am_bestand": an_bestand, "umgestuft": umgestuft,
+             "getrieben": getrieben, "unlesbar": unlesbar, "knoten": []}
     if teile:
         return eintrag("masse", False, **daten, hinweis="Maße außerhalb der Punkte verändert; " + "; ".join(teile))
     if unlesbar:
-        return eintrag("masse", None, **daten, unlesbar=unlesbar,
-                       hinweis="In keiner Konfiguration lesbar, also nicht nachgewiesen: " + ", ".join(unlesbar))
+        return eintrag("masse", None, **daten, hinweis="Nicht lesbar, also nicht nachgewiesen: "
+                       + ", ".join(f"{u['name']} ({u['konfiguration']})" for u in unlesbar))
     return eintrag("masse", True, **daten)
 
 
@@ -363,30 +401,41 @@ def _gleichungen(c: _Vergleich) -> dict:
 
 
 def _konfigurationen(c: _Vergleich) -> dict:
+    """Gleiche Konfigurationen, gleiche aktive, Unterdrückung nur wie die Punkte und nur in deren Richtung: `unterdruecken`
+    erlaubt Feature, Kinder und deren eigene Skizzen von False auf True, `aufheben` nur das Feature und seine eigenen Skizzen von
+    True auf False (die Kinder bleiben unterdrückt)."""
     v, n = c.vorher, c.nachher
-    probleme = []
+    probleme, unlesbar = [], []
     if fehlt := [k for k in v["konfigurationen"] if k not in n["konfigurationen"]]:
         probleme.append({"art": "fehlt", "konfigurationen": fehlt})
     if neu := [k for k in n["konfigurationen"] if k not in v["konfigurationen"]]:
         probleme.append({"art": "neu", "konfigurationen": neu})
     if v["aktiv"] != n["aktiv"]:  # sonst öffnet der Kollege eine andere Variante (Review Focus 4)
         probleme.append({"art": "aktiv", "soll": v["aktiv"], "ist": n["aktiv"]})
-    frei: set[tuple[str, str]] = set()
-    for p in c.punkte_vom_typ("unterdruecken", "aufheben"):
+    zu: set[tuple[str, str]] = set()
+    auf: set[tuple[str, str]] = set()
+    for p in c.punkte_vom_typ("unterdruecken"):
         namen = {p["feature"], *kinder_von(p["feature"], v)}
-        namen |= _skizzen_von(namen, v)
-        frei |= {(x, k) for x in namen for k in c.konfig(p)}
+        zu |= {(x, k) for x in namen | _eigene_skizzen(namen, v) for k in c.konfig(p)}
+    for p in c.punkte_vom_typ("aufheben"):
+        namen = {p["feature"]}
+        auf |= {(x, k) for x in namen | _eigene_skizzen(namen, v) for k in c.konfig(p)}
     for f in v["features"]:
         g = c.features_nachher.get(f["name"])
         if g is None:
             continue
         for k in c.konfigurationen:
             a, b = f["unterdrueckt"].get(k), g["unterdrueckt"].get(k)
-            if a is not None and b is not None and a != b and (f["name"], k) not in frei:
+            if a is None or b is None:
+                unlesbar.append({"feature": f["name"], "konfiguration": k})
+            elif a != b and (f["name"], k) not in (zu if b else auf):
                 probleme.append({"art": "unterdrueckung", "feature": f["name"], "konfiguration": k, "vorher": a, "nachher": b})
     if probleme:
         return eintrag("konfigurationen", False, ist=probleme, knoten=[], hinweis="Konfigurationen weichen vom Bestand ab: "
                        + ", ".join(q.get("feature") or q["art"] for q in probleme))
+    if unlesbar:
+        return eintrag("konfigurationen", None, ist=[], knoten=[], unlesbar=unlesbar, hinweis="Unterdrückung nicht lesbar: "
+                       + ", ".join(f"{u['feature']} ({u['konfiguration']})" for u in unlesbar))
     return eintrag("konfigurationen", True, ist=[], knoten=[])
 
 
@@ -440,21 +489,28 @@ def _skizzen(c: _Vergleich) -> dict:
 
 
 def _externe_referenzen(c: _Vergleich) -> dict:
-    """Keine neuen (verglichen wird der Dateiname: Bestandskopie und Lauf liegen in verschiedenen Ordnern); keine, die aus dem
-    Lauf-Ordner herauszeigen, soweit beide Aufnahmen ihren Ordner nennen (`datei.ordner`)."""
+    """Keine neuen und keine, die aus dem Lauf-Ordner herauszeigen. Bestandskopie und Lauf liegen in verschiedenen Ordnern, also
+    zählt der Pfad relativ zum Ordner der Datei (`datei.ordner`, beide Aufnahmen); liegt eine Referenz außerhalb, zählt der ganze
+    Pfad. Fehlt der Ordner, lässt sich nur der Dateiname vergleichen: Neue Namen sind ein Mangel, bekannte nicht nachgewiesen."""
     vor, nach = c.vorher["externe_referenzen"], c.nachher["externe_referenzen"]
-    bekannt = {_basis(p): p for p in vor}
-    neu = [p for p in nach if _basis(p) not in bekannt]
-    ordner_vor, ordner_nach = (_norm(a["datei"]["ordner"]).rstrip("/") + "/" if a.get("datei", {}).get("ordner") else None
-                               for a in (c.vorher, c.nachher))
-    heraus = []
-    if ordner_vor and ordner_nach:
-        heraus = [p for p in nach if _basis(p) in bekannt and _norm(bekannt[_basis(p)]).startswith(ordner_vor)
-                  and not _norm(p).startswith(ordner_nach)]
-    probleme = [{"art": "neu", "pfad": p} for p in neu] + [{"art": "heraus", "pfad": p} for p in heraus]
+    ordner = [_norm(a["datei"]["ordner"]).rstrip("/") + "/" if a.get("datei", {}).get("ordner") else None
+              for a in (c.vorher, c.nachher)]
+
+    def schluessel(pfad: str, wurzel: str | None) -> str:
+        pfad = _norm(pfad)
+        return pfad[len(wurzel):] if wurzel and pfad.startswith(wurzel) else pfad if wurzel else _basis(pfad)
+
+    wurzeln = ordner if all(ordner) else [None, None]
+    bekannt = {schluessel(p, wurzeln[0]) for p in vor}
+    innen = {_basis(p) for p in vor if wurzeln[0] and _norm(p).startswith(wurzeln[0])}
+    neu = [p for p in nach if schluessel(p, wurzeln[1]) not in bekannt]
+    probleme = [{"art": "heraus" if _basis(p) in innen else "neu", "pfad": p} for p in neu]
     if probleme:
         return eintrag("externe_referenzen", False, ist=probleme, knoten=[],
                        hinweis="Externe Referenzen: " + ", ".join(f"{q['pfad']} ({q['art']})" for q in probleme))
+    if nach and not all(ordner):
+        return eintrag("externe_referenzen", None, ist=[], knoten=[], hinweis="Ohne datei.ordner lassen sich die vorhandenen "
+                       "Referenzen nur nach Dateinamen vergleichen, nicht nachgewiesen: " + ", ".join(nach))
     return eintrag("externe_referenzen", True, ist=[], knoten=[])
 
 

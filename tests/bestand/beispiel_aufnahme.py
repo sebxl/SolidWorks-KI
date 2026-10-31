@@ -1,7 +1,8 @@
 """Attrappe einer Bestandsaufnahme (`bestand.json`, Plan Task 4) für die Tests ohne SolidWorks.
 
 Gesteuert: `D1@Skizze1` über die Variable `L`, `D3@Skizze2` über `"D1@Skizze1" + 5`, `D8@Skizze9` über die Tabelle.
-Verknüpft: `D1@S5` und `D2@S6` (Gruppe `Spalt`). Frei: `D2@Skizze4` (in Variante B nicht lesbar). Getrieben: `D7@Skizze9`.
+Verknüpft: `D1@S5` und `D2@S6` (Gruppe `Spalt`). Frei: `D2@Skizze4`, `D5@Skizze5`. Getrieben: `D7@Skizze9`. Alle Werte sind in
+beiden Konfigurationen lesbar; `None` heißt: SolidWorks lieferte nichts (Tests setzen es selbst).
 Baum: Skizze4 → Bohrung2 → Fase3 → Verrundung1; Schnitt-Linear1 ist eine Fläche zum Ankern.
 """
 
@@ -15,8 +16,8 @@ def _mass(name, feature, werte, zustand="treibend", quelle=None, gruppe=None):
             "gruppe": gruppe, "punkte": [[0.0, 0.0, 0.0]]}
 
 
-def _feature(name, typ, eltern=(), kinder=()):
-    return {"name": name, "typ": typ, "eltern": list(eltern), "kinder": list(kinder),
+def _feature(name, typ, eltern=(), kinder=(), unter=()):
+    return {"name": name, "typ": typ, "eltern": list(eltern), "kinder": list(kinder), "unter": list(unter),
             "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False}
 
 
@@ -50,7 +51,7 @@ AUFNAHME = {
               {"art": "gleichung", "name": "D3@Skizze2"}),
         _mass("D1@S5", "S5", {"Standard": 8.0, "Variante B": 8.0}, gruppe="Spalt"),
         _mass("D2@S6", "S6", {"Standard": 8.0, "Variante B": 8.0}, gruppe="Spalt"),
-        _mass("D2@Skizze4", "Skizze4", {"Standard": 40.0, "Variante B": None}),
+        _mass("D2@Skizze4", "Skizze4", {"Standard": 40.0, "Variante B": 40.0}),
         _mass("D5@Skizze5", "Skizze5", {"Standard": 12.0, "Variante B": 15.0}),
         _mass("D7@Skizze9", "Skizze9", {"Standard": 3.0, "Variante B": 3.0}, "getrieben"),
         _mass("D8@Skizze9", "Skizze9", {"Standard": 4.0, "Variante B": 4.0}, "gesteuert",

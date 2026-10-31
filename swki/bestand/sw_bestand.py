@@ -231,12 +231,21 @@ def unterdrueckt(feature, konfiguration: str) -> bool:
     return bool(feature.IsSuppressed2(SW_BENANNTE_KONFIGURATIONEN, bstr_array([konfiguration]))[0])
 
 
+def unter_namen(feature) -> list[str]:
+    """Unterfeatures: aufgenommene Skizzen, beim Bohrungsassistenten auch Gewinde (Sonde Task 6)."""
+    aus, u = [], feature.GetFirstSubFeature
+    while u is not None:
+        aus.append(u.Name)
+        u = u.GetNextSubFeature
+    return aus
+
+
 def _feature_eintrag(f, konfigurationen: list[str], tabelle: bool) -> dict:
     """`tabelle`: Tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen (S18b, Offen), jedes Feature einer
     Datei mit Tabelle gilt deshalb als möglicherweise gesteuert."""
     return {"name": f.Name, "typ": f.GetTypeName2, "eltern": [p.Name for p in f.GetParents or ()],
-            "kinder": [c.Name for c in f.GetChildren or ()], "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen},
-            "tabelle": tabelle}
+            "kinder": [c.Name for c in f.GetChildren or ()], "unter": unter_namen(f),
+            "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen}, "tabelle": tabelle}
 
 
 def _gleichungen(model) -> tuple[list[dict], dict[str, float]]:

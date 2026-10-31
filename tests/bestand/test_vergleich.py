@@ -125,32 +125,73 @@ def test_getriebenes_mass_nur_berichtet():
     nur_ok(e)
 
 
-def test_unterdruecktes_mass_none_ist_keine_aenderung():
-    """Review Focus 5: None/None, None/Wert und Wert/None sind weder Änderung noch Absturz."""
+def test_none_heisst_lesen_gescheitert_nie_bestanden():
+    """Review Fix 1: Auch unterdrückte Maße liefern Zahlen (S18b); `None` ist nie „keine Änderung"."""
     n = kopie()
-    setze(n, "D2@Skizze4", "Variante B", 40.0)  # vorher None
     setze(n, "D5@Skizze5", "Variante B", None)  # vorher 15.0
     e = vergleich(SPEC_LEER, n)
-    assert e["masse"]["ok"] is True
-    p = {"id": "p1", "typ": "unterdruecken", "feature": "Fase3", "konfigurationen": ["Variante B"]}
-    n["features"][4]["unterdrueckt"]["Variante B"] = True
-    nur_ok(vergleich(spec(p), n))
-
-
-def test_mass_in_keiner_konfiguration_lesbar_ist_nicht_nachgewiesen():
-    """Ein Maß eines nicht betroffenen, nicht unterdrückten Features, das nirgends lesbar ist: ok None, nicht bestanden."""
+    assert e["masse"]["ok"] is None and e["masse"]["unlesbar"] == [{"name": "D5@Skizze5", "konfiguration": "Variante B"}]
+    assert "D5@Skizze5" in e["masse"]["hinweis"]
     v = kopie()
-    setze(v, "D2@Skizze4", "Standard", None)
-    e = vergleich(SPEC_LEER, kopie(v), vorher=v)
-    assert e["masse"]["ok"] is None and e["masse"]["unlesbar"] == ["D2@Skizze4"] and "D2@Skizze4" in e["masse"]["hinweis"]
-    # in einer unterdrückten Konfiguration ist das erwartet
+    setze(v, "D2@Skizze4", "Variante B", None)  # vorher und nachher None
+    assert vergleich(SPEC_LEER, kopie(v), vorher=v)["masse"]["ok"] is None
+    v = kopie()
+    setze(v, "D2@Skizze4", "Variante B", None)  # vorher None, nachher Zahl
+    assert vergleich(SPEC_LEER, kopie(), vorher=v)["masse"]["ok"] is None
+
+
+def test_none_auch_bei_unterdrueckung_in_anderer_konfiguration():
+    v = kopie()
+    setze(v, "D2@Skizze4", "Variante B", 40.0)
     feature(v, "Skizze4")["unterdrueckt"]["Variante B"] = True
-    e = vergleich(SPEC_LEER, kopie(v), vorher=v)
-    assert e["masse"]["ok"] is True
-    # ein echter Mangel gewinnt gegen den Hinweis
     n = kopie(v)
+    setze(n, "D2@Skizze4", "Standard", None)
+    setze(n, "D2@Skizze4", "Variante B", None)
+    assert vergleich(SPEC_LEER, n, vorher=v)["masse"]["ok"] is None
+    # auch das Maß eines unterdrückten Features gilt nur mit Zahl als nachgewiesen
+    n2 = kopie(v)
+    setze(n2, "D2@Skizze4", "Variante B", None)
+    assert vergleich(SPEC_LEER, n2, vorher=v)["masse"]["ok"] is None
+
+
+def test_none_bei_punkt_ziel_und_folge():
+    n = kopie()
+    setze(n, "D5@Skizze5", "Standard", 13.0)
+    setze(n, "D5@Skizze5", "Variante B", None)
+    e = vergleich(spec({"id": "p1", "typ": "mass", "mass": "D5@Skizze5", "alt": 12, "neu": 13}), n)
+    assert e["punkt:p1"]["ok"] is None and "Variante B" in e["punkt:p1"]["hinweis"]
+    assert e["masse"]["ok"] is None  # das Ziel selbst ist in Variante B nicht gelesen worden
+
+
+def test_none_hat_hinter_einem_mangel_zurueckzustehen():
+    n = kopie()
+    setze(n, "D5@Skizze5", "Variante B", None)
     setze(n, "D1@S5", "Standard", 1.0)
-    assert vergleich(SPEC_LEER, n, vorher=v)["masse"]["ok"] is False
+    assert vergleich(SPEC_LEER, n)["masse"]["ok"] is False
+
+
+def test_unterdruecken_punkt_none_ist_nicht_bestanden():
+    n = kopie()
+    n["features"][0]["unterdrueckt"]["Standard"] = None
+    p = {"id": "p1", "typ": "unterdruecken", "feature": "Skizze1", "konfigurationen": ["Standard"]}
+    e = vergleich(spec(p), n)
+    assert e["punkt:p1"]["ok"] is None and e["konfigurationen"]["ok"] is None
+    n["features"][0]["unterdrueckt"]["Standard"] = True
+    assert vergleich(spec(p), n)["punkt:p1"]["ok"] is True
+
+
+def test_zustand_und_gruppe_eines_masses_aendern_sich_nicht():
+    n = kopie()
+    next(m for m in n["masse"] if m["name"] == "D2@Skizze4")["zustand"] = "getrieben"
+    e = vergleich(SPEC_LEER, n)
+    assert e["masse"]["ok"] is False and e["masse"]["umgestuft"][0]["feld"] == "zustand"
+    n = kopie()  # getrieben → treibend mit anderem Wert
+    m = next(m for m in n["masse"] if m["name"] == "D7@Skizze9")
+    m["zustand"], m["werte"]["Standard"] = "treibend", 9.0
+    assert vergleich(SPEC_LEER, n)["masse"]["ok"] is False
+    n = kopie()  # Verknüpfung gelöst
+    next(m for m in n["masse"] if m["name"] == "D1@S5")["gruppe"] = None
+    assert vergleich(SPEC_LEER, n)["masse"]["ok"] is False
 
 
 def test_wert_tauscht_nur_in_genannter_konfiguration():
@@ -162,6 +203,47 @@ def test_wert_tauscht_nur_in_genannter_konfiguration():
     e = vergleich(spec(p), n)
     assert e["masse"]["ok"] is False and e["masse"]["ist"][0]["konfiguration"] == "Variante B"
     assert e["punkt:p1"]["ok"] is True
+
+
+def test_folgen_gelten_nur_in_den_konfigurationen_des_punkts():
+    """Review Fix 2: Ein Partner oder eine Gleichungsfolge in einer nicht genannten Konfiguration ist ein Mangel."""
+    p = {"id": "p1", "typ": "mass", "mass": "D1@S5", "alt": 8, "neu": 9, "konfigurationen": ["Variante B"]}
+    n = kopie()
+    setze(n, "D1@S5", "Variante B", 9.0)
+    setze(n, "D2@S6", "Variante B", 9.0)
+    nur_ok(vergleich(spec(p), n))
+    setze(n, "D2@S6", "Standard", 9.0)  # Partner geht in Standard mit
+    e = vergleich(spec(p), n)
+    assert e["masse"]["ok"] is False and e["masse"]["ist"][0] == {"name": "D2@S6", "konfiguration": "Standard", "vorher": 8.0,
+                                                                  "nachher": 9.0}
+    v = kopie()
+    v["gleichungen"].append({"index": 3, "text": '"D8@Skizze9" = "D5@Skizze5" + 1', "links": "D8@Skizze9", "global": False})
+    n = kopie(v)
+    setze(n, "D5@Skizze5", "Standard", 13.0)
+    setze(n, "D8@Skizze9", "Standard", 14.0)
+    q = {"id": "p1", "typ": "mass", "mass": "D5@Skizze5", "alt": 12, "neu": 13, "konfigurationen": ["Standard"]}
+    nur_ok(vergleich(spec(q), n, vorher=v))
+    setze(n, "D8@Skizze9", "Variante B", 99.0)  # die Gleichungsfolge springt in Variante B
+    assert vergleich(spec(q), n, vorher=v)["masse"]["ok"] is False
+
+
+def test_gruppenpartner_traegt_den_zielwert():
+    n = kopie()
+    for k in n["konfigurationen"]:
+        setze(n, "D1@S5", k, 9.0)
+        setze(n, "D2@S6", k, 77.0)
+    e = vergleich(spec({"id": "p1", "typ": "mass", "mass": "D1@S5", "alt": 8, "neu": 9}), n)
+    assert e["punkt:p1"]["ok"] is False and "D2@S6" in e["punkt:p1"]["hinweis"]
+
+
+def test_gleichung_punkt_wirkt_auf_alle_konfigurationen():
+    n = kopie()
+    for k in n["konfigurationen"]:
+        setze(n, "D1@Skizze1", k, 110.0)
+        setze(n, "D3@Skizze2", k, 115.0)
+    n["variablen"]["L"] = 110.0
+    next(g for g in n["gleichungen"] if g["links"] == "L")["text"] = '"L" = 110'
+    nur_ok(vergleich(spec({"id": "p1", "typ": "gleichung", "variable": "L", "alt": 100, "neu": 110}), n))
 
 
 def test_mass_ohne_konfigurationen_gilt_in_allen():
@@ -183,13 +265,14 @@ def test_punkt_mass_nicht_umgesetzt():
 def test_punkt_mass_umgesetzt_mit_rauschen():
     n = kopie()
     setze(n, "D2@Skizze4", "Standard", 45.0000004)
-    p = {"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": 45}
-    assert vergleich(spec(p), n)["punkt:p1"]["ok"] is True  # Variante B ist nicht lesbar: kein Mangel
+    p = {"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": 45, "konfigurationen": ["Standard"]}
+    nur_ok(vergleich(spec(p), n))
 
 
 def test_punkt_mass_nirgends_lesbar_ist_none():
     n = kopie()
-    setze(n, "D2@Skizze4", "Standard", None)
+    for k in n["konfigurationen"]:
+        setze(n, "D2@Skizze4", k, None)
     p = {"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": 45}
     assert vergleich(spec(p), n)["punkt:p1"]["ok"] is None
 
@@ -206,7 +289,7 @@ def test_punkt_mass_fehlt():
 def test_punkt_neu_als_ausdruck():
     n = kopie()
     setze(n, "D2@Skizze4", "Standard", 15.0)
-    p = {"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": "=A_neu"}
+    p = {"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": "=A_neu", "konfigurationen": ["Standard"]}
     assert vergleich(spec(p), n, {"A_neu": 15})["punkt:p1"]["ok"] is True
     assert vergleich(spec(p), n, {"A_neu": 16})["punkt:p1"]["ok"] is False
 
@@ -271,15 +354,40 @@ def test_baum_neues_feature_erlaubt_nur_mit_punkt():
     assert e["baum"]["ok"] is False and "Gewinde M6" in str(e["baum"]["ist"])
     e = vergleich(spec(PUNKT_FEATURE), n)
     nur_ok(e)
-    assert e["baum"]["unbenannt"] == []
+    assert e["baum"]["ungeklaert"] == []
 
 
-def test_baum_neue_skizze_des_features_und_unbenannte_unterfeatures():
+def test_baum_neue_skizze_des_features_und_seine_unterfeatures():
     n = _neues_feature(kopie(), "Gewinde M6")
     _neues_feature(n, "Gewinde M6 Skizze")
-    _neues_feature(n, "Bohrungsgewinde1")  # behält den SolidWorks-Namen
+    _neues_feature(n, "Gewinde M6 Senkung Skizze")
+    _neues_feature(n, "Gewinde M6 2")
+    _neues_feature(n, "Bohrungsgewinde1")
+    feature(n, "Gewinde M6")["unter"] = ["Skizze6", "Bohrungsgewinde1"]  # behalten den SolidWorks-Namen
+    _neues_feature(n, "Skizze6")
+    nur_ok(vergleich(spec(PUNKT_FEATURE), n))
+
+
+def test_baum_verirrte_neue_features_neben_dem_feature_punkt_sind_mangel():
+    """Review Fix 3: Ein feature-Punkt macht nicht jedes neue Feature erlaubt."""
+    n = _neues_feature(kopie(), "Gewinde M6")
+    _neues_feature(n, "Schnitt-Linear2")
     e = vergleich(spec(PUNKT_FEATURE), n)
-    assert e["baum"]["ok"] is True and e["baum"]["unbenannt"] == ["Bohrungsgewinde1"]
+    assert e["baum"]["ok"] is False and "Schnitt-Linear2" in e["baum"]["hinweis"]
+    n = _neues_feature(kopie(), "Gewinde M6")
+    _neues_feature(n, "Bohrungsgewinde1", nach="Aufsatz")  # nicht in `unter`, mitten im Bestand
+    assert vergleich(spec(PUNKT_FEATURE), n)["baum"]["ok"] is False
+    n = _neues_feature(kopie(), "Gewinde M6")
+    _neues_feature(n, "Gewinde M6 Zweite Bohrung")  # ein Namenspräfix erklärt nicht alles
+    assert vergleich(spec(PUNKT_FEATURE), n)["baum"]["ok"] is False
+    n = _neues_feature(kopie(), "Schnitt-Linear2")  # nur ein mass-Punkt
+    assert vergleich(spec({"id": "p1", "typ": "mass", "mass": "D2@Skizze4", "alt": 40, "neu": 40}), n)["baum"]["ok"] is False
+
+
+def test_baum_feature_punkt_mit_vorhandenem_namen():
+    p = {**PUNKT_FEATURE, "name": "Aufsatz"}
+    e = vergleich(spec(p), kopie())["punkt:p3"]
+    assert e["ok"] is False and "schon im Bestand" in e["hinweis"]
 
 
 def test_baum_feature_punkt_nach():
@@ -390,6 +498,65 @@ def test_unterdruecken_nimmt_kinder_und_skizzen_mit():
     e = vergleich(spec(p), n)
     nur_ok(e)
     feature(n, "Aufsatz")["unterdrueckt"]["Standard"] = True  # nicht abhängig: Mangel
+    assert vergleich(spec(p), n)["konfigurationen"]["ok"] is False
+
+
+def test_aufheben_nimmt_die_kinder_nicht_mit():
+    """Review Fix 4: Die Richtung zählt. Aufheben löst nur das Feature (und seine eigene Skizze)."""
+    v = kopie()
+    for x in ("Bohrung2", "Fase3", "Verrundung1", "Skizze4"):
+        feature(v, x)["unterdrueckt"]["Variante B"] = True
+    n = kopie(v)
+    for x in ("Bohrung2", "Skizze4"):
+        feature(n, x)["unterdrueckt"]["Variante B"] = False
+    p = {"id": "p1", "typ": "aufheben", "feature": "Bohrung2", "konfigurationen": ["Variante B"]}
+    nur_ok(vergleich(spec(p), n, vorher=v))
+    feature(n, "Fase3")["unterdrueckt"]["Variante B"] = False  # das Kind ging ungewollt mit auf
+    assert vergleich(spec(p), n, vorher=v)["konfigurationen"]["ok"] is False
+
+
+def test_aufheben_punkt_darf_nichts_unterdruecken():
+    n = kopie()
+    feature(n, "Fase3")["unterdrueckt"]["Standard"] = True  # ein Kind wird unterdrückt
+    p = {"id": "p1", "typ": "aufheben", "feature": "Bohrung2", "konfigurationen": ["Standard"]}
+    assert vergleich(spec(p), n)["konfigurationen"]["ok"] is False
+
+
+def test_aufheben_punkt_unterdrueckt_nicht_das_feature_selbst():
+    n = kopie()
+    feature(n, "Bohrung2")["unterdrueckt"]["Standard"] = True  # False → True trotz aufheben-Punkt
+    p = {"id": "p1", "typ": "aufheben", "feature": "Bohrung2", "konfigurationen": ["Standard"]}
+    e = vergleich(spec(p), n)
+    assert e["konfigurationen"]["ok"] is False and e["punkt:p1"]["ok"] is False
+
+
+def test_unterdruecken_darf_nichts_aufheben():
+    v = kopie()
+    feature(v, "Fase3")["unterdrueckt"]["Standard"] = True
+    n = kopie(v)
+    feature(n, "Fase3")["unterdrueckt"]["Standard"] = False
+    p = {"id": "p1", "typ": "unterdruecken", "feature": "Bohrung2", "konfigurationen": ["Standard"]}
+    for x in ("Bohrung2", "Verrundung1", "Skizze4"):
+        feature(n, x)["unterdrueckt"]["Standard"] = True
+    assert vergleich(spec(p), n, vorher=v)["konfigurationen"]["ok"] is False
+
+
+def test_unterdruecken_mit_geteilter_skizze_und_unbeteiligten():
+    v = kopie()
+    feature(v, "Skizze4")["kinder"] = ["Bohrung2", "Aufsatz"]
+    feature(v, "Aufsatz")["eltern"] = ["Skizze1", "Skizze4"]
+    n = kopie(v)
+    for x in ("Bohrung2", "Fase3", "Verrundung1", "Skizze4"):
+        feature(n, x)["unterdrueckt"]["Standard"] = True
+    p = {"id": "p1", "typ": "unterdruecken", "feature": "Bohrung2", "konfigurationen": ["Standard"]}
+    assert vergleich(spec(p), n, vorher=v)["konfigurationen"]["ok"] is False  # Skizze4 hat noch ein aktives Kind
+    n = kopie()
+    for x in ("Bohrung2", "Fase3", "Verrundung1", "Skizze4"):
+        feature(n, x)["unterdrueckt"]["Standard"] = True
+        feature(n, x)["unterdrueckt"]["Variante B"] = True  # nicht genannte Konfiguration
+    assert vergleich(spec(p), n)["konfigurationen"]["ok"] is False
+    n = kopie()
+    feature(n, "Schnitt-Linear1")["unterdrueckt"]["Standard"] = True
     assert vergleich(spec(p), n)["konfigurationen"]["ok"] is False
 
 
@@ -570,10 +737,37 @@ def test_neue_externe_referenz():
 
 def test_vorhandene_externe_referenz_in_anderem_ordner_ist_nicht_neu():
     v = kopie()
+    v["datei"]["ordner"] = "C:\\Auftrag\\bestand-1"
+    v["externe_referenzen"] = ["C:\\Auftrag\\bestand-1\\Teile\\Basis.SLDPRT"]
+    n = kopie()
+    n["datei"]["ordner"] = "C:\\Auftrag\\lauf-1"
+    n["externe_referenzen"] = ["C:\\Auftrag\\lauf-1\\Teile\\Basis.SLDPRT"]
+    assert vergleich(SPEC_LEER, n, vorher=v)["externe_referenzen"]["ok"] is True
+    n["externe_referenzen"] = ["C:\\Auftrag\\lauf-1\\Andere\\Basis.SLDPRT"]  # gleicher Name, anderer Pfad
+    assert vergleich(SPEC_LEER, n, vorher=v)["externe_referenzen"]["ok"] is False
+
+
+def test_externe_referenzen_ohne_ordner_sind_nicht_nachgewiesen():
+    v = kopie()
     v["externe_referenzen"] = ["C:\\Auftrag\\bestand-1\\Basis.SLDPRT"]
     n = kopie()
-    n["externe_referenzen"] = ["C:\\Auftrag\\lauf-1\\Basis.SLDPRT"]
+    n["externe_referenzen"] = ["D:\\Kunde\\Original\\Basis.SLDPRT"]  # zeigt in den Kundenordner, ohne Ordner nicht erkennbar
+    assert vergleich(SPEC_LEER, n, vorher=v)["externe_referenzen"]["ok"] is None
+    n["externe_referenzen"] = ["D:\\Kunde\\Original\\Andere.SLDPRT"]
+    assert vergleich(SPEC_LEER, n, vorher=v)["externe_referenzen"]["ok"] is False
+    assert vergleich(SPEC_LEER, kopie(), vorher=kopie())["externe_referenzen"]["ok"] is True  # keine Referenzen: nichts offen
+
+
+def test_externe_referenz_ausserhalb_bleibt_nur_bei_gleichem_pfad_unveraendert():
+    v = kopie()
+    v["datei"]["ordner"] = "C:\\Auftrag\\bestand-1"
+    v["externe_referenzen"] = ["D:\\Kunde\\Basis.SLDPRT"]
+    n = kopie()
+    n["datei"]["ordner"] = "C:\\Auftrag\\lauf-1"
+    n["externe_referenzen"] = ["D:\\Kunde\\Basis.SLDPRT"]
     assert vergleich(SPEC_LEER, n, vorher=v)["externe_referenzen"]["ok"] is True
+    n["externe_referenzen"] = ["E:\\Fremd\\Basis.SLDPRT"]
+    assert vergleich(SPEC_LEER, n, vorher=v)["externe_referenzen"]["ok"] is False
 
 
 def test_externe_referenz_zeigt_aus_dem_lauf_ordner_heraus():
@@ -597,11 +791,14 @@ def test_skript_punkt_ist_nicht_pruefbar():
     assert e["punkt:p6"]["ok"] is None and "Notausgang" in e["punkt:p6"]["hinweis"]
 
 
-def test_skript_punkt_erlaubt_neue_features_ohne_namen():
+def test_skript_punkt_neue_features_sind_nicht_nachgewiesen():
     n = _neues_feature(kopie(), "Irgendwas")
     p = {"id": "p6", "typ": "skript", "datei": "skripte/p6.py", "luecke": "x"}
     e = vergleich(spec(p), n)
-    assert e["baum"]["ok"] is True and e["baum"]["unbenannt"] == ["Irgendwas"]
+    assert e["baum"]["ok"] is None and e["baum"]["ungeklaert"] == ["Irgendwas"] and "Irgendwas" in e["baum"]["hinweis"]
+    # ein echter Mangel im Baum hat Vorrang
+    n["reihenfolge"]["Standard"].remove("Fase3")
+    assert vergleich(spec(p), n)["baum"]["ok"] is False
 
 
 def test_eingaben_bleiben_unveraendert():
