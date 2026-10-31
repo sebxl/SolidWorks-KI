@@ -116,6 +116,24 @@ Sonde an Kopien des Musters unter `<arbeitsordner>/S18-T6/`. Skript und Rohdaten
   dem Umschalten, erster Einsatz des Bohrungsassistenten in der Sitzung. Die Stelle ist unbekannt, der Lauf hatte keinen Traceback. Der
   Bau brach sauber ab: nichts gespeichert, Dokument geschlossen, der nächste Lauf ging. Keine Wiederholung eingebaut.
 
+### Nachträge aus Task 8 (live, 2026-10-31)
+
+Sonde an einer Kopie des Musters, nur lesend und unsichtbar geöffnet; Vergleichskörper aus `IModeler.CreateBodyFromBox3`. Skript ist
+Wegwerf.
+
+- **Getrennte Körper liefern das Ziel unverändert, Code 0,** ob sich die Hüllquader überlappen (Quader in der Tasche, Platte minus
+  Quader und Quader minus Platte) oder nicht (Quader 500 mm entfernt). `(None, 0)` kommt nur bei gleichen Körpern. Damit trägt „jedes
+  Ziel minus alle Werkzeuge" aus Zeile d ohne Paaren nach Lage: Ein Körper auf nur einer Seite ist von selbst als Ganzes eine
+  Abweichung, ein zerschnittener Körper braucht keinen Sonderfall. Der Enum kennt `swBodyOperationDisjointBodies` (5) und
+  `swBodyOperationNoIntersect` (1067), beide kamen hier nicht vor; ein Code ungleich 0 heißt „nicht nachgewiesen".
+- **Differenz geht auch an nur lesend geöffneten Dokumenten** (`Copy2`, `Operations2`, `GetMassProperties`).
+- **Toleranz:** Unter der Toleranz liegt eine Abweichung, wenn `min(kleinste Box-Kante, 2 · 2·Volumen/Fläche)` darunter liegt. `2V/A`
+  ist nur die mittlere Dicke, die größte liegt bis zum Doppelten darüber: Sichel 20 µm (Zeile d) im Mittel 12,7 µm, eine Sichel von
+  12 µm käme mit `2V/A` allein durch. Die kleinste Box-Kante allein träfe nur achsparallele Schichten. Folge: Gleichmäßige schräge Schichten
+  und Ringe zählen schon ab 5 µm, das ist ein Fehlalarm, kein falsches „ok". Live: Fläche +5 µm: Volumen 5,99, Dicke 0,005, zählt nicht.
+- **Bilanz:** `koerper_differenz` vergleicht die Summe der Differenzkörper mit der Volumenänderung beider Stände; ein stilles leeres
+  Ergebnis wäre sonst ein falsches „ok". Flächenkörper sieht `Operations2` hier nicht, sie machen die Konfiguration „nicht nachgewiesen".
+
 ### Folgen für die Tasks
 
 - **Task 5 (Aufnahme):** Werte durch Umschalten lesen, Dubletten zusammenlegen, `zustand` wie oben ableiten, Namen ohne letztes

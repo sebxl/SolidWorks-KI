@@ -15,7 +15,7 @@ Annahmen, die live noch zu bestätigen sind (Task 11):
 - Unterdrücken nimmt Kinder und die Skizzen mit, deren Kinder alle betroffen sind (S18c: Grundplatte → Tasche, Fase), nur
   False→True; Aufheben nur das Feature und seine eigenen Skizzen, nur True→False (die Kinder bleiben unterdrückt).
 - Neue Features erklärt nur ein `feature`-Punkt: sein `name`, die Namen, die `_neuer_name` im Bau daraus macht (`Name Skizze`,
-  `Name Senkung`, `Name 2`), und die Unterfeatures (`unter`) des neuen Features. Bei `skript`-Punkten bleiben unerklärbare neue
+  `Name Senkung`, `Name Senkung Skizze`), und die Unterfeatures (`unter`) des neuen Features. Bei `skript`-Punkten bleiben unerklärbare neue
   Features `ok: None`.
 - Optional trägt `datei.ordner` in beiden Aufnahmen den Ordner der Datei (setzt der Aufrufer); nur damit lassen sich externe
   Referenzen über den Pfad (relativ zum Ordner) vergleichen.

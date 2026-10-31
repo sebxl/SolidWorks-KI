@@ -252,7 +252,7 @@ def richte_ein(app, model, spec: dict, tol_mm: float) -> tuple[list[Flaeche], di
     return flaechen, einbau, gewinde
 
 
-def _messpunkt(mp: dict, einbau: dict, gewinde: dict, flaechen: list[Flaeche], tol_mm: float) -> Messgeometrie | str:
+def messpunkt(mp: dict, einbau: dict, gewinde: dict, flaechen: list[Flaeche], tol_mm: float) -> Messgeometrie | str:
     if "punkt" in mp:
         return Messgeometrie("punkt", tuple(mp["punkt"]))
     if "referenz" in mp:
@@ -288,7 +288,7 @@ def _durchmesser(spec: dict, einbau: dict, flaechen: list[Flaeche], tol_mm: floa
 def messe(model, spec: dict, flaechen: list[Flaeche], einbau: dict, gewinde: dict, tol_mm: float) -> KaufteilMesswerte:
     mp = masseneigenschaften(model)   # None ohne Volumenkörper: Volumen 0, Masse 0, nicht überschrieben
     pr = spec.get("pruefung", {})
-    punkte = {messpunkt_schluessel(p): _messpunkt(p, einbau, gewinde, flaechen, tol_mm)
+    punkte = {messpunkt_schluessel(p): messpunkt(p, einbau, gewinde, flaechen, tol_mm)
               for m in pr.get("masse_pruefen", []) for p in (m["von"], m["zu"])}
     return KaufteilMesswerte(
         rebuild_fehler=rebuild_fehler(model), koerper=len(koerper(model)), flaechenkoerper=flaechenkoerper(model),

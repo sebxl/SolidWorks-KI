@@ -37,11 +37,16 @@ def pruefe_lauf_gebaut(protokoll: dict, lauf: int) -> None:
 
 
 def lade_spec_beliebig(spec_pfad: Path) -> dict:
-    """Geprüfte Spezifikation eines Teils oder einer Baugruppe (für status und bericht)."""
-    if art_der_datei(spec_pfad) == "baugruppe":
+    """Geprüfte Spezifikation eines Teils, einer Baugruppe oder einer Änderung (für status und bericht)."""
+    art = art_der_datei(spec_pfad)
+    if art == "baugruppe":
         from swki.baugruppe.laden import lade_baugruppe  # spät importiert (Kreisimport)
 
         return lade_baugruppe(spec_pfad).spec
+    if art == "aenderung":
+        from swki.bestand.spec import lade_aenderung  # spät importiert (Kreisimport)
+
+        return lade_aenderung(spec_pfad)
     return lade_spec(spec_pfad)
 
 
@@ -77,10 +82,15 @@ def steckbrief_fuer(app, model, ordner: Path) -> dict:
 
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
-    if art_der_datei(spec_pfad) == "baugruppe":
+    art = art_der_datei(spec_pfad)
+    if art == "baugruppe":
         from swki.baugruppe.pruefen import pruefen as baugruppe_pruefen  # spät importiert (Kreisimport)
 
         return baugruppe_pruefen(spec_pfad, lauf)
+    if art == "aenderung":
+        from swki.bestand.pruefen import pruefen as aenderung_pruefen  # spät importiert (Kreisimport)
+
+        return aenderung_pruefen(spec_pfad, lauf)
     spec = lade_spec(spec_pfad)
     pruefe_freigabe(spec_pfad, spec)
     r, standard = lade_rechner(), lade_standard()

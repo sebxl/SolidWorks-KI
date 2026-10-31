@@ -102,6 +102,16 @@ def lauf_kopie(quelle: Path, ordner: Path) -> Path:
     return ziel
 
 
+def vorher_kopie(quelle: Path, ordner: Path) -> Path:
+    """Kopie der Bestandskopie für den Vergleich im Lauf-Ordner `ordner`: unter anderem Namen (SolidWorks öffnet keine zwei
+    gleichnamigen Dokumente, S18d) und beschreibbar (sonst Warnung beim Öffnen). Sie steht in keiner Prüfsumme des Laufs."""
+    ziel = ordner / "vergleich" / f"vorher_{quelle.name}"
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(quelle, ziel)
+    os.chmod(ziel, stat.S_IREAD | stat.S_IWRITE)
+    return ziel
+
+
 def pruefe_kopie(aufnahme: dict, pfad: Path) -> None:
     """Die Bestandskopie muss noch die aufgenommene sein (SHA-256 aus `aufnahme["datei"]["sha256"]`)."""
     soll = aufnahme["datei"]["sha256"]

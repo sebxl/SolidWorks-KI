@@ -9,9 +9,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from swki.aenderungen import sha256_datei
+from swki.aenderungen import pruefe_unveraendert, sha256_datei
 from swki.bestand import bau, befehle
 from swki.bestand.ablage import bestand_ordner, lade_aufnahme
+from swki.bestand.pruefen import pruefen
 from swki.bestand.spec import freigeben, validieren
 from swki.bestand.sw_bestand import bstr_array, lies_bestand
 from swki.compiler import sw
@@ -99,13 +100,18 @@ NORMBOHRUNG = {"typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche
                "positionen": [["=-50+RA", 24], ["=-50+RA", -24]], "bezug": {"u": "-rand", "v": "mitte"}, "tiefe": 10, "gewindetiefe": 8}
 
 
-def _aenderung(tmp_path, auftrag: str, a: dict, punkte: list[dict]) -> Path:
+def _aenderung(tmp_path, auftrag: str, a: dict, punkte: list[dict], name="aenderung", box=([-60, -40, -1], [70, 40, 30]),
+               pruefung=None, features=None) -> Path:
     """Spec im Auftragsordner, validiert und für diesen Test freigegeben."""
-    pfad = tmp_path / auftrag / "aenderung.yaml"
+    pfad = tmp_path / auftrag / f"{name}.yaml"
     pfad.parent.mkdir(exist_ok=True)
     spec = {"art": "aenderung", "name": "Lagerdeckel_Rev",
             "bestand": {"datei": a["datei"]["name"], "sha256": a["datei"]["sha256"], "aufnahme": 1}, "parameter": {"RA": 12},
-            "punkte": punkte, "bereiche": [{"punkte": [p["id"] for p in punkte], "box": {"min": [-60, -40, -1], "max": [70, 40, 30]}}]}
+            "punkte": punkte, "bereiche": [{"punkte": [p["id"] for p in punkte], "box": {"min": box[0], "max": box[1]}}]}
+    if pruefung:
+        spec["pruefung"] = pruefung
+    if features:
+        spec["bereiche"] = [{"punkte": [p["id"] for p in punkte], "features": features}]
     pfad.write_text(yaml.safe_dump(spec, allow_unicode=True, sort_keys=False), encoding="utf-8")
     validieren(pfad)
     freigeben(pfad)
@@ -213,6 +219,85 @@ def test_unmoeglicher_zug_speichert_nicht(auftrag, tmp_path):
     assert d["fehler"]["punkt"] == "p1" and d["dateien"] == {}
     assert [k["status"] for k in d["knoten"]] == ["fehler", "uebersprungen"]
     assert sha256_datei(Path(d["ordner"]) / MUSTER.name) == sha
+
+
+def test_pruefen_besteht_und_zu_enger_bereich(auftrag, tmp_path):
+    """Brief Step 8. Bestand und Lauf heißen gleich (Plan Review Focus 1), die Fase verschwindet nur in Standard. Ohne Skript-Punkt:
+    Sein `ok: None` bestünde nie."""
+    r = lade_rechner()
+    sha = sha256_datei(MUSTER)
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(r, auftrag, 1)
+    kopie = bestand_ordner(r, auftrag, 1) / MUSTER.name
+    punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer", "mass": TASCHE, "alt": 8, "neu": 9},
+              {"id": "p2", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1"]},
+              {"id": "p3", "typ": "unterdruecken", "was": "Fase weg", "feature": "Fase1", "konfigurationen": ["Standard"]},
+              {"id": "p4", "typ": "feature", "was": "Gewinde", "name": "Gewinde M6 Deckel", "feature": NORMBOHRUNG},
+              {"id": "p5", "typ": "eigenschaft", "name": "Revision", "neu": "B"}]
+    pruefung = {"masse_pruefen": [
+        {"was": "Randabstand", "von": {"flaeche": {"nahe": [-50, 0, 10], "normale": [-1, 0, 0]}}, "zu": {"punkt": ["=-50+RA", 24, 20]},
+         "soll": "=RA"},
+        {"was": "Dicke", "von": {"feature": "Aufsatz-Linear austragen1", "flaeche": "+z"}, "zu": {"punkt": [0, 0, 0]}, "soll": 20}]}
+    spec = _aenderung(tmp_path, auftrag, a, punkte, pruefung=pruefung)
+    datei = Path(bau.bauen(spec)["dateien"]["teil"])
+    sha_lauf = sha256_datei(datei)
+
+    b = pruefen(spec)
+    assert b["maengel"] == [] and b["bestanden"] is True, b["maengel"]
+    assert all(e["ok"] is True for e in b["pruefungen"])
+    vorher = datei.parent / "vergleich" / f"vorher_{MUSTER.name}"
+    assert b["vorher"] == str(vorher) and sha256_datei(vorher) == sha and sha256_datei(datei) == sha_lauf
+    assert sha256_datei(kopie) == sha and sha256_datei(MUSTER) == sha and pruefe_unveraendert(r, auftrag, spec) is None
+    assert verbinde(r.sw_jahr).GetDocuments in (None, ())
+    assert {Path(p).name for p in b["bilder"].values()} == {"iso.png", "vorne.png", "oben.png", "rechts.png"}
+    assert all(Path(p).stat().st_size for p in [*b["bilder"].values(), *b["bilder_vorher"].values()])
+    masse = {e["id"]: e for e in b["pruefungen"] if e["id"].startswith("mass:")}
+    assert masse["mass:Randabstand"]["ist"] == pytest.approx(12) and masse["mass:Dicke"]["ist"] == pytest.approx(20)
+
+    # Volumen unabhängig von den Differenzkörpern: Die Aufnahmen beider Stände müssen zur Differenz passen
+    n = _lies_lauf(datei)
+    for k in a["konfigurationen"]:
+        d = sum(x["volumen"] * (1 if x["art"] == "hinzu" else -1) for x in b["differenzen"][k])
+        assert d == pytest.approx(n["geometrie"][k]["volumen"] - a["geometrie"][k]["volumen"], abs=0.1), k
+    assert all(x["bereich"] == 0 for k in a["konfigurationen"] for x in b["differenzen"][k])
+    assert len(b["differenzen"]["Standard"]) >= 2  # Fase und Tasche liegen getrennt
+
+    eng = _aenderung(tmp_path, auftrag, a, punkte, name="eng", box=([-60, -40, -1], [0, 40, 30]))  # die rechte Seite fehlt
+    bau.bauen(eng)
+    b = pruefen(eng)
+    assert b["bestanden"] is False
+    m = [x for x in b["maengel"] if x["pruefung"] == "bereich"]
+    assert len(m) == 2 and "mm³" in m[0]["beschreibung"] and "x " in m[0]["beschreibung"]
+    assert {x["pruefung"] for x in b["maengel"]} == {"bereich"}
+
+
+def test_verschobene_flaeche_5_um_liegt_unter_der_toleranz(auftrag, tmp_path):
+    """S18d an `swki pruefen`: Der Körper ist exakt da, zählt aber nicht; `punkt` meldet, dass im Bereich nichts geschah."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    punkte = [{"id": "p1", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 100.005, "folgen": ["D1@Skizze1"]}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte, box=([-60, -40, -1], [-40, 40, 30]))
+    bau.bauen(spec)
+    b = pruefen(spec)
+    d = b["differenzen"]["Standard"]
+    assert len(d) == 1 and d[0]["art"] == "hinzu" and d[0]["volumen"] == pytest.approx(5.99, abs=0.01)
+    assert d[0]["unter_toleranz"] is True and d[0]["dicke"] == pytest.approx(0.005, abs=1e-5) and d[0]["bereich"] is None
+    assert [e["ok"] for e in b["pruefungen"] if e["id"] == "bereich"] == [True, True]
+    assert [m["pruefung"] for m in b["maengel"]] == ["punkt:p1"]
+
+
+def test_feature_bereich_aus_den_flaechen_vorher(auftrag, tmp_path):
+    """Die Fase hat nachher keine Flächen mehr, ihr Bereich kommt aus dem Vorher-Dokument; Variante B ändert sich nicht."""
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    punkte = [{"id": "p1", "typ": "unterdruecken", "was": "Fase weg", "feature": "Fase1"}]
+    spec = _aenderung(tmp_path, auftrag, a, punkte, features=["Fase1"])
+    bau.bauen(spec)
+    b = pruefen(spec)
+    assert b["maengel"] == [] and b["bestanden"] is True, b["maengel"]
+    [d] = b["differenzen"]["Standard"]
+    assert d["art"] == "hinzu" and d["bereich"] == 0 and d["volumen"] == pytest.approx(200, abs=0.01)
+    assert b["differenzen"]["Variante B"] == []
 
 
 def test_aktive_konfiguration_bleibt_unterdrueckte_skizze_stoert_nicht(auftrag):
