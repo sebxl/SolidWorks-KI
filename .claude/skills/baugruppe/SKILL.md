@@ -1,6 +1,6 @@
 ---
 name: baugruppe
-description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen) in SolidWorks aus Eigenteilen und Normteilen – Teil-Specs und Baugruppen-Spec schreiben, validieren, eine Freigabe, bauen, prüfen (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage, Teilprüfungen), Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer mehrere Teile zusammenbauen, verschrauben, verstiften oder eine Baugruppe ändern will.
+description: Konstruiert eine Baugruppe (statisch oder mit begrenzten Bewegungen) in SolidWorks aus Eigenteilen und Normteilen – Teil-Specs und Baugruppen-Spec schreiben, validieren, eine Freigabe, bauen, prüfen (Verknüpfungen, Bestimmtheit, Kollision, Gewinde, Lage, Teilprüfungen), Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer mehrere Teile zusammenbauen, verschrauben, verstiften oder eine aus eigenen swki-Specs gebaute Baugruppe ändern will. Fremde Dateien, die swki nicht gebaut hat, gehen über den Skill aendern; eine fremde Baugruppe wird nicht nachgebaut.
 ---
 
 # Baugruppe (Stufe 3b, Kaufteile Stufe 3c, Bewegungen Stufe 4a, Kopplungen Stufe 4b)

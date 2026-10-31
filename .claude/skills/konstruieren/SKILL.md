@@ -1,6 +1,6 @@
 ---
 name: konstruieren
-description: Konstruiert ein Einzelteil in SolidWorks aus Skizze, Beschreibung oder Anweisung – Spezifikation schreiben, validieren, Rückfragen, Freigabe durch den Nutzer, bauen, prüfen, unabhängiger Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer ein Teil konstruiert, gebaut oder geändert haben will.
+description: Konstruiert ein Einzelteil in SolidWorks aus Skizze, Beschreibung oder Anweisung – Spezifikation schreiben, validieren, Rückfragen, Freigabe durch den Nutzer, bauen, prüfen, unabhängiger Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer ein Teil konstruiert, gebaut oder ein aus eigener swki-Spec gebautes Teil geändert haben will. Fremde Dateien, die swki nicht gebaut hat, gehen über den Skill aendern.
 ---
 
 # Konstruieren (Einzelteil, Stufe 2/2c)

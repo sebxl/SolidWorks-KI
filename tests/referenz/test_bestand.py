@@ -5,7 +5,6 @@ Regressions-Suite (`tests/live_einzeln.py tests/referenz`); Negativfälle in `te
 import json
 import math
 import shutil
-import stat
 from pathlib import Path
 
 import pytest
@@ -17,7 +16,7 @@ from swki.bestand import befehle
 from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.spec import validieren
 from swki.durchlauf import durchlauf
-from swki.konfig import Rechner, lade_rechner
+from swki.konfig import Rechner
 from swki.spec.normen import bohrspitze_grad, normmasse
 
 ORDNER = Path(__file__).parent / "bestand"
@@ -72,21 +71,6 @@ def test_volumen_delta_aus_rechnung():
     soll = s["pruefung"]["volumen_delta"]
     assert soll["soll"] == pytest.approx((variante_b + standard) / 2, abs=0.01)
     assert abs(variante_b - standard) / 2 < soll["soll"] * soll["toleranz_prozent"] / 100
-
-
-def _aufraeumen(pfad: Path) -> None:
-    for p in pfad.rglob("*"):
-        if p.is_file():
-            p.chmod(stat.S_IWRITE)  # Bestandskopien sind schreibgeschützt
-    shutil.rmtree(pfad, ignore_errors=True)
-
-
-@pytest.fixture
-def auftrag():
-    pfad = lade_rechner().arbeitsordner / AUFTRAG
-    _aufraeumen(pfad)
-    yield AUFTRAG
-    _aufraeumen(pfad)
 
 
 @pytest.mark.sw

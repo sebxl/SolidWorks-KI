@@ -96,6 +96,8 @@ oder die Prüfungs-ID.
 Du bekommst den Auftrag des Nutzers (Eingabe), die freigegebene Änderungs-Spec, den Prüfbericht, Vorher-Bilder (Bestand) und
 Nachher-Bilder (Screenshots des Laufs) derselben Ansichten. Knoten sind Punkt-IDs (`p3`) oder die Prüfungs-ID (`bereich`, `masse`).
 Maßstab sind Auftrag und Punkte: Der Rest der Datei gehört dem Kollegen, sein Stil und seine offenen Skizzen sind kein Mangel.
+Hier ist `ok: null` nicht zulässig, auch nicht mit Hinweis (abweichend von Checkliste 4): Jede Code-Prüfung ist `ok: true`, was nicht
+nachgewiesen ist, ist nicht bestanden.
 1. Jeder Punkt ist sichtbar umgesetzt und sitzt an der gemeinten Stelle (Bilder vorher/nachher, `punkt:<id>`, `differenzen`). Was
    kein Bild zeigt (Gewindegröße, Tiefe, Eigenschaft), belegt `punkt:<id>` mit `ist`/`soll`.
 2. Nichts sonst ist verändert: Vorher- und Nachher-Bilder gleichen sich außerhalb der Punkte, jede Differenz in `differenzen` hat

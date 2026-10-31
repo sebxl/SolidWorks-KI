@@ -36,21 +36,6 @@ SW_WARNUNG_ID, SW_WARNUNG_REFERENZ_FEHLT = 1, 1048576  # swFileLoadWarning_e: Id
 SW_KOMPONENTE_ID_FALSCH = 5  # swComponentSuppressionState_e.swComponentInternalIdMismatch
 
 
-def _aufraeumen(pfad: Path) -> None:
-    for p in pfad.rglob("*"):
-        if p.is_file():
-            p.chmod(stat.S_IWRITE)  # Bestandskopien sind schreibgeschützt
-    shutil.rmtree(pfad, ignore_errors=True)
-
-
-@pytest.fixture
-def auftrag():
-    pfad = lade_rechner().arbeitsordner / AUFTRAG
-    _aufraeumen(pfad)
-    yield AUFTRAG
-    _aufraeumen(pfad)
-
-
 def test_aufnahme_musterteil(auftrag):
     r = lade_rechner()
     sha = sha256_datei(MUSTER)

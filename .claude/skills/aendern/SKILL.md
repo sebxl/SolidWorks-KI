@@ -1,6 +1,6 @@
 ---
 name: aendern
-description: Ändert ein fremdes SolidWorks-Teil (Datei eines Kollegen, nicht von swki gebaut) gezielt an einer Arbeitskopie – Bestand aufnehmen, Revisionspunkte zuordnen, Änderungs-Spec, Freigabe durch den Nutzer, bauen, vorher/nachher prüfen, Prüfer, Ausgabe unter dem Originalnamen. Verwenden, wenn der Nutzer eine .sldprt eines Kollegen revidieren lässt. Eigene swki-Teile ändert der Skill konstruieren.
+description: Ändert eine fremde SolidWorks-Datei (Bestandsdatei, Datei eines Kollegen, bestehendes Teil, nicht von swki gebaut) gezielt an einer Arbeitskopie – Bestand aufnehmen, Revisionspunkte zuordnen, Änderungs-Spec, Freigabe durch den Nutzer, bauen, vorher/nachher prüfen, Prüfer, Ausgabe unter dem Originalnamen. Verwenden bei einer Revision oder wenn ein Maß, Feature, Material oder eine Eigenschaft in einer vorhandenen Datei geändert werden soll. Etappe 1 nur Teile, fremde Baugruppen noch nicht. Teile aus eigenen swki-Specs ändert der Skill konstruieren.
 ---
 
 # Ändern (Bestandsdateien, Etappe 1)
@@ -22,7 +22,8 @@ genannten Punkte. Der **Präzisionsschutz** weist das nach. Fünf Regeln gelten 
 ## 1. Abgrenzung
 
 - **Eigene swki-Konstruktionen:** Die Spec ist die Quelle, Skill `konstruieren` bzw. `baugruppe`.
-- **Baugruppen** kommen in Etappe 2 (`BESTAND_FORMAT`). **Dateien ohne Baum** (STEP, IGES) gibt es hier nicht; Kaufteile bleiben nur lesen.
+- **Fremde Baugruppen** kommen in Etappe 2 (`BESTAND_FORMAT`): dem Nutzer diese Grenze nennen; Skill `baugruppe` baut sie nicht nach. **Dateien ohne
+  Baum** (STEP, IGES) gibt es hier nicht; Kaufteile bleiben nur lesen.
 - **Teile mit externen Referenzen** (abgeleitet, gespiegelt, im Kontext, verknüpfte Gleichungsdatei) lehnt `aufnehmen` ab
   (`BESTAND_REFERENZ_EXTERN` mit Liste): dem Nutzer nennen.
 - **Konstruktionstabelle** (`tabelle: true`): Tabellenmaße und alle `unterdruecken`/`aufheben`-Punkte der Datei sperrt `validieren`
@@ -40,6 +41,8 @@ Die Ausgabe nennt `sha256`, `aufnahme`, Konfigurationen, Variablen, `tabelle`, F
 `gesteuert`, `getrieben`), dazu `skizzen_offen`, `neuaufbau`, `bilder`, `bestand_json` (Rohdaten: Quelle, Gruppe, `punkte` = Modelllage des Maßes).
 Bilder ansehen. Fehler in `neuaufbau` und offene Skizzen gehören dem Kollegen: dem Nutzer nennen, sie bleiben. `version_aelter: true` siehe §5.
 Hat der Kollege weitergearbeitet (andere SHA-256), entsteht `bestand-<n+1>` und die Spec zieht auf die neue Aufnahme um (`BESTAND_VERALTET`).
+`BESTAND_ANDERE_DATEI`: Ein Auftrag nimmt genau eine Datei auf, für die zweite einen neuen Auftrag anlegen. `BESTAND_NICHT_LESBAR`: Das Original fehlt oder
+ist gesperrt, den Nutzer fragen.
 
 ## 3. Punkte zuordnen
 
@@ -116,8 +119,8 @@ pruefung?:
 | `BEREICH_FEHLT` | Bereich ergänzen |
 
 **Freigabe-Vorlage** (eine Nachricht): je Punkt **Stelle** in Worten, **alt → neu**, **Folgen** (Maße, die mitgehen; mitgelöschte Features), **Konfigurationen**,
-**Bereich** und bei fremden Maßen und Features ein **Bild** aus `swki bestand zeige`. Dazu „Selbst entschieden“, offene Skizzen und Fehler im Bestand, und bei einer älteren Datei: „Nach dem Speichern
-nur noch mit SolidWorks ≥ <Jahr> lesbar.“ Ohne ausdrückliches OK wird nichts freigegeben. Ein OK gilt für den ganzen Auftrag. Nach dem OK: `swki durchlauf <spec> --freigeben`.
+**Bereich** und bei fremden Maßen und Features ein **Bild** aus `swki bestand zeige`. Dazu „Selbst entschieden“, offene Skizzen und Fehler im Bestand. Bei einer älteren Datei fragt die Vorlage das Hochstufen
+ausdrücklich: „Darf die Datei hochgestuft werden? Sie ist danach nur noch mit SolidWorks ≥ <Jahr> lesbar, das lässt sich nicht rückgängig machen.“ Ohne ausdrückliches OK wird nichts freigegeben. Ein OK gilt für den ganzen Auftrag. Nach dem OK: `swki durchlauf <spec> --freigeben`.
 
 Die Prüfsumme schützt `bestand`, `parameter`, Punkte, `bereiche` und `pruefung`. Bauweg bleiben Anker, `bezug`, `nach`, Skriptdateien und die Reihenfolge der Punkte.
 Ältere Datei: `swki durchlauf` baut sie nicht. Nach dem OK zum Hochstufen `swki freigeben <spec>`, `swki bauen <spec> --hochstufen`, `swki pruefen <spec>`, `swki status <spec>`.
@@ -154,4 +157,5 @@ Nach `bestanden`: `swki bestand ausgabe <spec> [--lauf n]` kopiert die geändert
 - `BESTAND_LIZENZ`: Rechner A läuft laut API als Student, die Datei trägt das mit. Ob sie sich beim Kollegen mit Vollversion so verwenden lässt, ist nicht gemessen. Vor dem Rückweg an einen
   Kollegen mit dem Nutzer klären.
 - `BESTAND_ORIGINAL_GEAENDERT`: Das Original ist neuer als die Aufnahme, Zurückkopieren überschriebe Arbeit des Kollegen. Nutzer fragen, ggf. neu aufnehmen.
+- `BESTAND_NICHT_LESBAR`: Das Original lässt sich nicht lesen, ob es sich geändert hat, ist unbekannt. Vor dem Zurückkopieren mit dem Nutzer prüfen.
 - `LAUF_NICHT_BESTANDEN`: Ausgegeben wird nur ein Lauf mit bestandenen Code-Prüfungen und Prüfer-Urteil.
