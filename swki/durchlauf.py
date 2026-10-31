@@ -60,6 +60,8 @@ def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
              f"Freigegebene Spezifikation(en): {kopien}.", f"Prüfbericht: {lauf_datei(spec_pfad, lauf, 'pruefbericht')}."]
     if bilder:
         teile.append(f"Screenshots: {', '.join(bilder)}.")
+    if vorher := sorted({str(b) for b in (bericht.get("bilder_vorher") or {}).values()}):   # nur bei art: aenderung
+        teile.append(f"Vorher-Bilder (Bestand, dieselben Ansichten wie die Screenshots): {', '.join(vorher)}.")
     if steck:
         teile.append(f"Geometrie-Steckbrief: {steck} (Lage und Vorzeichen zuerst daran prüfen).")
     teile.append("Lies alle genannten Dateien in deiner ersten Antwort parallel. Antworte nur mit dem JSON-Urteil.")

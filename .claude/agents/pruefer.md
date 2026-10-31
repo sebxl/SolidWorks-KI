@@ -92,6 +92,19 @@ oder die Prüfungs-ID.
 - `formschraegen` im Prüfbericht ist ok (Winkel je Seitenfläche unter `gemessen`); sonst steht es schon als Mangel im
   Prüfbericht.
 
+## Zusätzlich bei Änderungen (`art: aenderung`, fremde Bestandsdatei)
+Du bekommst den Auftrag des Nutzers (Eingabe), die freigegebene Änderungs-Spec, den Prüfbericht, Vorher-Bilder (Bestand) und
+Nachher-Bilder (Screenshots des Laufs) derselben Ansichten. Knoten sind Punkt-IDs (`p3`) oder die Prüfungs-ID (`bereich`, `masse`).
+Maßstab sind Auftrag und Punkte: Der Rest der Datei gehört dem Kollegen, sein Stil und seine offenen Skizzen sind kein Mangel.
+Abweichend von Checkliste 4 ist `ok: null` hier nicht zulässig, auch nicht mit Hinweis. Jede Code-Prüfung muss `ok: true` sein; was nicht
+nachgewiesen ist, ist nicht bestanden.
+1. Jeder Punkt ist sichtbar umgesetzt und sitzt an der gemeinten Stelle (Bilder vorher/nachher, `punkt:<id>`, `differenzen`). Was
+   kein Bild zeigt (Gewindegröße, Tiefe, Eigenschaft), belegt `punkt:<id>` mit `ist`/`soll`.
+2. Nichts sonst ist verändert: Vorher- und Nachher-Bilder gleichen sich außerhalb der Punkte, jede Differenz in `differenzen` hat
+   einen `bereich` und gehört zu einem Punkt, je Konfiguration.
+3. Folgen sind plausibel: `folgen` und die Differenzen passen zu dem, was laut Auftrag mitgehen muss (verknüpfte Maße, Gleichung).
+4. Nichts ist aufgeräumt: keine umbenannten Features, keine entfernten Gleichungen, keine nachträglich bestimmten Skizzen.
+
 ## Antwort (genau dieses JSON, sonst nichts)
 Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach, zum Beispiel:
 

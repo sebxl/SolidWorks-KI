@@ -1,0 +1,26 @@
+{
+ "start_mb": 436,
+ "bilder": {
+  "ohne": "C:\\Users\\User\\.swki\\arbeit\\S18\\e\\ohne.png",
+  "feature": "C:\\Users\\User\\.swki\\arbeit\\S18\\e\\feature.png",
+  "mass_auswahl": true,
+  "mass_nur_auswahl": "C:\\Users\\User\\.swki\\arbeit\\S18\\e\\mass_nur_auswahl.png",
+  "toggles": [
+   true,
+   true
+  ],
+  "annotation": {
+   "sichtbar": 1,
+   "name": "D2"
+  },
+  "ann_auswahl": false,
+  "mass_annotation": "C:\\Users\\User\\.swki\\arbeit\\S18\\e\\mass_annotation.png",
+  "aktiv": true,
+  "skizze_auswahl": false,
+  "mass_in_skizze": "C:\\Users\\User\\.swki\\arbeit\\S18\\e\\mass_in_skizze.png",
+  "fehler_danach": [],
+  "veraendert": false
+ },
+ "sekunden": 8.6,
+ "ende_mb": 3094
+}

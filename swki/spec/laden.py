@@ -360,7 +360,9 @@ def _verzahnung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
     return befunde
 
 
-def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
+def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] = frozenset()) -> list[dict]:
+    """fremde: Namen von Features, die nicht in `features` stehen, aber als früheres Feature gelten (Bestandsdatei,
+    Spec Bestandsdateien §4.2)."""
     befunde = []
     parameter = spec.get("parameter", {})
     features = spec["features"]
@@ -381,10 +383,10 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path) -> list[dict]:
 
     for i, f in enumerate(features):
         for pfad, ref in _referenzen({k: v for k, v in f.items() if k != "id"}, ["features", i]):
-            if ref not in ids[:i]:
+            if ref not in ids[:i] and ref not in fremde:
                 befunde.append({"pfad": _pfad(pfad), "meldung": f"Verweis auf {ref!r}: kein früheres Feature"})
     for pfad, ref in _referenzen(spec.get("pruefung", {}), ["pruefung"]):
-        if ref not in ids:
+        if ref not in ids and ref not in fremde:
             befunde.append({"pfad": _pfad(pfad), "meldung": f"Verweis auf unbekanntes Feature {ref!r}"})
 
     for pfad, schluessel, roh in _werte({k: v for k, v in spec.items() if k not in ("parameter", "optimierung")}, []):

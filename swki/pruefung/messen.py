@@ -23,31 +23,38 @@ from swki.verzahnung import ALPHA, Stirnrad, Verzahnung, verzahnung_im_teil
 SW_DOC_PART = 1  # swDocumentTypes_e
 SW_DOC_ASSEMBLY = 2
 SW_OPEN_SILENT = 1  # swOpenDocOptions_e
+SW_OPEN_READONLY = 2
 SW_WARNUNG_BEREITS_OFFEN = 128  # swFileLoadWarning_AlreadyOpen
+SW_FEHLER_GLEICHER_TITEL = 65536  # swFileLoadError_e.swFileWithSameTitleAlreadyOpen
 
 
 class PruefFehler(SwkiFehler):
     pass
 
 
-def oeffne(app, pfad: Path, sichtbar: bool = True):
+def oeffne(app, pfad: Path, sichtbar: bool = True, nur_lesen: bool = False):
     """Öffnet ein gespeichertes Teil oder eine Baugruppe (Typ nach der Endung). Ist das Dokument schon offen (evtl. beim
     Nutzer), wird abgebrochen statt es zu schließen.
 
     `sichtbar=False` öffnet ohne Fenster (DocumentVisible): ein Fenster kostet SolidWorks ~1,7 GB Private Bytes, ohne
     ~1 MB (BTP Umbau 1). SolidWorks schließt ein unsichtbares Dokument mit, wenn ein sichtbares schließt, das es hält
-    (Baugruppe) – nur für Dokumente, die bis dahin offen bleiben dürfen oder vorher geschlossen werden."""
+    (Baugruppe) – nur für Dokumente, die bis dahin offen bleiben dürfen oder vorher geschlossen werden.
+    `nur_lesen=True`: swOpenDocOptions_ReadOnly (Bestandskopien)."""
     typ = SW_DOC_ASSEMBLY if pfad.suffix.lower() == ".sldasm" else SW_DOC_PART
     fehler, warnungen = byref_long(), byref_long()
+    optionen = SW_OPEN_SILENT | (SW_OPEN_READONLY if nur_lesen else 0)
     if sichtbar:
-        model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
+        model = app.OpenDoc6(str(pfad), typ, optionen, "", fehler, warnungen)
     else:
         app.DocumentVisible(False, typ)
         try:
-            model = app.OpenDoc6(str(pfad), typ, SW_OPEN_SILENT, "", fehler, warnungen)
+            model = app.OpenDoc6(str(pfad), typ, optionen, "", fehler, warnungen)
         finally:
             app.DocumentVisible(True, typ)
     if model is None:
+        if fehler.value & SW_FEHLER_GLEICHER_TITEL:
+            raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen: In SolidWorks ist schon ein gleichnamiges Dokument offen, auch aus einem "
+                              "anderen Ordner – bitte schließen und erneut prüfen")
         raise PruefFehler(f"{pfad.name} ließ sich nicht öffnen (Fehler {fehler.value})")
     if warnungen.value & SW_WARNUNG_BEREITS_OFFEN:
         raise PruefFehler(f"{pfad.name} ist bereits in SolidWorks geöffnet – bitte schließen und erneut prüfen")

@@ -125,7 +125,13 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
 
 def _bauen(args) -> dict:
     pfad = Path(args.spec)
-    if art_der_datei(pfad) == "baugruppe":
+    art = art_der_datei(pfad)
+    if art == "aenderung":
+        from swki.bestand import bau  # spät importiert (Kreisimport)
+
+        # swki durchlauf übergibt ein eigenes Namespace ohne dieses Feld
+        return bau.bauen(pfad, args.lauf, args.verwerfen, args.uebernommen, getattr(args, "hochstufen", False))
+    if art == "baugruppe":
         from swki.baugruppe.bau import bauen as baugruppe_bauen  # spät importiert (Kreisimport); Modul aus Task 8
 
         return baugruppe_bauen(pfad, args.lauf, args.verwerfen, args.uebernommen,
@@ -139,6 +145,9 @@ def einrichten(subparsers) -> None:
     p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Laufnummer ≥ 1 (Vorgabe: nächste freie)")
     p.add_argument("--alles-neu", action="store_true",
                    help="Baugruppe: auch unveränderte Eigenteile neu bauen statt aus einem früheren Lauf übernehmen")
+    p.add_argument("--hochstufen", action="store_true",
+                   help="Bestandsdatei aus älterer SolidWorks-Version: bestätigt, dass sie danach nur noch mit diesem "
+                        "SolidWorks oder neuer lesbar ist")
     gruppe = p.add_mutually_exclusive_group()
     gruppe.add_argument("--verwerfen", action="store_true",
                         help="manuelle Änderungen am letzten Lauf ausdrücklich verwerfen (nur auf Anweisung des Nutzers)")

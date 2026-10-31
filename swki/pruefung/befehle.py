@@ -37,11 +37,16 @@ def pruefe_lauf_gebaut(protokoll: dict, lauf: int) -> None:
 
 
 def lade_spec_beliebig(spec_pfad: Path) -> dict:
-    """Geprüfte Spezifikation eines Teils oder einer Baugruppe (für status und bericht)."""
-    if art_der_datei(spec_pfad) == "baugruppe":
+    """Geprüfte Spezifikation eines Teils, einer Baugruppe oder einer Änderung (für status und bericht)."""
+    art = art_der_datei(spec_pfad)
+    if art == "baugruppe":
         from swki.baugruppe.laden import lade_baugruppe  # spät importiert (Kreisimport)
 
         return lade_baugruppe(spec_pfad).spec
+    if art == "aenderung":
+        from swki.bestand.spec import lade_aenderung  # spät importiert (Kreisimport)
+
+        return lade_aenderung(spec_pfad)
     return lade_spec(spec_pfad)
 
 
@@ -77,10 +82,15 @@ def steckbrief_fuer(app, model, ordner: Path) -> dict:
 
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
-    if art_der_datei(spec_pfad) == "baugruppe":
+    art = art_der_datei(spec_pfad)
+    if art == "baugruppe":
         from swki.baugruppe.pruefen import pruefen as baugruppe_pruefen  # spät importiert (Kreisimport)
 
         return baugruppe_pruefen(spec_pfad, lauf)
+    if art == "aenderung":
+        from swki.bestand.pruefen import pruefen as aenderung_pruefen  # spät importiert (Kreisimport)
+
+        return aenderung_pruefen(spec_pfad, lauf)
     spec = lade_spec(spec_pfad)
     pruefe_freigabe(spec_pfad, spec)
     r, standard = lade_rechner(), lade_standard()
@@ -143,6 +153,19 @@ def _compiler_aenderungen(seit: str) -> list[str]:
     return [z for z in ergebnis.stdout.splitlines() if z.strip()]
 
 
+def _ausgabe_fuer_bericht(spec_pfad: Path, alle: list[dict]) -> dict | None:
+    """Ausgabeliste im Bericht einer Änderung: nur, wenn der letzte Lauf bestanden ist. Ein Fehler (`BESTAND_VERALTET`, Lauf-Datei
+    verändert, Freigabe veraltet) steht im Bericht, er bricht ihn nicht ab. Es wird nichts kopiert."""
+    if not (alle and alle[-1]["bestanden"]):
+        return None
+    from swki.bestand.ausgabe import ausgabe_liste  # spät importiert (Kreisimport)
+
+    try:
+        return ausgabe_liste(spec_pfad, alle[-1]["lauf"])
+    except SwkiFehler as e:
+        return {"fehler": str(e)}
+
+
 def bericht(spec_pfad: Path) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec_beliebig(spec_pfad)
@@ -157,6 +180,7 @@ def bericht(spec_pfad: Path) -> dict:
         _lies(lauf_datei(spec_pfad, letzter, "pruefer")) if letzter else None,
         protokoll,
         _compiler_aenderungen(erstes["gestartet"]) if erstes else [],
+        ausgabe=_ausgabe_fuer_bericht(spec_pfad, alle) if spec.get("art") == "aenderung" else None,
     )
     ziel = spec_pfad.parent / "bericht.md"
     ziel.write_text(text, encoding="utf-8")

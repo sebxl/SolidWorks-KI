@@ -183,6 +183,19 @@ def test_flaechenbezug_zur_absatzwand():
         assert _achsen_x(f3) == [pytest.approx(-5, abs=0.01)]
 
 
+def test_nahe_anker_genau_auf_einer_bohrung():
+    """Anker {nahe} genau auf Position 1 mit Randbezug: In der offenen Positionsskizze ist die Bohrung zurückgerollt, die Fläche
+    wird wiedergefunden (Task 10a), das Randmaß geht zur Plattenkante."""
+    gewinde = {"id": "f2", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [-40, 20, -20]},
+               "positionen": [[-40, 20], [-40, -20]], "bezug": {"u": "-rand", "v": "mitte"}, "tiefe": 10, "gewindetiefe": 8}
+    with gebautes_teil({"art": "teil", "name": "T", "features": [KLOTZ, gewinde]}) as (ctx, fehler, protokoll):
+        assert fehler is None, fehler
+        assert set(skizzenstatus(ctx.model).values()) == {sw.SW_FULLY_CONSTRAINED}
+        [mass] = [m for k in protokoll.knoten for m in k.masse or [] if m["pfad"] == "features[1].positionen[0][0]"]
+        assert (mass["bezug"], mass["wert"]) == ("-rand", pytest.approx(10))
+        assert _achsen_x(ctx.ergebnis("f2").features[0]) == [pytest.approx(-40, abs=0.01)]
+
+
 def _mass_name(protokoll, pfad: str) -> str:
     [name] = [m["name"] for k in protokoll.knoten for m in k.masse or [] if m["pfad"] == pfad]
     return name

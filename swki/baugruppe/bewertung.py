@@ -10,8 +10,8 @@ from swki.baugruppe.kopplung import eingriff, in_baugruppe, kopplungen, teilkrei
 from swki.baugruppe.modell import Quelle, dokument_name
 from swki.compiler.anker import differenz, punkt_achse_abstand, skalar
 from swki.kaufteile.ortung import steigung
-from swki.pruefung.bewertung import beschreibung, eintrag, gleichungen_eintrag, messpunkt_schluessel
-from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand
+from swki.pruefung.bewertung import beschreibung, eintrag, gleichungen_eintrag, mass_eintrag
+from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.ausdruck import auswerten
 from swki.spec.normen import groesse_text, norm_von, normmasse
 
@@ -320,23 +320,9 @@ def _eingriff(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte, to
 
 
 def _masse_pruefen(pr: dict, p: dict, m: BaugruppenMesswerte) -> list[dict]:
-    ergebnisse = []
-    for mp in pr.get("masse_pruefen", []):
-        pid = f"mass:{mp['was']}"
-        von, zu = m.messpunkte.get(messpunkt_schluessel(mp["von"])), m.messpunkte.get(messpunkt_schluessel(mp["zu"]))
-        knoten = sorted({x["komponente"] for x in (mp["von"], mp["zu"]) if "komponente" in x})
-        soll, tol = auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS)
-        if not isinstance(von, Messgeometrie) or not isinstance(zu, Messgeometrie):
-            hinweis = next((x for x in (von, zu) if isinstance(x, str)), "Messpunkt fehlt")
-            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=hinweis, knoten=knoten))
-            continue
-        try:
-            ist = round(abstand(von, zu), 6)
-        except NichtMessbar as e:
-            ergebnisse.append(eintrag(pid, False, soll=soll, hinweis=str(e), knoten=knoten))
-            continue
-        ergebnisse.append(eintrag(pid, abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
-    return ergebnisse
+    return [mass_eintrag(mp, m.messpunkte, auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS),
+                         sorted({x["komponente"] for x in (mp["von"], mp["zu"]) if "komponente" in x}))
+            for mp in pr.get("masse_pruefen", [])]
 
 
 def bewerte_baugruppe(spec: dict, quellen: dict[str, Quelle], m: BaugruppenMesswerte, standard: dict,

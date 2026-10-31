@@ -1,0 +1,1257 @@
+{
+ "start_mb": 1885,
+ "version_ohne_oeffnen": {
+  "werte": [
+   "18000[2025/268]"
+  ],
+  "s": 0.006,
+  "offen_danach": [],
+  "letztes_kaufteil": [
+   "18000[2025/268]"
+  ]
+ },
+ "sekunden": 31.7,
+ "ende_mb": 3432,
+ "abhaengigkeiten": {
+  "tief_ohne_suche": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\muster\\Lagerdeckel.SLDPRT",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\muster\\gm42-10.SLDPRT"
+  ],
+  "tief_mit_suche": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ruhend\\Lagerdeckel.SLDPRT",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ruhend\\gm42-10.SLDPRT"
+  ],
+  "flach_ro": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\muster\\Lagerdeckel.SLDPRT",
+   "FALSE",
+   "gm42-10",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\muster\\gm42-10.SLDPRT",
+   "FALSE"
+  ],
+  "teil": null,
+  "s": 0.01,
+  "offen_danach": []
+ },
+ "einstellungen": {
+  "suchregeln": true,
+  "laden_extern": 0,
+  "refs_in_speicher": true,
+  "extern_nur_lesen": false,
+  "dokumentordner": ""
+ },
+ "gespeicherter_pfad_vorhanden": true,
+ "kennzeichen_daneben": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.52
+  },
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "volumen": 103419.381
+ },
+ "sibling_vor_altem_pfad": {
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.47,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\daneben\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 103419.381
+   },
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\daneben\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "fehlt_neben_baugruppe": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.47,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": false,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\muster\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 106239.381
+   },
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\muster\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "herkunft_unveraendert": true,
+ "oeffnen_schreibgeschuetzt": {
+  "fehler": 0,
+  "warnungen": 2,
+  "s": 0.42,
+  "nur_lesen": true
+ },
+ "lesen": {
+  "konfigurationen": [
+   "Standard",
+   "Variante B"
+  ],
+  "aktiv": "Standard",
+  "baum": [
+   {
+    "name": "Gleichungen",
+    "typ": "EqnFolder",
+    "eltern": [],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "1.0038 (S235JRG2)",
+    "typ": "MaterialFolder",
+    "eltern": [],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Ebene vorne",
+    "typ": "RefPlane",
+    "eltern": [],
+    "kinder": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Ebene oben",
+    "typ": "RefPlane",
+    "eltern": [],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Ebene rechts",
+    "typ": "RefPlane",
+    "eltern": [],
+    "kinder": [
+     "Verstärkungsrippe1",
+     "Skizze5"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Ursprung",
+    "typ": "OriginProfileFeature",
+    "eltern": [
+     "Ebene vorne"
+    ],
+    "kinder": [
+     "Schnitt-Linear austragen2",
+     "Skizze3",
+     "Skizze1",
+     "Schnitt-Linear austragen3",
+     "Aufsatz-Linear austragen1",
+     "Skizze4",
+     "Skizze2",
+     "Schnitt-Linear austragen1"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Skizze1",
+    "typ": "ProfileFeature",
+    "eltern": [
+     "Ebene vorne",
+     "Ursprung"
+    ],
+    "kinder": [
+     "Aufsatz-Linear austragen1"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Aufsatz-Linear austragen1",
+    "typ": "Extrusion",
+    "eltern": [
+     "Skizze1",
+     "Ebene vorne",
+     "Ursprung"
+    ],
+    "kinder": [
+     "Fase1",
+     "Schnitt-Linear austragen2",
+     "Skizze3",
+     "Schnitt-Linear austragen3",
+     "Skizze4",
+     "Skizze2",
+     "Schnitt-Linear austragen1"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Skizze2",
+    "typ": "ProfileFeature",
+    "eltern": [
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "kinder": [
+     "Schnitt-Linear austragen1"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Schnitt-Linear austragen1",
+    "typ": "ICE",
+    "eltern": [
+     "Skizze2",
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Skizze3",
+    "typ": "ProfileFeature",
+    "eltern": [
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "kinder": [
+     "Schnitt-Linear austragen2"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Schnitt-Linear austragen2",
+    "typ": "ICE",
+    "eltern": [
+     "Skizze3",
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Skizze4",
+    "typ": "ProfileFeature",
+    "eltern": [
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "kinder": [
+     "Schnitt-Linear austragen3"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Schnitt-Linear austragen3",
+    "typ": "ICE",
+    "eltern": [
+     "Skizze4",
+     "Aufsatz-Linear austragen1",
+     "Ursprung"
+    ],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Skizze5",
+    "typ": "ProfileFeature",
+    "eltern": [
+     "Ebene rechts"
+    ],
+    "kinder": [
+     "Verstärkungsrippe1"
+    ],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Verstärkungsrippe1",
+    "typ": "Rib",
+    "eltern": [
+     "Skizze5",
+     "Ebene rechts"
+    ],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     false
+    ]
+   },
+   {
+    "name": "Fase1",
+    "typ": "Chamfer",
+    "eltern": [
+     "Aufsatz-Linear austragen1"
+    ],
+    "kinder": [],
+    "unterdrueckt": [
+     false,
+     true
+    ]
+   }
+  ],
+  "masse": {
+   "D1@Skizze1": {
+    "voll": "D1@Skizze1@Lagerdeckel.Part",
+    "feature": "Skizze1",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.1
+    ],
+    "driven": 1,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -50.0,
+      30.0,
+      0.1
+     ],
+     [
+      50.0,
+      30.0,
+      0.1
+     ],
+     [
+      0.0,
+      0.0,
+      0.1
+     ]
+    ]
+   },
+   "D2@Skizze1": {
+    "voll": "D2@Skizze1@Lagerdeckel.Part",
+    "feature": "Skizze1",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.06
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      50.0,
+      -30.0,
+      0.1
+     ],
+     [
+      50.0,
+      30.0,
+      0.1
+     ],
+     [
+      0.0,
+      0.0,
+      0.1
+     ]
+    ]
+   },
+   "D3@Skizze1": {
+    "voll": "D3@Skizze1@Lagerdeckel.Part",
+    "feature": "Skizze1",
+    "typ2": 11,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.05
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -50.0,
+      -30.0,
+      0.1
+     ],
+     [
+      0.0,
+      0.0,
+      0.1
+     ],
+     [
+      0.0,
+      0.0,
+      0.1
+     ]
+    ]
+   },
+   "D4@Skizze1": {
+    "voll": "D4@Skizze1@Lagerdeckel.Part",
+    "feature": "Skizze1",
+    "typ2": 12,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.03
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -50.0,
+      -30.0,
+      0.1
+     ],
+     [
+      0.0,
+      0.0,
+      0.1
+     ],
+     [
+      0.0,
+      0.0,
+      0.1
+     ]
+    ]
+   },
+   "D1@Aufsatz-Linear austragen1": {
+    "voll": "D1@Aufsatz-Linear austragen1@Lagerdeckel.Part",
+    "feature": "Aufsatz-Linear austragen1",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.02
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      50.0,
+      30.1,
+      0.0
+     ],
+     [
+      50.0,
+      30.1,
+      20.0
+     ],
+     [
+      50.0,
+      30.1,
+      0.0
+     ]
+    ]
+   },
+   "D1@Skizze2": {
+    "voll": "D1@Skizze2@Lagerdeckel.Part",
+    "feature": "Skizze2",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.05
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -25.0,
+      15.0,
+      20.1
+     ],
+     [
+      25.0,
+      15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D2@Skizze2": {
+    "voll": "D2@Skizze2@Lagerdeckel.Part",
+    "feature": "Skizze2",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.03
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      25.0,
+      -15.0,
+      20.1
+     ],
+     [
+      25.0,
+      15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D3@Skizze2": {
+    "voll": "D3@Skizze2@Lagerdeckel.Part",
+    "feature": "Skizze2",
+    "typ2": 11,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.025
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -25.0,
+      -15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D4@Skizze2": {
+    "voll": "D4@Skizze2@Lagerdeckel.Part",
+    "feature": "Skizze2",
+    "typ2": 12,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.015
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -25.0,
+      -15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D5@Skizze2": {
+    "voll": "D5@Skizze2@Lagerdeckel.Part",
+    "feature": "Skizze2",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.05
+    ],
+    "driven": 1,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -25.0,
+      -15.0,
+      20.1
+     ],
+     [
+      25.0,
+      -15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D1@Schnitt-Linear austragen1": {
+    "voll": "D1@Schnitt-Linear austragen1@Lagerdeckel.Part",
+    "feature": "Schnitt-Linear austragen1",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.008
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      25.0,
+      15.1,
+      20.0
+     ],
+     [
+      25.0,
+      15.1,
+      12.0
+     ],
+     [
+      25.0,
+      15.1,
+      20.0
+     ]
+    ]
+   },
+   "Bohrung_D@Skizze3": {
+    "voll": "Bohrung_D@Skizze3@Lagerdeckel.Part",
+    "feature": "Skizze3",
+    "typ2": 6,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.007999999999999993
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": true,
+    "linked_text": "Bohrung_D",
+    "referenz": false,
+    "punkte": [
+     [
+      -40.0,
+      15.0,
+      20.1
+     ],
+     [
+      -40.0,
+      15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D2@Skizze3": {
+    "voll": "D2@Skizze3@Lagerdeckel.Part",
+    "feature": "Skizze3",
+    "typ2": 11,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.04
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -40.0,
+      15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D3@Skizze3": {
+    "voll": "D3@Skizze3@Lagerdeckel.Part",
+    "feature": "Skizze3",
+    "typ2": 12,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.015
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -40.0,
+      15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "Bohrung_D@Skizze4": {
+    "voll": "Bohrung_D@Skizze4@Lagerdeckel.Part",
+    "feature": "Skizze4",
+    "typ2": 6,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.007999999999999993
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": true,
+    "linked_text": "Bohrung_D",
+    "referenz": false,
+    "punkte": [
+     [
+      40.0,
+      -15.0,
+      20.1
+     ],
+     [
+      40.0,
+      -15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D2@Skizze4": {
+    "voll": "D2@Skizze4@Lagerdeckel.Part",
+    "feature": "Skizze4",
+    "typ2": 11,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.04
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      40.0,
+      -15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D3@Skizze4": {
+    "voll": "D3@Skizze4@Lagerdeckel.Part",
+    "feature": "Skizze4",
+    "typ2": 12,
+    "gelesen_in": [
+     "Standard",
+     "Standard",
+     "Variante B",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.015
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      40.0,
+      -15.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ],
+     [
+      0.0,
+      0.0,
+      20.1
+     ]
+    ]
+   },
+   "D1@Verstärkungsrippe1": {
+    "voll": "D1@Verstärkungsrippe1@Lagerdeckel.Part",
+    "feature": "Verstärkungsrippe1",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.003
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -1.5,
+      0.0,
+      17.1
+     ],
+     [
+      1.5,
+      0.0,
+      17.1
+     ],
+     [
+      -1.5,
+      0.0,
+      17.1
+     ]
+    ]
+   },
+   "D1@Fase1": {
+    "voll": "D1@Fase1@Lagerdeckel.Part",
+    "feature": "Fase1",
+    "typ2": 2,
+    "gelesen_in": [
+     "Standard",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.002
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -0.1,
+      30.0,
+      18.0
+     ],
+     [
+      -0.1,
+      30.0,
+      20.0
+     ],
+     [
+      -0.1,
+      30.0,
+      18.0
+     ]
+    ]
+   },
+   "D2@Fase1": {
+    "voll": "D2@Fase1@Lagerdeckel.Part",
+    "feature": "Fase1",
+    "typ2": 3,
+    "gelesen_in": [
+     "Standard",
+     "Variante B"
+    ],
+    "werte": [
+     0.0,
+     0.7853981633974483
+    ],
+    "driven": 2,
+    "readonly": 0,
+    "tabelle": false,
+    "linked": false,
+    "linked_text": "",
+    "referenz": false,
+    "punkte": [
+     [
+      -0.1,
+      37.071,
+      10.929
+     ],
+     [
+      -0.1,
+      30.0,
+      8.0
+     ],
+     [
+      -0.1,
+      30.0,
+      18.0
+     ]
+    ]
+   }
+  },
+  "gleichungen": [
+   {
+    "i": 0,
+    "text": "\"L\"= 100",
+    "global": true,
+    "wert": 100.0
+   },
+   {
+    "i": 1,
+    "text": "\"D1@Skizze1\" = \"L\"",
+    "global": false,
+    "wert": 100.0
+   }
+  ],
+  "skizzen": {
+   "Skizze1": 3,
+   "Aufsatz-Linear austragen1/Skizze1": 3,
+   "Skizze2": 3,
+   "Schnitt-Linear austragen1/Skizze2": 3,
+   "Skizze3": 3,
+   "Schnitt-Linear austragen2/Skizze3": 3,
+   "Skizze4": 3,
+   "Schnitt-Linear austragen3/Skizze4": 3,
+   "Skizze5": 2,
+   "Verstärkungsrippe1/Skizze5": 2
+  },
+  "fehler": [],
+  "extern": {
+   "modell": [],
+   "komponente": [],
+   "typ": [],
+   "status": [],
+   "entity": [],
+   "konfig_option": 0,
+   "konfig": ""
+  },
+  "material": {
+   "Standard": "1.0038 (S235JRG2)",
+   "Variante B": "1.0038 (S235JRG2)"
+  },
+  "eigenschaften": {
+   "": {
+    "Benennung": "Lagerdeckel",
+    "Revision": "A"
+   },
+   "Standard": {},
+   "Variante B": {
+    "Bemerkung": "ohne Fase"
+   }
+  },
+  "einheit": 5,
+  "version": [
+   "18000[2025/268]"
+  ],
+  "tabelle_vorhanden": true,
+  "lesen_s": 14.04
+ },
+ "speichern_auf_ro": {
+  "ok": false,
+  "fehler": 2,
+  "warnungen": 0
+ },
+ "ro_unveraendert": true,
+ "abgeleitet": {
+  "feature": "Stock"
+ },
+ "abgeleitet_speichern": {
+  "ok": true,
+  "fehler": 0,
+  "warnungen": 0
+ },
+ "ext_abh_ohne_oeffnen": [
+  "Lagerdeckel",
+  "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ext\\original\\Lagerdeckel.SLDPRT"
+ ],
+ "ext_oeffnen": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.47,
+  "offen": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ext\\kopie\\Abgeleitet.SLDPRT"
+  ],
+  "liste": {
+   "modell": [
+    "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ext\\original\\Lagerdeckel.SLDPRT"
+   ],
+   "komponente": [
+    "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ext\\original\\Lagerdeckel.SLDPRT"
+   ],
+   "typ": [
+    "Körper"
+   ],
+   "status": [
+    4
+   ],
+   "entity": [
+    "Körper von Lagerdeckel"
+   ],
+   "konfig_option": 0,
+   "konfig": ""
+  },
+  "abh": [
+   "Lagerdeckel",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\b\\ext\\original\\Lagerdeckel.SLDPRT"
+  ]
+ },
+ "fehler_vorher": [],
+ "tasche_loeschen": true,
+ "neuaufbau_nach_eingriff": {
+  "ok": false,
+  "fehler": [
+   {
+    "feature": "Verstärkungsrippe1",
+    "code": 1,
+    "warnung": false
+   }
+  ],
+  "baum": [
+   "Gleichungen",
+   "1.0038 (S235JRG2)",
+   "Ebene vorne",
+   "Ebene oben",
+   "Ebene rechts",
+   "Ursprung",
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Fase1"
+  ]
+ }
+}

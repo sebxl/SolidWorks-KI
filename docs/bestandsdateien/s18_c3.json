@@ -1,0 +1,1115 @@
+{
+ "start_mb": 433,
+ "kontrolle_bohrung_b": {
+  "vorher": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106239.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106239.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1"
+   ]
+  },
+  "unterskizzen": [
+   {
+    "name": "neu1_positionen",
+    "typ": "ProfileFeature",
+    "status": 3
+   },
+   {
+    "name": "Skizze6",
+    "typ": "ProfileFeature",
+    "status": 3
+   },
+   {
+    "name": "Bohrungsgewinde1",
+    "typ": "CosmeticThread",
+    "status": null
+   },
+   {
+    "name": "Bohrungsgewinde2",
+    "typ": "CosmeticThread",
+    "status": null
+   }
+  ],
+  "nach_bohrung": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 105827.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 105827.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106027.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106027.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1",
+    "neu1"
+   ]
+  },
+  "guter_zug": true,
+  "ans_ende": true,
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.73
+  },
+  "nach_oeffnen": {
+   "aktiv": "Variante B",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 105827.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 105827.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106027.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106027.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1",
+    "neu1"
+   ]
+  }
+ },
+ "sekunden": 73.7,
+ "ende_mb": 3512,
+ "wie_c11": {
+  "vorher": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106239.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106239.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1"
+   ]
+  },
+  "unterskizzen": [
+   {
+    "name": "neu1_positionen",
+    "typ": "ProfileFeature",
+    "status": 3
+   },
+   {
+    "name": "Skizze6",
+    "typ": "ProfileFeature",
+    "status": 3
+   },
+   {
+    "name": "Bohrungsgewinde1",
+    "typ": "CosmeticThread",
+    "status": null
+   },
+   {
+    "name": "Bohrungsgewinde2",
+    "typ": "CosmeticThread",
+    "status": null
+   }
+  ],
+  "nach_bohrung": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 105827.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 105827.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106027.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106027.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1",
+    "neu1"
+   ]
+  },
+  "guter_zug": true,
+  "ans_ende": true,
+  "unmoeglich": false,
+  "baum_direkt": [
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Fase1",
+   "neu1"
+  ],
+  "nach_zug": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": false,
+    "fehler": [
+     {
+      "feature": "Verstärkungsrippe1",
+      "code": 1,
+      "warnung": false
+     }
+    ],
+    "volumen": 105377.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [
+      {
+       "feature": "Verstärkungsrippe1",
+       "code": 1,
+       "warnung": false
+      }
+     ],
+     "volumen": 105377.019
+    },
+    "baum": [
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106027.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106027.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "baum": [
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Fase1",
+    "neu1"
+   ]
+  },
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.66
+  },
+  "nach_oeffnen": {
+   "aktiv": "Variante B",
+   "Standard": {
+    "rebuild": false,
+    "fehler": [
+     {
+      "feature": "Verstärkungsrippe1",
+      "code": 1,
+      "warnung": false
+     }
+    ],
+    "volumen": 105377.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [
+      {
+       "feature": "Verstärkungsrippe1",
+       "code": 1,
+       "warnung": false
+      }
+     ],
+     "volumen": 105377.019
+    },
+    "baum": [
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106027.019,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106027.019
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1",
+     "neu1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1",
+    "neu1"
+   ]
+  }
+ },
+ "nur_fehlschlag_b": {
+  "vorher": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106239.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106239.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1"
+   ]
+  },
+  "unmoeglich": false,
+  "baum_direkt": [
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Fase1"
+  ],
+  "nach_zug": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": false,
+    "fehler": [
+     {
+      "feature": "Verstärkungsrippe1",
+      "code": 1,
+      "warnung": false
+     }
+    ],
+    "volumen": 105789.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [
+      {
+       "feature": "Verstärkungsrippe1",
+       "code": 1,
+       "warnung": false
+      }
+     ],
+     "volumen": 105789.381
+    },
+    "baum": [
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Fase1"
+   ]
+  },
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.72
+  },
+  "nach_oeffnen": {
+   "aktiv": "Variante B",
+   "Standard": {
+    "rebuild": false,
+    "fehler": [
+     {
+      "feature": "Verstärkungsrippe1",
+      "code": 1,
+      "warnung": false
+     }
+    ],
+    "volumen": 105789.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [
+      {
+       "feature": "Verstärkungsrippe1",
+       "code": 1,
+       "warnung": false
+      }
+     ],
+     "volumen": 105789.381
+    },
+    "baum": [
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1"
+   ]
+  }
+ },
+ "nur_fehlschlag_standard": {
+  "vorher": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106239.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106239.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Fase1"
+   ]
+  },
+  "unmoeglich": false,
+  "baum_direkt": [
+   "Skizze5",
+   "Verstärkungsrippe1",
+   "Skizze1",
+   "Aufsatz-Linear austragen1",
+   "Skizze2",
+   "Schnitt-Linear austragen1",
+   "Skizze3",
+   "Schnitt-Linear austragen2",
+   "Skizze4",
+   "Schnitt-Linear austragen3",
+   "Fase1"
+  ],
+  "nach_zug": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": false,
+    "fehler": [
+     {
+      "feature": "Verstärkungsrippe1",
+      "code": 1,
+      "warnung": false
+     }
+    ],
+    "volumen": 105789.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [
+      {
+       "feature": "Verstärkungsrippe1",
+       "code": 1,
+       "warnung": false
+      }
+     ],
+     "volumen": 105789.381
+    },
+    "baum": [
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Fase1"
+   ]
+  },
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 0.71
+  },
+  "nach_oeffnen": {
+   "aktiv": "Standard",
+   "Standard": {
+    "rebuild": false,
+    "fehler": [
+     {
+      "feature": "Verstärkungsrippe1",
+      "code": 1,
+      "warnung": false
+     }
+    ],
+    "volumen": 105789.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [
+      {
+       "feature": "Verstärkungsrippe1",
+       "code": 1,
+       "warnung": false
+      }
+     ],
+     "volumen": 105789.381
+    },
+    "baum": [
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Fase1"
+    ]
+   },
+   "Variante B": {
+    "rebuild": true,
+    "fehler": [],
+    "volumen": 106439.381,
+    "rippe_unterdrueckt": {
+     "Standard": false,
+     "Variante B": false
+    },
+    "nach_force": {
+     "fehler": [],
+     "volumen": 106439.381
+    },
+    "baum": [
+     "Skizze1",
+     "Aufsatz-Linear austragen1",
+     "Skizze2",
+     "Schnitt-Linear austragen1",
+     "Skizze3",
+     "Schnitt-Linear austragen2",
+     "Skizze4",
+     "Schnitt-Linear austragen3",
+     "Skizze5",
+     "Verstärkungsrippe1",
+     "Fase1"
+    ]
+   },
+   "baum": [
+    "Skizze5",
+    "Verstärkungsrippe1",
+    "Skizze1",
+    "Aufsatz-Linear austragen1",
+    "Skizze2",
+    "Schnitt-Linear austragen1",
+    "Skizze3",
+    "Schnitt-Linear austragen2",
+    "Skizze4",
+    "Schnitt-Linear austragen3",
+    "Fase1"
+   ]
+  }
+ }
+}

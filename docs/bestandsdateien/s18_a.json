@@ -1,0 +1,320 @@
+{
+ "start_mb": 2142,
+ "kontrolle_bereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.5,
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\kontrolle\\gm42-10.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\kontrolle\\Lagerdeckel.SLDPRT"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "sekunden": 15.4,
+ "ende_mb": 3401,
+ "kontrolle_nachher_offen": [],
+ "kontrolle": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.46,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": false,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\kontrolle\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   },
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\kontrolle\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 106239.381
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "an_ort_bereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.49,
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\an_ort\\gm42-10.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\an_ort\\Lagerdeckel.SLDPRT"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "an_ort_nachher_offen": [],
+ "an_ort_aendern": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.43,
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  },
+  "volumen": 104829.381
+ },
+ "an_ort": {
+  "sha_geaendert": true,
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.47,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\an_ort\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 104829.381
+   },
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\an_ort\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "an_ort_zweimal": {
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.54,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\an_ort\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 103419.381
+   },
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\an_ort\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "saveas_neu_bereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.52,
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_neu\\Lagerdeckel.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_neu\\gm42-10.SLDPRT"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "saveas_neu_nachher_offen": [],
+ "saveas_neu_speichern": {
+  "ok": true,
+  "fehler": 0,
+  "warnungen": 0
+ },
+ "saveas_neu": {
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.58,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_neu\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   },
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_neu\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 104829.381
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "saveas_ordner_bereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.57,
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_ordner\\Lagerdeckel.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_ordner\\gm42-10.SLDPRT"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "saveas_ordner_nachher_offen": [],
+ "saveas_ordner_speichern": {
+  "ok": true,
+  "fehler": 0,
+  "warnungen": 0
+ },
+ "saveas_ordner": {
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.53,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_ordner\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 104829.381
+   },
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_ordner\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "saveas_kopie_bereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.52,
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_kopie\\gm42-10.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_kopie\\Lagerdeckel.SLDPRT"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "saveas_kopie_nachher_offen": [],
+ "saveas_kopie_speichern": {
+  "ok": true,
+  "fehler": 0,
+  "warnungen": 0
+ },
+ "saveas_kopie": {
+  "fehler": 0,
+  "warnungen": 32,
+  "s": 0.64,
+  "bits": {
+   "id_mismatch": false,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_kopie\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 104829.381
+   },
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\saveas_kopie\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   }
+  ],
+  "neuaufbau": true,
+  "whats_wrong": []
+ },
+ "fremd_bereiten": {
+  "fehler": 0,
+  "warnungen": 0,
+  "s": 0.61,
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\fremd\\gm42-10.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\fremd\\Lagerdeckel.SLDPRT"
+  ],
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": 0
+  }
+ },
+ "fremd_nachher_offen": [],
+ "fremd_speichern": {
+  "ok": true,
+  "fehler": 0,
+  "warnungen": 0
+ },
+ "fremd": {
+  "fehler": 0,
+  "warnungen": 33,
+  "s": 0.52,
+  "bits": {
+   "id_mismatch": true,
+   "needs_regen": true,
+   "fehlt": false
+  },
+  "komponenten": [
+   {
+    "name": "gm42-10-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\fremd\\gm42-10.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 220530.906
+   },
+   {
+    "name": "Lagerdeckel-1",
+    "pfad": "C:\\Users\\User\\.swki\\arbeit\\S18\\a\\fremd\\Lagerdeckel.SLDPRT",
+    "unterdrueckt": 2,
+    "volumen": 120000.0
+   }
+  ],
+  "neuaufbau": false,
+  "whats_wrong": [
+   {
+    "feature": "Verknüpfungen",
+    "code": 1,
+    "warnung": false
+   },
+   {
+    "feature": "Deckungsgleich1",
+    "code": 48,
+    "warnung": false
+   }
+  ]
+ }
+}

@@ -1,6 +1,6 @@
 ---
 name: konstruieren
-description: Konstruiert ein Einzelteil in SolidWorks aus Skizze, Beschreibung oder Anweisung – Spezifikation schreiben, validieren, Rückfragen, Freigabe durch den Nutzer, bauen, prüfen, unabhängiger Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer ein Teil konstruiert, gebaut oder geändert haben will.
+description: Konstruiert ein Einzelteil in SolidWorks aus Skizze, Beschreibung oder Anweisung – Spezifikation schreiben, validieren, Rückfragen, Freigabe durch den Nutzer, bauen, prüfen, unabhängiger Prüfer, nachbessern, Bericht. Verwenden, wenn der Nutzer ein Teil konstruiert, gebaut oder ein aus eigener swki-Spec gebautes Teil geändert haben will. Fremde Dateien, die swki nicht gebaut hat, gehen über den Skill aendern.
 ---
 
 # Konstruieren (Einzelteil, Stufe 2/2c)
@@ -85,8 +85,8 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   bei Gewinde mit `tiefe` ist `gewindetiefe` ≤ `tiefe` Pflicht, bei Gewinde mit `durch` ist sie erlaubt).
   Nur Größen aus `swki/wissen/bohrungsnormen.yaml`; `validieren` nennt die verfügbaren. Gewinde werden kosmetisch gebaut. `bohrung` bleibt für freie Durchmesser. Die erste Position
   muss auf der gemeinten `flaeche` liegen (kein Absatz davor, sonst Abbruch). Mit `rand`/`flaeche` im `bezug` löst swki
-  die Fläche nach dem Bohren neu auf; findet es sie nicht (`{nahe}` genau auf einer Bohrung), bricht der Bau mit
-  `REFERENZ_NICHT_GEFUNDEN` ab: `{feature, flaeche}` verwenden oder den nahe-Punkt neben die Bohrungen legen.
+  die Fläche in der offenen Positionsskizze neu auf; dort ist die Bohrung zurückgerollt, `{nahe}` darf also genau auf
+  einer Position liegen. Fehlt sie dort doch (`REFERENZ_NICHT_GEFUNDEN`): `{feature, flaeche}` verwenden.
 - Zahnräder und Zahnstangen als `typ: verzahnung` (Spec 4b, Vorlage `tests/referenz/zahnstangentrieb/`): `art:
   stirnrad | zahnstange`, `ebene` (Standardebene oder `versatz`, keine Fläche), `mitte` (Stirnrad: Radachse;
   Zahnstange: Mitte von Zahn 1 auf der Profilmittellinie), `modul` (DIN 780 Reihe 1), `zaehne` (Stirnrad ≥ 17),

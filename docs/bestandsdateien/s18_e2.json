@@ -1,0 +1,34 @@
+{
+ "start_mb": 434,
+ "bilder": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": 0,
+   "s": 5.0
+  },
+  "toggles": [
+   true,
+   true
+  ],
+  "flag_vor": false,
+  "a_ohne_auswahl": "C:\\Users\\User\\.swki\\arbeit\\S18\\e2\\a_ohne_auswahl.png",
+  "selectbyid": true,
+  "auswahl_anzahl_typ": [
+   1,
+   14
+  ],
+  "b_selectbyid": "C:\\Users\\User\\.swki\\arbeit\\S18\\e2\\b_selectbyid.png",
+  "select3_leer": false,
+  "select3_daten": true,
+  "c_select3": "C:\\Users\\User\\.swki\\arbeit\\S18\\e2\\c_select3.png",
+  "farbe_alt": 0,
+  "farbe_neu": 255,
+  "d_farbe": "C:\\Users\\User\\.swki\\arbeit\\S18\\e2\\d_farbe.png",
+  "e_feature_mass": "C:\\Users\\User\\.swki\\arbeit\\S18\\e2\\e_feature_mass.png",
+  "flag_nach": false,
+  "fehler": []
+ },
+ "sekunden": 8.3,
+ "ende_mb": 915,
+ "kopie_unveraendert": true
+}

@@ -53,6 +53,21 @@ def eintrag(pid: str, ok: bool | None, **daten) -> dict:
     return {"id": pid, "ok": ok, **daten}
 
 
+def mass_eintrag(mp: dict, messpunkte: dict, soll: float, tol: float, knoten: list[str], **daten) -> dict:
+    """`mass:<was>` eines Eintrags aus `pruefung.masse_pruefen`: Abstand der beiden Messpunkte gegen `soll`. Ein Fehlertext statt eines
+    Messpunkts und nicht parallele Bezüge sind Mängel, nie ein Abbruch. `daten` steht zusätzlich im Eintrag."""
+    pid = f"mass:{mp['was']}"
+    von, zu = messpunkte.get(messpunkt_schluessel(mp["von"])), messpunkte.get(messpunkt_schluessel(mp["zu"]))
+    if not isinstance(von, Messgeometrie) or not isinstance(zu, Messgeometrie):
+        fehler = next((x for x in (von, zu) if isinstance(x, str)), "Messpunkt fehlt")
+        return eintrag(pid, False, soll=soll, hinweis=fehler, **daten, knoten=knoten)
+    try:
+        ist = round(abstand(von, zu), 6)
+    except NichtMessbar as e:
+        return eintrag(pid, False, soll=soll, hinweis=str(e), **daten, knoten=knoten)
+    return eintrag(pid, abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, **daten, knoten=knoten)
+
+
 def normbohrung_abweichungen(f: dict, ist: dict, parameter: dict) -> list[str]:
     """Spec 2c §3.4: normbohrung-Knoten (freigegebene Kopie) gegen die Bohrungsassistent-Daten des gleichnamigen
     Features (swki.pruefung.messen.lies_normbohrung, Längen in mm). Leere Liste = passt.
@@ -235,19 +250,8 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
                                         abweichung_prozent=round(abweichung, 4), tol_prozent=prozent, knoten=[]))
 
     for mp in pr.get("masse_pruefen", []):
-        von, zu = m.messpunkte.get(messpunkt_schluessel(mp["von"])), m.messpunkte.get(messpunkt_schluessel(mp["zu"]))
-        knoten = sorted({x["feature"] for x in (mp["von"], mp["zu"]) if "feature" in x})
-        soll, tol = auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS)
-        if isinstance(von, str) or isinstance(zu, str) or von is None or zu is None:
-            fehler = next(x for x in (von, zu, "Messpunkt fehlt") if isinstance(x, str))
-            ergebnisse.append(eintrag(f"mass:{mp['was']}", False, soll=soll, hinweis=fehler, knoten=knoten))
-            continue
-        try:
-            ist = round(abstand(von, zu), 6)
-        except NichtMessbar as e:
-            ergebnisse.append(eintrag(f"mass:{mp['was']}", False, soll=soll, hinweis=str(e), knoten=knoten))
-            continue
-        ergebnisse.append(eintrag(f"mass:{mp['was']}", abs(ist - soll) <= tol, ist=ist, soll=soll, tol=tol, knoten=knoten))
+        ergebnisse.append(mass_eintrag(mp, m.messpunkte, auswerten(mp["soll"], p), mp.get("tol", _TOL_MASS),
+                                       sorted({x["feature"] for x in (mp["von"], mp["zu"]) if "feature" in x})))
 
     for dp in pr.get("durchmesser_pruefen", []):
         pid, knoten = f"durchmesser:{dp['was']}", [dp["feature"]]

@@ -27,7 +27,10 @@ class BauFehler(SwkiFehler):
 
 
 def fehler_dict(e: BaseException) -> dict:
-    """Fehler als {"code", "schritt", "meldung"} für Protokolle; fremde Ausnahmen mit ihrem Typnamen als Code."""
+    """Fehler als {"code", "schritt", "meldung"} für Protokolle; fremde Ausnahmen mit `daten["code"]` (SwkiFehler), sonst mit
+    ihrem Typnamen als Code."""
     if isinstance(e, BauFehler):
         return e.als_dict()
-    return {"code": type(e).__name__, "schritt": None, "meldung": str(e)}
+    daten = getattr(e, "daten", None)
+    code = daten.get("code") if isinstance(daten, dict) else None
+    return {"code": code or type(e).__name__, "schritt": None, "meldung": str(e)}
