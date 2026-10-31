@@ -92,7 +92,7 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
  "tabelle": false}
 ```
 
-`zustand`: `treibend` | `gesteuert` | `getrieben`. `quelle` bei gesteuert: `{"art": "gleichung"|"variable"|"tabelle", "name": …}`. `gruppe`: Name des gemeinsamen Werts verknüpfter Maße. `werte[k]` ist `null`, wenn das Maß in Konfiguration k unterdrückt ist. Einheiten mm, Grad, mm³.
+`zustand`: `treibend` | `gesteuert` | `getrieben`. `quelle` bei gesteuert: `{"art": "gleichung"|"variable"|"tabelle", "name": …}`. `gruppe`: Name des gemeinsamen Werts verknüpfter Maße. `werte[k]` ist auch bei unterdrückten Features eine Zahl (S18b); `null` nur, wenn SolidWorks nichts liefert. Zusätzlich `reihenfolge` je Konfiguration und `einheitensystem` (Task 5). Einheiten mm, Grad, mm³.
 
 ## Abhängigkeiten vom Spike S18 (Task 1)
 
