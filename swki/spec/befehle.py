@@ -17,6 +17,10 @@ def _validieren(args) -> dict:
         from swki.kaufteile.eintrag import validieren as validieren_kaufteil  # spät importiert (Kreisimport)
 
         return validieren_kaufteil(pfad)
+    if art_der_datei(pfad) == "aenderung":
+        from swki.bestand.spec import validieren as validieren_aenderung  # spät importiert (Kreisimport)
+
+        return validieren_aenderung(pfad)
     spec = lade_spec(pfad)
     erg = {
         "gueltig": True,
@@ -66,6 +70,10 @@ def _freigeben(args) -> dict:
         from swki.kaufteile.eintrag import freigeben as freigeben_kaufteil  # spät importiert (Kreisimport)
 
         return freigeben_kaufteil(pfad)
+    if art_der_datei(pfad) == "aenderung":
+        from swki.bestand.spec import freigeben as freigeben_aenderung  # spät importiert (Kreisimport)
+
+        return freigeben_aenderung(pfad)
     spec = lade_spec(pfad)
     zusatz = None
     if "optimierung" in spec:

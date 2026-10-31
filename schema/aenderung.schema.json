@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Änderungs-Spezifikation für eine fremde Bestandsdatei (Spec Bestandsdateien §4)",
+  "type": "object",
+  "required": ["art", "name", "bestand", "punkte", "bereiche"],
+  "additionalProperties": false,
+  "properties": {
+    "art": {"const": "aenderung"},
+    "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"},
+    "bestand": {
+      "type": "object", "required": ["datei", "sha256", "aufnahme"], "additionalProperties": false,
+      "properties": {
+        "datei": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "aufnahme": {"type": "integer", "minimum": 1}
+      }
+    },
+    "parameter": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"type": "number"}},
+    "punkte": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt"}},
+    "bereiche": {"type": "array", "items": {"$ref": "#/$defs/bereich"}},
+    "pruefung": {"$ref": "#/$defs/pruefung"},
+    "max_nachbesserungen": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "wert": {"oneOf": [{"type": "number"}, {"type": "string", "pattern": "^=.+"}]},
+    "punkt3": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
+    "zahl3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "richtung": {"enum": ["+x", "-x", "+y", "-y", "+z", "-z"]},
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "name": {"type": "string", "minLength": 1, "description": "SolidWorks-Name aus der Bestandsaufnahme (deutsch, wie im Baum)"},
+    "konfigurationen": {
+      "oneOf": [
+        {"const": "alle"},
+        {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/name"}}
+      ]
+    },
+    "folgen": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"}},
+    "punkt": {
+      "type": "object",
+      "required": ["id", "typ"],
+      "properties": {
+        "typ": {"enum": ["mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "material", "eigenschaft", "skript"]}
+      },
+      "allOf": [
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "mass"}}},
+          "then": {
+            "required": ["mass", "alt", "neu"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "mass": {"$ref": "#/$defs/name"}, "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"},
+              "konfigurationen": {"$ref": "#/$defs/konfigurationen"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "gleichung"}}},
+          "then": {
+            "oneOf": [
+              {
+                "required": ["variable", "alt", "neu"], "additionalProperties": false,
+                "properties": {
+                  "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+                  "folgen": {"$ref": "#/$defs/folgen"},
+                  "variable": {"$ref": "#/$defs/name"}, "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"}
+                }
+              },
+              {
+                "required": ["gleichung", "alt", "neu"], "additionalProperties": false,
+                "properties": {
+                  "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+                  "folgen": {"$ref": "#/$defs/folgen"},
+                  "gleichung": {"$ref": "#/$defs/name"}, "alt": {"type": "string", "minLength": 1},
+                  "neu": {"type": "string", "minLength": 1}
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"enum": ["unterdruecken", "aufheben"]}}},
+          "then": {
+            "required": ["feature"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "feature": {"$ref": "#/$defs/name"}, "konfigurationen": {"$ref": "#/$defs/konfigurationen"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "loeschen"}}},
+          "then": {
+            "required": ["feature"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "feature": {"$ref": "#/$defs/name"},
+              "kinder": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "feature"}}},
+          "then": {
+            "required": ["name", "feature"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "name": {"$ref": "#/$defs/name"},
+              "feature": {"type": "object", "description": "Inhalt wie ein Eintrag in features einer Teil-Spec (prüft validieren gegen die Aufnahme)"},
+              "nach": {"$ref": "#/$defs/name"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "material"}}},
+          "then": {
+            "required": ["neu"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "neu": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "eigenschaft"}}},
+          "then": {
+            "required": ["name", "neu"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "name": {"$ref": "#/$defs/name"}, "neu": {"type": ["string", "null"]},
+              "konfiguration": {"$ref": "#/$defs/name"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "skript"}}},
+          "then": {
+            "required": ["datei", "luecke"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "folgen": {"$ref": "#/$defs/folgen"},
+              "datei": {"type": "string", "minLength": 1}, "luecke": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      ]
+    },
+    "bereich": {
+      "type": "object", "required": ["punkte"], "additionalProperties": false,
+      "properties": {
+        "punkte": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+        "box": {
+          "type": "object", "required": ["min", "max"], "additionalProperties": false,
+          "properties": {"min": {"$ref": "#/$defs/zahl3"}, "max": {"$ref": "#/$defs/zahl3"}}
+        },
+        "features": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/name"}}
+      },
+      "oneOf": [{"required": ["box"]}, {"required": ["features"]}]
+    },
+    "messpunkt": {
+      "oneOf": [
+        {"type": "object", "required": ["punkt"], "additionalProperties": false,
+         "properties": {"punkt": {"$ref": "#/$defs/punkt3"}}},
+        {"type": "object", "required": ["flaeche"], "additionalProperties": false,
+         "properties": {"flaeche": {
+           "type": "object", "required": ["nahe", "normale"], "additionalProperties": false,
+           "properties": {"nahe": {"$ref": "#/$defs/punkt3"}, "normale": {"$ref": "#/$defs/punkt3"}}}}},
+        {"type": "object", "required": ["feature", "flaeche"], "additionalProperties": false,
+         "properties": {"feature": {"$ref": "#/$defs/name"}, "flaeche": {"$ref": "#/$defs/richtung"}}}
+      ]
+    },
+    "pruefung": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "masse_pruefen": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["was", "von", "zu", "soll"], "additionalProperties": false,
+            "properties": {
+              "was": {"type": "string", "minLength": 1},
+              "von": {"$ref": "#/$defs/messpunkt"}, "zu": {"$ref": "#/$defs/messpunkt"},
+              "soll": {"$ref": "#/$defs/wert"}, "tol": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        },
+        "volumen_delta": {
+          "type": "object", "required": ["soll"], "additionalProperties": false,
+          "properties": {
+            "soll": {"type": "number"},
+            "toleranz_prozent": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      }
+    }
+  }
+}

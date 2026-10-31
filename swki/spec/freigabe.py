@@ -5,7 +5,7 @@ nicht den Bauweg (Features, Anker, Reihenfolge) – den darf Claude beim Nachbes
 Zusätzlich wird die ganze Spezifikation als <spec>.freigegeben.yaml abgelegt: Sie ist das Soll für den
 Prüfer-Agenten und für das analytische Sollvolumen, auch wenn der Bauweg später nachgebessert wird.
 Baugruppen: zusätzlich die Prüfsummen der Teil-Specs (Spec 3b §6). Kaufteile: der ganze Eintrag (Spec 3c §4.6; ein
-Kaufteil hat keinen Bauweg).
+Kaufteil hat keinen Bauweg). Änderungs-Specs: Anforderungen ohne Anker, Bezüge, Einfügestelle und Skriptdateien.
 Die Kopie ist der Rohtext der Spezifikationsdatei (Kommentare bleiben erhalten); nur wenn die Datei
 fehlt oder inhaltlich nicht mehr zum übergebenen spec passt, dient yaml.safe_dump als Rückfall.
 """
@@ -38,6 +38,10 @@ def pruefsumme(spec: dict, teile: dict[str, str] | None = None) -> str:
     """Prüfsumme der Anforderungen; bei Baugruppen zusätzlich über die Prüfsummen der Teil-Specs (Dateiname → Summe)."""
     felder = PRUEF_FELDER_BAUGRUPPE if spec.get("art") == "baugruppe" else PRUEF_FELDER
     kern = dict(spec) if spec.get("art") == "kaufteil" else {feld: spec.get(feld) for feld in felder}
+    if spec.get("art") == "aenderung":  # Anforderung ohne Bauweg (Spec Bestandsdateien §4.5)
+        from swki.bestand.spec import bauweg_frei  # spät importiert (Kreisimport)
+
+        kern = bauweg_frei(spec)
     if spec.get("art") == "baugruppe":
         kern |= {feld: spec[feld] for feld in OPTIONAL_BAUGRUPPE if feld in spec}
     if "optimierung" in spec and spec.get("art") != "kaufteil":  # Raum ändern = neu freigeben (Spec C2 §6)
