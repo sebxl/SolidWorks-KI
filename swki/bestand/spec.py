@@ -17,7 +17,7 @@ from swki.auftrag import auftrag_name
 from swki.bestand.ablage import aufnahmen, lade_aufnahme
 from swki.bestand.fehler import (BEREICH_FEHLT, BESTAND_ALTWERT, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BESTAND_VERALTET,
                                  FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
-from swki.bestand.folgen import folgen_von, kinder_von, rechte_seite
+from swki.bestand.folgen import folgen_von, gleicher_ausdruck, kinder_von, rechte_seite
 from swki.compiler.skriptpruefung import pruefe_skript
 from swki.konfig import lade_rechner
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
@@ -200,7 +200,7 @@ def _punkt_befunde(p: dict, pfad: str, aufnahme: dict, namen: dict, ordner: Path
             befunde.append(_befund(f"{pfad}.gleichung", f"Eine Gleichung für {p['gleichung']!r} gibt es in der Aufnahme nicht",
                                    BESTAND_REFERENZ))
             start_ok = False
-        elif "".join(rechte_seite(g["text"]).split()) != "".join(p["alt"].split()):
+        elif not gleicher_ausdruck(rechte_seite(g["text"]), p["alt"]):
             befunde.append(_befund(f"{pfad}.alt", f"alt {p['alt']!r} stimmt nicht mit der rechten Seite im Bestand überein "
                                                   f"({rechte_seite(g['text'])!r})", BESTAND_ALTWERT))
 
@@ -358,8 +358,9 @@ def feature_befunde(spec: dict, aufnahme: dict, ordner: Path) -> tuple[list[dict
     return [], [{**h, "pfad": _zurueck(h["pfad"], feature_punkte)} for h in teil_hinweise(teil)]
 
 
-def _aufnahme_zu(spec: dict, pfad: Path) -> dict:
-    """Die Aufnahme, auf die die Spec zeigt: muss da sein, zur `sha256` passen und die jüngste des Auftrags sein."""
+def aufnahme_zu(spec: dict, pfad: Path) -> dict:
+    """Die Aufnahme, auf die die Spec zeigt: muss da sein, zur `sha256` passen und die jüngste des Auftrags sein. Auch
+    `swki bauen` geht hier durch: Eine ältere Aufnahme verlöre die Arbeit des Kollegen."""
     r, auftrag, bestand = lade_rechner(), auftrag_name(pfad), spec["bestand"]
     aufnahme = lade_aufnahme(r, auftrag, bestand["aufnahme"])  # BESTAND_UNBEKANNT
     if aufnahme["datei"]["sha256"] != bestand["sha256"]:
@@ -379,7 +380,7 @@ def validieren(pfad: Path) -> dict:
     Befunde auf einmal (`SpecFehler`). `folgen`: die aus der Aufnahme berechneten Folgemaße je `mass`-/`gleichung`-Punkt,
     zum Eintragen in die Spec und für die Freigabe-Vorlage."""
     spec = lade_aenderung(pfad)
-    aufnahme = _aufnahme_zu(spec, pfad)
+    aufnahme = aufnahme_zu(spec, pfad)
     befunde = befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
     feature_b, hinweise = feature_befunde(spec, aufnahme, pfad.parent)
     if befunde or feature_b:

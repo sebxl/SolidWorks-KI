@@ -110,7 +110,7 @@ def test_bau_startet_ab_bestand_und_speichert_an_ort(lauf):
     assert p["knoten"][0]["masse"][0]["name"] == "D2@Skizze4" and p["knoten"][0]["sw_name"] == "D2@Skizze4"
 
 
-def test_bau_folgt_der_spec_reihenfolge(lauf, monkeypatch):
+def test_bau_folgt_der_spec_reihenfolge(lauf):
     """Die Prüfsumme sortiert nach id, gebaut wird in Spec-Reihenfolge."""
     lauf.schreibe(UNTERDRUECKEN, MASS)
     assert [k["id"] for k in bau.bauen(lauf.spec_pfad)["knoten"]] == ["p3", "p1"]
@@ -332,8 +332,8 @@ def test_lizenz_im_protokoll(lauf):
     lauf.schreibe(MASS)
     lauf.vor_teil = lambda teil: setattr(teil, "lizenz", 0)
     bau.bauen(lauf.spec_pfad)
-    assert lauf.protokoll()["lizenz"] == {"typ": 0, "name": "swLicenseType_Full",
-                                          "sitzung": {"typ": 2, "name": "swLicenseType_Student"}}
+    assert lauf.protokoll()["lizenz"] == {"sitzung": {"typ": 2, "name": "swLicenseType_Student"},
+                                          "datei": {"typ": 0, "name": "swLicenseType_Full"}}
 
 
 def test_lizenz_nicht_lesbar_stoert_den_fertigen_lauf_nicht(lauf):
@@ -415,6 +415,20 @@ def test_speicherfehler_steht_im_protokoll(lauf):
         bau.bauen(lauf.spec_pfad)
     assert e.value.daten["fehler"]["code"] == SPEICHERN_FEHLGESCHLAGEN and lauf.geschlossen
     assert "punkt" not in e.value.daten["fehler"] and lauf.protokoll()["dateien"] == {}
+
+
+def test_code_eines_bestandfehlers_steht_im_protokoll(lauf):
+    """Eine Konfiguration lässt sich nicht aktivieren: Das Protokoll nennt den Code, nicht nur den Klassennamen."""
+    lauf.schreibe(MASS)
+
+    def bleibt_stehen(teil):
+        teil.aktiv = "Variante B"
+        teil.ShowConfiguration2 = lambda k: False
+
+    lauf.vor_teil = bleibt_stehen
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(lauf.spec_pfad)
+    assert e.value.daten["fehler"]["code"] == "BESTAND_NICHT_LESBAR" and lauf.teil.gespeichert == []
 
 
 def test_kontextfehler_schliesst_das_dokument(lauf):

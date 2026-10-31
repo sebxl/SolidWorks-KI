@@ -9,8 +9,7 @@ import pytest
 from swki.bestand import punkte
 from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_REFERENZ, KINDER_FEHLEN
 from swki.bestand.punkte import PUNKTE, kontext, punkt_handler
-from swki.compiler.fehler import (FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, MATERIAL_UNBEKANNT, REBUILD_FEHLER, UNBEKANNTER_TYP,
-                                  BauFehler)
+from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, MATERIAL_UNBEKANNT, UNBEKANNTER_TYP, BauFehler
 from swki.compiler.kontext import FeatureErgebnis
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
 from tests.bestand.sw_attrappe import Feat, teil_aus
@@ -525,5 +524,4 @@ def test_neuaufbau_fehler_kommen_aus_dem_bau_nicht_aus_dem_handler(aufnahme):
     a["masse"] = [m | {"werte": {"Standard": 40.0, "Variante B": 40.0}} if m["name"] == "D2@Skizze4" else m for m in a["masse"]]
     teil = teil_aus(a)
     teil.fehler["Variante B"] = [("Fase3", 12, False)]
-    _anwenden(teil, MASS, a)
-    assert REBUILD_FEHLER  # kein BauFehler bis hier
+    assert _anwenden(teil, MASS, a)[0] == ["D2@Skizze4"]

@@ -91,8 +91,10 @@ class SkriptKontext:
         sw.auswahl_leeren(self.model)
 
 
-@handler("skript")
-def skript(ctx, f: dict) -> FeatureErgebnis:
+def fuehre_aus(ctx, f: dict):
+    """Prüft das Skript statisch und führt `bauen(ctx)` aus; die Rückgabe bleibt ungeprüft. Der Punkt `skript` einer
+    Änderungs-Spec greift in fremde Features ein: Er darf `None` liefern und benennt nichts um (Bestandsdateien,
+    Präzisierung 6)."""
     datei = ctx.spec_pfad.parent / f["datei"]
     quelltext = datei.read_text(encoding="utf-8")
     befunde = pruefe_skript(quelltext)
@@ -102,14 +104,19 @@ def skript(ctx, f: dict) -> FeatureErgebnis:
     namensraum: dict = {"__name__": f"swki_skript_{f['id']}"}
     exec(compile(quelltext, str(datei), "exec"), namensraum)  # nach statischer Prüfung erlaubt
     try:
-        ergebnis = namensraum["bauen"](SkriptKontext(ctx, f["id"]))
+        return namensraum["bauen"](SkriptKontext(ctx, f["id"]))
     except BauFehler:
         raise
     except Exception as e:
         raise BauFehler(SKRIPT_FEHLER, f"{datei.name}: {type(e).__name__}: {e}", schritt="ausfuehren") from e
+
+
+@handler("skript")
+def skript(ctx, f: dict) -> FeatureErgebnis:
+    ergebnis = fuehre_aus(ctx, f)
     features = ergebnis if isinstance(ergebnis, (list, tuple)) else [ergebnis]
     if not features or any(x is None for x in features):
-        raise BauFehler(SKRIPT_FEHLER, f"{datei.name}: bauen(ctx) hat kein Feature zurückgegeben", schritt="ausfuehren")
+        raise BauFehler(SKRIPT_FEHLER, f"{f['datei']}: bauen(ctx) hat kein Feature zurückgegeben", schritt="ausfuehren")
     for i, feature in enumerate(features):
         feature.Name = f["id"] if i == 0 else f"{f['id']}_{i + 1}"
     return FeatureErgebnis(list(features))

@@ -147,7 +147,11 @@ class Erweiterung:
         teil = self.teil
         weg = {teil.auswahl}
         if option & 1:
-            weg |= {teil.feature(n) for n in teil.loescht_mit.get(teil.auswahl.Name, ())}
+            offen = [teil.auswahl.Name]
+            while offen:
+                for n in teil.loescht_mit.get(offen.pop(), ()):
+                    weg.add(teil.feature(n))
+                    offen.append(n)
         if option & 2:
             weg |= {u for f in list(weg) for u in f.unter}
         for k in teil.ordnung:

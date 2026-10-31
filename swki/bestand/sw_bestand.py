@@ -22,6 +22,7 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
     1), .IsDesignTableDimension(0), .GetSystemValue3(2: swSetValue_InThisConfiguration 1), .ReferencePoints
   IEquationMgr.GetCount(0), .Equation(Index), .GlobalVariable(Index), .Value(Index)
   ISketch.ModelToSketchTransform; IMathVector.MultiplyTransform(1); IModelView.Scale2
+  IModelDoc2.Save3(3: swSaveAsOptions_Silent 1); ISldWorks.GetCurrentLicenseType(0); IModelDocExtension.GetLicenseType(0)
 """
 
 import math
@@ -31,7 +32,9 @@ from pathlib import Path
 from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_REFERENZ, BESTAND_VERSION_NEUER, BestandFehler
 from swki.bestand.folgen import rechte_seite
 from swki.compiler import sw
+from swki.compiler.fehler import SPEICHERN_FEHLGESCHLAGEN, BauFehler
 from swki.compiler.topologie import koerper
+from swki.konfig import lade_rechner
 from swki.pruefung.bilder import ANSICHT_DER_ACHSE, ANSICHTEN, _aufnahme
 from swki.pruefung.messen import skizzenstatus
 from swki.verbindung import byref_long, byref_str, byref_variant, in_mm, in_mm3, r8_array
@@ -49,6 +52,11 @@ EINHEITEN = {SW_LINEAR: "mm", SW_WINKEL: "Grad"}  # ganzzahlige Maße (Anzahl im
 _LINKS = re.compile(r'\s*"([^"]+)"')
 _NUR_NAME = re.compile(r'"([^"]+)"')
 _VERSION = re.compile(r"\d+")
+_LAUF_ORDNER = re.compile(r"lauf-\d+")
+LIZENZEN = {0: "swLicenseType_Full", 1: "swLicenseType_Educational", 2: "swLicenseType_Student",
+            3: "swLicenseType_StudentDesignKit", 4: "swLicenseType_PersonalEdition", 5: "swLicenseType_Full_Office",
+            6: "swLicenseType_Full_Professional", 7: "swLicenseType_Full_Premium", 8: "swLicenseType_Maker",
+            9: "swLicenseType_Full_Ultimate"}  # swLicenseType_e
 
 
 def bstr_array(namen):
@@ -217,13 +225,18 @@ def _lies_masse(features: list, konfiguration: str, konfigurationen: list[str], 
             dd = f.GetNextDisplayDimension(dd)
 
 
-def _feature_eintrag(f, konfigurationen: list[str], tabelle: bool) -> dict:
+def unterdrueckt(feature, konfiguration: str) -> bool:
     """`IsSuppressed2` liefert in Dokumentreihenfolge, egal wie die Namen geordnet sind (live gemessen): je Name einzeln
-    fragen. `tabelle`: Tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen (S18b, Offen), jedes Feature einer
+    fragen."""
+    return bool(feature.IsSuppressed2(SW_BENANNTE_KONFIGURATIONEN, bstr_array([konfiguration]))[0])
+
+
+def _feature_eintrag(f, konfigurationen: list[str], tabelle: bool) -> dict:
+    """`tabelle`: Tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen (S18b, Offen), jedes Feature einer
     Datei mit Tabelle gilt deshalb als möglicherweise gesteuert."""
-    unterdrueckt = {k: bool(f.IsSuppressed2(SW_BENANNTE_KONFIGURATIONEN, bstr_array([k]))[0]) for k in konfigurationen}
     return {"name": f.Name, "typ": f.GetTypeName2, "eltern": [p.Name for p in f.GetParents or ()],
-            "kinder": [c.Name for c in f.GetChildren or ()], "unterdrueckt": unterdrueckt, "tabelle": tabelle}
+            "kinder": [c.Name for c in f.GetChildren or ()], "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen},
+            "tabelle": tabelle}
 
 
 def _gleichungen(model) -> tuple[list[dict], dict[str, float]]:
@@ -242,6 +255,11 @@ def _eigenschaften(model, konfiguration: str) -> dict[str, str]:
     namen, typen, werte, aufgeloest, verknuepft = (byref_variant() for _ in range(5))
     model.Extension.CustomPropertyManager(konfiguration).GetAll3(namen, typen, werte, aufgeloest, verknuepft)
     return dict(zip(namen.value or (), werte.value or ()))
+
+
+def material_von(model, konfiguration: str) -> str:
+    """Das Material gilt je Konfiguration (Sonde Task 6): Name nennen, `""` meint nur die aktive."""
+    return model.GetMaterialPropertyName2(konfiguration, byref_str()) or ""
 
 
 def _datei_referenzen(model) -> list[str]:
@@ -272,7 +290,8 @@ def lies_bestand(app, model) -> dict:
     gleichungen, variablen = _gleichungen(model)
     d: dict = {"version": 1, "konfigurationen": konfigurationen, "aktiv": aktiv,
                "einheitensystem": model.Extension.GetUserPreferenceInteger(SW_EINHEITENSYSTEM, 0),
-               "material": model.GetMaterialPropertyName2(aktiv, byref_str()) or "",
+               "material": material_von(model, aktiv),
+               "materialien": {k: material_von(model, k) for k in konfigurationen},
                "eigenschaften": {"datei": _eigenschaften(model, ""),
                                  "konfiguration": {k: _eigenschaften(model, k) for k in konfigurationen}},
                "externe_referenzen": _datei_referenzen(model), "gleichungen": gleichungen, "variablen": variablen,
@@ -314,6 +333,32 @@ def _anzeige(feature, name: str):
             return dd
         dd = feature.GetNextDisplayDimension(dd)
     return None
+
+
+def speichere_an_ort(model, pfad: Path) -> None:
+    """`Save3` an Ort und Stelle (S18a), nie `SaveAs3`. Gespeichert wird nur das offene Dokument selbst und nur in einem
+    Ordner `lauf-<n>` unter dem Arbeitsordner, so bleiben Original und Bestandskopie unerreichbar (Spec §6)."""
+    arbeit, ziel = lade_rechner().arbeitsordner.resolve(), pfad.resolve()
+    if not ziel.is_relative_to(arbeit) or not _LAUF_ORDNER.fullmatch(ziel.parent.name):
+        raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"{pfad} liegt nicht in einem Lauf-Ordner unter {arbeit}", schritt="speichern")
+    if Path(model.GetPathName).resolve() != ziel:
+        raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"Offen ist {model.GetPathName}, nicht {pfad}", schritt="speichern")
+    fehler, warnungen = byref_long(), byref_long()
+    if not model.Save3(sw.SW_SAVEAS_SILENT, fehler, warnungen) or fehler.value:
+        raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"{pfad.name}: Fehler {fehler.value}", schritt="speichern")
+
+
+def _lizenz_eintrag(typ: int) -> dict:
+    return {"typ": typ, "name": LIZENZEN.get(typ, "unbekannt")}
+
+
+def lizenz(app, model) -> dict | None:
+    """Lizenz der Sitzung (`GetCurrentLicenseType`) und der Datei (`GetLicenseType`, bei kommerziellen Lizenzen immer 0).
+    Nur ein Vermerk für die Ausgabe: Nicht lesbar heißt `None`, das darf einen fertigen Lauf nicht kippen."""
+    try:
+        return {"sitzung": _lizenz_eintrag(app.GetCurrentLicenseType), "datei": _lizenz_eintrag(model.Extension.GetLicenseType)}
+    except Exception:
+        return None
 
 
 def _einpassen(model, ansicht: str) -> None:

@@ -1,20 +1,24 @@
 """Live-Tests der Bestandsaufnahme am Musterteil (Spec Bestandsdateien §5, §12). SolidWorks muss laufen; das Muster dient als
 Original und wird nur gelesen, geöffnet und gespeichert wird nur unter dem Arbeitsordner."""
 
+import json
 import shutil
 import stat
 from pathlib import Path
 
 import pytest
+import yaml
 
 from swki.aenderungen import sha256_datei
-from swki.bestand import befehle
+from swki.bestand import bau, befehle
 from swki.bestand.ablage import bestand_ordner, lade_aufnahme
+from swki.bestand.spec import freigeben, validieren
 from swki.bestand.sw_bestand import bstr_array, lies_bestand
 from swki.compiler import sw
+from swki.compiler.bauen import BauAbbruch
 from swki.konfig import PROJEKT, lade_rechner
 from swki.pruefung.messen import oeffne
-from swki.verbindung import verbinde
+from swki.verbindung import byref_long, verbinde
 
 pytestmark = pytest.mark.sw
 MUSTER = PROJEKT / "tests" / "referenz" / "bestand" / "muster" / "Lagerdeckel.SLDPRT"
@@ -88,6 +92,121 @@ def test_aufnahme_musterteil(auftrag):
     assert sha256_datei(kopie) == sha
 
     assert befehle.aufnehmen(MUSTER, auftrag)["neu"] is False
+
+
+TASCHE = "D1@Schnitt-Linear austragen1"
+NORMBOHRUNG = {"typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [45, 0, 20]},
+               "positionen": [["=-50+RA", 24], ["=-50+RA", -24]], "bezug": {"u": "-rand", "v": "mitte"}, "tiefe": 10, "gewindetiefe": 8}
+
+
+def _aenderung(tmp_path, auftrag: str, a: dict, punkte: list[dict]) -> Path:
+    """Spec im Auftragsordner, validiert und für diesen Test freigegeben."""
+    pfad = tmp_path / auftrag / "aenderung.yaml"
+    pfad.parent.mkdir(exist_ok=True)
+    spec = {"art": "aenderung", "name": "Lagerdeckel_Rev",
+            "bestand": {"datei": a["datei"]["name"], "sha256": a["datei"]["sha256"], "aufnahme": 1}, "parameter": {"RA": 12},
+            "punkte": punkte, "bereiche": [{"punkte": [p["id"] for p in punkte], "box": {"min": [-60, -40, -1], "max": [70, 40, 30]}}]}
+    pfad.write_text(yaml.safe_dump(spec, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    validieren(pfad)
+    freigeben(pfad)
+    return pfad
+
+
+def _lies_lauf(datei: Path) -> dict:
+    app = verbinde(lade_rechner().sw_jahr)
+    model = oeffne(app, datei, sichtbar=False, nur_lesen=True)
+    try:
+        return lies_bestand(app, model)
+    finally:
+        sw.schliesse(app, model)
+
+
+def test_bau_mass_und_normbohrung(auftrag, tmp_path):
+    """Brief Step 8: alle Punktarten, die den Kern tragen; die Lauf-Datei wird neu geöffnet und gelesen."""
+    r = lade_rechner()
+    sha = sha256_datei(MUSTER)
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(r, auftrag, 1)
+    kopie = bestand_ordner(r, auftrag, 1) / MUSTER.name
+    punkte = [{"id": "p1", "typ": "mass", "was": "Tasche tiefer", "mass": TASCHE, "alt": 8, "neu": 9},
+              {"id": "p2", "typ": "gleichung", "was": "Länge", "variable": "L", "alt": 100, "neu": 110, "folgen": ["D1@Skizze1"]},
+              {"id": "p3", "typ": "mass", "was": "Beide Bohrungen", "mass": "Bohrung_D@Skizze3", "alt": 8, "neu": 9,
+               "folgen": ["Bohrung_D@Skizze4"]},
+              {"id": "p4", "typ": "unterdruecken", "was": "Fase weg", "feature": "Fase1", "konfigurationen": ["Standard"]},
+              {"id": "p5", "typ": "feature", "was": "Gewinde", "name": "Gewinde M6 Deckel", "feature": NORMBOHRUNG,
+               "nach": "Schnitt-Linear austragen3"},
+              {"id": "p6", "typ": "material", "neu": "1.4301"},
+              {"id": "p7", "typ": "eigenschaft", "name": "Revision", "neu": "B"}]
+    aus = bau.bauen(_aenderung(tmp_path, auftrag, a, punkte))
+
+    datei = Path(aus["dateien"]["teil"])
+    assert aus["status"] == "ok" and datei.name == MUSTER.name  # Teil heißt wie das Original
+    assert sha256_datei(MUSTER) == sha and sha256_datei(kopie) == sha and sha256_datei(datei) != sha
+    n = _lies_lauf(datei)
+    assert n["aktiv"] == "Standard" and n["neuaufbau"] == [] and n["variablen"] == {"L": 110.0}
+    assert len(n["gleichungen"]) == len(a["gleichungen"])  # keine neuen Gleichungen
+    masse = {m["name"]: m["werte"] for m in n["masse"]}
+    assert masse[TASCHE] == {"Standard": 9.0, "Variante B": 9.0}
+    assert masse["D1@Skizze1"] == {"Standard": 110.0, "Variante B": 110.0}
+    assert masse["Bohrung_D@Skizze4"] == {"Standard": 9.0, "Variante B": 9.0}
+    features = {f["name"]: f for f in n["features"]}
+    assert features["Fase1"]["unterdrueckt"] == {"Standard": True, "Variante B": True}
+    neu = features["Gewinde M6 Deckel"]
+    assert neu["unterdrueckt"] == {"Standard": False, "Variante B": False} and "Gewinde M6 Deckel Skizze" in features
+    for k in n["konfigurationen"]:
+        reihe = n["reihenfolge"][k]
+        assert reihe.index("Gewinde M6 Deckel") == reihe.index("Schnitt-Linear austragen3") + 1, k
+    assert set(n["materialien"].values()) == {"1.4301 (X5CrNi18-10)"}
+    assert n["eigenschaften"]["datei"]["Revision"] == "B"
+    # Fase in beiden Konfigurationen weg: gleiche Geometrie, in beiden die neuen Bohrungen
+    assert n["geometrie"]["Standard"]["volumen"] == pytest.approx(n["geometrie"]["Variante B"]["volumen"], abs=0.01)
+
+    protokoll = json.loads((datei.parent / "protokoll.json").read_text(encoding="utf-8"))
+    assert protokoll["sha256"] == {MUSTER.name: sha256_datei(datei)}
+    assert protokoll["lizenz"]["sitzung"]["name"].startswith("swLicenseType_")
+    knoten = {k["id"]: k for k in protokoll["knoten"]}
+    assert len(knoten["p5"]["punkte"]) == 2 and knoten["p1"]["masse"][0]["wert"] == 9
+    assert all(m["name"].endswith("@Gewinde M6 Deckel Skizze") for m in knoten["p5"]["masse"] if m["art"] == "lage")
+
+
+def test_bau_mit_variante_b_aktiv(auftrag, tmp_path):
+    """Plan Review Focus 4 und S18c: Ein Feature aus Variante B wäre in Standard unterdrückt, gespeichert wird Variante B."""
+    r = lade_rechner()
+    app = verbinde(r.sw_jahr)
+    quelle = r.arbeitsordner / auftrag / "quelle" / MUSTER.name
+    quelle.parent.mkdir(parents=True)
+    shutil.copy2(MUSTER, quelle)
+    model = oeffne(app, quelle, sichtbar=False)
+    try:
+        model.ShowConfiguration2("Variante B")
+        assert model.Save3(sw.SW_SAVEAS_SILENT, byref_long(), byref_long())
+    finally:
+        sw.schliesse(app, model)
+    befehle.aufnehmen(quelle, auftrag)
+    a = lade_aufnahme(r, auftrag, 1)
+    assert a["aktiv"] == "Variante B"
+    punkte = [{"id": "p1", "typ": "feature", "name": "Gewinde M6", "feature": NORMBOHRUNG}]
+    aus = bau.bauen(_aenderung(tmp_path, auftrag, a, punkte))
+    n = _lies_lauf(Path(aus["dateien"]["teil"]))
+    assert n["aktiv"] == "Variante B" and n["neuaufbau"] == []
+    assert {f["name"]: f for f in n["features"]}["Gewinde M6"]["unterdrueckt"] == {"Variante B": False, "Standard": False}
+    for k in n["konfigurationen"]:  # beide Konfigurationen haben die Bohrungen wirklich
+        assert n["geometrie"][k]["volumen"] < a["geometrie"][k]["volumen"] - 100, k
+
+
+def test_unmoeglicher_zug_speichert_nicht(auftrag, tmp_path):
+    """S18c3: Vor die Grundplatte lässt sich die Bohrung nicht ziehen. Die Datei im Lauf bleibt die unveränderte Kopie."""
+    sha = sha256_datei(MUSTER)
+    befehle.aufnehmen(MUSTER, auftrag)
+    a = lade_aufnahme(lade_rechner(), auftrag, 1)
+    punkte = [{"id": "p1", "typ": "feature", "name": "Gewinde M6", "feature": NORMBOHRUNG, "nach": "Skizze1"},
+              {"id": "p2", "typ": "unterdruecken", "feature": "Fase1"}]
+    with pytest.raises(BauAbbruch) as e:
+        bau.bauen(_aenderung(tmp_path, auftrag, a, punkte))
+    d = e.value.daten
+    assert d["fehler"]["punkt"] == "p1" and d["dateien"] == {}
+    assert [k["status"] for k in d["knoten"]] == ["fehler", "uebersprungen"]
+    assert sha256_datei(Path(d["ordner"]) / MUSTER.name) == sha
 
 
 def test_aktive_konfiguration_bleibt_unterdrueckte_skizze_stoert_nicht(auftrag):

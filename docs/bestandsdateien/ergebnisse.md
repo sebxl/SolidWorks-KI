@@ -91,6 +91,31 @@ Fläche. Git-Ignore greift nicht auf die Muster.
   `tabelle` True, Tabellenmaß gesteuert mit Werten 8 und 6, kein Excel-Prozess danach. Öffnen mit Option 2 (ReadOnly) und PNG aus dem
   nur lesend geöffneten Dokument gehen.
 
+### Nachträge aus Task 6 (live, 2026-10-31)
+
+Sonde an Kopien des Musters unter `<arbeitsordner>/S18-T6/`. Skript und Rohdaten sind Wegwerf, der Ordner darf gelöscht werden.
+
+- **`ReorderFeature` wirkt nur in der aktiven Konfiguration, auch bei Erfolg:** Rückgabe True, Standard hat die neue Reihenfolge,
+  Variante B behält die alte. Mit Variante B aktiv wirkt derselbe Zug dort, nach Speichern und Öffnen stimmen beide. Punkt
+  `feature` mit `nach` läuft darum je Konfiguration und prüft den Baum je Konfiguration; False heißt weiterhin Abbruch, nie speichern.
+- **Aufgenommene Skizzen sind Unterfeatures:** `GetFirstSubFeature` eines Schnitts liefert seine Skizze, beim Verschieben geht sie
+  mit (`neu1_skizze`, `neu1`). `loeschen` erlaubt deshalb die Unterfeatures des Features und der `kinder`.
+- **Aufheben mit Option 3:** `SetSuppression2(1, 3, alle Namen)` holt ein in Variante B entstandenes Feature in Standard zurück, seine
+  Unterfeatures folgen (`neu1_positionen`, `Skizze6`, `Bohrungsgewinde1`), Volumen stimmt. Option 2 ist nicht nötig.
+- **Veraltetes Volumen nach Option 3 (Zeile c) ließ sich nicht wiederholen:** Unterdrücken in der aktiven Standard zeigte sofort das
+  neue Volumen, auch nach Neuaufbau, `ForceRebuild3` und Umschalten gleich. `pruefe_stand` prüft die aktive trotzdem zuletzt.
+- **Material gilt je Konfiguration:** `SetMaterialPropertyName2("", …)` trifft nur die aktive, Variante B behält das alte. Mit Namen
+  gesetzt wirken beide, `""` beim Lesen meint ebenfalls die aktive. Punkt `material` setzt je Name, die Aufnahme liest `materialien`.
+- **Eigenschaften:** `Add3` liefert 0, `Delete2` 0, bei fehlender Eigenschaft 1. Zurücklesen statt Rückgabe auswerten.
+- **Lizenz:** `ISldWorks.GetCurrentLicenseType` gilt der Sitzung, `IModelDocExtension.GetLicenseType` der Datei (laut Index bei
+  kommerziellen Lizenzen immer 0). Hier beide 2, vor und nach `Save3`. Das Protokoll führt beide (`lizenz.sitzung`, `lizenz.datei`),
+  Task 9 wertet `sitzung` aus.
+- **`RPC_E_DISCONNECTED` zum zweiten Mal, wieder sporadisch:** einmal im Punkt `feature` (Normbohrung) des ersten Bau-Laufs einer
+  SolidWorks-Sitzung, bei unter 1 GB Private Bytes, also nicht am Speicher allein. Nicht wiederholbar: zwölf Folgen p1 bis p5 ohne
+  Aufnahme, zweimal der Live-Test in derselben Sitzung, einmal auf frischem SolidWorks. Vermutet und widerlegt: altes `IFeature` nach
+  dem Umschalten, erster Einsatz des Bohrungsassistenten in der Sitzung. Die Stelle ist unbekannt, der Lauf hatte keinen Traceback. Der
+  Bau brach sauber ab: nichts gespeichert, Dokument geschlossen, der nächste Lauf ging. Keine Wiederholung eingebaut.
+
 ### Folgen für die Tasks
 
 - **Task 5 (Aufnahme):** Werte durch Umschalten lesen, Dubletten zusammenlegen, `zustand` wie oben ableiten, Namen ohne letztes

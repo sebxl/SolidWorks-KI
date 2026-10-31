@@ -19,15 +19,21 @@ def rechte_seite(text: str) -> str:
     return (m.group(1) if m else text).strip()
 
 
-def _namen(ausdruck: str) -> list[str]:
+def namen_in(ausdruck: str) -> list[str]:
+    """Namen in Anführungszeichen, also die Größen, von denen ein Ausdruck abhängt."""
     return _NAME.findall(ausdruck)
+
+
+def gleicher_ausdruck(a: str, b: str) -> bool:
+    """Gleich bis auf Leerzeichen (SolidWorks setzt sie beim Speichern einer Gleichung selbst)."""
+    return "".join(a.split()) == "".join(b.split())
 
 
 def _nachbarn(aufnahme: dict) -> dict[str, set[str]]:
     """Name → Namen, die mitgehen, wenn er sich ändert: Gleichungen, die ihn rechts nennen, und Partner seiner Gruppe."""
     nachbarn: dict[str, set[str]] = defaultdict(set)
     for g in aufnahme.get("gleichungen", []):
-        for name in _namen(rechte_seite(g["text"])):
+        for name in namen_in(rechte_seite(g["text"])):
             nachbarn[name].add(g["links"])
     gruppen: dict[str, set[str]] = defaultdict(set)
     for m in aufnahme.get("masse", []):

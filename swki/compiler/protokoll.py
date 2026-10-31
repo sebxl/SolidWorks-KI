@@ -42,6 +42,8 @@ class Protokoll:
     komponenten: list[dict] = field(default_factory=list)  # Baugruppe: [{"id", "sw_name", "datei"}]
     normteile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Schlüssel → {"bibliothek", "gebaut", "pruefsumme"}
     kaufteile: dict[str, dict] = field(default_factory=dict)  # Baugruppe: Schlüssel → {"kaufteil", "cache", "gebaut", …}
+    lizenz: dict | None = None  # Bestandsdatei: {"sitzung": {"typ", "name"}, "datei": {"typ", "name"}} (swLicenseType_e)
+    hochgestuft: bool = False  # Bestandsdatei: ältere Datei mit --hochstufen auf das aktuelle SW-Jahr gespeichert
 
     @contextmanager
     def phase(self, name: str):

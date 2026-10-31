@@ -341,6 +341,15 @@ def test_aktive_konfiguration_bleibt_und_steht_vorn(byref):
     assert d["tabelle"] is False and d["neuaufbau"] == [] and "datei" not in d and "sw_jahr" not in d
 
 
+def test_material_je_konfiguration_und_der_aktiven(byref):
+    """Das Material gilt je Konfiguration (Sonde Task 6); `material` bleibt der Wert der aktiven."""
+    model = Modell(aktiv="Variante B")
+    model.GetMaterialPropertyName2 = lambda k, d: {"Standard": "1.0038"}.get(k, "1.4301")
+    d = lies_bestand(None, model)
+    assert d["material"] == "1.4301"
+    assert d["materialien"] == {"Variante B": "1.4301", "Standard": "1.0038", "Variante C": "1.4301"}
+
+
 def test_aktive_konfiguration_bleibt_im_fehlerfall(byref):
     model = Modell(aktiv="Variante B", fehler_in="Standard")
     with pytest.raises(RuntimeError):

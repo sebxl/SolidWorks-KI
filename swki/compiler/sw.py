@@ -18,6 +18,8 @@ SW_SAVEAS_CURRENT_VERSION = 0  # swSaveAsVersion_e
 SW_SAVEAS_SILENT = 1  # swSaveAsOptions_e
 SW_SAVEAS_COPY = 2
 
+_bekannte_fehler: frozenset[str] = frozenset()  # Features, deren Neuaufbau-Fehler rebuild übergeht (bekannte_fehler)
+
 
 def neues_teil(app, vorlage: Path):
     model = app.NewDocument(str(vorlage), 0, 0, 0)
@@ -228,19 +230,30 @@ def huellquader_eng_mm(model) -> list[float]:
     return box_aus_punkten(punkte) if punkte else teilebox_mm(model)
 
 
+@contextmanager
+def bekannte_fehler(features: set[str]):
+    """In diesem Block übergeht rebuild die Neuaufbau-Fehler dieser Features, auch in Handlern: Eine fremde Datei bringt
+    sie mit (Bestandsdateien, Plan Review Focus 2). Der Block ersetzt den äußeren Stand, denn bekannt ist je Konfiguration
+    verschieden. Neue Fehler bleiben Fehler."""
+    global _bekannte_fehler
+    alt = _bekannte_fehler
+    _bekannte_fehler = frozenset(features)
+    try:
+        yield
+    finally:
+        _bekannte_fehler = alt
+
+
 def rebuild(model) -> None:
-    """Baut neu auf; wirft REBUILD_FEHLER mit Feature und Code, wenn SolidWorks Fehler meldet."""
+    """Baut neu auf; wirft REBUILD_FEHLER mit Feature und Code, wenn SolidWorks Fehler meldet (bekannte_fehler ausgenommen)."""
     ok = model.EditRebuild3
     if model.Extension.GetWhatsWrongCount == 0 and ok:
         return
     features, codes, warnungen = byref_variant(), byref_variant(), byref_variant()
     model.Extension.GetWhatsWrong(features, codes, warnungen)
-    fehler = [
-        f"{f.Name}: Code {c}"
-        for f, c, w in zip(features.value or (), codes.value or (), warnungen.value or ())
-        if not w
-    ]
-    if fehler or not ok:
+    gemeldet = [(f.Name, c) for f, c, w in zip(features.value or (), codes.value or (), warnungen.value or ()) if not w]
+    fehler = [f"{name}: Code {c}" for name, c in gemeldet if name not in _bekannte_fehler]
+    if fehler or not (ok or gemeldet):  # False ist mit bekannten Fehlern erwartet, ohne jede Meldung nie
         raise BauFehler(REBUILD_FEHLER, "; ".join(fehler) or "EditRebuild3 meldet Fehler", schritt="rebuild")
 
 

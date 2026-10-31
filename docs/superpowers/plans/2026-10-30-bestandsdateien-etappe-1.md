@@ -78,7 +78,8 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
 {"version": 1, "sw_jahr": 2025,
  "datei": {"name": "Lagerdeckel.SLDPRT", "original": "D:\\…", "sha256": "…", "versionen": ["…"], "version_aelter": false},
  "konfigurationen": ["Standard", "Variante B"], "aktiv": "Standard",
- "material": "1.0038", "eigenschaften": {"datei": {"Benennung": "…"}, "konfiguration": {"Standard": {}}},
+ "material": "1.0038", "materialien": {"Standard": "1.0038", "Variante B": "1.0038"},
+ "eigenschaften": {"datei": {"Benennung": "…"}, "konfiguration": {"Standard": {}}},
  "externe_referenzen": [],
  "gleichungen": [{"index": 0, "text": "\"D1@Skizze1\" = \"L\" * 2", "links": "D1@Skizze1", "global": false}],
  "variablen": {"L": 100.0},
@@ -92,7 +93,7 @@ Geändert: `swki/cli.py`, `swki/spec/befehle.py`, `swki/spec/freigabe.py`, `swki
  "tabelle": false}
 ```
 
-`zustand`: `treibend` | `gesteuert` | `getrieben`. `quelle` bei gesteuert: `{"art": "gleichung"|"variable"|"tabelle", "name": …}`. `gruppe`: Name des gemeinsamen Werts verknüpfter Maße. `werte[k]` ist auch bei unterdrückten Features eine Zahl (S18b); `null` nur, wenn SolidWorks nichts liefert. Zusätzlich `reihenfolge` je Konfiguration und `einheitensystem` (Task 5). Einheiten mm, Grad, mm³.
+`zustand`: `treibend` | `gesteuert` | `getrieben`. `quelle` bei gesteuert: `{"art": "gleichung"|"variable"|"tabelle", "name": …}`. `gruppe`: Name des gemeinsamen Werts verknüpfter Maße. `werte[k]` ist auch bei unterdrückten Features eine Zahl (S18b); `null` nur, wenn SolidWorks nichts liefert. Zusätzlich `reihenfolge` je Konfiguration und `einheitensystem` (Task 5). `material` ist der Wert der aktiven Konfiguration, `materialien` nennt alle (Task 6). Einheiten mm, Grad, mm³.
 
 ## Abhängigkeiten vom Spike S18 (Task 1)
 

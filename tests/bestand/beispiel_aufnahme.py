@@ -25,7 +25,7 @@ AUFNAHME = {
     "datei": {"name": "Lagerdeckel.SLDPRT", "original": "D:\\Kunde\\Lagerdeckel.SLDPRT", "sha256": SHA,
               "versionen": ["18000[2025/268]"], "version_aelter": False},
     "konfigurationen": ["Standard", "Variante B"], "aktiv": "Standard",
-    "material": "1.0038", "eigenschaften": {"datei": {"Benennung": "Lagerdeckel"}, "konfiguration": {"Standard": {}}},
+    "material": "1.0038", "materialien": {"Standard": "1.0038", "Variante B": "1.0038"}, "eigenschaften": {"datei": {"Benennung": "Lagerdeckel"}, "konfiguration": {"Standard": {}}},
     "externe_referenzen": [],
     "gleichungen": [
         {"index": 0, "text": '"L"= 100', "links": "L", "global": True},

@@ -315,6 +315,8 @@ abbrechen; vor dem Speichern Fehler, Volumen und Baum in allen Konfigurationen p
 `DeleteSelection2(3)`, Baum vorher/nachher vergleichen; eine Skizze mit Kind lässt sich so nicht löschen. Vor dem Speichern auf die
 aufgenommene aktive Konfiguration zurück, `Save3` übernimmt die gerade aktive. Handler laufen auf fremden Flächen (`normbohrung`
 mit Randbezug). `Save3` hält die Datei-ID; `SaveAs3` tut das gemessen ebenfalls (S18a), gespeichert wird trotzdem an Ort und Stelle.
+`ReorderFeature` wirkt auch bei Erfolg nur in der aktiven Konfiguration, `nach` läuft deshalb je Konfiguration. `material` setzt je
+Konfiguration über den Namen, `""` träfe nur die aktive. Nach einem Fehler wird nie gespeichert, anders als beim Teil.
 
 Schutzregeln im Code: swki öffnet und speichert nur Dateien unter `<arbeitsordner>/<auftrag>/lauf-<n>/`; die Bestandskopie wird
 nur zum Lesen geöffnet; das Original nie.
@@ -422,6 +424,7 @@ geprüft“, wo zutreffend.
 |---|---|
 | `BESTAND_FORMAT` | Endung nicht `.sldprt` (bzw. `.sldasm` ab Etappe 2) |
 | `BESTAND_VERSION_NEUER` | Datei in neuerem SW-Jahr gespeichert |
+| `BESTAND_VERSION_AELTER` | `swki bauen` an einer Datei aus älterem SW-Jahr ohne `--hochstufen` |
 | `BESTAND_REFERENZ_FEHLT` | referenzierte Datei nicht gefunden |
 | `BESTAND_REFERENZ_EXTERN` | Teil mit externen Referenzen (Etappe 1) |
 | `BESTAND_UNBEKANNT`, `BESTAND_VERALTET` | keine bzw. nicht die neueste Aufnahme zur Spec |
