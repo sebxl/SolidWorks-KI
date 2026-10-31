@@ -666,7 +666,7 @@ def test_positionen_festlegen_mit_bezug(monkeypatch, modell):
     sm._neu(-0.04, 0.02)  # erste Position steht schon (SelectByRay)
     skizze = _Feature()
     monkeypatch.setattr(modul, "positionsskizze", lambda feature: skizze)
-    modul.positionen_festlegen(ctx, object(), _auf_flaeche(kanten), [[-40, 20], [-40, -20]], "f2_positionen",
+    modul.positionen_festlegen(ctx, object(), lambda: _auf_flaeche(kanten), [[-40, 20], [-40, -20]], "f2_positionen",
                                {"u": "-rand", "v": "mitte"}, "features[1].positionen")
     erste, zweite = _punkt(modell, -40, 20), _punkt(modell, -40, -20)
     mittellinie, = modell.mittellinien()
@@ -676,6 +676,41 @@ def test_positionen_festlegen_mit_bezug(monkeypatch, modell):
         ("D1@f2_positionen", "features[1].positionen[0][0]", "-rand", 10.0),
         ("D2@f2_positionen", "features[1].positionen[0][1]", "mitte", 40.0)]
     assert skizze.Name == "f2_positionen"
+
+
+def _protokolliert_insert_sketch(monkeypatch, modell) -> list:
+    """Attrappe wie oben, aber jeder InsertSketch steht in `folge`."""
+    folge: list[str] = []
+    monkeypatch.setattr(modul, "positionsskizze", lambda feature: _Feature())
+    monkeypatch.setattr(modell.SketchManager, "InsertSketch", lambda neu: folge.append("InsertSketch"), raising=False)
+    return folge
+
+
+def test_positionen_festlegen_holt_die_flaeche_erst_in_der_offenen_skizze(monkeypatch, modell):
+    """Öffnen und Schließen der Positionsskizze können eine vorher geholte IFace2 trennen (RPC_E_DISCONNECTED, Spike Trennung)."""
+    kanten = _block_kanten()
+    modell.SketchManager._neu(-0.04, 0.02)
+    folge = _protokolliert_insert_sketch(monkeypatch, modell)
+
+    def ebene():
+        folge.append("ebene")
+        return _auf_flaeche(kanten)
+
+    modul.positionen_festlegen(_kontext(modell), object(), ebene, [[-40, 20], [-40, -20]], "f2_positionen",
+                               {"u": "-rand", "v": "mitte"}, "features[1].positionen")
+    assert folge == ["InsertSketch", "ebene", "InsertSketch"]
+
+
+def test_positionen_festlegen_schliesst_die_skizze_wenn_die_flaeche_fehlt(monkeypatch, modell):
+    folge = _protokolliert_insert_sketch(monkeypatch, modell)
+
+    def ebene():
+        raise BauFehler("REFERENZ_NICHT_GEFUNDEN", "keine Fläche")
+
+    with pytest.raises(BauFehler):
+        modul.positionen_festlegen(_kontext(modell), object(), ebene, [[-40, 20]], "f2_positionen", {"u": "-rand"},
+                                   "features[1].positionen")
+    assert folge == ["InsertSketch", "InsertSketch"]
 
 
 # --- Konturen, Rotation, Notausgang -----------------------------------------------------------------------------------

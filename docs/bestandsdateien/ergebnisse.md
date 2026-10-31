@@ -59,7 +59,7 @@ Fläche. Git-Ignore greift nicht auf die Muster.
 | c | Umbenennen | `feature.Name = …` geht, Umlaute und Leerzeichen ok. **Doppelter Name: keine Ausnahme, Name bleibt still alt.** Zurücklesen | | |
 | c | Verschieben (`nach`) | `IModelDocExtension.ReorderFeature(name, ziel, 3)` geht (2 = davor, 1 = ans Ende mit Ziel `""`), Volumen gleich, Datei danach sauber (`kontrolle_bohrung_b`). **Unmöglicher Zug (Rippe vor Skizze1) beschädigt die beim Zug aktive Konfiguration still und dauerhaft:** Rückgabe False, aber in Standard steht die Rippe vorn, Neuaufbau False, Code 1, Volumen −450. Variante B bleibt heil: eigene Reihenfolge, 0 Fehler, Volumen gleich. **Die Feature-Reihenfolge gilt je Konfiguration.** `Save3` meldet 0/0, nach dem Öffnen ist der Schaden unverändert da, auch `ForceRebuild3` heilt ihn nicht. Mit Variante B aktiv sehen Baum und `fehlerliste` nichts: daher `fehler: []` in c12 trotz fehlender Rippe. Dreimal gemessen, auch ohne Bohrung und mit Standard aktiv beim Speichern. Nach `False` Lauf verwerfen, jede Prüfung je Konfiguration | Lauf `c3`, `je_konfiguration` | 74 s, 433 → 3512 MB |
 | c | Speichern | `Save3`: aktive Konfiguration bleibt die zur Speicherzeit aktive. Lauf muss also vor dem Speichern auf `aktiv` zurückschalten | | |
-| c | Sporadisch | Einmal `RPC_E_DISCONNECTED` im Handler bei 5,4 GB Private Bytes (`GetEdges` einer Fläche). Auf frischem SolidWorks in zwölf Aufrufen nicht wiederholbar, auch nicht nach Konfigurationswechseln. Ursache nicht bewiesen, Muster wie in `pywin32-fallstricke.md` (Neustart ab 4 GB) | | |
+| c | Sporadisch | Einmal `RPC_E_DISCONNECTED` im Handler bei 5,4 GB Private Bytes (`GetEdges` einer Fläche). Auf frischem SolidWorks in zwölf Aufrufen nicht wiederholbar, auch nicht nach Konfigurationswechseln. Ursache später gefunden: dieselbe Stelle wie in „Trennung: Ursache“ unten | | |
 | d | Kopie aus zwei Dokumenten kombinierbar? | **Ja.** `Copy2(True)` aus zwei offenen Dokumenten, `Operations2` geht; Original bleibt unverändert. Mit Typinfo: `r, code = ziel.Operations2(15902, werkzeug, 0)`, Rohzahl statt ByRef | zwei Richtungen, je Körper | 37 s, 719 → 4790 MB (davon 3200 MB ein sichtbarer Vergleich) |
 | d | Unveränderte Geometrie | **Leer, keine Splitter:** `(None, 0)` in beiden Richtungen und Konfigurationen, auch nach öffnen und `Save3` | | 0,04–0,07 s |
 | d | Kleine Bohrung Ø1 × 2 | Ein Körper, Volumen 1,570796 (Soll 1,5708), Hüllquader exakt (44,5…45,5 / 24,5…25,5 / 18…20), in beiden Konfigurationen | | 0,05 s |
@@ -115,6 +115,7 @@ Sonde an Kopien des Musters unter `<arbeitsordner>/S18-T6/`. Skript und Rohdaten
   Aufnahme, zweimal der Live-Test in derselben Sitzung, einmal auf frischem SolidWorks. Vermutet und widerlegt: altes `IFeature` nach
   dem Umschalten, erster Einsatz des Bohrungsassistenten in der Sitzung. Die Stelle ist unbekannt, der Lauf hatte keinen Traceback. Der
   Bau brach sauber ab: nichts gespeichert, Dokument geschlossen, der nächste Lauf ging. Keine Wiederholung eingebaut.
+  Überholt, siehe „Trennung: Ursache“ unten.
 
 ### Nachträge aus Task 8 (live, 2026-10-31)
 
@@ -157,11 +158,56 @@ eines eigenen, kleineren Laufs (`test_datei_id_bleibt`), nicht die dieser Refere
 - **`RPC_E_DISCONNECTED` beim ersten Bau nach `sw_neustart`, jetzt nachstellbar:** Referenz Lauf 2 brach in p5 (Normbohrung) ab, SolidWorks lief weiter,
   nichts gespeichert, kein Dokument offen. Probe, je Versuch Neustart und dann ein Bau: ok, Fehler, ok, ok. Ohne Neustart lief derselbe Bau sofort durch
   (Lauf 3). Das passt zum Fall aus Task 6 (erster Bau der Sitzung, unter 1 GB) und widerspricht dem dortigen Schluss, es sei nicht wiederholbar. Ursache
-  offen; Stelle im Punkt `feature`. Trifft auch `swki durchlauf --neustart`. Ein Fehlversuch zählt als Lauf.
+  offen; Stelle im Punkt `feature`. Trifft auch `swki durchlauf --neustart`. Ein Fehlversuch zählt als Lauf. Überholt: Am Neustart lag es nicht, siehe
+  „Trennung: Ursache“.
 - **Eine Variable, eine Folge:** Das Muster hat nur `"D1@Skizze1" = "L"`, ein `gleichung`-Punkt auf `L` hat genau eine Folge. Die zweite
   Folge der Referenz kommt aus dem verknüpften Maß (`Bohrung_D@Skizze4`).
 - **S18a am Ergebnis (`test_datei_id_bleibt`):** Ausgabe neben einer Kopie der Musterbaugruppe: kein IdMismatch, keine fehlende
   Referenz, Neuaufbau ohne Fehler, neues Volumen in der Komponente.
+
+### Trennung: Ursache (Task 10a, live, 2026-10-31)
+
+**Ursache:** `normbohrung` holte die Skizzenfläche vor dem Öffnen der Positionsskizze als `IFace2` und benutzte sie erst darin
+(`Skizzierer._flaechenkanten`: `GetEdges`). Dazwischen liegt `InsertSketch(True)`, und das Öffnen rollt den Körper zurück (20 auf 18 Flächen).
+Über Neuaufbauten gültig bleibt laut Hilfe nur eine Safe Entity (`IEntity.GetSafeEntity`). Mit Wächter wurde die Fläche **in jedem Lauf** getrennt, nur der
+Zeitpunkt wechselt. Fällt er auf das Öffnen, reißt `GetEdges`; fällt er auf das Schließen oder auf `ForceRebuild3`, merkt es niemand, weil die Fläche dann nicht
+mehr gebraucht wird. Skript: `spikes/s18_trennung.py`, Bau wie `swki.bestand.bau` an einer Kopie des Musters, Trace je Versuch.
+
+**Stelle (Frage 1):** In allen 10 Abbrüchen derselbe Stacktrace: `positionen_festlegen` → `lagen_festlegen` → `massplan` → `_bezugskante` →
+`_flaechenkanten`, `self.se.flaeche.objekt.GetEdges`. Das ist die Stelle aus S18c („`GetEdges` einer Fläche“, gleicher Fall `-rand`) und vermutlich die
+aus Task 6 (auch p5, dort ohne Traceback). Der Wächter fragt vor jedem weiteren COM-Zugriff die Fläche (`GetBox`) und grenzt so den Aufruf ein, der sie trennte
+(„Schließen“: `InsertSketch` oder das Umbenennen der Skizze danach, das läuft nicht über die Spur):
+
+| Fall | Neustart | Läufe | getrennt beim Öffnen, Bau bricht ab | beim Schließen | bei `ForceRebuild3` |
+|---|---|---|---|---|---|
+| Referenz p1 bis p6 | ja | 14 | 1 | 0 | 13 |
+| Referenz p1 bis p6 | nein | 10 | 1 | 0 | 9 |
+| Referenz, ohne `sw.schnell` | ja | 12 | 3 | 0 | 9 |
+| nur p5 | ja | 12 | 0 | 6 | 6 |
+| neues Teil, Klotz und Normbohrung `-rand` | ja | 12 | 0 | 0 | 12 |
+
+Ohne Wächter: 21 Läufe der Referenz mit Neustart, 5 Abbrüche. Zusammen 10 Abbrüche in 57 Läufen der Referenz (18 %).
+
+**Woran es nicht liegt (Frage 2):**
+
+- **Neustart:** Ohne Neustart 1 von 10. Die Probe aus Task 10 (ok, Fehler, ok, ok) war Zufall bei kleiner Zahl. Auch der Speicher nicht: Abbrüche ab 430 MB, S18c bei 5,4 GB.
+- **`sw.schnell`:** ohne ihn 3 von 12.
+- **Normbohrung allein oder Fremddatei allein:** Getrennt wird auch im neuen Teil und bei nur p5, dort aber nie beim Öffnen (je 0 von 12). Es braucht offenbar die
+  Punkte davor. Welcher von p1 bis p4 das bewirkt und warum der Zeitpunkt springt, ist **nicht** geklärt und für die Behebung nicht nötig. 0 von 12 schließt bei 18 % wenig
+  aus (Zufall 9 %): Ein Abbruch im normalen Teilebau mit Randbezug ist nicht belegt, aber auch nicht ausgeschlossen. Die Behebung gilt für ihn mit.
+- **Zeit:** Die Fläche überlebt `HoleWizard5` (dieselbe `IFace2` liefert danach 11 statt 10 Kanten) und in Fall `min` drei Sekunden in der offenen Skizze. Warten allein trennt nicht.
+
+**Kleinste Reproduktion (Frage 3):** Für die Trennung selbst genügt das neue Teil: eine Normbohrung mit `bezug: -rand`, Wächter auf der Fläche, 12 von 12 getrennt.
+Für den Abbruch ist die kleinste bekannte Folge die Referenz p1 bis p5 (`--fall voll_alt`). Ohne Skizzierer (Fall `min`: Fläche holen, Bohrung, Fläche holen, Skizze öffnen,
+sofort oder nach bis zu 3 s fragen, Skizze schließen) kam in 39 Proben keine Trennung; dort ändert sich die Skizze nicht und `ForceRebuild3` fehlt.
+
+**Behebung:** `positionen_festlegen` bekommt die Ebene als Funktion und ruft sie erst in der offenen Skizze auf. Dort sind die Kanten ohnehin die der ungebohrten Fläche
+(10, alt und frisch gleich). `{flaeche}`-Bezüge lösten schon immer dort auf. Danach **30 von 30** Läufen der Referenz mit Neustart ohne Abbruch; bei 18 % wäre das Zufall mit
+0,3 %. Der Wächter auf der frischen Fläche: 30-mal lebend bis `ForceRebuild3`. Gegenprobe auf demselben Code, nur die Ebene wieder vor dem Öffnen geholt (`--fall voll_alt`):
+4 Abbrüche in 10 Läufen. Keine Wiederholung, kein Abfangen: Ein Bau, der abbricht, speichert weiter nichts.
+
+Ein Anker `{nahe}` genau auf der Bohrung findet die Fläche jetzt, weil die Bohrung in der offenen Skizze zurückgerollt ist. Die Zweige „keine Fläche gefunden“ in
+`skizzenebene_nach_bohrung` bleiben als Absicherung.
 
 ### Folgen für die Tasks
 

@@ -386,7 +386,7 @@ def test_positionen_festlegen_gibt_jedem_punkt_seinen_pfad(monkeypatch):
     skizze = _Skizzenfeature()
     skizze.Select2 = lambda anhaengen, marke: None
     monkeypatch.setattr(modul, "positionsskizze", lambda feature: skizze)
-    modul.positionen_festlegen(ctx, object(), Skizzenebene(object(), "vorne", 0.0, (0, 0, 1)), [[1, 2], ["=B", 4]],
+    modul.positionen_festlegen(ctx, object(), lambda: Skizzenebene(object(), "vorne", 0.0, (0, 0, 1)), [[1, 2], ["=B", 4]],
                                "f2_positionen", None, "features[1].positionen")
     assert [pfad for _, pfad in erzeugt] == ["features[1].positionen[0]", "features[1].positionen[1]"]
     assert [m["name"] for m in ctx.masse["f2"]] == ["D1@f2_positionen", "D2@f2_positionen"]

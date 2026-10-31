@@ -136,6 +136,14 @@ Details und kopierfertige Aufrufe: `docs/stufe0/ergebnisse/s9a_b*.json`, `s9b_b*
   und ohne zu speichern (S9b-22). `OpenDoc6` auf bereits offene Datei → dasselbe Objekt,
   Warnung 128 `swFileLoadWarning_AlreadyOpen` (S9b-23).
 
+## Getrennte Objekte (`RPC_E_DISCONNECTED`, −2147417848)
+
+- **`IFace2` und `IEdge` nicht über einen Neuaufbau halten.** Über Neuaufbauten gültig bleibt laut Hilfe nur eine Safe Entity (`IEntity.GetSafeEntity`). Sonst wirft ein
+  späterer Zugriff `com_error` „Das aufgerufene Objekt wurde von den Clients getrennt“. Der Zeitpunkt ist nicht vorhersagbar: In der Positionsskizze einer Normbohrung traf es
+  dieselbe Fläche beim Öffnen, beim Schließen oder bei `ForceRebuild3`, beim Öffnen in 10 von 57 Läufen der Bestands-Referenz (`spikes/s18_trennung.py`,
+  `docs/bestandsdateien/ergebnisse.md`). Das sieht sporadisch aus, hängt aber weder am Speicher noch am Neustart.
+- Regel: Flächen und Kanten nach dem Öffnen einer bestehenden Skizze (`InsertSketch`) und nach jedem Neuaufbau neu holen.
+
 ## Bekannte Fehlschläge
 
 - Early Binding (`gencache.EnsureDispatch`) auf ein bereits laufendes SolidWorks-Objekt (S1, siehe

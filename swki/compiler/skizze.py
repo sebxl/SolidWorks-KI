@@ -7,6 +7,7 @@ damit Skizzen auf Flächen und versetzten Ebenen genauso funktionieren.
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
 from swki.bemassung import GLEICH_MM, MITTE, URSPRUNG, Auftrag, Kennpunkt, bezug_von, massplan, rechteck_kennkoordinate
@@ -815,11 +816,13 @@ def positionsskizze(feature):
     raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f"{feature.Name}: keine Positionsskizze gefunden", schritt="skizze")
 
 
-def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name: str, bezug: dict | None,
+def positionen_festlegen(ctx, feature, ebene: Callable[[], Skizzenebene], positionen: list, name: str, bezug: dict | None,
                          pfad: str) -> None:
     """Die erste Position steht schon (SelectByRay); weitere als Skizzenpunkte in die Positionsskizze einfügen, alle
     Punkte nach `bezug` (Spec-Feld der Normbohrung, je Achse) bemaßen, die Skizze benennen und die Maße ins Maßprotokoll
     tragen (S10 Frage 2, Rand und Symmetrie in der Positionsskizze: Spike S17 Zeile 4).
+    ebene: liefert die Skizzenebene. Aufgerufen wird sie erst in der offenen Skizze: Eine vorher geholte IFace2 kann schon
+    das Öffnen trennen (RPC_E_DISCONNECTED, spikes/s18_trennung.py).
     pfad: Spec-Pfad der Positionsliste (z. B. "features[1].positionen"); die Lage von Punkt k trägt "<pfad>[k][a]"."""
     bezug_je_achse = bezug_von({"bezug": bezug})
     skizze = positionsskizze(feature)
@@ -829,7 +832,7 @@ def positionen_festlegen(ctx, feature, se: Skizzenebene, positionen: list, name:
     sm.InsertSketch(True)  # öffnet die selektierte Skizze (S9b)
     status, masse = None, []
     try:
-        skizzierer = Skizzierer(ctx, se, sm.ActiveSketch)
+        skizzierer = Skizzierer(ctx, ebene(), sm.ActiveSketch)
         with sw.einstellung(ctx.app, sw.SW_INPUT_DIM_VAL_ON_CREATE, False), sw.ohne_inferenz(sm):
             for u, v in positionen[1:]:
                 x, y = skizzierer.zu_skizze(ctx.wert(u), ctx.wert(v))
