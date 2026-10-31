@@ -1,14 +1,16 @@
-"""Befehle "swki bestand aufnehmen|zeige" (Spec Bestandsdateien §5). Das Original wird nur gelesen; in SolidWorks geöffnet
+"""Befehle "swki bestand aufnehmen|zeige|ausgabe" (Spec Bestandsdateien §5, §9). Das Original wird nur gelesen; in SolidWorks geöffnet
 wird nur die schreibgeschützte Bestandskopie, nur lesend, und nie gespeichert. Die Rohdaten stehen in `bestand.json`,
 ausgegeben wird eine Zusammenfassung, mit der sich „das 40er Maß an der Bohrung“ zuordnen lässt."""
 
 import re
 from pathlib import Path
 
+from swki.bestand import ausgabe
 from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, kopiere_original, lade_aufnahme, pruefe_format,
                                  schreibe_aufnahme, sha_original)
 from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
 from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_mass)
+from swki.cli import ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import lade_rechner
 from swki.pruefung.bilder import screenshots
@@ -152,3 +154,8 @@ def einrichten(subparsers) -> None:
     was.add_argument("--mass")
     was.add_argument("--feature")
     p.set_defaults(func=lambda a: zeige(a.auftrag, a.mass, a.feature))
+    p = gruppe.add_parser("ausgabe", help="geänderte Dateien eines bestandenen Laufs nach <auftrag>/ausgabe/ kopieren "
+                                          "(der Nutzer kopiert selbst zurück)")
+    p.add_argument("spec")
+    p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Vorgabe: letzter Lauf")
+    p.set_defaults(func=lambda a: ausgabe.ausgabe(Path(a.spec), a.lauf))

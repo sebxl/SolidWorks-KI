@@ -20,11 +20,77 @@ def _grenze_text(wert) -> str:
     return {True: "geht durch", False: "wirkt", None: "–"}[wert]
 
 
+def _wert(wert) -> str:
+    return f"{wert:g}" if isinstance(wert, (int, float)) and not isinstance(wert, bool) else str(wert)
+
+
+def _punkt_text(p: dict) -> str:
+    """Was ein Punkt einer Änderungs-Spec tut, kurz (Spec Bestandsdateien §4.1)."""
+    typ = p["typ"]
+    if typ == "mass":
+        text = f"{p['mass']}: {_wert(p['alt'])} → {_wert(p['neu'])}"
+    elif typ == "gleichung":
+        text = f"{p.get('variable') or p['gleichung']}: {_wert(p['alt'])} → {_wert(p['neu'])}"
+    elif typ == "loeschen":
+        text = " + ".join([p["feature"], *p.get("kinder", [])])
+    elif typ in ("unterdruecken", "aufheben"):
+        text = p["feature"]
+    elif typ == "feature":
+        text = f"{p['name']} ({p['feature'].get('typ', '?')})" + (f" nach {p['nach']}" if p.get("nach") else "")
+    elif typ == "material":
+        text = _wert(p["neu"])
+    elif typ == "eigenschaft":
+        text = f"{p['name']} → {'gelöscht' if p['neu'] is None else _wert(p['neu'])}"
+    else:  # skript
+        text = f"{p['datei']} (Lücke: {p['luecke']})"
+    return f"{p['was']}: {text}" if p.get("was") else text
+
+
+def _ort(box: list[float]) -> str:
+    return ", ".join(f"{achse} {box[i]:g}…{box[i + 3]:g}" for i, achse in enumerate("xyz"))
+
+
+def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protokoll: dict | None) -> list[str]:
+    """Abschnitt für `art: aenderung` (Spec Bestandsdateien §9): Punkte mit Folgen, Differenzen, Ausgabeliste, Lizenz."""
+    bestand = spec["bestand"]
+    zeilen = ["", "## Änderung am Bestand", "", f"Datei: `{bestand['datei']}` (Aufnahme {bestand['aufnahme']})", "",
+              "### Punkte", "", "| Punkt | Typ | Änderung | Folgen |", "|---|---|---|---|"]
+    zeilen += [f"| {p['id']} | {p['typ']} | {_punkt_text(p)} | {', '.join(p.get('folgen', [])) or '–'} |" for p in spec["punkte"]]
+    zeilen += ["", "### Differenzen vorher/nachher (letzter Lauf)", ""]
+    differenzen = letzter.get("differenzen")
+    if not differenzen:
+        zeilen.append("- nicht geprüft")
+    for konfiguration, liste in (differenzen or {}).items():
+        if not liste:
+            zeilen.append(f"- {konfiguration}: keine Abweichung")
+            continue
+        zeilen += [f"- {konfiguration}: {a['art']} {a['volumen']:g} mm³ bei {_ort(a['box'])}, "
+                   + (f"Bereich {a['bereich']}" if a.get("bereich") is not None else "in keinem Bereich") for a in liste]
+    zeilen += ["", "### Ausgabe", ""]
+    if ausgabe is None:
+        zeilen.append("- Ausgabe erst nach bestandenem Lauf (geprüft und vom Prüfer abgenommen)")
+    elif "fehler" in ausgabe:
+        zeilen.append(f"- Ausgabeliste nicht ermittelt: {ausgabe['fehler']}")
+    else:
+        zeilen += [f"- `{d['datei']}`: Original `{d['original']}`, Ausgabe `{d['ausgabe']}`" for d in ausgabe["dateien"]]
+        zeilen += [f"- unverändert, nicht ausgegeben: `{n}`" for n in ausgabe["unveraendert"]]
+        zeilen += [f"- Warnung {w['code']}: {w['meldung']}" for w in ausgabe["warnungen"]]
+        if not (ausgabe["dateien"] or ausgabe["unveraendert"]):
+            zeilen.append("- keine Datei im Lauf")
+    lizenz = (protokoll or {}).get("lizenz")
+    if lizenz and isinstance(lizenz.get("sitzung"), dict):
+        zeilen += ["", f"Lizenz beim Bau: Sitzung {lizenz['sitzung'].get('name')}, Datei {(lizenz.get('datei') or {}).get('name')}"]
+    zeilen += ["", "Wirkung auf Baugruppen nicht geprüft (Etappe 1 prüft nur das Teil)."]
+    return zeilen
+
+
 def bericht_markdown(
     spec: dict, auftrag: str, laeufe: list[dict], empfehlung: tuple[str, str],
     letzter_bericht: dict | None, letztes_urteil: dict | None, letztes_protokoll: dict | None,
-    compiler_aenderungen: list[str],
+    compiler_aenderungen: list[str], ausgabe: dict | None = None,
 ) -> str:
+    """`ausgabe`: nur für `art: aenderung`, das Ergebnis von `ausgabe_liste` (`None` solange kein Lauf bestanden ist, bei einem
+    Fehler `{"fehler": Text}`)."""
     code, text = empfehlung
     status = "bestanden" if code == "bestanden" else f"offen ({code})"
     zeilen = [
@@ -55,6 +121,8 @@ def bericht_markdown(
         zeilen += ["", "## Feature-Baum (letzter Lauf)", "", f"- Knoten der Spezifikation: {baum['knoten']}",
                    f"- erzeugte Features (ohne Skizzen, Ebenen, Achsen): {baum['features']}"]
     letzter = letzter_bericht or {}
+    if spec.get("art") == "aenderung":
+        zeilen += _aenderung_abschnitt(spec, letzter, ausgabe, letztes_protokoll)
     if letzter.get("stueckliste"):
         zeilen += ["", "## Stückliste (letzter Lauf)", "", "| Datei | Anzahl |", "|---|---|"]
         zeilen += [f"| {n} | {c} |" for n, c in sorted(letzter["stueckliste"].items())]
@@ -111,6 +179,7 @@ def bericht_markdown(
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]
+    zeilen += [f"- vorher, {name}: `{pfad}`" for name, pfad in (letzter_bericht or {}).get("bilder_vorher", {}).items()]
     zeilen += ["", "## Phasenzeiten (letzter Lauf)", "", "| Phase | s |", "|---|---|"]
     for phase, sekunden in (letztes_protokoll or {}).get("phasen", {}).items():
         zeilen.append(f"| {phase} | {sekunden} |")

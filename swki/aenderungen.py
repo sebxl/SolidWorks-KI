@@ -31,6 +31,11 @@ MANUELL_GEAENDERT = "MANUELL_GEAENDERT"
 UEBERNAHME_OHNE_NEUE_FREIGABE = "UEBERNAHME_OHNE_NEUE_FREIGABE"
 _TOL = 1e-6
 _SW_DATEIEN = (".sldprt", ".sldasm")
+_TEXT_AENDERUNG = ("Änderungs-Spec (art: aenderung): swki liest hier keine Maße aus, die Abweichung zeigt nur die SHA-256. Ein neuer "
+                   "Lauf entsteht immer ab der Bestandskopie, nie aus der geänderten Lauf-Datei; sie bleibt unberührt. Der Befund "
+                   "bleibt MANUELL_GEAENDERT, bis der Nutzer entscheidet. Nutzer fragen, was geändert wurde: übernehmen (den Punkt in "
+                   "der Spec ergänzen, validieren, Nutzer-OK, swki freigeben, dann swki bauen --uebernommen) oder verwerfen "
+                   "(swki bauen --verwerfen, nur auf ausdrückliche Anweisung)")
 
 
 class AenderungFehler(SwkiFehler):
@@ -327,6 +332,9 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     a = abweichungen(ordner, protokoll.get("sha256", {}))
     if not a["geaendert"]:
         return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": a["fehlend"]}
+    if art_der_datei(spec_pfad) == "aenderung":  # Bestandsdatei (Spec Bestandsdateien §6): kein Soll aus Parametern, nichts zu lesen
+        return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], "text": _TEXT_AENDERUNG,
+                "geaendert": [{"datei": n, "parameter": [], "hinweis": "Datei geändert (nicht ausgelesen)"} for n in a["geaendert"]]}
     soll = soll_parameter(spec_pfad, auftrag, standard)  # erst jetzt: braucht eine gültige Freigabe
     soll_m = soll_masse(protokoll, spec_pfad, auftrag, standard)
     ergebnis = []

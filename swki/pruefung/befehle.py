@@ -153,6 +153,19 @@ def _compiler_aenderungen(seit: str) -> list[str]:
     return [z for z in ergebnis.stdout.splitlines() if z.strip()]
 
 
+def _ausgabe_fuer_bericht(spec_pfad: Path, alle: list[dict]) -> dict | None:
+    """Ausgabeliste im Bericht einer Änderung: nur, wenn der letzte Lauf bestanden ist. Ein Fehler (Lauf-Datei verändert, Freigabe
+    veraltet) steht im Bericht, er bricht ihn nicht ab. Es wird nichts kopiert."""
+    if not (alle and alle[-1]["bestanden"]):
+        return None
+    from swki.bestand.ausgabe import ausgabe_liste  # spät importiert (Kreisimport)
+
+    try:
+        return ausgabe_liste(spec_pfad, alle[-1]["lauf"])
+    except SwkiFehler as e:
+        return {"fehler": str(e)}
+
+
 def bericht(spec_pfad: Path) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec_beliebig(spec_pfad)
@@ -167,6 +180,7 @@ def bericht(spec_pfad: Path) -> dict:
         _lies(lauf_datei(spec_pfad, letzter, "pruefer")) if letzter else None,
         protokoll,
         _compiler_aenderungen(erstes["gestartet"]) if erstes else [],
+        ausgabe=_ausgabe_fuer_bericht(spec_pfad, alle) if spec.get("art") == "aenderung" else None,
     )
     ziel = spec_pfad.parent / "bericht.md"
     ziel.write_text(text, encoding="utf-8")
