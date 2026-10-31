@@ -136,7 +136,13 @@ Wegwerf.
 
 ### Nachträge aus Task 10 (live, 2026-10-31)
 
-Referenz `tests/referenz/bestand/lagerdeckel_rev.yaml`, sechs Punkte, Lauf 1 ohne Mangel, 12,8 s Bau, 21 Prüfungen.
+Referenz `tests/referenz/bestand/lagerdeckel_rev.yaml`, sechs Punkte, 12,7 s Bau, 21 Prüfungen. **Bestanden in Lauf 3**, Prüfer „bestanden“ ohne Mängel,
+`swki status` „bestanden“. Lauf 1: Code-Prüfungen ohne Mangel, Prüfer verlangte den Beleg für p5. Lauf 2: Abbruch im Bau, `RPC_E_DISCONNECTED`.
+
+Ausgabe: nur `Lagerdeckel.SLDPRT` unter dem Originalnamen in `<auftrag>/ausgabe/`, SHA-256 gleich Lauf 3 (65df85ba…), nichts unverändert. Warnung
+`BESTAND_LIZENZ` wie erwartet (Sitzung und Datei `swLicenseType_Student`), keine `BESTAND_ORIGINAL_GEAENDERT`. Das Muster ist unverändert (048eed27…,
+`git status` leer). `swki bericht`: Status bestanden, Ausgabeliste, Lizenz, „Wirkung auf Baugruppen nicht geprüft“. Die Baugruppenprobe nimmt eine Ausgabedatei
+eines eigenen, kleineren Laufs (`test_datei_id_bleibt`), nicht die dieser Referenz.
 
 - **Volumen vorab gerechnet, gemessen auf 0,001 genau:** Variante B +10603,567, Standard +10583,567 mm³. Die Differenz sind die 20 mm³
   der Fase auf der Verlängerung, `volumen_delta` trägt darum die Mitte mit 0,2 %.
