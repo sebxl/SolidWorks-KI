@@ -79,13 +79,25 @@ Fläche. Git-Ignore greift nicht auf die Muster.
 | g | `ReplaceReferencedDocument` | Geht ohne Öffnen, Pfade danach im Lauf-Ordner, keine Warnung, **ändert aber die SHA-256 der Baugruppe**. Für Etappe 2 unnötig, solange alle Dateien daneben liegen | Weg 3 | |
 | g | Pack and Go | **Nicht erreichbar.** `GetPackAndGo` hat laut Index 0 Parameter, per IDispatch „Parameter nicht optional" bzw. „Unzulässige Parameteranzahl" (Methode, Property-Get, `InvokeTypes`). Bräuchte außerdem ein offenes Dokument. Nicht nötig | | |
 
+### Nachträge aus Task 5 (live, 2026-10-31)
+
+- **`IsSuppressed2(3, Namen)` liefert in Dokumentreihenfolge, die Reihenfolge der Namen zählt nicht:** `['Variante B', 'Standard']`
+  und `['Standard', 'Variante B']` geben beide `(False, True)` für die in Variante B unterdrückte Fase. Im Spike fiel das nicht auf,
+  weil dort Dokumentreihenfolge gefragt wurde. Je Name einzeln fragen.
+- **PNG-Name:** `SaveAs3` lehnt `@` im Dateinamen ab (Fehler 8, `swFileNameContainsAtSign`), und `@` steht in jedem Maßnamen.
+- **Maßbild:** Schattiert verdeckt der Körper Maße im Innern, von der Tiefe der Tasche (`D1@Schnitt-Linear austragen1`) blieben in
+  der Isometrie nur Pfeilreste ohne Zahl. Mit `ViewDisplayWireframe` ist die rote Zahl lesbar, auch die Skizzen-Ansicht bleibt klar.
+- Bestand mit `HoleWzd` (Lauf `c3`): Unterfeatures, ihre Skizzen und Maße werden gelesen. Bestand mit Tabelle (Lauf `t`):
+  `tabelle` True, Tabellenmaß gesteuert mit Werten 8 und 6, kein Excel-Prozess danach. Öffnen mit Option 2 (ReadOnly) und PNG aus dem
+  nur lesend geöffneten Dokument gehen.
+
 ### Folgen für die Tasks
 
 - **Task 5 (Aufnahme):** Werte durch Umschalten lesen, Dubletten zusammenlegen, `zustand` wie oben ableiten, Namen ohne letztes
   `@…`. Unsichtbar öffnen spart 2,3 GB; `HoleWzd` über Unterfeatures. Tabelle: `HasDesignTable`, nie `GetDesignTable is None`.
   Baum und Fehler je Konfiguration lesen (`neuaufbau` trägt die Konfiguration): `fehlerliste` sieht nur die aktive, die
   Feature-Reihenfolge kann je Konfiguration abweichen.
-- **Task 6 (Bau):** `alt` und `neu` nach Neuaufbau nachmessen (Status 0 beweist nichts), nach jedem Konfigurationswechsel
+- **Task 6 (Bau):** Unterdrückung beim Nachmessen je Konfiguration einzeln lesen (Nachträge aus Task 5). `alt` und `neu` nach Neuaufbau nachmessen (Status 0 beweist nichts), nach jedem Konfigurationswechsel
   `FeatureByName` und `GetEquationMgr` neu holen, Unterdrücken nur mit Option 3, neue Features ausdrücklich in allen
   Konfigurationen aufheben, Namen zurücklesen, Baum nach `loeschen`/`nach` vergleichen, vor dem Speichern auf `aktiv` zurück. **Vor dem Speichern und nach
   jedem Fehlschlag Volumen, Fehler und Baum in allen Konfigurationen prüfen, nicht nur in der aktiven:** `ReorderFeature` = False

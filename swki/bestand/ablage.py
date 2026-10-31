@@ -43,16 +43,21 @@ def _kopie_in(ordner: Path) -> Path | None:
     return treffer[0] if treffer else None
 
 
-def kopiere_original(r: Rechner, auftrag: str, original: Path) -> dict:
-    """Original lesen und als schreibgeschützte Kopie in bestand-<n>/ ablegen. Gleiche Datei (gleicher Name ohne
-    Beachtung der Groß-/Kleinschreibung, gleiche SHA-256 wie die jüngste Aufnahme) → keine neue Aufnahme."""
-    pruefe_format(original)
+def sha_original(original: Path) -> str:
+    """SHA-256 des Originals; `BESTAND_NICHT_LESBAR`, wenn es fehlt oder gesperrt ist."""
     try:
-        sha = sha256_datei(original)
+        return sha256_datei(original)
     except OSError as e:
         raise BestandFehler(BESTAND_NICHT_LESBAR, f"{original} lässt sich nicht lesen ({e.strerror or e}) – fehlt die "
                                                   "Datei, ist das Laufwerk nicht da oder hat sie ein Kollege offen?",
                             pfad=str(original)) from e
+
+
+def kopiere_original(r: Rechner, auftrag: str, original: Path) -> dict:
+    """Original lesen und als schreibgeschützte Kopie in bestand-<n>/ ablegen. Gleiche Datei (gleicher Name ohne
+    Beachtung der Groß-/Kleinschreibung, gleiche SHA-256 wie die jüngste Aufnahme) → keine neue Aufnahme."""
+    pruefe_format(original)
+    sha = sha_original(original)
     nummern = aufnahmen(r, auftrag)
     if nummern:
         jung = nummern[-1]
