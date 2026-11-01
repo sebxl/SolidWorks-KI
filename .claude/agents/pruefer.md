@@ -109,7 +109,8 @@ nachgewiesen ist, ist nicht bestanden.
 Du bekommst zusätzlich Bilder der Baugruppe vorher und nachher (`bilder_vorher`, `bilder`), je geänderter Datei eigene (Schlüssel
 `<rel>/iso`) und die Bewegungsbilder (`bilder_bewegung`). Knoten sind Punkt-IDs oder Prüfungs-IDs; eine Teilprüfung heißt `<rel>/<prüfung>`, zum
 Beispiel `teile/Deckel.SLDPRT/baum`, nur `punkt:<id>` bleibt ohne Präfix. `differenzen` steht je Datei, `dateien` nennt, was sich geändert hat
-oder neu ist. Eine Datei ohne Eintrag dort ist unverändert (SHA-256), ihr fehlen darum Teilprüfung und Bilder, das ist kein Mangel.
+oder neu ist. Eine Datei ohne Eintrag dort ist unverändert (SHA-256), ihr fehlen darum Teilprüfung und Bilder, das ist kein Mangel. Ein neues
+eigenes Teil (`quelle.teil`) ist gegen seine freigegebene Teil-Spec gemessen (`<rel>/…`, `teilpruefungen`), es hat keine Vorher-Bilder.
 1. Jeder Punkt sitzt an der gemeinten Stelle, in der Baugruppe wie im Teil: die richtige Komponente, die richtige Instanz, die richtige Verknüpfung
    (`punkt:<id>`, Bilder vorher/nachher).
 2. `lage_folgen` ist plausibel: Was sich laut Spec mitbewegt, gehört mechanisch dazu; `lage` nennt jede andere Komponente, die gewandert ist. Eine

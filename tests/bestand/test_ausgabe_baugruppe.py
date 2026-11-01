@@ -17,9 +17,9 @@ from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT
 from swki.cli import SwkiFehler
 from swki.pruefung import befehle
 from swki.pruefung.bericht import _punkt_text, bericht_markdown
-from tests.bestand.test_bau_baugruppe import (EIGENSCHAFT, GRUND, HAUPT, MASS, NEU, NEUE_DATEI, SCHLITTEN, WERT, WEITERE, inhalt,
+from tests.bestand.test_bau_baugruppe import (EIGENSCHAFT, GRUND, HAUPT, MASS, MASS2, NEU, NEUE_DATEI, SCHLITTEN, WERT, WEITERE, inhalt,
                                               normteil)  # noqa: F401
-from tests.bestand.test_pruefen_baugruppe import BEREICH, Pruefung
+from tests.bestand.test_pruefen_baugruppe import BEREICH, BEREICHE, Pruefung
 
 
 class Ausgabe(Pruefung):
@@ -175,6 +175,71 @@ def test_ohne_herkunft_steht_none_da(u):
     assert modul.ausgabe(u.bestanden())["herkunft"] is None
 
 
+def test_alte_ausgabe_wandert_beiseite(u):
+    """Lauf 1 ändert Grund, Lauf 2 nur Schlitten: Wer `ausgabe/` zurückkopiert, brächte sonst die verworfene Änderung mit."""
+    spec = u.bestanden()
+    erste = modul.ausgabe(spec)
+    assert erste["alt"] is None and u.ausgegeben() == [GRUND]
+    u.schreibe(MASS2, bereiche=[BEREICHE[1]])
+    assert u.baue()["status"] == "ok"
+    lauf_datei(spec, 2, "pruefbericht").write_text(json.dumps({"bestanden": True, "maengel": []}), encoding="utf-8")
+    lauf_datei(spec, 2, "pruefer").write_text(json.dumps({"bestanden": True, "maengel": []}), encoding="utf-8")
+    zweite = modul.ausgabe(spec, 2)
+    alt = u.ausgabe_ordner().with_name("ausgabe_alt_1")
+    assert zweite["alt"] == str(alt) and u.ausgegeben() == [SCHLITTEN]
+    assert (alt / GRUND).read_bytes() == u.lauf_inhalt(GRUND)  # nichts gelöscht
+
+
+def test_ausgabe_nimmt_die_naechste_freie_nummer(u):
+    spec = u.bestanden()
+    frueher = u.ausgabe_ordner().with_name("ausgabe_alt_1")
+    frueher.mkdir(parents=True)
+    (frueher / "x.txt").write_text("früher", encoding="utf-8")
+    modul.ausgabe(spec)
+    erg = modul.ausgabe(spec)
+    assert erg["alt"] == str(u.ausgabe_ordner().with_name("ausgabe_alt_2")) and (frueher / "x.txt").read_text(encoding="utf-8") == "früher"
+    assert u.ausgegeben() == [GRUND]
+
+
+def test_leerer_ausgabe_ordner_wandert_nicht(u):
+    spec = u.bestanden()
+    u.ausgabe_ordner().mkdir(parents=True)
+    assert modul.ausgabe(spec)["alt"] is None and not u.ausgabe_ordner().with_name("ausgabe_alt_1").exists()
+
+
+def test_alte_ausgabe_wandert_auch_ohne_neue_datei(u):
+    """Der Lauf gibt nichts aus: Unter `ausgabe/` darf dann auch nichts Altes als Ergebnis liegen."""
+    spec = u.bestanden()
+    modul.ausgabe(spec)
+    u.lauf_pfad(GRUND).write_bytes(inhalt(GRUND))
+    datei = lauf_datei(spec, 1, "protokoll")
+    p = json.loads(datei.read_text(encoding="utf-8"))
+    p["sha256"][GRUND] = sha256_datei(u.lauf_pfad(GRUND))
+    datei.write_text(json.dumps(p), encoding="utf-8")
+    erg = modul.ausgabe(spec)
+    assert erg["dateien"] == [] and erg["alt"] and not u.ausgabe_ordner().exists()
+
+
+def test_gesperrte_alte_ausgabe_bricht_vor_dem_kopieren_ab(u, monkeypatch):
+    spec = u.bestanden()
+    modul.ausgabe(spec)
+    inhalt_vorher = (u.ausgabe_ordner() / GRUND).read_bytes()
+
+    def gesperrt(self, ziel):
+        raise PermissionError(13, "Zugriff verweigert")
+
+    monkeypatch.setattr(Path, "rename", gesperrt)
+    with pytest.raises(SwkiFehler, match="ausgabe"):
+        modul.ausgabe(spec)
+    assert (u.ausgabe_ordner() / GRUND).read_bytes() == inhalt_vorher
+
+
+def test_ausgabe_liste_verschiebt_nichts(u):
+    spec = u.bestanden()
+    modul.ausgabe(spec)
+    assert "alt" not in modul.ausgabe_liste(spec) and u.ausgegeben() == [GRUND]
+
+
 def test_ausgabe_verlangt_bestandenen_lauf(u):
     spec = u.gebaut()
     with pytest.raises(BestandFehler) as e:
@@ -299,6 +364,14 @@ def test_bericht_ausgabe_nennt_neue_dateien(u):
                                 "unveraendert": [], "warnungen": [], "herkunft": {"auftrag": "P", "lauf": 30, "spec": "s.yaml"}})
     assert f"- `{NEUE_DATEI}` (neu): neben die Hauptbaugruppe `K/n`, Ausgabe `A/n`" in text
     assert "Herkunft: Auftrag P, Lauf 30" in text
+
+
+def test_bericht_ohne_pruefbericht_sagt_nicht_geprueft(u):
+    spec = {"name": "Haupt_Rev", "art": "aenderung", "bestand": {"datei": HAUPT, "aufnahme": 1}, "punkte": [MASS]}
+    text = bericht_markdown(spec, "A", [], ("bauen", "x"), None, None, None, [])
+    for abschnitt in ("Kollisionen", "Bewegungen", "Warnungen", "Bestandsfehler (kein Mangel des Laufs)", "Nicht abgedeckt"):
+        assert f"### {abschnitt}\n\n- nicht geprüft" in text, abschnitt
+    assert "nichts bekannt" not in text and "keine Grenzverknüpfung" not in text
 
 
 def test_bericht_ende_zu_ende(u):

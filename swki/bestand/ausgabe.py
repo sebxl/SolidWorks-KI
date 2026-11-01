@@ -15,6 +15,7 @@ liegen flach neben der Hauptbaugruppe und tragen `neu: true`. Zusätzlich `herku
 
 import json
 import shutil
+from itertools import count
 from pathlib import Path
 
 from swki.aenderungen import AenderungFehler, sha256_datei
@@ -194,6 +195,21 @@ def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
              "unveraendert": unveraendert, "warnungen": warnungen}, ordner)
 
 
+def _alte_ausgabe_beiseite(ordner: Path) -> str | None:
+    """`ausgabe/` nennt nur den Stand dieses Aufrufs: Wer den Ordner zurückkopiert, brächte sonst eine verworfene Änderung aus einem
+    früheren Lauf in die Datei des Kollegen. Ein vorhandener Inhalt wandert darum nach `ausgabe_alt_<n>/` (nächste freie Nummer), gelöscht
+    wird nichts. Rückgabe: der neue Ordner oder None. Lässt er sich nicht verschieben, wird nichts kopiert."""
+    if not ordner.is_dir() or not any(ordner.iterdir()):
+        return None
+    ziel = next(z for n in count(1) if not (z := ordner.with_name(f"{AUSGABE_ORDNER}_alt_{n}")).exists())
+    try:
+        ordner.rename(ziel)
+    except OSError as e:
+        raise SwkiFehler(f"{ordner} lässt sich nicht nach {ziel.name} verschieben ({e.strerror or e}): Liegt eine Datei daraus noch offen? "
+                         "Es wurde nichts kopiert") from e
+    return str(ziel)
+
+
 def ausgabe_liste(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Was `ausgabe` täte, ohne etwas zu schreiben (für den Bericht). Fehler wie bei `ausgabe`: `LAUF_NICHT_BESTANDEN`,
     `BESTAND_VERALTET` (neuere Aufnahme, oder der Lauf ist aus einem anderen Stand gebaut, als die Spec nennt), Lauf-Datei verändert,
@@ -205,8 +221,10 @@ def ausgabe(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Spec §9: geänderte Dateien des bestandenen Laufs nach `ausgabe/` kopieren. Erst wird alles geplant und geprüft, dann kopiert.
 
     `{"auftrag", "lauf", "ordner", "dateien": [{datei, original, ausgabe, sha256}], "unveraendert": [...], "warnungen": [{code,
-    meldung}]}`; bei einer Baugruppe je Datei zusätzlich `neu`, je Datei-Warnung `datei`, dazu `herkunft`."""
+    meldung}], "alt"}`; `alt`: wohin eine frühere Ausgabe gewandert ist, sonst None. Bei einer Baugruppe je Datei zusätzlich `neu`, je
+    Datei-Warnung `datei`, dazu `herkunft`."""
     plan, quelle = _plane(spec_pfad, lauf)
+    plan = {**plan, "alt": _alte_ausgabe_beiseite(Path(plan["ordner"]))}
     for d in plan["dateien"]:
         ziel = Path(d["ausgabe"])
         ziel.parent.mkdir(parents=True, exist_ok=True)

@@ -102,14 +102,17 @@ def grenzen_der_aufnahme(aufnahme: dict) -> dict[str, dict]:
 
 def abdeckung(aufnahme: dict) -> list[str]:
     """Was die Bewegungsprüfung nicht abdeckt (Spec §8.4): Grenzen in Unterbaugruppen und bewegliche Komponenten ohne Grenze (aktive
-    Konfiguration unterbestimmt, nicht fixiert, nicht unterdrückt; mit aktiver Grenze zählt eine Komponente als bestimmt)."""
+    Konfiguration unterbestimmt, nicht fixiert, nicht unterdrückt). Partner einer aktiven Grenze haben eine, was `bewegungen` als bewegt
+    nennt, ist gefahren: Beide zählen nicht, ob eine Grenze wirklich fuhr, sagt `bewegung:<g>`."""
     aktiv = aufnahme.get("aktiv")
-    hinweise = []
+    hinweise, abgedeckt = [], {k for e in (aufnahme.get("bewegungen") or {}).values() for k in e.get("bewegt") or ()}
     for n, v in (aufnahme.get("verknuepfungen") or {}).items():
-        if v.get("grenze") and not _unterdrueckt(v, aktiv) and not _oberste_ebene(v):
-            hinweise.append(f"Grenze {n} liegt in einer Unterbaugruppe ({_komma(p for p in v['partner'] if p)}), nicht gefahren")
+        if v.get("grenze") and not _unterdrueckt(v, aktiv):
+            abgedeckt.update(v.get("partner") or ())
+            if not _oberste_ebene(v):
+                hinweise.append(f"Grenze {n} liegt in einer Unterbaugruppe ({_komma(p for p in v['partner'] if p)}), nicht gefahren")
     for n, k in (aufnahme.get("komponenten") or {}).items():
-        if (_je(k.get("status"), aktiv) == UNTERBESTIMMT and _je(k.get("fixiert"), aktiv) is not True
+        if (n not in abgedeckt and _je(k.get("status"), aktiv) == UNTERBESTIMMT and _je(k.get("fixiert"), aktiv) is not True
                 and _je(k.get("unterdrueckt"), aktiv) is not True):
             hinweise.append(f"Komponente {n} ist beweglich (unterbestimmt) und hat keine Grenze, nicht gefahren")
     return hinweise

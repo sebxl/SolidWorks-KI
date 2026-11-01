@@ -9,6 +9,7 @@ import json
 import os
 import stat
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -17,7 +18,7 @@ from swki.aenderungen import sha256_datei
 from swki.auftrag import lauf_datei, lauf_ordner
 from swki.baugruppe import sw_bewegung
 from swki.baugruppe.bewegungslauf import SpeicherKnapp
-from swki.bestand import ablage, ausgabe as ausgabe_modul, pruefen as pruefen_modul, pruefen_baugruppe as modul
+from swki.bestand import ablage, ausgabe as ausgabe_modul, pruefen as pruefen_modul, pruefen_baugruppe as modul, punkte_baugruppe
 from swki.bestand import spec as spec_modul
 from swki.bestand.bewegung_bestand import fahre_bestand, grenzen_der_aufnahme, statische_paare
 from swki.bestand.differenz import Abweichung
@@ -25,15 +26,18 @@ from swki.bestand.fehler import BESTAND_ABWEICHEND, BESTAND_PFAD_FREMD, BestandF
 from swki.bestand.sw_baugruppe_bestand import VERKNUEPFUNG_UNERREICHT, mechanik_fuer
 from swki.compiler.fehler import REBUILD_FEHLER, BauFehler
 from swki.pruefung import befehle
+from swki.pruefung.bewertung import Messwerte
 from swki.pruefung.messen import SW_OPEN_READONLY
 from swki.pruefung.schleife import lies_laeufe
 from tests.bestand.sw_attrappe_baugruppe import App, Interferenz, Kollisionen, Mate
 from tests.bestand.test_bau_baugruppe import (EIGENSCHAFT, GRUND, HAUPT, MASS, MASS2, NEU, NEUE_DATEI, NEUE_KOMPONENTE, SCHLITTEN, WERT, Lauf,
                                               normteil)  # noqa: F401
 from tests.bestand.test_pruefen import Umgebung
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, freigabe_der_teil_quelle, schreibe_teil
 
 STANDARD = {"toleranzen": {"anker_mm": 0.01, "volumen_prozent": 0.5}, "bewegung_schritte": 4, "speicher_grenze_mb": 16000,
-            "max_nachbesserungen": 3}
+            "max_nachbesserungen": 3, "gleichungen": False}
+DECKEL = "Deckel2.SLDPRT"
 IM_BEREICH = [-40.0, 10.0, 10.0, -30.0, 20.0, 20.0]
 BOX = {"min": [-50, 0, 0], "max": [-20, 40, 20]}
 BEREICH = [{"punkte": ["p1"], "in_datei": GRUND, "box": BOX}]
@@ -109,6 +113,8 @@ class Pruefung(Lauf):
         return list(self.abweichung)
 
     def _screenshots(self, app, model, ordner):
+        if model is self.asm:
+            self.aufgebaut_beim_bild = self.asm.aktiv in self.asm.aufgebaut
         self.bilder.append((model.GetTitle, Path(ordner)))
         return {"iso": str(Path(ordner) / "iso.png"), "vorne": str(Path(ordner) / "vorne.png")}
 
@@ -149,6 +155,13 @@ def ids(bericht: dict) -> dict[str, dict]:
 
 
 # --- Bestanden ---------------------------------------------------------------------------------------------------------------
+
+def test_neuaufbau_vor_bildern_und_fahrt(u):
+    """Teil geändert, Baugruppe ungespeichert: Das zweite Öffnen zeigte sonst den alten Stand."""
+    u.gebaut()
+    u.pruefe()
+    assert u.aufgebaut_beim_bild is True
+
 
 def test_ohne_mangel_bestanden(u):
     u.gebaut(MASS, EIGENSCHAFT)
@@ -406,11 +419,28 @@ def test_bekannte_fehler_der_fahrt_kommen_aus_dem_bestand(u, monkeypatch):
     assert gesehen["grenzen"] == ["Hub"]
 
 
-def test_abdeckung_steht_im_bericht(u):
+def frei(asm) -> None:
+    """Eine bewegliche Komponente ohne Grenze."""
+    asm.komponente("Frei-1", "teile/Welle.SLDPRT", status=2)
+
+
+def test_abdeckung_nennt_nur_was_nicht_gefahren_ist(tmp_path, monkeypatch):
+    u = Pruefung(tmp_path, monkeypatch, fehlerhaft=frei)
     u.gebaut()
     b = u.pruefe()
-    assert "Schlitten-1" in ids(b)["bewegung_abdeckung"]["hinweis"]
-    assert any("Schlitten-1" in h for h in b["nicht_abgedeckt"])
+    assert "Frei-1" in ids(b)["bewegung_abdeckung"]["hinweis"] and any("Frei-1" in h for h in b["nicht_abgedeckt"])
+    assert "Schlitten-1" not in ids(b)["bewegung_abdeckung"]["hinweis"]  # sie hat eine Grenze und ist gefahren
+    assert not [t for t in [*b["nicht_abgedeckt"], *(w["meldung"] for w in b["warnungen"])] if "Schlitten-1" in t]
+
+
+def test_ohne_offene_bewegung_kein_eintrag_zur_abdeckung(u):
+    u.gebaut()
+    assert "bewegung_abdeckung" not in ids(u.pruefe())
+
+
+def test_fahrt_nur_in_der_aktiven_konfiguration_steht_da(u):
+    u.gebaut()
+    assert any("Fahrt" in h and "Standard" in h and "Leicht" in h for h in u.pruefe()["nicht_abgedeckt"])
 
 
 # --- Bericht ------------------------------------------------------------------------------------------------------------------
@@ -482,13 +512,14 @@ def test_fehlende_aufnahme_einer_unterbaugruppe_ist_nicht_still(u):
     assert any(x.get("datei") == "Unter.SLDASM" for x in u.pruefe()["warnungen"])
 
 
-def test_warnungen_stehen_einmal_da(u):
+def test_warnungen_stehen_einmal_da(tmp_path, monkeypatch):
     """Die Aufnahme nennt die Abdeckung schon, der Lauf nennt sie wieder."""
-    u.aufnahme["warnungen"] = [{"code": "BEWEGUNG_ABDECKUNG", "meldung": "Komponente Schlitten-1 ist beweglich (unterbestimmt) und hat "
+    u = Pruefung(tmp_path, monkeypatch, fehlerhaft=frei)
+    u.aufnahme["warnungen"] = [{"code": "BEWEGUNG_ABDECKUNG", "meldung": "Komponente Frei-1 ist beweglich (unterbestimmt) und hat "
                                                                        "keine Grenze, nicht gefahren"}]
     u.gebaut()
     w = u.pruefe()["warnungen"]
-    assert len([x for x in w if x["code"] == "BEWEGUNG_ABDECKUNG"]) == len({x["meldung"] for x in w if x["code"] == "BEWEGUNG_ABDECKUNG"})
+    assert len([x for x in w if x["code"] == "BEWEGUNG_ABDECKUNG"]) == 1
 
 
 def test_bestandsfehler_stehen_im_bericht(tmp_path, monkeypatch):
@@ -525,7 +556,8 @@ def test_pruefer_auftrag_nennt_alle_bilder(u):
     assert f"Bewegungsbilder (Lauf, je Grenze min, mitte, max): {u.lauf_pfad('bilder') / 'Hub-max.png'}" in text
 
 
-def test_durchlauf_mit_neustart_und_ausgabe_der_warnungen(u, monkeypatch):
+def test_durchlauf_mit_neustart_und_ausgabe_der_warnungen(tmp_path, monkeypatch):
+    u = Pruefung(tmp_path, monkeypatch, fehlerhaft=frei)
     u.schreibe(MASS, bereiche=BEREICH, pruefen=False)
     neustarts = []
     monkeypatch.setattr(d, "_neustart", lambda erg, vor: neustarts.append(vor))
@@ -599,6 +631,105 @@ def test_neue_komponente_wird_geprueft(u, normteil):  # noqa: F811
     alle = ids(b)
     assert alle["punkt:k1"]["ok"] is True and alle["punkt:k1"]["ist"] == [NEUE_KOMPONENTE]
     assert b["dateien"]["neu"] == [NEUE_DATEI] and alle["dateien"]["ok"] is True and alle["komponenten"]["ok"] is True and b["bestanden"] is True
+
+
+@pytest.fixture
+def eigenes_teil(u, monkeypatch):
+    """`quelle.teil`: Teilbau und Speichern ohne SolidWorks; die Messwerte eines Teils wie im Soll."""
+    schreibe_teil(u.spec_pfad.parent)
+    teil = SimpleNamespace(GetPathName=None, GetTitle=DECKEL, GetPartBox=lambda welt: (0.0,) * 6)
+
+    def baue(app, r, standard, spec, pfad, auftrag, protokoll):
+        return teil, SimpleNamespace(model=teil, ergebnisse={}), None
+
+    def speichere(model, pfad):
+        Path(pfad).write_bytes(b"deckel")
+        teil.GetPathName = str(Path(pfad).with_suffix(".SLDPRT"))
+
+    monkeypatch.setattr(punkte_baugruppe, "baue_teil_dokument", baue)
+    monkeypatch.setattr(punkte_baugruppe.sw, "speichere", speichere)
+    monkeypatch.setattr(punkte_baugruppe, "lade_rechner", lambda: u.r)
+    gemessen = SimpleNamespace(werte=Messwerte([], {}, [-50, 0, -30, 50, 15, 30], 1000.0, (0, 0, 0), "1.0038", {}), kontexte=[])
+
+    def kontext(app, model, spec, spec_pfad, tol, protokoll):
+        gemessen.kontexte.append((Path(model.GetPathName).name, spec["parameter"]["H"], spec_pfad.name, protokoll["status"]))
+        return SimpleNamespace(model=model)
+
+    monkeypatch.setattr(modul, "kontext_aus_datei", kontext)
+    monkeypatch.setattr(modul, "messe", lambda ctx, soll: gemessen.werte)
+    return gemessen
+
+
+def test_eigenes_neues_teil_wird_gegen_die_freigabe_gemessen(u, eigenes_teil):
+    u.schreibe(TEIL_PUNKT, bereiche=[], pruefen=False)
+    freigabe_der_teil_quelle(u.spec_pfad)
+    assert u.baue()["status"] == "ok"
+    b = u.pruefe()
+    alle = ids(b)
+    assert alle[f"{DECKEL}/rebuild"]["ok"] is True and alle[f"{DECKEL}/huellquader"]["ok"] is True, alle
+    assert b["bestanden"] is True, b["maengel"]
+    assert b["teilpruefungen"][DECKEL] == {"bestanden": True, "maengel": 0} and f"teile:{DECKEL}" in b["messung"]
+    assert eigenes_teil.kontexte == [(DECKEL, 15, "Deckel2.yaml", "ok")]
+    assert u.verlauf == [DECKEL, HAUPT, HAUPT]  # zu, bevor die Baugruppe aufgeht; `_oeffne_beim_pruefen` prüft den Rest
+
+
+def test_eigenes_neues_teil_mit_mangel_ist_nicht_bestanden(u, eigenes_teil):
+    u.schreibe(TEIL_PUNKT, bereiche=[], pruefen=False)
+    freigabe_der_teil_quelle(u.spec_pfad)
+    u.baue()
+    eigenes_teil.werte.box = [-50, 0, -30, 50, 99, 30]
+    b = u.pruefe()
+    assert b["bestanden"] is False and ids(b)[f"{DECKEL}/huellquader"]["ok"] is False
+    assert b["teilpruefungen"][DECKEL] == {"bestanden": False, "maengel": 1}
+
+
+def test_gescheiterte_messung_des_neuen_teils_ist_nicht_nachgewiesen(u, eigenes_teil, monkeypatch):
+    u.schreibe(TEIL_PUNKT, bereiche=[], pruefen=False)
+    freigabe_der_teil_quelle(u.spec_pfad)
+    u.baue()
+    monkeypatch.setattr(modul, "messe", lambda ctx, soll: 1 / 0)
+    b = u.pruefe()
+    e = ids(b)[f"{DECKEL}/messung"]
+    assert e["ok"] is None and "ZeroDivisionError" in e["hinweis"] and b["bestanden"] is False and u.app.offen == []
+
+
+def test_neues_teil_fehlt_im_protokoll_ist_nicht_nachgewiesen(u, eigenes_teil):
+    u.schreibe(TEIL_PUNKT, bereiche=[], pruefen=False)
+    freigabe_der_teil_quelle(u.spec_pfad)
+    u.baue()
+    datei = lauf_datei(u.spec_pfad, 1, "protokoll")
+    p = json.loads(datei.read_text(encoding="utf-8"))
+    p["neue_dateien"] = []
+    datei.write_text(json.dumps(p), encoding="utf-8")
+    b = u.pruefe()
+    assert ids(b)["Deckel2.yaml/messung"]["ok"] is None and b["bestanden"] is False
+
+
+def test_pfad_fremd_am_neuen_teil_bleibt_laut(u, eigenes_teil, monkeypatch):
+    u.schreibe(TEIL_PUNKT, bereiche=[], pruefen=False)
+    freigabe_der_teil_quelle(u.spec_pfad)
+    u.baue()
+
+    echt = modul.oeffne_in
+
+    def fremd(app, pfad, *a, **k):
+        if Path(pfad).name == DECKEL:
+            raise BestandFehler(BESTAND_PFAD_FREMD, "fremd")
+        return echt(app, pfad, *a, **k)
+
+    monkeypatch.setattr(modul, "oeffne_in", fremd)
+    with pytest.raises(BestandFehler):
+        u.pruefe()
+    assert not lauf_datei(u.spec_pfad, 1, "pruefbericht").exists()
+
+
+def test_lauf_datei_nach_dem_bau_geaendert_ist_mangel(u, normteil):  # noqa: F811
+    """Auch eine neue Datei: Ihre SHA-256 kennt nur das Protokoll."""
+    u.gebaut(NEU, bereiche=[])
+    u.lauf_pfad(NEUE_DATEI).write_bytes(b"nach dem Bau von Hand")
+    b = u.pruefe()
+    e = ids(b)["dateien"]
+    assert e["ok"] is False and NEUE_DATEI in e["hinweis"] and e["nach_dem_bau"] == [NEUE_DATEI] and b["bestanden"] is False
 
 
 def test_veraltete_datei_ohne_pruefsumme_ist_nicht_bestanden(u):

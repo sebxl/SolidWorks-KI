@@ -226,8 +226,10 @@ def test_speicher_wird_vor_dem_oeffnen_gemessen(u, monkeypatch):
 
 
 def test_abdeckung_steht_in_den_warnungen(u):
+    u.asm.komponente("Frei-1", "teile/Welle.SLDPRT", status=2)
     aus = aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
-    assert any("Schlitten-1 ist beweglich" in w["meldung"] for w in aus["warnungen"])
+    assert any("Frei-1 ist beweglich" in w["meldung"] for w in aus["warnungen"])
+    assert not any("Schlitten-1" in w["meldung"] for w in aus["warnungen"])  # Partner der Grenze Hub
 
 
 def test_herkunft_und_belegter_auftrag(u):

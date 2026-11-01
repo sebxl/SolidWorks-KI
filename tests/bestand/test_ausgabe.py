@@ -120,6 +120,15 @@ def test_ausgabe_prueft_die_freigabe_der_teil_quelle(u):
     assert not u.ausgabe_ordner().exists() and u.nur_aussen() == [u.original]
 
 
+def test_alte_ausgabe_wandert_beiseite_auch_beim_teil(u):
+    u.voll()
+    spec = u.gebaut()
+    assert modul.ausgabe(spec)["alt"] is None
+    erg = modul.ausgabe(spec)
+    alt = u.ausgabe_ordner().with_name("ausgabe_alt_1")
+    assert erg["alt"] == str(alt) and (alt / "Lagerdeckel.SLDPRT").is_file() and (u.ausgabe_ordner() / "Lagerdeckel.SLDPRT").is_file()
+
+
 def test_ausgabe_nennt_unveraenderte_und_kopiert_sie_nicht(u):
     """Dieselbe SHA-256 wie die Bestandskopie: nichts auszugeben, die Datei steht unter `unveraendert`."""
     u.voll()

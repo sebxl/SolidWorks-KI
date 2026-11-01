@@ -1,8 +1,10 @@
 """bericht.md eines Auftrags: Status, Läufe, offene Punkte, Screenshots, Phasenzeiten, Compiler-Änderungen."""
 
+from swki.bestand.ablage import ist_baugruppe
 from swki.pruefung.bewertung import beschreibung
 
 _ERGEBNIS = {True: "bestanden", False: "Mangel", None: "nicht geprüft"}
+NICHT_GEPRUEFT = "- nicht geprüft"
 
 
 def _zelle(wert) -> str:
@@ -101,17 +103,17 @@ def _kollisionen_abschnitt(pruefungen: list[dict]) -> list[str]:
     """Die Kollisionsliste (Spec Bestandsdateien §8.2): Nur neue sind Mängel, der Rest steht hier."""
     e = next((x for x in pruefungen if x["id"] == "kollision"), None)
     if e is None:
-        return ["", "### Kollisionen", "", "- nicht geprüft"]
+        return ["", "### Kollisionen", "", NICHT_GEPRUEFT]
     zeilen = _paare(e.get("ist", []), "neu") + _paare(e.get("bekannt", []), "aus dem Bestand")
     zeilen += _paare(e.get("erlaubt", []), "erlaubt") + _paare(e.get("weggefallen", []), "weggefallen")
     return ["", "### Kollisionen", "", *(zeilen or ["- keine"])]
 
 
-def _bewegungen_abschnitt(bewegungen: dict) -> list[str]:
-    """Je Grenzverknüpfung die Fahrt des Laufs (Spec Bestandsdateien §8.4)."""
+def _bewegungen_abschnitt(bewegungen: dict | None) -> list[str]:
+    """Je Grenzverknüpfung die Fahrt des Laufs (Spec Bestandsdateien §8.4); `None`: kein Prüfbericht."""
     zeilen = ["", "### Bewegungen", ""]
     if not bewegungen:
-        return zeilen + ["- keine Grenzverknüpfung gefahren"]
+        return zeilen + [NICHT_GEPRUEFT if bewegungen is None else "- keine Grenzverknüpfung gefahren"]
     zeilen += ["| Grenze | Komponente | Bereich | gefahren | Stellungen | bewegt | Kollisionen | Hinweis |",
                "|---|---|---|---|---|---|---|---|"]
     for name, e in bewegungen.items():
@@ -123,7 +125,9 @@ def _bewegungen_abschnitt(bewegungen: dict) -> list[str]:
     return zeilen
 
 
-def _bestandsfehler_abschnitt(fehler: dict) -> list[str]:
+def _bestandsfehler_abschnitt(fehler: dict | None) -> list[str]:
+    if fehler is None:
+        return ["", "### Bestandsfehler (kein Mangel des Laufs)", "", NICHT_GEPRUEFT]
     zeilen = [f"- {x}" for x in fehler.get("neuaufbau", [])]
     zeilen += [f"- {v['verknuepfung']} ({v['konfiguration']}): Code {v['code']}" for v in fehler.get("verknuepfungen", [])]
     zeilen += _paare(fehler.get("kollisionen", []), "Kollision")
@@ -133,11 +137,14 @@ def _bestandsfehler_abschnitt(fehler: dict) -> list[str]:
 
 def _baugruppe_abschnitt(letzter: dict) -> list[str]:
     """Was nur eine Baugruppe hat: Kollisionsliste, Bewegungen, Warnungen, Bestandsfehler, was die Prüfung nicht abdeckt."""
-    zeilen = _kollisionen_abschnitt(letzter.get("pruefungen", [])) + _bewegungen_abschnitt(letzter.get("bewegungen") or {})
-    warnungen = [f"- {w['code']}: {w['meldung']}" for w in letzter.get("warnungen", [])]
-    zeilen += ["", "### Warnungen", "", *(warnungen or ["- keine"])] + _bestandsfehler_abschnitt(letzter.get("bestandsfehler") or {})
-    offen = [f"- {h}" for h in letzter.get("nicht_abgedeckt", [])]
-    return zeilen + ["", "### Nicht abgedeckt", "", *(offen or ["- nichts bekannt"])]
+    def liste(feld: str, leer: str) -> list[str]:
+        if feld not in letzter:
+            return [NICHT_GEPRUEFT]
+        return [f"- {w['code']}: {w['meldung']}" if isinstance(w, dict) else f"- {w}" for w in letzter[feld]] or [leer]
+
+    zeilen = _kollisionen_abschnitt(letzter.get("pruefungen", [])) + _bewegungen_abschnitt(letzter.get("bewegungen"))
+    zeilen += ["", "### Warnungen", "", *liste("warnungen", "- keine")] + _bestandsfehler_abschnitt(letzter.get("bestandsfehler"))
+    return zeilen + ["", "### Nicht abgedeckt", "", *liste("nicht_abgedeckt", "- nichts bekannt")]
 
 
 def _ausgabe_zeile(d: dict) -> str:
@@ -150,7 +157,7 @@ def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protok
     """Abschnitt für `art: aenderung` (Spec Bestandsdateien §8, §9): Punkte mit Folgen, Differenzen, Ausgabeliste, Lizenz, bei
     einer Baugruppe je Datei und mit `_baugruppe_abschnitt`."""
     bestand = spec["bestand"]
-    baugruppe = bestand["datei"].lower().endswith(".sldasm")
+    baugruppe = ist_baugruppe(bestand["datei"])
     zeilen = ["", "## Änderung am Bestand", "", f"Datei: `{bestand['datei']}` (Aufnahme {bestand['aufnahme']})", "",
               "### Punkte", "", "| Punkt | Typ | Änderung | Folgen |", "|---|---|---|---|"]
     zeilen += [f"| {p['id']} | {p['typ']} | {_punkt_text(p)}{' in ' + p['in_datei'] if p.get('in_datei') else ''} | "

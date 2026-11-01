@@ -1,7 +1,8 @@
 """swki pruefen für art: aenderung an einer Baugruppe (Spec Bestandsdateien §7, §8.1a, §8.3, §8.4, §8.7; Plan Etappe 2 Task 11).
 
 Hier laufen die Prüfungen zusammen: je Datei mit geänderter SHA-256 und Punkten die Teil-Prüfung von Etappe 1 (`pruefe_teil`,
-Einträge mit Präfix `<rel>/`, außer `punkt:<id>`), dann die Hauptbaugruppe (`vergleiche_baugruppe`, `vergleiche_dateien`,
+Einträge mit Präfix `<rel>/`, außer `punkt:<id>`), je Teil-Quelle die Messung gegen ihre freigegebene Spec (ebenfalls `<rel>/`,
+Normteile und Kaufteile sind in ihrer Bibliothek geprüft), dann die Hauptbaugruppe (`vergleiche_baugruppe`, `vergleiche_dateien`,
 `vergleiche_bewegungen`, eine Etappe-1-Prüfung der Hauptdatei über `haupt_scheibe`, Pfadschutz). Gleiche SHA-256 plus gleiche
 Transformation beweisen, dass eine Komponente unverändert ist; darum wird nur verglichen, was sich geändert hat, auch in großen
 Baugruppen. Eine geänderte Datei ohne Punkt ist ein Mangel `dateien`, sie braucht keine Teil-Prüfung.
@@ -37,8 +38,9 @@ from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.fehler import BauFehler
 from swki.pruefung.befehle import schreibe_pruefbericht
-from swki.pruefung.bewertung import eintrag
+from swki.pruefung.bewertung import bewerte, eintrag
 from swki.pruefung.bilder import ANSICHTEN, screenshots
+from swki.pruefung.messen import kontext_aus_datei, messe
 from swki.spec.freigabe import freigegebene_spec
 from swki.verbindung import verbinde
 
@@ -54,6 +56,17 @@ def _ist_summen(ordner: Path, protokoll: dict) -> dict[str, str | None]:
             return None
 
     return {rel: summe(rel) for rel in protokoll.get("sha256") or {}}
+
+
+def _dateien_pruefung(spec: dict, dateien: dict, ist: dict, neue_dateien: list[str], protokoll: dict) -> dict:
+    """`vergleiche_dateien`, dazu der Stand des Baus: Was nach dem Bau anders ist als in `protokoll.sha256`, ist nicht geprüft, was gebaut
+    wurde, auch bei einer Datei mit Punkt oder einer neuen, deren SHA-256 sonst niemand kennt."""
+    e = vergleiche_dateien(spec, dateien, ist, neue_dateien)
+    summen = protokoll.get("sha256") or {}
+    if not (spaeter := sorted(rel for rel, sha in ist.items() if sha is not None and sha != summen[rel])):
+        return e
+    text = f"Nach dem Bau geändert: {', '.join(spaeter)}"
+    return {**e, "ok": False, "nach_dem_bau": spaeter, "hinweis": "; ".join(filter(None, [e.get("hinweis"), text]))}
 
 
 def _mit_datei(e: dict, rel: str) -> dict:
@@ -81,6 +94,40 @@ def _pruefe_teile(app, m: _Messung, r, spec: dict, freigegeben: dict, spec_pfad:
             ergebnisse[rel] = pruefe_teil(app, teil, scheibe(freigegeben, datei, vorher["dateien"]), spec_pfad, aufnahme,
                                           quelle / rel, ordner / rel, ordner, tol, standard, protokoll, bilder_unter=flach(rel))
     return ergebnisse, ohne
+
+
+def _miss_neues_teil(app, pfad: Path, ordner: Path, soll: dict, spec_datei: Path, standard: dict, protokoll_teil: dict) -> dict:
+    """Wie `swki.baugruppe.pruefen`: gegen die freigegebene Teil-Spec, aus der auch gebaut wurde. Unsichtbar, nur lesend."""
+    model = oeffne_in(app, pfad, ordner, sichtbar=False, nur_lesen=True)
+    try:
+        ctx = kontext_aus_datei(app, model, soll, spec_datei, standard["toleranzen"]["anker_mm"], protokoll_teil)
+        with sw.schnell(app, model):  # Messen ohne Bildschirmarbeit (Messstand Umbau 5)
+            return bewerte(soll, messe(ctx, soll), standard, soll)
+    finally:
+        sw.schliesse(app, model)
+
+
+def _pruefe_neue_teile(app, m: _Messung, spec: dict, spec_pfad: Path, ordner: Path, neue_dateien: list[str], standard: dict,
+                       protokoll: dict) -> tuple[list[dict], dict]:
+    """(Einträge mit Präfix `<rel>/`, rel → `{bestanden, maengel}`) je Teil-Quelle: Ein Punkt belegt nur, dass die Komponente da ist, die
+    Datei selbst misst erst dies. Scheitert die Messung, steht `<rel>/messung` auf `ok: None`; ein fremder Pfad bleibt laut (§8.1a)."""
+    eintraege, uebersicht = [], {}
+    for datei in sorted({p["quelle"]["teil"] for p in spec["punkte"] if "teil" in p.get("quelle", {})}):
+        rel = datei  # bis die Datei im Lauf gefunden ist
+        try:
+            soll = freigegebene_spec(spec_pfad.parent / datei)
+            rel = next(n for n in neue_dateien if Path(n).stem.casefold() == soll["name"].casefold())
+            with m.phase(f"teile:{rel}"):
+                bewertet = _miss_neues_teil(app, ordner / rel, ordner, soll, spec_pfad.parent / datei, standard, protokoll["teile"][datei])
+        except BestandFehler:
+            raise
+        except (Exception, StopIteration) as e:
+            eintraege.append(eintrag(f"{rel}/messung", None, knoten=[], hinweis=f"{datei} nicht gemessen: {type(e).__name__}: {e}"))
+            uebersicht[rel] = {"bestanden": False, "maengel": 1}
+            continue
+        eintraege += [_mit_datei(e, rel) for e in bewertet["pruefungen"]]
+        uebersicht[rel] = {"bestanden": bewertet["bestanden"], "maengel": len(bewertet["maengel"])}
+    return eintraege, uebersicht
 
 
 def _lies_lauf(app, m: _Messung, asm_pfad: Path, ordner: Path, weitere: list[str]) -> tuple[dict, dict]:
@@ -116,10 +163,13 @@ def _fahre(app, asm, spec: dict, vorher: dict, nachher: dict, neue: dict, ersetz
 
 def _bilder_und_fahrt(app, m: _Messung, asm_pfad: Path, ordner: Path, spec: dict, vorher: dict, nachher: dict, neue: dict,
                       ersetzt: dict, standard: dict, start_mb: float | None) -> tuple[dict, dict]:
-    """(Bilder, `bewegungen`) im Fenster; geschlossen wird ohne Speichern, auch nach `SpeicherKnapp`."""
+    """(Bilder, `bewegungen`) im Fenster; geschlossen wird ohne Speichern, auch nach `SpeicherKnapp`. Neu aufgebaut wird zuerst: Ein
+    geändertes Teil neben einer ungespeicherten Baugruppe zeigte sonst den alten Stand, Bilder und Fahrt gälten nicht dem Lauf."""
     with m.phase("fenster"):
         asm = oeffne_in(app, asm_pfad, ordner, sichtbar=True, nur_lesen=True)
     try:
+        with m.phase("neuaufbau"):
+            asm.ForceRebuild3(False)
         with m.phase("bilder"):
             bilder = screenshots(app, asm, ordner / "bilder")
         with m.phase("fahrt"):
@@ -164,7 +214,8 @@ def _nicht_abgedeckt(vorher: dict, nachher: dict) -> list[str]:
     """Was die Prüfung nicht abdeckt, nie stumm (§8.4): Bewegung, und was die Kollision nur in der aktiven Konfiguration sieht."""
     aus = list(dict.fromkeys([*abdeckung(vorher), *abdeckung(nachher)]))
     if uebrige := [k for k in nachher["konfigurationen"] if k != nachher["aktiv"]]:
-        aus.append(f"Kollisionen nur in der aktiven Konfiguration {nachher['aktiv']} geprüft, nicht in: {', '.join(uebrige)}")
+        was = "Kollisionen und Fahrt" if nachher["bewegungen"] else "Kollisionen"
+        aus.append(f"{was} nur in der aktiven Konfiguration {nachher['aktiv']} geprüft, nicht in: {', '.join(uebrige)}")
     return aus
 
 
@@ -209,19 +260,22 @@ def pruefen_baugruppe(spec_pfad: Path, spec: dict, vorher: dict, lauf: int, prot
     start_mb = m.speicher_mb()  # frisches SolidWorks? (SWKI-11), vor den Teilen und ihren Fenstern
     teile, ohne_vergleich = _pruefe_teile(app, m, r, spec, freigegebene_spec(spec_pfad), spec_pfad, vorher, ordner, quelle, ist,
                                           standard, protokoll)
+    neue_teile, teil_uebersicht = _pruefe_neue_teile(app, m, spec, spec_pfad, ordner, neue_dateien, standard, protokoll)
     gelesen, pfade = _lies_lauf(app, m, asm_pfad, ordner, [*vorher["dateien"], *neue_dateien])
     bilder, bewegungen = _bilder_und_fahrt(app, m, asm_pfad, ordner, spec, vorher, gelesen, neue, ersetzt, standard, start_mb)
     nachher = {**gelesen, "bewegungen": bewegungen}
 
-    datei_pruefung = vergleiche_dateien(spec, dateien, ist, neue_dateien)
+    datei_pruefung = _dateien_pruefung(spec, dateien, ist, neue_dateien, protokoll)
     pruefungen = [pfade, datei_pruefung, *vergleiche_baugruppe(spec, vorher, nachher, neue, ersetzt, neue_dateien),
                   *_haupt_pruefungen(spec, vorher, nachher, quelle, ordner, protokoll),
-                  *vergleiche_bewegungen(vorher, nachher, spec, neue, ersetzt), *ohne_vergleich,
+                  *vergleiche_bewegungen(vorher, nachher, spec, neue, ersetzt), *ohne_vergleich, *neue_teile,
                   *(_mit_datei(e, rel) for rel, erg in teile.items() for e in erg["pruefungen"])]
     vor_bilder = _bilder_vorher(quelle)
     bericht = {"auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(asm_pfad),
                "vorher": str(quelle / vorher["datei"]["name"]), **bewerte_aenderung(pruefungen),
                "differenzen": {rel: erg["differenzen"] for rel, erg in teile.items()},
+               "teilpruefungen": {**{rel: {"bestanden": erg["bestanden"], "maengel": len(erg["maengel"])} for rel, erg in teile.items()},
+                                  **teil_uebersicht},
                "dateien": {feld: datei_pruefung[feld] for feld in ("geaendert", "neu", "erwartet_geaendert")},
                "bewegungen": bewegungen, "bilder": {**bilder, **_je_datei(teile, "bilder")},
                "bilder_vorher": {**vor_bilder, **_je_datei(teile, "bilder_vorher")},

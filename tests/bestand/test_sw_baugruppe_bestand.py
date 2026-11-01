@@ -533,8 +533,14 @@ def test_kollision_in_der_fahrt_nicht_gelesen_bricht_ab(asm, stand):
 
 
 def test_abdeckung_der_aufnahme(asm):
+    """Schlitten-1 ist unterbestimmt, aber Partner der Grenze Hub; Frei-1 hat keine, Gefahren-1 hat die Fahrt bewegt."""
+    asm.komponente("Frei-1", "teile/Welle.SLDPRT", status=2)
+    asm.komponente("Gefahren-1", "teile/Welle.SLDPRT", status=2)
     a = lies_baugruppe(None, asm)
-    assert abdeckung(a) == ["Komponente Schlitten-1 ist beweglich (unterbestimmt) und hat keine Grenze, nicht gefahren"]
+    text = "Komponente {} ist beweglich (unterbestimmt) und hat keine Grenze, nicht gefahren"
+    assert abdeckung(a) == [text.format("Frei-1"), text.format("Gefahren-1")]  # noch keine Fahrt, Schlitten-1 ist Partner
+    a["bewegungen"] = {"Hub": {"bewegt": ["Gefahren-1"]}}
+    assert abdeckung(a) == [text.format("Frei-1")]
 
 
 def test_sw_bestand_helfer_sind_oeffentlich():
