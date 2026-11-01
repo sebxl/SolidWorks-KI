@@ -90,10 +90,12 @@ Geändert: `schema/aenderung.schema.json`, `swki/bestand/{fehler,befehle,bau,pru
  "konfigurationen": ["Standard"], "aktiv": "Standard", "einheitensystem": 5, "tabelle": false,
  "eigenschaften": {"datei": {}, "konfiguration": {"Standard": {}}}, "externe_referenzen": [], "gleichungen": [], "variablen": {},
  "features": [], "reihenfolge": {"Standard": []}, "masse": [], "neuaufbau": [], "skizzen": {}, "material": "", "materialien": {}, "geometrie": {},
- "komponenten": {"Teil-1": {"datei": "teile/Teil.SLDPRT", "konfiguration": "Standard", "virtuell": false, "muster": false, "loesen": 0,
+ "komponenten": {"Teil-1": {"datei": "teile/Teil.SLDPRT", "konfiguration": "Standard", "konfigurationen": {"Standard": "Standard"},
+                            "virtuell": false, "muster": false, "loesen": 0,
                             "fixiert": {"Standard": true}, "unterdrueckt": {"Standard": false}, "status": {"Standard": 3},
                             "transform": {"Standard": [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]}}},
- "verknuepfungen": {"Abstand1": {"typ": 5, "ausrichtung": 0, "wert": 12.0, "min": 0.0, "max": 25.0, "grenze": true, "gesteuert": false,
+ "verknuepfungen": {"Abstand1": {"typ": 5, "ausrichtung": 0, "wert": 12.0, "min": 0.0, "max": 25.0,
+                                 "werte": {"Standard": {"wert": 12.0, "min": 0.0, "max": 25.0}}, "grenze": true, "gesteuert": false,
                                  "partner": ["Teil-1", "Teil-2"], "fehler": {"Standard": 0}, "unterdrueckt": {"Standard": false}}},
  "kollisionen": [{"paar": ["Teil-1", "Teil-2"], "volumen": 1.5}],
  "bewegungen": {"Abstand1": {"komponente": "Teil-2", "art": "abstand", "min": 0.0, "max": 25.0, "gefahren": true, "bewegt": ["Teil-2"],
@@ -103,7 +105,7 @@ Geändert: `schema/aenderung.schema.json`, `swki/bestand/{fehler,befehle,bau,pru
  "warnungen": [], "messung": {"lesen": {"s": 1.2, "mb": 900}}}
 ```
 
-Die Felder von `eigenschaften` bis `geometrie` sind die von Etappe 1, damit `vergleiche` die Baugruppe als Datei behandeln kann; `features`, `reihenfolge` und `masse` lassen Komponenten und Verknüpfungen aus. `aufnahme/<rel>.json` trägt jede weitere Datei, Teile im Format von Etappe 1, Unterbaugruppen in diesem; `datei.name` ist dort der relative Pfad. `dateien.<rel>.referenzen`: was die Datei selbst referenziert, bei Teilen leer, wenn sie frei ist. `komponenten` trägt alle Ebenen, `transform` ist `null`, wenn die Komponente unterdrückt ist. Werte in mm und Grad, `transform` wie `Transform2.ArrayData` (Verschiebung in m). `status`: swConstrainedStatus_e.
+Die Felder von `eigenschaften` bis `geometrie` sind die von Etappe 1, damit `vergleiche` die Baugruppe als Datei behandeln kann; `features`, `reihenfolge` und `masse` lassen Komponenten und Verknüpfungen aus. `aufnahme/<rel>.json` trägt jede weitere Datei, Teile im Format von Etappe 1, Unterbaugruppen in diesem; `datei.name` ist dort der relative Pfad. `dateien.<rel>.referenzen`: was die Datei selbst referenziert, bei Teilen leer, wenn sie frei ist. `komponenten` trägt alle Ebenen, `konfiguration` ist die aktive referenzierte Konfiguration des Teils, `konfigurationen` nennt sie je Konfiguration der Baugruppe; `wert`/`min`/`max` einer Verknüpfung sind die der aktiven Konfiguration, `werte` nennt sie je Konfiguration (ein fehlender Eintrag ist nicht gelesen, `null` heißt: trägt keinen Wert); `kollisionen` sind die der aktiven Konfiguration; `transform` ist `null`, wenn die Komponente unterdrückt ist. Werte in mm und Grad, `transform` wie `Transform2.ArrayData` (Verschiebung in m). `status`: swConstrainedStatus_e.
 
 ---
 

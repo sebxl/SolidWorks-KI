@@ -20,10 +20,13 @@ def spec_aus(*punkte, **rest) -> dict:
             **rest}
 
 
-def vergleich(spec, nachher, neue=None, ersetzt=None, vorher=None) -> dict[str, dict]:
-    """Die Einträge von `vergleiche_baugruppe` nach ID."""
+def vergleich(spec, nachher, neue=None, ersetzt=None, vorher=None, neue_dateien="auto") -> dict[str, dict]:
+    """Die Einträge von `vergleiche_baugruppe` nach ID. `neue_dateien` "auto": die Dateien der Komponenten, die der Bestand nicht kennt."""
     vorher = vorher if vorher is not None else baugruppen_aufnahme()
-    eintraege = vergleiche_baugruppe(spec, vorher, nachher, neue or {}, ersetzt or {})
+    if neue_dateien == "auto":
+        bekannt = {k["datei"] for k in vorher["komponenten"].values()}
+        neue_dateien = sorted({k["datei"] for k in nachher["komponenten"].values() if k["datei"] not in bekannt and k["datei"]})
+    eintraege = vergleiche_baugruppe(spec, vorher, nachher, neue or {}, ersetzt or {}, neue_dateien)
     assert len({e["id"] for e in eintraege}) == len(eintraege)
     return {e["id"]: e for e in eintraege}
 
@@ -40,12 +43,32 @@ def zwei_konfigurationen(a: dict) -> dict:
     """Die Aufnahme mit einer zweiten Konfiguration 'Variante B', die in jedem Wert der ersten gleicht."""
     a["konfigurationen"] = ["Standard", "Variante B"]
     for k in a["komponenten"].values():
-        for feld in ("fixiert", "unterdrueckt", "status", "transform"):
+        for feld in ("fixiert", "unterdrueckt", "status", "transform", "konfigurationen"):
             k[feld]["Variante B"] = copy.deepcopy(k[feld]["Standard"])
     for v in a["verknuepfungen"].values():
-        for feld in ("fehler", "unterdrueckt"):
+        for feld in ("fehler", "unterdrueckt", "werte"):
             v[feld]["Variante B"] = copy.deepcopy(v[feld]["Standard"])
     return a
+
+
+def setze_wert(a: dict, name: str, feld: str, wert, konfiguration: str | None = None) -> None:
+    """`wert`/`min`/`max` einer Verknüpfung: in allen Konfigurationen (oder nur `konfiguration`); die aktive auch als Feld oben."""
+    m = a["verknuepfungen"][name]
+    for k, w in m["werte"].items():
+        if konfiguration in (None, k):
+            w[feld] = wert
+    if konfiguration in (None, a["aktiv"]):
+        m[feld] = wert
+
+
+def setze_konfig(a: dict, name: str, text: str, konfiguration: str | None = None) -> None:
+    """Die referenzierte Konfiguration einer Komponente: in allen Konfigurationen (oder nur `konfiguration`)."""
+    k = a["komponenten"][name]
+    for kfg in k["konfigurationen"]:
+        if konfiguration in (None, kfg):
+            k["konfigurationen"][kfg] = text
+    if konfiguration in (None, a["aktiv"]):
+        k["konfiguration"] = text
 
 
 # ---------------------------------------------------------------------------------------------------------- Grundfall
@@ -58,7 +81,7 @@ def test_unveraendert_alles_ok():
 
 def test_der_lauf_zur_beispiel_spec_ist_ok():
     nachher, neue, ersetzt = nachher_zu_spec()
-    e = vergleich(SPEC, nachher, neue, ersetzt)
+    e = vergleich(SPEC, nachher, neue, ersetzt, neue_dateien=[NEUE_DATEI])
     assert list(e) == [*KOMPONENTEN_IDS, "punkt:k1", "punkt:v1", "punkt:w1"]
     assert all(x["ok"] is True for x in e.values()), {k: x for k, x in e.items() if x["ok"] is not True}
 
@@ -134,13 +157,13 @@ def test_neue_komponente_fixiert_und_konfiguration_aus_dem_punkt():
     n["komponenten"]["Neu-1"]["fixiert"]["Standard"] = False
     assert vergleich(s, n, {"k1": ["Neu-1"]})["punkt:k1"]["ok"] is False
     n["komponenten"]["Neu-1"]["fixiert"]["Standard"] = True
-    n["komponenten"]["Neu-1"]["konfiguration"] = "Andere"
+    setze_konfig(n, "Neu-1", "Andere")
     assert vergleich(s, n, {"k1": ["Neu-1"]})["punkt:k1"]["ok"] is False
 
 
 def test_andere_konfiguration_ist_mangel():
     n = baugruppen_aufnahme()
-    n["komponenten"]["Deckel-1"]["konfiguration"] = "Variante"
+    setze_konfig(n, "Deckel-1", "Variante")
     e = vergleich(spec_aus(), n)
     assert e["komponenten"]["ok"] is False and "Deckel-1" in hinweise(e["komponenten"])
     assert e["komponenten"]["ist"][0]["feld"] == "konfiguration"
@@ -309,11 +332,12 @@ def test_je_konfiguration():
     assert vergleich(spec_aus(), n, vorher=v)["verknuepfungen"]["ok"] is False
 
 
-def test_nur_gemeinsame_konfigurationen_zaehlen_keine_gemeinsame_ist_unbewiesen():
+def test_keine_gemeinsame_konfiguration_ist_mangel_und_unbewiesen():
     v = baugruppen_aufnahme()
-    n = baugruppen_aufnahme(konfigurationen=["Andere"])
+    n = baugruppen_aufnahme(konfigurationen=["Andere"], aktiv="Andere")
     e = vergleich(spec_aus(), n, vorher=v)
-    assert e["lage"]["ok"] is None and e["komponenten"]["ok"] is None
+    assert e["komponenten"]["ok"] is False
+    assert e["lage"]["ok"] is None and e["bestimmtheit"]["ok"] is None and e["verknuepfungen"]["ok"] is None
 
 
 # ----------------------------------------------------------------------------------------------------------- Ersetzen
@@ -325,7 +349,7 @@ def _ersetzt_stand(alle: bool = False):
         neu = alt.replace("Schraube", "Neu")
         n["komponenten"][neu] = n["komponenten"].pop(alt)
         n["komponenten"][neu]["datei"] = "Neu.SLDPRT"
-        n["komponenten"][neu]["konfiguration"] = "Andere"  # Datei und Konfiguration dürfen abweichen
+        setze_konfig(n, neu, "Andere")  # Datei und Konfiguration dürfen abweichen
         for v in n["verknuepfungen"].values():
             v["partner"] = [neu if p == alt else p for p in v["partner"]]
         ersetzt[alt] = neu
@@ -453,12 +477,12 @@ def test_fehler_nicht_lesbar_ist_unbewiesen():
 
 def test_wert_geaendert_nur_mit_punkt():
     n = baugruppen_aufnahme()
-    n["verknuepfungen"]["Abstand1"]["wert"] = 11.0
+    setze_wert(n, "Abstand1", "wert", 11.0)
     assert vergleich(spec_aus(), n)["verknuepfungen"]["ok"] is False
     s = spec_aus(punkt("verknuepfung_wert", "w1", verknuepfung="Abstand1", alt=10, neu=11))
     e = vergleich(s, n)
     assert e["verknuepfungen"]["ok"] is True and e["punkt:w1"]["ok"] is True
-    n["verknuepfungen"]["Abstand2"]["wert"] = 4.0  # ein anderer Abstand ändert sich mit
+    setze_wert(n, "Abstand2", "wert", 4.0)  # ein anderer Abstand ändert sich mit
     assert vergleich(s, n)["verknuepfungen"]["ok"] is False
 
 
@@ -466,23 +490,23 @@ def test_wert_punkt_ohne_wirkung_oder_falscher_wert_ist_mangel():
     s = spec_aus(punkt("verknuepfung_wert", "w1", verknuepfung="Abstand1", alt=10, neu="=ABSTAND_NEU"))
     assert vergleich(s, baugruppen_aufnahme())["punkt:w1"]["ok"] is False
     n = baugruppen_aufnahme()
-    n["verknuepfungen"]["Abstand1"]["wert"] = 12.5
+    setze_wert(n, "Abstand1", "wert", 12.5)
     e = vergleich(s, n)
     assert e["punkt:w1"]["ok"] is False and "12.5" in hinweise(e["punkt:w1"])
-    n["verknuepfungen"]["Abstand1"]["wert"] = 12.0
+    setze_wert(n, "Abstand1", "wert", 12.0)
     assert vergleich(s, n)["punkt:w1"]["ok"] is True
 
 
 def test_grenzwert_punkt_nur_das_genannte_feld():
     s = spec_aus(punkt("verknuepfung_wert", "w1", verknuepfung="Grenze_Abstand1", grenze="max", alt=5, neu=8))
     n = baugruppen_aufnahme()
-    n["verknuepfungen"]["Grenze_Abstand1"]["max"] = 8.0
+    setze_wert(n, "Grenze_Abstand1", "max", 8.0)
     e = vergleich(s, n)
     assert e["punkt:w1"]["ok"] is True and e["verknuepfungen"]["ok"] is True
-    n["verknuepfungen"]["Grenze_Abstand1"]["min"] = 1.0  # min war nicht gemeint
+    setze_wert(n, "Grenze_Abstand1", "min", 1.0)  # min war nicht gemeint
     assert vergleich(s, n)["verknuepfungen"]["ok"] is False
     n2 = baugruppen_aufnahme()
-    n2["verknuepfungen"]["Grenze_Abstand1"]["min"] = 8.0  # falsches Feld statt max
+    setze_wert(n2, "Grenze_Abstand1", "min", 8.0)  # falsches Feld statt max
     assert vergleich(s, n2)["punkt:w1"]["ok"] is False
 
 
@@ -554,9 +578,9 @@ def test_neue_grenzverknuepfung_prueft_min_und_max_und_grenze():
     n = baugruppen_aufnahme()
     n["verknuepfungen"]["Grenze_Abstand2"] = verknuepfung(5, ["Platte-1", "Deckel-1"], wert=3.0, min_=0.0, max_=30.0, grenze=True)
     assert vergleich(s, n)["punkt:v1"]["ok"] is True
-    n["verknuepfungen"]["Grenze_Abstand2"]["max"] = 25.0
+    setze_wert(n, "Grenze_Abstand2", "max", 25.0)
     assert vergleich(s, n)["punkt:v1"]["ok"] is False
-    n["verknuepfungen"]["Grenze_Abstand2"]["max"] = 30.0
+    setze_wert(n, "Grenze_Abstand2", "max", 30.0)
     n["verknuepfungen"]["Grenze_Abstand2"]["grenze"] = False  # ein gewöhnlicher Abstand ist keine Grenze
     assert vergleich(s, n)["punkt:v1"]["ok"] is False
 
@@ -569,6 +593,7 @@ def test_scharnier_braucht_konzentrisch_und_anlage():
     n["verknuepfungen"]["Konzentrisch9"] = verknuepfung(1, ["Platte-1", "Deckel-1"])
     assert vergleich(s, n)["punkt:v1"]["ok"] is False  # die Anlage fehlt
     n["verknuepfungen"]["Deckungsgleich9"] = verknuepfung(0, ["Platte-1", "Deckel-1"])
+    n["verknuepfungen"]["Deckungsgleich9"]["ausrichtung"] = 1  # die Anlage ist vorgabegemäß entgegengesetzt
     e = vergleich(s, n)
     assert e["punkt:v1"]["ok"] is True and e["verknuepfungen"]["ok"] is True
 
@@ -795,10 +820,11 @@ def test_haupt_geaendert_ohne_baugruppen_punkt_ist_mangel():
     assert e["ok"] is False and HAUPT in hinweise(e)
 
 
-def test_haupt_nur_mit_lage_folgen_darf_gespeichert_werden_muss_aber_nicht():
+def test_haupt_bei_lage_folgen_wird_immer_gespeichert():  # Korrektur I2
     s = {**SPEC, "punkte": [p for p in SPEC["punkte"] if p.get("in_datei")]}
     teile = {"teile/Platte.SLDPRT": "b" * 64, "teile/Deckel.SLDPRT": "c" * 64}
-    assert vergleiche_dateien(s, dateien_json(), lauf_shas(**teile), [])["ok"] is True
+    e = vergleiche_dateien(s, dateien_json(), lauf_shas(**teile), [])
+    assert e["ok"] is False and HAUPT in hinweise(e) and "gespeichert" in hinweise(e)
     assert vergleiche_dateien(s, dateien_json(), lauf_shas(**teile, **{HAUPT: "a" * 64}), [])["ok"] is True
 
 

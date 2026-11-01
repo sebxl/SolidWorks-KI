@@ -3,7 +3,8 @@
 Haupt.SLDASM mit: Gehaeuse-1 (fixiert), Deckel-1, Platte-1, Schieber-1, elf Schrauben (eine Datei, elf Instanzen), Unter-1
 (Unterbaugruppe mit Welle-1), Abgeleitet-1 (hängt am Basisteil Basis-1) und einer virtuellen Komponente. Verknüpfungen: Abstand1 und
 Abstand2 frei, Abstand3 von einer Gleichung gesteuert, Winkel1, Deckungsgleich3 und Konzentrisch2 an Deckel-1, Konzentrisch5 an einer
-Komponente der Unterbaugruppe, Grenze_Abstand1 (0 bis 5 mm, gefahren). Die Teile tragen die Aufnahme von `beispiel_aufnahme`
+Komponente der Unterbaugruppe, Grenze_Abstand1 (0 bis 5 mm, gefahren). Wert und Konfiguration stehen je Konfiguration in `werte` bzw.
+`konfigurationen` (die aktive zusätzlich als `wert`/`min`/`max` bzw. `konfiguration`). Die Teile tragen die Aufnahme von `beispiel_aufnahme`
 (Lagerdeckel) mit dem relativen Pfad als Dateinamen.
 """
 
@@ -40,8 +41,8 @@ DATEIEN = {
 
 
 def _komp(datei: str, fixiert: bool = False, virtuell: bool = False) -> dict:
-    return {"datei": datei, "konfiguration": "Standard", "virtuell": virtuell, "muster": False, "loesen": 0,
-            "fixiert": {"Standard": fixiert}, "unterdrueckt": {"Standard": False}, "status": {"Standard": 3},
+    return {"datei": datei, "konfiguration": "Standard", "konfigurationen": {"Standard": "Standard"}, "virtuell": virtuell,
+            "muster": False, "loesen": 0, "fixiert": {"Standard": fixiert}, "unterdrueckt": {"Standard": False}, "status": {"Standard": 3},
             "transform": {"Standard": list(STANDARD_LAGE)}}
 
 
@@ -60,8 +61,8 @@ KOMPONENTEN = {
 
 
 def _mate(typ: int, partner: list[str], wert=None, min_=None, max_=None, grenze: bool = False, gesteuert: bool = False) -> dict:
-    return {"typ": typ, "ausrichtung": 0, "wert": wert, "min": min_, "max": max_, "grenze": grenze, "gesteuert": gesteuert,
-            "partner": partner, "fehler": {"Standard": 0}, "unterdrueckt": {"Standard": False}}
+    return {"typ": typ, "ausrichtung": 0, "wert": wert, "min": min_, "max": max_,
+            "werte": {"Standard": {"wert": wert, "min": min_, "max": max_}}, "grenze": grenze, "gesteuert": gesteuert, "partner": partner, "fehler": {"Standard": 0}, "unterdrueckt": {"Standard": False}}
 
 
 VERKNUEPFUNGEN = {
@@ -186,5 +187,6 @@ def nachher_zu_spec() -> tuple[dict, dict, dict]:
     a["komponenten"][NEUE_KOMPONENTE] = _komp(NEUE_DATEI)
     a["verknuepfungen"]["Abstand4"] = _mate(5, [NEUE_KOMPONENTE, "Gehaeuse-1"], wert=12.0)
     a["verknuepfungen"]["Abstand1"]["wert"] = 12.0
+    a["verknuepfungen"]["Abstand1"]["werte"]["Standard"]["wert"] = 12.0
     a["komponenten"]["Deckel-1"]["transform"]["Standard"][9] += 0.0005
     return a, {"k1": [NEUE_KOMPONENTE]}, {}
