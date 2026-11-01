@@ -118,3 +118,58 @@ def test_bericht_bewegungen():
 def test_bericht_ohne_gefahrene_bewegungen_hat_keinen_abschnitt():
     bericht = {"maengel": [], "bilder": {}, "bewegungen": {"laeufe": [], "paare": []}}
     assert "## Bewegungen" not in bericht_markdown(BAUGRUPPE, "A", [], ("pruefen", "…"), bericht, None, None, [])
+
+
+def test_lagen_nach_sw_namen():
+    from swki.baugruppe.pruefen import lagen_nach_sw_namen
+
+    protokoll = {"komponenten": [{"id": "platte", "sw_name": "Platte-1", "datei": "A.sldprt"},
+                                 {"id": "schraube.2", "sw_name": "ISO4762-2", "datei": "S.sldprt"}]}
+    t1, t2, t3 = [1] * 16, [2] * 16, [3] * 16
+    assert lagen_nach_sw_namen({"platte": t1, "schraube.2": t2, "ohne": t3}, protokoll) == {
+        "Platte-1": t1, "ISO4762-2": t2, "ohne": t3}
+    assert lagen_nach_sw_namen({"platte": t1}, {}) == {"platte": t1}
+
+
+def test_pruefbericht_traegt_lagen_mit_solidworks_namen(tmp_path, monkeypatch):
+    """Der Bericht trägt `lagen: {SolidWorks-Name: Transform}`, damit `swki bestand abgleich` sie ohne Umweg mit dem Export
+    vergleicht (Bestandsdateien §8.6). Alles SolidWorks-nahe ist ersetzt."""
+    from contextlib import nullcontext
+    from pathlib import Path
+
+    from swki.auftrag import lauf_datei, lauf_ordner
+    from swki.baugruppe import pruefen as modul
+    from swki.baugruppe.bewertung import BaugruppenMesswerte
+    from swki.konfig import Rechner
+
+    spec_pfad = schreibe(tmp_path / "A")
+    freigeben_baugruppe(lade_baugruppe(spec_pfad))
+    r = Rechner(2025, Path("C:/SW"), Path("C:/t.prtdot"), None, None, tmp_path / "arbeit")
+    ordner = lauf_ordner(r, "A", 1)
+    ordner.mkdir(parents=True)
+    (ordner / "A_Probe.sldasm").write_bytes(b"asm")
+    protokoll = {"status": "ok", "komponenten": [{"id": "platte", "sw_name": "Platte-1", "datei": "A_Platte.sldprt"}],
+                 "teile": {datei: {"knoten": []} for datei in lade_baugruppe(spec_pfad).teile}}
+    ziel = lauf_datei(spec_pfad, 1, "protokoll")
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    ziel.write_text(json.dumps(protokoll), encoding="utf-8")
+    lage_platte, lage_schraube = [1.0] + [0.0] * 15, [0.5] * 16
+    messwerte = BaugruppenMesswerte(rebuild_fehler=[], verknuepfungen={}, komponenten={}, stueckliste={}, interferenzen=[],
+                                    box=[0.0] * 6, masse_kg=1.0, lagen={"platte": lage_platte, "schraube.1": lage_schraube})
+    monkeypatch.setattr(modul, "lade_rechner", lambda: r)
+    monkeypatch.setattr(modul, "verbinde", lambda jahr: "app")
+    monkeypatch.setattr(modul, "oeffne", lambda *a, **k: "modell")
+    monkeypatch.setattr(modul, "kontext_aus_datei", lambda *a, **k: "ctx")
+    monkeypatch.setattr(modul, "messe", lambda *a, **k: {})
+    monkeypatch.setattr(modul, "bewerte", lambda *a, **k: {"bestanden": True, "maengel": [], "pruefungen": []})
+    monkeypatch.setattr(modul, "_geometrie", lambda *a, **k: {})
+    monkeypatch.setattr(modul, "_messe_baugruppe", lambda *a, **k: messwerte)
+    monkeypatch.setattr(modul, "screenshots", lambda *a, **k: {})
+    monkeypatch.setattr(modul, "_kopplungsbilder", lambda *a, **k: {})
+    monkeypatch.setattr(modul, "bewerte_baugruppe", lambda *a, **k: {"bestanden": True, "maengel": []})
+    monkeypatch.setattr(modul.sw, "schnell", lambda app, model: nullcontext())
+    monkeypatch.setattr(modul.sw, "schliesse", lambda app, model: None)
+    monkeypatch.setattr(modul.sw_baugruppe, "aufloesen", lambda asm: None)
+    bericht = modul.pruefen(spec_pfad, 1)
+    assert bericht["lagen"] == {"Platte-1": lage_platte, "schraube.1": lage_schraube}
+    assert json.loads((ordner / "pruefbericht.json").read_text(encoding="utf-8"))["lagen"]["Platte-1"] == lage_platte

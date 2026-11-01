@@ -4,8 +4,10 @@ verliert.
 swki bauen schreibt den SHA-256 jeder gespeicherten Datei ins Protokoll (Feld sha256). Vor dem nächsten Bau vergleicht
 pruefe_unveraendert den höchsten durchgebauten Lauf (Protokollstatus ok) damit. Läufe ohne Prüfsummen (vor Stufe 3b) und
 ganz entfernte Lauf-Ordner gelten als unverändert. swki aenderungen liest geänderte Dateien aus (mit SolidWorks, nur
-lesend): bei Läufen mit Maßprotokoll (Knoten.masse) die einzelnen Maße und schlägt Spec-Änderungen vor, bei älteren Läufen
-die globalen Variablen; verglichen wird mit dem Protokoll bzw. der freigegebenen Spezifikation."""
+lesend, unsichtbar): bei Läufen mit Maßprotokoll (Knoten.masse) die einzelnen Maße und schlägt Spec-Änderungen vor, bei älteren Läufen
+die globalen Variablen; bei Teilen dazu den Baum (neue und fehlende Features, Material, Eigenschaften, swki.bestand.abgleich).
+Verglichen wird mit dem Protokoll bzw. der freigegebenen Spezifikation. Ein Lauf, aus dem eine Bestandsaufnahme stammt
+(swki bestand aufnehmen, Spec Bestandsdateien §8.5), wird nie geöffnet: Dort vergleicht swki bestand abgleich über die Kopie."""
 
 import hashlib
 import json
@@ -31,6 +33,7 @@ MANUELL_GEAENDERT = "MANUELL_GEAENDERT"
 UEBERNAHME_OHNE_NEUE_FREIGABE = "UEBERNAHME_OHNE_NEUE_FREIGABE"
 _TOL = 1e-6
 _SW_DATEIEN = (".sldprt", ".sldasm")
+_LAUF_DATEIEN = (*_SW_DATEIEN, ".slddrw")  # SolidWorks-Dateien, die im Lauf-Ordner neu auftauchen können
 _TEXT_AENDERUNG = ("Änderungs-Spec (art: aenderung): swki liest hier keine Maße aus, die Abweichung zeigt nur die SHA-256. Ein neuer "
                    "Lauf entsteht immer ab der Bestandskopie, nie aus der geänderten Lauf-Datei; sie bleibt unberührt. Der Befund "
                    "bleibt MANUELL_GEAENDERT, bis der Nutzer entscheidet. Nutzer fragen, was geändert wurde: übernehmen (den Punkt in "
@@ -110,6 +113,40 @@ def _freigabe_zeitpunkt(spec_pfad: Path) -> datetime | None:
         return None
 
 
+def aufnahmen_des_laufs(r: Rechner, auftrag: str, lauf: int) -> list[dict]:
+    """`[{auftrag, aufnahme}]` der Bestandsaufnahmen, deren Original aus diesem Lauf stammt (`herkunft.json`, Spec Bestandsdateien
+    §8.5). Der Lauf-Ordner wird nicht gelesen."""
+    from swki.bestand.ablage import aufnahmen_aus_lauf  # spät importiert: swki.bestand.ablage nutzt sha256_datei
+
+    return [{"auftrag": t["auftrag"], "aufnahme": t["nummer"]} for t in aufnahmen_aus_lauf(r, lauf_ordner(r, auftrag, lauf))]
+
+
+def _kommandozeile(pfad: Path) -> str:
+    text = str(pfad)
+    return f'"{text}"' if " " in text else text
+
+
+def _abgleich_befehl(aufnahme: dict, spec_pfad: Path) -> str:
+    return f"swki bestand abgleich {aufnahme['auftrag']} --spec {_kommandozeile(spec_pfad)}"
+
+
+def _text_geaendert(b: dict, genannt: str, aufnahmen: list[dict], spec_pfad: Path) -> str:
+    """Meldung der Sperre MANUELL_GEAENDERT mit den drei Wegen (Spec §8.5). Hat der Lauf eine Aufnahme, steht dort `swki bestand
+    abgleich` statt `swki aenderungen` (das den Lauf in SolidWorks öffnen würde)."""
+    kopf = f"Lauf {b['lauf']} wurde nach dem Bau verändert ({genannt}). "
+    if aufnahmen:
+        nennung = ", ".join(f"Auftrag {a['auftrag']}, Aufnahme {a['aufnahme']}" for a in aufnahmen)
+        return (kopf + f"Er ist schon aufgenommen ({nennung}); was geändert wurde, zeigt {_abgleich_befehl(aufnahmen[-1], spec_pfad)} "
+                       "über die Bestandskopie, ohne den Lauf zu öffnen. Ist die Datei der Stand, arbeitet der Skill aendern in dem "
+                       "Auftrag der Aufnahme weiter und diese Spec bleibt eingefroren. Nutzer fragen: übernehmen "
+                       "(Spezifikation ändern, validieren, neu freigeben, swki bauen --uebernommen) oder verwerfen "
+                       "(swki bauen --verwerfen)")
+    return (kopf + "swki aenderungen zeigt, was geändert wurde (nur lesend). Nutzer fragen: übernehmen (Spezifikation ändern, "
+                   "validieren, neu freigeben, swki bauen --uebernommen), verwerfen (swki bauen --verwerfen) oder, wenn die "
+                   "geänderte Datei der Stand ist, aufnehmen (swki bestand aufnehmen in einem neuen Auftrag, Skill aendern; "
+                   "diese Spec bleibt eingefroren)")
+
+
 def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bool = False,
                         uebernommen: bool = False) -> dict | None:
     """Wirft AenderungFehler, wenn Dateien des letzten durchgebauten Laufs geändert wurden oder fehlen.
@@ -124,6 +161,7 @@ def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bo
     if b is None or verwerfen:
         return b
     genannt = ", ".join(b["geaendert"] + b["fehlend"])
+    aufnahmen = aufnahmen_des_laufs(r, auftrag, b["lauf"])
     if uebernommen:
         freigabe, lauf = _freigabe_zeitpunkt(spec_pfad), _lauf_zeitpunkt(spec_pfad, b["lauf"])
         if freigabe is not None and freigabe > lauf:
@@ -131,11 +169,8 @@ def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bo
         raise AenderungFehler(
             f"Freigabe ist nicht neuer als Lauf {b['lauf']} (geändert: {genannt}) – erst die Änderung in die "
             "Spezifikation übernehmen, validieren, vom Nutzer bestätigen lassen und per swki freigeben neu freigeben, "
-            "dann swki bauen --uebernommen", code=UEBERNAHME_OHNE_NEUE_FREIGABE, **b)
-    raise AenderungFehler(
-        f"Lauf {b['lauf']} wurde nach dem Bau verändert ({genannt}). "
-        "swki aenderungen zeigt die Parameter; Nutzer fragen: übernehmen (Spezifikation ändern, validieren, neu "
-        "freigeben, swki bauen --uebernommen) oder verwerfen (swki bauen --verwerfen)", **b)
+            "dann swki bauen --uebernommen", code=UEBERNAHME_OHNE_NEUE_FREIGABE, aufnahmen=aufnahmen, **b)
+    raise AenderungFehler(_text_geaendert(b, genannt, aufnahmen, spec_pfad), aufnahmen=aufnahmen, **b)
 
 
 def vermerke_befund(protokoll, b: dict | None, verwerfen: bool) -> None:
@@ -305,15 +340,72 @@ def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, d
     return ergebnis
 
 
+def soll_teile(protokoll: dict, spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, tuple[dict, dict]]:
+    """Dateiname im Lauf → (Bauprotokoll, freigegebene Spec) je Teil, gegen die swki.bestand.abgleich den Baum vergleicht (Teil:
+    der Lauf selbst; Baugruppe: je Teil aus protokoll["teile"]). Normteil- und Kaufteil-Kopien tragen kein Soll."""
+    if art_der_datei(spec_pfad) == "baugruppe":
+        from swki.baugruppe.freigabe import freigegebene_teile  # spät importiert: swki.baugruppe nutzt swki.compiler
+        from swki.baugruppe.laden import lade_baugruppe
+        from swki.baugruppe.modell import dokument_name
+
+        bg = lade_baugruppe(spec_pfad)
+        freigegeben = freigegebene_teile(bg)
+        return {dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard): (teil, freigegeben[datei])
+                for datei, teil in (protokoll.get("teile") or {}).items() if datei in freigegeben}
+    soll = freigegebene_spec(spec_pfad)
+    return {f"{dateiname(soll, auftrag, standard)}.sldprt": (protokoll, soll)}
+
+
+def neue_dateien(ordner: Path, soll_sha: dict[str, str]) -> list[dict]:
+    """SolidWorks-Dateien im Lauf-Ordner, die das Bauprotokoll nicht kennt (`[{datei, sha256}]`): ein neues Teil, das jemand dort
+    abgelegt hat. Nur lesend; Sperrdateien (`~$`) zählen nicht."""
+    from swki.bestand.abgleich import abgleich_dateien  # spät importiert: abgleich importiert dieses Modul
+
+    bekannt = {n.replace("\\", "/").lower() for n in soll_sha}
+    ist = {rel: sha256_datei(p) for p in sorted(ordner.rglob("*"))
+           if p.is_file() and p.suffix.lower() in _LAUF_DATEIEN and not p.name.startswith("~$")
+           and (rel := p.relative_to(ordner).as_posix()).lower() not in bekannt}
+    return [{"datei": rel, "sha256": ist[rel]} for rel in abgleich_dateien({}, ist)["neu"]]
+
+
+def _baum(name: str, soll_t: dict, ist_bestand: dict | None, lesefehler: str | None, auftrag: str) -> dict:
+    """Der Baum eines gelesenen Teils gegen das Bauprotokoll; wo ein Vergleich nicht möglich war, steht der Grund da (nie ein
+    „unverändert“)."""
+    from swki.bestand.abgleich import abgleich_teil, ungeprueft_teil  # spät importiert: abgleich importiert dieses Modul
+
+    if name not in soll_t:
+        return ungeprueft_teil("kein Soll für dieses Teil im Bauprotokoll – Baum nicht verglichen")
+    if ist_bestand is None:
+        return ungeprueft_teil(f"Baum nicht lesbar ({lesefehler})")
+    protokoll_teil, spec_teil = soll_t[name]
+    return abgleich_teil(protokoll_teil, spec_teil, ist_bestand, auftrag)
+
+
+def _lies_baum(app, model) -> tuple[dict | None, str | None]:
+    """Aufnahme eines offenen Teils (swki.bestand.sw_bestand.lies_bestand, nur im Speicher); ein Lesefehler ist ein Befund, kein
+    Abbruch."""
+    from swki.bestand import sw_bestand  # spät importiert: sw_bestand zieht Bilder und Topologie nach
+
+    try:
+        return sw_bestand.lies_bestand(app, model), None
+    except Exception as e:  # COM-Fehler beim Lesen → der Baum bleibt unerklärt, die Maße gelten weiter
+        return None, f"{type(e).__name__}: {e}"
+
+
 def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Geänderte Dateien eines Laufs mit Abweichungen von der Freigabe; öffnet SolidWorks nur bei geänderten
-    .sldprt/.sldasm und speichert nie. Ohne Lauf-Ordner oder ohne geänderte Datei wird nichts geöffnet und keine
-    Freigabe gebraucht; Normteil-Kopien (ohne Soll) werden nur genannt.
+    .sldprt/.sldasm (unsichtbar und schreibgeschützt) und speichert nie. Ohne Lauf-Ordner oder ohne geänderte Datei wird nichts
+    geöffnet und keine Freigabe gebraucht; Normteil-Kopien (ohne Soll) werden nur genannt.
 
     Je SW-Datei: parameter (Differenz zu den freigegebenen Parametern bzw. – im Baugruppendokument – Verknüpfungswerten),
     masse (geänderte oder fehlende Maße des Maßprotokolls) und vorschlaege (Spec-Änderungen, nur zu freigegebenen
     Parametern, siehe vorschlaege). Läufe mit Maßprotokoll lesen keine globalen Variablen: Teile vergleichen nur Maße,
-    das Baugruppendokument nur Verknüpfungswerte; ältere Läufe vergleichen die globalen Variablen wie bisher."""
+    das Baugruppendokument nur Verknüpfungswerte; ältere Läufe vergleichen die globalen Variablen wie bisher.
+
+    Je Teil kommt baum dazu (swki.bestand.abgleich.abgleich_teil: neue und fehlende Features, neue Maße, Material, Eigenschaften).
+    „Datei geändert, Maße gleich“ steht nur noch da, wenn auch der Baum nichts erklärt, dann mit nicht_erklaert: true. neu nennt
+    SolidWorks-Dateien im Lauf-Ordner ohne Protokolleintrag. Hat der Lauf eine Bestandsaufnahme (Spec Bestandsdateien §8.5), öffnet
+    aenderungen nichts: geaendert nennt die SHA-256, abgleich den Befehl swki bestand abgleich."""
     spec_pfad = spec_pfad.resolve()
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
@@ -329,21 +421,35 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     if not ordner.is_dir():
         return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": [],
                 "text": f"Lauf-Ordner {ordner} fehlt (aufgeräumt) – nichts auszulesen"}
-    a = abweichungen(ordner, protokoll.get("sha256", {}))
+    soll_sha = protokoll.get("sha256", {})
+    a = abweichungen(ordner, soll_sha)
+    neu = neue_dateien(ordner, soll_sha)
+    neu_feld = {"neu": neu} if neu else {}  # das Feld erscheint nur, wenn es etwas zu melden gibt
     if not a["geaendert"]:
-        return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": a["fehlend"]}
+        return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": [], "fehlend": a["fehlend"], **neu_feld}
     if art_der_datei(spec_pfad) == "aenderung":  # Bestandsdatei (Spec Bestandsdateien §6): kein Soll aus Parametern, nichts zu lesen
-        return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], "text": _TEXT_AENDERUNG,
+        return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], **neu_feld, "text": _TEXT_AENDERUNG,
                 "geaendert": [{"datei": n, "parameter": [], "hinweis": "Datei geändert (nicht ausgelesen)"} for n in a["geaendert"]]}
+    aufnahmen = aufnahmen_des_laufs(r, auftrag, lauf)
+    if aufnahmen:  # der Lauf ist das Original einer Aufnahme (§8.5): nichts öffnen, die Kopie vergleicht swki bestand abgleich
+        return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], **neu_feld, "aufnahmen": aufnahmen,
+                "abgleich": _abgleich_befehl(aufnahmen[-1], spec_pfad),
+                "text": "Der Lauf hat eine Bestandsaufnahme: swki öffnet ihn nicht in SolidWorks. Geändert ist laut SHA-256:",
+                "geaendert": [{"datei": n, "parameter": [], "sha256": {"soll": soll_sha[n], "ist": sha256_datei(ordner / n)},
+                               "hinweis": "Datei geändert (SHA-256) – Befund über swki bestand abgleich, siehe abgleich"}
+                              for n in a["geaendert"]]}
     soll = soll_parameter(spec_pfad, auftrag, standard)  # erst jetzt: braucht eine gültige Freigabe
     soll_m = soll_masse(protokoll, spec_pfad, auftrag, standard)
     ergebnis = []
     sw_dateien = [n for n in a["geaendert"] if n.lower().endswith(_SW_DATEIEN) and n in soll]
     if sw_dateien:
+        soll_t = soll_teile(protokoll, spec_pfad, auftrag, standard) if any(n.lower().endswith(".sldprt") for n in sw_dateien) else {}
         app = verbinde(r.sw_jahr)
         for name in sw_dateien:
             massweg = name in soll_m  # Lauf mit Maßprotokoll: einzelne Maße, keine globalen Variablen
-            model = oeffne(app, ordner / name)
+            ist_teil = name.lower().endswith(".sldprt")
+            ist_bestand, lesefehler = None, None
+            model = oeffne(app, ordner / name, sichtbar=False, nur_lesen=True)  # unsichtbar, schreibgeschützt, nie gespeichert
             try:
                 ist = {} if massweg else lies_globale_variablen(model)
                 if name.lower().endswith(".sldasm"):
@@ -351,6 +457,8 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
 
                     ist |= {f"verknuepfung:{n}": w for n, w in sw_baugruppe.verknuepfungswerte(model).items()}
                 ist_masse = lies_masse(model, soll_m[name]) if massweg else {}
+                if ist_teil and name in soll_t:
+                    ist_bestand, lesefehler = _lies_baum(app, model)
             finally:
                 sw.schliesse(app, model)  # schließt ohne zu speichern (S9b)
             soll_p = soll[name]
@@ -360,14 +468,20 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
             masse_diff = mass_differenz(soll_m[name], ist_masse) if massweg else []
             eintrag = {"datei": name, "parameter": differenz, "masse": masse_diff,
                        "vorschlaege": vorschlaege(masse_diff, soll[name])}
+            baum = _baum(name, soll_t, ist_bestand, lesefehler, auftrag) if ist_teil else None
+            if baum is not None:
+                eintrag["baum"] = baum
             if not differenz and masse_diff and all(d["ist"] is None for d in masse_diff):
                 namen = ", ".join(d["name"] for d in masse_diff)
                 eintrag["hinweis"] = ((f"Maß {namen} fehlt" if len(masse_diff) == 1 else f"Maße {namen} fehlen")
                                       + " (Feature gelöscht?) – Nutzer fragen")
-            elif not differenz and not masse_diff:
+            elif not differenz and not masse_diff and (baum is None or baum["nicht_erklaert"]):
                 gleich = (("Verknüpfungswerte gleich" if name.lower().endswith(".sldasm") else "Maße gleich")
                           if massweg else "Parameter gleich")
-                eintrag["hinweis"] = f"Datei geändert, {gleich} – den Nutzer fragen, was geändert wurde"
+                wo = ("Baum, Material und Eigenschaften" if baum is not None
+                      else "Komponenten und Verknüpfungen (dieser Weg liest sie nicht)")
+                eintrag["hinweis"] = f"Datei geändert, {gleich}, nicht erklärt durch {wo} – den Nutzer fragen, was geändert wurde"
+                eintrag["nicht_erklaert"] = True
             ergebnis.append(eintrag)
     for n in a["geaendert"]:
         if n in sw_dateien:
@@ -375,7 +489,7 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
         hinweis = ("keine Spezifikation zu dieser Datei (Normteil- oder Kaufteil-Kopie)" if n.lower().endswith(_SW_DATEIEN)
                    else "Datei geändert (nicht ausgelesen)")
         ergebnis.append({"datei": n, "parameter": [], "hinweis": hinweis})
-    return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": ergebnis, "fehlend": a["fehlend"]}
+    return {"spec": spec_pfad.name, "lauf": lauf, "geaendert": ergebnis, "fehlend": a["fehlend"], **neu_feld}
 
 
 def einrichten(subparsers) -> None:

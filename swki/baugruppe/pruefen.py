@@ -160,6 +160,13 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
         gleichungen=gleichungen_anzahl(asm))
 
 
+def lagen_nach_sw_namen(lagen: dict[str, list[float]], protokoll: dict) -> dict[str, list[float]]:
+    """Lagen (Instanz-ID → Transform2.ArrayData) unter dem SolidWorks-Namen der Komponente, wie ihn der Export und
+    `swki bestand abgleich --lagen` kennen. Eine Instanz ohne Namen im Protokoll bleibt unter ihrer ID (wie in `_messe_baugruppe`)."""
+    namen = {k["id"]: k["sw_name"] for k in protokoll.get("komponenten", [])}
+    return {namen.get(iid, iid): t for iid, t in lagen.items()}
+
+
 def _kopplungsbilder(app, asm, bg: Baugruppe, protokoll: dict, messwerte: BaugruppenMesswerte, ordner: Path) -> dict:
     """Je Kopplung ein Bild entlang der Radachse von Seite a, gezoomt auf beide Komponenten, die übrigen Komponenten
     während der Aufnahme verborgen (Spec 4b §5.7)."""
@@ -300,6 +307,7 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
         **bewerte_baugruppe(bg.spec, bg.quellen, messwerte, standard,
                             stueckliste_soll(bg.spec, freigegebene_quellen(bg), auftrag, standard)),
         "normteile": protokoll.get("normteile", {}), "bilder": bilder,
+        "lagen": lagen_nach_sw_namen(messwerte.lagen, protokoll),  # Soll-Lagen für swki bestand abgleich (Bestandsdateien §8.6)
         **({"kaufteile": protokoll["kaufteile"]} if protokoll.get("kaufteile") else {}),
     }
     if bewegung is not None:
