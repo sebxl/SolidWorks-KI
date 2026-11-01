@@ -27,6 +27,8 @@ Regeln, die der Vergleich festlegt:
   (unterbestimmte) Komponenten ohne Grenze.
 """
 
+from pathlib import Path
+
 from swki.baugruppe.aufloesen import Verknuepfung
 from swki.baugruppe.bewegung import Bewegung, BewegungsMesswerte, bewerte_bewegungen, ist_bewegt
 from swki.baugruppe.bewegungslauf import Mechanik, StellungFehler, fahre
@@ -244,17 +246,19 @@ def _gefahren(b: Bewegung, m, tol_mm: float) -> dict:
     pruefungen, _ = bewerte_bewegungen({"bewegungen": []}, [b], messwerte, tol_mm)
     hinweis = (f"Lauf bei Stellung {grund.fehler['stellung']:g} abgebrochen: {grund.fehler['meldung']}"
                if grund.fehler is not None else None)
+    bilder = {Path(p).stem: p for lauf in laeufe for p in [*lauf.bilder.values(), *(k["bild"] for k in lauf.kollisionen)] if p}
     return {"komponente": b.komponente, "art": b.art, "min": b.min, "max": b.max, "gefahren": True,
             "stellungen": len(grund.stellungen), "bewegt": list(grund.bewegt),
             "raum": [round(c, 3) for c in grund.raum] if grund.raum else None,
             "kollisionen": [{"paar": list(k["paar"]), "volumen": k["volumen"]} for lauf in laeufe for k in lauf.kollisionen],
-            "pruefungen": pruefungen, "hinweis": hinweis}
+            "pruefungen": pruefungen, "hinweis": hinweis, "bilder": bilder}
 
 
 def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schritte: int, bekannt: set[frozenset],
                   grenze_mb: float, tol_mm: float, start_mb: float | None = None) -> dict:
     """Fährt die `grenzen` (`grenzen_der_aufnahme`) der Aufnahme von `min` bis `max` und liefert das Feld `bewegungen` der Aufnahme:
-    Grenze → {komponente, art, min, max, gefahren, stellungen, bewegt, raum, kollisionen, pruefungen, hinweis}. `aufnahme` ist die
+    Grenze → {komponente, art, min, max, gefahren, stellungen, bewegt, raum, kollisionen, pruefungen, hinweis, bilder}; `bilder`
+    (Name → Pfad) nur bei gefahrenen Grenzen an einer Mechanik mit Bildordner. `aufnahme` ist die
     des Standes, der gefahren wird (Bestand oder Lauf); sie nennt die fixierten Komponenten für die bewegte Seite.
 
     Erst alle zusammen über `fahre` (Paarläufe, Kollisionen). Scheitert das mit `StellungFehler`, ist die benannte Grenze

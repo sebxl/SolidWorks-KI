@@ -4,7 +4,7 @@ Spart dem Agenten Runden und Kontext (Messstand Umbau 1). `--freigeben` nur, wen
 ausdrücklich freigegeben hat (CLAUDE.md); ohne die Option braucht der Durchlauf eine gültige Freigabe.
 Bei einem Fehler endet der Durchlauf im betreffenden Schritt und nennt ihn (`schritt`). `--neustart` startet
 SolidWorks vor dem Bauen und vor dem Prüfen frisch (werkzeuge.sw_neustart; nur ohne offene Dokumente) – Standardweg für
-Baugruppen mit Bewegungen."""
+Baugruppen mit Bewegungen, auch für Änderungen an fremden Baugruppen (jede Grenzverknüpfung ist dort eine Bewegung)."""
 
 from argparse import Namespace
 from pathlib import Path
@@ -22,6 +22,8 @@ def _kurz_pruefung(bericht: dict) -> dict:
            "bilder": sorted(set(str(Path(b).parent) for b in (bericht.get("bilder") or {}).values()))}
     if bericht.get("steckbrief_text"):
         erg["steckbrief"] = bericht["steckbrief_text"].splitlines()
+    if bericht.get("warnungen"):   # Änderung an einer Baugruppe: kein Mangel, aber nie stumm
+        erg["warnungen"] = bericht["warnungen"]
     return erg
 
 
@@ -62,6 +64,8 @@ def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
         teile.append(f"Screenshots: {', '.join(bilder)}.")
     if vorher := sorted({str(b) for b in (bericht.get("bilder_vorher") or {}).values()}):   # nur bei art: aenderung
         teile.append(f"Vorher-Bilder (Bestand, dieselben Ansichten wie die Screenshots): {', '.join(vorher)}.")
+    if bewegung := sorted({str(b) for b in (bericht.get("bilder_bewegung") or {}).values()}):   # Änderung an einer Baugruppe
+        teile.append(f"Bewegungsbilder (Lauf, je Grenze min, mitte, max): {', '.join(bewegung)}.")
     if steck:
         teile.append(f"Geometrie-Steckbrief: {steck} (Lage und Vorzeichen zuerst daran prüfen).")
     teile.append("Lies alle genannten Dateien in deiner ersten Antwort parallel. Antworte nur mit dem JSON-Urteil.")
@@ -131,7 +135,7 @@ def einrichten(subparsers) -> None:
                    help="vorher freigeben – nur nach ausdrücklichem OK des Nutzers zu den Anforderungen")
     p.add_argument("--max", type=ganzzahl_ab(0, "--max"), help="maximale Nachbesserungen laut Anweisung im Chat")
     p.add_argument("--neustart", action="store_true",
-                   help="SolidWorks vor dem Bauen und vor dem Prüfen frisch starten (Baugruppen mit Bewegungen)")
+                   help="SolidWorks vor dem Bauen und vor dem Prüfen frisch starten (Baugruppen mit Bewegungen, auch fremde)")
     p.add_argument("--alles-neu", action="store_true",
                    help="Baugruppe: auch unveränderte Eigenteile neu bauen statt aus einem früheren Lauf übernehmen")
     p.set_defaults(func=lambda a: durchlauf(Path(a.spec), a.freigeben, a.max, neustart=a.neustart,

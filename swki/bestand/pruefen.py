@@ -9,7 +9,10 @@ Beide Dokumente gehen unsichtbar auf (S18d: +0 MB gegen +3,2 GB) und nur lesend,
 
 `ok: None` heißt hier nicht bestanden (Ruling): `bewerte_aenderung` führt solche Einträge in `maengel`, mit `nicht_nachgewiesen`, also
 zählt `lies_laeufe` sie als offen. Anders als beim Teil: Dort heißt `None` „kein Soll berechenbar“, hier „der Schutz hat nicht
-gegriffen“."""
+gegriffen“.
+
+Eine Baugruppe geht über `swki.bestand.pruefen_baugruppe`, ihre geänderten Teile über denselben Kern `pruefe_teil`, dort mit
+Pfadschutz (`oeffne_in`). Ein einzelnes Teil öffnet wie in Etappe 1 über `oeffne`."""
 
 import json
 from pathlib import Path
@@ -18,8 +21,9 @@ from swki.auftrag import auftrag_name, lauf_datei, lauf_ordner, laeufe
 from swki.bestand.ablage import bestand_ordner, pruefe_kopie, vorher_kopie
 from swki.bestand.differenz import DifferenzFehler, alle_feature_boxen, bewerte_bereiche, in_konfigurationen, koerper_differenz
 from swki.bestand.feature_messung import bewerte, messart, teil_spec
+from swki.bestand.pfade import oeffne_in
 from swki.bestand.punkte import fremde_namen
-from swki.bestand.spec import aufnahme_zu, lade_aenderung, pruefe_freigabe_aenderung, pruefe_lauf_bestand
+from swki.bestand.spec import aufnahme_zu, ist_baugruppen_aufnahme, lade_aenderung, pruefe_freigabe_aenderung, pruefe_lauf_bestand
 from swki.bestand.sw_bestand import lies_bestand
 from swki.bestand.vergleich import vergleiche
 from swki.cli import SwkiFehler
@@ -151,12 +155,12 @@ def _bereichs_features(spec: dict) -> set[str]:
     return {n for b in spec["bereiche"] for n in b.get("features", ())}
 
 
-def _vergleiche_dokumente(app, vorher_pfad: Path, teil: Path, spec: dict, freigegeben: dict, spec_pfad: Path, vorher: dict,
-                          tol_mm: float) -> tuple:
+def _vergleiche_dokumente(oeffnen, app, vorher_pfad: Path, teil: Path, spec: dict, freigegeben: dict, spec_pfad: Path,
+                          vorher: dict, tol_mm: float) -> tuple:
     """(nachher, abweichungen, feature_boxen, messpunkte, feature_messungen). Nichts wird gespeichert, beide Dokumente gehen wieder zu."""
-    model_vorher = oeffne(app, vorher_pfad, sichtbar=False, nur_lesen=True)
+    model_vorher = oeffnen(vorher_pfad, False)
     try:
-        model = oeffne(app, teil, sichtbar=False, nur_lesen=True)
+        model = oeffnen(teil, False)
         try:
             nachher = lies_bestand(app, model)
             konfigurationen = [k for k in vorher["konfigurationen"] if k in nachher["konfigurationen"]]
@@ -170,13 +174,38 @@ def _vergleiche_dokumente(app, vorher_pfad: Path, teil: Path, spec: dict, freige
         sw.schliesse(app, model_vorher)
 
 
-def _bilder(app, pfad: Path, ordner: Path) -> dict[str, str]:
+def _bilder(oeffnen, app, pfad: Path, ordner: Path) -> dict[str, str]:
     """Die gespeicherte aktive Konfiguration, in eigenem Fenster: Bilder gehen nur sichtbar."""
-    model = oeffne(app, pfad, nur_lesen=True)
+    model = oeffnen(pfad, True)
     try:
         return screenshots(app, model, ordner)
     finally:
         sw.schliesse(app, model)
+
+
+def pruefe_teil(app, scheibe: dict, freigegeben: dict, spec_pfad: Path, vorher: dict, kopie: Path, teil: Path, ordner: Path,
+                tol_mm: float, standard: dict, protokoll: dict, oeffnen=None, bilder_unter: str = "") -> dict:
+    """Der Vergleich einer Datei gegen ihren Bestand (§7): `scheibe` und `freigegeben` sind Änderungs-Specs dieser einen Datei, `vorher`
+    ihre Aufnahme, `kopie` ihre Bestandskopie, `teil` die Datei im Lauf-Ordner `ordner`. Ergebnis: `{vorher, bestanden, maengel,
+    pruefungen, differenzen, bilder, bilder_vorher}`. Geöffnet wird über `oeffne_in`, `oeffnen(pfad, sichtbar)` ersetzt das im
+    Teil-Weg. `bilder_unter`: eigener Unterordner der Bilder, wenn ein Lauf mehrere Dateien vergleicht."""
+    oeffnen = oeffnen or (lambda pfad, sichtbar: oeffne_in(app, pfad, ordner, sichtbar=sichtbar, nur_lesen=True))
+    vorher_pfad = vorher_kopie(kopie, ordner, vorher["datei"]["name"])
+    nachher, abweichungen, boxen, punkte, gemessen = _vergleiche_dokumente(oeffnen, app, vorher_pfad, teil, scheibe, freigegeben,
+                                                                           spec_pfad, vorher, tol_mm)
+    bilder = _bilder(oeffnen, app, teil, ordner / "bilder" / bilder_unter)
+    bilder_vorher = _bilder(oeffnen, app, vorher_pfad, vorher_pfad.parent / "bilder" / bilder_unter)
+
+    vorher = {**vorher, "datei": {**vorher["datei"], "ordner": str(kopie.parent)}}  # für `externe_referenzen`
+    nachher = {**nachher, "datei": {"name": teil.name, "ordner": str(teil.parent)}}
+    bereiche = bewerte_bereiche(scheibe, abweichungen, boxen, volumen_prozent=standard["toleranzen"]["volumen_prozent"])
+    feature_messung = bewerte(freigegeben, gemessen, standard["toleranzen"])
+    pruefungen = (vergleiche(scheibe, vorher, nachher, scheibe.get("parameter", {}), *_skript_lauf(scheibe, protokoll),
+                             feature_messung)
+                  + bereiche + _masse_pruefen(scheibe, punkte, nachher["aktiv"]))
+    return {"vorher": str(vorher_pfad), **bewerte_aenderung(pruefungen),
+            "differenzen": {e["konfiguration"]: e["ist"] for e in bereiche if e["id"] == "bereich"},
+            "bilder": bilder, "bilder_vorher": bilder_vorher}
 
 
 def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
@@ -196,30 +225,21 @@ def pruefen(spec_pfad: Path, lauf: int | None = None) -> dict:
     protokoll = json.loads(protokoll_datei.read_text(encoding="utf-8"))
     pruefe_lauf_gebaut(protokoll, lauf)
     pruefe_lauf_bestand(spec, protokoll, lauf)  # BESTAND_VERALTET
+    vorher = aufnahme_zu(spec, spec_pfad)  # BESTAND_UNBEKANNT, BESTAND_VERALTET
+    if ist_baugruppen_aufnahme(vorher):
+        from swki.bestand.pruefen_baugruppe import pruefen_baugruppe  # spät importiert (Kreisimport, nutzt `pruefe_teil`)
+
+        return pruefen_baugruppe(spec_pfad, spec, vorher, lauf, protokoll, standard, r)
     ordner, teil = lauf_ordner(r, auftrag, lauf), Path(protokoll["dateien"]["teil"])
     if not teil.exists():
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")
-    vorher = aufnahme_zu(spec, spec_pfad)  # BESTAND_UNBEKANNT, BESTAND_VERALTET
     kopie = bestand_ordner(r, auftrag, spec["bestand"]["aufnahme"]) / vorher["datei"]["name"]
     pruefe_kopie(vorher, kopie)  # BESTAND_ABWEICHEND
-    vorher_pfad = vorher_kopie(kopie, ordner)
 
     app = verbinde(r.sw_jahr)
-    freigegeben = freigegebene_spec(spec_pfad)
-    nachher, abweichungen, boxen, punkte, gemessen = _vergleiche_dokumente(app, vorher_pfad, teil, spec, freigegeben, spec_pfad, vorher,
-                                                                           standard["toleranzen"]["anker_mm"])
-    bilder = _bilder(app, teil, ordner / "bilder")
-    bilder_vorher = _bilder(app, vorher_pfad, vorher_pfad.parent / "bilder")
-
-    vorher["datei"] = {**vorher["datei"], "ordner": str(kopie.parent)}  # für `externe_referenzen`
-    nachher = {**nachher, "datei": {"name": teil.name, "ordner": str(ordner)}}
-    bereiche = bewerte_bereiche(spec, abweichungen, boxen, volumen_prozent=standard["toleranzen"]["volumen_prozent"])
-    feature_messung = bewerte(freigegeben, gemessen, standard["toleranzen"])
-    pruefungen = (vergleiche(spec, vorher, nachher, spec.get("parameter", {}), *_skript_lauf(spec, protokoll), feature_messung) + bereiche
-                  + _masse_pruefen(spec, punkte, nachher["aktiv"]))
-    bericht = {"auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil), "vorher": str(vorher_pfad),
-               **bewerte_aenderung(pruefungen),
-               "differenzen": {e["konfiguration"]: e["ist"] for e in bereiche if e["id"] == "bereich"},
-               "bilder": bilder, "bilder_vorher": bilder_vorher}
+    erg = pruefe_teil(app, spec, freigegebene_spec(spec_pfad), spec_pfad, vorher, kopie, teil, ordner,
+                      standard["toleranzen"]["anker_mm"], standard, protokoll,
+                      oeffnen=lambda pfad, sichtbar: oeffne(app, pfad, sichtbar=sichtbar, nur_lesen=True))
+    bericht = {"auftrag": auftrag, "spec": spec_pfad.name, "lauf": lauf, "datei": str(teil), **erg}
     schreibe_pruefbericht(spec_pfad, lauf, ordner, bericht)
     return bericht
