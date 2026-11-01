@@ -614,3 +614,53 @@ def test_validieren_weiche_meldet_veraltete_aufnahme(umg, capsys):
     schreibe_aufnahme(umg.r, "a1", 2, aufnahme(datei={**AUFNAHME["datei"], "sha256": "0" * 64}))
     assert main(["validieren", str(_schreibe(umg, BASIS))]) == 1
     assert json.loads(capsys.readouterr().out)["code"] == BESTAND_VERALTET
+
+
+# --- Teil-Aufnahme mit Baugruppen-Inhalt: `in_datei`, `lage_folgen`, Baugruppen-Punkte gibt es hier nicht ---
+
+BAUGRUPPEN_INHALT = {
+    "in_datei": (lambda s: s["punkte"][0].update(in_datei="teile/Anderes.SLDPRT"), "punkte[0].in_datei"),
+    "in_datei_eigenschaft": (lambda s: s["punkte"][4].update(in_datei="teile/Anderes.SLDPRT"), "punkte[4].in_datei"),
+    "lage_folgen": (lambda s: s["punkte"][1].update(lage_folgen=["Deckel-1"]), "punkte[1].lage_folgen"),
+    "bereich": (lambda s: s["bereiche"][0].update(in_datei="teile/Anderes.SLDPRT"), "bereiche[0].in_datei"),
+    "messung": (lambda s: s["pruefung"]["masse_pruefen"][0].update(in_datei="teile/Anderes.SLDPRT"),
+                "pruefung.masse_pruefen[0].in_datei"),
+    "kollision_erlaubt": (lambda s: s.update(kollision_erlaubt=[{"paar": ["a-1", "b-1"], "grund": "x"}]), "kollision_erlaubt"),
+    "komponente_neu": (lambda s: s["punkte"].append({"id": "k1", "typ": "komponente_neu", "wie": "Schraube-1"}), "punkte[6]"),
+    "komponente_entfernen": (lambda s: s["punkte"].append({"id": "e1", "typ": "komponente_entfernen", "komponente": "Deckel-1",
+                                                           "verknuepfungen": []}), "punkte[6]"),
+    "komponente_ersetzen": (lambda s: s["punkte"].append({"id": "e2", "typ": "komponente_ersetzen", "komponente": "Deckel-1",
+                                                          "quelle": {"normteil": "ISO 4762 M6x16"}}), "punkte[6]"),
+    "verknuepfung_neu": (lambda s: s["punkte"].append({"id": "v1", "typ": "verknuepfung_neu", "art": "konzentrisch",
+                                                       "a": {"komponente": "Deckel-1", "ebene": "oben"},
+                                                       "b": {"komponente": "Gehaeuse-1", "ebene": "oben"}}), "punkte[6]"),
+    "verknuepfung_wert": (lambda s: s["punkte"].append({"id": "w1", "typ": "verknuepfung_wert", "verknuepfung": "Abstand1",
+                                                        "alt": 1, "neu": 2}), "punkte[6]"),
+    "verknuepfung_loeschen": (lambda s: s["punkte"].append({"id": "l1", "typ": "verknuepfung_loeschen",
+                                                            "verknuepfung": "Abstand1"}), "punkte[6]"),
+}
+
+
+@pytest.mark.parametrize("name", sorted(BAUGRUPPEN_INHALT))
+def test_baugruppen_inhalt_an_teil_aufnahme_ist_befund(umg, name):
+    aendere, pfad = BAUGRUPPEN_INHALT[name]
+    spec = copy.deepcopy(BASIS)
+    aendere(spec)
+    with pytest.raises(SpecFehler) as e:
+        validieren(_schreibe(umg, spec))
+    befunde = [b for b in e.value.daten["befunde"] if b["pfad"] == pfad]
+    assert [b["code"] for b in befunde] == [BESTAND_REFERENZ] and "Baugruppe" in befunde[0]["meldung"]
+    assert len(e.value.daten["befunde"]) == 1  # sonst nichts (die Basis ist gültig)
+
+
+def test_in_datei_an_teil_aufnahme_trifft_nicht_still_die_aufgenommene_datei(umg):
+    """Ein `mass`-Punkt mit `in_datei` einer anderen Datei darf nicht als Punkt der aufgenommenen Datei durchgehen."""
+    spec = copy.deepcopy(BASIS)
+    spec["punkte"][0]["in_datei"] = "teile/Anderes.SLDPRT"
+    with pytest.raises(SpecFehler):
+        freigeben(_schreibe(umg, spec))
+    assert not (umg.ordner / "aenderung.freigegeben.yaml").exists()
+
+
+def test_teil_aufnahme_ohne_baugruppen_inhalt_bleibt_gueltig(umg):
+    assert validieren(_schreibe(umg, BASIS))["gueltig"] is True

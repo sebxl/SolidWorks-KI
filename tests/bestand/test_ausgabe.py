@@ -23,7 +23,7 @@ from swki.spec.freigabe import FreigabeFehler
 from swki.pruefung import befehle
 from swki.pruefung.schleife import empfehlung
 from tests.bestand.test_bau import INHALT, MASS, Lauf
-from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, schreibe_teil
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, freigabe_der_teil_quelle, schreibe_teil
 
 DIFFERENZEN = {"Standard": [{"art": "hinzu", "box": [-40.0, 10.0, 10.0, -30.0, 20.0, 20.0], "volumen": 500.0, "flaeche": 120.0,
                              "dicke": 5.0, "bereich": 0, "unter_toleranz": False, "duenn": False}],
@@ -111,7 +111,8 @@ def test_ausgabe_prueft_die_freigabe_der_teil_quelle(u):
     u.voll()
     u.gebaut()
     schreibe_teil(u.spec_pfad.parent)
-    spec = u.schreibe(MASS, TEIL_PUNKT)  # neu freigegeben, der Lauf 1 bleibt
+    spec = u.schreibe(MASS, TEIL_PUNKT, freigeben=False)  # neu freigegeben (ohne Prüfung gegen die Aufnahme), der Lauf 1 bleibt
+    freigabe_der_teil_quelle(spec)
     schreibe_teil(u.spec_pfad.parent, hoehe=20)  # Anforderung der Teil-Spec nach der Freigabe geändert
     with pytest.raises(FreigabeFehler) as e:
         modul.ausgabe(spec)

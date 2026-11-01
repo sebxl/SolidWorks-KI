@@ -17,7 +17,9 @@ from swki.konfig import Rechner
 from swki.spec.freigabe import pruefsumme
 from swki.spec.laden import SpecFehler
 from tests.bestand.beispiel_baugruppe import DATEIEN, SPEC, baugruppen_aufnahme, datei_aufnahmen, teil_aufnahme
+from tests.baugruppe.beispiel_kaufteil import katalog
 from tests.bestand.test_spec_baugruppe import _teil
+from tests.kaufteile.beispiel import kopie as eintrag_kopie, schreibe as schreibe_eintrag
 
 
 def _spec(*punkte, bereiche=None, **mehr) -> dict:
@@ -687,3 +689,66 @@ def test_teil_aufnahmen_werden_nur_fuer_dateien_mit_punkten_gelesen(umg):
     """Eine fehlende Aufnahme einer Datei ohne Punkte stört nicht."""
     (umg.r.arbeitsordner / "a1" / "bestand-1" / "aufnahme" / "teile" / "Gehaeuse.SLDPRT.json").unlink()
     validieren(_schreibe(umg, SPEC))
+
+
+# --- Korrekturrunde 1 ---
+
+def test_teil_in_einer_unterbaugruppe_ist_kein_abgeleitetes_teil():
+    """`referenzen` einer Unterbaugruppe trägt ihre Kinder: Nur ein Teil mit Referenz auf ein Basisteil sperrt dieses."""
+    p = {**_punkt("p1"), "in_datei": "teile/Welle.SLDPRT"}
+    assert _befunde(_spec(p, bereiche=[_bereich("p1", datei="teile/Welle.SLDPRT")])) == []
+    (b,) = _befunde(_spec({**_punkt("p1"), "in_datei": "teile/Basis.SLDPRT"}))
+    assert b["code"] == BESTAND_REFERENZ_EXTERN and b["abhaengig"] == ["teile/Abgeleitet.SLDPRT"]
+
+
+def test_quelle_mit_variante_vor_dem_normteil():
+    """Die Reihenfolge der Schlüssel im YAML ist egal."""
+    k = {"id": "k1", "typ": "komponente_neu", "quelle": {"variante": "8.8", "normteil": "ISO 4762 M6x16"}}
+    assert _befunde(_spec(k)) == []
+    a = baugruppen_aufnahme()
+    a["dateien"]["ISO4762_M6x16_8_8.SLDPRT"] = copy.deepcopy(DATEIEN["teile/Platte.SLDPRT"])
+    assert _codes(_befunde(_spec(k), a)) == [NAME_BELEGT]
+
+
+KAUFTEIL = {"id": "k4", "typ": "komponente_neu", "quelle": {"kaufteil": "SWKI-MUSTER GM42-10"}}
+
+
+def test_kaufteil_aus_dem_katalog_besteht(tmp_path, monkeypatch):
+    katalog(tmp_path / "kat", monkeypatch)
+    assert _befunde(_spec(KAUFTEIL)) == []
+    a = baugruppen_aufnahme()
+    a["dateien"]["SWKI-MUSTER_GM42-10.SLDPRT"] = copy.deepcopy(DATEIEN["teile/Platte.SLDPRT"])
+    (b,) = _befunde(_spec(KAUFTEIL), a)
+    assert b["code"] == NAME_BELEGT and b["datei"] == "SWKI-MUSTER_GM42-10.sldprt"
+
+
+def test_kaufteil_ungeprueft_ist_befund(tmp_path, monkeypatch):
+    katalog(tmp_path / "kat", monkeypatch, geprueft=False)
+    (b,) = _befunde(_spec(KAUFTEIL))
+    assert b["pfad"] == "punkte[0].quelle" and b["meldung"].startswith("KAUFTEIL_UNGEPRUEFT")
+
+
+def test_kaufteil_nicht_freigegeben_ist_befund(tmp_path, monkeypatch):
+    katalog(tmp_path / "kat", monkeypatch)
+    anders = eintrag_kopie()
+    anders["koerper"] = 3  # geändert, nicht neu freigegeben
+    schreibe_eintrag(tmp_path / "kat", anders)
+    (b,) = _befunde(_spec(KAUFTEIL))
+    assert b["pfad"] == "punkte[0].quelle" and b["meldung"].startswith("KAUFTEIL_NICHT_FREIGEGEBEN")
+
+
+def test_kaufteil_eintrag_ungueltig_ist_befund(tmp_path, monkeypatch):
+    katalog(tmp_path / "kat", monkeypatch)
+    kaputt = eintrag_kopie()
+    del kaputt["einbau"]
+    schreibe_eintrag(tmp_path / "kat", kaputt)
+    befunde = _befunde(_spec(KAUFTEIL))
+    assert befunde and all(b["pfad"] == "punkte[0].quelle" and b["meldung"].startswith("Katalogeintrag SWKI-MUSTER GM42-10 ungültig")
+                           for b in befunde)
+
+
+def test_kaufteil_ungepruefter_eintrag_scheitert_schon_in_validieren(tmp_path, monkeypatch):
+    """Sonst bestünde er `validieren` und `freigeben` und scheiterte erst im Bau."""
+    katalog(tmp_path / "kat", monkeypatch, geprueft=False)
+    befunde = pruefe_baugruppe(_spec(KAUFTEIL), baugruppen_aufnahme(), datei_aufnahmen(), tmp_path)[0]
+    assert [b["meldung"].split(":")[0] for b in befunde] == ["KAUFTEIL_UNGEPRUEFT"]

@@ -8,13 +8,14 @@ import pytest
 import yaml
 
 from swki.bestand.ablage import schreibe_aufnahme
-from swki.bestand.spec import (BAUGRUPPEN_TYPEN, freigeben, lade_aenderung, pruefe_freigabe_aenderung,
+from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _summen, _teil_specs, freigeben, lade_aenderung, pruefe_freigabe_aenderung,
                                teil_summen_aenderung, validieren)
 from swki.cli import main
 from swki.konfig import Rechner
 from swki.spec.freigabe import FreigabeFehler, pruefsumme
+from swki.spec.freigabe import freigeben as spec_freigeben
 from swki.spec.laden import SpecFehler
-from tests.bestand.beispiel_aufnahme import AUFNAHME, SHA
+from tests.bestand.beispiel_baugruppe import baugruppen_aufnahme
 from tests.bestand.test_spec import BEISPIEL as TEIL_BEISPIEL
 
 SHA_BG = "5e7d" * 16
@@ -325,10 +326,10 @@ def _teil(name="Deckel2", hoehe=15):
 
 @pytest.fixture
 def umg(tmp_path, monkeypatch):
-    """Arbeitsordner mit Aufnahme 1 (beliebiger Inhalt, die Baugruppen-Punkte prüft erst Task 4) und Auftragsordner a1."""
+    """Arbeitsordner mit der Baugruppen-Aufnahme 1 (`beispiel_baugruppe`) und Auftragsordner a1."""
     r = Rechner(2025, Path("C:/SW"), Path("C:/t.prtdot"), None, None, tmp_path / "arbeit")
     monkeypatch.setattr("swki.bestand.spec.lade_rechner", lambda: r)
-    schreibe_aufnahme(r, "a1", 1, AUFNAHME)
+    schreibe_aufnahme(r, "a1", 1, baugruppen_aufnahme())
     ordner = tmp_path / "a1"
     ordner.mkdir()
     return type("Umgebung", (), {"r": r, "ordner": ordner})
@@ -337,7 +338,7 @@ def umg(tmp_path, monkeypatch):
 def _auftrag(umg, spec=None, teil=None):
     """Teil-Spec und Änderungs-Spec (ein komponente_neu aus der Teil-Quelle) im Auftragsordner; Rückgabe: (Spec-Pfad, Spec)."""
     spec = spec or {"art": "aenderung", "name": "Haupt_Rev",
-                    "bestand": {"datei": AUFNAHME["datei"]["name"], "sha256": SHA, "aufnahme": 1},
+                    "bestand": BAUGRUPPE["bestand"],
                     "punkte": [{"id": "k3", "typ": "komponente_neu", "quelle": {"teil": "Deckel2.yaml"}},
                                {"id": "k4", "typ": "komponente_neu", "quelle": {"teil": "Deckel2.yaml"}},
                                {"id": "v1", "typ": "verknuepfung_neu", "art": "deckungsgleich",
@@ -446,7 +447,7 @@ def test_aenderung_der_anforderung_macht_die_freigabe_veraltet(umg):
 
 def test_freigabe_ohne_teil_quelle_unveraendert(umg):
     """Etappe 1 / reine Baugruppen-Punkte: kein `teile`, Prüfsumme wie `pruefsumme(spec)`, keine Teil-Kopie."""
-    spec = {**BAUGRUPPE, "bestand": {"datei": AUFNAHME["datei"]["name"], "sha256": SHA, "aufnahme": 1},
+    spec = {**BAUGRUPPE,
             "punkte": [_punkt(BAUGRUPPE, "k1")], "bereiche": [], "pruefung": {}, "kollision_erlaubt": []}
     pfad, _ = _auftrag(umg, spec)
     erg = freigeben(pfad)
@@ -471,3 +472,14 @@ TEIL_PUNKT = {"id": "k3", "typ": "komponente_neu", "quelle": {"teil": "Deckel2.y
 def schreibe_teil(ordner: Path, hoehe: float = 15) -> None:
     """Die Teil-Spec `Deckel2.yaml` neben der Änderungs-Spec; eine andere Höhe ändert ihre Anforderung (Parameter)."""
     _schreibe(ordner, _teil(hoehe=hoehe), "Deckel2.yaml")
+
+
+def freigabe_der_teil_quelle(spec_pfad: Path) -> None:
+    """Freigabe samt Teil-Quelle wie `swki freigeben`, aber ohne die Prüfung gegen die Aufnahme. Die Bau-, Prüf- und Ausgabetests
+    tragen die Teil-Quelle an einer Teil-Aufnahme, die `freigeben` (zu Recht) abweist: Sie belegen nur, dass `bauen`, `pruefen` und
+    `ausgabe` die Freigabe der Teil-Quelle prüfen."""
+    spec = lade_aenderung(spec_pfad)
+    teile = _teil_specs(spec, spec_pfad)
+    for datei, teil in teile.items():
+        spec_freigeben(spec_pfad.parent / datei, teil)
+    spec_freigeben(spec_pfad, spec, teile=_summen(teile))

@@ -447,6 +447,29 @@ def ist_baugruppen_aufnahme(aufnahme: dict) -> bool:
     return aufnahme.get("art") == "baugruppe"
 
 
+def baugruppen_inhalt_befunde(spec: dict) -> list[dict]:
+    """Eine Spec an einer Teil-Aufnahme kennt keine Baugruppe: `in_datei` (an Punkt, Bereich, Messung), `lage_folgen`,
+    `kollision_erlaubt` und die Baugruppen-Punkte gehören an eine Baugruppen-Aufnahme. Ohne den Befund träfe ein Punkt mit `in_datei`
+    still die aufgenommene Datei, und ein Baugruppen-Punkt scheiterte erst im Bau."""
+    def befund(pfad: str, was: str) -> dict:
+        return _befund(pfad, f"{was} gibt es nur an einer Baugruppe: Die Aufnahme ist ein Teil ({spec['bestand']['datei']})",
+                       BESTAND_REFERENZ)
+
+    befunde = []
+    for i, p in enumerate(spec["punkte"]):
+        if p["typ"] in BAUGRUPPEN_TYPEN:
+            befunde.append(befund(f"punkte[{i}]", f"Ein Punkt typ: {p['typ']}"))
+        for feld in ("in_datei", "lage_folgen"):
+            if feld in p:
+                befunde.append(befund(f"punkte[{i}].{feld}", feld))
+    befunde += [befund(f"bereiche[{j}].in_datei", "in_datei") for j, b in enumerate(spec["bereiche"]) if "in_datei" in b]
+    befunde += [befund(f"pruefung.masse_pruefen[{m}].in_datei", "in_datei")
+                for m, x in enumerate(spec.get("pruefung", {}).get("masse_pruefen", [])) if "in_datei" in x]
+    if "kollision_erlaubt" in spec:
+        befunde.append(befund("kollision_erlaubt", "kollision_erlaubt"))
+    return befunde
+
+
 def _geprueft(pfad: Path) -> tuple[dict, dict, list[dict]]:
     """(Spec, Aufnahme, Hinweise) nach der vollen Prüfung; alle Befunde auf einmal (`SpecFehler`). Eine Baugruppen-Aufnahme geht über
     ihre Scheiben (`pruefe_baugruppe`), Teile laufen wie in Etappe 1."""
@@ -459,7 +482,7 @@ def _geprueft(pfad: Path) -> tuple[dict, dict, list[dict]]:
         if befunde:
             raise SpecFehler(befunde)
         return spec, aufnahme, hinweise
-    befunde = befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
+    befunde = baugruppen_inhalt_befunde(spec) + befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
     feature_b, hinweise = feature_befunde(spec, aufnahme, pfad.parent)
     if befunde or feature_b:
         raise SpecFehler(befunde + feature_b)

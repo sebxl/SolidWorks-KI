@@ -14,17 +14,12 @@ Ebene darf Ziel eines Punkts sein, eine in einer Unterbaugruppe nur Partner eine
 from collections.abc import Callable
 from pathlib import Path, PureWindowsPath
 
-from swki.baugruppe.laden import teile_normteil
+from swki.baugruppe.laden import kaufteil_quelle, normteil_quelle
 from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, MASS_GESTEUERT, NAME_BELEGT, VERKNUEPFUNGEN_FEHLEN
 from swki.bestand.folgen import folgen_von
 from swki.bestand.scheiben import (aenderung_an_haupt, datei_schluessel, dateien_mit_punkten, haupt_scheibe, scheibe, scheiben_karte,
                                    zurueck)
 from swki.bestand.spec import BAUGRUPPEN_TYPEN, _alt_befund, _befund, _ist_relativ, befunde_gegen_aufnahme, feature_befunde
-from swki.kaufteile.fehler import KaufteilFehler
-from swki.kaufteile.katalog import bibliotheksschluessel, finde, teile_schluessel
-from swki.normteile.fehler import NormteilFehler
-from swki.normteile.schluessel import loese_auf
-from swki.normteile.tabelle import lade_normtabelle, pruefe_tabelle
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.laden import SpecFehler, lade_spec, lade_yaml
 
@@ -78,7 +73,8 @@ class _Bestand:
         schl, name = datei_schluessel(rel), PureWindowsPath(rel).name.casefold()
         treffer = []
         for andere, d in self.dateien.items():
-            if andere != rel and any(datei_schluessel(_ref_name(e)) == schl or PureWindowsPath(_ref_name(e)).name.casefold() == name
+            # nur ein Teil ist abgeleitet: `referenzen` einer Unterbaugruppe trägt ihre Kinder
+            if andere != rel and d.get("art") == "teil" and any(datei_schluessel(_ref_name(e)) == schl or PureWindowsPath(_ref_name(e)).name.casefold() == name
                                      for e in d.get("referenzen", [])):
                 treffer.append(andere)
         return sorted(treffer)
@@ -185,41 +181,34 @@ class _Quellen:
             return None, [{**x, "pfad": f"{datei}: {x['pfad']}"} for x in e.daten["befunde"]]
         return f"{spec['name']}.sldprt", []
 
-    def _norm(self, quelle: dict, pfad: str) -> tuple[str | None, list[dict]]:
-        norm, groesse = teile_normteil(quelle["normteil"])
-        try:
-            pruefe_tabelle(lade_normtabelle(norm))
-            _, anfrage = loese_auf(norm, groesse, quelle.get("variante"))
-        except NormteilFehler as e:
-            return None, [_befund(f"{pfad}.quelle", f"{e.daten['code']}: {e}")]
-        return f"{anfrage.schluessel}.sldprt", []
-
-    def _kauf(self, quelle: dict, pfad: str) -> tuple[str | None, list[dict]]:
-        try:
-            finde(quelle["kaufteil"])
-        except KaufteilFehler as e:
-            return None, [_befund(f"{pfad}.quelle", f"{e.daten['code']}: {e}")]
-        return f"{bibliotheksschluessel(*teile_schluessel(quelle['kaufteil']))}.sldprt", []
+    @staticmethod
+    def _bibliothek(lade: Callable[[dict, str], tuple], quelle: dict, pfad: str) -> tuple[str | None, list[dict]]:
+        """Normteil und Kaufteil: dieselbe Prüfung wie beim Laden einer Baugruppen-Spec (`swki/baugruppe/laden.py`), also Tabelle bzw.
+        Katalog, Freigabe und Prüfer-Urteil; der Dateiname ist der Bibliotheksschlüssel."""
+        q, befunde = lade(quelle, f"{pfad}.quelle")
+        return (None if q is None else f"{q.schluessel}.sldprt"), befunde
 
     def befunde(self, quelle: dict, pfad: str) -> list[dict]:
-        art = next(iter(quelle))
+        art = next(k for k in ("teil", "normteil", "kaufteil") if k in quelle)
         schl = f"{art}:{quelle[art]}:{quelle.get('variante', '')}"
         erstmals = schl not in self._cache
         if erstmals:
-            self._cache[schl] = {"teil": self._teil, "normteil": self._norm, "kaufteil": self._kauf}[art](quelle, pfad)
-        name, befunde = self._cache[schl]
+            self._cache[schl] = (self._teil(quelle, pfad) if art == "teil" else
+                                 self._bibliothek(normteil_quelle if art == "normteil" else kaufteil_quelle, quelle, pfad))
+        name, fehler = self._cache[schl]
+        befunde = list(fehler) if erstmals else []  # Befunde einer Quelle meldet nur der erste Punkt, der sie nennt
         if name is None:
-            return befunde if erstmals else []  # Fehler einer Quelle meldet nur der erste Punkt, der sie nennt
+            return befunde
         klein = name.casefold()
         if klein in self.vorhanden:
-            return [_befund(f"{pfad}.quelle", f"Die neue Datei {name} hieße wie {self.vorhanden[klein]} im Bestand: SolidWorks öffnet "
-                            "keine zwei Dokumente gleichen Namens und neue Dateien liegen flach neben der Hauptbaugruppe. Für eine "
-                            "weitere Instanz der vorhandenen Datei 'wie: <Komponente>' benutzen", NAME_BELEGT, datei=name,
-                            vorhanden=self.vorhanden[klein])]
+            return befunde + [_befund(
+                f"{pfad}.quelle", f"Die neue Datei {name} hieße wie {self.vorhanden[klein]} im Bestand: SolidWorks öffnet keine zwei "
+                "Dokumente gleichen Namens und neue Dateien liegen flach neben der Hauptbaugruppe. Für eine weitere Instanz der "
+                "vorhandenen Datei 'wie: <Komponente>' benutzen", NAME_BELEGT, datei=name, vorhanden=self.vorhanden[klein])]
         if self.neue.setdefault(klein, schl) != schl:
-            return [_befund(f"{pfad}.quelle", f"Die neue Datei {name} hieße wie die einer anderen neuen Komponente: SolidWorks öffnet "
-                            "keine zwei Dokumente gleichen Namens", NAME_BELEGT, datei=name, vorhanden=name)]
-        return []
+            return befunde + [_befund(f"{pfad}.quelle", f"Die neue Datei {name} hieße wie die einer anderen neuen Komponente: SolidWorks "
+                                      "öffnet keine zwei Dokumente gleichen Namens", NAME_BELEGT, datei=name, vorhanden=name)]
+        return befunde
 
 
 def _verknuepfung_neu_befunde(p: dict, pfad: str, b: _Bestand, neu: set[str], parameter: dict) -> list[dict]:

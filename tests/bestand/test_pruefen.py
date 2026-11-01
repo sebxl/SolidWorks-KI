@@ -29,7 +29,7 @@ from swki.pruefung.schleife import empfehlung, lies_laeufe
 from swki.spec.freigabe import FreigabeFehler
 from swki.spec.normen import SW_BEFESTIGUNG, SW_END_BLIND, SW_NORM
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
-from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, schreibe_teil
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, freigabe_der_teil_quelle, schreibe_teil
 
 INHALT = b"bestandskopie"
 GEAENDERT = b"lauf"
@@ -268,7 +268,8 @@ def test_ohne_freigabe_kein_pruefen(u):
 
 def test_pruefen_prueft_die_freigabe_der_teil_quelle(u):
     schreibe_teil(u.spec_pfad.parent)
-    spec = u.schreibe(punkte=(MASS, TEIL_PUNKT))
+    spec = u.schreibe(punkte=(MASS, TEIL_PUNKT), freigeben=False)
+    freigabe_der_teil_quelle(spec)
     schreibe_teil(u.spec_pfad.parent, hoehe=20)  # Anforderung der Teil-Spec nach der Freigabe geändert
     with pytest.raises(FreigabeFehler) as e:
         modul.pruefen(spec)

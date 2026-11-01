@@ -35,7 +35,7 @@ DATEIEN = {
     "teile/Welle.SLDPRT": _datei("teile/Welle.SLDPRT"),
     "teile/Basis.SLDPRT": _datei("teile/Basis.SLDPRT"),
     "teile/Abgeleitet.SLDPRT": _datei("teile/Abgeleitet.SLDPRT", referenzen=["teile/Basis.SLDPRT"]),
-    "Unter.SLDASM": _datei("Unter.SLDASM", art="baugruppe"),
+    "Unter.SLDASM": _datei("Unter.SLDASM", art="baugruppe", referenzen=["teile/Welle.SLDPRT"]),  # trägt ihre Kinder
 }
 
 
