@@ -66,7 +66,7 @@ def test_1_typ_ohne_beleg_ist_eine_luecke_kein_treffer():
 
 def test_1_tabelle_nennt_nur_belegte_typen():
     assert abgleich.TYP_TABELLE["schnitt"] == frozenset({"ICE"}) and abgleich.TYP_TABELLE["normbohrung"] == frozenset({"HoleWzd"})
-    assert "skript" not in abgleich.TYP_TABELLE and "verzahnung" not in abgleich.TYP_TABELLE
+    assert "skript" not in abgleich.TYP_TABELLE and abgleich.TYP_TABELLE["verzahnung"] == frozenset({"Extrusion"})
 
 
 # --- 2: Partner, Ausrichtung, Kopplungen, Soll aus der Spec -------------------------------------------------------------
@@ -437,3 +437,107 @@ def test_7_manuell_geaendert_nennt_die_unlesbare_herkunft(umgebung):
         pruefe_unveraendert(r, "A", spec_pfad)
     assert e.value.daten["herkunft_unlesbar"][0]["pfad"] == str(pfad) and "herkunft.json" in str(e.value)
     assert "swki aenderungen" not in str(e.value)       # das würde den Lauf in SolidWorks öffnen
+
+
+# --- Korrekturrunde 2 ---------------------------------------------------------------------------------------------------------
+
+from tests.bestand.test_abgleich import _ist_masse  # noqa: E402
+
+_VORGABE = [("fase", "Chamfer", "D2", 45.0), ("muster_kreis", "CirPattern", "D3", 360.0), ("rotation", "Revolution", "D1", 360.0)]
+
+
+def _mit_knoten(typ, ist_typ, kennung=None, wert=None, name="k1"):
+    """Teil mit einem zusätzlichen Knoten `name` vom Spec-Typ `typ`; sein Maß `<kennung>@<name>` steht nur im Ist."""
+    protokoll = copy.deepcopy(PROTOKOLL_TEIL)
+    protokoll["knoten"].append({"id": name, "typ": typ, "sw_name": name, "status": "ok", "masse": []})
+    ist = _ist_teil()
+    ist["features"].append(_f(name, ist_typ))
+    if kennung:
+        ist["masse"].append(_ist_masse(f"{kennung}@{name}", name, wert))
+    return protokoll, ist
+
+
+@pytest.mark.parametrize(("typ", "ist_typ", "kennung", "wert"), _VORGABE)
+def test_r2_vorgabemass_ohne_winkel_ist_kein_neues_mass(typ, ist_typ, kennung, wert):
+    protokoll, ist = _mit_knoten(typ, ist_typ, kennung, wert)
+    a = _teil(ist, protokoll)
+    assert a["masse_neu"] == [] and a["vollstaendig"] is True and a["nicht_erklaert"] is True
+
+
+@pytest.mark.parametrize(("typ", "ist_typ", "kennung", "wert"), _VORGABE)
+def test_r2_anderer_wert_des_vorgabemasses_bleibt_ein_treffer(typ, ist_typ, kennung, wert):
+    protokoll, ist = _mit_knoten(typ, ist_typ, kennung, wert - 15.0)
+    a = _teil(ist, protokoll)
+    assert [m["name"] for m in a["masse_neu"]] == [f"{kennung}@k1"] and a["nicht_erklaert"] is False
+
+
+@pytest.mark.parametrize(("typ", "ist_typ", "kennung", "wert"), _VORGABE)
+def test_r2_vorgabemass_gilt_nur_am_passenden_typ_und_mit_der_passenden_kennung(typ, ist_typ, kennung, wert):
+    protokoll, ist = _mit_knoten(typ, ist_typ, "D9", wert)                       # andere Kennung
+    assert [m["name"] for m in _teil(ist, protokoll)["masse_neu"]] == ["D9@k1"]
+    protokoll, ist = _mit_knoten("verrundung", "Fillet", kennung, wert)          # richtige Kennung, falscher Knoten-Typ
+    assert [m["name"] for m in _teil(ist, protokoll)["masse_neu"]] == [f"{kennung}@k1"]
+
+
+def test_r2_vorgabemass_am_soll_feature_mit_spec_winkel_wird_verglichen():
+    """Nennt die Spec den Winkel, steht das Maß im Maßprotokoll und eine Änderung ist eine Maßabweichung, kein neues Maß."""
+    protokoll, ist = _mit_knoten("fase", "Chamfer", "D2", 30.0)
+    protokoll["knoten"][-1]["masse"] = [_massprotokoll("D2@k1", 45.0)]
+    a = _teil(ist, protokoll)
+    assert [(m["name"], m["soll"], m["ist"]) for m in a["masse"]] == [("D2@k1", 45.0, 30.0)] and a["masse_neu"] == []
+
+
+def _massprotokoll(name, wert):
+    return {"name": name, "pfad": "features[3].winkel", "art": "winkel", "bezug": None, "roh": wert, "vorzeichen": 1, "wert": wert,
+            "einheit": "grad"}
+
+
+def test_r2_alle_knoten_uebersprungen_ist_eine_luecke():
+    protokoll = {"status": "ok", "knoten": [{"id": "f1", "typ": "extrusion", "sw_name": None, "status": "uebersprungen"}]}
+    a = _teil(_ist_teil(), protokoll)
+    assert a["vollstaendig"] is False and a["features_geprueft"] is False and any("Features" in text for text in a["luecken"])
+    assert a["features_fehlen"] == [] and a["nicht_erklaert"] is True
+
+
+def _spec_mit_rotation(schnitt):
+    return {**SPEC_TEIL, "features": [{"id": "r1", "typ": "rotation", "schnitt": schnitt}]}
+
+
+@pytest.mark.parametrize(("schnitt", "ist_typ", "erlaubt"), [(False, "RevCut", ["Revolution"]), (True, "Revolution", ["RevCut"])])
+def test_r2_rotation_aufsatz_gegen_schnitt_wird_erkannt(schnitt, ist_typ, erlaubt):
+    protokoll, ist = _mit_knoten("rotation", ist_typ, "D1", 360.0, name="r1")
+    a = abgleich_teil(protokoll, _spec_mit_rotation(schnitt), ist, auftrag="A")
+    assert a["typ_geaendert"] == [{"name": "r1", "knoten": "r1", "soll": "rotation", "ist": ist_typ, "erlaubt": erlaubt}]
+
+
+@pytest.mark.parametrize(("schnitt", "ist_typ"), [(False, "Revolution"), (True, "RevCut")])
+def test_r2_rotation_passender_typ_ist_kein_treffer(schnitt, ist_typ):
+    protokoll, ist = _mit_knoten("rotation", ist_typ, "D1", 360.0, name="r1")
+    assert abgleich_teil(protokoll, _spec_mit_rotation(schnitt), ist, auftrag="A")["typ_geaendert"] == []
+
+
+def test_r2_rotation_ohne_spec_features_erlaubt_beide():
+    """Ohne die Spec-Features ist `schnitt` unbekannt: beide Typen sind zulässig, die Grenze steht im Kommentar der Tabelle."""
+    for ist_typ in ("Revolution", "RevCut"):
+        protokoll, ist = _mit_knoten("rotation", ist_typ, "D1", 360.0, name="r1")
+        assert _teil(ist, protokoll)["typ_geaendert"] == []
+
+
+def test_r2_verzahnung_ist_belegt():
+    protokoll, ist = _mit_knoten("verzahnung", "Extrusion", "D1", 10.0)
+    protokoll["knoten"][-1]["masse"] = [_massprotokoll("D1@k1", 10.0)]
+    a = _teil(ist, protokoll)
+    assert a["typ_geaendert"] == [] and a["vollstaendig"] is True
+    ist["features"][-1]["typ"] = "Fillet"
+    assert [t["name"] for t in _teil(ist, protokoll)["typ_geaendert"]] == ["k1"]
+
+
+def test_r2_ergebnis_traegt_feste_grenzen():
+    """Was der Vergleich nicht sieht, steht in jedem Ergebnis, ohne `vollstaendig` zu ändern."""
+    b = _bg()
+    assert b["vollstaendig"] is True
+    assert any("fixiert" in g for g in b["grenzen"]) and any("Ausrichtung" in g for g in b["grenzen"])
+    assert any("Skizzengeometrie" in g and "Endbedingung" in g for g in b["grenzen"])
+    t = _teil(_ist_teil())
+    assert t["vollstaendig"] is True and any("Skizzengeometrie" in g and "Endbedingung" in g for g in t["grenzen"])
+    assert abgleich.ungeprueft_teil("x")["grenzen"] == t["grenzen"]

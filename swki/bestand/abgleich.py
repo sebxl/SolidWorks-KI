@@ -20,10 +20,14 @@ from swki.spec.laden import COMPILER_ENDUNGEN, RESERVIERT
 
 # Spec-Typ eines Features → zulässige IFeature.GetTypeName2. NUR BELEGTE NAMEN (Spikes docs/stufe0/ergebnisse: s9a_b6 Extrusion,
 # s9a_b7 ICE, s9a_b8 Revolution/RevCut, s9b_b12 Fillet, s9b_b13 Chamfer, s9b_b14 LPattern, s9b_b15 CirPattern, s9b_b16 MirrorPattern,
-# s10_f1 HoleWzd, s2/topologie RefPlane/RefAxis; `bohrung` baut mit FeatureCut4 wie `schnitt`). Ein Spec-Typ ohne Eintrag (skript,
-# verzahnung) wird nicht verglichen, das steht als Lücke da, nie als Treffer. Task 12 ergänzt die Tabelle aus echten Dateien.
+# s10_f1 HoleWzd, s2/topologie RefPlane/RefAxis; `bohrung` baut mit FeatureCut4 wie `schnitt`, `verzahnung` mit FeatureExtrusion3 wie
+# `extrusion`). Andere Namen, die die API kennt (etwa `Boss`, `Cut`), sind hier nicht gemessen und darum nicht zulässig: Ein Treffer
+# ist billiger als ein Verschweigen. Ein Spec-Typ ohne Eintrag (skript) wird nicht verglichen, das steht als Lücke da, nie als Treffer.
+# `rotation` erlaubt beide Namen; ist die Spec-Feature bekannt (`schnitt`), engt `_erlaubte_typen` auf einen ein. Task 12 ergänzt die
+# Tabelle aus echten Dateien.
 TYP_TABELLE = {
     "extrusion": frozenset({"Extrusion"}), "schnitt": frozenset({"ICE"}), "rotation": frozenset({"Revolution", "RevCut"}),
+    "verzahnung": frozenset({"Extrusion"}),
     "bohrung": frozenset({"ICE"}), "normbohrung": frozenset({"HoleWzd"}), "verrundung": frozenset({"Fillet"}),
     "fase": frozenset({"Chamfer"}), "muster_linear": frozenset({"LPattern"}), "muster_kreis": frozenset({"CirPattern"}),
     "spiegeln": frozenset({"MirrorPattern"}), "referenz": frozenset({"RefPlane", "RefAxis"}),
@@ -35,6 +39,17 @@ MAX_STANDARDEBENEN = 3
 # `_senkung` ist ein Feature der Bohrung, seine Skizze heißt `<id>_senkung_skizze`.
 _SKIZZE_AM_KNOTEN = {"_skizze": frozenset({"extrusion", "schnitt", "rotation", "bohrung", "verzahnung"}),
                      "_senkung": frozenset({"bohrung"}), "_positionen": frozenset({"normbohrung"})}
+# Maße, die der Handler immer anlegt, obwohl das Maßprotokoll sie nur bei gesetztem `winkel` nennt: Knoten-Typ → (Kennung, Vorgabe in Grad).
+# Werte aus den Handlern: fase `ctx.rad(f.get("winkel", 45))` (D2), muster_kreis `winkel` 360 (D3), rotation `winkel` 360 (D1).
+# Ein gleichwertiges Maß an einem Knoten dieses Typs ist erklärt, ein anderer Wert bleibt ein Treffer.
+_VORGABE_MASSE = {"fase": ("D2", 45.0), "muster_kreis": ("D3", 360.0), "rotation": ("D1", 360.0)}
+# Was der Vergleich nicht sieht, steht in jedem Ergebnis (`grenzen`), ohne `vollstaendig` zu ändern
+GRENZEN_TEIL = ("Skizzengeometrie ohne Maß (verschobene Elemente, Beziehungen), Endbedingungen und Anzahlen (ganzzahlige Maße) sieht dieser "
+                "Vergleich nicht: gleicher Name und gleiche Maße gelten als gleich (Abhilfe: --referenzbau, Spec §8.6)",)
+GRENZEN_BAUGRUPPE = ("`fixiert`/gelöst einer Komponente steht nicht im Bauprotokoll und wird nicht verglichen",
+                     "Die Ausrichtung einer Verknüpfung wird nur verglichen, wenn die Spec sie nennt",
+                     "Geometrie der Teile (Skizzengeometrie, Endbedingungen) sieht dieser Vergleich nicht, nur ihre Dateien (SHA-256) und "
+                     "Lagen; Lagen unter 10 µm Abweichung zählen als gleich")
 _MUSTER_TYPEN = frozenset({"muster_linear", "muster_kreis"})   # legen Referenzachsen `achse_x|y|z` an (handler/muster.py)
 VERKNUEPFUNGS_TYPEN = frozenset(MATE_TYP) | frozenset(MATE_KOPPLUNG)
 _MIT_WERT = {"abstand": ("wert",), "winkel": ("wert",), "grenze_abstand": ("wert", "min", "max"),
@@ -137,7 +152,25 @@ def ungeprueft_teil(grund: str) -> dict:
     return {"features_neu": [], "features_fehlen": [], "features_unterdrueckt": [], "typ_geaendert": [], "reihenfolge": None,
             "masse": [], "masse_neu": [], "material": None, "eigenschaften": {"geaendert": [], "fehlen": [], "neu": []},
             "gleichungen_neu": [], "konfigurationen_neu": [], "features_geprueft": False, "masse_geprueft": False,
-            "vollstaendig": False, "luecken": [grund], "nicht_erklaert": True}
+            "vollstaendig": False, "luecken": [grund], "grenzen": list(GRENZEN_TEIL), "nicht_erklaert": True}
+
+
+def _erlaubte_typen(knoten: dict, spec_teil: dict) -> frozenset[str] | None:
+    """Zulässige `GetTypeName2` für den Knoten (`TYP_TABELLE`); bei `rotation` nach `schnitt` der Spec-Feature gleicher Id, wenn sie
+    bekannt ist (Aufsatz `Revolution`, Schnitt `RevCut`)."""
+    erlaubt = TYP_TABELLE.get(knoten.get("typ"))
+    if erlaubt is not None and knoten.get("typ") == "rotation":
+        f = next((f for f in spec_teil.get("features") or [] if f.get("id") == knoten.get("id")), None)
+        if f is not None:
+            return frozenset({"RevCut"} if f.get("schnitt") else {"Revolution"}) & erlaubt
+    return erlaubt
+
+
+def _vorgabemass(name: str, wert: float | None, knoten_typen: dict[str, str]) -> bool:
+    """Ist das Maß `name` mit dem Betrag `wert` das Vorgabemaß seines Knotens (z. B. `D2@Fase1` = 45° ohne `winkel`)?"""
+    kennung, _, feature = name.partition("@")
+    vorgabe = _VORGABE_MASSE.get(knoten_typen.get(feature))
+    return vorgabe is not None and vorgabe[0] == kennung and wert is not None and abs(wert - vorgabe[1]) <= 1e-6
 
 
 def _ist_werte(masse: list[dict], aktiv: str | None) -> dict[str, float]:
@@ -189,13 +222,14 @@ def abgleich_teil(protokoll_teil: dict, spec_teil: dict, ist: dict, auftrag: str
     luecken = []
     knoten = protokoll_teil.get("knoten") or []
     soll_features = [(n, k) for k in knoten for n in _knoten_namen(k)]
+    knoten_typen = {n: k.get("typ") for n, k in soll_features}
     features = ist.get("features")
     features_geprueft = bool(soll_features) and features is not None
     ohne_namen = [k["id"] for k in knoten if not _knoten_namen(k) and k.get("status") != "uebersprungen"]
     if ohne_namen:
         luecken.append(f"Das Bauprotokoll nennt für {', '.join(ohne_namen)} keinen SolidWorks-Namen (sw_name): nicht vergleichbar")
-    elif not knoten:
-        luecken.append("Das Bauprotokoll hat keine Knoten: Features sind nicht vergleichbar")
+    elif not soll_features:
+        luecken.append("Das Bauprotokoll nennt keinen Knoten mit SolidWorks-Namen (leer oder alle übersprungen): Features nicht vergleichbar")
     if soll_features and features is None:
         luecken.append("Die Aufnahme enthält keine Features: Features sind nicht vergleichbar")
     masse_soll = [m for k in knoten for m in k.get("masse") or []]
@@ -209,7 +243,6 @@ def abgleich_teil(protokoll_teil: dict, spec_teil: dict, ist: dict, auftrag: str
     neu, fehlen, unterdrueckt, typ_geaendert, reihenfolge = [], [], [], [], None
     if features_geprueft:
         alle = {f["name"]: f for f in features}
-        knoten_typen = {n: k.get("typ") for n, k in soll_features}
         soll, hilfsnamen = set(knoten_typen), _hilfsnamen(masse_soll)
         for f in features:
             if not ist_erklaert(f, soll, alle, knoten_typen, hilfsnamen):
@@ -223,7 +256,7 @@ def abgleich_teil(protokoll_teil: dict, spec_teil: dict, ist: dict, auftrag: str
             namen = _knoten_namen(k)
             if not namen:
                 continue
-            erlaubt = TYP_TABELLE.get(k.get("typ"))
+            erlaubt = _erlaubte_typen(k, spec_teil)
             if erlaubt is None:
                 unbelegt.append(f"{namen[0]} ({k.get('typ')})")
             elif namen[0] in alle and alle[namen[0]].get("typ") not in erlaubt:
@@ -242,9 +275,10 @@ def abgleich_teil(protokoll_teil: dict, spec_teil: dict, ist: dict, auftrag: str
         aktiv = ist.get("aktiv") or next(iter(ist.get("konfigurationen") or []), None)
         masse = mass_differenz(masse_soll, _ist_werte(ist["masse"], aktiv))
         bekannt = {m["name"] for m in masse_soll}
-        masse_neu = [{"name": m["name"], "feature": m.get("feature"), "zustand": m.get("zustand"),
-                      "ist": None if (w := (m.get("werte") or {}).get(aktiv)) is None else abs(float(w))}
-                     for m in ist["masse"] if m["name"] not in bekannt and m.get("einheit") in _EINHEITEN_MASS]
+        ist_betraege = _ist_werte(ist["masse"], aktiv)
+        masse_neu = [{"name": m["name"], "feature": m.get("feature"), "zustand": m.get("zustand"), "ist": ist_betraege.get(m["name"])}
+                     for m in ist["masse"] if m["name"] not in bekannt and m.get("einheit") in _EINHEITEN_MASS
+                     and not _vorgabemass(m["name"], ist_betraege.get(m["name"]), knoten_typen)]
 
     material = None
     if "material" not in ist:
@@ -275,7 +309,8 @@ def abgleich_teil(protokoll_teil: dict, spec_teil: dict, ist: dict, auftrag: str
     return {"features_neu": neu, "features_fehlen": fehlen, "features_unterdrueckt": unterdrueckt, "typ_geaendert": typ_geaendert,
             "reihenfolge": reihenfolge, "masse": masse, "masse_neu": masse_neu, "material": material, "eigenschaften": eigenschaften,
             "gleichungen_neu": gleichungen, "konfigurationen_neu": konfigurationen_neu, "features_geprueft": features_geprueft,
-            "masse_geprueft": masse_geprueft, "vollstaendig": not luecken, "luecken": luecken, "nicht_erklaert": not gefunden}
+            "masse_geprueft": masse_geprueft, "vollstaendig": not luecken, "luecken": luecken, "grenzen": list(GRENZEN_TEIL),
+            "nicht_erklaert": not gefunden}
 
 
 # --- Baugruppen -----------------------------------------------------------------------------------------------------
@@ -469,4 +504,4 @@ def abgleich_baugruppe(protokoll: dict, soll_verknuepfungen: dict | None, ist: d
             "lagen": lagen_abw, "lage_geprueft": lage_geprueft, "lage_ungeprueft": lage_ungeprueft,
             "konfigurationen_neu": konfigurationen_neu, "komponenten_geprueft": komponenten_geprueft,
             "verknuepfungen_geprueft": verknuepfungen_geprueft, "vollstaendig": not luecken, "luecken": luecken,
-            "nicht_erklaert": not gefunden}
+            "grenzen": list(GRENZEN_BAUGRUPPE), "nicht_erklaert": not gefunden}
