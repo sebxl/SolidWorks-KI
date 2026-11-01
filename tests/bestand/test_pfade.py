@@ -207,6 +207,54 @@ def test_fund_schliesst_ohne_speichern(wurzel, tmp_path):
     assert app.dok.gespeichert == []
 
 
+def test_scheitert_die_nachpruefung_bleibt_das_dokument_nicht_offen(wurzel):
+    class Defekt(RuntimeError):
+        pass
+
+    def kaputt(nur_oberste):
+        raise Defekt("COM-Fehler an einer Komponente")
+
+    app = App(wurzel, komponenten=[])
+    oeffne = app.OpenDoc6
+
+    def oeffne_defekt(*a):
+        dok = oeffne(*a)
+        dok.GetComponents = kaputt
+        return dok
+
+    app.OpenDoc6 = oeffne_defekt
+    with pytest.raises(Defekt):  # die Ursache kommt durch, nicht ein Folgefehler
+        pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    assert app.geschlossen == ["Asm.SLDASM"]
+    assert app.dok.gespeichert == []
+
+
+def test_schliessfehler_verdeckt_die_ursache_der_nachpruefung_nicht(wurzel):
+    app = App(wurzel, komponenten=[])
+    oeffne = app.OpenDoc6
+
+    def oeffne_defekt(*a):
+        dok = oeffne(*a)
+        dok.GetComponents = lambda nur_oberste: (_ for _ in ()).throw(KeyError("Ursache"))
+        return dok
+
+    app.OpenDoc6 = oeffne_defekt
+    app.CloseDoc = lambda titel: (_ for _ in ()).throw(OSError("Schließen scheitert"))
+    with pytest.raises(KeyError):
+        pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+
+
+def test_schliessfehler_verdeckt_den_pfadbefund_nicht(wurzel, tmp_path):
+    fremd = tmp_path / "kunde" / "orig.SLDPRT"
+    app = App(wurzel, komponenten=[Komp(fremd)])
+    app.CloseDoc = lambda titel: (_ for _ in ()).throw(OSError("Schließen scheitert"))
+    with pytest.raises(BestandFehler) as e:
+        pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD
+    assert e.value.daten["pfade"] == [str(fremd)]
+    assert "Schließen scheitert" in e.value.daten["schliessen_fehlgeschlagen"]
+
+
 def test_oeffnen_mit_voller_last_und_nur_lesen(wurzel):
     app = App(wurzel)
     pfade.oeffne_in(app, wurzel / "Teil.SLDPRT", wurzel, sichtbar=False)

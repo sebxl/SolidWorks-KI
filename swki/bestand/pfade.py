@@ -89,15 +89,32 @@ def pruefe_geladen(app, model, wurzel: Path, vorher: set[str]) -> dict:
     return eintrag("pfade", not fremd, geladen=len(geladen), fremd=fremd)
 
 
+def _schliesse_still(app, model) -> str | None:
+    """Schließt ohne Speichern; ein Fehler dabei verdeckt nie den eigentlichen Befund und kommt als Text zurück."""
+    try:
+        sw.schliesse(app, model)
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
+    return None
+
+
 def oeffne_in(app, pfad: Path, wurzel: Path, sichtbar: bool = False, nur_lesen: bool = True):
     """Öffnet `pfad` (Teil oder Baugruppe, Typ nach der Endung) mit beiden Sperren; `wurzel` ist der Ordner `bestand-<n>` bzw.
     `lauf-<n>`. Geöffnet wird voll geladen, damit jede Komponente ihren Pfad zeigt. Bei einem Fund nach dem Laden wird das
-    Dokument ohne Speichern geschlossen und `BESTAND_PFAD_FREMD` geworfen."""
+    Dokument ohne Speichern geschlossen und `BESTAND_PFAD_FREMD` geworfen; scheitert die Prüfung selbst, wird ebenfalls
+    geschlossen und die Ursache weitergereicht."""
     pruefe_vor_dem_oeffnen(app, pfad, wurzel)
     vorher = offene_dokumente(app)
     model = oeffne(app, pfad, sichtbar=sichtbar, nur_lesen=nur_lesen, voll=True)
-    geladen = pruefe_geladen(app, model, wurzel, vorher)
+    try:
+        geladen = pruefe_geladen(app, model, wurzel, vorher)
+    except BaseException:
+        _schliesse_still(app, model)  # scheitert die Prüfung selbst, bleibt das Dokument nicht offen; die Ursache kommt durch
+        raise
     if not geladen["ok"]:
-        sw.schliesse(app, model)
-        raise _fremd([{"pfad": p} for p in geladen["fremd"]], "nach dem Öffnen", pfad)
+        fehler = _fremd([{"pfad": p} for p in geladen["fremd"]], "nach dem Öffnen", pfad)
+        schliessfehler = _schliesse_still(app, model)
+        if schliessfehler is not None:
+            fehler.daten["schliessen_fehlgeschlagen"] = schliessfehler  # der Pfadbefund bleibt, das Dokument ist noch offen
+        raise fehler
     return model
