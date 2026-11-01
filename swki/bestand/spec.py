@@ -29,10 +29,10 @@ from swki.spec.laden import (SpecFehler, _pfad, _referenzen, _werte, lade_spec, 
 PRUEF_FELDER = ("art", "name", "bestand", "parameter", "bereiche", "pruefung", "kollision_erlaubt")
 # Bauweg in den Punkten: Anker und Bezug neuer Features, Einfügestelle, Skriptdatei (Reihenfolge: nach id sortiert)
 BAUWEG_SCHLUESSEL = frozenset({"nach", "bezug", "flaeche", "kanten"})
-# Punkte an der Baugruppe selbst (Etappe 2, Spec §4.1); die Anker `a`/`b` einer neuen Verknüpfung sind Bauweg wie in Spec 3b
+# Punkte an der Baugruppe selbst (Etappe 2, Spec §4.1); die Anker `a`/`b`/`anlage_a`/`anlage_b` einer neuen Verknüpfung sind Bauweg wie in Spec 3b
 BAUGRUPPEN_TYPEN = frozenset({"komponente_neu", "komponente_entfernen", "komponente_ersetzen", "verknuepfung_neu",
                               "verknuepfung_wert", "verknuepfung_loeschen"})
-ANKER_SCHLUESSEL = frozenset({"a", "b"})
+ANKER_SCHLUESSEL = frozenset({"a", "b", "anlage_a", "anlage_b"})
 # Punkte, die Geometrie ändern können: jeder steht in mindestens einem Bereich (Spec §4.4 Punkt 5)
 GEOMETRIE_TYPEN = frozenset({"mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "skript"})
 _TOL_ALT = 1e-6  # mm bzw. Grad: Rauschen beim Lesen aus SolidWorks
@@ -65,7 +65,7 @@ def _ohne_bauweg(obj):
 
 def bauweg_frei(spec: dict) -> dict:
     """Die Anforderungen einer Änderungs-Spec (Grundlage der Prüfsumme): ohne Anker, `bezug`, `nach`, Skriptdateien, ohne die
-    Anker `a`/`b` neuer Verknüpfungen und ohne die Reihenfolge der Punkte. Die Spec selbst bleibt unverändert. Die Teil-Specs
+    Anker `a`/`b`/`anlage_a`/`anlage_b` neuer Verknüpfungen und ohne die Reihenfolge der Punkte. Die Spec selbst bleibt unverändert. Die Teil-Specs
     der Teil-Quellen gehen über das Argument `teile=` von `pruefsumme` ein (`teil_summen_aenderung`)."""
     kern = {feld: copy.deepcopy(spec[feld]) for feld in PRUEF_FELDER if feld in spec}
     punkte = []

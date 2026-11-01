@@ -29,6 +29,7 @@ from swki.pruefung.schleife import empfehlung, lies_laeufe
 from swki.spec.freigabe import FreigabeFehler
 from swki.spec.normen import SW_BEFESTIGUNG, SW_END_BLIND, SW_NORM
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, schreibe_teil
 
 INHALT = b"bestandskopie"
 GEAENDERT = b"lauf"
@@ -263,6 +264,15 @@ def test_ohne_freigabe_kein_pruefen(u):
     with pytest.raises(FreigabeFehler):
         modul.pruefen(u.schreibe(freigeben=False))
     assert u.geoeffnet == []
+
+
+def test_pruefen_prueft_die_freigabe_der_teil_quelle(u):
+    schreibe_teil(u.spec_pfad.parent)
+    spec = u.schreibe(punkte=(MASS, TEIL_PUNKT))
+    schreibe_teil(u.spec_pfad.parent, hoehe=20)  # Anforderung der Teil-Spec nach der Freigabe geändert
+    with pytest.raises(FreigabeFehler) as e:
+        modul.pruefen(spec)
+    assert e.value.daten["code"] == "FREIGABE_VERALTET" and "Deckel2.yaml" in str(e.value) and u.geoeffnet == []
 
 
 def test_geaenderte_bestandskopie_bricht_ab(u):

@@ -452,3 +452,22 @@ def test_freigabe_ohne_teil_quelle_unveraendert(umg):
     erg = freigeben(pfad)
     assert "teile" not in erg and erg["pruefsumme"] == pruefsumme(spec)
     assert not (umg.ordner / "Deckel2.freigegeben.yaml").exists()
+
+
+def test_anlage_anker_einer_verknuepfung_sind_bauweg():
+    """`anlage_a`/`anlage_b` sind Anker wie `a`/`b`: ganz Bauweg, auch wenn sie ganz fehlen."""
+    spec = _mit("v1", art="scharnier", anlage_a={"komponente": "k1", "feature": "f2", "flaeche": "+y"},
+                anlage_b={"komponente": "Gehaeuse-1", "nahe": [0, 0, 10]})
+    anders = _mit("v1", art="scharnier", anlage_a={"komponente": "Anderes-1", "ebene": "oben"},
+                  anlage_b={"komponente": "Anderes-2", "referenz": "R"})
+    assert pruefsumme(anders) == pruefsumme(spec) == pruefsumme(_mit("v1", art="scharnier"))
+
+
+# --- Verdrahtung: bauen, prüfen und ausgeben prüfen auch die Freigabe der Teil-Quelle ---
+
+TEIL_PUNKT = {"id": "k3", "typ": "komponente_neu", "quelle": {"teil": "Deckel2.yaml"}}
+
+
+def schreibe_teil(ordner: Path, hoehe: float = 15) -> None:
+    """Die Teil-Spec `Deckel2.yaml` neben der Änderungs-Spec; eine andere Höhe ändert ihre Anforderung (Parameter)."""
+    _schreibe(ordner, _teil(hoehe=hoehe), "Deckel2.yaml")

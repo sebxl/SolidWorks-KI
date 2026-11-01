@@ -23,6 +23,7 @@ from swki.konfig import Rechner
 from swki.spec.freigabe import FreigabeFehler
 from swki.spec.freigabe import freigeben as freigabe_ohne_pruefung
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, schreibe_teil
 from tests.bestand.sw_attrappe import Teil, teil_aus
 
 INHALT = b"bestandskopie"
@@ -393,6 +394,15 @@ def test_bau_ohne_freigabe(lauf):
     with pytest.raises(FreigabeFehler) as e:
         bau.bauen(lauf.spec_pfad)
     assert e.value.daten["code"] == "FREIGABE_FEHLT" and lauf.geoeffnet == []
+
+
+def test_bau_prueft_die_freigabe_der_teil_quelle(lauf):
+    schreibe_teil(lauf.spec_pfad.parent)
+    lauf.schreibe(MASS, TEIL_PUNKT)
+    schreibe_teil(lauf.spec_pfad.parent, hoehe=20)  # Anforderung der Teil-Spec nach der Freigabe geändert
+    with pytest.raises(FreigabeFehler) as e:
+        bau.bauen(lauf.spec_pfad)
+    assert e.value.daten["code"] == "FREIGABE_VERALTET" and "Deckel2.yaml" in str(e.value) and lauf.geoeffnet == []
 
 
 def test_bau_kopie_veraendert(lauf):
