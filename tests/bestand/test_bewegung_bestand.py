@@ -211,7 +211,8 @@ def test_grenze_ohne_weg_wird_nicht_gefahren():
     assert erg["Hub"]["gefahren"] is False and erg["Schwenk"]["gefahren"] is True
 
 
-@pytest.mark.parametrize("feld,wert,text", [("max", None, "nicht gelesen"), ("min", 200.0, "größer"), ("typ", 0, "weder Abstand noch Winkel"),
+@pytest.mark.parametrize("feld,wert,text", [("max", None, "nicht gelesen"), ("min", 200.0, "größer"),
+                                            ("typ", 0, "weder Abstand noch Winkel"),
                                             ("partner", None, "nicht gelesen")])
 def test_unlesbare_grenze_wird_nicht_gefahren(feld, wert, text):
     a = aufnahme()
@@ -712,4 +713,27 @@ def test_kollision_ohne_befund_im_feld_ist_nicht_bestanden(gefahren):
     setze(n, "Hub", "bewegung_kollision:Hub", False, "Kollision")
     assert vergleich(gefahren, n)["bewegung_kollision:Hub"]["ok"] is False  # der Bestand kennt das Paar nicht
     bekannt = aufnahme(bewegungen=gefahren, kollisionen=[{"paar": ["bolzen", "schieber"], "volumen": 1.0}])
-    assert {x["id"]: x["ok"] for x in vergleiche_bewegungen(bekannt, aufnahme(bewegungen=n), spec_aus(), {})}["bewegung_kollision:Hub"] is True
+    e = {x["id"]: x["ok"] for x in vergleiche_bewegungen(bekannt, aufnahme(bewegungen=n), spec_aus(), {})}
+    assert e["bewegung_kollision:Hub"] is True
+
+
+def test_gleicher_abbruch_in_beiden_staenden_besteht():
+    """`grenze` und `sollweg` laufen nach einem Abbruch nicht (None); bricht der Bestand ebenso ab, besteht die Baugruppe trotzdem."""
+    e = vergleich(bricht_ab(100.0), bricht_ab(100.0))
+    assert all(x["ok"] is True for x in e.values()), {k: x for k, x in e.items() if x["ok"] is not True}
+    assert "Abbruch" in e["grenze:Hub"]["hinweis"] and "Abbruch" in e["sollweg:Hub:schieber"]["hinweis"]
+    assert "Schon im Bestand nicht bestanden" in e["bewegung:Hub"]["hinweis"]
+
+
+def test_fruehere_abbruch_im_lauf_bleibt_mangel_und_none_bleibt_none():
+    e = vergleich(bricht_ab(100.0), bricht_ab(75.0))
+    assert falsche(e) == ["bewegung:Hub"] and e["grenze:Hub"]["ok"] is None and e["sollweg:Hub:schieber"]["ok"] is None
+    # ein None nur im Lauf wird nicht angehoben (der Bestand lief durch)
+    e = vergleich(fahre_alle(), bricht_ab(100.0))
+    assert falsche(e) == ["bewegung:Hub"] and e["grenze:Hub"]["ok"] is None
+    # ein None nur im Bestand ebenso: der Lauf hat die Prüfung, ihr Urteil gilt
+    assert vergleich(bricht_ab(100.0), fahre_alle())["grenze:Hub"]["ok"] is True
+    # weniger Stellungen als im Bestand heben die Prüfungen nach dem Abbruch nicht an
+    kurz = fahre_alle(Attrappe(fehler_bei=("Hub", 100.0)), schritte=2)
+    e = vergleich(bricht_ab(100.0), kurz)
+    assert e["bewegung:Hub"]["ok"] is False and e["grenze:Hub"]["ok"] is None

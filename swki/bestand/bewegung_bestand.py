@@ -220,8 +220,8 @@ def _gefahren(b: Bewegung, m, tol_mm: float) -> dict:
 def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schritte: int, bekannt: set[frozenset],
                   grenze_mb: float, tol_mm: float, start_mb: float | None = None) -> dict:
     """Fährt die `grenzen` (`grenzen_der_aufnahme`) der Aufnahme von `min` bis `max` und liefert das Feld `bewegungen` der Aufnahme:
-    Grenze → {komponente, art, min, max, gefahren, bewegt, raum, kollisionen, pruefungen, hinweis}. `aufnahme` ist die des Standes,
-    der gefahren wird (Bestand oder Lauf); sie nennt die fixierten Komponenten für die bewegte Seite.
+    Grenze → {komponente, art, min, max, gefahren, stellungen, bewegt, raum, kollisionen, pruefungen, hinweis}. `aufnahme` ist die
+    des Standes, der gefahren wird (Bestand oder Lauf); sie nennt die fixierten Komponenten für die bewegte Seite.
 
     Erst alle zusammen über `fahre` (Paarläufe, Kollisionen). Scheitert das mit `StellungFehler`, ist die benannte Grenze
     `gefahren: false` mit dem Grund, und der Rest fährt neu. Ohne Weg (min gleich max), mit unlesbaren Werten oder ohne bewegte
@@ -278,7 +278,8 @@ def bekannte_paare(vorher: dict, spec: dict, neue: dict[str, list[str]], ersetzt
     """Kollisionspaare, die in der Fahrt des Laufs keine neuen sind: die statischen Kollisionen des Bestands, die Kollisionen in der
     Fahrt des Bestands und `kollision_erlaubt`. Die Namen laufen über denselben Stand des Protokolls wie der Vergleich der Baugruppe
     (`Vergleichsstand`): Eine Punkt-ID steht für die Komponenten, die der Lauf erzeugt hat, Namen ersetzter Komponenten gelten unter
-    dem neuen Namen; ein Protokoll, das kein Punkt deckt, gilt nicht. `nachher`: die Aufnahme des Laufs (ohne Angabe die des Bestands)."""
+    dem neuen Namen; ein Protokoll, das kein Punkt deckt, gilt nicht. `nachher`: die Aufnahme des Laufs (ohne Angabe die des
+    Bestands)."""
     return _bekannt(Vergleichsstand(spec, vorher, vorher if nachher is None else nachher, neue, ersetzt or {}))
 
 
@@ -338,6 +339,13 @@ def _angehoben(e: dict, bestand: dict) -> dict:
     return {**e, "ok": True, "hinweis": "; ".join(teile), "bestand_ok": False}
 
 
+def _angehoben_abbruch(e: dict) -> dict:
+    """`grenze` und `sollweg` laufen nach einem Abbruch der Fahrt nicht (`ok: None`). Brach die Fahrt im Bestand ebenso ab und ist der
+    Lauf dabei nicht schlechter, ist das kein Mangel des Laufs und kein Grund, die Baugruppe nie bestehen zu lassen."""
+    return {**e, "ok": True, "bestand_ok": None,
+            "hinweis": "Wegen des Abbruchs der Fahrt nicht gelaufen, im Bestand ebenso, kein Mangel des Laufs"}
+
+
 def _bewegung_pruefen(e: dict, g: str, ve: dict, ne: dict, c: Vergleichsstand) -> dict:
     """`bewegung:<g>` zusätzlich gegen den Bestand: Bereich nur mit Punkt anders, mindestens so viele Stellungen gefahren wie im
     Bestand. Fehlt die Zahl der Stellungen in einem Stand, ist ein sonst bestandener Eintrag nicht nachgewiesen."""
@@ -350,7 +358,8 @@ def _bewegung_pruefen(e: dict, g: str, ve: dict, ne: dict, c: Vergleichsstand) -
     if gruende:
         return {**e, "ok": False, "hinweis": "; ".join([*vorweg, "Lauf gegen Bestand: " + "; ".join(gruende)])}
     if not lesbar and e["ok"] is True:
-        return {**e, "ok": None, "hinweis": "; ".join([*vorweg, "Die Zahl der gefahrenen Stellungen ist nicht gelesen, nicht nachgewiesen"])}
+        hinweis = "Die Zahl der gefahrenen Stellungen ist nicht gelesen, nicht nachgewiesen"
+        return {**e, "ok": None, "hinweis": "; ".join([*vorweg, hinweis])}
     return e
 
 
@@ -385,7 +394,8 @@ def _kollision(g: str, ne: dict, bekannt: set[frozenset], pruefung: dict | None)
     ist = list(neu.values())
     if ist:
         return eintrag(pid, False, ist=ist, knoten=sorted({x for k in ist for x in k["paar"]}),
-                       hinweis="Neue Kollisionen in der Fahrt: " + ", ".join(f"{' / '.join(k['paar'])} ({k['volumen']} mm³)" for k in ist))
+                       hinweis="Neue Kollisionen in der Fahrt: "
+                       + ", ".join(f"{' / '.join(k['paar'])} ({k['volumen']} mm³)" for k in ist))
     if not roh and (pruefung is None or pruefung.get("ok") is not True):
         was = "fehlt" if pruefung is None else f"meldet {'Kollision' if pruefung.get('ok') is False else 'nichts'}"
         return eintrag(pid, None, ist=[], knoten=[],
@@ -394,17 +404,25 @@ def _kollision(g: str, ne: dict, bekannt: set[frozenset], pruefung: dict | None)
 
 
 def _eintraege_der_grenze(g: str, ve: dict | None, ne: dict, c: Vergleichsstand, bekannt: set[frozenset]) -> list[dict]:
-    """Die Prüfungen einer im Lauf gefahrenen Grenze; `ve` die des Bestands (`None`: kein Soll, nur die Fahrt selbst wird bewertet)."""
+    """Die Prüfungen einer im Lauf gefahrenen Grenze; `ve` die des Bestands (`None`: kein Soll, nur die Fahrt wird bewertet)."""
     bestand = {_id_im_lauf(c, e["id"]): e for e in (ve or {}).get("pruefungen") or []}
     pruefungen = ne.get("pruefungen") or []
     bid, kid = f"bewegung:{g}", f"bewegung_kollision:{g}"
     ergebnis = []
+    abbruch_gleich = False  # die Fahrt brach im Bestand ebenso ab, der Lauf ist dabei nicht schlechter
+    lauf_b, best_b = next((e for e in pruefungen if e["id"] == bid), None), bestand.get(bid)
+    if ve is not None and lauf_b and best_b and lauf_b.get("ok") is False and best_b.get("ok") is False \
+            and _nicht_schlechter(bid, lauf_b, best_b):
+        abbruch_gleich = _bewegung_pruefen(_angehoben(lauf_b, best_b), g, ve, ne, c)["ok"] is True
     for e in pruefungen:
         pid = e["id"]
         if pid == kid:
             continue  # die Kollision bildet `_kollision` neu aus dem Feld kollisionen
         if e.get("ok") is False and bestand.get(pid, {}).get("ok") is False and _nicht_schlechter(pid, e, bestand[pid]):
             e = _angehoben(e, bestand[pid])
+        elif (abbruch_gleich and e.get("ok") is None and bestand.get(pid, {}).get("ok") is None
+              and pid.split(":")[0] in ("grenze", "sollweg")):
+            e = _angehoben_abbruch(e)
         if pid == bid and ve is not None:
             e = _bewegung_pruefen(e, g, ve, ne, c)
         ergebnis.append(e)
