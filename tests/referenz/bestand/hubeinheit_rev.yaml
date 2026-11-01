@@ -1,0 +1,76 @@
+# Referenz Bestandsdateien Etappe 2: Revision der Musterbaugruppe Hubeinheit (Spec Bestandsdateien §12, Plan Task 13), Auftrag laut
+# eingabe/aufgabe_baugruppe.md. Namen von Komponenten und Verknüpfungen setzt werkzeuge/bestand_muster.py (HUB_KOMPONENTEN, HUB_VERKNUEPFUNGEN).
+#
+# PLATZHALTER sha256: Die Musterdateien gibt es erst nach `-m werkzeuge.bestand_muster hubeinheit`. Die Nullen ersetzt der Live-Test durch die
+# SHA-256 der erzeugten Datei; liegt das Muster im Git, kommt hier die echte Summe hin, wie in lagerdeckel_rev.yaml.
+# Live zu bestätigen, S19 und Aufnahme: Mass-Name D1@Aufsatz-Linear austragen1, Datei und Komponentenname des Normteils, Anker `nahe` auf der
+# Bohrungswand, Ersatz über die Standardebenen.
+art: aenderung
+name: Hubeinheit_Rev
+bestand:
+  datei: Hubeinheit.SLDASM
+  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  aufnahme: 1
+parameter: {DICKE_NEU: 18, L_NEU: 70, HUB_NEU: 30}
+punkte:
+  - id: p1
+    was: "Grundplatte 3 mm dicker, alles darauf wandert mit"
+    typ: mass
+    in_datei: teile/Grundplatte.SLDPRT
+    mass: "D1@Aufsatz-Linear austragen1"
+    alt: 15
+    neu: "=DICKE_NEU"
+    lage_folgen: [Schlitten-1, Anschlag-1, Anschlag-2]
+  - id: p2
+    was: "Schlitten 10 mm länger, nach +X"
+    typ: gleichung
+    in_datei: teile/Schlitten.SLDPRT
+    variable: L
+    alt: 60
+    neu: "=L_NEU"
+    folgen: ["D1@Skizze1"]
+  - id: p3
+    was: "Klemmschraube M6 im Kernloch des Schlittens"
+    typ: komponente_neu
+    quelle: {normteil: "ISO 4762 M6x16"}
+  - id: v1
+    was: "Schraube in der Achse des Kernlochs"
+    typ: verknuepfung_neu
+    art: konzentrisch
+    a: {komponente: p3, referenz: EINBAU_ACHSE}
+    b: {komponente: Schlitten-1, nahe: [12.5, 10, 14]}
+  - id: v2
+    was: "Kopf liegt auf der Oberseite des Schlittens"
+    typ: verknuepfung_neu
+    art: deckungsgleich
+    a: {komponente: p3, referenz: EINBAU_EBENE}
+    b: {komponente: Schlitten-1, nahe: [-20, 10, 20]}
+    ausrichtung: gleich
+  - id: p4
+    was: "Hub 30 statt 25 mm"
+    typ: verknuepfung_wert
+    verknuepfung: Hub
+    grenze: max
+    alt: 25
+    neu: "=HUB_NEU"
+  - id: p5
+    was: "Zweiter Anschlag entfällt"
+    typ: komponente_entfernen
+    komponente: Anschlag-2
+    verknuepfungen: ["Anschlag2 Auflage", "Anschlag2 Mitte", "Anschlag2 Lage"]
+  - id: p6
+    was: "Erster Anschlag wird der höhere neue"
+    typ: komponente_ersetzen
+    komponente: Anschlag-1
+    quelle: {teil: anschlag_neu.yaml}
+bereiche:
+  - {punkte: [p1], in_datei: teile/Grundplatte.SLDPRT, box: {min: [-100, -40, 15], max: [100, 40, 18]}}   # die neue Lage, unten bleibt
+  - {punkte: [p2], in_datei: teile/Schlitten.SLDPRT, box: {min: [30, -25, 0], max: [40, 25, 20]}}         # die Verlängerung, links bleibt
+kollision_erlaubt:
+  - {paar: [p3, Schlitten-1], grund: "Schraube im Kernloch Ø5: Das Gewinde ist nicht modelliert, die Schraube überlappt den Kernlochrand"}
+pruefung:
+  masse_pruefen:
+    - {was: "Dicke", in_datei: teile/Grundplatte.SLDPRT, von: {flaeche: {nahe: [0, 0, 0], normale: [0, 0, -1]}},
+       zu: {flaeche: {nahe: [0, 0, "=DICKE_NEU"], normale: [0, 0, 1]}}, soll: "=DICKE_NEU", tol: 0.01}
+    - {was: "Länge", in_datei: teile/Schlitten.SLDPRT, von: {flaeche: {nahe: [-30, 0, 10], normale: [-1, 0, 0]}},
+       zu: {flaeche: {nahe: [40, 0, 10], normale: [1, 0, 0]}}, soll: "=L_NEU", tol: 0.01}

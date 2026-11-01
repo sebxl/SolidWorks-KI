@@ -1,0 +1,15 @@
+# Referenz Bestandsdateien Etappe 2: Ersatz für den Anschlag der Hubeinheit. Gleiche Grundfläche, Ursprung und Standardebenen wie das Original,
+# 40 statt 30 mm hoch: Die Verknüpfungen der Hubeinheit hängen an den Standardebenen und bleiben beim Ersetzen erhalten (S19e klärt das).
+art: teil
+name: Anschlag_Neu
+material: "1.0038"
+eigenschaften: {Benennung: Anschlag neu}
+parameter: {B: 20, H: 40}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: vorne, elemente: [{rechteck: {mitte: [0, 0], breite: "=B", hoehe: "=B"}}]}
+    ende: {typ: blind, tiefe: "=H"}
+pruefung:
+  huellquader: ["=B", "=B", "=H"]
+  volumen: {soll: 16000}

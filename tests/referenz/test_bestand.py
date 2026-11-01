@@ -12,16 +12,17 @@ import yaml
 
 from swki.aenderungen import sha256_datei
 from swki.auftrag import lauf_datei
-from swki.bestand import befehle
+from swki.bestand import ausgabe, befehle
 from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.spec import validieren
 from swki.durchlauf import durchlauf
 from swki.konfig import Rechner, lade_rechner
 from swki.spec.normen import bohrspitze_grad, normmasse
-from werkzeuge.bestand_muster import muster_ordner
+from werkzeuge.bestand_muster import HUBEINHEIT, TEILE_HUB, hubeinheit_ordner, muster_ordner
 
 ORDNER = Path(__file__).parent / "bestand"
 SPEC = ORDNER / "lagerdeckel_rev.yaml"
+SPEC_HUB = ORDNER / "hubeinheit_rev.yaml"
 AUFTRAG = "REF-BESTAND"
 
 
@@ -99,3 +100,39 @@ def test_referenz_lagerdeckel(auftrag, tmp_path):
         ist = gewinde["ist"][k]
         assert (ist["groesse"], ist["tiefe"], ist["gewindetiefe"]) == ("M6", 10, 8), k
         assert sorted(ist["positionen"]) == [[-38, -24], [-38, 24]], k
+
+
+@pytest.mark.sw
+def test_referenz_hubeinheit(auftrag, tmp_path):
+    """Spec §12, Plan Task 13: die Revision der Musterbaugruppe über `swki durchlauf`. Der Prüfer bleibt dem Referenzlauf vorbehalten, sein
+    Urteil steht hier als Datei da, damit die Ausgabe laufen kann. Das Muster dient als Original und bleibt byteweise gleich; ausgegeben
+    wird nur, was sich ändert oder neu ist. Vor dem ersten Lauf: `-m werkzeuge.bestand_muster hubeinheit`, die SHA-256 in der Spec ist ein
+    Platzhalter, bis das Muster im Git liegt."""
+    muster = hubeinheit_ordner(lade_rechner())
+    originale = {p.relative_to(muster).as_posix(): sha256_datei(p) for p in muster.rglob("*") if p.is_file()}
+    ziel = tmp_path / auftrag
+    ziel.mkdir()
+    platzhalter = yaml.safe_load(SPEC_HUB.read_text(encoding="utf-8"))["bestand"]["sha256"]
+    spec = ziel / SPEC_HUB.name
+    spec.write_text(SPEC_HUB.read_text(encoding="utf-8").replace(platzhalter, sha256_datei(muster / HUBEINHEIT)), encoding="utf-8")
+    shutil.copy2(ORDNER / "anschlag_neu.yaml", ziel)
+    shutil.copytree(ORDNER / "eingabe", ziel / "eingabe")
+    befehle.aufnehmen(muster / HUBEINHEIT, auftrag)
+
+    erg = durchlauf(spec, freigeben=True, neustart=True)
+    assert erg["schritt"] == "fertig" and erg["pruefung"]["bestanden"] is True, erg
+    b = json.loads(lauf_datei(spec, erg["lauf"], "pruefbericht").read_text(encoding="utf-8"))
+    assert b["bestanden"] is True and b["maengel"] == [], b["maengel"]
+    ergebnis = {e["id"]: e for e in b["pruefungen"]}
+    assert ergebnis["pfade"]["ok"] is True and ergebnis["dateien"]["ok"] is True
+    assert all(ergebnis[f"punkt:{p}"]["ok"] is True for p in ("p1", "p2", "p3", "v1", "v2", "p4", "p5", "p6"))
+    assert ergebnis["kollision"]["ok"] is True and ergebnis["bewegung:Hub"]["ok"] is True
+    assert b["bewegungen"]["Hub"]["max"] == pytest.approx(30)  # der neue Bereich aus Punkt p4 wird gefahren
+    assert {k: v for k, v in originale.items()} == {p.relative_to(muster).as_posix(): sha256_datei(p) for p in muster.rglob("*") if p.is_file()}
+
+    lauf_datei(spec, erg["lauf"], "pruefer").write_text(json.dumps({"bestanden": True, "maengel": []}), encoding="utf-8")
+    aus = ausgabe.ausgabe(spec)
+    assert {d["datei"] for d in aus["dateien"] if not d["neu"]} == {HUBEINHEIT, TEILE_HUB[0], TEILE_HUB[1]}
+    assert {Path(d["datei"]).suffix.lower() for d in aus["dateien"] if d["neu"]} == {".sldprt"} and len([d for d in aus["dateien"] if d["neu"]]) == 2
+    assert {"Muster.SLDASM", "Lagerdeckel.SLDPRT", "gm42-10.SLDPRT", TEILE_HUB[2]} <= set(aus["unveraendert"])
+    assert all(Path(d["ausgabe"]).is_relative_to(aus["ordner"]) for d in aus["dateien"])
