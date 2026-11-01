@@ -177,6 +177,25 @@ Komponente>`), `komponente_entfernen`, `komponente_ersetzen`, `verknuepfung_neu`
 Winkel: `alt`/`neu`), `verknuepfung_loeschen`; Punkte, die ein Teil der Baugruppe ändern, nennen es mit `datei:` (relativer Pfad
 in der Bestandskopie) und benutzen die Teil-Typen.
 
+*Präzisiert im Plan Etappe 2, 2026-11-01:* Das Feld heißt **`in_datei`**, nicht `datei`: Punkt `skript` trägt schon `datei` für das Skript. Ohne `in_datei` gilt die Hauptdatei.
+
+| `typ` | Pflichtfelder | Wirkung |
+|---|---|---|
+| `komponente_neu` | `quelle` oder `wie`, `konfiguration?`, `fixiert?` | fügt eine Komponente ein; Punkt-ID nennt sie in `verknuepfung_neu` |
+| `komponente_entfernen` | `komponente`, `verknuepfungen` | löscht eine Komponente; `verknuepfungen` nennt alle, die mitgehen (`VERKNUEPFUNGEN_FEHLEN`) |
+| `komponente_ersetzen` | `komponente`, `quelle`, `alle_instanzen?`, `konfiguration?` | `ReplaceComponents2`, Verknüpfungen bleiben, soweit sie sich neu zuordnen lassen |
+| `verknuepfung_neu` | `art`, `a`, `b`, `wert` bzw. `min`/`max`, `ausrichtung?` | `art` wie `typ` einer Verknüpfung in Spec 3b; `a`/`b`: `{komponente: <SW-Name oder Punkt-ID>, …}` |
+| `verknuepfung_wert` | `verknuepfung`, `grenze?` (`min`/`max`), `alt`, `neu` | Wert einer Abstands-/Winkelverknüpfung oder eine Grenze |
+| `verknuepfung_loeschen` | `verknuepfung` | löscht die Verknüpfung |
+
+Alle Punkte dürfen `lage_folgen: [<Komponente>, …]` tragen: Komponenten, deren Lage sich durch den Punkt ändern darf (§8.3). Neu auf
+oberster Ebene: `kollision_erlaubt: [{paar: [a, b], grund: …}]` für gewollte Überlappungen, etwa eine neue Schraube im Kernloch.
+Beides ist Anforderung, steht in der Prüfsumme und in der Freigabe-Vorlage. `a`/`b` sind Bauweg wie bei Spec 3b.
+
+**Grenzen in Etappe 2:** An der Hauptbaugruppe gelten ohne `in_datei` nur die Baugruppen-Punkte, `eigenschaft` und `skript`. `mass` und `gleichung` an der Baugruppe selbst weist `validieren` ab: Ein
+Maß der Baugruppe hat keine Körper-Differenz als Nachweis. Baugruppen-Punkte treffen die Hauptbaugruppe und ihre Komponenten der obersten Ebene; eine Komponente in einer Unterbaugruppe darf nur Partner einer Verknüpfung sein.
+Einen Abstand, den eine Gleichung steuert, weist `validieren` ab (`MASS_GESTEUERT`), dafür gibt es hier keinen Punkt-Weg: dem Nutzer nennen, nur auf seine Anweisung `skript`.
+
 ### 4.2 Bezüge auf fremde Geometrie
 
 - Fremde Features, Maße, Komponenten und Verknüpfungen werden mit ihrem **SolidWorks-Namen** aus der Bestandsaufnahme
@@ -411,6 +430,32 @@ verweist nur auf Dateien im Lauf-Ordner (Spike S18g). Nach dem Bau prüft swki j
 Bestandskopie: was sich nicht ändern sollte, darf sich nicht ändern (auch nicht durch bloßes Speichern; Baugruppe nur speichern,
 was die Punkte ändern – Weg im Spike).
 
+*Präzisiert im Plan Etappe 2, 2026-11-01:*
+
+- **Aufnahme.** `GetDocumentDependencies2` am Original liefert alle Dateien. Eine Datei neben der Baugruppe hat Vorrang vor dem gespeicherten Pfad, wie beim
+  Öffnen; `~$`-Dateien kommen nicht mit, sie stehen als Warnung `BESTAND_OFFEN` in der Ausgabe (die Datei hat jemand offen, kopiert wird der gespeicherte Stand).
+  `dateien.json` nennt je relativem Pfad Original, SHA-256, Art und Version. Gleiche Aufnahme heißt: alle SHA-256 gleich. Eine ältere Einzeldatei
+  zählt nur, wenn sie gespeichert werden muss.
+- **Dateien außerhalb des Ordners der Baugruppe** liegen flach neben der Hauptbaugruppe, nicht unter `extern/`: Belegt ist nur der Vorrang der Datei daneben (S18g). Gleiche Namen aus
+  zwei Ordnern sind `BESTAND_REFERENZ_EXTERN`. Ob eine relative Struktur (`teile/A.SLDPRT`) bei noch vorhandenem Original aus der Kopie lädt, klärt S19c.
+- **Rohdaten.** `bestand.json` trägt die Hauptdatei, `aufnahme/<rel>.json` jede weitere im Format von Etappe 1. Gelesen wird jede Datei einmal, einzeln, unsichtbar, nach dem Schließen
+  der Baugruppe: Das Durchschalten der Konfigurationen soll nicht in einer geladenen Baugruppe laufen.
+- **Teile mit externen Referenzen** werden in Etappe 2 aufgenommen, wenn die Ziele in der Kopie liegen. Punkte auf so ein Teil und auf ein Teil, von dem ein anderes abhängt, weist `validieren` ab
+  (`BESTAND_REFERENZ_EXTERN`): Allein geöffnet ist seine Geometrie eingefroren, und die Kopie `vorher_<name>` hätte ihre Referenz nicht daneben, SolidWorks läse sie still vom gespeicherten Pfad.
+- **Virtuelle Komponenten** liegen in der Baugruppe und unter einem Temp-Pfad, ihr Name trägt `^`. Als Pfad zählen sie weder als fehlend noch als fremd, Punkte auf ihr Teil weist `validieren` ab.
+  Woran man sie vor dem Öffnen erkennt, misst S19f.
+
+### 8.1a Pfadschutz
+
+Fehlt eine Datei neben der Baugruppe, lädt SolidWorks still vom gespeicherten Pfad, also womöglich vom Original (S18g, Warnung 0). Zwei Sperren:
+
+1. **Vor dem Öffnen:** `GetDocumentDependencies2(kopie, True, True, False)` nach Suchregeln auflösen. Zeigt ein Pfad aus dem Kopie-Ordner heraus, wird nicht geöffnet.
+2. **Nach dem Öffnen:** jeder `GetPathName` aller Komponenten auf allen Ebenen (`GetComponents(False)`) und aller Dokumente, die durch das Öffnen dazugekommen sind, muss unter dem Kopie-Ordner liegen,
+   auch für Unterbaugruppen, Normteil- und Kaufteil-Kopien und unterdrückte Komponenten. Liegt einer außerhalb: Schließen ohne Speichern, `BESTAND_PFAD_FREMD` mit Liste.
+
+Gilt für jedes Öffnen in `aufnehmen`, `bauen`, `pruefen`, auch für einzelne Teile. Die zweite Sperre greift erst nach dem Laden, die erste ist also die eigentliche: Löst sie anders auf als das Öffnen (S19c), ist
+das ein Halt für die Etappe, keine Kleinigkeit. Im Prüfbericht steht die Prüfung `pfade`.
+
 ### 8.2 Komponenten und Verknüpfungen
 
 - Neue Normteile über `swki normteil hole`, Kaufteile über `swki kaufteil hole`, eigene Teile über eine Teil-Spec im Auftrag;
@@ -419,6 +464,10 @@ was die Punkte ändern – Weg im Spike).
 - Verknüpfungen wie Spec 3b; Partner in fremden Komponenten über `{komponente: <SW-Komponentenname>, nahe | feature | referenz}`.
 - Gewindepaarung und Kollision: nur **neue** Kollisionen und Paarungen neuer Normteile sind Mängel; Kollisionen, die der Bestand
   schon hatte, stehen im Bericht.
+
+*Präzisiert im Plan Etappe 2, 2026-11-01:* Neue Dateien liegen flach neben der Hauptbaugruppe, nicht unter `swki/`: Der Rückweg ist nur für die Datei daneben belegt (S18g). Ein gleicher Name
+im Bestand ist ein Befund. Gewindepaarungen setzen freigegebene Bohrungsdaten voraus, die eine fremde Datei nicht hat. Eine neue Schraube in einem fremden Gewinde ist darum zunächst eine neue
+Kollision; ist sie gewollt, nennt `kollision_erlaubt` das Paar mit Grund, der Prüfer sieht das Volumen im Bericht.
 
 ### 8.3 Prüfungen zusätzlich
 
@@ -429,9 +478,79 @@ was die Punkte ändern – Weg im Spike).
 | `bestimmtheit` | Freiheitsgrade je Komponente wie im Bestand, außer den Punkten |
 | `kollision` | keine neue statische Kollision |
 | `lage` | nicht betroffene Komponenten haben dieselbe Transformation |
+| `dateien` | SHA-256 jeder Datei wie in der Bestandskopie, außer Dateien mit Punkten und neuen Dateien; die Hauptbaugruppe nur, wenn ein Baugruppen-Punkt oder `lage_folgen` sie ändert |
+| `pfade` | alle geladenen Dateien liegen im Lauf-Ordner (§8.1a) |
+| `bewegung:<grenze>`, `bewegung_menge:<grenze>`, `bewegung_kollision:<grenze>`, `grenze:<grenze>`, `sollweg:<grenze>:<komponente>` | §8.4 |
 
 Ändert ein Punkt ein Teil, das in der Baugruppe steckt, laufen die Teilprüfungen (§7) für dieses Teil und die Baugruppenprüfungen
 für die Baugruppe.
+
+*Präzisiert im Plan Etappe 2, 2026-11-01:*
+
+- **`lage` erlaubt** die Komponenten der Punkte und ihre `lage_folgen`. Gleiche SHA-256 plus gleiche Transformation beweisen, dass eine Komponente unverändert ist; darum braucht die Baugruppe
+  keine eigene Körper-Differenz, und nur Dateien mit geänderter SHA-256 werden als Teil verglichen. Das hält die Prüfung auch bei großen Baugruppen klein. Der Beweis gilt nur auf **allen Ebenen**:
+  `komponenten` trägt auch die Kinder von Unterbaugruppen (`Name2` mit `/`), denn die Datei einer Unterbaugruppe bleibt gleich, während ihre Kinder wandern können. Gelesen wird nach dem Neuaufbau.
+  Ein `komponente_ersetzen` führt die Zuordnung alt zu neu im Protokoll, sonst sähe der Vergleich eine fehlende und eine fremde Komponente.
+- **`bereiche` tragen `in_datei`** und gelten für Teil-Punkte. Baugruppen-Punkte brauchen keinen Bereich (Änderung von §4.4 Punkt 5): Sie sichern `komponenten`, `verknuepfungen` und `lage`.
+- **Bestand und Lauf sind nie zugleich offen:** gleiche Dateinamen. Vorher steht in der Aufnahme, Teile gehen einzeln über `vorher_<name>` in die Differenz.
+- **Eine geänderte Hauptbaugruppe enthält Lauf-Pfade** (S18g). Zurückkopiert neben die Teile lädt sie die Dateien daneben; die Probe dazu steht in S19c und in der Referenz.
+
+### 8.4 Bewegungen
+
+Neu gegenüber der Spec vom 2026-10-25: Die Prüfstation hat zwei Bewegungen. Eine geänderte Baugruppe muss nachweislich noch fahren. Fremde Baugruppen haben keine `bewegungen` in einer Spec,
+deshalb gilt die Datei: **Jede Grenzverknüpfung der Hauptbaugruppe ist eine Bewegung.**
+
+- **Aufnahme:** `aufnehmen` fährt jede Grenzverknüpfung an der Bestandskopie von `min` bis `max` wie Spec 4a §8.2 und schreibt das Ergebnis nach `bestand.json` (`bewegungen`). Der treibende
+  Antrieb sitzt an denselben Flächen, die Grenze verrät sie (`IMate2.MateEntity`, S19b), und bleibt im Speicher: Nichts wird gespeichert. Die bewegte Seite ist die nicht fixierte, sonst
+  zeigt sie ein Probeschritt. `--ohne-bewegung` lässt das weg, `pruefen` meldet dann `bewegung:*` als `ok: None`.
+- **Prüfung:** Dieselbe Fahrt am Lauf, dieselbe Bewertung (`bewerte_bewegungen`). Soll ist das Verhalten im Bestand, nicht eine Spec: Was dort fuhr, muss wieder fahren; dieselben Komponenten
+  bewegen sich, außer neue aus Punkten und entfernte (`bewegung_menge`); neue Kollisionen sind Mängel; bekannte aus dem Bestand und `kollision_erlaubt` nicht. Was schon im Bestand nicht
+  bestand, ist kein Mangel des Laufs, sondern steht im Bericht.
+- **Fahrt robust gegen alte Fehler:** Verknüpfungsfehler aus der Aufnahme stoppen die Fahrt nicht, neue schon. Scheitert eine Grenze im Bestand, wird sie als nicht gefahren vermerkt und die übrigen fahren einzeln weiter, sonst
+  fiele der Nachweis still für alle weg. Eine Grenze mit `min` gleich `max` hat keinen Weg und wird nicht gefahren.
+- **Ein Punkt ändert die Grenze** (`verknuepfung_wert`, `verknuepfung_loeschen`): gefahren wird der neue Bereich bzw. nichts. `punkt:<id>` belegt das.
+- **Nicht abgedeckt:** Grenzen in Unterbaugruppen und bewegliche Komponenten ohne Grenze. Beides steht als Hinweis im Bericht, nie stumm. Speicher wie Stufe 4a: `SPEICHER_KNAPP`, `--neustart`.
+
+### 8.5 Dateien, die swki selbst gebaut hat
+
+Quelle ist die Datei, nicht die Spec, sobald sie von Hand geändert ist und der Nutzer sie als Stand erklärt (Nutzer 2026-10-30: Weitere Änderungen kommen vom Konstrukteur; wird das Tool
+wieder gebraucht, zuerst eine neue Bestandsaufnahme). Drei Wege, sie schließen sich aus:
+
+| Lage | Weg |
+|---|---|
+| swki-Datei, keine Handänderung | Spec ändern, neu bauen (Skills `konstruieren`, `baugruppe`) |
+| Handänderung, Nutzer will sie in die Spec holen | `MANUELL_GEAENDERT`, `swki aenderungen`, übernehmen (wie bisher) |
+| Handänderung, die Datei ist der Stand | `swki bestand aufnehmen` in einen **neuen** Auftrag, Skill `aendern` |
+
+- **Lauf-Ordner bleibt unberührt:** swki schreibt dort nichts, auch keine Marke. `lauf-<n>` ist das Original im Sinn von §3: nur lesen, nie in SolidWorks öffnen.
+- **Eigener Auftrag:** `aufnehmen` verweigert einen Auftrag mit eigenen Läufen aus Specs (`BESTAND_AUFTRAG_BELEGT`), sonst liefen Zählung und `MANUELL_GEAENDERT` durcheinander.
+- **Herkunft:** Liegt das Original unter `<arbeitsordner>/<auftrag>/lauf-<n>/`, steht `herkunft: {auftrag, lauf, spec}` in `herkunft.json` der Aufnahme.
+- **`MANUELL_GEAENDERT` bleibt** für die alte Spec bestehen, das ist richtig: Die Spec beschreibt die Datei nicht mehr. Die Meldung nennt zusätzlich die Aufnahme (gefunden über `herkunft.json`);
+  `swki bauen <alte Spec>` bleibt gesperrt, `--verwerfen` nur auf ausdrückliche Anweisung. Die Spec wird eingefroren, nicht gelöscht, und nicht nachgezogen.
+- **Bestand und Spec-Stand vergleichen** (§8.6) geht ohne das Original zu öffnen, über die Bestandskopie. Hat ein Lauf eine Aufnahme, öffnet `swki aenderungen` ihn nicht mehr in SolidWorks: Die Antwort nennt die geänderten
+  Dateien per SHA-256 und verweist auf `swki bestand abgleich`.
+
+### 8.6 Abgleich: Was wurde von Hand geändert?
+
+`swki aenderungen` kannte Maße und Verknüpfungswerte, neue Features oder Komponenten nur als „Datei geändert, Maße gleich“. Für die Frage braucht es keine zweite Logik. `swki/bestand/abgleich.py` vergleicht rein:
+
+| Ebene | Soll | Ist | Nennt |
+|---|---|---|---|
+| Dateien | `protokoll.sha256` | Datei | geändert, neu, fehlend |
+| Teil | Knoten mit `sw_name`, Maßprotokoll | gelesene Aufnahme | neue und fehlende Features, geänderte und neue Maße, Material, Eigenschaften |
+| Baugruppe | `protokoll.komponenten`, Verknüpfungs-Knoten, Werte der Freigabe, Lagen | gelesene Aufnahme | Komponenten neu/weg/andere Datei, Verknüpfungen neu/weg/Wert/Fehler/unterdrückt, Lagen |
+
+- `swki aenderungen <spec>` nutzt das für eigene Läufe ohne Aufnahme, nur lesend und unsichtbar (§8.5).
+- `swki bestand abgleich <auftrag> --spec <alte Spec>` nutzt die Aufnahme, öffnet also nichts im Lauf-Ordner.
+- Soll-Lagen: `pruefen` schreibt ab jetzt `lagen` in den Prüfbericht. Ältere Läufe geben sie mit `--lagen <json>` (Format Export `name`, `transform`); ohne sie bleibt die Lage ungeprüft und das steht da.
+- **Grenze:** Ein Feature, das bei gleichem Namen und gleichen Maßen anders ist (Skizze verschoben, Endbedingung), sieht dieser Vergleich nicht. Die Datei bleibt „geändert, nicht
+  erklärt“. **Offen, Entscheidung des Nutzers:** `--referenzbau` baut nur die geänderten Eigenteile aus der freigegebenen Spec in `<auftrag>/referenz-<n>/` und vergleicht exakt (`vergleiche`, `koerper_differenz`).
+
+### 8.7 Größe
+
+Bisher gemessen sind Aufnahme und Differenz bis 23 Flächen. Etappe 2 misst `lauf-30` (rund 35 Dateien, 74 Komponenten, 171 Verknüpfungen) und eine erzeugte große Baugruppe (`-m werkzeuge.bestand_gross`:
+200 Komponenten, 40 Dateien, ein Teil mit rund 2000 Flächen). Je Phase Zeit und Private Bytes, in `bestand.json` und im Protokoll (`messung`). Gelesen wird unsichtbar, nur Bilder und Bewegungsbilder
+öffnen ein Fenster. Kein Zeitlimit als Abnahme, die Zahlen stehen in den Ergebnissen.
 
 ## 9. Ausgabe
 
@@ -461,14 +580,17 @@ geprüft“, wo zutreffend.
 | `BESTAND_VERSION_NEUER` | Datei in neuerem SW-Jahr gespeichert |
 | `BESTAND_VERSION_AELTER` | `swki bauen` an einer Datei aus älterem SW-Jahr ohne `--hochstufen` |
 | `BESTAND_REFERENZ_FEHLT` | referenzierte Datei nicht gefunden |
-| `BESTAND_REFERENZ_EXTERN` | Teil mit externen Referenzen (Etappe 1) |
+| `BESTAND_REFERENZ_EXTERN` | Teil mit externen Referenzen (Etappe 1); ab Etappe 2 Ziel außerhalb der Kopie, gleiche Dateinamen aus zwei Ordnern, Punkt auf ein Teil mit Referenz im Kontext |
+| `BESTAND_PFAD_FREMD` | SolidWorks würde eine Datei außerhalb des Kopie-Ordners laden oder hat es getan (§8.1a) |
+| `BESTAND_AUFTRAG_BELEGT` | Auftrag hat Läufe aus eigenen Specs (§8.5) |
+| `BESTAND_OFFEN` | Warnung: `~$`-Datei neben einer aufgenommenen Datei, jemand hat sie offen |
 | `BESTAND_UNBEKANNT`, `BESTAND_VERALTET` | keine bzw. nicht die neueste Aufnahme zur Spec; `BESTAND_VERALTET` auch für einen Lauf aus einem anderen Stand als dem der Spec (§9) |
 | `BESTAND_ABWEICHEND` | Bestandskopie verändert |
 | `BESTAND_ORIGINAL_GEAENDERT` | Original seit der Aufnahme geändert (Warnung bei `ausgabe`) |
 | `BESTAND_LIZENZ` | Lauf nicht mit einer Vollversion oder Lizenz unbekannt (Warnung bei `ausgabe`) |
 | `LAUF_NICHT_BESTANDEN` | `ausgabe` eines Laufs ohne bestandene Code-Prüfungen und Prüfer-Urteil |
-| Befunde `validieren` | `BESTAND_REFERENZ`, `BESTAND_ALTWERT`, `BESTAND_EINHEIT`, `MASS_GESTEUERT`, `FOLGEN_ABWEICHEND`, `KINDER_FEHLEN`, `BEREICH_FEHLT` |
-| Mängel `pruefen` | `punkt:<id>`, `baum`, `masse`, `gleichungen`, `konfigurationen`, `neuaufbau`, `skizzen`, `externe_referenzen`, `bereich`, Etappe 2 §8.3 |
+| Befunde `validieren` | `BESTAND_REFERENZ`, `BESTAND_ALTWERT`, `BESTAND_EINHEIT`, `MASS_GESTEUERT`, `FOLGEN_ABWEICHEND`, `KINDER_FEHLEN`, `BEREICH_FEHLT`, `VERKNUEPFUNGEN_FEHLEN`, `NAME_BELEGT` (neue Datei heißt wie eine im Bestand) |
+| Mängel `pruefen` | `punkt:<id>`, `baum`, `masse`, `gleichungen`, `konfigurationen`, `neuaufbau`, `skizzen`, `externe_referenzen`, `bereich`, Etappe 2 §8.3 und §8.4 |
 
 Ein Prüfmangel ist ein Fehler im Bauweg oder in der Spec: Die KI passt keine Bereiche oder Sollwerte an Messwerte an; hält sie
 die Spec für falsch (Bereich zu eng, Folgeänderung vergessen), fragt sie den Nutzer.
@@ -497,6 +619,17 @@ Live, nur nach Freigabe durch den Nutzer und nie parallel zu einer anderen Solid
   z. B. Rippe oder Wandung, eine importierte STEP-Komponente in der Baugruppe).
 - **S18g Baugruppe:** Pack and Go (`GetPackAndGo`) bzw. Datei-Kopie plus Pfadumleitung in den Lauf-Ordner; Original-Dateien
   unverändert (SHA-256 vorher/nachher); nur geänderte Dateien speichern.
+
+### Spike S19 (Etappe 2, live, erst wenn SolidWorks frei ist)
+
+Offene Wege für Baugruppen. Zeilen und Pflichtfragen im Plan Etappe 2, Task 12.
+
+- **S19a Verknüpfungen lesen:** Typ, Partner, Grenzen (`IMate2`, `GetDefinition`), Grenze von normalem Abstand trennen.
+- **S19b Antrieb aus der Grenze:** Entitäten über `MateEntity(i).Reference` bzw. `EntitiesToMate`, Fahrt an nur lesend geöffneter Kopie, SHA-256 danach gleich.
+- **S19c Pfade:** relative Struktur und flache Fremddatei bei vorhandenem Original, Auflösung vor dem Öffnen, zurückkopierte Baugruppe mit Lauf-Pfaden.
+- **S19d Unsichtbar:** Baugruppe unsichtbar öffnen, Kollision und Transformationen, Zeit und Speicher.
+- **S19e Schreiben:** Einfügen, Ersetzen, Löschen, Grenze ändern an einer fremden Baugruppe, je Konfiguration.
+- **S19f Baum:** Typnamen von Komponenten, Verknüpfungen, Mustern, virtuellen Komponenten, Namen in Unterbaugruppen.
 
 ## 12. Referenz und Tests
 
@@ -534,7 +667,9 @@ Folgen-Berechnung, Bereichsprüfung mit Attrappen-Differenzen, Ausgabe-Liste und
 
 - Etappe 1: Musterteil-Änderung besteht (Code-Prüfungen ohne Mangel, Prüfer „bestanden“), die Negativfälle liefern ihre Codes,
   S18a belegt die Datei-ID, die Abnahme an einer echten Kollegen-Datei ist dokumentiert.
-- Etappe 2: Musterbaugruppen-Änderung besteht ebenso, Originale nachweislich unverändert.
+- Etappe 2: Musterbaugruppen-Änderung besteht ebenso, Originale nachweislich unverändert. Dazu (Nutzer 2026-11-01): Abnahme an `lauf-30` der Prüfstation, erst ein Blindtest, in dem das
+  Tool die Handänderungen selbst ermittelt, dann die neuen Anforderungen des Nutzers mit Freigabe und Prüfer; Kennzahlen in den Ergebnissen. Eine echte Kollegen-Baugruppe auf SW 2026 bleibt
+  eine eigene, offene Abnahme: `lauf-30` stammt von swki und läuft auf SW 2025.
 - Bisherige Regressions-Suite besteht weiter, Unit-Tests grün, `swki api pruefe-code` ohne Befund.
 
 ## 15. Reihenfolge der Umsetzung
