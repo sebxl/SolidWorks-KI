@@ -4,6 +4,7 @@ Nullargumentige Member ohne "()"; nullargumentige Aktionen (FixComponent, EditDe
 Methode markiert – so ist es egal, ob pywin32 sie beim Attributzugriff schon ausführen würde (S9a) oder nicht (S5)."""
 
 import math
+from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
 
@@ -391,17 +392,26 @@ def treibe(asm, v, a: tuple[object, bool], b: tuple[object, bool], wert: float, 
     return verknuepfe(asm, antrieb, a, b, {}, None, handles=handles)
 
 
-def stelle(asm, antrieb, art: str, wert: float, mates: list | None = None) -> str | None:
+def fehler_block(bekannt):
+    """Kontext, in dem `sw.rebuild` die Fehler von `bekannt` übergeht. `sw.bekannte_fehler` ersetzt den äußeren Stand, darum
+    ohne bekannte Fehler gar kein Block."""
+    return sw.bekannte_fehler(bekannt) if bekannt else nullcontext()
+
+
+def stelle(asm, antrieb, art: str, wert: float, mates: list | None = None, bekannt=frozenset()) -> str | None:
     """Treibende Verknüpfung auf wert stellen und neu aufbauen; None = gelöst, sonst die Meldung (Rebuild-Fehler oder
     Fehlercode einer Verknüpfung). Ob die Komponente dort steht, prüft der Aufrufer über die Lage (Präzisierung 4).
-    `mates`: alle Verknüpfungen des Dokuments als Handles (ohne Baumdurchlauf, BTP Umbau 1)."""
+    `mates`: alle Verknüpfungen des Dokuments als Handles (ohne Baumdurchlauf, BTP Umbau 1). `bekannt`: Verknüpfungen, deren
+    Fehler schon im Bestand standen (Namen): Sie zählen nicht, neue stoppen die Fahrt (Spec Bestandsdateien §8.4)."""
     antrieb.Parameter(MASS_NAME).SetSystemValue3(mm(wert) if art == "abstand" else grad(wert),
                                                  SW_WERT_DIESE_KONFIGURATION, None)
     try:
-        sw.rebuild(asm)
+        with fehler_block(bekannt):
+            sw.rebuild(asm)
     except BauFehler as e:
         return str(e)
-    fehlerhaft = [f.Name for f in (mates if mates is not None else verknuepfungen(asm)) if fehlercode(f)]
+    alle = mates if mates is not None else verknuepfungen(asm)
+    fehlerhaft = [f.Name for f in alle if f.Name not in bekannt and fehlercode(f)]
     return f"Verknüpfungsfehler: {', '.join(fehlerhaft)}" if fehlerhaft else None
 
 

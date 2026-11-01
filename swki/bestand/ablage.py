@@ -16,6 +16,8 @@ from swki.bestand.fehler import (BESTAND_ABWEICHEND, BESTAND_ANDERE_DATEI, BESTA
 from swki.konfig import Rechner
 
 ENDUNG = ".sldprt"
+ENDUNG_BAUGRUPPE = ".sldasm"
+ENDUNGEN = (ENDUNG, ENDUNG_BAUGRUPPE)
 AUFNAHME_DATEI = "bestand.json"
 DATEIEN_DATEI = "dateien.json"
 HERKUNFT_DATEI = "herkunft.json"
@@ -37,9 +39,13 @@ def aufnahmen(r: Rechner, auftrag: str) -> list[int]:
 
 
 def pruefe_format(pfad: Path) -> None:
-    if pfad.suffix.lower() != ENDUNG:
-        raise BestandFehler(BESTAND_FORMAT, f"{pfad.name}: nur Teile ({ENDUNG}) – Baugruppen und andere Formate sind "
-                                            "hier nicht möglich", erlaubt=[ENDUNG])
+    if pfad.suffix.lower() not in ENDUNGEN:
+        raise BestandFehler(BESTAND_FORMAT, f"{pfad.name}: nur Teile und Baugruppen ({', '.join(ENDUNGEN)}) – andere Formate "
+                                            "sind hier nicht möglich", erlaubt=list(ENDUNGEN))
+
+
+def ist_baugruppe(pfad: Path | str) -> bool:
+    return PureWindowsPath(pfad).suffix.lower() == ENDUNG_BAUGRUPPE
 
 
 def _kopie_in(ordner: Path) -> Path | None:
@@ -65,9 +71,13 @@ def sha_original(original: Path) -> str:
 
 
 def kopiere_original(r: Rechner, auftrag: str, original: Path) -> dict:
-    """Original lesen und als schreibgeschützte Kopie in bestand-<n>/ ablegen. Gleiche Datei (gleicher Name ohne
-    Beachtung der Groß-/Kleinschreibung, gleiche SHA-256 wie die jüngste Aufnahme) → keine neue Aufnahme."""
+    """Original lesen und als schreibgeschützte Kopie in bestand-<n>/ ablegen. Gleiche Datei (gleicher Name ohne Beachtung der
+    Groß-/Kleinschreibung, gleiche SHA-256 wie die jüngste Aufnahme) → keine neue Aufnahme. Nur Teile: Eine Baugruppe geht über
+    `kopiere_baugruppe`, allein kopiert fehlten ihr die Dateien."""
     pruefe_format(original)
+    if ist_baugruppe(original):
+        raise BestandFehler(BESTAND_FORMAT, f"{original.name}: Eine Baugruppe wird mit allen Dateien kopiert, nicht einzeln",
+                            erlaubt=[ENDUNG])
     sha = sha_original(original)
     nummern = aufnahmen(r, auftrag)
     if nummern:
@@ -322,6 +332,30 @@ def pruefe_auftrag_frei(r: Rechner, auftrag: str, spec_laeufe: list[int]) -> Non
         raise BestandFehler(BESTAND_AUFTRAG_BELEGT,
                             f"Der Auftrag {auftrag} hat schon Läufe aus Specs ({', '.join(map(str, spec_laeufe))}) – die "
                             "Bestandsaufnahme gehört in einen neuen Auftrag", auftrag=auftrag, laeufe=list(spec_laeufe))
+
+
+def spec_laeufe(r: Rechner, auftrag: str) -> list[int]:
+    """Läufe des Auftrags aus eigenen Specs, für `pruefe_auftrag_frei`. Läufe aus `art: aenderung` zählen nicht: Ihr Protokoll
+    trägt den Vermerk `bestand`, sie gehören zu den Aufnahmen dieses Auftrags. Ohne lesbares Protokoll zählt ein Lauf mit, der
+    Schutz schlägt nicht offen fehl."""
+    wurzel = r.arbeitsordner / auftrag
+    if not wurzel.is_dir():
+        return []
+    aus = []
+    for ordner in wurzel.iterdir():
+        if ordner.is_dir() and (m := _LAUF.match(ordner.name)):
+            try:
+                protokoll = json.loads((ordner / "protokoll.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                protokoll = None
+            if not (isinstance(protokoll, dict) and protokoll.get("bestand")):
+                aus.append(int(m.group(1)))
+    return sorted(aus)
+
+
+def lade_herkunft(r: Rechner, auftrag: str, nummer: int) -> dict | None:
+    """`herkunft.json` der Aufnahme; fehlt sie oder ist sie unlesbar, `None`."""
+    return _lies_herkunft(bestand_ordner(r, auftrag, nummer) / HERKUNFT_DATEI)[0]
 
 
 def schreibe_herkunft(r: Rechner, auftrag: str, nummer: int, herkunft: dict) -> Path:

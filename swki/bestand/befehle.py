@@ -1,16 +1,19 @@
-"""Befehle "swki bestand aufnehmen|zeige|ausgabe" (Spec Bestandsdateien §5, §9). Das Original wird nur gelesen; in SolidWorks geöffnet
-wird nur die schreibgeschützte Bestandskopie, nur lesend, und nie gespeichert. Die Rohdaten stehen in `bestand.json`,
-ausgegeben wird eine Zusammenfassung, mit der sich „das 40er Maß an der Bohrung“ zuordnen lässt."""
+"""Befehle "swki bestand aufnehmen|zeige|abgleich|ausgabe" (Spec Bestandsdateien §5, §8, §9). Das Original wird nur gelesen; in
+SolidWorks geöffnet wird nur die schreibgeschützte Bestandskopie, nur lesend, und nie gespeichert. Die Rohdaten stehen in
+`bestand.json`, ausgegeben wird eine Zusammenfassung, mit der sich „das 40er Maß an der Bohrung“ zuordnen lässt. Baugruppen
+laufen über `swki.bestand.aufnahme_baugruppe`, der Abgleich gegen den Spec-Stand über `swki.bestand.abgleich_lauf`."""
 
 import re
 from pathlib import Path
 
 from swki.bestand import ausgabe
-from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, kopiere_original, lade_aufnahme, pruefe_format,
-                                 schreibe_aufnahme, sha_original, verwirf_aufnahme)
+from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, ist_baugruppe, kopiere_original, lade_aufnahme,
+                                 pruefe_format, schreibe_aufnahme, sha_original, verwirf_aufnahme)
 from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
+from swki.bestand.pfade import oeffne_in
 from swki.bestand.spec import einheit_text
-from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_mass)
+from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_komponente,
+                                     zeige_mass)
 from swki.cli import ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import lade_rechner
@@ -70,11 +73,16 @@ def _lies_kopie(app, kopie: Path, ordner: Path) -> dict:
     return gelesen
 
 
-def aufnehmen(original: Path, auftrag: str) -> dict:
+def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict:
     """Spec §5.1/5.2. Prüfungen ohne Öffnen vor der Kopie, damit eine abgelehnte Datei keine Aufnahme hinterlässt; zeigt sich die
     Referenz erst im offenen Dokument, wird der Ordner wieder entfernt. Ob zu lesen ist, entscheidet das fehlende `bestand.json`, nicht
-    `neu`: Scheiterte das Lesen, liegt die Kopie schon da und das Lesen lässt sich nachholen."""
+    `neu`: Scheiterte das Lesen, liegt die Kopie schon da und das Lesen lässt sich nachholen. Eine Baugruppe geht über
+    `swki.bestand.aufnahme_baugruppe` (§8.1), `ohne_bewegung` gilt nur dort."""
     pruefe_format(original)
+    if ist_baugruppe(original):
+        from swki.bestand import aufnahme_baugruppe  # spät importiert: nutzt `zusammenfassung` aus diesem Modul
+
+        return aufnahme_baugruppe.aufnehmen(original, auftrag, ohne_bewegung)
     sha_original(original)  # BESTAND_NICHT_LESBAR, bevor SolidWorks gefragt wird
     r = lade_rechner()
     app = verbinde(r.sw_jahr)
@@ -113,10 +121,37 @@ def _dateiname(name: str) -> str:
     return re.sub(r'[\\/:*?"<>|@\s]+', "_", name)
 
 
-def zeige(auftrag: str, mass: str | None, feature: str | None) -> dict:
-    """Spec §5.3: Bild der jüngsten Bestandskopie mit hervorgehobenem Maß bzw. Feature; genau eines von beiden."""
-    if (mass is None) == (feature is None):
-        raise BestandFehler(BESTAND_REFERENZ, "Genau eines von --mass und --feature nennen")
+def komponente_sichtbar_in(aufnahme: dict, name: str) -> str:
+    """Konfiguration für ein Bild der Komponente: die aktive, außer sie ist dort unterdrückt."""
+    weg = aufnahme["komponenten"][name]["unterdrueckt"]
+    if not weg.get(aufnahme["aktiv"]):
+        return aufnahme["aktiv"]
+    return next((k for k in aufnahme["konfigurationen"] if not weg.get(k)), aufnahme["aktiv"])
+
+
+def _zeige_komponente(r, auftrag: str, nummer: int, a: dict, name: str) -> dict:
+    """§5.3 für eine Komponente einer Baugruppen-Aufnahme: geöffnet über den Pfadschutz, die Kopie bleibt nur lesend."""
+    if a.get("art") != "baugruppe" or name not in a["komponenten"]:
+        raise BestandFehler(BESTAND_REFERENZ, f"Komponente {name!r} gibt es in der Aufnahme nicht", komponente=name)
+    konfiguration = komponente_sichtbar_in(a, name)
+    ordner = bestand_ordner(r, auftrag, nummer)
+    ziel = ordner / "bilder" / f"zeige_{_dateiname(name)}.png"
+    app = verbinde(r.sw_jahr)
+    asm = oeffne_in(app, ordner / a["datei"]["name"], ordner, sichtbar=True, nur_lesen=True)
+    try:
+        if konfiguration != a["aktiv"]:
+            asm.ShowConfiguration2(konfiguration)
+        zeige_komponente(app, asm, name, ziel)
+    finally:
+        sw.schliesse(app, asm)
+    return {"auftrag": auftrag, "aufnahme": nummer, "konfiguration": konfiguration, "bild": str(ziel)}
+
+
+def zeige(auftrag: str, mass: str | None, feature: str | None, komponente: str | None = None) -> dict:
+    """Spec §5.3: Bild der jüngsten Bestandskopie mit hervorgehobenem Maß, Feature oder (Baugruppe) Komponente; genau eines
+    davon."""
+    if sum(x is not None for x in (mass, feature, komponente)) != 1:
+        raise BestandFehler(BESTAND_REFERENZ, "Genau eines von --mass, --feature und --komponente nennen")
     r = lade_rechner()
     nummern = aufnahmen(r, auftrag)
     if not nummern:
@@ -124,6 +159,8 @@ def zeige(auftrag: str, mass: str | None, feature: str | None) -> dict:
                             auftrag=auftrag)
     nummer = nummern[-1]
     a = lade_aufnahme(r, auftrag, nummer)
+    if komponente is not None:
+        return _zeige_komponente(r, auftrag, nummer, a, komponente)
     if mass is not None:
         eintrag = next((m for m in a["masse"] if m["name"] == mass), None)
         if eintrag is None:
@@ -136,7 +173,11 @@ def zeige(auftrag: str, mass: str | None, feature: str | None) -> dict:
     ordner = bestand_ordner(r, auftrag, nummer)
     ziel = ordner / "bilder" / f"zeige_{_dateiname(mass or feature)}.png"
     app = verbinde(r.sw_jahr)
-    model = oeffne(app, ordner / a["datei"]["name"], nur_lesen=True)
+    pfad = ordner / a["datei"]["name"]
+    if ist_baugruppe(pfad):
+        model = oeffne_in(app, pfad, ordner, sichtbar=True, nur_lesen=True)
+    else:
+        model = oeffne(app, pfad, nur_lesen=True)
     try:
         if konfiguration != a["aktiv"]:
             model.ShowConfiguration2(konfiguration)
@@ -149,19 +190,38 @@ def zeige(auftrag: str, mass: str | None, feature: str | None) -> dict:
     return {"auftrag": auftrag, "aufnahme": nummer, "konfiguration": konfiguration, "bild": str(ziel)}
 
 
+def _abgleich(a) -> dict:
+    from swki.bestand import abgleich_lauf  # spät importiert: zieht Compiler und Differenz nach
+
+    return abgleich_lauf.abgleich(a.auftrag, Path(a.spec), aufnahme=a.aufnahme, lagen_pfad=Path(a.lagen) if a.lagen else None,
+                                  referenz=a.referenzbau)
+
+
 def einrichten(subparsers) -> None:
-    gruppe = subparsers.add_parser("bestand", help="Fremde Teile aufnehmen und ansehen").add_subparsers(
+    gruppe = subparsers.add_parser("bestand", help="Fremde Teile und Baugruppen aufnehmen und ansehen").add_subparsers(
         dest="unterbefehl", required=True)
     p = gruppe.add_parser("aufnehmen", help="Original kopieren und die Kopie lesend aufnehmen (bestand.json, Bilder)")
     p.add_argument("pfad")
     p.add_argument("--auftrag", required=True)
-    p.set_defaults(func=lambda a: aufnehmen(Path(a.pfad), a.auftrag))
-    p = gruppe.add_parser("zeige", help="Bild der Bestandskopie mit hervorgehobenem Maß oder Feature")
+    p.add_argument("--ohne-bewegung", action="store_true",
+                   help="Baugruppe: Grenzen nicht fahren, swki pruefen meldet bewegung:* dann als nicht nachgewiesen")
+    p.set_defaults(func=lambda a: aufnehmen(Path(a.pfad), a.auftrag, a.ohne_bewegung))
+    p = gruppe.add_parser("zeige", help="Bild der Bestandskopie mit hervorgehobenem Maß, Feature oder Komponente")
     p.add_argument("auftrag")
     was = p.add_mutually_exclusive_group(required=True)
     was.add_argument("--mass")
     was.add_argument("--feature")
-    p.set_defaults(func=lambda a: zeige(a.auftrag, a.mass, a.feature))
+    was.add_argument("--komponente")
+    p.set_defaults(func=lambda a: zeige(a.auftrag, a.mass, a.feature, a.komponente))
+    p = gruppe.add_parser("abgleich",
+                          help="Aufnahme gegen den Spec-Stand: Was wurde von Hand geändert? Öffnet nichts im Lauf-Ordner")
+    p.add_argument("auftrag")
+    p.add_argument("--spec", required=True, help="die eigene Spec, aus der die Datei gebaut ist")
+    p.add_argument("--aufnahme", type=ganzzahl_ab(1, "--aufnahme"), help="Vorgabe: die jüngste")
+    p.add_argument("--lagen", help="JSON mit Soll-Lagen (name, transform), Vorgabe: Prüfbericht des Laufs")
+    p.add_argument("--referenzbau", action="store_true",
+                   help="geänderte Eigenteile nach <auftrag>/referenz-<n>/ bauen und vergleichen (braucht SolidWorks)")
+    p.set_defaults(func=_abgleich)
     p = gruppe.add_parser("ausgabe", help="geänderte Dateien eines bestandenen Laufs nach <auftrag>/ausgabe/ kopieren "
                                           "(der Nutzer kopiert selbst zurück)")
     p.add_argument("spec")

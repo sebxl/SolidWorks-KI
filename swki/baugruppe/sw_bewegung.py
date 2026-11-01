@@ -9,17 +9,20 @@ from swki.baugruppe.bewegung import Bewegung
 from swki.baugruppe.bewegungslauf import StellungFehler
 from swki.compiler import sw
 from swki.pruefung.bilder import iso_bild
+from swki.pruefung.messen import SW_DOC_PART
 from swki.speicher import privat_mb
-from swki.verbindung import in_mm
+from swki.verbindung import in_mm, wert as primitiv
 
 
 class SwMechanik:
-    def __init__(self, app, asm, grenzen: dict, entitaet, komponenten: dict, bilder: Path | None = None):
+    def __init__(self, app, asm, grenzen: dict, entitaet, komponenten: dict, bilder: Path | None = None,
+                 bekannte_fehler=frozenset()):
         self.app, self.asm = app, asm
         self.grenzen = grenzen              # Verknüpfungs-ID → Verknuepfung (Grenzverknüpfungen)
         self.entitaet = entitaet            # Referenz der Spec → Entität im Baugruppenkontext
         self.komponenten = komponenten      # Instanz-ID → IComponent2
         self.bilder = bilder
+        self.bekannte_fehler = frozenset(bekannte_fehler)  # Verknüpfungen mit Fehlern aus dem Bestand (Bestandsdateien §8.4)
         self.antriebe: dict[str, object] = {}  # Bewegung → treibende Verknüpfung
         self._namen = {k.Name2: iid for iid, k in komponenten.items()}
         self._teileboxen: dict[str, list[float] | None] = {}  # Instanz-ID → Teilebox (mm), beim 1. zustand() gelesen
@@ -35,23 +38,27 @@ class SwMechanik:
     def halte(self, b: Bewegung, wert: float) -> None:
         if b.name not in self.antriebe:
             v = self.grenzen[b.grenze]
-            self.antriebe[b.name] = sw_baugruppe.treibe(self.asm, v, self.entitaet(v.a), self.entitaet(v.b), wert,
-                                                        self._handles())
+            with sw_baugruppe.fehler_block(self.bekannte_fehler):
+                self.antriebe[b.name] = sw_baugruppe.treibe(self.asm, v, self.entitaet(v.a), self.entitaet(v.b), wert,
+                                                            self._handles())
         if (meldung := self.stelle(b, wert)) is not None:
             raise StellungFehler(b.name, wert, meldung)
 
     def stelle(self, b: Bewegung, wert: float) -> str | None:
-        return sw_baugruppe.stelle(self.asm, self.antriebe[b.name], b.art, wert, list(self._handles().values()))
+        return sw_baugruppe.stelle(self.asm, self.antriebe[b.name], b.art, wert, list(self._handles().values()),
+                                   self.bekannte_fehler)
 
     def loese(self, b: Bewegung) -> None:
         if (antrieb := self.antriebe.pop(b.name, None)) is not None:
             self._mates = None
-            sw_baugruppe.loesche(self.asm, antrieb)
+            with sw_baugruppe.fehler_block(self.bekannte_fehler):
+                sw_baugruppe.loesche(self.asm, antrieb)
 
     def unterdruecke(self, b: Bewegung, ja: bool) -> None:
         namen = {n.lower(): f for n, f in self._handles().items()}
         self._mates = None   # Handle nach SetSuppression2 nicht belegt: danach neu lesen
-        sw_baugruppe.unterdruecke(self.asm, namen[b.grenze.lower()], ja)
+        with sw_baugruppe.fehler_block(self.bekannte_fehler):
+            sw_baugruppe.unterdruecke(self.asm, namen[b.grenze.lower()], ja)
 
     def status(self) -> dict[str, int]:
         # Spike/Diagnose 4b (Task 13): GetConstrainedStatus liest über die Kopplungskette veraltet (EditRebuild3
@@ -61,10 +68,12 @@ class SwMechanik:
 
     def _teilebox(self, iid: str, komp) -> list[float] | None:
         """Teilebox der Komponente in mm, je Instanz einmal gelesen (Spike S13 Zeile 6/8: GetBox je Schritt ist teuer);
-        None, wenn das Teildokument nicht geladen ist (GetModelDoc2 liefert dann nichts)."""
+        None, wenn das Teildokument nicht geladen ist (GetModelDoc2 liefert dann nichts) oder die Komponente eine Unterbaugruppe
+        ist: `GetPartBox` gibt es nur am Teil, `zustand` nimmt dann `GetBox`."""
         if iid not in self._teileboxen:
             model = komp.GetModelDoc2
-            self._teileboxen[iid] = sw.teilebox_mm(model) if model is not None else None
+            teil = model is not None and primitiv(model.GetType) == SW_DOC_PART
+            self._teileboxen[iid] = sw.teilebox_mm(model) if teil else None
         return self._teileboxen[iid]
 
     def zustand(self) -> dict[str, tuple[list[float], list[float]]]:

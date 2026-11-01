@@ -96,14 +96,26 @@ def test_endung_grossgeschrieben_geht(r, tmp_path, name):
     assert kopiere_original(r, "a1", _datei(tmp_path, name, b"x"))["neu"]
 
 
-@pytest.mark.parametrize("name", ["Deckel.step", "Baugruppe.sldasm", "Deckel"])
-def test_endung_step_und_baugruppe_gehen_nicht(r, tmp_path, name):
+@pytest.mark.parametrize("name", ["Deckel.step", "Deckel"])
+def test_endung_step_geht_nicht(r, tmp_path, name):
     with pytest.raises(BestandFehler) as e:
         kopiere_original(r, "a1", _datei(tmp_path, name, b"x"))
     assert e.value.daten["code"] == BESTAND_FORMAT
     assert aufnahmen(r, "a1") == []
     with pytest.raises(BestandFehler):
         pruefe_format(Path(name))
+
+
+@pytest.mark.parametrize("name", ["Deckel.SLDPRT", "deckel.sldprt", "Haupt.SLDASM", "haupt.sldasm"])
+def test_format_nimmt_teile_und_baugruppen(name):
+    assert pruefe_format(Path(name)) is None
+
+
+def test_baugruppe_geht_nicht_ueber_die_kopie_eines_teils(r, tmp_path):
+    """Allein kopiert fehlten ihr die Dateien; `kopiere_baugruppe` kopiert alle."""
+    with pytest.raises(BestandFehler) as e:
+        kopiere_original(r, "a1", _datei(tmp_path, "Haupt.SLDASM", b"x"))
+    assert e.value.daten["code"] == BESTAND_FORMAT and aufnahmen(r, "a1") == []
 
 
 def test_original_fehlt(r, tmp_path):

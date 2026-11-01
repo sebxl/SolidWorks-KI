@@ -29,7 +29,7 @@ from functools import reduce
 from itertools import combinations, pairwise, product
 
 from swki.bestand.spec import GEOMETRIE_TYPEN
-from swki.bestand.sw_bestand import _schalte
+from swki.bestand.sw_bestand import schalte
 from swki.cli import SwkiFehler
 from swki.compiler.topologie import koerper
 from swki.kaufteile.sw_kaufteil import flaechenkoerper
@@ -237,12 +237,12 @@ def _aktive_zurueck(modelle: list) -> Iterator[None]:
         yield
     finally:
         for m, k in aktiv:
-            _schalte(m, k)
+            schalte(m, k)
 
 
 def _zeige(model, konfiguration: str) -> None:
     """Wie `lies_bestand`: umschalten, zurücklesen, neu aufbauen. Körper und Features danach neu holen (S18c)."""
-    _schalte(model, konfiguration)
+    schalte(model, konfiguration)
     model.EditRebuild3
 
 

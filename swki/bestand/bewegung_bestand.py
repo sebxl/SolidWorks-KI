@@ -151,6 +151,8 @@ def _probeschritt(mech: Mechanik, name: str, v: dict, a: str, b: str) -> str:
         if (meldung := mech.stelle(bw, bw.max)) is not None:
             raise StellungFehler(name, bw.max, meldung)
         nachher = mech.zustand()
+        if v.get("wert") is not None:  # die Fahrt beginnt bei min; fällt die Grenze dort heraus, steht sie nicht am Anschlag
+            mech.stelle(bw, v["wert"])
     finally:
         for aufraeumen in (lambda: mech.loese(bw), lambda: mech.unterdruecke(bw, False)):
             try:
@@ -202,6 +204,36 @@ def _nicht_gefahren(v: dict, komponente: str | None, grund: str) -> dict:
             "bewegt": [], "raum": None, "kollisionen": [], "pruefungen": [], "hinweis": grund}
 
 
+def ohne_fahrt(grenzen: dict[str, dict], grund: str) -> dict:
+    """Das Feld `bewegungen` ohne Fahrt (`--ohne-bewegung`): `gefahren` ist `null`, nicht `false`. `false` hieße „im Bestand
+    nicht gefahren, kein Soll“ und ergäbe `ok: True`, die Spec verlangt `ok: None` (§8.4)."""
+    return {name: {**_nicht_gefahren(v, None, grund), "gefahren": None} for name, v in grenzen.items()}
+
+
+def _zurueckstellen(mech: Mechanik, b: Bewegung, wert: float | None) -> str | None:
+    """Eine Grenze, die herausfällt, ließe ihre Komponente in der letzten Stellung stehen, und die übrigen führen aus einer
+    Lage, die es im Bestand nicht gibt. Darum mit einem Antrieb zurück auf den gelesenen Wert; gelingt das nicht, trägt der
+    Eintrag den Hinweis."""
+    if wert is None:
+        return f"{b.komponente} steht womöglich nicht in der Ausgangslage: Wert der Grenze nicht gelesen"
+    hinweis = None
+    try:
+        mech.unterdruecke(b, True)
+        mech.halte(b, wert)
+    except Exception as e:
+        hinweis = f"{b.komponente} steht womöglich nicht in der Ausgangslage: {e}"
+    for aufraeumen in (lambda: mech.loese(b), lambda: mech.unterdruecke(b, False)):
+        try:
+            aufraeumen()
+        except Exception as e:  # wie in `bewegungslauf.fahre`, aber hier steht es im Eintrag
+            hinweis = hinweis or f"Aufräumen nach dem Zurückstellen von {b.komponente} gescheitert: {e}"
+    return hinweis
+
+
+def _mit_hinweis(grund: str, zusatz: str | None) -> str:
+    return f"{grund}; {zusatz}" if zusatz else grund
+
+
 def _gefahren(b: Bewegung, m, tol_mm: float) -> dict:
     """Der Eintrag einer gefahrenen Grenze: Grundstellungslauf (bewegt, Raum), Kollisionen aller Läufe, Prüfungen der Bewertung."""
     laeufe = [lauf for lauf in m.laeufe if lauf.bewegung == b.name]
@@ -242,7 +274,8 @@ def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schr
         except SeiteUnklar as e:
             ergebnis[name] = _nicht_gefahren(v, None, str(e))
         except StellungFehler as e:
-            ergebnis[name] = _nicht_gefahren(v, None, f"Probeschritt gescheitert: {e}")
+            zurueck = _zurueckstellen(mech, grenze_als_bewegung(name, v, _partner(v)[0] or _partner(v)[1], 1), v.get("wert"))
+            ergebnis[name] = _nicht_gefahren(v, None, _mit_hinweis(f"Probeschritt gescheitert: {e}", zurueck))
         else:
             offen.append(grenze_als_bewegung(name, v, seite, schritte))
     if offen:
@@ -257,7 +290,8 @@ def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schr
             if b is None:
                 raise
             offen.remove(b)
-            ergebnis[b.name] = _nicht_gefahren(grenzen[b.name], b.komponente, str(e))
+            zurueck = _zurueckstellen(mech, b, grenzen[b.name].get("wert"))
+            ergebnis[b.name] = _nicht_gefahren(grenzen[b.name], b.komponente, _mit_hinweis(str(e), zurueck))
     for b in offen:
         ergebnis[b.name] = _gefahren(b, messwerte, tol_mm)
     return {name: ergebnis[name] for name in grenzen}

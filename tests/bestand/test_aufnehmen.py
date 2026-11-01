@@ -433,7 +433,7 @@ def test_unterdrueckung_je_konfiguration_einzeln_gefragt():
         def IsSuppressed2(self, art, namen):
             return tuple(u for k, u in (("Standard", False), ("Variante B", True)) if k in namen.value)
 
-    d = sw_bestand._feature_eintrag(Feature(), ["Variante B", "Standard"], False)
+    d = sw_bestand.feature_eintrag(Feature(), ["Variante B", "Standard"], False)
     assert d["unterdrueckt"] == {"Variante B": True, "Standard": False}
     assert d["unter"] == []
 
@@ -451,7 +451,7 @@ def test_unterfeatures_stehen_beim_feature():
         def IsSuppressed2(self, art, namen):
             return (False,)
 
-    assert sw_bestand._feature_eintrag(Feature(), ["Standard"], False)["unter"] == ["Skizze6", "Bohrungsgewinde1"]
+    assert sw_bestand.feature_eintrag(Feature(), ["Standard"], False)["unter"] == ["Skizze6", "Bohrungsgewinde1"]
 
 
 def test_externe_referenzen_paare():

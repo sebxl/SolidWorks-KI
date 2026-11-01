@@ -15,7 +15,7 @@ from swki.bestand import punkte
 from swki.bestand.ablage import bestand_ordner, lauf_kopie, pruefe_kopie
 from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
 from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, lade_aenderung, pruefe_freigabe_aenderung
-from swki.bestand.sw_bestand import _geometrie, _schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
+from swki.bestand.sw_bestand import _geometrie, schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
 from swki.bestand.vergleich import neue_fehler
 from swki.cli import SwkiFehler
 from swki.compiler import sw
@@ -66,7 +66,7 @@ def pruefe_stand(model, aufnahme: dict, liste: list[dict], geloescht: set[str]) 
     betroffen = {k for p in liste if p["typ"] in GEOMETRIE_TYPEN for k in punkte._konfigurationen(p, aufnahme)}
     namen = None
     for k in [*(x for x in aufnahme["konfigurationen"] if x != aktiv), aktiv]:
-        _schalte(model, k)
+        schalte(model, k)
         ok = model.EditRebuild3
         fehler = whats_wrong(model)
         neu = neue_fehler(fehler, aufnahme, k)
@@ -106,7 +106,7 @@ def _wende_punkte_an(app, model, spec: dict, spec_pfad: Path, tol_mm: float, auf
 
 
 def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: float, aufnahme: dict, protokoll: Protokoll,
-                           pfad: Path) -> Exception | None:
+                           pfad: Path, ordner: Path) -> Exception | None:
     """Der erste Fehler oder None; gespeichert ist die Datei nur bei None."""
     geloescht: set[str] = set()
     try:
@@ -115,7 +115,7 @@ def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: floa
                 return fehler
             pruefe_stand(model, aufnahme, spec["punkte"], geloescht)
         with protokoll.phase("speichern"):
-            speichere_an_ort(model, pfad)
+            speichere_an_ort(model, pfad, ordner)
     except Exception as e:  # jeder Fehler (auch COM) heißt: nicht speichern
         return e
     return None
@@ -161,7 +161,8 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
         model = oeffne(app, pfad)
     fehler = None
     try:
-        fehler = _aendere_und_speichere(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], aufnahme, protokoll, pfad)
+        fehler = _aendere_und_speichere(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], aufnahme, protokoll,
+                                        pfad, ordner)
         protokoll.lizenz = lizenz(app, model)
     finally:
         try:

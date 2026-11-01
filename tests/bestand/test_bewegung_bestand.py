@@ -9,7 +9,8 @@ import pytest
 from swki.baugruppe.bewegungslauf import StellungFehler
 from swki.baugruppe.sw_baugruppe import NAECHSTE
 from swki.bestand.bewegung_bestand import (SeiteUnklar, abdeckung, als_verknuepfung, bekannte_paare, bewegte_seite, fahre_bestand,
-                                           grenze_als_bewegung, grenzen_der_aufnahme, statische_paare, vergleiche_bewegungen)
+                                           grenze_als_bewegung, grenzen_der_aufnahme, ohne_fahrt, statische_paare,
+                                           vergleiche_bewegungen)
 from tests.baugruppe.attrappe_mechanik import Attrappe
 from tests.bestand.beispiel_baugruppe import baugruppen_aufnahme, komponente, verknuepfung
 
@@ -183,6 +184,70 @@ def test_eine_kaputte_grenze_kostet_nur_sie_selbst():
     assert erg["Hub"]["gefahren"] is True and erg["Hub"]["bewegt"] == ["schieber", "hebel"]
     assert all(e["ok"] for e in erg["Hub"]["pruefungen"])
     assert mech.unterdrueckt == set() and mech.gehalten == set()
+
+
+class SchwenkFaelltHeraus(Attrappe):
+    """Die Grundstellung des Schwenks scheitert, die Stellung `geht` gelingt (`None`: nichts gelingt mehr)."""
+
+    def __init__(self, geht=None):
+        super().__init__()
+        self.geht = geht
+
+    def halte(self, b, wert):
+        if b.name == "Schwenk" and wert != self.geht:
+            raise StellungFehler("Schwenk", wert, "Zwang")
+        super().halte(b, wert)
+
+
+def _schwenk_faellt_heraus(wert):
+    a = aufnahme()
+    a["verknuepfungen"]["Schwenk"]["partner"] = ["hebel", "platte"]  # bewegte Seite ohne Probeschritt
+    a["verknuepfungen"]["Schwenk"]["wert"] = wert
+    return a
+
+
+def test_herausgefallene_grenze_steht_wieder_auf_dem_gelesenen_wert():
+    """Zusatz Task 8: Die übrigen Grenzen fahren sonst aus einer Lage, die es im Bestand nicht gibt."""
+    mech = SchwenkFaelltHeraus(geht=30.0)
+    mech.werte["Schwenk"] = 70.0            # wo die gescheiterte Fahrt sie stehen ließ
+    erg = fahre_alle(mech, _schwenk_faellt_heraus(30.0))
+    assert mech.werte["Schwenk"] == 30.0 and "Ausgangslage" not in erg["Schwenk"]["hinweis"]
+    assert mech.unterdrueckt == set() and mech.gehalten == set() and erg["Hub"]["gefahren"] is True
+
+
+def test_nicht_zurueckgestellte_grenze_traegt_den_hinweis():
+    mech = SchwenkFaelltHeraus()
+    erg = fahre_alle(mech, _schwenk_faellt_heraus(30.0))
+    assert "Ausgangslage" in erg["Schwenk"]["hinweis"] and "Zwang" in erg["Schwenk"]["hinweis"]
+    assert mech.unterdrueckt == set() and mech.gehalten == set()
+
+
+def test_unbekannter_wert_der_grenze_traegt_den_hinweis():
+    erg = fahre_alle(SchwenkFaelltHeraus(), _schwenk_faellt_heraus(None))
+    assert "Wert der Grenze nicht gelesen" in erg["Schwenk"]["hinweis"]
+
+
+def test_probeschritt_stellt_auf_den_gelesenen_wert_zurueck():
+    a = aufnahme()
+    a["verknuepfungen"]["Schwenk"]["wert"] = 30.0
+    mech = Attrappe()
+    assert bewegte_seite(mech, "Schwenk", a["verknuepfungen"]["Schwenk"], a) == "hebel"
+    assert mech.werte["Schwenk"] == 30.0
+
+
+def test_gescheiterter_probeschritt_stellt_zurueck():
+    a = aufnahme()
+    a["verknuepfungen"]["Schwenk"]["wert"] = 30.0
+    mech = Attrappe(fehler_bei=("Schwenk", 90.0))
+    erg = fahre_alle(mech, a)
+    assert erg["Schwenk"]["gefahren"] is False and mech.gehalten == set() and mech.unterdrueckt == set()
+
+
+def test_ohne_fahrt_ist_null_nicht_false():
+    a = aufnahme()
+    e = ohne_fahrt(grenzen_der_aufnahme(a), "ohne Bewegung")
+    assert e["Hub"]["gefahren"] is None and e["Hub"]["hinweis"] == "ohne Bewegung" and e["Hub"]["min"] == 0.0
+    json.dumps(e)
 
 
 def test_probeschritt_gescheitert_kostet_nur_die_grenze():

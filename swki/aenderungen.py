@@ -393,6 +393,41 @@ def soll_teile(protokoll: dict, spec_pfad: Path, auftrag: str, standard: dict) -
     return {f"{dateiname(soll, auftrag, standard)}.sldprt": (protokoll, soll)}
 
 
+def teil_specs(protokoll: dict, spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, tuple[dict, Path]]:
+    """Dateiname im Lauf → (freigegebene Teil-Spec, Pfad der Spec) für `--referenzbau`; Eigenteile wie `soll_teile`."""
+    if art_der_datei(spec_pfad) == "baugruppe":
+        from swki.baugruppe.freigabe import freigegebene_teile  # spät importiert: swki.baugruppe nutzt swki.compiler
+        from swki.baugruppe.laden import lade_baugruppe
+        from swki.baugruppe.modell import dokument_name
+
+        bg = lade_baugruppe(spec_pfad)
+        freigegeben = freigegebene_teile(bg)
+        return {dokument_name(bg.quellen[bg.komponente_von(datei)], auftrag, standard): (freigegeben[datei],
+                                                                                         bg.pfad.parent / datei)
+                for datei in (protokoll.get("teile") or {}) if datei in freigegeben}
+    soll = freigegebene_spec(spec_pfad)
+    return {f"{dateiname(soll, auftrag, standard)}.sldprt": (soll, spec_pfad)}
+
+
+def soll_verknuepfungen_lauf(spec_pfad: Path, protokoll: dict) -> dict[str, dict]:
+    """`soll_verknuepfungen` eines Laufs: Verknüpfungen aus der Spec (Bauweg), Ausdrücke mit den freigegebenen Parametern, Namen
+    aus `protokoll["komponenten"]`."""
+    from swki.baugruppe.laden import lade_baugruppe  # spät importiert: swki.baugruppe nutzt swki.compiler
+
+    bg = lade_baugruppe(spec_pfad)
+    return soll_verknuepfungen(bg.spec, bg.quellen, freigegebene_spec(spec_pfad).get("parameter", {}),
+                               protokoll.get("komponenten") or [])
+
+
+def soll_lagen(spec_pfad: Path, lauf: int) -> dict | None:
+    """Prüfbericht des Laufs als Soll-Lagen (`lagen`, swki.bestand.abgleich.normalisiere_lagen); ältere Läufe tragen keine."""
+    try:
+        bericht = json.loads(lauf_datei(spec_pfad, lauf, "pruefbericht").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return bericht if isinstance(bericht, dict) else None
+
+
 def neue_dateien(ordner: Path, soll_sha: dict[str, str]) -> list[dict]:
     """SolidWorks-Dateien im Lauf-Ordner, die das Bauprotokoll nicht kennt (`[{datei, sha256}]`): ein neues Teil, das jemand dort
     abgelegt hat. Nur lesend; Sperrdateien (`~$`) zählen nicht."""
@@ -405,7 +440,7 @@ def neue_dateien(ordner: Path, soll_sha: dict[str, str]) -> list[dict]:
     return [{"datei": rel, "sha256": ist[rel]} for rel in abgleich_dateien({}, ist)["neu"]]
 
 
-def _baum(name: str, soll_t: dict, ist_bestand: dict | None, lesefehler: str | None, auftrag: str) -> dict:
+def baum_gegen_soll(name: str, soll_t: dict, ist_bestand: dict | None, lesefehler: str | None, auftrag: str) -> dict:
     """Der Baum eines gelesenen Teils gegen das Bauprotokoll; wo ein Vergleich nicht möglich war, steht der Grund da (nie ein
     „unverändert“)."""
     from swki.bestand.abgleich import abgleich_teil, ungeprueft_teil  # spät importiert: abgleich importiert dieses Modul
@@ -429,6 +464,19 @@ def _lies_baum(app, model) -> tuple[dict | None, str | None]:
         return None, f"{type(e).__name__}: {e}"
 
 
+def _baugruppe_block(app, model, spec_pfad: Path, lauf: int, protokoll: dict) -> dict:
+    """Der Block `baugruppe` einer geöffneten Baugruppe (swki.bestand.abgleich.abgleich_baugruppe, nur im Speicher gelesen). Ein
+    Lesefehler ist ein Befund, kein Abbruch: Die Maße gelten weiter, die Baugruppe bleibt unerklärt."""
+    from swki.bestand import sw_baugruppe_bestand  # spät importiert: zieht die Mechanik nach
+    from swki.bestand.abgleich import abgleich_baugruppe, ungeprueft_baugruppe  # spät importiert: abgleich braucht dieses Modul
+
+    try:
+        ist = sw_baugruppe_bestand.lies_baugruppe(app, model)
+    except Exception as e:  # COM-Fehler beim Lesen
+        return ungeprueft_baugruppe(f"Baugruppe nicht lesbar ({type(e).__name__}: {e})")
+    return abgleich_baugruppe(protokoll, soll_verknuepfungen_lauf(spec_pfad, protokoll), ist, soll_lagen(spec_pfad, lauf))
+
+
 def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Geänderte Dateien eines Laufs mit Abweichungen von der Freigabe; öffnet SolidWorks nur bei geänderten
     .sldprt/.sldasm (unsichtbar und schreibgeschützt) und speichert nie. Ohne Lauf-Ordner oder ohne geänderte Datei wird nichts
@@ -439,10 +487,11 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
     Parametern, siehe vorschlaege). Läufe mit Maßprotokoll lesen keine globalen Variablen: Teile vergleichen nur Maße,
     das Baugruppendokument nur Verknüpfungswerte; ältere Läufe vergleichen die globalen Variablen wie bisher.
 
-    Je Teil kommt baum dazu (swki.bestand.abgleich.abgleich_teil: neue und fehlende Features, neue Maße, Material, Eigenschaften).
-    „Datei geändert, Maße gleich“ steht nur noch da, wenn auch der Baum nichts erklärt, dann mit nicht_erklaert: true. neu nennt
-    SolidWorks-Dateien im Lauf-Ordner ohne Protokolleintrag. Hat der Lauf eine Bestandsaufnahme (Spec Bestandsdateien §8.5), öffnet
-    aenderungen nichts: geaendert nennt die SHA-256, abgleich den Befehl swki bestand abgleich."""
+    Je Teil kommt baum dazu (swki.bestand.abgleich.abgleich_teil: neue und fehlende Features, neue Maße, Material,
+    Eigenschaften), je Baugruppe baugruppe (abgleich_baugruppe: Komponenten, Verknüpfungen, Lagen). „Datei geändert, Maße
+    gleich“ steht nur noch da, wenn auch sie nichts erklären, dann mit nicht_erklaert: true. neu nennt SolidWorks-Dateien im
+    Lauf-Ordner ohne Protokolleintrag. Hat der Lauf eine Bestandsaufnahme (Spec Bestandsdateien §8.5), öffnet aenderungen
+    nichts: geaendert nennt die SHA-256, abgleich den Befehl swki bestand abgleich."""
     spec_pfad = spec_pfad.resolve()
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
@@ -490,14 +539,16 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
         for name in sw_dateien:
             massweg = name in soll_m  # Lauf mit Maßprotokoll: einzelne Maße, keine globalen Variablen
             ist_teil = name.lower().endswith(".sldprt")
-            ist_bestand, lesefehler = None, None
-            model = oeffne(app, ordner / name, sichtbar=False, nur_lesen=True)  # unsichtbar, schreibgeschützt, nie gespeichert
+            ist_bestand, lesefehler, block = None, None, None
+            # unsichtbar, schreibgeschützt, nie gespeichert; eine Baugruppe voll geladen, sonst zeigen ihre Komponenten nichts
+            model = oeffne(app, ordner / name, sichtbar=False, nur_lesen=True, **({} if ist_teil else {"voll": True}))
             try:
                 ist = {} if massweg else lies_globale_variablen(model)
                 if name.lower().endswith(".sldasm"):
                     from swki.baugruppe import sw_baugruppe  # spät importiert (Kreisimport)
 
                     ist |= {f"verknuepfung:{n}": w for n, w in sw_baugruppe.verknuepfungswerte(model).items()}
+                    block = _baugruppe_block(app, model, spec_pfad, lauf, protokoll)
                 ist_masse = lies_masse(model, soll_m[name]) if massweg else {}
                 if ist_teil and name in soll_t:
                     ist_bestand, lesefehler = _lies_baum(app, model)
@@ -510,18 +561,20 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
             masse_diff = mass_differenz(soll_m[name], ist_masse) if massweg else []
             eintrag = {"datei": name, "parameter": differenz, "masse": masse_diff,
                        "vorschlaege": vorschlaege(masse_diff, soll[name])}
-            baum = _baum(name, soll_t, ist_bestand, lesefehler, auftrag) if ist_teil else None
+            baum = baum_gegen_soll(name, soll_t, ist_bestand, lesefehler, auftrag) if ist_teil else None
             if baum is not None:
                 eintrag["baum"] = baum
+            if block is not None:
+                eintrag["baugruppe"] = block
+            gefunden = baum if baum is not None else block
             if not differenz and masse_diff and all(d["ist"] is None for d in masse_diff):
                 namen = ", ".join(d["name"] for d in masse_diff)
                 eintrag["hinweis"] = ((f"Maß {namen} fehlt" if len(masse_diff) == 1 else f"Maße {namen} fehlen")
                                       + " (Feature gelöscht?) – Nutzer fragen")
-            elif not differenz and not masse_diff and (baum is None or baum["nicht_erklaert"]):
+            elif not differenz and not masse_diff and (gefunden is None or gefunden["nicht_erklaert"]):
                 gleich = (("Verknüpfungswerte gleich" if name.lower().endswith(".sldasm") else "Maße gleich")
                           if massweg else "Parameter gleich")
-                wo = ("Baum, Material und Eigenschaften" if baum is not None
-                      else "Komponenten und Verknüpfungen (dieser Weg liest sie nicht)")
+                wo = "Baum, Material und Eigenschaften" if baum is not None else "Komponenten, Verknüpfungen und Lagen"
                 eintrag["hinweis"] = f"Datei geändert, {gleich}, nicht erklärt durch {wo} – den Nutzer fragen, was geändert wurde"
                 eintrag["nicht_erklaert"] = True
             ergebnis.append(eintrag)

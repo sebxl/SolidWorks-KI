@@ -29,7 +29,7 @@ from pathlib import Path
 from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_REFERENZ, KINDER_FEHLEN
 from swki.bestand.folgen import gleicher_ausdruck, namen_in, rechte_seite
 from swki.bestand.spec import _nahe
-from swki.bestand.sw_bestand import (SW_BENANNTE_KONFIGURATIONEN, _eigenschaften, _schalte, _wert, baum_features, bstr_array,
+from swki.bestand.sw_bestand import (SW_BENANNTE_KONFIGURATIONEN, eigenschaften_von, schalte, _wert, baum_features, bstr_array,
                                      links_von, material_von, unter_namen, unterdrueckt)
 from swki.compiler import sw
 from swki.compiler.eigenschaften import SW_CUSTOM_INFO_TEXT, SW_CUSTOM_PROPERTY_REPLACE_VALUE, finde_material
@@ -115,10 +115,10 @@ def _je_konfiguration(ctx, aufnahme: dict, konfigurationen: list[str], messen: C
     aktive der Aufnahme. Kein `finally`: Nach einem Fehler wird ohnehin nicht gespeichert."""
     aus = {}
     for k in konfigurationen:
-        _schalte(ctx.model, k)
+        schalte(ctx.model, k)
         ctx.model.EditRebuild3
         aus[k] = messen(k)
-    _schalte(ctx.model, aufnahme["aktiv"])
+    schalte(ctx.model, aufnahme["aktiv"])
     _frisch(ctx)
     return aus
 
@@ -406,7 +406,7 @@ def eigenschaft(ctx, p: dict, aufnahme: dict) -> list[str]:
         verwalter.Delete2(name)
     else:
         verwalter.Add3(name, SW_CUSTOM_INFO_TEXT, neu, SW_CUSTOM_PROPERTY_REPLACE_VALUE)
-    if _eigenschaften(ctx.model, wo).get(name) != neu:
+    if eigenschaften_von(ctx.model, wo).get(name) != neu:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Eigenschaft {name} ließ sich nicht {'entfernen' if neu is None else 'setzen'}",
                         schritt="eigenschaft")
     return [name]

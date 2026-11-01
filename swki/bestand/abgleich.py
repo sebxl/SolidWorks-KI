@@ -412,6 +412,17 @@ def _verknuepfungen(soll_mates: dict[str, tuple[str, str]], soll_v: dict, ist_v:
             "werte": [w for w in werte if w["ist"] is None or abs(w["delta"]) > 1e-6]}
 
 
+def ungeprueft_baugruppe(grund: str) -> dict:
+    """Ergebnis einer Baugruppe, die nicht verglichen werden konnte: leer, `vollstaendig` falsch, `nicht_erklaert` wahr, der
+    Grund steht in `luecken`. Nie ein „unverändert“."""
+    return {"komponenten_neu": [], "komponenten_weg": [], "andere_datei": [], "umbenannt": [], "komponenten_unterdrueckt": [],
+            "verknuepfungen_neu": [], "verknuepfungen_weg": [], "typ_geaendert": [], "partner_geaendert": [],
+            "ausrichtung_geaendert": [], "werte": [], "fehler": [], "unterdrueckt": [], "lagen": [], "lage_geprueft": False,
+            "lage_ungeprueft": [], "konfigurationen_neu": [],
+            "komponenten_geprueft": False, "verknuepfungen_geprueft": False, "vollstaendig": False, "luecken": [grund],
+            "grenzen": list(GRENZEN_BAUGRUPPE), "nicht_erklaert": True}
+
+
 def abgleich_baugruppe(protokoll: dict, soll_verknuepfungen: dict | None, ist: dict, lagen=None) -> dict:
     """Bauprotokoll einer Baugruppe und Soll-Daten je Verknüpfungs-Id (`soll_verknuepfungen` in swki.aenderungen: `{typ, partner:
     [SolidWorks-Name, …], ausrichtung, wert, min, max}`) gegen die gelesene Aufnahme `ist` (Format `bestand.json` einer Baugruppe).
