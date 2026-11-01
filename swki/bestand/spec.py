@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 from swki.auftrag import auftrag_name
-from swki.bestand.ablage import aufnahmen, lade_aufnahme
+from swki.bestand.ablage import aufnahmen, lade_aufnahme, lade_datei_aufnahme
 from swki.bestand.fehler import (BEREICH_FEHLT, BESTAND_ALTWERT, BESTAND_EINHEIT, BESTAND_REFERENZ, BESTAND_UNBEKANNT,
                                  BESTAND_VERALTET, FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
 from swki.bestand.folgen import folgen_von, gleicher_ausdruck, kinder_von, rechte_seite, vergleichsname
@@ -436,10 +436,29 @@ def pruefe_lauf_bestand(spec: dict, protokoll: dict, lauf: int) -> None:
                         "swki bauen", lauf=lauf, protokoll=ist, spec=soll)
 
 
+def _datei_aufnahmen(spec: dict, pfad: Path):
+    """`datei_aufnahme(rel)` für die Prüfung einer Baugruppen-Spec: die Aufnahme einer weiteren Datei der Baugruppen-Aufnahme."""
+    r, auftrag, nummer = lade_rechner(), auftrag_name(pfad), spec["bestand"]["aufnahme"]
+    return lambda rel: lade_datei_aufnahme(r, auftrag, nummer, rel)
+
+
+def ist_baugruppen_aufnahme(aufnahme: dict) -> bool:
+    """Weiche nach `aufnahme["art"]`: Aufnahmen von Teilen (Etappe 1) tragen kein `art`, die einer Baugruppe `baugruppe`."""
+    return aufnahme.get("art") == "baugruppe"
+
+
 def _geprueft(pfad: Path) -> tuple[dict, dict, list[dict]]:
-    """(Spec, Aufnahme, Hinweise) nach der vollen Prüfung; alle Befunde auf einmal (`SpecFehler`)."""
+    """(Spec, Aufnahme, Hinweise) nach der vollen Prüfung; alle Befunde auf einmal (`SpecFehler`). Eine Baugruppen-Aufnahme geht über
+    ihre Scheiben (`pruefe_baugruppe`), Teile laufen wie in Etappe 1."""
     spec = lade_aenderung(pfad)
     aufnahme = aufnahme_zu(spec, pfad)
+    if ist_baugruppen_aufnahme(aufnahme):
+        from swki.bestand.spec_baugruppe import pruefe_baugruppe  # spät importiert (Kreisimport, nutzt die Funktionen dieses Moduls)
+
+        befunde, hinweise = pruefe_baugruppe(spec, aufnahme, _datei_aufnahmen(spec, pfad), pfad.parent)
+        if befunde:
+            raise SpecFehler(befunde)
+        return spec, aufnahme, hinweise
     befunde = befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
     feature_b, hinweise = feature_befunde(spec, aufnahme, pfad.parent)
     if befunde or feature_b:
@@ -451,15 +470,23 @@ def validieren(pfad: Path) -> dict:
     """`swki validieren` für art: aenderung: Schema und Plausibilität, dann die Prüfung gegen die Aufnahme (§4.4). `folgen`: die
     aus der Aufnahme berechneten Folgemaße je `mass`-/`gleichung`-Punkt, zum Eintragen in die Spec und für die Freigabe-Vorlage."""
     spec, aufnahme, hinweise = _geprueft(pfad)
-    aelter = bool(aufnahme["datei"].get("version_aelter"))
-    if aelter:
-        hinweise.append({"art": "version_aelter", "pfad": "bestand",
-                         "meldung": "Die Datei stammt aus einer älteren SolidWorks-Version: swki bauen speichert sie nur mit "
-                                    "--hochstufen, danach lässt sie sich nur noch mit SolidWorks "
-                                    f"{aufnahme.get('sw_jahr', '')} oder neuer lesen"})
+    if ist_baugruppen_aufnahme(aufnahme):
+        # je Datei, die gespeichert wird: Hinweise `version_aelter` stehen schon in `hinweise`; Folgen aus der Aufnahme des Teils
+        from swki.bestand.spec_baugruppe import ergebnis_baugruppe
+
+        zusatz = ergebnis_baugruppe(spec, aufnahme, _datei_aufnahmen(spec, pfad), hinweise)
+        aelter, folgen = zusatz.pop("version_aelter"), zusatz.pop("folgen")
+    else:
+        aelter = bool(aufnahme["datei"].get("version_aelter"))
+        if aelter:
+            hinweise.append({"art": "version_aelter", "pfad": "bestand",
+                             "meldung": "Die Datei stammt aus einer älteren SolidWorks-Version: swki bauen speichert sie nur mit "
+                                        "--hochstufen, danach lässt sie sich nur noch mit SolidWorks "
+                                        f"{aufnahme.get('sw_jahr', '')} oder neuer lesen"})
+        zusatz, folgen = {}, {p["id"]: folgen_von(p, aufnahme) for p in spec["punkte"] if p["typ"] in ("mass", "gleichung")}
     return {"gueltig": True, "spec": str(pfad), "art": "aenderung", "name": spec["name"], "punkte": len(spec["punkte"]),
             "pruefsumme": pruefsumme(spec, teil_summen_aenderung(spec, pfad)), "hinweise": hinweise, "version_aelter": aelter,
-            "folgen": {p["id"]: folgen_von(p, aufnahme) for p in spec["punkte"] if p["typ"] in ("mass", "gleichung")}}
+            "folgen": folgen, **zusatz}
 
 
 def _teil_specs(spec: dict, pfad: Path) -> dict[str, dict]:
