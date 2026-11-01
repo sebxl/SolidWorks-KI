@@ -78,6 +78,17 @@ def test_gleiche_namen_aus_zwei_ordnern(tmp_path):
     assert str(eins).replace("\\", "\\\\") in nennt and str(zwei).replace("\\", "\\\\") in nennt
 
 
+def test_exakt_gleicher_name_aus_zwei_ordnern(tmp_path):
+    """Gleiches `rel`, andere Quelle: die zweite darf die erste nicht still überschreiben."""
+    haupt = _datei(tmp_path / "kunde", "Haupt.SLDASM", b"h")
+    eins = _datei(tmp_path / "x", "S.sldprt", b"1")
+    zwei = _datei(tmp_path / "y", "S.sldprt", b"2")
+    with pytest.raises(BestandFehler) as e:
+        ordne_referenzen(haupt, [str(eins), str(zwei)])
+    assert e.value.daten["code"] == BESTAND_REFERENZ_EXTERN
+    assert sorted(e.value.daten["gleiche_namen"]["s.sldprt"]) == sorted([str(eins), str(zwei)])
+
+
 def test_gleiche_namen_im_unterordner_und_flach(tmp_path):
     """SolidWorks öffnet keine zwei gleichnamigen Dokumente: auch teile/A und ein fremdes A kollidieren."""
     haupt = _datei(tmp_path / "kunde", "Haupt.SLDASM", b"h")

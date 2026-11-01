@@ -160,7 +160,7 @@ def ordne_referenzen(haupt: Path, gespeichert: list[str]) -> dict[str, Path]:
     Baugruppe liegt, behält seine relative Struktur, alles andere liegt flach daneben. Virtuelle Komponenten (Name mit `^`)
     und die Hauptbaugruppe selbst sind keine Referenz."""
     ordner = PureWindowsPath(haupt.parent)
-    gefunden: dict[str, tuple[str, Path]] = {}  # rel → (Name klein, Quelle)
+    gefunden: list[tuple[str, str, Path]] = []  # (rel, Name klein, Quelle), nie überschreiben: gleiche rel prüft der Namensvergleich
     fehlen: list[str] = []
     for text in gespeichert:
         pfad = PureWindowsPath(text)
@@ -179,19 +179,19 @@ def ordne_referenzen(haupt: Path, gespeichert: list[str]) -> dict[str, Path]:
             except ValueError:
                 rel = pfad.name
         if _schluessel(quelle) != _schluessel(haupt):
-            gefunden[rel] = (pfad.name.lower(), quelle)
+            gefunden.append((rel, pfad.name.lower(), quelle))
     if fehlen:
         raise BestandFehler(BESTAND_REFERENZ_FEHLT, f"{len(fehlen)} referenzierte Dateien fehlen (weder neben {haupt.name} noch am "
                                                     f"gespeicherten Pfad): {', '.join(fehlen)}", fehlen=fehlen)
     je_name: dict[str, dict[str, Path]] = {}
-    for name, quelle in gefunden.values():
+    for _, name, quelle in gefunden:
         je_name.setdefault(name, {})[_schluessel(quelle)] = quelle
     doppelt = {name: sorted(str(q) for q in quellen.values()) for name, quellen in je_name.items() if len(quellen) > 1}
     if doppelt:
         raise BestandFehler(BESTAND_REFERENZ_EXTERN,
                             f"Gleiche Dateinamen aus verschiedenen Ordnern: {', '.join(sorted(doppelt))} – SolidWorks öffnet "
                             "keine zwei gleichnamigen Dokumente, die Baugruppe lässt sich so nicht kopieren", gleiche_namen=doppelt)
-    return {rel: quelle for rel, (_, quelle) in gefunden.items()}
+    return {rel: quelle for rel, _, quelle in gefunden}
 
 
 def sperrdateien(quellen: dict[str, Path]) -> list[str]:
