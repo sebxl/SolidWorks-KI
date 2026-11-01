@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from swki.baugruppe import sw_baugruppe
+from swki.baugruppe import bau, sw_baugruppe
 from swki.baugruppe.fehler import KOMPONENTE_FEHLER, TEIL_BAU, VERKNUEPFUNG_FEHLER
 from swki.baugruppe.modell import Quelle
 from swki.baugruppe.referenzen import TeilReferenz
@@ -15,7 +15,7 @@ from swki.bestand import punkte_baugruppe
 from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_REFERENZ, NAME_BELEGT, VERKNUEPFUNGEN_FEHLEN
 from swki.bestand.punkte_baugruppe import (PUNKTE, BauKontext, NeueDatei, hole_neue_dateien, loesche_komponente, punkt_handler)
 from swki.bestand.sw_baugruppe_bestand import lies_komponenten, lies_verknuepfungen
-from swki.bestand.vergleich_baugruppe import vergleiche_baugruppe
+from swki.bestand.vergleich_baugruppe import ersetzen_ziele, vergleiche_baugruppe
 from swki.compiler.anker import AnkerFehler
 from swki.compiler.fehler import REFERENZ_NICHT_GEFUNDEN, UNBEKANNTER_TYP, BauFehler
 from swki.compiler.protokoll import Protokoll
@@ -35,7 +35,8 @@ def kontext_von(tmp_path: Path, spec: dict | None = None, konfigurationen=KONFIG
     asm = muster_baugruppe(ordner, konfigurationen)
     auftrag = tmp_path / "auftraege" / "A1"
     auftrag.mkdir(parents=True)
-    aufnahme = {"konfigurationen": list(konfigurationen), "aktiv": konfigurationen[0], "dateien": {}}
+    aufnahme = {"konfigurationen": list(konfigurationen), "aktiv": konfigurationen[0], "dateien": {},
+                "komponenten": lies_komponenten(asm, list(konfigurationen))}
     return BauKontext(SimpleNamespace(), asm, spec or {"punkte": [], "parameter": {"H": 12.5}}, auftrag / "rev.yaml", ordner,
                       aufnahme, {"toleranzen": {"anker_mm": 0.01}}, protokoll=Protokoll("A1", "rev.yaml", 3, 2025))
 
@@ -139,9 +140,9 @@ def bibliothek(tmp_path, monkeypatch):
     monkeypatch.setattr(punkte_baugruppe.normteil_befehle, "hole", hole_normteil)
     monkeypatch.setattr(punkte_baugruppe.kaufteil_befehle, "hole", hole_kaufteil)
     monkeypatch.setattr(punkte_baugruppe, "lade_rechner", lambda: SimpleNamespace(sw_jahr=2025))
-    monkeypatch.setattr(punkte_baugruppe, "bibliotheksordner", lambda r: quelle)
-    monkeypatch.setattr(punkte_baugruppe, "lies_eintrag", lambda ordner, schluessel: {"pruefsumme": "xyz"})
-    monkeypatch.setattr(punkte_baugruppe, "angaben_fuer_bericht", lambda eintrag: {"quelle": "beleg"})
+    monkeypatch.setattr(bau, "bibliotheksordner", lambda r: quelle)
+    monkeypatch.setattr(bau, "lies_eintrag", lambda ordner, schluessel: {"pruefsumme": "xyz"})
+    monkeypatch.setattr(bau, "angaben_fuer_bericht", lambda eintrag: {"quelle": "beleg"})
     return aufrufe
 
 
@@ -283,11 +284,61 @@ def test_neu_wie_mit_ausdruecklicher_konfiguration(b):
     assert komponenten(b)["Schraube-12"]["konfigurationen"] == {"Standard": "Kurz", "Leicht": "Kurz"}
 
 
-def test_neu_wie_unterdrueckte_vorlage_braucht_kein_modell(b):
-    """Plan Review Focus 4: `GetModelDoc2` ist dann `None`, die Datei steht trotzdem fest."""
+def test_neu_wie_unterdrueckte_vorlage_mit_aktiver_instanz_laedt_nichts(b, monkeypatch):
+    """Plan Review Focus 4: `GetModelDoc2` ist dann `None`, die Datei steht trotzdem fest. Geladen ist sie über Schraube-2, ein
+    zweites Öffnen bräche ab (`PruefFehler`: bereits offen)."""
+    monkeypatch.setattr(punkte_baugruppe, "oeffne_in", lambda *a, **k: pytest.fail("Die Datei ist schon geladen"))
     b.asm.komp("Schraube-1").unterdrueckt.add("Standard")
     assert punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"}) == ["Schraube-12"]
     assert komponenten(b)["Schraube-12"]["unterdrueckt"] == {"Standard": False, "Leicht": False}
+
+
+def test_neu_wie_nimmt_den_pfad_im_lauf_nie_den_gespeicherten(b, tmp_path, monkeypatch):
+    """§8.1a: `GetPathName` einer unterdrückten Komponente nennt den gespeicherten Pfad, in der Kopie also den Kundenordner. Ist
+    keine Instanz aktiv, lädt der Handler die Datei selbst, über den Pfadschutz."""
+    geoeffnet = []
+
+    def oeffne_in(app, pfad, wurzel, sichtbar, nur_lesen):
+        geoeffnet.append((pfad, wurzel))
+        return "teil"
+
+    monkeypatch.setattr(punkte_baugruppe, "oeffne_in", oeffne_in)
+    b.asm.pfade_wie_gespeichert = tmp_path / "kundenordner"
+    b.aufnahme["dateien"] = {"teile/Schraube.SLDPRT": {}}
+    for n in range(1, 12):
+        b.asm.komp(f"Schraube-{n}").unterdrueckt.add("Standard")
+    punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"})
+    soll = b.ordner / "teile" / "Schraube.SLDPRT"
+    assert b.asm.eingefuegt[-1]["pfad"] == str(soll)
+    assert geoeffnet == [(soll, b.ordner)] and b.offen == ["teil"]
+
+
+def test_neu_wie_ohne_lesbare_datei_bricht_ab(b, monkeypatch):
+    roh = lies_komponenten
+
+    def ohne_datei(*argumente):
+        k = roh(*argumente)
+        k["Schraube-1"]["datei"] = None
+        return k
+
+    monkeypatch.setattr(punkte_baugruppe, "lies_komponenten", ohne_datei)
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"})
+    assert e.value.code == KOMPONENTE_FEHLER and not b.asm.eingefuegt
+
+
+def test_neu_wie_ohne_lesbare_konfiguration_bricht_ab(b, monkeypatch):
+    roh = lies_komponenten
+
+    def ohne_konfiguration(*argumente):
+        k = roh(*argumente)
+        del k["Schraube-1"]["konfigurationen"]["Leicht"]
+        return k
+
+    monkeypatch.setattr(punkte_baugruppe, "lies_komponenten", ohne_konfiguration)
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"})
+    assert e.value.code == KOMPONENTE_FEHLER and "Leicht" in str(e.value) and not b.asm.eingefuegt
 
 
 def test_neu_wie_unbekannte_vorlage(b):
@@ -447,20 +498,14 @@ def test_ersetzen_fuehrt_alt_zu_neu(b):
 def test_ersetzen_fuehrt_alt_zu_neu_bei_alle_instanzen(b):
     neue_datei(b, "Neu.sldprt")
     namen = punkt_handler("komponente_ersetzen")(b, ALLE_SCHRAUBEN)
-    assert b.asm.ersetzungen[0]["alle"] is True
-    assert b.ersetzt == {f"Schraube-{n}": f"Neu-{n}" for n in range(1, 12)}
+    assert len(b.asm.ersetzungen) == 11 and not any(e["alle"] for e in b.asm.ersetzungen)
+    assert set(b.ersetzt) == {f"Schraube-{n}" for n in range(1, 12)}
+    assert sorted(b.ersetzt.values()) == sorted(f"Neu-{n}" for n in range(1, 12))
     assert sorted(namen) == sorted(b.ersetzt.values()) and b.neue["p1"] == namen
 
 
-def test_ersetzen_alle_instanzen_ohne_lesbare_datei_bricht_ab(b, monkeypatch):
-    roh = lies_komponenten
-
-    def ohne_datei(*argumente):
-        k = roh(*argumente)
-        k["Schraube-1"]["datei"] = None
-        return k
-
-    monkeypatch.setattr(punkte_baugruppe, "lies_komponenten", ohne_datei)
+def test_ersetzen_alle_instanzen_ohne_lesbare_datei_bricht_ab(b):
+    b.aufnahme["komponenten"]["Schraube-1"]["datei"] = None
     neue_datei(b, "Neu.sldprt")
     with pytest.raises(BauFehler) as e:
         punkt_handler("komponente_ersetzen")(b, ALLE_SCHRAUBEN)
@@ -470,6 +515,7 @@ def test_ersetzen_alle_instanzen_ohne_lesbare_datei_bricht_ab(b, monkeypatch):
 def test_ersetzen_alle_instanzen_in_einer_unterbaugruppe_bricht_ab(b):
     """`ReplaceComponents2` kennt nur die oberste Ebene (API-Hilfe), `vergleiche_baugruppe` zählt jede Ebene als Instanz."""
     b.asm.komponente("Unter-1/Schraube-1", "teile/Schraube.SLDPRT")
+    b.aufnahme["komponenten"] = komponenten(b)
     neue_datei(b, "Neu.sldprt")
     with pytest.raises(BauFehler) as e:
         punkt_handler("komponente_ersetzen")(b, ALLE_SCHRAUBEN)
@@ -656,6 +702,53 @@ def test_kopplung_in_fremder_baugruppe_gibt_es_nicht(b, anker, art):
     with pytest.raises(BauFehler) as e:
         punkt_handler("verknuepfung_neu")(b, p)
     assert e.value.code == VERKNUEPFUNG_FEHLER and "skript" in str(e.value)
+
+
+def test_name_einer_vorhandenen_verknuepfung_misst_nie_die_alte(b, anker, monkeypatch):
+    """Gleicher Typ, gleiche Partner, gleicher Wert wie `Abstand1`: Gemessen würde die alte, und die neue trägt den falschen
+    Wert."""
+    roh = b.asm.AddMate5
+
+    def falsch(typ, ausrichtung, flip, d, *rest):
+        return roh(typ, ausrichtung, flip, 0.001, *rest)
+
+    monkeypatch.setattr(b.asm, "AddMate5", falsch)
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_neu")(b, verbinde("Schraube-1", "Grund-1", id="Abstand1", art="abstand", wert=3))
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "Abstand1" in str(e.value) and e.value.schritt == "nachmessen"
+
+
+def test_name_einer_vorhandenen_verknuepfung_ohne_gross_und_klein(b, anker):
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_neu")(b, verbinde("Schraube-1", "Grund-1", id="abstand1", art="abstand", wert=3))
+    assert e.value.code == VERKNUEPFUNG_FEHLER and e.value.schritt == "nachmessen"
+
+
+def test_ausrichtung_wird_nachgemessen(b, anker, monkeypatch):
+    roh = b.asm.AddMate5
+
+    def umgekehrt(typ, ausrichtung, *rest):
+        return roh(typ, 1 - ausrichtung, *rest)
+
+    monkeypatch.setattr(b.asm, "AddMate5", umgekehrt)
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_neu")(b, verbinde(ausrichtung="gleich"))
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "Ausrichtung" in str(e.value)
+
+
+def test_ausrichtung_steht_wie_genannt(b, anker):
+    punkt_handler("verknuepfung_neu")(b, verbinde(ausrichtung="entgegengesetzt"))
+    assert mates(b)["v1"]["ausrichtung"] == 1
+
+
+def test_ohne_genannte_ausrichtung_wird_sie_nicht_verlangt(b, anker, monkeypatch):
+    roh = b.asm.AddMate5
+
+    def umgekehrt(typ, ausrichtung, *rest):
+        return roh(typ, 1, *rest)
+
+    monkeypatch.setattr(b.asm, "AddMate5", umgekehrt)
+    assert punkt_handler("verknuepfung_neu")(b, verbinde()) == ["v1"]
 
 
 def test_doppelter_name_scheitert_still_und_faellt_beim_nachmessen_auf(b, anker):
@@ -901,3 +994,146 @@ def test_lage_der_uebrigen_bleibt_beim_einfuegen(b):
     assert komponenten(b)["Schlitten-1"]["transform"]["Standard"] == lage(0.010)
     assert komponenten(b)["Schraube-12"]["transform"]["Standard"] == lage()
 
+
+# --- Nicht lesbar ist nie Erfolg --------------------------------------------------------------------------------------------
+
+def verknuepfungen_lesen_als(monkeypatch, aendere):
+    """Alle Lesungen laufen durch `aendere`, auch die vor dem Schreiben: nicht lesbar auf beiden Seiten ist nicht gleich."""
+    roh = lies_verknuepfungen
+
+    def lies(*argumente):
+        m = roh(*argumente)
+        aendere(m)
+        return m
+
+    monkeypatch.setattr(punkte_baugruppe, "lies_verknuepfungen", lies)
+
+
+def test_ersetzen_partner_auf_beiden_seiten_nicht_lesbar(b, monkeypatch):
+    neue_datei(b, "Neu.sldprt")
+    verknuepfungen_lesen_als(monkeypatch, lambda m: m["Hub"].update(partner=None))
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("komponente_ersetzen")(b, {"id": "p1", "komponente": "Schlitten-1", "quelle": QUELLE})
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "Hub" in str(e.value)
+
+
+def test_ersetzen_fehlercode_nicht_lesbar(b, monkeypatch):
+    neue_datei(b, "Neu.sldprt")
+    verknuepfungen_lesen_als(monkeypatch, lambda m: m["Hub"]["fehler"].pop("Leicht"))
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("komponente_ersetzen")(b, {"id": "p1", "komponente": "Schlitten-1", "quelle": QUELLE})
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "Hub" in str(e.value) and "Leicht" in str(e.value)
+
+
+def test_ersetzen_konfiguration_nicht_lesbar(b, monkeypatch):
+    neue_datei(b, "Neu.sldprt")
+    roh = lies_komponenten
+
+    def lies(*argumente):
+        k = roh(*argumente)
+        if "Neu-1" in k:
+            del k["Neu-1"]["konfigurationen"]["Leicht"]
+        return k
+
+    monkeypatch.setattr(punkte_baugruppe, "lies_komponenten", lies)
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("komponente_ersetzen")(b, {"id": "p1", "komponente": "Schlitten-1", "quelle": QUELLE,
+                                                 "konfiguration": "Lang"})
+    assert e.value.code == KOMPONENTE_FEHLER and "Leicht" in str(e.value)
+
+
+def test_wert_in_den_uebrigen_nicht_lesbar(b, monkeypatch):
+    verknuepfungen_lesen_als(monkeypatch, lambda m: m["Abstand1"]["werte"].pop("Standard"))
+    p = {"id": "p1", "verknuepfung": "Abstand1", "alt": 3, "neu": 5, "konfigurationen": ["Leicht"]}
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_wert")(b, p)
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "Standard" in str(e.value) and "nicht lesbar" in str(e.value)
+
+
+def test_wert_fehlercode_nicht_lesbar(b, monkeypatch):
+    verknuepfungen_lesen_als(monkeypatch, lambda m: m["Abstand1"]["fehler"].pop("Leicht"))
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_wert")(b, {"id": "p1", "verknuepfung": "Abstand1", "alt": 3, "neu": 5})
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "Leicht" in str(e.value)
+
+
+def test_wert_ohne_grenzen_bleibt_ohne_grenzen(b):
+    """`None` in einem gelesenen Eintrag heißt: trägt keinen Wert. Das ist gleich und nicht „nicht lesbar“."""
+    assert punkt_handler("verknuepfung_wert")(b, {"id": "p1", "verknuepfung": "Abstand1", "alt": 3, "neu": 5}) == ["Abstand1"]
+
+
+# --- Handler und Vergleich zusammen -----------------------------------------------------------------------------------------
+
+def lauf(b: BauKontext, punkte: list[dict], dateien: list[str]) -> dict:
+    b.spec["punkte"] = punkte
+    vorher = stand(b)
+    for p in punkte:
+        punkt_handler(p["typ"])(b, p)
+    e = vergleiche_baugruppe({"punkte": punkte, "parameter": {}}, vorher, stand(b), b.neue, b.ersetzt, dateien)
+    return {x["id"]: (x["ok"], x.get("hinweis")) for x in e if x["ok"] is not True}
+
+
+def test_alle_sechs_zusammen(b, anker):
+    neue_datei(b)
+    neue_datei(b, "Neu.sldprt", art="teil", schluessel="teil:neu.yaml:")
+    punkte = [{"id": "s1", "typ": "komponente_neu", "quelle": QUELLE},
+              {"id": "s2", "typ": "komponente_neu", "wie": "Schraube-4", "fixiert": True},
+              {"id": "e1", "typ": "komponente_ersetzen", "komponente": "Schraube-2", "quelle": {"teil": "neu.yaml"}},
+              {"id": "w0", "typ": "komponente_entfernen", "komponente": "Schraube-3", "verknuepfungen": []},
+              {"typ": "verknuepfung_neu", **verbinde("s1", "Grund-1", art="abstand", wert=4)},
+              {"id": "w1", "typ": "verknuepfung_wert", "verknuepfung": "Abstand1", "alt": 3, "neu": 5},
+              {"id": "l1", "typ": "verknuepfung_loeschen", "verknuepfung": "Deckungsgleich1"}]
+    assert lauf(b, punkte, ["ISO4762_M5x20.sldprt", "Neu.sldprt"]) == {}
+
+
+ENTFERNEN = {"id": "w0", "typ": "komponente_entfernen", "komponente": "Schraube-3", "verknuepfungen": []}
+ALLE = {"typ": "komponente_ersetzen", **ALLE_SCHRAUBEN, "id": "e1"}
+
+
+@pytest.mark.parametrize("punkte", [[ENTFERNEN, ALLE], [ALLE, ENTFERNEN]], ids=["erst_entfernen", "erst_ersetzen"])
+def test_eine_schraube_weg_die_uebrigen_tauschen(b, punkte):
+    neue_datei(b, "Neu.sldprt")
+    assert lauf(b, punkte, ["Neu.sldprt"]) == {}
+    assert "Schraube-3" not in b.ersetzt and len(b.ersetzt) == 10
+    assert "Schraube-3" not in komponenten(b)
+    assert sum(k["datei"] == "Neu.sldprt" for k in komponenten(b).values()) == 10
+
+
+def test_ersetzen_trifft_die_zum_entfernen_genannte_nicht(b):
+    b.spec["punkte"] = [ALLE, ENTFERNEN]
+    neue_datei(b, "Neu.sldprt")
+    punkt_handler("komponente_ersetzen")(b, ALLE)
+    assert "Schraube-3" in komponenten(b)
+
+
+def test_ersetzen_einer_entfernten_unterbaugruppe_zaehlt_ihre_kinder_nicht(b):
+    b.asm.komponente("Unter-1/Schraube-1", "teile/Schraube.SLDPRT")
+    b.aufnahme["komponenten"] = komponenten(b)
+    neue_datei(b, "Neu.sldprt")
+    entfernen = {"id": "w0", "typ": "komponente_entfernen", "komponente": "Unter-1", "verknuepfungen": []}
+    assert lauf(b, [entfernen, ALLE], ["Neu.sldprt"]) == {}
+
+
+# --- Die gemeinsame Instanzmenge --------------------------------------------------------------------------------------------
+
+KOMPONENTEN = {"A-1": {"datei": "A.SLDPRT"}, "A-2": {"datei": "a.sldprt"}, "B-1": {"datei": "B.SLDPRT"},
+               "Sub-1": {"datei": "Sub.SLDASM"}, "Sub-1/A-3": {"datei": "A.SLDPRT"}}
+
+
+def test_ziele_ohne_alle_instanzen_nur_die_genannte():
+    assert ersetzen_ziele({"komponente": "A-1"}, KOMPONENTEN, []) == (["A-1"], [])
+
+
+def test_ziele_alle_instanzen_jede_ebene():
+    assert ersetzen_ziele({"komponente": "A-1", "alle_instanzen": True}, KOMPONENTEN, []) == (["A-1", "A-2", "Sub-1/A-3"], [])
+
+
+def test_ziele_ohne_die_entfernten_samt_kindern():
+    punkte = [{"typ": "komponente_entfernen", "komponente": "A-2"}, {"typ": "komponente_entfernen", "komponente": "Sub-1"}]
+    assert ersetzen_ziele({"komponente": "A-1", "alle_instanzen": True}, KOMPONENTEN, punkte) == (["A-1"], [])
+
+
+def test_ziele_nicht_lesbare_datei_ist_unbewiesen():
+    k = {**KOMPONENTEN, "A-2": {"datei": None}}
+    ziele, unlesbar = ersetzen_ziele({"komponente": "A-1", "alle_instanzen": True}, k, [])
+    assert ziele == ["A-1", "Sub-1/A-3"] and "A-2" in unlesbar[0]

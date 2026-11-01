@@ -14,6 +14,8 @@ Ebene darf Ziel eines Punkts sein, eine in einer Unterbaugruppe nur Partner eine
 from collections.abc import Callable
 from pathlib import Path, PureWindowsPath
 
+from swki.baugruppe.aufloesen import ANLAGE
+from swki.baugruppe.kopplung import KOPPLUNGEN
 from swki.baugruppe.laden import kaufteil_quelle, normteil_quelle
 from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, MASS_GESTEUERT, NAME_BELEGT, VERKNUEPFUNGEN_FEHLEN
 from swki.bestand.folgen import folgen_von
@@ -21,6 +23,7 @@ from swki.bestand.scheiben import (aenderung_an_haupt, datei_schluessel, dateien
                                    zurueck)
 from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _alt_befund, _befund, _gewaehlt, _ist_relativ, _konfig_befunde, befunde_gegen_aufnahme,
                                feature_befunde)
+from swki.bestand.vergleich_baugruppe import ersetzen_ziele
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.laden import SpecFehler, lade_spec, lade_yaml
 
@@ -29,6 +32,12 @@ TEIL_TYPEN = frozenset({"mass", "gleichung", "unterdruecken", "aufheben", "loesc
 # Pflichtfelder der neuen Verknüpfung je Art (Spec §4.1); die übrigen Arten brauchen keinen Wert
 PFLICHT_FELDER = {"abstand": ("wert",), "winkel": ("wert",), "grenze_abstand": ("min", "max"), "grenze_winkel": ("min", "max")}
 ANKER = ("a", "b", "anlage_a", "anlage_b")
+
+
+def quelle_schluessel(quelle: dict) -> str:
+    """Eine neue Datei je Quelle: `validieren`, Bau und Protokoll rechnen mit diesem Schlüssel."""
+    art = next(k for k in ("teil", "normteil", "kaufteil") if k in quelle)
+    return f"{art}:{quelle[art]}:{quelle.get('variante', '')}"
 
 
 def _ref_name(eintrag) -> str:
@@ -99,9 +108,9 @@ def _beispiele(namen: list[str], n: int = 8) -> str:
 
 
 def _datei_befunde(pfad: str, datei: str, b: _Bestand) -> list[dict]:
-    """`in_datei` eines Teil-Punkts: relativ, aufgenommen, ein Teil (keine Unterbaugruppe, keine virtuelle Komponente), ohne Referenz
-    auf eine andere Datei und nicht Basis einer anderen (Spec §8.1: allein geöffnet ist die Geometrie eingefroren, und `vorher_<name>`
-    hätte die Referenz nicht daneben)."""
+    """`in_datei` eines Teil-Punkts: relativ, aufgenommen, ein Teil (keine Unterbaugruppe, keine virtuelle Komponente), ohne
+    Referenz auf eine andere Datei und nicht Basis einer anderen (Spec §8.1: allein geöffnet ist die Geometrie eingefroren, und
+    `vorher_<name>` hätte die Referenz nicht daneben)."""
     if not _ist_relativ(datei):
         return [_befund(pfad, "Die Datei muss relativ zur Bestandskopie genannt werden (kein absoluter Pfad, kein ..)", BESTAND_REFERENZ)]
     rel = b.rel(datei)
@@ -156,9 +165,9 @@ def _zahl_oder_none(roh, parameter: dict):
 
 
 class _Quellen:
-    """Dateiname einer neuen Komponente aus ihrer Quelle und die Namenskollision mit dem Bestand (Spec §8.2: neue Dateien liegen flach
-    neben der Hauptbaugruppe, ein gleicher Name im Bestand ist ein Befund). Berechnet nur, was ohne SolidWorks geht: bei Normteil und
-    Kaufteil den Bibliotheksschlüssel (`swki.normteile`, `swki.kaufteile`), bei `teil` den `name` der Teil-Spec."""
+    """Dateiname einer neuen Komponente aus ihrer Quelle und die Namenskollision mit dem Bestand (Spec §8.2: neue Dateien liegen
+    flach neben der Hauptbaugruppe, ein gleicher Name im Bestand ist ein Befund). Berechnet nur, was ohne SolidWorks geht: bei
+    Normteil und Kaufteil den Bibliotheksschlüssel (`swki.normteile`, `swki.kaufteile`), bei `teil` den `name` der Teil-Spec."""
 
     def __init__(self, b: _Bestand, ordner: Path | None):
         self.b, self.ordner = b, ordner
@@ -186,14 +195,14 @@ class _Quellen:
 
     @staticmethod
     def _bibliothek(lade: Callable[[dict, str], tuple], quelle: dict, pfad: str) -> tuple[str | None, list[dict]]:
-        """Normteil und Kaufteil: dieselbe Prüfung wie beim Laden einer Baugruppen-Spec (`swki/baugruppe/laden.py`), also Tabelle bzw.
-        Katalog, Freigabe und Prüfer-Urteil; der Dateiname ist der Bibliotheksschlüssel."""
+        """Normteil und Kaufteil: dieselbe Prüfung wie beim Laden einer Baugruppen-Spec (`swki/baugruppe/laden.py`), also Tabelle
+        bzw. Katalog, Freigabe und Prüfer-Urteil; der Dateiname ist der Bibliotheksschlüssel."""
         q, befunde = lade(quelle, f"{pfad}.quelle")
         return (None if q is None else f"{q.schluessel}.sldprt"), befunde
 
     def befunde(self, quelle: dict, pfad: str) -> list[dict]:
         art = next(k for k in ("teil", "normteil", "kaufteil") if k in quelle)
-        schl = f"{art}:{quelle[art]}:{quelle.get('variante', '')}"
+        schl = quelle_schluessel(quelle)
         erstmals = schl not in self._cache
         if erstmals:
             self._cache[schl] = (self._teil(quelle, pfad) if art == "teil" else
@@ -214,8 +223,25 @@ class _Quellen:
         return befunde
 
 
+def _name_befunde(p: dict, pfad: str, b: _Bestand) -> list[dict]:
+    """Die Punkt-ID wird der Name der Verknüpfung (beim Scharnier auch `<id>.anlage`). Trägt ihn schon eine, bliebe `Name =` still
+    alt; SolidWorks achtet dabei nicht auf die Schreibweise."""
+    vorhanden = {n.casefold(): n for n in b.verknuepfungen}
+    namen = [p["id"], *([f"{p['id']}{ANLAGE}"] if p["art"] == "scharnier" else [])]
+    return [_befund(f"{pfad}.id", f"Die Verknüpfung {vorhanden[n.casefold()]!r} gibt es schon: Die Punkt-ID wird der Name der "
+                    "neuen", NAME_BELEGT, vorhanden=vorhanden[n.casefold()]) for n in namen if n.casefold() in vorhanden]
+
+
 def _verknuepfung_neu_befunde(p: dict, pfad: str, b: _Bestand, neu: set[str], parameter: dict) -> list[dict]:
-    befunde = []
+    if p["art"] in KOPPLUNGEN:
+        return [_befund(f"{pfad}.art", f"Eine {p['art']}-Kopplung braucht die Verzahnung aus einer freigegebenen Spec, die eine "
+                        "fremde Datei nicht hat: Dem Nutzer nennen, nur auf seine Anweisung geht das über einen skript-Punkt mit "
+                        "luecke")]
+    befunde = _name_befunde(p, pfad, b)
+    if p["art"] == "scharnier" and not {"anlage_a", "anlage_b"} <= set(p):
+        befunde.append(_befund(pfad, "Ein Scharnier braucht anlage_a und anlage_b (die Flächen der Anlage). Ohne sie gibt es "
+                               "hier keinen Punkt-Weg: Dem Nutzer nennen, nur auf seine Anweisung über einen skript-Punkt mit "
+                               "luecke"))
     for feld in PFLICHT_FELDER.get(p["art"], ()):
         if feld not in p:
             befunde.append(_befund(f"{pfad}.{feld}", f"Eine Verknüpfung der Art {p['art']} braucht {feld}"))
@@ -230,8 +256,8 @@ def _verknuepfung_neu_befunde(p: dict, pfad: str, b: _Bestand, neu: set[str], pa
 
 
 def _alt_je_konfiguration(p: dict, v: dict, feld: str, b: _Bestand) -> dict:
-    """Der Wert des Felds (`wert`/`min`/`max`) in jeder Konfiguration, die der Punkt nennt (aus `werte`); eine Aufnahme ohne `werte`
-    liefert nur den Wert der aktiven Konfiguration."""
+    """Der Wert des Felds (`wert`/`min`/`max`) in jeder Konfiguration, die der Punkt nennt (aus `werte`); eine Aufnahme ohne
+    `werte` liefert nur den Wert der aktiven Konfiguration."""
     ist = {k: ((v.get("werte") or {}).get(k) or {}).get(feld) for k in _gewaehlt(p, b.konfigurationen)}
     return ist if any(w is not None for w in ist.values()) else {b.aktiv or "aktiv": v.get(feld)}
 
@@ -308,6 +334,43 @@ def _punkt_befunde(i: int, p: dict, b: _Bestand, neu: set[str], q: _Quellen, par
     elif typ == "verknuepfung_loeschen" and p["verknuepfung"] not in b.verknuepfungen:
         befunde.append(_befund(f"{pfad}.verknuepfung", f"Verknüpfung {p['verknuepfung']!r} gibt es in der Aufnahme nicht "
                                f"(vorhanden: {_beispiele(sorted(b.verknuepfungen))})", BESTAND_REFERENZ))
+    return befunde
+
+
+def _kombinations_befunde(spec: dict, b: _Bestand) -> list[dict]:
+    """Punkte, die einzeln gültig sind und zusammen nie bestehen: Der Handler löst gegen den Stand im Lauf auf, der Vergleich
+    gegen den Bestand. Eine Komponente wird höchstens einmal ersetzt und nicht zugleich entfernt, ein `wie` nennt keine ersetzte
+    Vorlage und keine Datei, die `alle_instanzen` tauscht (die neue Komponente trüge die alte Datei oder bräche „alle“). Alle
+    Reihenfolgen gelten gleich; `alle_instanzen` neben `komponente_entfernen` geht, entfernte Instanzen gehören nicht dazu
+    (`ersetzen_ziele`)."""
+    punkte, befunde = spec["punkte"], []
+    getroffen: dict[str, str] = {}
+    getauscht: dict[str, str] = {}
+    entfernt = {p["komponente"] for p in punkte if p["typ"] == "komponente_entfernen"}
+    for i, p in enumerate(punkte):
+        if p["typ"] != "komponente_ersetzen" or p["komponente"] not in b.komponenten:
+            continue
+        ziele = ersetzen_ziele(p, b.komponenten, punkte)[0]
+        if p.get("alle_instanzen") and (tief := [n for n in ziele if "/" in n]):
+            befunde.append(_befund(f"punkte[{i}].alle_instanzen", f"alle_instanzen träfe auch {_beispiele(tief)} in einer "
+                                   "Unterbaugruppe: Punkte treffen nur die oberste Ebene, dort hieße das, die Datei der "
+                                   "Unterbaugruppe zu ändern", BESTAND_REFERENZ))
+        if p["komponente"] in entfernt and not p.get("alle_instanzen"):
+            befunde.append(_befund(f"punkte[{i}].komponente", f"{p['komponente']!r} wird zugleich entfernt", BESTAND_REFERENZ))
+        if doppelt := [n for n in ziele if n in getroffen]:
+            befunde.append(_befund(f"punkte[{i}].komponente", f"{_beispiele(doppelt)} ersetzt schon Punkt "
+                                   f"{getroffen[doppelt[0]]}: Eine Komponente wird höchstens einmal ersetzt", BESTAND_REFERENZ))
+        getroffen.update({n: p["id"] for n in ziele if n not in getroffen})
+        if p.get("alle_instanzen") and (datei := b.komponenten[p["komponente"]].get("datei")):
+            getauscht[datei_schluessel(datei)] = p["id"]
+    for i, p in enumerate(punkte):
+        if p["typ"] != "komponente_neu" or "wie" not in p or p["wie"] not in b.komponenten:
+            continue
+        wie, datei = p["wie"], b.komponenten[p["wie"]].get("datei")
+        punkt = getroffen.get(wie) or (getauscht.get(datei_schluessel(datei)) if datei else None)
+        if punkt is not None:
+            befunde.append(_befund(f"punkte[{i}].wie", f"Punkt {punkt} ersetzt {wie!r} bzw. alle Instanzen ihrer Datei: Die neue "
+                                   "Komponente trüge die alte Datei. Stattdessen quelle nennen", BESTAND_REFERENZ))
     return befunde
 
 
@@ -416,13 +479,13 @@ def befunde_baugruppe(spec: dict, aufnahme: dict, datei_aufnahme: Callable[[str]
         for s, name in enumerate(eintrag["paar"]):
             befunde += _komponente(f"kollision_erlaubt[{k}].paar[{s}]", name, b, alle_neu)
     dateien = {datei_schluessel(d) for d in dateien_mit_punkten(spec)}
-    befunde += _bereich_befunde(spec, b, dateien) + _pruefung_befunde(spec, b, dateien)
+    befunde += _kombinations_befunde(spec, b) + _bereich_befunde(spec, b, dateien) + _pruefung_befunde(spec, b, dateien)
     return befunde, _hinweise(spec, b)
 
 
 def _version_hinweise(spec: dict, aufnahme: dict, b: _Bestand) -> list[dict]:
-    """Je Datei, die gespeichert wird und aus einer älteren SolidWorks-Version stammt, ein Hinweis (Spec §5.1, Entscheidung 12). Die
-    Hauptbaugruppe zählt nur, wenn ein Punkt sie ändert."""
+    """Je Datei, die gespeichert wird und aus einer älteren SolidWorks-Version stammt, ein Hinweis (Spec §5.1, Entscheidung 12).
+    Die Hauptbaugruppe zählt nur, wenn ein Punkt sie ändert."""
     def hinweis(datei: str, pfad: str) -> dict:
         return {"art": "version_aelter", "pfad": pfad, "datei": datei,
                 "meldung": f"{datei} stammt aus einer älteren SolidWorks-Version: swki bauen speichert sie nur mit --hochstufen, danach "
@@ -439,8 +502,8 @@ def _version_hinweise(spec: dict, aufnahme: dict, b: _Bestand) -> list[dict]:
 
 def pruefe_baugruppe(spec: dict, aufnahme: dict, datei_aufnahme: Callable[[str], dict], ordner: Path | None) -> tuple[list[dict], list[dict]]:
     """Die ganze Prüfung einer Baugruppen-Spec gegen die Aufnahme, ohne SolidWorks (Befunde, Hinweise): `befunde_baugruppe`, die
-    Haupt-Scheibe und je Teil-Datei die Scheibe durch den Code von Etappe 1, dazu die Versionshinweise. Pfade der Scheiben sind auf
-    die ganze Spec zurückgeführt. Eine Datei, die `befunde_baugruppe` nicht als Teil zulässt, hat keine Scheibe."""
+    Haupt-Scheibe und je Teil-Datei die Scheibe durch den Code von Etappe 1, dazu die Versionshinweise. Pfade der Scheiben sind
+    auf die ganze Spec zurückgeführt. Eine Datei, die `befunde_baugruppe` nicht als Teil zulässt, hat keine Scheibe."""
     befunde, hinweise = befunde_baugruppe(spec, aufnahme, datei_aufnahme, ordner)
     b = _Bestand(aufnahme)
     haupt = scheiben_karte(spec, None)
@@ -458,8 +521,8 @@ def pruefe_baugruppe(spec: dict, aufnahme: dict, datei_aufnahme: Callable[[str],
 
 
 def freigabe_angaben(spec: dict, aufnahme: dict) -> dict:
-    """Angaben je Punkt-ID für die Freigabe-Vorlage (aus der Aufnahme): `instanzen` (Zahl der vorhandenen Komponenten, die der Punkt
-    trifft: alle Instanzen einer Teil-Datei, die ersetzten bzw. entfernten Komponenten; 0 für Punkte, die keine vorhandene
+    """Angaben je Punkt-ID für die Freigabe-Vorlage (aus der Aufnahme): `instanzen` (Zahl der vorhandenen Komponenten, die der
+    Punkt trifft: alle Instanzen einer Teil-Datei, die ersetzten bzw. entfernten Komponenten; 0 für Punkte, die keine vorhandene
     Komponente treffen), `verknuepfungen` (die mitgehenden bzw. betroffenen Verknüpfungen) und `bewegungen` (betroffene
     Grenzverknüpfungen mit Fahrt im Bestand)."""
     b = _Bestand(aufnahme)
@@ -469,9 +532,8 @@ def freigabe_angaben(spec: dict, aufnahme: dict) -> dict:
         if p.get("in_datei") and (rel := b.rel(p["in_datei"])) is not None:
             komponenten = b.instanzen(rel)
         elif typ in ("komponente_entfernen", "komponente_ersetzen") and p["komponente"] in b.komponenten:
-            komponenten = [p["komponente"]]
-            if typ == "komponente_ersetzen" and p.get("alle_instanzen") and b.komponenten[p["komponente"]].get("datei"):
-                komponenten = b.instanzen(b.komponenten[p["komponente"]]["datei"])
+            ersetzen = typ == "komponente_ersetzen"
+            komponenten = ersetzen_ziele(p, b.komponenten, spec["punkte"])[0] if ersetzen else [p["komponente"]]
             if "in_datei" not in p:
                 verknuepfungen = sorted({v for k in komponenten for v in b.haengt_dran(k)})
         elif typ in ("verknuepfung_wert", "verknuepfung_loeschen") and p["verknuepfung"] in b.verknuepfungen:
@@ -483,8 +545,8 @@ def freigabe_angaben(spec: dict, aufnahme: dict) -> dict:
 
 def ergebnis_baugruppe(spec: dict, aufnahme: dict, datei_aufnahme: Callable[[str], dict], hinweise: list[dict]) -> dict:
     """Zusatz der Ausgabe von `swki validieren` für eine Baugruppe: `dateien` (Teile mit Punkten, relative Pfade der Aufnahme),
-    `haupt_speichern`, `version_aelter` (muss eine zu speichernde Datei hochgestuft werden), `folgen` je `mass`-/`gleichung`-Punkt aus
-    der Aufnahme des Teils und `angaben` je Punkt für die Freigabe-Vorlage."""
+    `haupt_speichern`, `version_aelter` (muss eine zu speichernde Datei hochgestuft werden), `folgen` je `mass`-/`gleichung`-Punkt
+    aus der Aufnahme des Teils und `angaben` je Punkt für die Freigabe-Vorlage."""
     b = _Bestand(aufnahme)
     dateien = [b.rel(d) for d in dateien_mit_punkten(spec) if b.rel(d) is not None]
     folgen = {p["id"]: folgen_von(p, datei_aufnahme(b.rel(p["in_datei"]))) for p in spec["punkte"]

@@ -196,6 +196,10 @@ Beides ist Anforderung, steht in der Prüfsumme und in der Freigabe-Vorlage. `a`
 Maß der Baugruppe hat keine Körper-Differenz als Nachweis. Baugruppen-Punkte treffen die Hauptbaugruppe und ihre Komponenten der obersten Ebene; eine Komponente in einer Unterbaugruppe darf nur Partner einer Verknüpfung sein.
 Einen Abstand, den eine Gleichung steuert, weist `validieren` ab (`MASS_GESTEUERT`), dafür gibt es hier keinen Punkt-Weg: dem Nutzer nennen, nur auf seine Anweisung `skript`.
 
+*Präzisiert bei der Umsetzung, Etappe 2 Task 9, 2026-11-01:* `validieren` weist ab, was nie bestehen kann. `verknuepfung_neu` mit `art: zahnrad`/`zahnstange` (die Verzahnung steht in einer freigegebenen Spec, die eine fremde Datei nicht hat) und `scharnier` ohne `anlage_a`/`anlage_b`: dafür gibt es hier keinen Punkt-Weg, dem Nutzer nennen, nur auf seine Anweisung `skript`. Die Punkt-ID einer `verknuepfung_neu` ist der Name der neuen Verknüpfung; trägt ihn schon eine, unabhängig von der Schreibweise: `NAME_BELEGT`.
+
+`alle_instanzen` heißt: die Komponenten mit der Datei der genannten im Bestand, jede Ebene, ohne die von `komponente_entfernen` genannten samt Kindern. Bau, `validieren`, Freigabe-Vorlage und Vergleich rechnen mit dieser einen Menge, unabhängig von der Reihenfolge der Punkte (`ersetzen_ziele`). Eine Schraube entfernen und die übrigen tauschen geht also in beiden Reihenfolgen. Eine Instanz in einer Unterbaugruppe ist ein Befund. Ebenfalls Befunde: eine Komponente zweimal ersetzen, ersetzen und entfernen zugleich, `wie` an einer ersetzten Komponente, `wie` an einer Datei, die `alle_instanzen` tauscht.
+
 ### 4.2 Bezüge auf fremde Geometrie
 
 - Fremde Features, Maße, Komponenten und Verknüpfungen werden mit ihrem **SolidWorks-Namen** aus der Bestandsaufnahme

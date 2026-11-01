@@ -40,7 +40,7 @@ from pathlib import Path
 
 from swki.baugruppe import sw_baugruppe
 from swki.baugruppe.aufloesen import _einzeln
-from swki.baugruppe.bau import _mit_kontext
+from swki.baugruppe.bau import _mit_kontext, kaufteil_protokoll, normteil_protokoll
 from swki.baugruppe.fehler import KOMPONENTE_FEHLER, TEIL_BAU, VERKNUEPFUNG_FEHLER
 from swki.baugruppe.kopplung import KOPPLUNGEN
 from swki.baugruppe.laden import kaufteil_quelle, normteil_quelle
@@ -51,20 +51,20 @@ from swki.bestand.bewegung_bestand import SW_ABSTAND
 from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_REFERENZ, NAME_BELEGT, VERKNUEPFUNGEN_FEHLEN
 from swki.bestand.pfade import oeffne_in
 from swki.bestand.scheiben import datei_schluessel
+from swki.bestand.spec_baugruppe import quelle_schluessel
 from swki.bestand.sw_baugruppe_bestand import SW_UNTERDRUECKT, _je_konfiguration, lies_komponenten, lies_verknuepfungen
 from swki.bestand.sw_bestand import SW_BENANNTE_KONFIGURATIONEN, bstr_array
-from swki.bestand.vergleich_baugruppe import _ahnen, _gleich
+from swki.bestand.vergleich_baugruppe import (_ahnen, _gleich, _wert_gelesen, _wert_gleich, abbild_name, ersetzen_ziele,
+                                              namen_im_lauf, soll_ausrichtung, soll_werte)
 from swki.compiler import sw
 from swki.compiler.bauen import baue_teil_dokument
 from swki.compiler.fehler import UNBEKANNTER_TYP, BauFehler, fehler_dict
 from swki.compiler.kontext import FeatureErgebnis
 from swki.compiler.protokoll import Protokoll
 from swki.kaufteile import befehle as kaufteil_befehle
-from swki.kaufteile.eintrag import angaben_fuer_bericht
 from swki.kaufteile.fehler import KaufteilFehler
 from swki.konfig import lade_rechner
 from swki.normteile import befehle as normteil_befehle
-from swki.normteile.bibliothek import bibliotheksordner, lies_eintrag
 from swki.normteile.fehler import NormteilFehler
 from swki.pruefung.messen import SW_DOC_PART, kontext_aus_datei
 from swki.spec.ausdruck import auswerten
@@ -107,7 +107,7 @@ class BauKontext:
     ersetzt: dict[str, str] = field(default_factory=dict)  # alter → neuer Name (Protokoll)
     kontexte: dict = field(default_factory=dict)         # Dateiname klein → Kontext des Teildokuments
     protokoll: Protokoll | None = None                   # nimmt die Herkunft neuer Dateien auf
-    quellen: dict[str, NeueDatei] = field(default_factory=dict)  # `_schluessel(quelle)` → neue Datei
+    quellen: dict[str, NeueDatei] = field(default_factory=dict)  # `quelle_schluessel(quelle)` → neue Datei
     offen: list = field(default_factory=list)            # selbst geöffnete Teildokumente, schließt der Bau
     gesetzt: dict = field(default_factory=dict)          # Verknüpfung → ausdrücklich gesetzte Ausrichtung (`verknuepfe`)
 
@@ -144,14 +144,9 @@ def _verknuepfungen(b: BauKontext) -> dict:
 
 
 def _lauf_name(b: BauKontext, name: str) -> str:
-    """Der Name im Lauf: Eine Punkt-ID steht für die neue Komponente, ein alter Name für ihren Ersatz (auch die Kinder einer
-    ersetzten Unterbaugruppe), wie `vergleich_baugruppe._Lauf.namen`."""
-    if name in b.neue:
-        return b.neue[name][0]
-    for a in reversed(_ahnen(name)):
-        if a in b.ersetzt:
-            return b.ersetzt[a] + name[len(a):]
-    return name
+    """Der Name im Lauf, die erste Komponente einer Punkt-ID (`verknuepfung_neu` nennt nur `komponente_neu`, das hat genau
+    eine)."""
+    return namen_im_lauf(name, b.neue, b.ersetzt)[0]
 
 
 def _komponente(b: BauKontext, name: str):
@@ -181,12 +176,6 @@ def _gleiche_datei(a: str | None, b: str | None) -> bool:
 
 
 # --- Neue Dateien ---------------------------------------------------------------------------------------------------------
-
-def _schluessel(quelle: dict) -> str:
-    """Eine Datei je Quelle, wie `spec_baugruppe._Quellen`."""
-    art = next(k for k in ("teil", "normteil", "kaufteil") if k in quelle)
-    return f"{art}:{quelle[art]}:{quelle.get('variante', '')}"
-
 
 def _ziel(b: BauKontext, name: str) -> Path:
     """Flach neben der Hauptbaugruppe (Plan Präzisierung 2). `validieren` meldet gleiche Namen (`NAME_BELEGT`); hier nur die
@@ -221,9 +210,7 @@ def _normteil(b: BauKontext, quelle: dict) -> NeueDatei:
         ergebnis = normteil_befehle.hole(q.norm, q.hole_groesse, q.variante)
     except NormteilFehler as e:
         raise BauFehler(e.daten["code"], f"{quelle['normteil']}: {e}", schritt="normteil") from e
-    eintrag = lies_eintrag(bibliotheksordner(lade_rechner()), q.schluessel) or {}
-    b.protokoll.normteile[q.schluessel] = {"bibliothek": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
-                                           "pruefsumme": eintrag.get("pruefsumme")}
+    b.protokoll.normteile[q.schluessel] = normteil_protokoll(lade_rechner(), q.schluessel, ergebnis)
     return _lege_ab(b, q, ergebnis["pfad"])
 
 
@@ -233,9 +220,7 @@ def _kaufteil(b: BauKontext, quelle: dict) -> NeueDatei:
         ergebnis = kaufteil_befehle.hole(q.kaufteil)
     except KaufteilFehler as e:
         raise BauFehler(e.daten["code"], f"{quelle['kaufteil']}: {e}", schritt="kaufteil") from e
-    b.protokoll.kaufteile[q.schluessel] = {"kaufteil": q.kaufteil, "cache": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
-                                           "pruefsumme": ergebnis["pruefsumme"], "gewinde_modell": ergebnis["gewinde_modell"],
-                                           **angaben_fuer_bericht(q.eintrag)}
+    b.protokoll.kaufteile[q.schluessel] = kaufteil_protokoll(q, ergebnis)
     return _lege_ab(b, q, ergebnis["pfad"])
 
 
@@ -270,10 +255,10 @@ def hole_neue_dateien(b: BauKontext, spec: dict) -> dict[str, Path]:
     dateien = {}
     for p in spec["punkte"]:
         quelle = p.get("quelle")
-        if quelle is None or _schluessel(quelle) in b.quellen:
+        if quelle is None or quelle_schluessel(quelle) in b.quellen:
             continue
         art = next(k for k in holen if k in quelle)
-        neu = b.quellen[_schluessel(quelle)] = holen[art](b, quelle)
+        neu = b.quellen[quelle_schluessel(quelle)] = holen[art](b, quelle)
         b.kontexte[neu.pfad.name.casefold()] = neu.ctx
         dateien[neu.pfad.name] = neu.pfad
     return dateien
@@ -327,6 +312,28 @@ def _pruefe_neue_komponente(b: BauKontext, name: str, datei: str, soll: dict[str
         raise BauFehler(KOMPONENTE_FEHLER, f"{name}: {'; '.join(probleme)}", schritt="nachmessen")
 
 
+def _wie(b: BauKontext, p: dict) -> tuple[Path, str, dict[str, str]]:
+    """(Pfad im Lauf, relativer Pfad, Konfiguration je Baugruppen-Konfiguration) einer vorhandenen Komponente. Der Pfad kommt aus
+    der Aufnahme, nie aus `GetPathName`: Unterdrückt nennt das den gespeicherten Pfad, in der Kopie also den Kundenordner (§8.1a).
+    `AddComponent5` verlangt eine geladene Datei; ist in der aktiven Konfiguration keine Instanz da, lädt sie der Pfadschutz."""
+    komponenten = _komponenten(b)
+    vorlage = komponenten.get(_lauf_name(b, p["wie"]))
+    if vorlage is None:
+        raise BauFehler(BESTAND_REFERENZ, f"Komponente {p['wie']!r} gibt es in der Baugruppe nicht", schritt="referenz")
+    datei = vorlage["datei"]
+    if datei is None:
+        raise BauFehler(KOMPONENTE_FEHLER, f"Die Datei von {p['wie']} ist nicht lesbar", schritt="referenz")
+    fest = p.get("konfiguration")
+    soll = {k: fest or vorlage["konfigurationen"].get(k) for k in b.konfigurationen}
+    if unlesbar := [k for k, w in soll.items() if w is None]:
+        raise BauFehler(KOMPONENTE_FEHLER, f"Die Konfiguration von {p['wie']} ist in {', '.join(unlesbar)} nicht lesbar",
+                        schritt="referenz")
+    pfad, aktiv = b.ordner / datei, b.aufnahme["aktiv"]
+    if not any(_gleiche_datei(k["datei"], datei) and k["unterdrueckt"].get(aktiv) is False for k in komponenten.values()):
+        b.offen.append(oeffne_in(b.app, pfad, b.ordner, sichtbar=False, nur_lesen=False))
+    return pfad, datei, soll
+
+
 @punkt("komponente_neu")
 def komponente_neu(b: BauKontext, p: dict) -> list[str]:
     """Aus einer Quelle oder `wie` eine vorhandene Komponente: gleiche Datei, gleiche Konfiguration, und zwar je Konfiguration der
@@ -334,13 +341,10 @@ def komponente_neu(b: BauKontext, p: dict) -> list[str]:
     danach."""
     konfigurationen, fest = b.konfigurationen, p.get("konfiguration")
     if "wie" in p:
-        vorlage = _komponenten(b).get(_lauf_name(b, p["wie"]))
-        if vorlage is None:
-            raise BauFehler(BESTAND_REFERENZ, f"Komponente {p['wie']!r} gibt es in der Baugruppe nicht", schritt="referenz")
-        pfad, box, datei = Path(primitiv(_komponente(b, p["wie"]).GetPathName)), KEINE_BOX, vorlage["datei"]
-        soll = {k: fest or vorlage["konfigurationen"].get(k) for k in konfigurationen}
+        pfad, datei, soll = _wie(b, p)
+        box = KEINE_BOX
     else:
-        neu = b.quellen[_schluessel(p["quelle"])]
+        neu = b.quellen[quelle_schluessel(p["quelle"])]
         pfad, box, datei = neu.pfad, sw.teilebox_mm(neu.ctx.model), neu.pfad.name
         soll = dict.fromkeys(konfigurationen, fest) if fest else {}
     komp = sw_baugruppe.fuege_ein(b.app, b.asm, pfad, box, soll.get(b.aufnahme["aktiv"]) or "")
@@ -373,47 +377,48 @@ def komponente_entfernen(b: BauKontext, p: dict) -> list[str]:
     return weg
 
 
-def _ziele(p: dict, name: str, komponenten: dict) -> list[str]:
-    """Die Komponenten, die der Punkt ersetzt. `alle_instanzen` zählt wie `vergleich_baugruppe` jede Ebene; `ReplaceComponents2`
-    kennt nur die oberste (API-Hilfe), und ein Teil in einer Unterbaugruppe zu tauschen hieße, deren Datei zu ändern."""
-    if name not in komponenten:
-        raise BauFehler(BESTAND_REFERENZ, f"Komponente {name!r} gibt es in der Baugruppe nicht", schritt="referenz")
-    if not p.get("alle_instanzen"):
-        return [name]
-    datei = komponenten[name]["datei"]
-    if datei is None:
-        raise BauFehler(KOMPONENTE_FEHLER, f"Die Datei von {name} ist nicht lesbar: Ihre Instanzen sind nicht zu bestimmen",
-                        schritt="referenz")
-    ziele = sorted(n for n, k in komponenten.items() if _gleiche_datei(k["datei"], datei))
+def _ziele(b: BauKontext, p: dict) -> list[str]:
+    """Die Komponenten, die der Punkt ersetzt: dieselbe Menge wie `vergleiche_baugruppe`, aus der Aufnahme und nicht aus dem Lauf,
+    sonst hinge sie an der Reihenfolge der Punkte. Die Sperren stehen auch in `validieren`, hier als zweite Linie."""
+    ziele, unlesbar = ersetzen_ziele(p, b.aufnahme["komponenten"], b.spec["punkte"])
+    if unlesbar:
+        raise BauFehler(KOMPONENTE_FEHLER, f"Die Instanzen sind nicht zu bestimmen: {'; '.join(unlesbar)}", schritt="referenz")
     if tief := [n for n in ziele if "/" in n]:
         raise BauFehler(KOMPONENTE_FEHLER, f"alle_instanzen träfe auch {', '.join(tief)} in einer Unterbaugruppe: Punkte treffen "
                                            "nur die oberste Ebene", schritt="referenz")
     return ziele
 
 
-def _partner(mate: dict) -> Counter:
-    return Counter(mate["partner"] or ())
+def _fehler_neu(vorher: dict, nachher: dict, k: str) -> str | None:
+    """Text, wenn die Verknüpfung in `k` einen neuen Fehler trägt. Ein Code, der sich nicht lesen lässt, zählt wie ein Fehler."""
+    code = nachher["fehler"].get(k)
+    if code is None:
+        return f"Fehlercode in {k} nicht lesbar"
+    return f"Fehler {code} in {k}" if code != 0 and code != vorher["fehler"].get(k) else None
 
 
-def _pruefe_verknuepfungen_nach_ersetzen(name: str, zuordnung: dict[str, str], vorher: dict, nachher: dict) -> None:
+def _pruefe_verknuepfungen_nach_ersetzen(b: BauKontext, name: str, zuordnung: dict[str, str], vorher: dict,
+                                         nachher: dict) -> None:
     """Sie bleiben, soweit sie sich neu zuordnen lassen. Was verloren ging, hat keinen Punkt, also Abbruch mit allen Namen; ein
-    Fehler, den die Verknüpfung vorher nicht hatte, zählt als verloren."""
+    Fehler, den die Verknüpfung vorher nicht hatte, zählt als verloren, nicht lesbare Partner oder Codes auch."""
     verloren, falsch, fehlerhaft = sorted(set(vorher) - set(nachher)), [], []
-    for n in set(vorher) & set(nachher):
+    for n in sorted(set(vorher) & set(nachher)):
         v, m = vorher[n], nachher[n]
-        if _partner(m) != Counter(zuordnung.get(x, x) for x in v["partner"] or ()):
+        if v["partner"] is None or m["partner"] is None:
+            falsch.append(f"{n} (nicht lesbar)")
+        elif Counter(m["partner"]) != Counter(abbild_name(x, zuordnung) for x in v["partner"]):
             falsch.append(n)
-        codes = {f"{code} ({k})" for k, code in m["fehler"].items() if code and code != v["fehler"].get(k)}
-        if codes:
-            fehlerhaft.append(f"{n}: Fehler {', '.join(sorted(codes))}")
+        if meldungen := [text for k in b.konfigurationen if (text := _fehler_neu(v, m, k))]:
+            fehlerhaft.append(f"{n}: {', '.join(meldungen)}")
     if verloren or falsch or fehlerhaft:
         teile = [*([f"verloren: {', '.join(verloren)}"] if verloren else []),
-                 *([f"andere Partner: {', '.join(sorted(falsch))}"] if falsch else []), *sorted(fehlerhaft)]
+                 *([f"andere Partner: {', '.join(falsch)}"] if falsch else []), *fehlerhaft]
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Das Ersetzen von {name} trifft Verknüpfungen, {'; '.join(teile)}. Muss eine "
                                              "gehen: verknuepfung_loeschen davor", schritt="nachmessen")
 
 
-def _pruefe_komponenten_nach_ersetzen(p: dict, zuordnung: dict[str, str], neu: NeueDatei, vorher: dict, nachher: dict) -> None:
+def _pruefe_komponenten_nach_ersetzen(b: BauKontext, p: dict, zuordnung: dict[str, str], neu: NeueDatei, vorher: dict,
+                                      nachher: dict) -> None:
     probleme = [f"{n} ist noch da" for n in zuordnung if n in nachher]
     probleme += [f"{n} (Ersatz für {alt}) fehlt" for alt, n in zuordnung.items() if n not in nachher]
     probleme += [f"{n} gibt es schon im Bestand" for n in zuordnung.values() if n in vorher]
@@ -424,29 +429,33 @@ def _pruefe_komponenten_nach_ersetzen(p: dict, zuordnung: dict[str, str], neu: N
         if not _gleiche_datei(nachher[n]["datei"], neu.pfad.name):
             probleme.append(f"{n} hat die Datei {nachher[n]['datei']!r} statt {neu.pfad.name!r}")
         if "konfiguration" in p:
-            probleme += [f"{n} steht in {k} in der Konfiguration {w!r} statt {p['konfiguration']!r}"
-                         for k, w in nachher[n]["konfigurationen"].items() if w != p["konfiguration"]]
+            ist = nachher[n]["konfigurationen"]
+            probleme += [f"{n} steht in {k} in der Konfiguration {ist.get(k)!r} statt {p['konfiguration']!r}"
+                         for k in b.konfigurationen if ist.get(k) != p["konfiguration"]]
     if probleme:
         raise BauFehler(KOMPONENTE_FEHLER, f"Ersetzen: {'; '.join(probleme)}", schritt="nachmessen")
 
 
 @punkt("komponente_ersetzen")
 def komponente_ersetzen(b: BauKontext, p: dict) -> list[str]:
-    """`ReplaceComponents2` mit Neuzuordnung der Verknüpfungen. Den neuen Namen nennt der alte Handle (Beispiel der API-Hilfe); ob
-    das bei `alle_instanzen` für jede Instanz gilt, klärt S19e, bis dahin hält das Nachmessen die Zuordnung fest."""
-    name = _lauf_name(b, p["komponente"])
+    """`ReplaceComponents2` mit Neuzuordnung der Verknüpfungen, je Ziel ein Aufruf ohne `ReplaceAllInstance`: Das träfe auch die
+    Instanz, die ein späterer `komponente_entfernen` nennt, und die Menge stünde nicht mehr fest. Den neuen Namen nennt der alte
+    Handle der gewählten Komponente (Beispiel der API-Hilfe)."""
+    ziele, name = _ziele(b, p), p["komponente"]
     vorher_k, vorher_v = _komponenten(b), _verknuepfungen(b)
-    handles = {n: _komponente(b, n) for n in _ziele(p, name, vorher_k)}
-    neu, konfiguration = b.quellen[_schluessel(p["quelle"])], p.get("konfiguration", "")
-    sw.auswahl_leeren(b.asm)
-    _waehle(b.asm, handles[name])
-    b.asm.ReplaceComponents2(str(neu.pfad), konfiguration, bool(p.get("alle_instanzen")),
-                             SW_ERSETZEN_BENANNT if konfiguration else SW_ERSETZEN_GLEICHER_NAME, True)
-    sw.auswahl_leeren(b.asm)
-    zuordnung = {alt: komp.Name2 for alt, komp in handles.items()}
+    neu, konfiguration = b.quellen[quelle_schluessel(p["quelle"])], p.get("konfiguration", "")
+    zuordnung = {}
+    for alt in ziele:
+        komp = _komponente(b, alt)
+        sw.auswahl_leeren(b.asm)
+        _waehle(b.asm, komp)
+        b.asm.ReplaceComponents2(str(neu.pfad), konfiguration, False,
+                                 SW_ERSETZEN_BENANNT if konfiguration else SW_ERSETZEN_GLEICHER_NAME, True)
+        sw.auswahl_leeren(b.asm)
+        zuordnung[alt] = komp.Name2
     nachher_k, nachher_v = _komponenten(b), _verknuepfungen(b)
-    _pruefe_komponenten_nach_ersetzen(p, zuordnung, neu, vorher_k, nachher_k)
-    _pruefe_verknuepfungen_nach_ersetzen(name, zuordnung, vorher_v, nachher_v)
+    _pruefe_komponenten_nach_ersetzen(b, p, zuordnung, neu, vorher_k, nachher_k)
+    _pruefe_verknuepfungen_nach_ersetzen(b, name, zuordnung, vorher_v, nachher_v)
     b.ersetzt.update(zuordnung)
     b.neue[p["id"]] = sorted(zuordnung.values())
     return sorted(zuordnung.values())
@@ -497,27 +506,27 @@ def _drehung_sperren(b: BauKontext, p: dict) -> bool:
     return p["art"] == "konzentrisch" and any(_dateiname(_komponente(b, p[s]["komponente"])) in norm for s in ("a", "b"))
 
 
-def _soll_werte(b: BauKontext, p: dict) -> dict[str, float]:
-    """Wie `vergleich_baugruppe._Lauf.soll_werte`: mm bzw. Grad, die Grenzen nennt ein `grenze_*`."""
-    felder = ("wert",) if p["art"] in ("abstand", "winkel") else ("min", "max") if p["art"].startswith("grenze_") else ()
-    return {f: float(auswerten(p[f], b.spec.get("parameter", {}))) for f in felder}
-
-
-def _nachmesse_neue(b: BauKontext, p: dict, teile: list) -> None:
-    """Name, Typ und Partner, dazu je Konfiguration aktiv, ohne Fehler, mit den Werten des Punkts. Ein Wert gehört zur ersten
-    Verknüpfung, die Anlage eines Scharniers hat keinen."""
+def _nachmesse_neue(b: BauKontext, p: dict, teile: list, vorher: set[str]) -> None:
+    """Name, Typ, Partner und die genannte Ausrichtung, dazu je Konfiguration aktiv, ohne Fehler, mit den Werten des Punkts. Ein
+    Wert gehört zur ersten Verknüpfung, die Anlage eines Scharniers hat keinen. `vorher`: Namen vor dem Anlegen, klein. Ein Name,
+    den es schon gab, bleibt still alt (S18c), gelesen würde dann die alte Verknüpfung, und die könnte zufällig stimmen."""
     nachher = _verknuepfungen(b)
-    soll, probleme = _soll_werte(b, p), []
+    soll, probleme = soll_werte(p, b.spec.get("parameter", {})), []
     for i, t in enumerate(teile):
         e = nachher.get(t.id)
+        if t.id.casefold() in vorher:
+            probleme.append(f"{t.id}: Den Namen gibt es schon, die neue Verknüpfung heißt anders")
+            continue
         if e is None:
-            probleme.append(f"{t.id} fehlt (gibt es den Namen schon?)")
+            probleme.append(f"{t.id} fehlt")
             continue
         if e["typ"] != sw_baugruppe.MATE_TYP[t.typ]:
             probleme.append(f"{t.id} hat den Typ {e['typ']} statt {sw_baugruppe.MATE_TYP[t.typ]}")
         partner = {_lauf_name(b, t.a["komponente"]), _lauf_name(b, t.b["komponente"])}
         if not partner <= set(e["partner"] or ()):
             probleme.append(f"{t.id} verbindet {e['partner']} statt {sorted(partner)}")
+        if (ausrichtung := soll_ausrichtung(p, i)) is not None and e["ausrichtung"] != ausrichtung:
+            probleme.append(f"{t.id}: Ausrichtung {e['ausrichtung']} statt {ausrichtung}")
         for k in b.konfigurationen:
             if e["unterdrueckt"].get(k) is not False:
                 probleme.append(f"{t.id} ist unterdrückt in {k}")
@@ -545,19 +554,12 @@ def verknuepfung_neu(b: BauKontext, p: dict) -> list[str]:
                         schritt="verknuepfung")
     v = {**p, "typ": art, "drehung_sperren": _drehung_sperren(b, p)}
     teile = _einzeln(v, p["id"], p["a"], p["b"], {}, p.get("anlage_a"), p.get("anlage_b"))
+    vorher = {f.Name.casefold() for f in sw_baugruppe.verknuepfungen(b.asm)}
     for t in teile:
         f = sw_baugruppe.verknuepfe(b.asm, t, _entitaet(b, t.a), _entitaet(b, t.b), b.spec.get("parameter", {}), b.gesetzt)
         f.SetSuppression2(SW_AUFHEBEN, SW_BENANNTE_KONFIGURATIONEN, bstr_array(b.konfigurationen))
-    _nachmesse_neue(b, p, teile)
+    _nachmesse_neue(b, p, teile, vorher)
     return [t.id for t in teile]
-
-
-def _wert_in(mate: dict, k: str, feld: str):
-    return (mate["werte"].get(k) or {}).get(feld)
-
-
-def _gleiche_zahl(a, b) -> bool:
-    return (a is None and b is None) or (a is not None and b is not None and _gleich(a, b))
 
 
 def _setze_wert(b: BauKontext, p: dict, name: str, si: float) -> None:
@@ -592,7 +594,7 @@ def _setze_grenze(b: BauKontext, p: dict, name: str, abstand: bool, si: float) -
 def _pruefe_alt(p: dict, name: str, feld: str, mate: dict, konfigurationen: list[str]) -> None:
     """`alt` muss in allen genannten stimmen (Spec §4.1). Strenger als `punkte.mass`: Nicht lesbar zählt als Abweichung, denn das
     Nachmessen einer Verknüpfung kennt keinen Ersatzwert wie die Aufnahme eines Maßes."""
-    abweichend = {k: w for k in konfigurationen if (w := _wert_in(mate, k, feld)) is None or not _gleich(w, p["alt"])}
+    abweichend = {k: w for k in konfigurationen if (w := _wert_gelesen(mate, k, feld)[1]) is None or not _gleich(w, p["alt"])}
     if abweichend:
         raise BauFehler(BESTAND_ALTWERT, f"Verknüpfung {name}: {feld} alt {p['alt']} stimmt nicht mit der Datei überein "
                                          f"({punkte._werte_text(abweichend)})", schritt="alt")
@@ -600,24 +602,23 @@ def _pruefe_alt(p: dict, name: str, feld: str, mate: dict, konfigurationen: list
 
 def _nachmesse_wert(b: BauKontext, name: str, feld: str, neu: float, genannt: list[str], vorher: dict, nachher: dict) -> None:
     """Das Feld steht in den genannten auf `neu`, alles andere wie vorher, in allen Konfigurationen. Eine geänderte Grenze darf
-    den aktuellen Wert mitnehmen, wie `vergleich_baugruppe.wert_frei`."""
+    den aktuellen Wert mitnehmen, wie `vergleich_baugruppe.wert_frei`. Nicht gelesen ist nie gleich; `None` in einem gelesenen
+    Eintrag heißt, das Feld trägt keinen Wert (Abstand ohne Grenzen)."""
     if name not in nachher:
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name} ist nach dem Setzen weg", schritt="nachmessen")
     probleme = []
     for k in b.konfigurationen:
         for f in WERTFELDER:
-            ist = _wert_in(nachher[name], k, f)
-            if k in genannt and f == feld:
-                soll = neu
-            elif k in genannt and f == "wert":
+            if k in genannt and f == "wert" != feld:
                 continue
-            else:
-                soll = _wert_in(vorher[name], k, f)
-            if not _gleiche_zahl(ist, soll):
+            soll_gelesen, soll = (True, neu) if k in genannt and f == feld else _wert_gelesen(vorher[name], k, f)
+            gelesen, ist = _wert_gelesen(nachher[name], k, f)
+            if not (gelesen and soll_gelesen):
+                probleme.append(f"{f} in {k} nicht lesbar")
+            elif not _wert_gleich(ist, soll):
                 probleme.append(f"{f} steht in {k} auf {ist} statt {soll}")
-        code = nachher[name]["fehler"].get(k)
-        if code and code != vorher[name]["fehler"].get(k):
-            probleme.append(f"Fehler {code} in {k}")
+        if text := _fehler_neu(vorher[name], nachher[name], k):
+            probleme.append(text)
     if probleme:
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name}: {'; '.join(probleme)} – gesteuert?", schritt="nachmessen")
 

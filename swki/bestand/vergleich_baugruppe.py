@@ -80,6 +80,59 @@ def _ahnen(name: str) -> list[str]:
     return ["/".join(teile[:i]) for i in range(1, len(teile) + 1)]
 
 
+def ersetzen_ziele(p: dict, komponenten: dict, punkte: list[dict]) -> tuple[list[str], list[str]]:
+    """(Komponenten, die ein `komponente_ersetzen` trifft; nicht lesbar). `komponenten`: die der Aufnahme, `punkte`: alle der
+    Spec. `alle_instanzen` heißt: die Komponenten mit der Datei der genannten, jede Ebene, ohne die von `komponente_entfernen`
+    genannten samt ihren Kindern. Handler, `validieren` und Vergleich rechnen mit dieser einen Menge, sonst hinge das Ergebnis an
+    der Reihenfolge der Punkte. Ist eine Datei nicht gelesen, lässt sich nicht ausschließen, dass die Komponente eine Instanz
+    ist."""
+    name = p["komponente"]
+    k = komponenten.get(name)
+    if not p.get("alle_instanzen") or k is None:
+        return [name], []
+    if k.get("datei") is None:
+        return [name], [f"{name}: Datei nicht lesbar"]
+    entfernt = {x["komponente"] for x in punkte if x["typ"] == "komponente_entfernen"}
+    namen, unlesbar = [], []
+    for n, x in komponenten.items():
+        if set(_ahnen(n)) & entfernt:
+            continue
+        if x.get("datei") is None:
+            unlesbar.append(f"{n}: Datei nicht lesbar, Instanz von {name} nicht auszuschließen")
+        elif datei_schluessel(x["datei"]) == datei_schluessel(k["datei"]):
+            namen.append(n)
+    return sorted(namen) or [name], unlesbar
+
+
+def abbild_name(name: str | None, ersetzt: dict[str, str]) -> str | None:
+    """Der Name im Lauf: ersetzte Komponenten und ihre Kinder heißen dort anders (`None`: Hauptbaugruppe)."""
+    if name is None:
+        return None
+    for a in reversed(_ahnen(name)):
+        if a in ersetzt:
+            return ersetzt[a] + name[len(a):]
+    return name
+
+
+def namen_im_lauf(name: str, neue: dict[str, list[str]], ersetzt: dict[str, str]) -> list[str]:
+    """Eine Punkt-ID steht für die Komponenten, die sie im Lauf erzeugt hat, ein SolidWorks-Name für sich, der Altname einer
+    ersetzten Komponente für ihren Ersatz."""
+    return list(neue.get(name) or [abbild_name(name, ersetzt)])
+
+
+def soll_werte(p: dict, parameter: dict) -> dict[str, float]:
+    """Wert bzw. Grenzen einer neuen Verknüpfung, ausgewertet mit den Parametern der Spec (mm und Grad)."""
+    felder = ("wert",) if p["art"] in ("abstand", "winkel") else ("min", "max") if p["art"].startswith("grenze_") else ()
+    return {f: float(auswerten(p[f], parameter)) for f in felder if f in p}
+
+
+def soll_ausrichtung(p: dict, i: int) -> int | None:
+    """Ausrichtung, die der Punkt für die i-te neue Verknüpfung verlangt (`None`: keine Prüfung)."""
+    if p["art"] == "scharnier":  # die Anlage hat die Vorgabe `entgegengesetzt`, die Konzentrik bleibt frei (`aufloesen._einzeln`)
+        return AUSRICHTUNG[p.get("ausrichtung", "entgegengesetzt")] if i == 1 else None
+    return AUSRICHTUNG[p["ausrichtung"]] if "ausrichtung" in p else None
+
+
 def _je(werte, konfiguration: str):
     """Wert einer Komponente oder Verknüpfung in einer Konfiguration; `None`, wenn er nicht gelesen wurde."""
     return (werte or {}).get(konfiguration)
@@ -233,30 +286,11 @@ class _Lauf:
 
     # --------------------------------------------------------------------------------------------------- Protokoll
 
-    def instanzen(self, name: str) -> tuple[list[str], list[str]]:
-        """(Komponenten mit der Datei der genannten im Bestand, jede Ebene; nicht lesbar). Ist eine Datei nicht gelesen, lässt sich
-        nicht ausschließen, dass die Komponente eine Instanz ist."""
-        k = self.v_komp.get(name)
-        if k is None:
-            return [name], []
-        if k.get("datei") is None:
-            return [name], [f"{name}: Datei nicht lesbar"]
-        namen, unlesbar = [], []
-        for n, x in self.v_komp.items():
-            if x.get("datei") is None:
-                unlesbar.append(f"{n}: Datei nicht lesbar, Instanz von {name} nicht auszuschließen")
-            elif datei_schluessel(x["datei"]) == datei_schluessel(k["datei"]):
-                namen.append(n)
-        return sorted(namen) or [name], unlesbar
-
     def _ziele(self, alle: list[dict]) -> None:
         self.ziele, self.ziele_unlesbar = {}, {}
         for p in alle:
             if p["typ"] == "komponente_ersetzen":
-                if p.get("alle_instanzen"):
-                    self.ziele[p["id"]], self.ziele_unlesbar[p["id"]] = self.instanzen(p["komponente"])
-                else:
-                    self.ziele[p["id"]], self.ziele_unlesbar[p["id"]] = [p["komponente"]], []
+                self.ziele[p["id"]], self.ziele_unlesbar[p["id"]] = ersetzen_ziele(p, self.v_komp, alle)
 
     def _protokoll(self, alle: list[dict]) -> None:
         """Das Protokoll gegen die Punkte: Was kein Punkt deckt, ist ein Mangel und gibt weder Lage noch Komponenten frei."""
@@ -307,18 +341,10 @@ class _Lauf:
         return [x for x in k if x in self.konfigs], [x for x in k if x not in self.konfigs]
 
     def namen(self, name: str) -> list[str]:
-        """Eine Punkt-ID steht für die Komponenten, die sie im Lauf erzeugt hat, ein SolidWorks-Name für sich, der Altname einer
-        ersetzten Komponente für ihren Ersatz."""
-        return list(self.neue.get(name) or [self.abbild(name)])
+        return namen_im_lauf(name, self.neue, self.ersetzt)
 
     def abbild(self, name: str | None) -> str | None:
-        """Der Name im Lauf: ersetzte Komponenten und ihre Kinder heißen dort anders (`None`: Hauptbaugruppe)."""
-        if name is None:
-            return None
-        for a in reversed(_ahnen(name)):
-            if a in self.ersetzt:
-                return self.ersetzt[a] + name[len(a):]
-        return name
+        return abbild_name(name, self.ersetzt)
 
     def ist_neu(self, name: str) -> bool:
         return any(a in self.erwartet_neu for a in _ahnen(name))
@@ -358,11 +384,6 @@ class _Lauf:
 
     # ------------------------------------------------------------------------------------------------ Verknüpfungen
 
-    def soll_werte(self, p: dict) -> dict[str, float]:
-        """Wert bzw. Grenzen einer neuen Verknüpfung, ausgewertet mit den Parametern der Spec (mm und Grad)."""
-        felder = ("wert",) if p["art"] in ("abstand", "winkel") else ("min", "max") if p["art"].startswith("grenze_") else ()
-        return {f: float(auswerten(p[f], self.parameter)) for f in felder if f in p}
-
     def wert_befunde(self, name: str, soll: dict[str, float], konfigs: list[str] | None = None) -> tuple[list[str], list[str]]:
         """(Mängel, nicht lesbar): `wert`/`min`/`max` der Verknüpfung in den `konfigs` (Vorgabe: jede gemeinsame) gegen `soll`.
         Ohne Konfiguration ist nichts nachgewiesen."""
@@ -380,13 +401,6 @@ class _Lauf:
                     probleme.append(f"{name} ({k}): {feld} steht auf {ist} statt {w:g}")
         return probleme, unlesbar
 
-    @staticmethod
-    def soll_ausrichtung(p: dict, i: int) -> int | None:
-        """Ausrichtung, die der Punkt für die i-te neue Verknüpfung verlangt (`None`: keine Prüfung)."""
-        if p["art"] == "scharnier":  # die Anlage hat die Vorgabe `entgegengesetzt`, die Konzentrik bleibt frei (`aufloesen._einzeln`)
-            return AUSRICHTUNG[p.get("ausrichtung", "entgegengesetzt")] if i == 1 else None
-        return AUSRICHTUNG[p["ausrichtung"]] if "ausrichtung" in p else None
-
     def _passt(self, name: str, typ: int, grenze: bool | None, a: list[str], b: list[str]) -> bool:
         m = self.n_mate[name]
         partner = set(m.get("partner") or [])
@@ -402,7 +416,7 @@ class _Lauf:
         for p in self.punkte:
             if p["typ"] != "verknuepfung_neu":
                 continue
-            soll = self.soll_werte(p)
+            soll = soll_werte(p, self.parameter)
             gewaehlt = []
             for i, typ in enumerate(MATE_TYPEN[p["art"]]):
                 anlage = p["art"] == "scharnier" and i == 1
@@ -410,7 +424,7 @@ class _Lauf:
                 b = self.namen((p.get("anlage_b") if anlage and "anlage_b" in p else p["b"])["komponente"])
                 grenze = p["art"].startswith("grenze_") if typ in (5, 6) else None
                 kandidaten = [n for n in frei if self._passt(n, typ, grenze, a, b)]
-                ausrichtung = self.soll_ausrichtung(p, i)
+                ausrichtung = soll_ausrichtung(p, i)
                 kandidaten.sort(key=lambda n: (not (i == 0 and not any(self.wert_befunde(n, soll))),
                                                ausrichtung is not None and self.n_mate[n].get("ausrichtung") != ausrichtung))
                 wahl = kandidaten[0] if kandidaten else None
@@ -815,7 +829,7 @@ def _punkt_komponente_ersetzen(p: dict, c: _Lauf) -> dict:
 
 
 def _punkt_verknuepfung_neu(p: dict, c: _Lauf) -> dict:
-    pid, soll = f"punkt:{p['id']}", c.soll_werte(p)
+    pid, soll = f"punkt:{p['id']}", soll_werte(p, c.parameter)
     probleme, unlesbar, gewaehlt = [], [], c.zuordnung[p["id"]]
     for i, (typ, name) in enumerate(zip(MATE_TYPEN[p["art"]], gewaehlt)):
         if name is None:
@@ -827,7 +841,7 @@ def _punkt_verknuepfung_neu(p: dict, c: _Lauf) -> dict:
             mangel, nicht_lesbar = c.wert_befunde(name, soll)
             probleme += mangel
             unlesbar += nicht_lesbar
-        if (soll_a := c.soll_ausrichtung(p, i)) is not None:
+        if (soll_a := soll_ausrichtung(p, i)) is not None:
             if m.get("ausrichtung") is None:
                 unlesbar.append(f"{name}: Ausrichtung")
             elif m["ausrichtung"] != soll_a:

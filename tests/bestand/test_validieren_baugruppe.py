@@ -174,7 +174,8 @@ def test_neue_komponente_muss_vor_ihrer_verknuepfung_stehen():
 
 
 def test_anlage_der_verknuepfung_pruft_die_komponente():
-    v = {**_punkt("v1"), "art": "scharnier", "anlage_a": {"komponente": "Nix-1", "ebene": "oben"}}
+    v = {**_punkt("v1"), "art": "scharnier", "anlage_a": {"komponente": "Nix-1", "ebene": "oben"},
+         "anlage_b": {"komponente": "Gehaeuse-1", "ebene": "oben"}}
     (b,) = _befunde(_spec(_punkt("k1"), v))
     assert b["pfad"] == "punkte[1].anlage_a.komponente"
 
@@ -266,10 +267,130 @@ def test_verknuepfung_neu_pflichtfelder_je_art(art, fehlt):
     assert _pfade(befunde) == [f"punkte[1].{f}" for f in fehlt]
 
 
-@pytest.mark.parametrize("art", ["deckungsgleich", "konzentrisch", "parallel", "senkrecht", "scharnier"])
+@pytest.mark.parametrize("art", ["deckungsgleich", "konzentrisch", "parallel", "senkrecht"])
 def test_verknuepfung_neu_ohne_wert_ist_bei_anderen_arten_gueltig(art):
     v = {k: w for k, w in _punkt("v1").items() if k != "wert"}
     assert _befunde(_spec(_punkt("k1"), {**v, "art": art})) == []
+
+
+@pytest.mark.parametrize("art", ["zahnrad", "zahnstange"])
+def test_kopplung_in_fremder_baugruppe_ist_ein_befund(art):
+    (b,) = _befunde(_spec(_punkt("k1"), {**_punkt("v1"), "art": art}))
+    assert b["pfad"] == "punkte[1].art" and "skript" in b["meldung"]
+
+
+@pytest.mark.parametrize("fehlt", [("anlage_a",), ("anlage_b",), ("anlage_a", "anlage_b")])
+def test_scharnier_braucht_beide_anlagen(fehlt):
+    anlagen = {s: {"komponente": "Gehaeuse-1", "ebene": "oben"} for s in ("anlage_a", "anlage_b") if s not in fehlt}
+    v = {k: w for k, w in _punkt("v1").items() if k != "wert"}
+    (b,) = _befunde(_spec(_punkt("k1"), {**v, "art": "scharnier", **anlagen}))
+    assert b["pfad"] == "punkte[1]" and "anlage" in b["meldung"] and "skript" in b["meldung"]
+
+
+def test_scharnier_mit_beiden_anlagen_ist_gueltig():
+    v = {k: w for k, w in _punkt("v1").items() if k != "wert"}
+    anlagen = {s: {"komponente": "Gehaeuse-1", "ebene": "oben"} for s in ("anlage_a", "anlage_b")}
+    assert _befunde(_spec(_punkt("k1"), {**v, "art": "scharnier", **anlagen})) == []
+
+
+@pytest.mark.parametrize("name", ["Abstand1", "abstand1", "ABSTAND1"])
+def test_id_einer_neuen_verknuepfung_darf_keine_vorhandene_nennen(name):
+    """`Name =` bliebe still alt, ohne Beachtung der Schreibweise wie in SolidWorks."""
+    befunde = _befunde(_spec(_punkt("k1"), {**_punkt("v1"), "id": name}))
+    assert _codes(befunde) == [NAME_BELEGT] and befunde[0]["pfad"] == "punkte[1].id" and "Abstand1" in befunde[0]["meldung"]
+
+
+def test_anlage_eines_scharniers_darf_keine_vorhandene_nennen():
+    a = baugruppen_aufnahme()
+    a["verknuepfungen"]["v1.anlage"] = a["verknuepfungen"]["Abstand1"]
+    v = {k: w for k, w in _punkt("v1").items() if k != "wert"}
+    anlagen = {s: {"komponente": "Gehaeuse-1", "ebene": "oben"} for s in ("anlage_a", "anlage_b")}
+    assert _codes(_befunde(_spec(_punkt("k1"), {**v, "art": "scharnier", **anlagen}), a)) == [NAME_BELEGT]
+
+
+# --- Punkte, die einzeln gehen und zusammen nie bestehen ---
+
+ERSETZEN = {"typ": "komponente_ersetzen", "quelle": {"normteil": "ISO 4762 M8x20"}}
+
+
+def _ersetzen(pid="e1", komponente="Schraube-1", **mehr) -> dict:
+    return {"id": pid, **ERSETZEN, "komponente": komponente, **mehr}
+
+
+def _wie(komponente="Schraube-4") -> dict:
+    return {"id": "s1", "typ": "komponente_neu", "wie": komponente}
+
+
+def _entfernen(komponente="Schraube-5", verknuepfungen=()) -> dict:
+    return {"id": "w1", "typ": "komponente_entfernen", "komponente": komponente, "verknuepfungen": list(verknuepfungen)}
+
+
+@pytest.mark.parametrize("reihenfolge", [(0, 1), (1, 0)])
+def test_entfernen_und_alle_instanzen_gehen_zusammen(reihenfolge):
+    punkte = [_entfernen(), _ersetzen(alle_instanzen=True)]
+    assert _befunde(_spec(*(punkte[i] for i in reihenfolge))) == []
+
+
+def test_alle_instanzen_mit_einer_in_der_unterbaugruppe_ist_ein_befund():
+    a = baugruppen_aufnahme()
+    a["komponenten"]["Unter-1/Schraube-1"] = a["komponenten"]["Schraube-1"]
+    (b,) = _befunde(_spec(_ersetzen(alle_instanzen=True)), a)
+    assert _codes([b]) == [BESTAND_REFERENZ] and b["pfad"] == "punkte[0].alle_instanzen"
+    assert "Unter-1/Schraube-1" in b["meldung"]
+
+
+def test_alle_instanzen_mit_entfernter_unterbaugruppe_geht():
+    a = baugruppen_aufnahme()
+    a["komponenten"]["Unter-1/Schraube-1"] = a["komponenten"]["Schraube-1"]
+    mates = sorted(n for n, v in a["verknuepfungen"].items() if any(p and p.startswith("Unter-1") for p in v["partner"]))
+    assert _befunde(_spec(_entfernen("Unter-1", mates), _ersetzen(alle_instanzen=True)), a) == []
+
+
+@pytest.mark.parametrize("reihenfolge", [(0, 1), (1, 0)])
+def test_wie_und_alle_instanzen_auf_dieselbe_datei_sind_ein_befund(reihenfolge):
+    """Fall c: Die neue Komponente trüge die alte Datei, `alle_instanzen` hieße nicht mehr alle."""
+    punkte = [_wie(), _ersetzen(alle_instanzen=True)]
+    befunde = _befunde(_spec(*(punkte[i] for i in reihenfolge)))
+    assert _codes(befunde) == [BESTAND_REFERENZ] and "Schraube-4" in befunde[0]["meldung"]
+    assert befunde[0]["pfad"] == f"punkte[{reihenfolge.index(0)}].wie"
+
+
+def test_wie_an_einer_entfernten_vorlage_und_alle_instanzen_ist_ein_befund():
+    befunde = _befunde(_spec(_wie("Schraube-5"), _entfernen(), _ersetzen(alle_instanzen=True)))
+    assert _codes(befunde) == [BESTAND_REFERENZ] and befunde[0]["pfad"] == "punkte[0].wie"
+
+
+@pytest.mark.parametrize("reihenfolge", [(0, 1), (1, 0)])
+def test_wie_an_einer_ersetzten_komponente_ist_ein_befund(reihenfolge):
+    """Fall d: Der Vergleich misst die Vorlage im Bestand, der Handler im Lauf."""
+    punkte = [_wie("Schraube-2"), _ersetzen(komponente="Schraube-2")]
+    befunde = _befunde(_spec(*(punkte[i] for i in reihenfolge)))
+    assert _codes(befunde) == [BESTAND_REFERENZ] and "Schraube-2" in befunde[0]["meldung"]
+
+
+def test_wie_an_einer_anderen_instanz_derselben_datei_geht():
+    assert _befunde(_spec(_wie("Schraube-4"), _ersetzen(komponente="Schraube-2"))) == []
+
+
+def test_zweimal_ersetzen_ist_ein_befund():
+    befunde = _befunde(_spec(_ersetzen("e1"), _ersetzen("e2")))
+    assert _codes(befunde) == [BESTAND_REFERENZ] and befunde[0]["pfad"] == "punkte[1].komponente"
+    assert "e1" in befunde[0]["meldung"]
+
+
+def test_alle_instanzen_und_einzelnes_ersetzen_ist_ein_befund():
+    befunde = _befunde(_spec(_ersetzen("e1", alle_instanzen=True), _ersetzen("e2", komponente="Schraube-7")))
+    assert _codes(befunde) == [BESTAND_REFERENZ] and "Schraube-7" in befunde[0]["meldung"]
+
+
+def test_ersetzen_und_entfernen_derselben_komponente_ist_ein_befund():
+    befunde = _befunde(_spec(_ersetzen(komponente="Schraube-5"), _entfernen()))
+    assert _codes(befunde) == [BESTAND_REFERENZ] and befunde[0]["pfad"] == "punkte[0].komponente"
+
+
+def test_freigabe_zaehlt_die_instanzen_ohne_die_entfernten():
+    angaben = freigabe_angaben(_spec(_entfernen(), _ersetzen(alle_instanzen=True)), baugruppen_aufnahme())
+    assert angaben["e1"]["instanzen"] == 10
 
 
 def test_verknuepfung_neu_grenze_min_ueber_max():
