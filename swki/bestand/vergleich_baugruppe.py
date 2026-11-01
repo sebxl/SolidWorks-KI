@@ -850,13 +850,15 @@ def _punkt_verknuepfung_wert(p: dict, c: _Lauf) -> dict:
     gewaehlt, nicht_verglichen = c.gewaehlt(p)
     probleme, unlesbar = c.wert_befunde(name, {feld: soll}, gewaehlt)
     unlesbar += [f"Konfiguration {k} nicht verglichen" for k in nicht_verglichen]
-    for k in (k for k in c.konfigs if k not in gewaehlt):  # in den übrigen Konfigurationen bleibt der Wert des Kollegen
+    for k in c.konfigs:  # was kein Punkt (dieser oder ein anderer) in dieser Konfiguration nennt, bleibt wie beim Kollegen
         for f in MATE_WERTE:
+            if (k in gewaehlt and f == feld) or k in c.wert_frei.get((name, f), ()):
+                continue
             (ga, va), (gb, vb) = _wert_gelesen(c.v_mate[name], k, f), _wert_gelesen(c.n_mate[name], k, f)
             if not (ga and gb):
                 unlesbar.append(f"{name} ({k}): {f}")
             elif not _wert_gleich(va, vb):
-                probleme.append(f"{name} ({k}): {f} steht auf {vb} statt {va}, der Punkt nennt diese Konfiguration nicht")
+                probleme.append(f"{name} ({k}): {f} steht auf {vb} statt {va}, kein Punkt nennt es in dieser Konfiguration")
     f, u = c.neue_fehler_an(namen={name})
     return _ergebnis(pid, probleme + f, unlesbar + u, ["; ".join(probleme + f)] if probleme + f else [], soll=soll, knoten=[p["id"]])
 
