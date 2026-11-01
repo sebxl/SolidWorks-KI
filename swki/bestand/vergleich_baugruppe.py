@@ -36,6 +36,7 @@ Regeln, die der Vergleich festlegt:
   im Eintrag und ändern `ok` nicht.
 """
 
+from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from itertools import product
@@ -82,6 +83,11 @@ def _ahnen(name: str) -> list[str]:
 def _je(werte, konfiguration: str):
     """Wert einer Komponente oder Verknüpfung in einer Konfiguration; `None`, wenn er nicht gelesen wurde."""
     return (werte or {}).get(konfiguration)
+
+
+def _partner_schluessel(partner) -> tuple[bool, str]:
+    """Sortierschlüssel: `None` (Ebene oder Achse der Hauptbaugruppe) steht hinten und lässt sich mit Namen vergleichen."""
+    return partner is None, partner or ""
 
 
 def _komma(namen) -> str:
@@ -162,7 +168,7 @@ class _Lauf:
     weg: set[str] = field(init=False)                # Komponenten, die verschwinden dürfen: entfernte und ersetzte samt Kindern
     lage_frei: set[str] = field(init=False)          # Komponenten, deren Lage sich ändern darf (ihre Kinder nur relativ dazu)
     geloeschte_mates: set[str] = field(init=False)
-    wert_felder: dict[str, frozenset[str]] = field(init=False)
+    wert_frei: dict[tuple[str, str], set[str]] = field(init=False)  # (Verknüpfung, Feld) → Konfigurationen, in denen der Wert wandern darf
     bekannte_fehler: set[tuple] = field(init=False)
     zuordnung: dict[str, list[str | None]] = field(init=False)  # Punkt-ID → beanspruchte neue Verknüpfung je erwartetem Typ
     mates_frei: list[str] = field(init=False)        # neue Verknüpfungen, die kein Punkt beansprucht
@@ -178,17 +184,18 @@ class _Lauf:
         self._ziele(alle)
         self._protokoll(alle)
         self.erwartet_neu = {n for namen in self.neue.values() for n in namen} | set(self.ersetzt.values())
-        self.reine_neue = {n for namen in self.neue.values() for n in namen}
+        self.reine_neue = {n for namen in self.neue.values() for n in namen} - set(self.ersetzt.values())
         entfernt = {p["komponente"] for p in alle if p["typ"] == "komponente_entfernen"}
         self.weg = entfernt | set(self.ersetzt)
         self.lage_frei = entfernt | self.reine_neue | {n for p in alle for n in p.get("lage_folgen", [])}
         self.geloeschte_mates = ({n for p in alle if p["typ"] == "komponente_entfernen" for n in p["verknuepfungen"]}
                                  | {p["verknuepfung"] for p in alle if p["typ"] == "verknuepfung_loeschen"})
-        self.wert_felder = {}
+        self.wert_frei = {}
         for p in alle:
             if p["typ"] == "verknuepfung_wert":
-                felder = frozenset({"wert"} if p.get("grenze") is None else {p["grenze"], "wert"})
-                self.wert_felder[p["verknuepfung"]] = self.wert_felder.get(p["verknuepfung"], frozenset()) | felder
+                gewaehlt = set(self.gewaehlt(p)[0])
+                for feld in ({"wert"} if p.get("grenze") is None else {p["grenze"], "wert"}):
+                    self.wert_frei.setdefault((p["verknuepfung"], feld), set()).update(gewaehlt)
         self.bekannte_fehler = {(n, k, code) for n, m in self.v_mate.items() for k, code in (m.get("fehler") or {}).items()
                                 if code not in (0, None)}
         self._ordne_verknuepfungen()
@@ -256,6 +263,13 @@ class _Lauf:
         befunde = []
         self.neue, self.ersetzt = {}, {}
         ziele = {alt for z in self.ziele.values() for alt in z}
+        # jeder Name höchstens einmal über neue (komponente_neu) und ersetzt hinweg, sonst ist nicht zu sagen, was er ist
+        genannt = Counter([namen[0] for pid, namen in self.neue_roh.items() if pid in ids_neu and len(namen) == 1]
+                          + list(self.ersetzt_roh.values()))
+        doppelt = {n for n, anzahl in genannt.items() if anzahl > 1}
+        for n in sorted(doppelt):
+            befunde.append(_protokoll_befund(f"Der Name {n} kommt im Protokoll mehrfach vor (neue Komponente oder Ersatz): "
+                                             "Jeder Name steht für genau eine Komponente"))
         for alt, neu in self.ersetzt_roh.items():
             if alt not in ziele:
                 befunde.append(_protokoll_befund(f"Das Protokoll ersetzt {alt}, aber kein Punkt komponente_ersetzen trifft sie"))
@@ -263,7 +277,7 @@ class _Lauf:
                 befunde.append(_protokoll_befund(f"Das Protokoll ersetzt {alt}, die es im Bestand nicht gibt"))
             elif neu in self.v_komp:
                 befunde.append(_protokoll_befund(f"Die ersetzende Komponente {neu} (für {alt}) gibt es schon im Bestand"))
-            else:
+            elif neu not in doppelt:
                 self.ersetzt[alt] = neu
         for pid, namen in self.neue_roh.items():
             if pid in ids_neu:
@@ -271,7 +285,7 @@ class _Lauf:
                     befunde.append(_protokoll_befund(f"komponente_neu {pid} hat {len(namen)} Namen im Protokoll statt einem"))
                 elif namen[0] in self.v_komp:
                     befunde.append(_protokoll_befund(f"Die neue Komponente {namen[0]} (Punkt {pid}) gibt es schon im Bestand"))
-                else:
+                elif namen[0] not in doppelt:
                     self.neue[pid] = list(namen)
             elif pid in ids_ersetzen:
                 if fremde := [n for n in namen if n not in self.ersetzt.values()]:
@@ -283,12 +297,22 @@ class _Lauf:
 
     # ------------------------------------------------------------------------------------------------------ Namen
 
-    def namen(self, name: str) -> list[str]:
-        """Eine Punkt-ID steht für die Komponenten, die sie im Lauf erzeugt hat, ein SolidWorks-Name für sich."""
-        return list(self.neue.get(name) or [name])
+    def gewaehlt(self, p: dict) -> tuple[list[str], list[str]]:
+        """(Konfigurationen, die der Punkt nennt und beide Stände haben; genannte, die nicht verglichen wurden). Vorgabe: alle."""
+        k = p.get("konfigurationen", "alle")
+        if k == "alle":
+            return list(self.konfigs), []
+        return [x for x in k if x in self.konfigs], [x for x in k if x not in self.konfigs]
 
-    def abbild(self, name: str) -> str:
-        """Der Name im Lauf: ersetzte Komponenten und ihre Kinder heißen dort anders."""
+    def namen(self, name: str) -> list[str]:
+        """Eine Punkt-ID steht für die Komponenten, die sie im Lauf erzeugt hat, ein SolidWorks-Name für sich, der Altname einer
+        ersetzten Komponente für ihren Ersatz."""
+        return list(self.neue.get(name) or [self.abbild(name)])
+
+    def abbild(self, name: str | None) -> str | None:
+        """Der Name im Lauf: ersetzte Komponenten und ihre Kinder heißen dort anders (`None`: Hauptbaugruppe)."""
+        if name is None:
+            return None
         for a in reversed(_ahnen(name)):
             if a in self.ersetzt:
                 return self.ersetzt[a] + name[len(a):]
@@ -328,7 +352,7 @@ class _Lauf:
     def partner_vorher(self, name: str) -> tuple | None:
         """Partner einer Verknüpfung im Bestand, mit den Namen der ersetzenden Komponenten; `None`, wenn nicht gelesen."""
         partner = self.v_mate[name].get("partner")
-        return None if partner is None else tuple(sorted(self.abbild(p) for p in partner))
+        return None if partner is None else tuple(sorted((self.abbild(p) for p in partner), key=_partner_schluessel))
 
     # ------------------------------------------------------------------------------------------------ Verknüpfungen
 
@@ -337,12 +361,16 @@ class _Lauf:
         felder = ("wert",) if p["art"] in ("abstand", "winkel") else ("min", "max") if p["art"].startswith("grenze_") else ()
         return {f: float(auswerten(p[f], self.parameter)) for f in felder if f in p}
 
-    def wert_befunde(self, name: str, soll: dict[str, float]) -> tuple[list[str], list[str]]:
-        """(Mängel, nicht lesbar): `wert`/`min`/`max` der Verknüpfung in jeder gemeinsamen Konfiguration gegen `soll`."""
+    def wert_befunde(self, name: str, soll: dict[str, float], konfigs: list[str] | None = None) -> tuple[list[str], list[str]]:
+        """(Mängel, nicht lesbar): `wert`/`min`/`max` der Verknüpfung in den `konfigs` (Vorgabe: jede gemeinsame) gegen `soll`.
+        Ohne Konfiguration ist nichts nachgewiesen."""
         probleme, unlesbar = [], []
         m = self.n_mate[name]
+        konfigs = self.konfigs if konfigs is None else konfigs
+        if soll and not konfigs:
+            unlesbar.append(f"{name}: keine Konfiguration zum Vergleichen")
         for feld, w in soll.items():
-            for k in self.konfigs:
+            for k in konfigs:
                 gelesen, ist = _wert_gelesen(m, k, feld)
                 if not gelesen:
                     unlesbar.append(f"{name} ({k}): {feld}")
@@ -570,12 +598,13 @@ def _verknuepfungen(c: _Lauf) -> dict:
         pa, pb = c.partner_vorher(name), b.get("partner")
         if pa is None or pb is None:
             unlesbar.append(f"{name}: partner")
-        elif pa != tuple(sorted(pb)):
-            probleme.append({"art": "geaendert", "verknuepfung": name, "feld": "partner", "vorher": list(pa), "nachher": sorted(pb)})
+        elif pa != tuple(sorted(pb, key=_partner_schluessel)):
+            probleme.append({"art": "geaendert", "verknuepfung": name, "feld": "partner", "vorher": list(pa),
+                             "nachher": sorted(pb, key=_partner_schluessel)})
         for feld in MATE_WERTE:
-            if feld in c.wert_felder.get(name, ()):
-                continue
             for k in c.konfigs:
+                if k in c.wert_frei.get((name, feld), ()):
+                    continue
                 (ga, va), (gb, vb) = _wert_gelesen(a, k, feld), _wert_gelesen(b, k, feld)
                 if not (ga and gb):
                     unlesbar.append(f"{name} ({k}): {feld}")
@@ -818,7 +847,16 @@ def _punkt_verknuepfung_wert(p: dict, c: _Lauf) -> dict:
         return eintrag(pid, False, soll=None, hinweis=f"Verknüpfung {name} fehlt nach der Änderung", knoten=[p["id"]])
     feld = p.get("grenze") or "wert"
     soll = float(auswerten(p["neu"], c.parameter))
-    probleme, unlesbar = c.wert_befunde(name, {feld: soll})
+    gewaehlt, nicht_verglichen = c.gewaehlt(p)
+    probleme, unlesbar = c.wert_befunde(name, {feld: soll}, gewaehlt)
+    unlesbar += [f"Konfiguration {k} nicht verglichen" for k in nicht_verglichen]
+    for k in (k for k in c.konfigs if k not in gewaehlt):  # in den übrigen Konfigurationen bleibt der Wert des Kollegen
+        for f in MATE_WERTE:
+            (ga, va), (gb, vb) = _wert_gelesen(c.v_mate[name], k, f), _wert_gelesen(c.n_mate[name], k, f)
+            if not (ga and gb):
+                unlesbar.append(f"{name} ({k}): {f}")
+            elif not _wert_gleich(va, vb):
+                probleme.append(f"{name} ({k}): {f} steht auf {vb} statt {va}, der Punkt nennt diese Konfiguration nicht")
     f, u = c.neue_fehler_an(namen={name})
     return _ergebnis(pid, probleme + f, unlesbar + u, ["; ".join(probleme + f)] if probleme + f else [], soll=soll, knoten=[p["id"]])
 
@@ -843,7 +881,12 @@ def vergleiche_baugruppe(spec: dict, vorher: dict, nachher: dict, neue: dict[str
     Pfade der Dateien, die der Bau angelegt hat; die Datei einer Komponente aus einer `quelle` muss dazugehören)."""
     c = _Lauf(spec, vorher, nachher, neue, ersetzt, neue_dateien)
     allgemein = [_komponenten(c), _verknuepfungen(c), _bestimmtheit(c), _kollision(c), _lage(c)]
-    return allgemein + [_PUNKT[p["typ"]](p, c) for p in c.punkte]
+    punkte = [_PUNKT[p["typ"]](p, c) for p in c.punkte]
+    if not c.konfigs:  # ohne gemeinsame Konfiguration hat kein Punkt etwas belegt
+        for e in punkte:
+            if e["ok"] is True:
+                e["ok"], e["hinweis"] = None, "Keine gemeinsame Konfiguration gelesen, nicht nachgewiesen"
+    return allgemein + punkte
 
 
 # ---------------------------------------------------------------------------------------------------------------- Dateien

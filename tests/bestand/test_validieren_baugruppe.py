@@ -235,7 +235,7 @@ def test_verknuepfung_wert_altwert_auch_fuer_die_grenze():
     w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 6}
     assert _befunde(_spec(w)) == []
     (b,) = _befunde(_spec({**w, "alt": 6}))
-    assert b["code"] == BESTAND_ALTWERT and b["werte"] == {"max": 5.0}
+    assert b["code"] == BESTAND_ALTWERT and b["werte"] == {"Standard": 5.0}
     assert _befunde(_spec({**w, "grenze": "min", "alt": 0})) == []
     (b,) = _befunde(_spec({**w, "grenze": "min", "alt": 1}))
     assert b["code"] == BESTAND_ALTWERT
@@ -752,3 +752,40 @@ def test_kaufteil_ungepruefter_eintrag_scheitert_schon_in_validieren(tmp_path, m
     katalog(tmp_path / "kat", monkeypatch, geprueft=False)
     befunde = pruefe_baugruppe(_spec(KAUFTEIL), baugruppen_aufnahme(), datei_aufnahmen(), tmp_path)[0]
     assert [b["meldung"].split(":")[0] for b in befunde] == ["KAUFTEIL_UNGEPRUEFT"]
+
+
+# --- verknuepfung_wert mit `konfigurationen` (Korrekturrunde 2) ---
+
+def _zwei_konfigurationen_10_20():
+    a = baugruppen_aufnahme()
+    a["konfigurationen"] = ["Standard", "Variante B"]
+    for v in a["verknuepfungen"].values():
+        v["werte"]["Variante B"] = copy.deepcopy(v["werte"]["Standard"])
+    a["verknuepfungen"]["Abstand1"]["werte"]["Variante B"]["wert"] = 20.0
+    return a
+
+
+def test_verknuepfung_wert_altwert_gilt_in_allen_genannten_konfigurationen():
+    a = _zwei_konfigurationen_10_20()
+    (b,) = _befunde(_spec(_punkt("w1")), a)  # Vorgabe alle: Variante B steht auf 20
+    assert b["code"] == BESTAND_ALTWERT and b["pfad"] == "punkte[0].alt"
+    assert b["werte"] == {"Standard": 10.0, "Variante B": 20.0}
+    assert _befunde(_spec({**_punkt("w1"), "konfigurationen": "alle"}), a)[0]["code"] == BESTAND_ALTWERT
+    assert _befunde(_spec({**_punkt("w1"), "konfigurationen": ["Standard"]}), a) == []
+    (b,) = _befunde(_spec({**_punkt("w1"), "konfigurationen": ["Variante B"]}), a)
+    assert b["code"] == BESTAND_ALTWERT and b["werte"] == {"Variante B": 20.0}
+    assert _befunde(_spec({**_punkt("w1"), "alt": 20, "konfigurationen": ["Variante B"]}), a) == []
+
+
+def test_verknuepfung_wert_altwert_der_grenze_je_konfiguration():
+    a = _zwei_konfigurationen_10_20()
+    a["verknuepfungen"]["Grenze_Abstand1"]["werte"]["Variante B"]["max"] = 9.0
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 6}
+    (b,) = _befunde(_spec(w), a)
+    assert b["code"] == BESTAND_ALTWERT and b["werte"] == {"Standard": 5.0, "Variante B": 9.0}
+    assert _befunde(_spec({**w, "konfigurationen": ["Standard"]}), a) == []
+
+
+def test_verknuepfung_wert_unbekannte_konfiguration():
+    (b,) = _befunde(_spec({**_punkt("w1"), "konfigurationen": ["Gibts nicht"]}))
+    assert b["code"] == BESTAND_REFERENZ and b["pfad"] == "punkte[0].konfigurationen[0]"

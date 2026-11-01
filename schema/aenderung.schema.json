@@ -266,7 +266,8 @@
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
               "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "verknuepfung": {"$ref": "#/$defs/name"}, "grenze": {"enum": ["min", "max"]},
-              "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"}
+              "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"},
+              "konfigurationen": {"$ref": "#/$defs/konfigurationen"}
             }
           }
         },

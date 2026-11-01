@@ -185,7 +185,7 @@ in der Bestandskopie) und benutzen die Teil-Typen.
 | `komponente_entfernen` | `komponente`, `verknuepfungen` | löscht eine Komponente; `verknuepfungen` nennt alle, die mitgehen (`VERKNUEPFUNGEN_FEHLEN`) |
 | `komponente_ersetzen` | `komponente`, `quelle`, `alle_instanzen?`, `konfiguration?` | `ReplaceComponents2`, Verknüpfungen bleiben, soweit sie sich neu zuordnen lassen |
 | `verknuepfung_neu` | `art`, `a`, `b`, `wert` bzw. `min`/`max`, `ausrichtung?` | `art` wie `typ` einer Verknüpfung in Spec 3b; `a`/`b`: `{komponente: <SW-Name oder Punkt-ID>, …}` |
-| `verknuepfung_wert` | `verknuepfung`, `grenze?` (`min`/`max`), `alt`, `neu` | Wert einer Abstands-/Winkelverknüpfung oder eine Grenze |
+| `verknuepfung_wert` | `verknuepfung`, `grenze?` (`min`/`max`), `konfigurationen?`, `alt`, `neu` | Wert einer Abstands-/Winkelverknüpfung oder eine Grenze, in den genannten Konfigurationen (Vorgabe `alle`, wie bei `mass`); `alt` muss in allen genannten stimmen (`BESTAND_ALTWERT`), die übrigen bleiben unverändert |
 | `verknuepfung_loeschen` | `verknuepfung` | löscht die Verknüpfung |
 
 Alle Punkte dürfen `lage_folgen: [<Komponente>, …]` tragen: Komponenten, deren Lage sich durch den Punkt ändern darf (§8.3). Neu auf

@@ -19,7 +19,8 @@ from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, MASS_
 from swki.bestand.folgen import folgen_von
 from swki.bestand.scheiben import (aenderung_an_haupt, datei_schluessel, dateien_mit_punkten, haupt_scheibe, scheibe, scheiben_karte,
                                    zurueck)
-from swki.bestand.spec import BAUGRUPPEN_TYPEN, _alt_befund, _befund, _ist_relativ, befunde_gegen_aufnahme, feature_befunde
+from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _alt_befund, _befund, _gewaehlt, _ist_relativ, _konfig_befunde, befunde_gegen_aufnahme,
+                               feature_befunde)
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.laden import SpecFehler, lade_spec, lade_yaml
 
@@ -46,6 +47,8 @@ class _Bestand:
         self.komponenten = aufnahme.get("komponenten", {})
         self.verknuepfungen = aufnahme.get("verknuepfungen", {})
         self.bewegungen = aufnahme.get("bewegungen") or {}
+        self.konfigurationen = aufnahme.get("konfigurationen") or []
+        self.aktiv = aufnahme.get("aktiv")
         self._rel = {datei_schluessel(rel): rel for rel in self.dateien}
 
     def rel(self, datei: str) -> str | None:
@@ -82,7 +85,7 @@ class _Bestand:
     def haengt_dran(self, komponente: str) -> list[str]:
         """Verknüpfungen, an denen die Komponente (oder eine in ihr, bei einer Unterbaugruppe) Partner ist."""
         return sorted(n for n, v in self.verknuepfungen.items()
-                      if any(p == komponente or p.startswith(komponente + "/") for p in v.get("partner", [])))
+                      if any(p is not None and (p == komponente or p.startswith(komponente + "/")) for p in v.get("partner", [])))
 
     def bewegungen_von(self, komponenten: list[str], verknuepfungen: list[str]) -> list[str]:
         """Bewegungen (Grenzverknüpfungen), die eine der Verknüpfungen sind oder eine der Komponenten bewegen."""
@@ -226,6 +229,13 @@ def _verknuepfung_neu_befunde(p: dict, pfad: str, b: _Bestand, neu: set[str], pa
     return befunde
 
 
+def _alt_je_konfiguration(p: dict, v: dict, feld: str, b: _Bestand) -> dict:
+    """Der Wert des Felds (`wert`/`min`/`max`) in jeder Konfiguration, die der Punkt nennt (aus `werte`); eine Aufnahme ohne `werte`
+    liefert nur den Wert der aktiven Konfiguration."""
+    ist = {k: ((v.get("werte") or {}).get(k) or {}).get(feld) for k in _gewaehlt(p, b.konfigurationen)}
+    return ist if any(w is not None for w in ist.values()) else {b.aktiv or "aktiv": v.get(feld)}
+
+
 def _verknuepfung_wert_befunde(p: dict, pfad: str, b: _Bestand) -> list[dict]:
     name = p["verknuepfung"]
     v = b.verknuepfungen.get(name)
@@ -241,13 +251,13 @@ def _verknuepfung_wert_befunde(p: dict, pfad: str, b: _Bestand) -> list[dict]:
         if grenze is None:
             return [_befund(f"{pfad}.grenze", f"{name!r} ist eine Grenzverknüpfung (min {v.get('min')}, max {v.get('max')}): grenze: "
                             "min oder max nennen")]
-        return _alt_befund(f"{pfad}.alt", p["alt"], {grenze: v.get(grenze)})
+        return _alt_befund(f"{pfad}.alt", p["alt"], _alt_je_konfiguration(p, v, grenze, b))
     if grenze is not None:
         return [_befund(f"{pfad}.grenze", f"{name!r} ist keine Grenzverknüpfung: grenze weglassen")]
     if v.get("wert") is None:
         return [_befund(f"{pfad}.verknuepfung", f"{name!r} hat keinen Wert (nur Abstand und Winkel tragen einen, nicht etwa "
                         "konzentrisch oder deckungsgleich)")]
-    return _alt_befund(f"{pfad}.alt", p["alt"], {"Wert": v["wert"]})
+    return _alt_befund(f"{pfad}.alt", p["alt"], _alt_je_konfiguration(p, v, "wert", b))
 
 
 def _entfernen_befunde(p: dict, pfad: str, b: _Bestand) -> list[dict]:
@@ -294,7 +304,7 @@ def _punkt_befunde(i: int, p: dict, b: _Bestand, neu: set[str], q: _Quellen, par
     elif typ == "verknuepfung_neu":
         befunde += _verknuepfung_neu_befunde(p, pfad, b, neu, parameter)
     elif typ == "verknuepfung_wert":
-        befunde += _verknuepfung_wert_befunde(p, pfad, b)
+        befunde += _konfig_befunde(p, pfad, b.konfigurationen) + _verknuepfung_wert_befunde(p, pfad, b)
     elif typ == "verknuepfung_loeschen" and p["verknuepfung"] not in b.verknuepfungen:
         befunde.append(_befund(f"{pfad}.verknuepfung", f"Verknüpfung {p['verknuepfung']!r} gibt es in der Aufnahme nicht "
                                f"(vorhanden: {_beispiele(sorted(b.verknuepfungen))})", BESTAND_REFERENZ))

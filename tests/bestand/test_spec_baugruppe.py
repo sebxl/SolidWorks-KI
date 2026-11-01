@@ -483,3 +483,11 @@ def freigabe_der_teil_quelle(spec_pfad: Path) -> None:
     for datei, teil in teile.items():
         spec_freigeben(spec_pfad.parent / datei, teil)
     spec_freigeben(spec_pfad, spec, teile=_summen(teile))
+
+
+def test_verknuepfung_wert_traegt_konfigurationen(tmp_path):
+    spec = _mit("w1", konfigurationen=["Standard"])
+    assert lade_aenderung(_schreibe(tmp_path, spec)) == spec
+    assert lade_aenderung(_schreibe(tmp_path, _mit("w1", konfigurationen="alle")))
+    assert _befunde(tmp_path, _mit("w1", konfigurationen=[]))  # mindestens eine Konfiguration
+    assert _befunde(tmp_path, _mit("w1", konfigurationen="Standard"))  # entweder "alle" oder eine Liste
