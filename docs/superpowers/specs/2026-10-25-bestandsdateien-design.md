@@ -505,7 +505,10 @@ deshalb gilt die Datei: **Jede Grenzverknüpfung der Hauptbaugruppe ist eine Bew
   zeigt sie ein Probeschritt. `--ohne-bewegung` lässt das weg, `pruefen` meldet dann `bewegung:*` als `ok: None`.
 - **Prüfung:** Dieselbe Fahrt am Lauf, dieselbe Bewertung (`bewerte_bewegungen`). Soll ist das Verhalten im Bestand, nicht eine Spec: Was dort fuhr, muss wieder fahren; dieselben Komponenten
   bewegen sich, außer neue aus Punkten und entfernte (`bewegung_menge`); neue Kollisionen sind Mängel; bekannte aus dem Bestand und `kollision_erlaubt` nicht. Was schon im Bestand nicht
-  bestand, ist kein Mangel des Laufs, sondern steht im Bericht.
+  bestand, ist kein Mangel des Laufs, solange er nicht schlechter ist, und steht im Bericht (Maßstab je Prüfung: `bewegung` gleiche oder spätere Abbruchstellung je Gegenlauf, `grenze` nur
+  dort Durchgang, wo auch der Bestand durchging, `sollweg` Betrag und Anzahl der abweichenden Stellungen nicht größer, `freiheitsgrad` gleiche Bestimmtheit; ein unbekanntes Format wird nie
+  angehoben). Der Lauf fährt mindestens so viele Stellungen wie der Bestand; fehlt die Zahl in einem Stand, ist `bewegung:<g>` nicht nachgewiesen. Fuhr eine Grenze im Bestand nicht, hat
+  sie kein Soll, ihre Fahrt im Lauf wird aber für sich bewertet. Eine Kollisionsprüfung ohne Befund im Feld `kollisionen` ist nie bestanden, sondern nicht nachgewiesen.
 - **Fahrt robust gegen alte Fehler:** Verknüpfungsfehler aus der Aufnahme stoppen die Fahrt nicht, neue schon. Scheitert eine Grenze im Bestand, wird sie als nicht gefahren vermerkt und die übrigen fahren einzeln weiter, sonst
   fiele der Nachweis still für alle weg. Eine Grenze mit `min` gleich `max` hat keinen Weg und wird nicht gefahren.
 - **Ein Punkt ändert die Grenze** (`verknuepfung_wert`, `verknuepfung_loeschen`): gefahren wird der neue Bereich bzw. nichts. `punkt:<id>` belegt das.

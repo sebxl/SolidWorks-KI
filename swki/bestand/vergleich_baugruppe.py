@@ -166,6 +166,7 @@ class _Lauf:
     erwartet_neu: set[str] = field(init=False)       # Namen aus dem Protokoll: neue und ersetzende Komponenten
     reine_neue: set[str] = field(init=False)         # nur die neuen (ohne ersetzende)
     weg: set[str] = field(init=False)                # Komponenten, die verschwinden dürfen: entfernte und ersetzte samt Kindern
+    entfernt: set[str] = field(init=False)           # nur die Ziele von komponente_entfernen
     lage_frei: set[str] = field(init=False)          # Komponenten, deren Lage sich ändern darf (ihre Kinder nur relativ dazu)
     geloeschte_mates: set[str] = field(init=False)
     wert_frei: dict[tuple[str, str], set[str]] = field(init=False)  # (Verknüpfung, Feld) → Konfigurationen, in denen der Wert wandern darf
@@ -186,6 +187,7 @@ class _Lauf:
         self.erwartet_neu = {n for namen in self.neue.values() for n in namen} | set(self.ersetzt.values())
         self.reine_neue = {n for namen in self.neue.values() for n in namen} - set(self.ersetzt.values())
         entfernt = {p["komponente"] for p in alle if p["typ"] == "komponente_entfernen"}
+        self.entfernt = entfernt
         self.weg = entfernt | set(self.ersetzt)
         self.lage_frei = entfernt | self.reine_neue | {n for p in alle for n in p.get("lage_folgen", [])}
         self.geloeschte_mates = ({n for p in alle if p["typ"] == "komponente_entfernen" for n in p["verknuepfungen"]}
@@ -953,3 +955,8 @@ def vergleiche_dateien(spec: dict, bestand: dict, ist: dict[str, str | None],
                        if schl in lauf and None not in (lauf[schl][1], sha) and lauf[schl][1] != sha)
     return _ergebnis("dateien", probleme, unlesbar, ["Dateien: " + "; ".join(teile)] if teile else [], ist=probleme,
                      erwartet_geaendert=sorted(verlangt.values()), geaendert=geaendert, neu=sorted(neu.values()), knoten=[])
+
+
+# Öffentliche Namen für `swki.bestand.bewegung_bestand`: derselbe Stand des Protokolls und dieselben erlaubten Paare, keine zweite Logik
+Vergleichsstand = _Lauf
+erlaubte_paare = _erlaubte_paare

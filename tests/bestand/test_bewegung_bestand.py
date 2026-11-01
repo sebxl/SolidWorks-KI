@@ -257,6 +257,14 @@ def spec_aus(*punkte, **rest) -> dict:
     return {"art": "aenderung", "name": "T", "punkte": list(punkte), **rest}
 
 
+def neu_punkt(pid: str) -> dict:
+    return punkt("komponente_neu", pid, quelle={"normteil": "ISO 4762 M6x16"})
+
+
+def ersetzen(pid: str, alt: str) -> dict:
+    return punkt("komponente_ersetzen", pid, komponente=alt, quelle={"normteil": "ISO 4762 M6x16"})
+
+
 def vergleich(vorher_bew, nachher_bew, spec=None, neue=None, ersetzt=None, vorher=None, nachher=None) -> dict[str, dict]:
     v = vorher or aufnahme(bewegungen=vorher_bew)
     n = nachher or aufnahme(bewegungen=nachher_bew)
@@ -402,18 +410,34 @@ def test_andere_menge_ist_mangel(gefahren):
 def test_neue_schraube_am_bewegten_teil_darf_mitfahren(gefahren):
     nachher = kopie(gefahren, bewegt=["schieber", "hebel", "Schraube-12", "Unter-2/Welle-1"])
     assert falsche(vergleich(gefahren, nachher)) == ["bewegung_menge:Hub"]  # ohne Punkt fährt sie unerklärt mit
-    e = vergleich(gefahren, nachher, neue={"k1": ["Schraube-12"], "k2": ["Unter-2"]})
+    e = vergleich(gefahren, nachher, spec_aus(neu_punkt("k1"), neu_punkt("k2")), neue={"k1": ["Schraube-12"], "k2": ["Unter-2"]})
     assert falsche(e) == [] and e["bewegung_menge:Hub"]["ok"] is True
+    # ein Protokoll, das kein Punkt deckt, gibt nichts frei
+    assert falsche(vergleich(gefahren, nachher, neue={"k1": ["Schraube-12"], "k2": ["Unter-2"]})) == ["bewegung_menge:Hub"]
 
 
 def test_entfernte_komponente_darf_fehlen_ersetzte_zieht_um(gefahren):
     nachher = kopie(gefahren, bewegt=["schieber"])
     assert falsche(vergleich(gefahren, nachher, spec_aus(punkt("komponente_entfernen", "e1", komponente="hebel", verknuepfungen=[])))) == []
     nachher = kopie(gefahren, bewegt=["schieber", "hebel2"])
-    ersetzt = {"hebel": "hebel2"}
-    assert vergleich(gefahren, nachher, ersetzt=ersetzt)["bewegung_menge:Hub"]["ok"] is True
+    ersetzt, spec = {"hebel": "hebel2"}, spec_aus(ersetzen("r1", "hebel"))
+    assert vergleich(gefahren, nachher, spec, ersetzt=ersetzt)["bewegung_menge:Hub"]["ok"] is True
     assert falsche(vergleich(gefahren, nachher)) == ["bewegung_menge:Hub"]  # ohne Ersetzung fehlt hebel
-    assert "bewegung_menge:Hub" in falsche(vergleich(gefahren, kopie(gefahren, bewegt=["schieber"]), ersetzt=ersetzt))
+    assert falsche(vergleich(gefahren, nachher, ersetzt=ersetzt)) == ["bewegung_menge:Hub"]  # ohne Punkt gilt die Ersetzung nicht
+    assert "bewegung_menge:Hub" in falsche(vergleich(gefahren, kopie(gefahren, bewegt=["schieber"]), spec, ersetzt=ersetzt))
+
+
+def test_ersetzte_fixierte_komponente_darf_nicht_mitfahren(gefahren):
+    nachher = kopie(gefahren, bewegt=["schieber", "hebel", "platte2"])
+    e = vergleich(gefahren, nachher, spec_aus(ersetzen("r1", "platte")), ersetzt={"platte": "platte2"})
+    assert falsche(e) == ["bewegung_menge:Hub"] and e["bewegung_menge:Hub"]["zusaetzlich"] == ["platte2"]
+
+
+def test_protokoll_ohne_punkt_macht_die_fixierte_platte_nicht_frei(gefahren):
+    nachher = kopie(gefahren, bewegt=["schieber", "hebel", "platte"])
+    assert falsche(vergleich(gefahren, nachher, neue={"gibt_es_nicht": ["platte"]})) == ["bewegung_menge:Hub"]
+    # ein Punkt, der die Komponente neu anlegt, hilft nicht, wenn sie im Bestand schon da ist (Protokoll ungültig)
+    assert falsche(vergleich(gefahren, nachher, spec_aus(neu_punkt("k1")), neue={"k1": ["platte"]})) == ["bewegung_menge:Hub"]
 
 
 def test_neue_kollision_ist_mangel_bekannte_nicht(gefahren):
@@ -450,11 +474,15 @@ def test_kollision_erlaubt_gilt_auch_in_der_fahrt(gefahren):
 def test_bekannte_paare():
     vorher = aufnahme(kollisionen=[{"paar": ["platte", "hebel"], "volumen": 1.0}],
                       bewegungen={"Hub": {"kollisionen": [{"paar": ["schieber", "bolzen"], "volumen": 1.0}]}, "Schwenk": {}})
-    spec = spec_aus(kollision_erlaubt=[{"paar": ["k1", "schieber"], "grund": "x"}])
-    assert bekannte_paare(vorher, spec, {"k1": ["Neu-1", "Neu-2"]}) == {
-        frozenset({"platte", "hebel"}), SCHIEBER_BOLZEN, frozenset({"Neu-1", "schieber"}), frozenset({"Neu-2", "schieber"})}
-    # ersetzte Komponenten gelten unter dem neuen Namen, auch ihre Kinder
-    assert bekannte_paare(vorher, spec_aus(), {}, {"hebel": "hebel2", "schieber": "schieber2"}) == {
+    spec = spec_aus(neu_punkt("k1"), kollision_erlaubt=[{"paar": ["k1", "schieber"], "grund": "x"}])
+    assert bekannte_paare(vorher, spec, {"k1": ["Neu-1"]}) == {
+        frozenset({"platte", "hebel"}), SCHIEBER_BOLZEN, frozenset({"Neu-1", "schieber"})}
+    # ohne Punkt, der das Protokoll deckt, bleibt die Punkt-ID ein Name
+    assert bekannte_paare(vorher, spec_aus(kollision_erlaubt=spec["kollision_erlaubt"]), {"k1": ["Neu-1"]}) == {
+        frozenset({"platte", "hebel"}), SCHIEBER_BOLZEN, frozenset({"k1", "schieber"})}
+    # ersetzte Komponenten gelten unter dem neuen Namen
+    assert bekannte_paare(vorher, spec_aus(ersetzen("r1", "hebel"), ersetzen("r2", "schieber")), {},
+                          {"hebel": "hebel2", "schieber": "schieber2"}) == {
         frozenset({"platte", "hebel2"}), frozenset({"schieber2", "bolzen"})}
     assert statische_paare(vorher) == {frozenset({"platte", "hebel"})}
 
@@ -508,8 +536,12 @@ def test_lauf_ohne_eine_pruefung_beweist_nichts(gefahren):
     nachher["Hub"]["pruefungen"] = [x for x in nachher["Hub"]["pruefungen"]
                                     if x["id"] not in ("bewegung:Hub", "bewegung_kollision:Hub", "sollweg:Hub:schieber")]
     e = vergleich(gefahren, nachher)
-    assert e["bewegung:Hub"]["ok"] is None and e["bewegung_kollision:Hub"]["ok"] is True
+    assert e["bewegung:Hub"]["ok"] is None and e["bewegung_kollision:Hub"]["ok"] is None
     assert e["sollweg:Hub:schieber"]["ok"] is None and falsche(e) == []
+    leer = kopie(gefahren, pruefungen=[])  # gar keine Prüfungen: nichts bestanden
+    e = vergleich(gefahren, leer)
+    assert all(x["ok"] is None for k, x in e.items() if (k.endswith("Hub") or "Hub:" in k or k == "freiheitsgrad:schieber")
+               and not k.startswith("bewegung_menge"))
 
 
 def test_ersetzte_komponente_behaelt_ihre_pruefungen(gefahren):
@@ -517,7 +549,7 @@ def test_ersetzte_komponente_behaelt_ihre_pruefungen(gefahren):
     for x in nachher["Hub"]["pruefungen"]:
         x["id"] = x["id"].replace("schieber", "schieber2")
     setze(nachher, "Hub", "sollweg:Hub:schieber2", False)
-    e = vergleich(gefahren, nachher, ersetzt={"schieber": "schieber2"})
+    e = vergleich(gefahren, nachher, spec_aus(ersetzen("r1", "schieber")), ersetzt={"schieber": "schieber2"})
     assert falsche(e) == ["sollweg:Hub:schieber2"]
     assert e["freiheitsgrad:schieber2"]["ok"] is True
 
@@ -536,3 +568,148 @@ def test_nur_dieselbe_id_wird_zusammengefuehrt(gefahren):
     b["verknuepfungen"]["Zwei"] = copy.deepcopy(b["verknuepfungen"]["Hub"])
     e = vergleich(None, None, vorher=a, nachher=b)
     assert falsche(e) == ["freiheitsgrad:schieber"]
+
+
+# ------------------------------------------------------------------------------------- Korrekturrunde 1 (Review Task 6)
+
+def test_im_bestand_nicht_gefahren_der_lauf_faehrt_trotzdem(gefahren):
+    """Bestand ohne Weg, ein Punkt öffnet den Bereich: Die Fahrt des Laufs wird bewertet, ihr Fehler und ihre neue Kollision zählen."""
+    vorher = kopie(gefahren, gefahren=False, hinweis="min gleich max: kein Weg, nicht gefahren", bewegt=[], pruefungen=[], max=0.0)
+    lauf = fahre_alle(Attrappe(fehler_bei=("Hub", 50.0)))
+    lauf["Hub"]["kollisionen"] = [{"paar": ["anschlag", "hebel"], "volumen": 500.0}]
+    e = vergleich(vorher, lauf, spec_aus(punkt("verknuepfung_wert", "w", verknuepfung="Hub", grenze="max", alt=0, neu=100)))
+    assert "bewegung:Hub" in falsche(e) and "bewegung_kollision:Hub" in falsche(e)
+    assert "kein Weg" in e["bewegung:Hub"]["hinweis"]  # der Grund bleibt im Eintrag
+    assert "bewegung_menge:Hub" not in e  # kein Soll für die Menge
+    # fuhr auch der Lauf nicht, bleibt es bei ok True mit Hinweis
+    e = vergleich(vorher, kopie(vorher, hinweis="auch nicht"))
+    assert e["bewegung:Hub"]["ok"] is True and "kein Weg" in e["bewegung:Hub"]["hinweis"]
+    # fährt der Lauf sauber, bleibt es ohne Mangel und der Grund steht weiter da
+    e = vergleich(vorher, copy.deepcopy(gefahren))
+    assert falsche(e) == [] and "kein Weg" in e["bewegung:Hub"]["hinweis"]
+
+
+def bricht_ab(stellung: float, **kw) -> dict:
+    return fahre_alle(Attrappe(fehler_bei=("Hub", stellung)), **kw)
+
+
+def test_lauf_darf_nicht_frueher_abbrechen_als_der_bestand():
+    bestand, spaeter, frueher = bricht_ab(100.0), bricht_ab(100.0), bricht_ab(75.0)
+    # der Bestand bricht bei 100 ab (Belege in `ist`): gleicher Abbruch ist kein Mangel des Laufs
+    assert [x["ist"][0]["stellung"] for x in bestand["Hub"]["pruefungen"] if x["id"] == "bewegung:Hub"] == [100.0]
+    e = vergleich(bestand, spaeter)
+    assert e["bewegung:Hub"]["ok"] is True and "nicht schlechter" in e["bewegung:Hub"]["hinweis"]
+    # früher abbrechen ist schlechter, auch wenn die Prüfung beide Male ok False ist
+    assert "bewegung:Hub" in falsche(vergleich(bestand, frueher))
+    # ein Bestand, der bei 75 abbrach, hält einen Lauf bei 100 aus
+    assert "bewegung:Hub" not in falsche(vergleich(frueher, bestand))
+    # ein Abbruch, den der Bestand nicht hatte (anderes `gegen`), ist schlechter
+    anders = copy.deepcopy(spaeter)
+    for x in anders["Hub"]["pruefungen"]:
+        if x["id"] == "bewegung:Hub":
+            x["ist"][0]["gegen"] = {"Schwenk": "max"}
+    assert "bewegung:Hub" in falsche(vergleich(bestand, anders))
+
+
+def pruefung_mit_ist(k: dict, g: str, pid: str, ist) -> None:
+    for x in k[g]["pruefungen"]:
+        if x["id"] == pid:
+            x["ok"], x["ist"] = False, ist
+            return
+    raise KeyError(pid)
+
+
+def test_sollweg_nur_angehoben_wenn_nicht_schlechter(gefahren):
+    def lauf(betrag, anzahl):
+        k = kopie(gefahren)
+        pruefung_mit_ist(k, "Hub", "sollweg:Hub:schieber", {"groesste_abweichung": {"betrag": betrag}, "abweichende_stellungen": anzahl})
+        return k
+
+    pid = "sollweg:Hub:schieber"
+    assert vergleich(lauf(0.2, 1), lauf(0.2, 1))[pid]["ok"] is True
+    assert vergleich(lauf(0.2, 1), lauf(0.1, 1))[pid]["ok"] is True
+    assert vergleich(lauf(0.2, 1), lauf(50.0, 1))[pid]["ok"] is False  # Betrag größer
+    assert vergleich(lauf(0.2, 1), lauf(0.2, 5))[pid]["ok"] is False  # mehr Stellungen
+    kaputt = lauf(0.2, 1)
+    pruefung_mit_ist(kaputt, "Hub", pid, None)
+    assert vergleich(kaputt, kaputt)[pid]["ok"] is False  # unbekanntes Format wird nie angehoben
+
+
+def test_grenze_nur_angehoben_wenn_durchgang_teilmenge(gefahren):
+    def lauf(oben, unten):
+        k = kopie(gefahren)
+        pruefung_mit_ist(k, "Hub", "grenze:Hub", {"oben": oben, "unten": unten})
+        return k
+
+    assert vergleich(lauf(True, None), lauf(True, None))["grenze:Hub"]["ok"] is True
+    assert vergleich(lauf(True, False), lauf(True, None))["grenze:Hub"]["ok"] is True
+    assert vergleich(lauf(True, None), lauf(True, True))["grenze:Hub"]["ok"] is False  # unten geht neu durch
+    assert vergleich(lauf(False, True), lauf(True, False))["grenze:Hub"]["ok"] is False
+
+
+def test_freiheitsgrad_nur_angehoben_wenn_gleich(gefahren):
+    def lauf(ohne, mit):
+        k = kopie(gefahren)
+        pruefung_mit_ist(k, "Hub", "freiheitsgrad:schieber", {"ohne_antrieb": ohne, "mit_antrieb": mit})
+        return k
+
+    assert vergleich(lauf(3, 3), lauf(3, 3))["freiheitsgrad:schieber"]["ok"] is True
+    assert vergleich(lauf(3, 3), lauf(2, 3))["freiheitsgrad:schieber"]["ok"] is False
+
+
+def test_weniger_stellungen_im_lauf_ist_mangel(gefahren):
+    kurz = fahre_alle(schritte=1)
+    assert gefahren["Hub"]["stellungen"] == 5 and kurz["Hub"]["stellungen"] == 2
+    e = vergleich(gefahren, kurz)
+    assert "bewegung:Hub" in falsche(e) and "2 Stellungen" in e["bewegung:Hub"]["hinweis"]
+    assert falsche(vergleich(kurz, gefahren)) == []  # mehr ist in Ordnung
+    # fehlt die Zahl in einem Stand, ist der Eintrag nicht nachgewiesen
+    ohne = copy.deepcopy(gefahren)
+    del ohne["Hub"]["stellungen"]
+    assert vergleich(gefahren, ohne)["bewegung:Hub"]["ok"] is None
+    assert vergleich(ohne, gefahren)["bewegung:Hub"]["ok"] is None
+    assert vergleich(gefahren, ohne)["bewegung:Schwenk"]["ok"] is True
+    # nicht gefahrene Grenzen tragen 0 Stellungen
+    a = aufnahme()
+    a["verknuepfungen"]["Hub"]["max"] = 0.0
+    assert fahre_alle(a=a)["Hub"]["stellungen"] == 0
+
+
+def test_neue_grenze_im_lauf_ohne_fahrt_eintrag_ist_nicht_nachgewiesen(gefahren):
+    nachher = aufnahme(bewegungen={})
+    vorher = aufnahme(bewegungen={}, verknuepfungen={})
+    e = vergleiche_bewegungen(vorher, nachher, spec_aus(), {})
+    assert {x["id"]: x["ok"] for x in e} == {"bewegung:Hub": None, "bewegung:Schwenk": None}
+    ohne_feld = {k: x for k, x in nachher.items() if k != "bewegungen"}
+    assert {x["id"]: x["ok"] for x in vergleiche_bewegungen(vorher, ohne_feld, spec_aus(), {})} == {"bewegung:Hub": None,
+                                                                                                    "bewegung:Schwenk": None}
+    # eine Grenze, die ein Punkt löscht, fällt nicht darunter
+    assert vergleiche_bewegungen(vorher, nachher, spec_aus(punkt("verknuepfung_loeschen", "d", verknuepfung="Hub"),
+                                                           punkt("verknuepfung_loeschen", "d2", verknuepfung="Schwenk")), {}) == []
+
+
+def test_kollision_nur_im_paarlauf(gefahren):
+    def nur_zusammen(w):
+        return [{"paar": ["hebel", "platte"], "volumen": 9.0}] if w["Hub"] >= 100 and w["Schwenk"] >= 90 else []
+
+    lauf = fahre_alle(Attrappe(kollision=nur_zusammen))
+    assert {"paar": ["hebel", "platte"], "volumen": 9.0} in lauf["Hub"]["kollisionen"]  # nur im Lauf gegen den Schwenk
+    e = vergleich(gefahren, lauf)
+    assert falsche(e) == ["bewegung_kollision:Hub", "bewegung_kollision:Schwenk"]
+    # kannte der Bestand sie aus seiner Fahrt, ist sie keine neue
+    assert falsche(vergleich(lauf, copy.deepcopy(lauf))) == []
+
+
+def test_kollision_ohne_befund_im_feld_ist_nicht_bestanden(gefahren):
+    n = kopie(gefahren)
+    setze(n, "Hub", "bewegung_kollision:Hub", False, "Kollision")
+    e = vergleich(gefahren, n)["bewegung_kollision:Hub"]
+    assert e["ok"] is None and "nicht nachgewiesen" in e["hinweis"]  # das Feld kollisionen trägt nichts
+    setze(n, "Hub", "bewegung_kollision:Hub", None)
+    assert vergleich(gefahren, n)["bewegung_kollision:Hub"]["ok"] is None
+    # trägt das Feld nur bekannte Paare, ist die Prüfung des Laufs (False) ohne Belang
+    n["Hub"]["kollisionen"] = [{"paar": ["bolzen", "schieber"], "volumen": 1.0}]
+    setze(n, "Hub", "bewegung_kollision:Hub", False, "Kollision")
+    assert vergleich(gefahren, n)["bewegung_kollision:Hub"]["ok"] is False  # der Bestand kennt das Paar nicht
+    bekannt = aufnahme(bewegungen=gefahren, kollisionen=[{"paar": ["bolzen", "schieber"], "volumen": 1.0}])
+    assert {x["id"]: x["ok"] for x in vergleiche_bewegungen(bekannt, aufnahme(bewegungen=n), spec_aus(), {})}["bewegung_kollision:Hub"] is True

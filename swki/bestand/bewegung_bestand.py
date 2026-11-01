@@ -10,29 +10,29 @@ ein Fehlalarm.
 
 Regeln, die der Vergleich festlegt:
 - Soll ist nur eine Grenze, die im Bestand gefahren ist. Was schon im Bestand nicht bestand (Prüfung `ok: False`), ist kein Mangel
-  des Laufs, wenn dieselbe Prüfung im Lauf ebenfalls nicht besteht; es steht im Hinweis. Eine Grenze, die im Bestand nicht gefahren
-  wurde (kein Weg, Fahrt gescheitert), hat kein Soll: `bewegung:<g>` ist `ok: True` mit dem Grund im Hinweis. Fehlt die Fahrt in der
-  Aufnahme ganz (`--ohne-bewegung`), ist `bewegung:<g>` `ok: None`.
+  des Laufs, solange er nicht schlechter ist (`_nicht_schlechter`: spätere Abbruchstellung, nicht mehr Durchgang, nicht größere
+  Abweichung, gleiche Bestimmtheit); es steht im Hinweis, ein unbekanntes Format wird nie angehoben. Eine Grenze, die im Bestand nicht
+  gefahren wurde (kein Weg, Fahrt gescheitert), hat kein Soll: `bewegung:<g>` ist `ok: True` mit dem Grund im Hinweis, fährt der Lauf
+  sie trotzdem, werden seine Prüfungen für sich bewertet. Fehlt die Fahrt in der Aufnahme ganz (`--ohne-bewegung`), ist `bewegung:<g>`
+  `ok: None`. Der Lauf muss mindestens so viele Stellungen gefahren sein wie der Bestand (`stellungen`); fehlt die Zahl, `ok: None`.
 - Lief im Bestand eine Grenze und fehlt sie im Lauf (nicht in `bewegungen`, nicht gefahren), ist das ein Mangel, außer ein Punkt
   löscht die Verknüpfung (`verknuepfung_loeschen`, `komponente_entfernen`). Ein `verknuepfung_wert` an `min` oder `max` ändert den
   Bereich: gefahren wird der Bereich des Laufs; ohne Punkt ist ein anderer Bereich ein Mangel in `bewegung:<g>`.
-- `bewegung_menge:<g>`: Dieselben Komponenten bewegen sich wie im Bestand (ersetzte unter ihrem neuen Namen). Neue Komponenten (aus
-  den Punkten) dürfen mitfahren, entfernte fehlen; sonst ist jede andere Menge ein Mangel.
+- `bewegung_menge:<g>`: Dieselben Komponenten bewegen sich wie im Bestand (ersetzte unter ihrem neuen Namen). Neu angelegte
+  Komponenten (aus den Punkten, keine ersetzenden) dürfen mitfahren, entfernte fehlen; sonst ist jede andere Menge ein Mangel.
+  Namen, Protokoll und `kollision_erlaubt` laufen durch `Vergleichsstand` (`vergleich_baugruppe`), keine zweite Namenslogik.
 - `bewegung_kollision:<g>`: Eine Kollision in der Fahrt des Laufs ist ein Mangel, außer das Paar ist bekannt: statisch im Bestand,
   in der Fahrt des Bestands oder in `kollision_erlaubt` (`bekannte_paare`).
 - Nicht abgedeckt, aber nie stumm (`abdeckung`, Eintrag `bewegung_abdeckung`): Grenzen in Unterbaugruppen und bewegliche
   (unterbestimmte) Komponenten ohne Grenze.
 """
 
-from dataclasses import dataclass, field
-from itertools import product
-
 from swki.baugruppe.aufloesen import Verknuepfung
 from swki.baugruppe.bewegung import Bewegung, BewegungsMesswerte, bewerte_bewegungen, ist_bewegt
 from swki.baugruppe.bewegungslauf import Mechanik, StellungFehler, fahre
 from swki.baugruppe.bewertung import UNTERBESTIMMT
 from swki.baugruppe.sw_baugruppe import AUSRICHTUNG
-from swki.bestand.vergleich_baugruppe import _ahnen, _je, _komma
+from swki.bestand.vergleich_baugruppe import Vergleichsstand, _ahnen, _je, _komma, erlaubte_paare
 from swki.pruefung.bewertung import eintrag
 
 SW_ABSTAND, SW_WINKEL = 5, 6  # swMateType_e swMateDISTANCE / swMateANGLE
@@ -198,8 +198,8 @@ def _nicht_fahrbar(v: dict) -> str | None:
 
 
 def _nicht_gefahren(v: dict, komponente: str | None, grund: str) -> dict:
-    return {"komponente": komponente, "art": _art(v), "min": v.get("min"), "max": v.get("max"), "gefahren": False, "bewegt": [],
-            "raum": None, "kollisionen": [], "pruefungen": [], "hinweis": grund}
+    return {"komponente": komponente, "art": _art(v), "min": v.get("min"), "max": v.get("max"), "gefahren": False, "stellungen": 0,
+            "bewegt": [], "raum": None, "kollisionen": [], "pruefungen": [], "hinweis": grund}
 
 
 def _gefahren(b: Bewegung, m, tol_mm: float) -> dict:
@@ -210,7 +210,8 @@ def _gefahren(b: Bewegung, m, tol_mm: float) -> dict:
     pruefungen, _ = bewerte_bewegungen({"bewegungen": []}, [b], messwerte, tol_mm)
     hinweis = (f"Lauf bei Stellung {grund.fehler['stellung']:g} abgebrochen: {grund.fehler['meldung']}"
                if grund.fehler is not None else None)
-    return {"komponente": b.komponente, "art": b.art, "min": b.min, "max": b.max, "gefahren": True, "bewegt": list(grund.bewegt),
+    return {"komponente": b.komponente, "art": b.art, "min": b.min, "max": b.max, "gefahren": True,
+            "stellungen": len(grund.stellungen), "bewegt": list(grund.bewegt),
             "raum": [round(c, 3) for c in grund.raum] if grund.raum else None,
             "kollisionen": [{"paar": list(k["paar"]), "volumen": k["volumen"]} for lauf in laeufe for k in lauf.kollisionen],
             "pruefungen": pruefungen, "hinweis": hinweis}
@@ -264,157 +265,171 @@ def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schr
 
 # ------------------------------------------------------------------------------------------------------------------- Vergleich
 
-def bekannte_paare(vorher: dict, spec: dict, neue: dict[str, list[str]], ersetzt: dict[str, str] | None = None) -> set[frozenset]:
-    """Kollisionspaare, die in der Fahrt des Laufs keine neuen sind: die statischen Kollisionen des Bestands, die Kollisionen in der
-    Fahrt des Bestands und `kollision_erlaubt` (eine Punkt-ID steht für die Komponenten, die der Lauf erzeugt hat; Namen ersetzter
-    Komponenten gelten unter dem neuen Namen)."""
-    c = _Kontext(spec, neue, ersetzt or {})
-    paare = {frozenset(c.abbild(x) for x in k["paar"]) for k in vorher.get("kollisionen") or []}
-    for e in (vorher.get("bewegungen") or {}).values():
+def _bekannt(c: Vergleichsstand) -> set[frozenset]:
+    """Die bekannten Paare eines Vergleichsstands (`bekannte_paare`); Namen und `kollision_erlaubt` über den Stand des Protokolls."""
+    paare = {frozenset(c.abbild(x) for x in k["paar"]) for k in c.vorher.get("kollisionen") or []}
+    for e in (c.vorher.get("bewegungen") or {}).values():
         paare |= {frozenset(c.abbild(x) for x in k["paar"]) for k in e.get("kollisionen") or []}
-    for e in spec.get("kollision_erlaubt") or []:
-        a, b = e["paar"]
-        paare |= {frozenset((x, y)) for x, y in product(c.namen(a), c.namen(b))}
-    return paare
+    return paare | {frozenset(p) for p in erlaubte_paare(c)}
 
 
-@dataclass
-class _Kontext:
-    spec: dict
-    neue: dict[str, list[str]]
-    ersetzt: dict[str, str]
-    punkte: list[dict] = field(init=False)
-    neue_namen: set[str] = field(init=False)   # neue und ersetzende Komponenten
-    entfernt: set[str] = field(init=False)
-    geloescht: set[str] = field(init=False)    # Verknüpfungen, die ein Punkt löscht
-    bekannt: set[frozenset] = field(init=False, default_factory=set)
-
-    def __post_init__(self):
-        self.punkte = self.spec.get("punkte") or []
-        self.neue_namen = {n for namen in self.neue.values() for n in namen} | set(self.ersetzt.values())
-        self.entfernt = {p["komponente"] for p in self.punkte if p["typ"] == "komponente_entfernen"}
-        self.geloescht = ({p["verknuepfung"] for p in self.punkte if p["typ"] == "verknuepfung_loeschen"}
-                          | {n for p in self.punkte if p["typ"] == "komponente_entfernen" for n in p.get("verknuepfungen", [])})
-
-    def abbild(self, name: str) -> str:
-        """Der Name im Lauf: ersetzte Komponenten und ihre Kinder heißen dort anders."""
-        for a in reversed(_ahnen(name)):
-            if a in self.ersetzt:
-                return self.ersetzt[a] + name[len(a):]
-        return name
-
-    def namen(self, name: str) -> list[str]:
-        """Eine Punkt-ID steht für die Komponenten, die der Lauf erzeugt hat, ein SolidWorks-Name für sich (ein ersetzter für den
-        Ersatz)."""
-        return list(self.neue.get(name) or [self.abbild(name)])
-
-    def ist_neu(self, name: str) -> bool:
-        return any(a in self.neue_namen for a in _ahnen(name))
-
-    def darf_fehlen(self, name: str) -> bool:
-        return any(a in self.entfernt for a in _ahnen(name))
-
-    def bereich_frei(self, grenze: str, feld: str) -> bool:
-        """Ein `verknuepfung_wert`-Punkt nennt `min` bzw. `max` dieser Grenze."""
-        return any(p["typ"] == "verknuepfung_wert" and p["verknuepfung"] == grenze and p.get("grenze") == feld for p in self.punkte)
-
-    def id_im_lauf(self, pid: str) -> str:
-        """ID einer Prüfung des Bestands unter den Komponentennamen des Laufs (`freiheitsgrad:<k>`, `sollweg:<g>:<k>`)."""
-        teile = pid.split(":")
-        if teile[0] in ("freiheitsgrad", "sollweg") and len(teile) >= 2:
-            teile[-1] = self.abbild(teile[-1])
-        return ":".join(teile)
+def bekannte_paare(vorher: dict, spec: dict, neue: dict[str, list[str]], ersetzt: dict[str, str] | None = None,
+                   nachher: dict | None = None) -> set[frozenset]:
+    """Kollisionspaare, die in der Fahrt des Laufs keine neuen sind: die statischen Kollisionen des Bestands, die Kollisionen in der
+    Fahrt des Bestands und `kollision_erlaubt`. Die Namen laufen über denselben Stand des Protokolls wie der Vergleich der Baugruppe
+    (`Vergleichsstand`): Eine Punkt-ID steht für die Komponenten, die der Lauf erzeugt hat, Namen ersetzter Komponenten gelten unter
+    dem neuen Namen; ein Protokoll, das kein Punkt deckt, gilt nicht. `nachher`: die Aufnahme des Laufs (ohne Angabe die des Bestands)."""
+    return _bekannt(Vergleichsstand(spec, vorher, vorher if nachher is None else nachher, neue, ersetzt or {}))
 
 
-def _bereich_befund(g: str, ve: dict, ne: dict, c: _Kontext) -> list[str]:
-    """Der Bereich im Lauf weicht ab, ohne dass ein Punkt `min` bzw. `max` nennt."""
+def _id_im_lauf(c: Vergleichsstand, pid: str) -> str:
+    """ID einer Prüfung des Bestands unter den Komponentennamen des Laufs (`freiheitsgrad:<k>`, `sollweg:<g>:<k>`)."""
+    teile = pid.split(":")
+    if teile[0] in ("freiheitsgrad", "sollweg") and len(teile) >= 2:
+        teile[-1] = c.abbild(teile[-1])
+    return ":".join(teile)
+
+
+def _bereich_befund(g: str, ve: dict, ne: dict, c: Vergleichsstand) -> list[str]:
+    """Der Bereich im Lauf weicht ab, ohne dass ein `verknuepfung_wert`-Punkt `min` bzw. `max` in der aktiven Konfiguration nennt."""
+    aktiv = c.nachher.get("aktiv")
     befunde = []
     for feld in ("min", "max"):
         alt, neu = ve.get(feld), ne.get(feld)
-        if alt is None or neu is None or abs(alt - neu) > TOL_BEREICH:
-            if not c.bereich_frei(g, feld):
-                befunde.append(f"{feld} steht auf {neu} statt {alt}, kein Punkt nennt es")
+        if (alt is None or neu is None or abs(alt - neu) > TOL_BEREICH) and aktiv not in c.wert_frei.get((g, feld), ()):
+            befunde.append(f"{feld} steht auf {neu} statt {alt}, kein Punkt nennt es")
     return befunde
 
 
+def _schluessel(gegen: dict) -> tuple:
+    return tuple(sorted(gegen.items()))
+
+
+def _nicht_schlechter(pid: str, lauf: dict, bestand: dict) -> bool:
+    """Ist der Befund im Lauf nicht schlechter als im Bestand? Maßstab je Prüfung: `bewegung` gleiche oder spätere Abbruchstellung
+    je `gegen`; `grenze` geht nur dort durch, wo es auch im Bestand durchging; `sollweg` Betrag und Anzahl der abweichenden
+    Stellungen nicht größer; `freiheitsgrad` dieselbe Bestimmtheit. Ein Format, das der Maßstab nicht kennt, gilt als schlechter."""
+    art, a, b = pid.split(":")[0], lauf.get("ist"), bestand.get("ist")
+    try:
+        if art == "bewegung":
+            alt = {_schluessel(f["gegen"]): f["stellung"] for f in b}
+            return bool(a) and bool(b) and all(
+                f["stellung"] is not None and alt.get(_schluessel(f["gegen"])) is not None
+                and f["stellung"] >= alt[_schluessel(f["gegen"])] for f in a)
+        if art == "grenze":
+            return {k for k in ("oben", "unten") if a.get(k)} <= {k for k in ("oben", "unten") if b.get(k)}
+        if art == "sollweg":
+            return (a["groesste_abweichung"]["betrag"] <= b["groesste_abweichung"]["betrag"] + TOL_BEREICH
+                    and a["abweichende_stellungen"] <= b["abweichende_stellungen"])
+        if art == "freiheitsgrad":
+            return isinstance(a, dict) and a == b
+    except (KeyError, TypeError, AttributeError):
+        return False
+    return False
+
+
 def _angehoben(e: dict, bestand: dict) -> dict:
-    """Eine Prüfung, die im Lauf nicht besteht und im Bestand schon nicht bestand: kein Mangel des Laufs, der Befund steht im
-    Hinweis."""
+    """Eine Prüfung, die im Lauf nicht besteht und im Bestand schon nicht bestand, im Lauf aber nicht schlechter ist: kein Mangel des
+    Laufs, der Befund steht im Hinweis."""
     grund = bestand.get("hinweis")
-    teile = ["Schon im Bestand nicht bestanden, kein Mangel des Laufs" + (f" ({grund})" if grund else "")]
+    teile = ["Schon im Bestand nicht bestanden, im Lauf nicht schlechter, kein Mangel des Laufs" + (f" ({grund})" if grund else "")]
     if e.get("hinweis"):
         teile.append(f"im Lauf: {e['hinweis']}")
     return {**e, "ok": True, "hinweis": "; ".join(teile), "bestand_ok": False}
 
 
-def _menge(g: str, ve: dict, ne: dict, c: _Kontext) -> dict:
+def _bewegung_pruefen(e: dict, g: str, ve: dict, ne: dict, c: Vergleichsstand) -> dict:
+    """`bewegung:<g>` zusätzlich gegen den Bestand: Bereich nur mit Punkt anders, mindestens so viele Stellungen gefahren wie im
+    Bestand. Fehlt die Zahl der Stellungen in einem Stand, ist ein sonst bestandener Eintrag nicht nachgewiesen."""
+    gruende = _bereich_befund(g, ve, ne, c)
+    alt, neu = ve.get("stellungen"), ne.get("stellungen")
+    lesbar = isinstance(alt, int) and isinstance(neu, int)
+    if lesbar and neu < alt:
+        gruende.append(f"der Lauf fuhr {neu} Stellungen, der Bestand {alt}")
+    vorweg = [e["hinweis"]] if e.get("hinweis") else []
+    if gruende:
+        return {**e, "ok": False, "hinweis": "; ".join([*vorweg, "Lauf gegen Bestand: " + "; ".join(gruende)])}
+    if not lesbar and e["ok"] is True:
+        return {**e, "ok": None, "hinweis": "; ".join([*vorweg, "Die Zahl der gefahrenen Stellungen ist nicht gelesen, nicht nachgewiesen"])}
+    return e
+
+
+def _menge(g: str, ve: dict, ne: dict, c: Vergleichsstand) -> dict:
+    """Dieselben Komponenten bewegen sich wie im Bestand (ersetzte unter ihrem neuen Namen); mitfahren dürfen nur Komponenten, die
+    ein Punkt neu anlegt (keine ersetzende), fehlen dürfen nur entfernte."""
     pid = f"bewegung_menge:{g}"
     if ve.get("bewegt") is None or ne.get("bewegt") is None:
         return eintrag(pid, None, hinweis="Die bewegten Komponenten sind nicht gelesen, nicht nachgewiesen", knoten=[])
     lauf = set(ne["bewegt"])
     erwartet = {c.abbild(x) for x in ve["bewegt"]}
-    fehlen = sorted(c.abbild(x) for x in ve["bewegt"] if c.abbild(x) not in lauf and not c.darf_fehlen(x))
-    zusaetzlich = sorted(y for y in lauf if y not in erwartet and not c.ist_neu(y))
+    fehlen = sorted({c.abbild(x) for x in ve["bewegt"] if c.abbild(x) not in lauf and not any(a in c.entfernt for a in _ahnen(x))})
+    zusaetzlich = sorted(y for y in lauf if y not in erwartet and not any(a in c.reine_neue for a in _ahnen(y)))
     teile = ([f"bewegen sich nicht mehr: {_komma(fehlen)}"] if fehlen else []) + (
         [f"bewegen sich zusätzlich: {_komma(zusaetzlich)}"] if zusaetzlich else [])
     return eintrag(pid, not teile, ist=sorted(lauf), soll=sorted(erwartet), fehlen=fehlen, zusaetzlich=zusaetzlich,
                    knoten=fehlen + zusaetzlich, **({"hinweis": "; ".join(teile)} if teile else {}))
 
 
-def _kollision(g: str, ne: dict, c: _Kontext) -> dict:
-    """Neue Kollisionen in der Fahrt des Laufs: jedes Paar, das nicht bekannt ist (je Paar die größte Überlappung)."""
+def _kollision(g: str, ne: dict, bekannt: set[frozenset], pruefung: dict | None) -> dict:
+    """Neue Kollisionen in der Fahrt des Laufs: jedes Paar, das nicht bekannt ist (je Paar die größte Überlappung). Trägt das Feld
+    nichts und meldet die Prüfung des Laufs Kollision, Fehlen oder nicht geprüft, ist das nicht nachgewiesen, nie bestanden."""
     pid = f"bewegung_kollision:{g}"
-    if ne.get("kollisionen") is None:
+    roh = ne.get("kollisionen")
+    if roh is None:
         return eintrag(pid, None, hinweis="Die Kollisionen der Fahrt sind nicht gelesen, nicht nachgewiesen", knoten=[])
     neu: dict[frozenset, dict] = {}
-    for k in ne["kollisionen"]:
+    for k in roh:
         paar = frozenset(k["paar"])
-        if paar in c.bekannt:
-            continue
-        if paar not in neu or (k.get("volumen") or 0) > (neu[paar].get("volumen") or 0):
+        if paar not in bekannt and (paar not in neu or (k.get("volumen") or 0) > (neu[paar].get("volumen") or 0)):
             neu[paar] = {"paar": sorted(paar), "volumen": k.get("volumen")}
     ist = list(neu.values())
-    return eintrag(pid, not ist, ist=ist, knoten=sorted({x for k in ist for x in k["paar"]}),
-                   **({"hinweis": "Neue Kollisionen in der Fahrt: " + ", ".join(
-                       f"{' / '.join(k['paar'])} ({k['volumen']} mm³)" for k in ist)} if ist else {}))
+    if ist:
+        return eintrag(pid, False, ist=ist, knoten=sorted({x for k in ist for x in k["paar"]}),
+                       hinweis="Neue Kollisionen in der Fahrt: " + ", ".join(f"{' / '.join(k['paar'])} ({k['volumen']} mm³)" for k in ist))
+    if not roh and (pruefung is None or pruefung.get("ok") is not True):
+        was = "fehlt" if pruefung is None else f"meldet {'Kollision' if pruefung.get('ok') is False else 'nichts'}"
+        return eintrag(pid, None, ist=[], knoten=[],
+                       hinweis=f"Die Prüfung der Kollision im Lauf {was}, das Feld kollisionen trägt nichts: nicht nachgewiesen")
+    return eintrag(pid, True, ist=[], knoten=[])
 
 
-def _eintraege_der_grenze(g: str, ve: dict | None, ne: dict, c: _Kontext) -> list[dict]:
-    """Die Prüfungen einer im Lauf gefahrenen Grenze; `ve` die des Bestands (`None`: neue Grenze ohne Soll)."""
-    bestand = {c.id_im_lauf(e["id"]): e for e in (ve or {}).get("pruefungen") or []}
-    ergebnis, gesehen = [], set()
-    for e in ne.get("pruefungen") or []:
+def _eintraege_der_grenze(g: str, ve: dict | None, ne: dict, c: Vergleichsstand, bekannt: set[frozenset]) -> list[dict]:
+    """Die Prüfungen einer im Lauf gefahrenen Grenze; `ve` die des Bestands (`None`: kein Soll, nur die Fahrt selbst wird bewertet)."""
+    bestand = {_id_im_lauf(c, e["id"]): e for e in (ve or {}).get("pruefungen") or []}
+    pruefungen = ne.get("pruefungen") or []
+    bid, kid = f"bewegung:{g}", f"bewegung_kollision:{g}"
+    ergebnis = []
+    for e in pruefungen:
         pid = e["id"]
-        gesehen.add(pid)
-        if pid == f"bewegung_kollision:{g}":
-            e = _kollision(g, ne, c)
-        elif e.get("ok") is False and bestand.get(pid, {}).get("ok") is False:
+        if pid == kid:
+            continue  # die Kollision bildet `_kollision` neu aus dem Feld kollisionen
+        if e.get("ok") is False and bestand.get(pid, {}).get("ok") is False and _nicht_schlechter(pid, e, bestand[pid]):
             e = _angehoben(e, bestand[pid])
-        if pid == f"bewegung:{g}" and ve is not None and (befund := _bereich_befund(g, ve, ne, c)):
-            vorweg = [e["hinweis"]] if e.get("hinweis") else []
-            e = {**e, "ok": False, "hinweis": "; ".join([*vorweg, "Bereich: " + "; ".join(befund)])}
+        if pid == bid and ve is not None:
+            e = _bewegung_pruefen(e, g, ve, ne, c)
         ergebnis.append(e)
+    gesehen = {e["id"] for e in pruefungen}
+    if bid not in gesehen:  # eine gefahrene Grenze ohne diese Prüfung beweist nichts
+        ergebnis.append(eintrag(bid, None, hinweis="Die Prüfung bewegung fehlt im Lauf, nicht nachgewiesen", knoten=[]))
+    ergebnis.append(_kollision(g, ne, bekannt, next((e for e in pruefungen if e["id"] == kid), None)))
     if ve is not None:
         ergebnis.append(_menge(g, ve, ne, c))
-    if f"bewegung:{g}" not in gesehen:  # eine gefahrene Grenze ohne diese Prüfung beweist nichts
-        ergebnis.append(eintrag(f"bewegung:{g}", None, hinweis="Die Prüfung bewegung fehlt im Lauf, nicht nachgewiesen",
-                                knoten=[]))
-    if f"bewegung_kollision:{g}" not in gesehen:
-        ergebnis.append(_kollision(g, ne, c))
-    for pid in bestand:
-        if pid not in gesehen | {f"bewegung:{g}", f"bewegung_kollision:{g}"}:
-            ergebnis.append(eintrag(pid, None, hinweis="Im Lauf nicht geprüft, nicht nachgewiesen", knoten=[]))
+    ergebnis += [eintrag(pid, None, hinweis="Im Lauf nicht geprüft, nicht nachgewiesen", knoten=[])
+                 for pid in bestand if pid not in gesehen | {bid, kid}]
     return ergebnis
 
 
-def _grenze_vergleichen(g: str, ve: dict | None, ne: dict | None, c: _Kontext) -> list[dict]:
+def _grenze_vergleichen(g: str, ve: dict | None, ne: dict | None, c: Vergleichsstand, bekannt: set[frozenset]) -> list[dict]:
     pid = f"bewegung:{g}"
     if ve is None or ve.get("gefahren") is None:
         return [eintrag(pid, None, hinweis="Die Aufnahme enthält keine Fahrt dieser Grenze (ohne Bewegung), nicht nachgewiesen",
                         knoten=[])]
-    if ve["gefahren"] is not True:
-        return [eintrag(pid, True, hinweis=f"Im Bestand nicht gefahren ({ve.get('hinweis')}), kein Soll", knoten=[],
-                        bestand_gefahren=False)]
+    if ve["gefahren"] is not True:  # kein Soll; was der Lauf trotzdem fährt, wird für sich bewertet
+        basis = eintrag(pid, True, hinweis=f"Im Bestand nicht gefahren ({ve.get('hinweis')}), kein Soll", knoten=[],
+                        bestand_gefahren=False)
+        if ne is not None and ne.get("gefahren") is True:
+            return [basis, *_eintraege_der_grenze(g, None, ne, c, bekannt)]
+        return [basis]
     if ne is None:
         return [eintrag(pid, False, hinweis="Die Grenze lief im Bestand und fehlt im Lauf (nicht gefahren), kein Punkt löscht sie",
                         knoten=[ve.get("komponente")] if ve.get("komponente") else [])]
@@ -423,15 +438,17 @@ def _grenze_vergleichen(g: str, ve: dict | None, ne: dict | None, c: _Kontext) -
     if ne["gefahren"] is not True:
         return [eintrag(pid, False, hinweis=f"Im Lauf nicht gefahren, im Bestand schon: {ne.get('hinweis')}",
                         knoten=[ne["komponente"]] if ne.get("komponente") else [])]
-    return _eintraege_der_grenze(g, ve, ne, c)
+    return _eintraege_der_grenze(g, ve, ne, c, bekannt)
 
 
-def _neue_grenze(g: str, ne: dict, c: _Kontext) -> list[dict]:
-    """Eine Grenze, die der Bestand nicht hatte (Punkt `verknuepfung_neu`): kein Soll, nur die Fahrt selbst wird bewertet."""
+def _neue_grenze(g: str, ne: dict | None, c: Vergleichsstand, bekannt: set[frozenset]) -> list[dict]:
+    """Eine Grenze, die der Bestand nicht hatte (Punkt `verknuepfung_neu`): kein Soll, nur die Fahrt selbst wird bewertet. Ohne
+    Fahrt-Eintrag im Lauf ist sie nicht nachgewiesen."""
+    if ne is None:
+        return [eintrag(f"bewegung:{g}", None, hinweis="Neue Grenze ohne Fahrt im Lauf, nicht nachgewiesen", knoten=[])]
     if ne.get("gefahren") is not True:
-        return [eintrag(f"bewegung:{g}", None, hinweis=f"Neue Grenze, im Lauf nicht gefahren ({ne.get('hinweis')})",
-                        knoten=[])]
-    return _eintraege_der_grenze(g, None, ne, c)
+        return [eintrag(f"bewegung:{g}", None, hinweis=f"Neue Grenze, im Lauf nicht gefahren ({ne.get('hinweis')})", knoten=[])]
+    return _eintraege_der_grenze(g, None, ne, c, bekannt)
 
 
 def _zusammen(eintraege: list[dict]) -> list[dict]:
@@ -453,20 +470,21 @@ def vergleiche_bewegungen(vorher: dict, nachher: dict, spec: dict, neue: dict[st
                           ersetzt: dict[str, str] | None = None) -> list[dict]:
     """§8.4: Die Fahrt des Laufs gegen die des Bestands. `vorher` und `nachher` sind Baugruppen-Aufnahmen mit `bewegungen`
     (`fahre_bestand`); `neue` (Punkt-ID → SolidWorks-Namen der neuen Komponenten) und `ersetzt` (alter → neuer Name) kommen aus dem
-    Protokoll des Baus wie in `vergleiche_baugruppe`. Je Grenze des Bestands `bewegung:<g>`, `bewegung_menge:<g>`,
-    `bewegung_kollision:<g>`, `grenze:<g>`, `sollweg:<g>:<komponente>` und `freiheitsgrad:<komponente>`, dazu `bewegung_abdeckung`,
-    wenn etwas nicht abgedeckt ist. Grenzen, die ein Punkt löscht, bleiben außen vor."""
-    c = _Kontext(spec, neue, ersetzt or {})
-    c.bekannt = bekannte_paare(vorher, spec, neue, ersetzt)
+    Protokoll des Baus wie in `vergleiche_baugruppe` und laufen durch denselben `Vergleichsstand`. Je Grenze des Bestands
+    `bewegung:<g>`, `bewegung_menge:<g>`, `bewegung_kollision:<g>`, `grenze:<g>`, `sollweg:<g>:<komponente>` und
+    `freiheitsgrad:<komponente>`; neue Grenzen des Laufs ohne Soll; `bewegung_abdeckung`, wenn etwas nicht abgedeckt ist. Grenzen,
+    die ein Punkt löscht, bleiben außen vor."""
+    c = Vergleichsstand(spec, vorher, nachher, neue, ersetzt or {})
+    bekannt = _bekannt(c)
     vb, nb = vorher.get("bewegungen") or {}, nachher.get("bewegungen") or {}
     eintraege = []
-    for g in dict.fromkeys([*grenzen_der_aufnahme(vorher), *vb]):
-        if g not in c.geloescht:
-            eintraege += _grenze_vergleichen(g, vb.get(g), nb.get(g), c)
-    gesehen = {*grenzen_der_aufnahme(vorher), *vb}
-    for g, ne in nb.items():
-        if g not in gesehen and g not in c.geloescht:
-            eintraege += _neue_grenze(g, ne, c)
+    im_bestand = dict.fromkeys([*grenzen_der_aufnahme(vorher), *vb])
+    for g in im_bestand:
+        if g not in c.geloeschte_mates:
+            eintraege += _grenze_vergleichen(g, vb.get(g), nb.get(g), c, bekannt)
+    for g in dict.fromkeys([*grenzen_der_aufnahme(nachher), *nb]):
+        if g not in im_bestand and g not in c.geloeschte_mates:
+            eintraege += _neue_grenze(g, nb.get(g), c, bekannt)
     if hinweise := abdeckung(vorher):
         eintraege.append(eintrag("bewegung_abdeckung", True, ist=hinweise, knoten=[],
                                  hinweis="Nicht abgedeckt: " + "; ".join(hinweise)))
