@@ -23,7 +23,7 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
     .MaximumVariation
   IMateEntity2.Reference, .ReferenceComponent, .ReferenceType2 (swSelectType_e swSelDATUMPLANES 4, swSelDATUMAXES 5,
     swSelDATUMPOINTS 6)
-  IModelDoc2.ForceRebuild3(1), .GetType(0: swDocumentTypes_e)
+  IModelDoc2.ForceRebuild3(1), .GetType(0: swDocumentTypes_e), .FeatureManager; IFeatureManager.GetFeatures(1: False alle Ebenen)
 Typnamen laut Index zu IFeature.GetTypeName2: Reference, ReferencePattern, MateGroup, Mate…; ob die Baugruppe sie so meldet,
 klärt S19f."""
 
@@ -44,7 +44,10 @@ from swki.pruefung.messen import skizzenstatus
 from swki.verbindung import in_mm, in_mm3
 from swki.verbindung import wert as primitiv
 
+VERKNUEPFUNG_UNERREICHT = "VERKNUEPFUNG_UNERREICHT"  # Warnung der Aufnahme: Der Baum erreicht nicht jede Verknüpfung
 SW_UNTERDRUECKT = 0  # swComponentSuppressionState_e.swComponentSuppressed
+SW_MATE_UNBEKANNT = 7  # swMateType_e.swMateUNKNOWN: Ersatz, wenn eine überall unterdrückte Verknüpfung nichts hergibt
+AUSRICHTUNG_UNBEKANNT = -1  # kein swMateAlign_e: nur als Ersatz, in Bestand und Lauf gleich
 SW_BEZUGSGEOMETRIE = frozenset({4, 5, 6})  # swSelectType_e: Ebene, Achse, Punkt sind Features, wählbar mit Select2
 GLIEDER = frozenset({"Reference", "ReferencePattern"})  # IFeature.GetTypeName2 von Komponenten und Komponentenmustern, laut Index
 MATE_VORSILBE = "Mate"   # MateGroup und alle Verknüpfungen (MateCoincident, MateDistanceDim …), laut Index
@@ -192,7 +195,8 @@ def _zahlen(feature, mate, typ: int) -> dict | None:
 def _verknuepfung_stand(f, k: str, e: dict) -> None:
     """Eine Verknüpfung in der aktiven Konfiguration `k` nach `e`. Unterdrückt gibt sie womöglich nichts her: Das bleibt
     ungelesen."""
-    e["unterdrueckt"][k] = unterdrueckt(f, k)
+    if (weg := _versuch(lambda: unterdrueckt(f, k))) is not None:
+        e["unterdrueckt"][k] = weg
     if (code := _versuch(lambda: sw_baugruppe.fehlercode(f))) is not None:
         e["fehler"][k] = code
     mate = _versuch(lambda: f.GetSpecificFeature2)
@@ -221,17 +225,34 @@ def _gesteuerte(gleichungen: list[dict]) -> set[str]:
 def _verknuepfungen_leser(asm, roh: dict[str, dict], gesteuert: set[str]):
     def lies(k: str) -> None:
         for f in sw_baugruppe.verknuepfungen(asm):
-            if not ist_ordner(f.GetTypeName2):
-                name = f.Name
-                e = roh.setdefault(name, _leere_verknuepfung(vergleichsname(f"{sw_baugruppe.MASS_NAME}@{name}") in gesteuert))
-                _verknuepfung_stand(f, k, e)
+            name = f.Name
+            e = roh.setdefault(name, _leere_verknuepfung(vergleichsname(f"{sw_baugruppe.MASS_NAME}@{name}") in gesteuert))
+            _verknuepfung_stand(f, k, e)
 
     return lies
 
 
-def _werte_der_aktiven(roh: dict[str, dict], aktiv: str) -> dict[str, dict]:
-    """`wert`, `min`, `max` der aktiven Konfiguration; `grenze`: in einer gelesenen Konfiguration trägt sie Grenzen."""
+def _ersetze_unterdrueckte(e: dict, konfigurationen: list[str]) -> None:
+    """Wie `_vervollstaendige`: Eine unterdrückte Verknüpfung hat kein Soll, trägt aber je Konfiguration Einträge, sonst wäre
+    eine unveränderte Baugruppe nie bewiesen. Werte aus einer anderen Konfiguration, sonst „trägt keinen Wert“. Ist sie überall
+    unterdrückt und gab nichts her, stehen Ersatzwerte da, die nichts behaupten; in beiden Ständen sind sie gleich, aktiviert
+    jemand sie, weicht alles ab."""
+    leer = {"wert": None, "min": None, "max": None}
+    for k in konfigurationen:
+        if e["unterdrueckt"].get(k):
+            e["werte"].setdefault(k, next(iter(e["werte"].values()), leer))
+            e["fehler"].setdefault(k, 0)
+    if all(e["unterdrueckt"].get(k) for k in konfigurationen):
+        for feld, ersatz in (("typ", SW_MATE_UNBEKANNT), ("ausrichtung", AUSRICHTUNG_UNBEKANNT), ("partner", [])):
+            if e[feld] is None:
+                e[feld] = ersatz
+
+
+def _werte_der_aktiven(roh: dict[str, dict], konfigurationen: list[str], aktiv: str) -> dict[str, dict]:
+    """Unterdrückte ergänzt; `wert`, `min`, `max` der aktiven Konfiguration; `grenze`: in einer gelesenen Konfiguration trägt sie
+    Grenzen."""
     for e in roh.values():
+        _ersetze_unterdrueckte(e, konfigurationen)
         e.update(e["werte"].get(aktiv, {}))
         if e["werte"]:
             e["grenze"] = any(z["min"] is not None or z["max"] is not None for z in e["werte"].values())
@@ -243,7 +264,24 @@ def lies_verknuepfungen(asm, konfigurationen: list[str]) -> dict:
     roh: dict[str, dict] = {}
     aktiv = asm.ConfigurationManager.ActiveConfiguration.Name
     _je_konfiguration(asm, konfigurationen, _verknuepfungen_leser(asm, roh, _gesteuerte(gleichungen_von(asm)[0])))
-    return _werte_der_aktiven(roh, aktiv)
+    return _werte_der_aktiven(roh, konfigurationen, aktiv)
+
+
+def gegenprobe_verknuepfungen(asm, gelesen) -> list[dict]:
+    """Warnungen, wenn der Baumweg nicht jede Verknüpfung erreicht: `IFeatureManager.GetFeatures(False)` nennt alle Features des
+    Dokuments in beliebiger Reihenfolge, ohne Struktur. Der Vergleich sähe eine fehlende nie, Bestand und Lauf läsen gleich; so
+    ist es auch dann nicht still, wenn S19f eine andere Baumform zeigt als angenommen. Nicht lesbar ist selbst eine Warnung."""
+    try:
+        typen = {f.Name: f.GetTypeName2 for f in asm.FeatureManager.GetFeatures(False) or ()}
+    except Exception as e:
+        return [{"code": VERKNUEPFUNG_UNERREICHT, "verknuepfungen": None,
+                 "meldung": f"Gegenprobe der Verknüpfungen nicht lesbar ({type(e).__name__}: {e}), Vollständigkeit nicht belegt"}]
+    fehlen = sorted(n for n, typ in typen.items()
+                    if typ.startswith(MATE_VORSILBE) and typ != "MateGroup" and not ist_ordner(typ) and n not in gelesen)
+    if not fehlen:
+        return []
+    return [{"code": VERKNUEPFUNG_UNERREICHT, "verknuepfungen": fehlen,
+             "meldung": f"Verknüpfungen, die der Baum nicht erreicht, sind weder gelesen noch gefahren: {', '.join(fehlen)}"}]
 
 
 # --- Kollision ----------------------------------------------------------------------------------------------------------
@@ -284,7 +322,7 @@ def lies_baugruppe(app, asm, dateien=(), kollision: bool = True) -> dict:
                                  "konfiguration": {k: eigenschaften_von(asm, k) for k in konfigurationen}},
                "externe_referenzen": datei_referenzen(asm) + gleichungsdatei(asm), "gleichungen": gleichungen,
                "variablen": variablen,
-               "skizzen": skizzenstatus(asm), "material": "", "materialien": {}, "geometrie": {}, "warnungen": [], "messung": {}}
+               "skizzen": skizzenstatus(asm), "material": "", "materialien": {}, "geometrie": {}, "messung": {}}
     komponenten, verknuepfungen, neuaufbau, reihenfolge, masse = {}, {}, [], {}, {}
     lies_komp = _komponenten_leser(asm, komponenten, dateien)
     lies_mate = _verknuepfungen_leser(asm, verknuepfungen, _gesteuerte(gleichungen))
@@ -302,8 +340,9 @@ def lies_baugruppe(app, asm, dateien=(), kollision: bool = True) -> dict:
     _je_konfiguration(asm, konfigurationen, lies)
     return d | {"reihenfolge": reihenfolge, "masse": leite_masse(list(masse.values()), gleichungen), "neuaufbau": neuaufbau,
                 "komponenten": _vervollstaendige(komponenten, konfigurationen, aktiv),
-                "verknuepfungen": _werte_der_aktiven(verknuepfungen, aktiv),
-                "kollisionen": lies_kollisionen(asm) if kollision else None}
+                "verknuepfungen": _werte_der_aktiven(verknuepfungen, konfigurationen, aktiv),
+                "kollisionen": lies_kollisionen(asm) if kollision else None,
+                "warnungen": gegenprobe_verknuepfungen(asm, verknuepfungen)}
 
 
 # --- Mechanik -----------------------------------------------------------------------------------------------------------------
@@ -317,9 +356,21 @@ def _entitaeten(feature) -> list[tuple[object, bool]]:
 
 
 class BestandMechanik(SwMechanik):
-    """Die Mechanik an einer Bestandskopie oder einem Lauf. Eine Kollision, die sich nicht lesen lässt, bricht die Fahrt ab (laut,
-    `fahre_bestand`): `sw_baugruppe.interferenzen` machte daraus still „keine“, und ein bestandenes `bewegung_kollision` hieße
-    nichts."""
+    """Die Mechanik an einer Bestandskopie oder einem Lauf. Eine Kollision, die sich nicht lesen lässt, bricht die Fahrt ab
+    (laut, `fahre_bestand`): `sw_baugruppe.interferenzen` machte daraus still „keine“, und ein bestandenes `bewegung_kollision`
+    hieße nichts. Ein Antrieb, der sich nicht anlegen lässt, kostet dagegen nur seine Grenze (§8.4, Ruling Task 6 präzisiert);
+    Fehler ohne Bezug zu einer Grenze bleiben laut."""
+
+    def halte(self, b, wert: float) -> None:
+        if b.name in self.antriebe:
+            super().halte(b, wert)
+            return
+        try:
+            super().halte(b, wert)
+        except StellungFehler:
+            raise
+        except Exception as e:  # jeder Fehler beim Anlegen, auch COM: `verknuepfe` hat seine Verknüpfung schon wieder gelöscht
+            raise StellungFehler(b.name, wert, f"Antrieb nicht angelegt: {e}") from e
 
     def interferenzen(self) -> list[dict]:
         gelesen = lies_kollisionen(self.asm)

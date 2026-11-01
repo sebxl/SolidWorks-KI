@@ -45,9 +45,9 @@ class _Messung:
         try:
             yield
         finally:
-            self.daten[name] = {"s": round(time.perf_counter() - beginn, 3), "mb": self._mb()}
+            self.daten[name] = {"s": round(time.perf_counter() - beginn, 3), "mb": self.speicher_mb()}
 
-    def _mb(self) -> float | None:
+    def speicher_mb(self) -> float | None:
         try:
             return privat_mb(int(self.app.GetProcessID))
         except Exception:
@@ -79,16 +79,16 @@ def _warnungen_offen(quellen: dict[str, Path]) -> list[dict]:
             for rel in sperrdateien(quellen)]
 
 
-def _bewegungen(app, asm, gelesen: dict, standard: dict, ohne_bewegung: bool) -> dict:
+def _bewegungen(app, asm, gelesen: dict, standard: dict, ohne_bewegung: bool, start_mb: float | None) -> dict:
     """Das Feld `bewegungen`: Jede Grenzverknüpfung der Hauptbaugruppe wird an der Kopie gefahren. Ohne Fenster, also ohne
-    Bilder."""
+    Bilder. `start_mb`: Private Bytes vor dem Öffnen, `SPEICHER_KNAPP` erkennt daran frisches SolidWorks."""
     grenzen = grenzen_der_aufnahme(gelesen)
     if ohne_bewegung:
         return ohne_fahrt(grenzen, "ohne Bewegung aufgenommen (--ohne-bewegung)")
     if not grenzen:
         return {}
     return fahre_bestand(mechanik_fuer(app, asm, grenzen, gelesen, None), gelesen, grenzen, standard["bewegung_schritte"],
-                         statische_paare(gelesen), standard["speicher_grenze_mb"], standard["toleranzen"]["anker_mm"])
+                         statische_paare(gelesen), standard["speicher_grenze_mb"], standard["toleranzen"]["anker_mm"], start_mb)
 
 
 def lies_baugruppe_einzeln(app, model) -> dict:
@@ -113,6 +113,7 @@ def _lies_kopie(app, m: _Messung, r, auftrag: str, nummer: int, ordner: Path, pf
                 ohne_bewegung: bool) -> dict:
     """Die Kopie lesen: `bestand.json` ohne `datei`, in der Reihenfolge des Moduldocstrings. Schließt auch nach einem Fehler."""
     weitere = {rel: d for rel, d in dateien.items() if not d.get("haupt")}
+    start_mb = m.speicher_mb()
     with m.phase("oeffnen"):
         asm = oeffne_in(app, pfad, ordner, sichtbar=False, nur_lesen=True)
     try:
@@ -121,7 +122,7 @@ def _lies_kopie(app, m: _Messung, r, auftrag: str, nummer: int, ordner: Path, pf
         with m.phase("kollision"):
             gelesen["kollisionen"] = lies_kollisionen(asm)
         with m.phase("fahrt"):
-            gelesen["bewegungen"] = _bewegungen(app, asm, gelesen, standard, ohne_bewegung)
+            gelesen["bewegungen"] = _bewegungen(app, asm, gelesen, standard, ohne_bewegung, start_mb)
     finally:
         sw.schliesse(app, asm)
     with m.phase("dateien"):
@@ -176,7 +177,7 @@ def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict
     pfad = original.absolute()
     versionen, aelter = pruefe_version(app, pfad)
     quellen = ordne_referenzen(pfad, externe_referenzen(app, pfad))
-    namen = {Path(rel).name.lower(): rel for rel in quellen}
+    namen = {Path(rel).name.lower(): rel for rel in quellen} | {pfad.name.lower(): pfad.name}  # auch ein In-Context-Teil
     angaben = {rel.lower(): _angaben_der_datei(app, rel, quelle, namen) for rel, quelle in quellen.items()}
     angaben[pfad.name.lower()] = {"art": "baugruppe", "versionen": versionen, "version_aelter": aelter,
                                   "referenzen": sorted(quellen)}
@@ -197,8 +198,8 @@ def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict
         if e.daten["code"] in _ABLEHNUNG:  # abgelehnt, auch wenn die Kopie aus einem abgebrochenen Versuch stammt
             verwirf_aufnahme(ordner)
         raise
-    warnungen = _warnungen_offen({pfad.name: pfad, **quellen}) + [{"code": BEWEGUNG_ABDECKUNG,
-                                                                   "meldung": h} for h in abdeckung(gelesen)]
+    abgedeckt = [{"code": BEWEGUNG_ABDECKUNG, "meldung": h} for h in abdeckung(gelesen)]
+    warnungen = gelesen["warnungen"] + _warnungen_offen({pfad.name: pfad, **quellen}) + abgedeckt
     daten = {**gelesen, "sw_jahr": r.sw_jahr, "warnungen": warnungen,
              "datei": {"name": kopie["pfad"].name, "original": str(pfad), "sha256": kopie["sha256"], "versionen": versionen,
                        "version_aelter": aelter},

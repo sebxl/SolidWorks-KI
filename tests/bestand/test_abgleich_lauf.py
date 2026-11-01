@@ -243,6 +243,23 @@ def test_referenzbau_meldet_differenzen(bau, monkeypatch):
     assert t["differenzen"]["Standard"][0]["art"] == "hinzu" and t["differenzen"]["Variante B"] == "Bilanz"
 
 
+def test_referenzbau_traegt_den_auftrag_der_spec_ein(bau):
+    """Die Eigenschaft `Auftrag` wiche sonst immer ab: Gebaut wurde die Datei im Auftrag der Spec, nicht in dem der Aufnahme."""
+    abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)
+    assert bau.gebaut[0][2] == "alt"
+
+
+def test_referenzbau_ohne_gemeinsame_konfiguration_steht_das_da(bau, monkeypatch):
+    """Leere `differenzen` hieße sonst: gleich."""
+    monkeypatch.setattr(abgleich_lauf, "lies_bestand", lambda a, m: {**_gelesen(REL), "konfigurationen": ["Andere"]})
+    t = abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]["teile"][REL]
+    assert t["differenzen"] == {} and "keine gemeinsame Konfiguration" in t["hinweis"] and bau.app.geoeffnet == []
+
+
+def test_referenzbau_mit_gemeinsamer_konfiguration_ohne_hinweis(bau):
+    assert "hinweis" not in abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]["teile"][REL]
+
+
 def test_referenzbau_zaehlt_weiter(bau):
     (bau.r.arbeitsordner / "neu" / "referenz-3").mkdir(parents=True)
     assert abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]["ordner"].endswith("referenz-4")

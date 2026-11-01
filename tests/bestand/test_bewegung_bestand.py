@@ -235,6 +235,20 @@ def test_probeschritt_stellt_auf_den_gelesenen_wert_zurueck():
     assert mech.werte["Schwenk"] == 30.0
 
 
+def test_misslungenes_zurueckstellen_nach_dem_probeschritt_steht_im_eintrag():
+    """Die Fahrt beginnt trotzdem bei min, aber was misslang, steht da."""
+    class Klemmt(Attrappe):
+        def stelle(self, b, wert):
+            return "klemmt" if b.name == "Schwenk" and wert == 30.0 else super().stelle(b, wert)
+
+    a = aufnahme()
+    a["verknuepfungen"]["Schwenk"]["wert"] = 30.0
+    erg = fahre_alle(Klemmt(), a)
+    assert erg["Schwenk"]["gefahren"] is True
+    assert "klemmt" in erg["Schwenk"]["hinweis"] and "Probeschritt" in erg["Schwenk"]["hinweis"]
+    assert erg["Hub"]["hinweis"] is None
+
+
 def test_gescheiterter_probeschritt_stellt_zurueck():
     a = aufnahme()
     a["verknuepfungen"]["Schwenk"]["wert"] = 30.0

@@ -14,11 +14,11 @@ from swki.baugruppe.sw_bewegung import SwMechanik
 from swki.bestand import sw_bestand
 from swki.bestand.bewegung_bestand import abdeckung, fahre_bestand, grenzen_der_aufnahme, statische_paare
 from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BestandFehler
-from swki.bestand.sw_baugruppe_bestand import (baum_ohne_glieder, lies_baugruppe, lies_kollisionen, lies_komponenten,
-                                               lies_verknuepfungen, mechanik_fuer)
+from swki.bestand.sw_baugruppe_bestand import (VERKNUEPFUNG_UNERREICHT, baum_ohne_glieder, lies_baugruppe, lies_kollisionen,
+                                               lies_komponenten, lies_verknuepfungen, mechanik_fuer)
 from swki.bestand.vergleich_baugruppe import vergleiche_baugruppe
 from swki.compiler.fehler import BauFehler
-from tests.bestand.sw_attrappe_baugruppe import Interferenz, Kollisionen, lage, muster_baugruppe
+from tests.bestand.sw_attrappe_baugruppe import Bezug, Interferenz, Knoten, Kollisionen, Mate, Seite, lage, muster_baugruppe
 
 SPEC = {"art": "aenderung", "punkte": [], "bereiche": []}
 APP = SimpleNamespace(GetProcessID=os.getpid())
@@ -191,11 +191,46 @@ def test_unlesbare_partner_bleiben_none(asm):
     assert lies_verknuepfungen(asm, ["Standard"])["Hub"]["partner"] is None
 
 
-def test_ordner_unter_den_verknuepfungen_zaehlt_nicht(asm):
-    """Ein Ordner im Verknüpfungsbaum hat kein IMate2 (S19f klärt, wo seine Verknüpfungen stehen)."""
-    ordner = asm.mate("Ordner1", 0, typname="FtrFolder")
-    ordner.daten = None
-    assert "Ordner1" not in lies_verknuepfungen(asm, ["Standard"])
+def _im_ordner(asm, *mates):
+    """Die Verknüpfungen stecken in einem Ordner unter `MateGroup`; der Ordner selbst hat kein IMate2."""
+    for m in mates:
+        asm.mates.remove(m)
+    ordner = Knoten(asm, "Ordner1", "FtrFolder", unter=mates)
+    asm.mates.append(ordner)
+    return ordner
+
+
+def test_verknuepfung_im_ordner_wird_gelesen(asm):
+    _im_ordner(asm, asm.mates[1])
+    v = lies_verknuepfungen(asm, ["Standard"])
+    assert "Abstand1" in v and "Ordner1" not in v and v["Abstand1"]["wert"] == pytest.approx(3.0)
+
+
+def test_grenze_im_ordner_wird_gefahren(asm):
+    """Sonst fehlte sie ohne Hinweis: Bestand und Lauf läsen gleich, der Vergleich sähe es nie."""
+    _im_ordner(asm, asm.mates[0])
+    a = lies_baugruppe(None, asm)
+    g = grenzen_der_aufnahme(a)
+    assert list(g) == ["Hub"] and _fahre(mechanik_fuer(APP, asm, g, a, None), a, g)["Hub"]["gefahren"] is True
+
+
+def test_gegenprobe_schweigt_wenn_der_baum_alles_kennt(asm):
+    _im_ordner(asm, asm.mates[1])
+    assert lies_baugruppe(None, asm)["warnungen"] == []
+
+
+def test_gegenprobe_nennt_was_der_baum_nicht_erreicht(asm):
+    """`GetFeatures(False)` kennt sie, der Baumweg nicht: Das steht in `warnungen`, auch vor S19f nie still."""
+    asm.versteckt.append(Mate(asm, "Versteckt1", 0))
+    w = lies_baugruppe(None, asm)["warnungen"]
+    assert [x["code"] for x in w] == [VERKNUEPFUNG_UNERREICHT] and w[0]["verknuepfungen"] == ["Versteckt1"]
+    assert "Versteckt1" in w[0]["meldung"]
+
+
+def test_gegenprobe_nicht_lesbar_ist_nie_still(asm):
+    asm.__class__ = type("Ohne", (asm.__class__,), {"FeatureManager": property(lambda self: 1 / 0)})
+    w = lies_baugruppe(None, asm)["warnungen"]
+    assert [x["code"] for x in w] == [VERKNUEPFUNG_UNERREICHT] and "ZeroDivisionError" in w[0]["meldung"]
 
 
 # --- Baum und ganzes Lesen --------------------------------------------------------------------------------------------
@@ -214,6 +249,57 @@ def test_lies_baugruppe_format(asm):
     assert set(d["eigenschaften"]) == {"datei", "konfiguration"} and d["neuaufbau"] == [] and d["kollisionen"] == []
     assert "datei" not in d and "dateien" not in d and "bewegungen" not in d
     assert len(d["komponenten"]) == 15 and set(d["verknuepfungen"]) == {"Hub", "Abstand1", "Deckungsgleich1"}
+
+
+class Stumm(Mate):
+    """Pflichtfrage 5: Unterdrückt gibt die Verknüpfung gar nichts her, auch `GetSpecificFeature2` nicht."""
+
+    @property
+    def GetSpecificFeature2(self):
+        return None if self.asm.aktiv in self.unterdrueckt else self.daten
+
+
+@pytest.mark.parametrize("stumm", [False, True])
+@pytest.mark.parametrize("aus", [{"Leicht"}, {"Standard"}, {"Standard", "Leicht"}])
+def test_unterdrueckte_verknuepfung_ist_ein_unveraenderter_stand(asm, aus, stumm):
+    """Unterdrückt in einer oder in allen Konfigurationen: Eine unveränderte Baugruppe ist bewiesen, nicht `ok: None`."""
+    m = asm.mates[1]
+    m.unterdrueckt.update(aus)
+    if stumm:
+        m.__class__ = Stumm
+    vorher = lies_baugruppe(None, asm)
+    nachher = copy.deepcopy(lies_baugruppe(None, asm))
+    assert vorher["verknuepfungen"]["Abstand1"]["werte"].keys() == {"Standard", "Leicht"}
+    assert {e["id"]: e["ok"] for e in vergleiche_baugruppe(SPEC, vorher, nachher, {}, {})} == {
+        "komponenten": True, "verknuepfungen": True, "bestimmtheit": True, "kollision": True, "lage": True}
+
+
+def test_ueberall_unterdrueckte_verknuepfung_ohne_gelesene_daten(asm):
+    """Nichts gelesen: Ersatz, der in Bestand und Lauf gleich ist. Eine Zahl behauptet er nicht, `swMateUNKNOWN` steht als Typ."""
+    m = asm.mates[1]
+    m.unterdrueckt.update({"Standard", "Leicht"})
+    m.__class__ = Stumm
+    v = lies_baugruppe(None, asm)["verknuepfungen"]["Abstand1"]
+    assert v["typ"] == 7 and v["partner"] == [] and v["grenze"] is False and v["wert"] is None
+    assert v["werte"] == {"Standard": {"wert": None, "min": None, "max": None}, "Leicht": {"wert": None, "min": None,
+                                                                                           "max": None}}
+
+
+def test_wieder_aktivierte_verknuepfung_faellt_auf(asm):
+    """Der Ersatz gilt nur, solange sie in beiden Ständen unterdrückt ist."""
+    m = asm.mates[1]
+    m.unterdrueckt.update({"Standard", "Leicht"})
+    m.__class__ = Stumm
+    vorher = lies_baugruppe(None, asm)
+    m.unterdrueckt.clear()
+    aus = {e["id"]: e["ok"] for e in vergleiche_baugruppe(SPEC, vorher, lies_baugruppe(None, asm), {}, {})}
+    assert aus["verknuepfungen"] is False
+
+
+def test_aktive_verknuepfung_ohne_lesbare_zahl_bleibt_unlesbar(asm):
+    """Nur eine unterdrückte bekommt Ersatz: Bei einer aktiven heißt fehlend nicht gelesen."""
+    asm.mates[1].Parameter = None
+    assert "Standard" not in lies_verknuepfungen(asm, ["Standard"])["Abstand1"]["werte"]
 
 
 def test_lies_baugruppe_aktive_bleibt_auch_nach_fehler(asm):
@@ -309,8 +395,6 @@ def test_bezugsebene_wird_als_feature_gewaehlt(asm):
 
 
 def sw_seite_ebene(asm):
-    from tests.bestand.sw_attrappe_baugruppe import Bezug, Seite
-
     return Seite(None, Bezug("Ebene"), 4)
 
 
@@ -335,6 +419,46 @@ def test_fahrt_an_der_attrappe(asm, stand):
     assert e["gefahren"] is True and e["komponente"] == "Schlitten-1" and e["stellungen"] == 6 and e["bewegt"] == ["Schlitten-1"]
     assert all(p["ok"] is not False for p in e["pruefungen"] if not p["id"].startswith("freiheitsgrad")), e["pruefungen"]
     assert asm.gespeichert == [] and [m.Name for m in asm.mates] == ["Hub", "Abstand1", "Deckungsgleich1"]  # Antrieb wieder weg
+
+
+class Stumpf(Bezug):
+    def Select4(self, anhaengen, daten):
+        return False
+
+
+def _zweite_grenze(asm, bezug):
+    asm.komponente("Schlitten-2", "teile/Schlitten.SLDPRT", status=2)
+    asm.mate("Hub2", 5, [Seite(asm.komp("Schlitten-2"), bezug), asm.seite("Grund-1")], wert=0.010, spanne=(-0.010, 0.015),
+             typname="MateDistanceDim")
+    asm.bewegt["Hub2"] = "Schlitten-2"
+    a = lies_baugruppe(None, asm)
+    return a, grenzen_der_aufnahme(a)
+
+
+def test_ein_antrieb_scheitert_die_andere_grenze_faehrt(asm):
+    """§8.4: `Select4` False wirft einen `BauFehler`. Nur diese Grenze fällt heraus, der Grund steht im Hinweis."""
+    a, g = _zweite_grenze(asm, Stumpf("Fläche"))
+    e = _fahre(mechanik_fuer(APP, asm, g, a, None), a, g)
+    assert e["Hub2"]["gefahren"] is False and "Auswahl" in e["Hub2"]["hinweis"] and e["Hub"]["gefahren"] is True
+    assert [m.Name for m in asm.mates] == ["Hub", "Abstand1", "Deckungsgleich1", "Hub2"] and not asm.mates[3].unterdrueckt
+
+
+def test_com_fehler_beim_anlegen_gilt_nur_dieser_grenze(asm):
+    class Kaputt(Bezug):
+        def Select4(self, anhaengen, daten):
+            raise RuntimeError("COM weg")
+
+    a, g = _zweite_grenze(asm, Kaputt("Fläche"))
+    e = _fahre(mechanik_fuer(APP, asm, g, a, None), a, g)
+    assert e["Hub2"]["gefahren"] is False and "COM weg" in e["Hub2"]["hinweis"] and e["Hub"]["gefahren"] is True
+
+
+def test_fehler_ohne_bezug_zu_einer_grenze_bleibt_laut(asm, stand):
+    """Ruling Task 6, präzisiert: Nur das Anlegen des Antriebs fällt auf die Grenze zurück."""
+    a, g = stand
+    asm.mates[0].SetSuppression2 = lambda aktion, option, namen: False
+    with pytest.raises(BauFehler):
+        _fahre(mechanik_fuer(APP, asm, g, a, None), a, g)
 
 
 def test_alter_verknuepfungsfehler_stoppt_die_fahrt_nicht(asm):

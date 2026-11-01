@@ -2,9 +2,11 @@
 
 UNGEMESSEN: Die Attrappe folgt dem API-Index, nicht einer Messung; S19 kann sie korrigieren. Sie bildet nach, was die Schicht
 aushalten muss: `Transform2` steht bis zum Neuaufbau veraltet; `GetComponents` liefert je aktiver Konfiguration, Kinder einer
-dort unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); Grenzen wirken, solange sie
-nicht unterdrückt sind; eine Verknüpfung mit altem Fehler lässt `EditRebuild3` scheitern. Unterdrückte Verknüpfungen geben ihre
-Entitäten nicht mehr her (`entitaeten_nach_dem_unterdruecken`), so fällt auf, wer sie zu spät liest."""
+dort unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); `FeatureManager.GetFeatures`
+kennt auch, was der Baum nicht zeigt (`versteckt`); `pfade_wie_gespeichert`: `GetPathName` einer unterdrückten Komponente nennt
+laut Index den gespeicherten Pfad, die Attrappe tut das nur auf Wunsch; Grenzen wirken, solange sie nicht unterdrückt sind; eine
+Verknüpfung mit altem Fehler lässt `EditRebuild3` scheitern. Unterdrückte Verknüpfungen geben ihre Entitäten nicht mehr her
+(`entitaeten_nach_dem_unterdruecken`), so fällt auf, wer sie zu spät liest."""
 
 import os
 from pathlib import Path
@@ -149,6 +151,9 @@ class Komp:
 
     @property
     def GetPathName(self):
+        gespeichert = self.asm.pfade_wie_gespeichert
+        if gespeichert is not None and self.asm.aktiv in self.unterdrueckt:
+            return str(Path(gespeichert) / self.rel)
         return str(self.asm.wurzel / self.rel)
 
     @property
@@ -283,6 +288,8 @@ class Baugruppe:
         self.gespeichert = []
         self.auswahl = None
         self.entitaeten_nach_dem_unterdruecken = False
+        self.pfade_wie_gespeichert: Path | None = None  # Index zu GetPathName: unterdrückt zeigt sie den gespeicherten Pfad
+        self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
         self.Extension = Erweiterung(self)
         self.SelectionManager = SimpleNamespace(CreateSelectData=SimpleNamespace(Mark=0))
 
@@ -329,12 +336,20 @@ class Baugruppe:
     def ConfigurationManager(self):
         return SimpleNamespace(ActiveConfiguration=SimpleNamespace(Name=self.aktiv))
 
+    def alle_mates(self) -> list:
+        """Verknüpfungen und Ordner, auch was in Ordnern steckt."""
+        return [x for m in self.mates for x in (m, *m.unter)]
+
+    @property
+    def FeatureManager(self):
+        return SimpleNamespace(GetFeatures=lambda nur_oben: (self.ebene, self.mategruppe, *self.alle_mates(), *self.versteckt))
+
     def _loese(self):
         self.aufgebaut.add(self.aktiv)
         for m in self.mates:
             if not m.Name.endswith(".antrieb"):
                 continue
-            grenze = next(g for g in self.mates if g.Name == m.Name.removesuffix(".antrieb"))
+            grenze = next(g for g in self.alle_mates() if g.Name == m.Name.removesuffix(".antrieb"))
             wert = m.wert_d1.SystemValue
             mitte = grenze.wert_d1.SystemValue
             unten, oben = mitte + grenze.daten.MinimumVariation, mitte + grenze.daten.MaximumVariation

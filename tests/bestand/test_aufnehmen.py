@@ -8,9 +8,9 @@ from types import SimpleNamespace
 import pytest
 
 from swki.bestand import befehle, sw_bestand
-from swki.bestand.ablage import aufnahmen, bestand_ordner, lade_aufnahme
-from swki.bestand.fehler import (BESTAND_NICHT_LESBAR, BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT,
-                                 BESTAND_VERSION_NEUER, BestandFehler)
+from swki.bestand.ablage import aufnahmen, aufnahmen_aus_lauf, bestand_ordner, lade_aufnahme
+from swki.bestand.fehler import (BESTAND_AUFTRAG_BELEGT, BESTAND_NICHT_LESBAR, BESTAND_PFAD_FREMD, BESTAND_REFERENZ,
+                                 BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BESTAND_VERSION_NEUER, BestandFehler)
 from swki.bestand.sw_bestand import leite_masse, links_von, lies_bestand, massname, whats_wrong
 from swki.cli import main
 from swki.konfig import Rechner
@@ -53,8 +53,8 @@ def umgebung(tmp_path, monkeypatch):
     original.write_bytes(b"inhalt")
     u = SimpleNamespace(r=r, original=original, app=App(), geoeffnet=[], gelesen=dict(GELESEN), bilder=[], lesefehler=None)
 
-    def oeffne(app, pfad, sichtbar=True, nur_lesen=False):
-        u.geoeffnet.append({"pfad": pfad, "sichtbar": sichtbar, "nur_lesen": nur_lesen})
+    def oeffne_in(app, pfad, wurzel, sichtbar=False, nur_lesen=True):
+        u.geoeffnet.append({"pfad": pfad, "wurzel": wurzel, "sichtbar": sichtbar, "nur_lesen": nur_lesen})
         return SimpleNamespace(GetTitle=pfad.name)
 
     def lies(app, model):
@@ -68,7 +68,7 @@ def umgebung(tmp_path, monkeypatch):
 
     monkeypatch.setattr(befehle, "lade_rechner", lambda: r)
     monkeypatch.setattr(befehle, "verbinde", lambda jahr: u.app)
-    monkeypatch.setattr(befehle, "oeffne", oeffne)
+    monkeypatch.setattr(befehle, "oeffne_in", oeffne_in)
     monkeypatch.setattr(befehle, "lies_bestand", lies)
     monkeypatch.setattr(befehle, "screenshots", screenshots)
     return u
@@ -148,6 +148,58 @@ def test_oeffnet_nur_die_kopie_nur_lesend(umgebung):
     assert umgebung.geoeffnet and all(g["nur_lesen"] and g["pfad"].parent == ordner for g in umgebung.geoeffnet)
     assert umgebung.geoeffnet[0]["sichtbar"] is False  # S18: unsichtbar spart 2,3 GB; nur die Bilder brauchen ein Fenster
     assert umgebung.bilder == [ordner / "bilder"]
+
+
+def test_jedes_oeffnen_geht_ueber_den_pfadschutz_im_ordner_der_aufnahme(umgebung):
+    befehle.aufnehmen(umgebung.original, "a1")
+    ordner = bestand_ordner(umgebung.r, "a1", 1)
+    assert [g["wurzel"] for g in umgebung.geoeffnet] == [ordner, ordner]
+
+
+def test_pfad_fremd_beim_oeffnen_entfernt_die_aufnahme(umgebung, monkeypatch):
+    def fremd(*a, **k):
+        raise BestandFehler(BESTAND_PFAD_FREMD, "fremd")
+
+    monkeypatch.setattr(befehle, "oeffne_in", fremd)
+    with pytest.raises(BestandFehler):
+        befehle.aufnehmen(umgebung.original, "a1")
+    assert not bestand_ordner(umgebung.r, "a1", 1).exists()
+
+
+def _lauf(r, auftrag, n, protokoll):
+    ordner = r.arbeitsordner / auftrag / f"lauf-{n}"
+    ordner.mkdir(parents=True)
+    (ordner / "protokoll.json").write_text(json.dumps(protokoll), encoding="utf-8")
+    return ordner
+
+
+def test_teil_aus_einem_lauf_traegt_die_herkunft(umgebung):
+    """§8.5: Sonst öffnet `swki aenderungen` diesen Lauf weiter in SolidWorks."""
+    lauf = _lauf(umgebung.r, "alt", 3, {"auftrag": "alt", "lauf": 3, "spec": "alt.yaml"})
+    teil = lauf / "Deckel.SLDPRT"
+    teil.write_bytes(b"inhalt")
+    aus = befehle.aufnehmen(teil, "neu")
+    herkunft = bestand_ordner(umgebung.r, "neu", 1) / "herkunft.json"
+    assert json.loads(herkunft.read_text(encoding="utf-8")) == {"auftrag": "alt", "lauf": 3, "spec": "alt.yaml"}
+    assert aus["herkunft"]["lauf"] == 3 and aufnahmen_aus_lauf(umgebung.r, lauf)[0]["auftrag"] == "neu"
+    assert befehle.aufnehmen(teil, "neu")["herkunft"]["lauf"] == 3      # auch ohne neue Aufnahme
+
+
+def test_teil_im_auftrag_mit_spec_laeufen_lehnt_ab(umgebung):
+    _lauf(umgebung.r, "a1", 2, {"auftrag": "a1", "lauf": 2, "spec": "a1.yaml"})
+    with pytest.raises(BestandFehler) as e:
+        befehle.aufnehmen(umgebung.original, "a1")
+    assert e.value.daten["code"] == BESTAND_AUFTRAG_BELEGT and umgebung.app.gefragt == []
+
+
+def test_teil_im_auftrag_mit_aenderungs_lauf_bleibt_erlaubt(umgebung):
+    _lauf(umgebung.r, "a1", 1, {"auftrag": "a1", "bestand": {"sha256": "ab", "aufnahme": 1}})
+    assert befehle.aufnehmen(umgebung.original, "a1")["aufnahme"] == 1
+
+
+def test_teil_ohne_lauf_bleibt_wie_bisher(umgebung):
+    assert "herkunft" not in befehle.aufnehmen(umgebung.original, "a1")
+    assert not (bestand_ordner(umgebung.r, "a1", 1) / "herkunft.json").exists()
 
 
 def test_schliesst_auch_bei_fehler(umgebung):

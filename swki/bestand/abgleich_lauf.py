@@ -109,9 +109,11 @@ def _differenzen(app, kopie: Path, wurzel: Path, model, konfigurationen: list[st
 def _referenz_teil(app, r, standard: dict, rel: str, spec_teil: dict, spec_pfad: Path, auftrag: str, nummer: int, vorher: dict,
                    ordner: Path) -> dict:
     """Ein Teil aus der freigegebenen Spec bauen, unter `ordner` speichern und mit der Bestandskopie vergleichen. Das Dokument
-    geht immer zu, auch nach einem Fehler; ein Baufehler ist ein Befund."""
-    protokoll = Protokoll(auftrag, spec_pfad.name, 0, r.sw_jahr)
-    model, _, fehler = baue_teil_dokument(app, r, standard, spec_teil, spec_pfad, auftrag, protokoll)
+    geht immer zu, auch nach einem Fehler; ein Baufehler ist ein Befund. Gebaut wird im Auftrag der Spec, nicht in dem der
+    Aufnahme, sonst wiche die Eigenschaft `Auftrag` immer ab."""
+    eigener = auftrag_name(spec_pfad)
+    protokoll = Protokoll(eigener, spec_pfad.name, 0, r.sw_jahr)
+    model, _, fehler = baue_teil_dokument(app, r, standard, spec_teil, spec_pfad, eigener, protokoll)
     try:
         if fehler is not None:
             return {"datei": rel, "fehler": fehler_dict(fehler)}
@@ -120,14 +122,17 @@ def _referenz_teil(app, r, standard: dict, rel: str, spec_teil: dict, spec_pfad:
         nachher = lies_bestand(app, model)
         konfigurationen = [k for k in vorher["konfigurationen"] if k in nachher["konfigurationen"]]
         wurzel = bestand_ordner(r, auftrag, nummer)
-        differenzen = _differenzen(app, wurzel / rel, wurzel, model, konfigurationen)
+        differenzen = _differenzen(app, wurzel / rel, wurzel, model, konfigurationen) if konfigurationen else {}
     finally:
         sw.schliesse(app, model)
     pruefungen = vergleiche({"punkte": []}, {**vorher, "datei": {**vorher["datei"], "ordner": str((wurzel / rel).parent)}},
                             {**nachher, "datei": {"name": ziel.name, "ordner": str(ordner)}}, {})
     je_id = {e["id"]: e for e in pruefungen}
+    hinweis = {} if konfigurationen else {"hinweis": "Bestandskopie und Referenz haben keine gemeinsame Konfiguration ("
+                                                     f"{', '.join(vorher['konfigurationen'])} gegen "
+                                                     f"{', '.join(nachher['konfigurationen'])}): Körper nicht verglichen"}
     return {"datei": str(ziel), "features": je_id["baum"], "masse": je_id["masse"], "differenzen": differenzen,
-            "pruefungen": pruefungen}
+            "pruefungen": pruefungen, **hinweis}
 
 
 def referenzbau(r, standard: dict, auftrag: str, nummer: int, a: dict, geaendert: list[str], specs: dict) -> dict:

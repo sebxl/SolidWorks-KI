@@ -110,15 +110,23 @@ def waehle(asm, entitaet: tuple[object, bool], anhaengen: bool, marke: int = MAR
         raise BauFehler(VERKNUEPFUNG_FEHLER, "Auswahl für die Verknüpfung fehlgeschlagen", schritt="auswahl")
 
 
+def _sammle_verknuepfungen(unter, ergebnis: list) -> None:
+    while unter is not None:
+        if unter.GetTypeName2.endswith("Folder"):  # swki legt keine an, ein Kollege schon (Bestandsdateien, S19f)
+            _sammle_verknuepfungen(unter.GetFirstSubFeature, ergebnis)
+        else:
+            ergebnis.append(unter)
+        unter = unter.GetNextSubFeature
+
+
 def verknuepfungen(asm) -> list:
-    """Verknüpfungs-Features (Unterfeatures des Ordners vom Typ MateGroup) in Baumreihenfolge."""
+    """Verknüpfungs-Features (Unterfeatures des Ordners vom Typ MateGroup, auch in Ordnern darunter) in Baumreihenfolge."""
     f = asm.FirstFeature
     while f is not None and f.GetTypeName2 != "MateGroup":
         f = f.GetNextFeature
-    ergebnis, unter = [], (f.GetFirstSubFeature if f is not None else None)
-    while unter is not None:
-        ergebnis.append(unter)
-        unter = unter.GetNextSubFeature
+    ergebnis: list = []
+    if f is not None:
+        _sammle_verknuepfungen(f.GetFirstSubFeature, ergebnis)
     return ergebnis
 
 

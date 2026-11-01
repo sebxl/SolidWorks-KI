@@ -12,6 +12,7 @@ import pytest
 from swki.aenderungen import sha256_datei
 from swki.bestand import aufnahme_baugruppe, befehle, sw_bestand
 from swki.bestand.ablage import (aufnahmen, bestand_ordner, lade_aufnahme, lade_datei_aufnahme, lade_dateien, spec_laeufe)
+from swki.bestand.sw_baugruppe_bestand import VERKNUEPFUNG_UNERREICHT
 from swki.bestand.bewegung_bestand import vergleiche_bewegungen
 from swki.bestand.fehler import (BESTAND_AUFTRAG_BELEGT, BESTAND_OFFEN, BESTAND_PFAD_FREMD, BESTAND_REFERENZ,
                                  BESTAND_REFERENZ_EXTERN,
@@ -19,7 +20,7 @@ from swki.bestand.fehler import (BESTAND_AUFTRAG_BELEGT, BESTAND_OFFEN, BESTAND_
 from swki.cli import main
 from swki.compiler.fehler import BauFehler
 from swki.konfig import Rechner, lade_standard
-from tests.bestand.sw_attrappe_baugruppe import App, Komp, muster_baugruppe
+from tests.bestand.sw_attrappe_baugruppe import App, Komp, Mate, muster_baugruppe
 
 ORIGINALE = ("Unter.SLDASM", "teile/Grund.SLDPRT", "teile/Schlitten.SLDPRT", "teile/Schraube.SLDPRT", "teile/Welle.SLDPRT")
 GELESEN = {"version": 1, "konfigurationen": ["Standard"], "aktiv": "Standard", "material": "", "eigenschaften": {},
@@ -120,6 +121,13 @@ def test_abgeleitetes_teil_traegt_seine_referenz_relativ(u):
     assert lade_aufnahme(u.r, "a1", 1)["dateien"]["teile/Schlitten.SLDPRT"]["referenzen"] == ["teile/Grund.SLDPRT"]
 
 
+def test_teil_mit_referenz_auf_die_hauptbaugruppe(u):
+    """In-Context-Teil: Das Ziel liegt in der Kopie (§8.1), also wird es aufgenommen."""
+    u.app.abhaengig["Schlitten.SLDPRT"] = [str(u.haupt)]
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert lade_aufnahme(u.r, "a1", 1)["dateien"]["teile/Schlitten.SLDPRT"]["referenzen"] == ["Haupt.SLDASM"]
+
+
 def test_referenz_eines_teils_ausserhalb_der_kopie_lehnt_ab(u):
     u.app.abhaengig["Schlitten.SLDPRT"] = ["D:\\Sonst\\Fremd.SLDPRT"]
     with pytest.raises(BestandFehler) as e:
@@ -187,6 +195,34 @@ def test_warnung_offen(u):
     assert w["datei"] == "teile/Schraube.SLDPRT" and "offen" in w["meldung"]
     assert lade_aufnahme(u.r, "a1", 1)["warnungen"] == aus["warnungen"]
     assert not list(bestand_ordner(u.r, "a1", 1).rglob("~$*"))
+
+
+def test_gegenprobe_der_verknuepfungen_steht_in_den_warnungen(u):
+    u.asm.versteckt.append(Mate(u.asm, "Versteckt1", 0))
+    aus = aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert any(w["code"] == VERKNUEPFUNG_UNERREICHT for w in aus["warnungen"])
+    assert any(w["code"] == VERKNUEPFUNG_UNERREICHT for w in lade_aufnahme(u.r, "a1", 1)["warnungen"])
+
+
+def test_speicher_wird_vor_dem_oeffnen_gemessen(u, monkeypatch):
+    """`SPEICHER_KNAPP` urteilt nach dem Stand zu Beginn: Nach dem Öffnen sähe frisches SolidWorks nie frisch aus."""
+    stand = {"mb": 500.0}
+    gefahren = {}
+    wahr = aufnahme_baugruppe.oeffne_in
+
+    def oeffne(*a, **k):
+        stand["mb"] = 5000.0
+        return wahr(*a, **k)
+
+    def fahre(mech, a, grenzen, schritte, bekannt, grenze_mb, tol_mm, start_mb=None):
+        gefahren["start_mb"] = start_mb
+        return {}
+
+    monkeypatch.setattr(aufnahme_baugruppe, "privat_mb", lambda pid: stand["mb"])
+    monkeypatch.setattr(aufnahme_baugruppe, "oeffne_in", oeffne)
+    monkeypatch.setattr(aufnahme_baugruppe, "fahre_bestand", fahre)
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert gefahren["start_mb"] == 500.0
 
 
 def test_abdeckung_steht_in_den_warnungen(u):
@@ -282,6 +318,18 @@ def test_pfad_fremd_nach_dem_oeffnen_entfernt_die_aufnahme(u):
     assert ("zu", "Haupt.SLDASM") in u.app.ereignisse
 
 
+def test_heute_meldet_eine_unterdrueckte_komponente_mit_gespeichertem_pfad_pfad_fremd(u):
+    """Hält das heutige Verhalten fest, ohne es gutzuheißen: Laut Index nennt `GetPathName` einer unterdrückten Komponente den
+    gespeicherten Pfad, §8.1a prüft sie mit, die Aufnahme verwirft sich. Stimmt der Index, geht das an echten Baugruppen nicht
+    auf. Die Entscheidung trifft S19c, der Pfadschutz wird ohne Messung nicht aufgeweicht."""
+    u.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    u.asm.pfade_wie_gespeichert = u.kunde
+    with pytest.raises(BestandFehler) as e:
+        aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and str(u.kunde / "teile" / "Schraube.SLDPRT") in e.value.daten["pfade"]
+    assert aufnahmen(u.r, "a1") == []
+
+
 def test_lesefehler_laesst_sich_nachholen(u):
     u.lesefehler = RuntimeError("COM weg")
     with pytest.raises(RuntimeError):
@@ -344,7 +392,8 @@ def test_teil_wie_bisher(u, monkeypatch):
     gelesen = {**GELESEN, "externe_referenzen": [], "gleichungen": [], "variablen": {}, "reihenfolge": {}, "skizzen": {},
                "masse": [],
                "neuaufbau": [], "geometrie": {}, "tabelle": False, "einheitensystem": 5}
-    monkeypatch.setattr(befehle, "oeffne", lambda app, pfad, sichtbar=True, nur_lesen=False: SimpleNamespace(GetTitle=pfad.name))
+    monkeypatch.setattr(befehle, "oeffne_in", lambda app, pfad, wurzel, sichtbar=False,
+                        nur_lesen=True: SimpleNamespace(GetTitle=pfad.name))
     monkeypatch.setattr(befehle, "lies_bestand", lambda app, model: gelesen)
     monkeypatch.setattr(befehle, "screenshots", lambda app, model, ordner: {})
     monkeypatch.setattr(aufnahme_baugruppe, "aufnehmen", lambda *a: pytest.fail("Teil geht nicht über den Baugruppen-Weg"))

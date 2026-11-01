@@ -7,9 +7,10 @@ import re
 from pathlib import Path
 
 from swki.bestand import ausgabe
-from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, ist_baugruppe, kopiere_original, lade_aufnahme,
-                                 pruefe_format, schreibe_aufnahme, sha_original, verwirf_aufnahme)
-from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
+from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, herkunft_von, ist_baugruppe, kopiere_original,
+                                 lade_aufnahme, pruefe_auftrag_frei, pruefe_format, schreibe_aufnahme, schreibe_herkunft,
+                                 sha_original, spec_laeufe, verwirf_aufnahme)
+from swki.bestand.fehler import BESTAND_PFAD_FREMD, BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
 from swki.bestand.pfade import oeffne_in
 from swki.bestand.spec import einheit_text
 from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_komponente,
@@ -18,7 +19,6 @@ from swki.cli import ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import lade_rechner
 from swki.pruefung.bilder import screenshots
-from swki.pruefung.messen import oeffne
 from swki.verbindung import verbinde
 
 VOLL_BESTIMMT = 3  # swConstrainedStatus_e.swFullyConstrained
@@ -58,14 +58,14 @@ def zusammenfassung(auftrag: str, nummer: int, a: dict, ordner: Path, neu: bool)
 def _lies_kopie(app, kopie: Path, ordner: Path) -> dict:
     """Lesen geht ohne Fenster (S18b: 1,4 statt 5,3 s, +0 statt +2,3 GB), nur die Bilder brauchen eins; deshalb zweimal
     öffnen."""
-    model = oeffne(app, kopie, sichtbar=False, nur_lesen=True)
+    model = oeffne_in(app, kopie, ordner, sichtbar=False, nur_lesen=True)
     try:
         gelesen = lies_bestand(app, model)
     finally:
         sw.schliesse(app, model)
     if gelesen["externe_referenzen"]:
         raise _extern(kopie, gelesen["externe_referenzen"])
-    model = oeffne(app, kopie, nur_lesen=True)
+    model = oeffne_in(app, kopie, ordner, sichtbar=True, nur_lesen=True)
     try:
         screenshots(app, model, ordner / "bilder")
     finally:
@@ -74,10 +74,12 @@ def _lies_kopie(app, kopie: Path, ordner: Path) -> dict:
 
 
 def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict:
-    """Spec §5.1/5.2. Prüfungen ohne Öffnen vor der Kopie, damit eine abgelehnte Datei keine Aufnahme hinterlässt; zeigt sich die
-    Referenz erst im offenen Dokument, wird der Ordner wieder entfernt. Ob zu lesen ist, entscheidet das fehlende `bestand.json`, nicht
-    `neu`: Scheiterte das Lesen, liegt die Kopie schon da und das Lesen lässt sich nachholen. Eine Baugruppe geht über
-    `swki.bestand.aufnahme_baugruppe` (§8.1), `ohne_bewegung` gilt nur dort."""
+    """Spec §5.1/5.2. Prüfungen ohne Öffnen vor der Kopie, damit eine abgelehnte Datei keine Aufnahme hinterlässt; zeigt sich
+    die Referenz erst im offenen Dokument, wird der Ordner wieder entfernt. Ob zu lesen ist, entscheidet das fehlende
+    `bestand.json`, nicht `neu`: Scheiterte das Lesen, liegt die Kopie schon da und das Lesen lässt sich nachholen. Eine
+    Baugruppe geht über `swki.bestand.aufnahme_baugruppe` (§8.1), `ohne_bewegung` gilt nur dort. Wie dort gilt §8.5: kein
+    Auftrag mit Läufen aus Specs, und ein Original aus einem Lauf hinterlässt `herkunft.json`, sonst öffnete `swki aenderungen`
+    diesen Lauf weiter."""
     pruefe_format(original)
     if ist_baugruppe(original):
         from swki.bestand import aufnahme_baugruppe  # spät importiert: nutzt `zusammenfassung` aus diesem Modul
@@ -85,6 +87,7 @@ def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict
         return aufnahme_baugruppe.aufnehmen(original, auftrag, ohne_bewegung)
     sha_original(original)  # BESTAND_NICHT_LESBAR, bevor SolidWorks gefragt wird
     r = lade_rechner()
+    pruefe_auftrag_frei(r, auftrag, spec_laeufe(r, auftrag))
     app = verbinde(r.sw_jahr)
     pfad = original.absolute()
     versionen, aelter = pruefe_version(app, pfad)
@@ -93,19 +96,23 @@ def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict
     kopie = kopiere_original(r, auftrag, pfad)
     nummer = kopie["nummer"]
     ordner = bestand_ordner(r, auftrag, nummer)
+    herkunft = herkunft_von(r, pfad)
+    if herkunft is not None:
+        schreibe_herkunft(r, auftrag, nummer, herkunft)
+    mit_herkunft = {"herkunft": herkunft} if herkunft is not None else {}
     if (ordner / AUFNAHME_DATEI).is_file():
-        return zusammenfassung(auftrag, nummer, lade_aufnahme(r, auftrag, nummer), ordner, neu=False)
+        return zusammenfassung(auftrag, nummer, lade_aufnahme(r, auftrag, nummer), ordner, neu=False) | mit_herkunft
     try:
         gelesen = _lies_kopie(app, kopie["pfad"], ordner)
     except BestandFehler as e:
-        if e.daten["code"] == BESTAND_REFERENZ_EXTERN:  # abgelehnt, auch wenn die Kopie aus einem abgebrochenen Versuch stammt
+        if e.daten["code"] in (BESTAND_REFERENZ_EXTERN, BESTAND_PFAD_FREMD):  # abgelehnt, auch bei einer Kopie aus einem Abbruch
             verwirf_aufnahme(ordner)
         raise
     daten = {**gelesen, "sw_jahr": r.sw_jahr,
              "datei": {"name": kopie["pfad"].name, "original": str(pfad), "sha256": kopie["sha256"], "versionen": versionen,
                        "version_aelter": aelter}}
     schreibe_aufnahme(r, auftrag, nummer, daten)
-    return zusammenfassung(auftrag, nummer, daten, ordner, neu=True)
+    return zusammenfassung(auftrag, nummer, daten, ordner, neu=True) | mit_herkunft
 
 
 def sichtbar_in(aufnahme: dict, feature: str) -> str:
@@ -173,11 +180,7 @@ def zeige(auftrag: str, mass: str | None, feature: str | None, komponente: str |
     ordner = bestand_ordner(r, auftrag, nummer)
     ziel = ordner / "bilder" / f"zeige_{_dateiname(mass or feature)}.png"
     app = verbinde(r.sw_jahr)
-    pfad = ordner / a["datei"]["name"]
-    if ist_baugruppe(pfad):
-        model = oeffne_in(app, pfad, ordner, sichtbar=True, nur_lesen=True)
-    else:
-        model = oeffne(app, pfad, nur_lesen=True)
+    model = oeffne_in(app, ordner / a["datei"]["name"], ordner, sichtbar=True, nur_lesen=True)
     try:
         if konfiguration != a["aktiv"]:
             model.ShowConfiguration2(konfiguration)

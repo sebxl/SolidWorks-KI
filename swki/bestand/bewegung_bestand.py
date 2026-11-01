@@ -140,7 +140,7 @@ def _seite_ohne_probe(v: dict, aufnahme: dict) -> str | None:
     return None
 
 
-def _probeschritt(mech: Mechanik, name: str, v: dict, a: str, b: str) -> str:
+def _probeschritt(mech: Mechanik, name: str, v: dict, a: str, b: str, hinweise: list[str] | None = None) -> str:
     """Grenze unterdrücken, mit der treibenden Verknüpfung von min nach max fahren und lesen, welche Seite sich bewegt hat; beide:
     a. Räumt immer auf (treibende Verknüpfung löschen, Grenze wieder aktivieren). `StellungFehler`, wenn der Schritt misslingt."""
     bw = grenze_als_bewegung(name, v, a, 1)
@@ -151,8 +151,9 @@ def _probeschritt(mech: Mechanik, name: str, v: dict, a: str, b: str) -> str:
         if (meldung := mech.stelle(bw, bw.max)) is not None:
             raise StellungFehler(name, bw.max, meldung)
         nachher = mech.zustand()
-        if v.get("wert") is not None:  # die Fahrt beginnt bei min; fällt die Grenze dort heraus, steht sie nicht am Anschlag
-            mech.stelle(bw, v["wert"])
+        # die Fahrt beginnt bei min; fällt die Grenze dort heraus, steht sie nicht am Anschlag
+        if v.get("wert") is not None and (meldung := mech.stelle(bw, v["wert"])) is not None and hinweise is not None:
+            hinweise.append(f"Nach dem Probeschritt nicht auf {v['wert']:g} zurückgestellt: {meldung}")
     finally:
         for aufraeumen in (lambda: mech.loese(bw), lambda: mech.unterdruecke(bw, False)):
             try:
@@ -168,15 +169,16 @@ def _probeschritt(mech: Mechanik, name: str, v: dict, a: str, b: str) -> str:
     return a if a in bewegt else b
 
 
-def bewegte_seite(mech: Mechanik, name: str, v: dict, aufnahme: dict) -> str:
+def bewegte_seite(mech: Mechanik, name: str, v: dict, aufnahme: dict, hinweise: list[str] | None = None) -> str:
     """Die bewegte Komponente der Grenze `name`: die Seite, die nicht die Hauptbaugruppe ist, sonst der einzige nicht fixierte
     Partner, sonst zeigt sie ein Probeschritt (`fixiert` unbekannt oder beide gleich); bewegen sich beide, gilt Seite a.
-    `SeiteUnklar`, wenn sich keine Seite bestimmen lässt; `StellungFehler`, wenn der Probeschritt misslingt."""
+    `SeiteUnklar`, wenn sich keine Seite bestimmen lässt; `StellungFehler`, wenn der Probeschritt misslingt. `hinweise` sammelt,
+    was beim Zurückstellen nach dem Probeschritt misslang."""
     seite = _seite_ohne_probe(v, aufnahme)
     if seite is not None:
         return seite
     a, b = _partner(v)
-    return _probeschritt(mech, name, v, a, b)
+    return _probeschritt(mech, name, v, a, b, hinweise)
 
 
 # ---------------------------------------------------------------------------------------------------------------------- Fahrt
@@ -261,6 +263,7 @@ def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schr
     `start_mb`: Private Bytes zu Beginn der Prüfung; ohne Angabe die Abfrage vor der Fahrt."""
     ergebnis: dict[str, dict] = {}
     offen: list[Bewegung] = []
+    zusatz: dict[str, list[str]] = {}
     for name, v in grenzen.items():
         if grund := _nicht_fahrbar(v):
             try:
@@ -270,7 +273,7 @@ def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schr
             ergebnis[name] = _nicht_gefahren(v, seite, grund)
             continue
         try:
-            seite = bewegte_seite(mech, name, v, aufnahme)
+            seite = bewegte_seite(mech, name, v, aufnahme, zusatz.setdefault(name, []))
         except SeiteUnklar as e:
             ergebnis[name] = _nicht_gefahren(v, None, str(e))
         except StellungFehler as e:
@@ -294,6 +297,9 @@ def fahre_bestand(mech: Mechanik, aufnahme: dict, grenzen: dict[str, dict], schr
             ergebnis[b.name] = _nicht_gefahren(grenzen[b.name], b.komponente, _mit_hinweis(str(e), zurueck))
     for b in offen:
         ergebnis[b.name] = _gefahren(b, messwerte, tol_mm)
+    for name, hinweise in zusatz.items():
+        if hinweise:
+            ergebnis[name]["hinweis"] = "; ".join(filter(None, [ergebnis[name]["hinweis"], *hinweise]))
     return {name: ergebnis[name] for name in grenzen}
 
 
