@@ -154,6 +154,11 @@ def _schluessel(pfad: Path | str) -> str:
     return os.path.normcase(os.path.abspath(pfad))
 
 
+def ist_virtuell(pfad: Path | str) -> bool:
+    """Eine virtuelle Komponente steckt in der Baugruppe und hat keine Datei: ihr Name enthält `^` (S18g)."""
+    return "^" in PureWindowsPath(pfad).name
+
+
 def ordne_referenzen(haupt: Path, gespeichert: list[str]) -> dict[str, Path]:
     """Relativer Pfad in der Kopie → Quelle für alle gespeicherten Pfade der Referenzen (`GetDocumentDependencies2`). Wie beim
     Öffnen hat die Datei neben der Hauptbaugruppe Vorrang vor dem gespeicherten Pfad (S18g). Sonst: was im Ordner der
@@ -164,7 +169,7 @@ def ordne_referenzen(haupt: Path, gespeichert: list[str]) -> dict[str, Path]:
     fehlen: list[str] = []
     for text in gespeichert:
         pfad = PureWindowsPath(text)
-        if "^" in pfad.name:
+        if ist_virtuell(pfad):
             continue
         daneben = haupt.parent / pfad.name
         if daneben.is_file():
