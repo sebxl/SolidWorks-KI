@@ -4,7 +4,8 @@ jedem Punkt Neuaufbau, vor dem Speichern alle Konfigurationen prüfen, Speichern
 Anders als beim Teil wird nach einem Fehler **nie** gespeichert: Eine fehlgeschlagene Änderung kann eine Konfiguration still
 und dauerhaft beschädigen, `Save3` meldet trotzdem Erfolg (S18c3). Der Lauf-Ordner behält dann die unveränderte Kopie, der
 nächste Lauf beginnt ohnehin wieder ab der Bestandskopie. Die Datei behält ihren Namen (kein `<auftrag>_<name>`), geöffnet wird
-nur die Lauf-Kopie, nie Bestandskopie oder Original."""
+nur die Lauf-Kopie, nie Bestandskopie oder Original. Eine Baugruppe nimmt die Weiche in `bauen` nach `swki.bestand.bau_baugruppe`,
+ihre Teile laufen als Scheiben durch `_aendere_und_speichere`."""
 
 import time
 from pathlib import Path
@@ -14,7 +15,8 @@ from swki.auftrag import auftrag_name, lauf_belegt, lauf_datei, lauf_ordner, nae
 from swki.bestand import punkte
 from swki.bestand.ablage import bestand_ordner, lauf_kopie, pruefe_kopie
 from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
-from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, lade_aenderung, pruefe_freigabe_aenderung
+from swki.bestand.spec import (GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, ist_baugruppen_aufnahme, lade_aenderung,
+                               pruefe_freigabe_aenderung)
 from swki.bestand.sw_bestand import _geometrie, schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
 from swki.bestand.vergleich import neue_fehler
 from swki.cli import SwkiFehler
@@ -128,6 +130,29 @@ def _fehler_mit_punkt(fehler: Exception, protokoll: Protokoll) -> dict:
     return d if pid is None else {**d, "punkt": pid, "meldung": f"Punkt {pid}: {d['meldung']}"}
 
 
+def schliesse_lauf(protokoll: Protokoll, fehler: Exception | None, ordner: Path, spec_pfad: Path, beginn: float) -> dict:
+    """Status und Fehler ins Protokoll, Protokoll in den Lauf-Ordner und in den Auftrag, das Ergebnis des Baus; nach einem Fehler
+    `BauAbbruch`. Auch ein Abbruch schreibt sein Protokoll."""
+    protokoll.status = "fehler" if fehler else "ok"
+    protokoll.fehler = _fehler_mit_punkt(fehler, protokoll) if fehler else None
+    protokoll.dauer_s = round(time.perf_counter() - beginn, 3)
+    protokoll.schreibe(ordner / "protokoll.json")
+    protokoll.schreibe(lauf_datei(spec_pfad, protokoll.lauf, "protokoll"))
+    ergebnis = {
+        "status": protokoll.status,
+        "auftrag": protokoll.auftrag,
+        "lauf": protokoll.lauf,
+        "ordner": str(ordner),
+        "dateien": protokoll.dateien,
+        "knoten": [{"id": k.id, "status": k.status, "sw_name": k.sw_name} for k in protokoll.knoten],
+        "fehler": protokoll.fehler,
+        "dauer_s": protokoll.dauer_s,
+    }
+    if fehler:
+        raise BauAbbruch(ergebnis)
+    return ergebnis
+
+
 def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False,
           hochstufen: bool = False) -> dict:
     spec_pfad = spec_pfad.resolve()
@@ -138,6 +163,10 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):
         raise SwkiFehler(f"Lauf {lauf} von {auftrag} existiert schon – ohne --lauf baut swki den nächsten freien Lauf")
     aufnahme = aufnahme_zu(spec, spec_pfad)  # BESTAND_UNBEKANNT, BESTAND_VERALTET
+    if ist_baugruppen_aufnahme(aufnahme):
+        from swki.bestand import bau_baugruppe  # spät importiert (Kreisimport, nutzt den Kern dieses Moduls)
+
+        return bau_baugruppe.bauen_baugruppe(spec_pfad, spec, aufnahme, lauf, verwerfen, uebernommen, hochstufen)
     kopie = bestand_ordner(r, auftrag, spec["bestand"]["aufnahme"]) / aufnahme["datei"]["name"]
     pruefe_kopie(aufnahme, kopie)  # BESTAND_ABWEICHEND
     aelter = bool(aufnahme["datei"].get("version_aelter"))
@@ -172,21 +201,4 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     if fehler is None:
         protokoll.dateien = {"teil": str(pfad)}
         protokoll.sha256 = pruefsummen(ordner, [pfad])
-    protokoll.status = "fehler" if fehler else "ok"
-    protokoll.fehler = _fehler_mit_punkt(fehler, protokoll) if fehler else None
-    protokoll.dauer_s = round(time.perf_counter() - beginn, 3)
-    protokoll.schreibe(ordner / "protokoll.json")
-    protokoll.schreibe(lauf_datei(spec_pfad, lauf, "protokoll"))
-    ergebnis = {
-        "status": protokoll.status,
-        "auftrag": auftrag,
-        "lauf": lauf,
-        "ordner": str(ordner),
-        "dateien": protokoll.dateien,
-        "knoten": [{"id": k.id, "status": k.status, "sw_name": k.sw_name} for k in protokoll.knoten],
-        "fehler": protokoll.fehler,
-        "dauer_s": protokoll.dauer_s,
-    }
-    if fehler:
-        raise BauAbbruch(ergebnis)
-    return ergebnis
+    return schliesse_lauf(protokoll, fehler, ordner, spec_pfad, beginn)

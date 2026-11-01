@@ -46,6 +46,10 @@ class Protokoll:
     lizenz: dict | None = None  # Bestandsdatei: {"sitzung": {"typ", "name"}, "datei": {"typ", "name"}} (swLicenseType_e)
     hochgestuft: bool = False  # Bestandsdatei: ältere Datei mit --hochstufen auf das aktuelle SW-Jahr gespeichert
     bestand: dict | None = None  # Bestandsdatei: {"sha256", "aufnahme"}, aus diesem Stand ist der Lauf gebaut
+    neue: dict[str, list[str]] = field(default_factory=dict)  # Bestandsbaugruppe: Punkt-ID → SolidWorks-Namen neuer Komponenten
+    ersetzt: dict[str, str] = field(default_factory=dict)  # Bestandsbaugruppe: alter → neuer Komponentenname
+    neue_dateien: list[str] = field(default_factory=list)  # Bestandsbaugruppe: vom Bau angelegte Dateien, relativ zum Lauf
+    messung: dict[str, dict] = field(default_factory=dict)  # Bestandsbaugruppe: Phase → {"s", "mb"} (Spec Bestandsdateien §8.7)
 
     @contextmanager
     def phase(self, name: str):
