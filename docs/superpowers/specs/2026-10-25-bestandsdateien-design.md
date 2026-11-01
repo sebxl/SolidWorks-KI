@@ -544,7 +544,8 @@ wieder gebraucht, zuerst eine neue Bestandsaufnahme). Drei Wege, sie schließen 
 - `swki bestand abgleich <auftrag> --spec <alte Spec>` nutzt die Aufnahme, öffnet also nichts im Lauf-Ordner.
 - Soll-Lagen: `pruefen` schreibt ab jetzt `lagen` in den Prüfbericht. Ältere Läufe geben sie mit `--lagen <json>` (Format Export `name`, `transform`); ohne sie bleibt die Lage ungeprüft und das steht da.
 - **Grenze:** Ein Feature, das bei gleichem Namen und gleichen Maßen anders ist (Skizze verschoben, Endbedingung), sieht dieser Vergleich nicht. Die Datei bleibt „geändert, nicht
-  erklärt“. **Offen, Entscheidung des Nutzers:** `--referenzbau` baut nur die geänderten Eigenteile aus der freigegebenen Spec in `<auftrag>/referenz-<n>/` und vergleicht exakt (`vergleiche`, `koerper_differenz`).
+  erklärt“. Dafür gibt es `--referenzbau` (Nutzer 2026-11-01): Es baut nur die geänderten Eigenteile aus der freigegebenen Spec in `<auftrag>/referenz-<n>/` und vergleicht exakt (`vergleiche`, `koerper_differenz`). Das ist eine
+  Messlatte, kein Nachbau im Sinn der Regel vom 2026-10-30: Weitergearbeitet wird nur an der Bestandskopie, der Referenzordner fließt in keinen Lauf und keine Ausgabe ein.
 
 ### 8.7 Größe
 

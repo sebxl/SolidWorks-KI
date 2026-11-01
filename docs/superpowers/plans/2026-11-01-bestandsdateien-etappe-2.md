@@ -396,7 +396,7 @@ def test_fremder_lauf_wird_nicht_beschrieben(tmp_path): ...       # Ordnerinhalt
 - `swki bestand aufnehmen <pfad> --auftrag <a> [--ohne-bewegung]`: Ablauf Spec §8.1, Ausgabe `zusammenfassung` plus `komponenten`, `verknuepfungen`, `grenzen`, `kollisionen`, `dateien`, `warnungen`, `herkunft`, `messung`.
 - `swki bestand abgleich <auftrag> --spec <pfad> [--aufnahme n] [--lagen <json>]`: öffnet nichts im Lauf-Ordner.
 - `swki bestand zeige <auftrag> --komponente <name>`.
-- **Nur bei Ja des Nutzers zur offenen Frage:** `--referenzbau` baut mit `baue_teil_dokument` die Eigenteile mit geänderter SHA-256 aus der freigegebenen Teil-Spec nach `<auftrag>/referenz-<n>/`, liest sie mit `lies_bestand`, vergleicht mit der Bestandskopie (`vergleiche` ohne Punkte, `koerper_differenz`) und meldet `features`, `masse`, `differenzen`. Test: `test_referenzbau_schreibt_nur_unter_referenz`, `test_referenzbau_baut_nur_geaenderte`. Bei Nein entfällt das, die Spec §8.6 bekommt die Grenze als endgültig.
+- `--referenzbau` (Nutzer 2026-11-01: ja) baut mit `baue_teil_dokument` die Eigenteile mit geänderter SHA-256 aus der freigegebenen Teil-Spec nach `<auftrag>/referenz-<n>/`, liest sie mit `lies_bestand`, vergleicht mit der Bestandskopie (`vergleiche` ohne Punkte, `koerper_differenz`) und meldet `features`, `masse`, `differenzen`. Test: `test_referenzbau_schreibt_nur_unter_referenz`, `test_referenzbau_baut_nur_geaenderte`.
 
 - [ ] **Step 1: Tests schreiben** (Attrappe: Komponenten, Verknüpfungen, Grenze, Abhängigkeiten)
 
