@@ -44,7 +44,7 @@ from itertools import product
 from swki.baugruppe.bewegung import TOL_BEWEGT_DREHUNG, TOL_BEWEGT_MM, _drehung, _mal, _transponiert, ist_bewegt, verschiebung_mm
 from swki.baugruppe.sw_baugruppe import AUSRICHTUNG
 from swki.bestand.scheiben import aenderung_an_haupt, datei_schluessel, dateien_mit_punkten
-from swki.bestand.vergleich import SKIZZE_RANG, TOL
+from swki.bestand.vergleich import SKIZZE_RANG, TOL, bekannte_fehler_in
 from swki.pruefung.bewertung import eintrag
 from swki.spec.ausdruck import auswerten
 from swki.verbindung import in_mm
@@ -78,6 +78,23 @@ def _ahnen(name: str) -> list[str]:
     """Die Komponente selbst und die Unterbaugruppen, in denen sie steckt (`A/B/C` → `A`, `A/B`, `A/B/C`)."""
     teile = name.split("/")
     return ["/".join(teile[:i]) for i in range(1, len(teile) + 1)]
+
+
+def bekannte_fehler_baugruppe(aufnahme: dict, konfiguration: str) -> set[str]:
+    """Features und Verknüpfungen, deren Fehler die Baugruppe in dieser Konfiguration schon hatte: `neuaufbau` und die Fehlercodes
+    der Verknüpfungen. Bau und Fahrt rechnen damit."""
+    return bekannte_fehler_in(aufnahme, konfiguration) | {n for n, v in (aufnahme.get("verknuepfungen") or {}).items()
+                                                          if (v.get("fehler") or {}).get(konfiguration)}
+
+
+def neuer_verknuepfungsfehler(vorher: dict | None, nachher: dict, konfiguration: str) -> str | None:
+    """Text, wenn die Verknüpfung in dieser Konfiguration einen Fehler trägt, den `vorher` dort nicht kennt (`None`: sie ist neu).
+    Ein Code, der sich nicht lesen lässt, zählt wie ein Fehler. Handler und Stand vor dem Speichern rechnen damit."""
+    code = (nachher.get("fehler") or {}).get(konfiguration)
+    if code is None:
+        return f"Fehlercode in {konfiguration} nicht lesbar"
+    alt = ((vorher or {}).get("fehler") or {}).get(konfiguration)
+    return f"Fehler {code} in {konfiguration}" if code != 0 and code != alt else None
 
 
 def ersetzen_ziele(p: dict, komponenten: dict, punkte: list[dict]) -> tuple[list[str], list[str]]:

@@ -18,7 +18,7 @@ from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
 from swki.bestand.spec import (GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, ist_baugruppen_aufnahme, lade_aenderung,
                                pruefe_freigabe_aenderung)
 from swki.bestand.sw_bestand import _geometrie, schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
-from swki.bestand.vergleich import neue_fehler
+from swki.bestand.vergleich import bekannte_fehler_in, neue_fehler
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.ablauf import durchlaufe
@@ -30,11 +30,6 @@ from swki.pruefung.messen import oeffne
 from swki.verbindung import verbinde
 
 _TOL_VOLUMEN_MM3, _TOL_VOLUMEN_ANTEIL = 0.01, 1e-6  # Rauschen der Massenberechnung; feine Abweichungen zeigt die Differenz
-
-
-def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
-    """Features, deren Fehler die Datei in dieser Konfiguration schon hatte. Warnungen zählen nicht."""
-    return {e["feature"] for e in aufnahme["neuaufbau"] if e["konfiguration"] == konfiguration and not e["warnung"]}
 
 
 def _pruefe_baum(k: str, ist: list[str], aufnahme: dict, geloescht: set[str]) -> None:
@@ -126,6 +121,9 @@ def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: floa
 def _fehler_mit_punkt(fehler: Exception, protokoll: Protokoll) -> dict:
     """Spec §6: Abbruch mit Punkt-ID, Schritt, Code und Meldung. Scheitert die Prüfung davor oder danach, gibt es keinen Punkt."""
     d = fehler_dict(fehler)
+    # `oeffne_in` konnte nach einem Pfadbefund nicht schließen: Das Dokument ist noch offen, `fehler_dict` kennt das Feld nicht
+    if (offen := (getattr(fehler, "daten", None) or {}).get("schliessen_fehlgeschlagen")) is not None:
+        d["schliessen_fehlgeschlagen"] = offen
     pid = next((k.id for k in protokoll.knoten if k.status == "fehler"), None)
     return d if pid is None else {**d, "punkt": pid, "meldung": f"Punkt {pid}: {d['meldung']}"}
 

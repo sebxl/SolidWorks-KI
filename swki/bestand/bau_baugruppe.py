@@ -31,7 +31,7 @@ from swki.baugruppe.bau import _schliesse_alle
 from swki.bestand import punkte
 from swki.bestand.ablage import bestand_ordner, lade_datei_aufnahme, lade_dateien, lauf_kopie_alle
 from swki.bestand.aufnahme_baugruppe import _Messung
-from swki.bestand.bau import _aendere_und_speichere, _pruefe_baum, bekannte_fehler_in, schliesse_lauf
+from swki.bestand.bau import _aendere_und_speichere, _pruefe_baum, schliesse_lauf
 from swki.bestand.fehler import BESTAND_ABWEICHEND, BESTAND_VERSION_AELTER, BestandFehler
 from swki.bestand.pfade import oeffne_in, pruefe_vor_dem_oeffnen
 from swki.bestand.punkte_baugruppe import BauKontext, hole_neue_dateien, punkt_handler
@@ -41,20 +41,15 @@ from swki.bestand.sw_baugruppe_bestand import (_komponenten_leser, _verknuepfung
                                                baum_ohne_glieder)
 from swki.bestand.sw_bestand import lizenz, schalte, speichere_an_ort, whats_wrong
 from swki.bestand.vergleich import neue_fehler
-from swki.bestand.vergleich_baugruppe import _ahnen, _gleich, _wert_gelesen, ersetzen_ziele, namen_im_lauf, soll_werte
+from swki.bestand.vergleich_baugruppe import (_ahnen, _gleich, _wert_gelesen, bekannte_fehler_baugruppe, ersetzen_ziele,
+                                              namen_im_lauf, neuer_verknuepfungsfehler, soll_werte)
 from swki.compiler import sw
 from swki.compiler.ablauf import durchlaufe
-from swki.compiler.fehler import REBUILD_FEHLER, BauFehler
+from swki.compiler.fehler import REBUILD_FEHLER, BauFehler, fehler_dict
 from swki.compiler.protokoll import Knoten, Protokoll
 from swki.konfig import lade_rechner, lade_standard
 from swki.spec.ausdruck import auswerten
 from swki.verbindung import verbinde
-
-
-def bekannte_fehler_baugruppe(aufnahme: dict, konfiguration: str) -> set[str]:
-    """Features und Verknüpfungen, deren Fehler die Baugruppe in dieser Konfiguration schon hatte."""
-    return bekannte_fehler_in(aufnahme, konfiguration) | {n for n, v in aufnahme["verknuepfungen"].items()
-                                                          if (v.get("fehler") or {}).get(konfiguration)}
 
 
 def neue_fehler_baugruppe(fehler: list[dict], aufnahme: dict, konfiguration: str) -> list[str]:
@@ -75,18 +70,9 @@ def _pruefe_neuaufbau(ctx, aufnahme: dict) -> None:
 # --- Stand vor dem Speichern --------------------------------------------------------------------------------------------------
 
 def _neue_verknuepfungsfehler(mates: dict, aufnahme: dict) -> list[str]:
-    """Alle Verknüpfungen, auch die keines Punkts, gegen die Aufnahme; ein Code, den SolidWorks nicht hergibt, zählt wie ein
-    Fehler."""
-    probleme = []
-    for name, m in mates.items():
-        alt = (aufnahme["verknuepfungen"].get(name) or {}).get("fehler") or {}
-        for k in aufnahme["konfigurationen"]:
-            code = m["fehler"].get(k)
-            if code is None:
-                probleme.append(f"{name}: Fehlercode in {k} nicht lesbar")
-            elif code != 0 and code != alt.get(k):
-                probleme.append(f"{name}: Fehler {code} in {k}")
-    return probleme
+    """Alle Verknüpfungen, auch die keines Punkts, gegen die Aufnahme."""
+    return [f"{name}: {text}" for name, m in mates.items() for k in aufnahme["konfigurationen"]
+            if (text := neuer_verknuepfungsfehler(aufnahme["verknuepfungen"].get(name), m, k))]
 
 
 def _verschwunden(spec: dict, aufnahme: dict, komponenten: dict, mates: dict) -> list[str]:
@@ -241,22 +227,31 @@ def _phase(protokoll: Protokoll, messung: _Messung, name: str):
         yield
 
 
+def _mit_datei(fehler: Exception, rel: str) -> BauFehler:
+    """Die Prüfungen von Etappe 1 kennen nur ihre eine Datei: Bei mehreren Scheiben nennt die Meldung sie. Code, Schritt und
+    `daten` bleiben."""
+    d = fehler_dict(fehler)
+    neu = BauFehler(d["code"], f"{rel}: {d['meldung']}", d["schritt"])
+    neu.daten = {**(getattr(fehler, "daten", None) or {}), **neu.daten}
+    return neu
+
+
 def _aendere_scheibe(b: BauKontext, r, rel: str, teil: dict, tol_mm: float) -> Exception | None:
-    """Eine Datei mit Punkten über den Kern von Etappe 1, die Baugruppe ist dabei nicht offen. Der erste Fehler oder None; die
-    Datei ist danach geschlossen und nur bei None gespeichert."""
-    aufnahme = lade_datei_aufnahme(r, b.protokoll.auftrag, teil["bestand"]["aufnahme"], rel)
-    pfad = b.ordner / rel
-    with b.protokoll.phase("vorbereiten"):
-        model = oeffne_in(b.app, pfad, b.ordner, sichtbar=True, nur_lesen=False)
+    """Eine Datei mit Punkten über den Kern von Etappe 1, die Baugruppe ist dabei nicht offen. Der erste Fehler (nennt die Datei)
+    oder None; die Datei ist danach geschlossen und nur bei None gespeichert."""
     fehler = None
     try:
-        fehler = _aendere_und_speichere(b.app, model, teil, b.spec_pfad, tol_mm, aufnahme, b.protokoll, pfad, b.ordner)
-    finally:
+        aufnahme = lade_datei_aufnahme(r, b.protokoll.auftrag, teil["bestand"]["aufnahme"], rel)
+        pfad = b.ordner / rel
+        with b.protokoll.phase("vorbereiten"):
+            model = oeffne_in(b.app, pfad, b.ordner, sichtbar=True, nur_lesen=False)
         try:
+            fehler = _aendere_und_speichere(b.app, model, teil, b.spec_pfad, tol_mm, aufnahme, b.protokoll, pfad, b.ordner)
+        finally:
             sw.schliesse(b.app, model)
-        except Exception as e:  # darf den Baufehler nicht verdecken, und ohne einen steht er im Protokoll
-            fehler = fehler or e
-    return fehler
+    except Exception as e:  # ein Schließfehler darf den Baufehler nicht verdecken, und ohne einen steht er im Protokoll
+        fehler = fehler or e
+    return None if fehler is None else _mit_datei(fehler, rel)
 
 
 def _wende_punkte_an(b: BauKontext, ctx):
@@ -311,7 +306,9 @@ def _baue(b: BauKontext, r, messung: _Messung, quelle: Path, dateien: dict, sche
         pruefe_vor_dem_oeffnen(b.app, pfad, b.ordner)
         with messung.phase("teile"):
             for rel, teil in scheiben.items():
-                if fehler := _aendere_scheibe(b, r, rel, teil, tol_mm):
+                with messung.phase(f"teile:{rel}"):
+                    fehler = _aendere_scheibe(b, r, rel, teil, tol_mm)
+                if fehler:
                     return fehler
     except Exception as e:  # jeder Fehler (auch OSError beim Kopieren) steht im Protokoll, der Ordner sperrte sonst den Auftrag
         return e
@@ -361,7 +358,10 @@ def bauen_baugruppe(spec_pfad: Path, spec: dict, aufnahme: dict, lauf: int | Non
     protokoll.neue_dateien = sorted(n.pfad.name for n in b.quellen.values())
     _uebersprungen(protokoll, spec)
     if fehler is None:
-        protokoll.dateien = {"haupt": str(ordner / aufnahme["datei"]["name"])}
-        protokoll.dateien |= {f"geaendert:{rel}": str(ordner / rel) for rel in scheiben}
-        protokoll.sha256 = pruefsummen(ordner, [ordner / rel for rel in [*dateien, *protokoll.neue_dateien]])
+        try:
+            protokoll.sha256 = pruefsummen(ordner, [ordner / rel for rel in [*dateien, *protokoll.neue_dateien]])
+            protokoll.dateien = {"haupt": str(ordner / aufnahme["datei"]["name"])}
+            protokoll.dateien |= {f"geaendert:{rel}": str(ordner / rel) for rel in scheiben}
+        except OSError as e:  # jemand hat eine Datei gesperrt: Ohne Protokoll sperrte der Ordner den Auftrag
+            fehler = e
     return schliesse_lauf(protokoll, fehler, ordner, spec_pfad, beginn)

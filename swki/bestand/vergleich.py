@@ -37,6 +37,11 @@ TOL = 1e-6  # mm bzw. Grad; die Aufnahme rundet auf 6 Stellen, die Reserve fäng
 SKIZZE_RANG = {6: 0, 5: 0, 4: 1, 1: 2, 7: 2, 2: 3, 3: 4}
 
 
+def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
+    """Features, deren Fehler die Datei in dieser Konfiguration schon hatte. Warnungen zählen nicht."""
+    return {e["feature"] for e in aufnahme.get("neuaufbau") or () if e["konfiguration"] == konfiguration and not e["warnung"]}
+
+
 def neue_fehler(fehler: list[dict], aufnahme: dict, konfiguration: str) -> list[str]:
     """Was die Aufnahme nicht kennt, als Tripel (Konfiguration, Feature, Code): Auch ein anderer Code am selben Feature ist neu.
     Warnungen zählen hier nicht (`neue_warnungen`)."""

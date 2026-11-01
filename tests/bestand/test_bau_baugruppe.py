@@ -13,18 +13,22 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
-from swki.aenderungen import sha256_datei
+from swki.aenderungen import befund, sha256_datei
 from swki.auftrag import lauf_datei, lauf_ordner
 from swki.baugruppe import bau as baugruppe_bau
 from swki.baugruppe.modell import Quelle
+from swki.baugruppe.referenzen import TeilReferenz
 from swki.bestand import ablage, bau, bau_baugruppe, punkte_baugruppe, spec as spec_modul, sw_bestand
 from swki.bestand.bau_baugruppe import bauen_baugruppe, pruefe_stand_baugruppe
 from swki.bestand.fehler import BESTAND_ABWEICHEND, BESTAND_PFAD_FREMD, BESTAND_VERSION_AELTER, BestandFehler
 from swki.bestand.sw_baugruppe_bestand import lies_baugruppe
+from swki.bestand.vergleich_baugruppe import (bekannte_fehler_baugruppe, neuer_verknuepfungsfehler, vergleiche_baugruppe,
+                                              vergleiche_dateien)
 from swki.cli import SwkiFehler
 from swki.compiler.bauen import BauAbbruch
 from swki.compiler.fehler import REBUILD_FEHLER, SPEICHERN_FEHLGESCHLAGEN, BauFehler
 from swki.konfig import Rechner
+from swki.pruefung.geometrie import Messgeometrie
 from swki.pruefung.messen import SW_OPEN_READONLY
 from swki.spec.freigabe import FreigabeFehler
 from swki.spec.freigabe import freigeben as freigabe_ohne_pruefung
@@ -671,6 +675,254 @@ def test_aeltere_haupt_gespeichert_verlangt_hochstufen(lauf):
     with pytest.raises(BestandFehler) as e:
         lauf.baue()
     assert e.value.daten["code"] == BESTAND_VERSION_AELTER and HAUPT in str(e.value)
+
+
+# --- Vertrag mit swki pruefen -----------------------------------------------------------------------------------------------
+
+@pytest.fixture
+def anker(monkeypatch):
+    """`loese_im_teil` ohne Geometrie."""
+    def loese(ctx, seite):
+        return TeilReferenz(SimpleNamespace(name=f"Fläche {seite}"), Messgeometrie("ebene", (0, 0, 0), (0, 0, 1)), False)
+
+    monkeypatch.setattr(punkte_baugruppe, "loese_im_teil", loese)
+
+
+def skript_punkt(lauf, text: str) -> dict:
+    (lauf.spec_pfad.parent / "s.py").write_text(text, encoding="utf-8")
+    return {"id": "x1", "typ": "skript", "datei": "s.py", "luecke": "Test"}
+
+
+def vertrag(lauf) -> None:
+    """Was `swki pruefen` (Task 11) aus dem Protokoll liest, muss zum Lauf passen: jeder Eintrag von `vergleiche_dateien` und
+    `vergleiche_baugruppe` steht auf `ok: True`, und die Änderungserkennung schweigt."""
+    assert lauf.baue()["status"] == "ok"
+    p = lauf.protokoll()
+    spec = spec_modul.lade_aenderung(lauf.spec_pfad)
+    nachher = lies_baugruppe(lauf.app, lauf.asm, dateien=WEITERE, kollision=True)
+    eintraege = [vergleiche_dateien(spec, ablage.lade_dateien(lauf.r, "A", 1), p["sha256"], p["neue_dateien"]),
+                 *vergleiche_baugruppe(spec, lauf.aufnahme, nachher, p["neue"], p["ersetzt"], p["neue_dateien"])]
+    assert not [e for e in eintraege if e["ok"] is not True]
+    assert befund(lauf.r, "A", lauf.spec_pfad) is None
+
+
+ERSETZEN = {"id": "e1", "typ": "komponente_ersetzen", "komponente": "Schraube-1", "quelle": NEU["quelle"]}
+VERKNUEPFUNG_NEU = {"id": "v1", "typ": "verknuepfung_neu", "art": "abstand", "wert": 12,
+                    "a": {"komponente": "Grund-1", "nahe": [0, 0, 0]}, "b": {"komponente": "Schraube-2", "nahe": [0, 0, 0]}}
+
+
+def test_vertrag_nur_teil(lauf):
+    lauf.schreibe(MASS)
+    vertrag(lauf)
+
+
+def test_vertrag_lage_folgen(lauf):
+    lauf.schreibe({**MASS, "lage_folgen": ["Grund-1"]})
+    vertrag(lauf)
+
+
+def test_vertrag_eigenschaft(lauf):
+    lauf.schreibe(EIGENSCHAFT)
+    vertrag(lauf)
+
+
+def test_vertrag_skript(lauf):
+    lauf.schreibe(skript_punkt(lauf, "def bauen(ctx):\n    return None\n"), pruefen=False, bereiche=[])
+    vertrag(lauf)
+
+
+def test_vertrag_komponente_neu_aus_quelle(lauf, normteil):
+    lauf.schreibe(NEU, pruefen=False)
+    vertrag(lauf)
+
+
+def test_vertrag_komponente_neu_wie(lauf):
+    lauf.schreibe({"id": "k1", "typ": "komponente_neu", "wie": "Schraube-1"}, pruefen=False)
+    vertrag(lauf)
+
+
+def test_vertrag_komponente_ersetzen(lauf, normteil):
+    lauf.schreibe(ERSETZEN, pruefen=False)
+    vertrag(lauf)
+
+
+def test_vertrag_komponente_entfernen(lauf):
+    lauf.schreibe({"id": "e1", "typ": "komponente_entfernen", "komponente": "Schraube-1", "verknuepfungen": ["Abstand1"]},
+                  pruefen=False)
+    vertrag(lauf)
+
+
+def test_vertrag_verknuepfung_neu(lauf, anker):
+    lauf.schreibe(VERKNUEPFUNG_NEU, pruefen=False)
+    vertrag(lauf)
+
+
+def test_vertrag_verknuepfung_wert(lauf):
+    lauf.schreibe(WERT)
+    vertrag(lauf)
+
+
+def test_vertrag_verknuepfung_loeschen(lauf):
+    lauf.schreibe({"id": "l1", "typ": "verknuepfung_loeschen", "verknuepfung": "Deckungsgleich1"}, pruefen=False)
+    vertrag(lauf)
+
+
+def test_vertrag_alles_zusammen(lauf, normteil, anker):
+    lauf.schreibe(WERT, MASS, NEU, ERSETZEN | {"komponente": "Schraube-2"},
+                  VERKNUEPFUNG_NEU | {"b": {"komponente": "k1", "nahe": [0, 0, 0]}}, EIGENSCHAFT,
+                  {"id": "l1", "typ": "verknuepfung_loeschen", "verknuepfung": "Deckungsgleich1"}, pruefen=False)
+    vertrag(lauf)
+
+
+# --- Skript an der Hauptbaugruppe -------------------------------------------------------------------------------------------
+
+def test_skript_nimmt_eine_verknuepfung_speichert_nicht(lauf):
+    """Auch ein Skript darf nichts aus dem Bestand verschwinden lassen."""
+    lauf.schreibe(skript_punkt(lauf, "def bauen(ctx):\n    ctx.model.mates.pop()\n"), pruefen=False, bereiche=[])
+    with pytest.raises(BauAbbruch, match="Deckungsgleich1") as e:
+        lauf.baue()
+    assert e.value.daten["fehler"]["schritt"] == "stand" and lauf.asm.gespeichert == []
+
+
+def test_skript_scheitert_mit_punkt_id(lauf):
+    punkt = skript_punkt(lauf, "def bauen(ctx):\n    raise ValueError('kaputt')\n")
+    lauf.schreibe(punkt, EIGENSCHAFT, pruefen=False, bereiche=[])
+    with pytest.raises(BauAbbruch) as e:
+        lauf.baue()
+    d = e.value.daten
+    assert d["fehler"]["punkt"] == "x1" and lauf.asm.gespeichert == []
+    assert [(k["id"], k["status"]) for k in d["knoten"]] == [("x1", "fehler"), ("s1", "uebersprungen")]
+
+
+# --- Korrekturrunde: Abbrüche, die im Protokoll stehen müssen ------------------------------------------------------------------
+
+def test_pruefsummen_scheitern_das_protokoll_steht_trotzdem(lauf, monkeypatch):
+    """Sperrt jemand eine Datei nach dem Schließen, sperrte ein Ordner ohne Protokoll den Auftrag für `aufnehmen`."""
+    lauf.schreibe(MASS)
+
+    def wirft(ordner, dateien):
+        raise PermissionError("gesperrt")
+
+    monkeypatch.setattr(bau_baugruppe, "pruefsummen", wirft)
+    with pytest.raises(BauAbbruch, match="gesperrt") as e:
+        lauf.baue()
+    assert e.value.daten["fehler"]["code"] == "PermissionError"
+    p = lauf.protokoll()
+    assert p["status"] == "fehler" and p["dateien"] == {} and p["sha256"] == {}
+    assert ablage.spec_laeufe(lauf.r, "A") == []
+
+
+def test_sperre_2_nach_gespeicherter_scheibe(lauf):
+    """Die Scheibe ist gespeichert, die Baugruppe wird abgewiesen: Nichts mehr speichern, der Lauf gilt nicht."""
+    lauf.schreibe(MASS, WERT)
+    lauf.asm.pfade_wie_gespeichert = lauf.kunde
+    lauf.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    with pytest.raises(BauAbbruch) as e:
+        lauf.baue()
+    p = lauf.protokoll()
+    assert e.value.daten["fehler"]["code"] == BESTAND_PFAD_FREMD and "punkt" not in e.value.daten["fehler"]
+    assert p["status"] == "fehler" and p["sha256"] == {} and p["dateien"] == {}
+    assert [(k["id"], k["status"]) for k in p["knoten"]] == [("p1", "ok"), ("w1", "uebersprungen")]
+    assert lauf.lauf_inhalt(GRUND) == b"gespeichert" and lauf.asm.gespeichert == [] and lauf.app.offen == []
+
+
+def test_fehlgeschlagenes_schliessen_nach_sperre_2_steht_im_protokoll(lauf):
+    """Das Dokument ist noch offen: `fehler_dict` allein verlöre das."""
+    lauf.schreibe(WERT)
+    lauf.asm.pfade_wie_gespeichert = lauf.kunde
+    lauf.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+
+    def schliesse(titel):
+        raise OSError("Schließen kaputt")
+
+    lauf.app.CloseDoc = schliesse
+    with pytest.raises(BauAbbruch):
+        lauf.baue()
+    f = lauf.protokoll()["fehler"]
+    assert f["code"] == BESTAND_PFAD_FREMD and "Schließen kaputt" in f["schliessen_fehlgeschlagen"]
+
+
+def test_fehler_der_scheibe_nennt_die_datei(lauf):
+    """Der Stand kennt keine Datei: `Konfiguration Variante B` allein sagt bei zwei Scheiben nichts."""
+    lauf.schreibe(MASS, MASS2)
+    aufnahme = ablage.lade_datei_aufnahme(lauf.r, "A", 1, SCHLITTEN)
+    aufnahme["reihenfolge"] = {k: ["GibtEsNicht"] for k in aufnahme["konfigurationen"]}
+    ablage.schreibe_datei_aufnahme(lauf.r, "A", 1, SCHLITTEN, aufnahme)
+    with pytest.raises(BauAbbruch) as e:
+        lauf.baue()
+    f = e.value.daten["fehler"]
+    assert SCHLITTEN in f["meldung"] and f["code"] == REBUILD_FEHLER and f["schritt"] == "stand"
+
+
+def test_oeffnen_der_scheibe_scheitert_nennt_die_datei_und_behaelt_den_code(lauf, monkeypatch):
+    lauf.schreibe(MASS)
+    roh = bau_baugruppe.oeffne_in
+
+    def oeffne_in(app, pfad, wurzel, sichtbar=False, nur_lesen=True):
+        if pfad.suffix == ".SLDPRT":
+            raise BestandFehler(BESTAND_PFAD_FREMD, "fremd", schliessen_fehlgeschlagen="offen")
+        return roh(app, pfad, wurzel, sichtbar, nur_lesen)
+
+    monkeypatch.setattr(bau_baugruppe, "oeffne_in", oeffne_in)
+    with pytest.raises(BauAbbruch) as e:
+        lauf.baue()
+    f = e.value.daten["fehler"]
+    assert f["code"] == BESTAND_PFAD_FREMD and f["meldung"] == f"{GRUND}: fremd" and HAUPT not in lauf.geoeffnet()
+    assert f["schliessen_fehlgeschlagen"] == "offen"  # die Datei in der Meldung kostet das Feld nicht
+
+
+def test_schliessfehler_der_scheibe_verdeckt_den_baufehler_nicht(lauf):
+    lauf.schreibe(MASS)
+    lauf.teil_fehler()
+
+    def schliesse(titel):
+        raise OSError("Schließen kaputt")
+
+    lauf.app.CloseDoc = schliesse
+    with pytest.raises(BauAbbruch) as e:
+        lauf.baue()
+    f = e.value.daten["fehler"]
+    assert f["code"] == REBUILD_FEHLER and f["punkt"] == "p1" and GRUND in f["meldung"]
+
+
+def test_schliessfehler_nach_gespeicherter_scheibe_nennt_die_datei(lauf):
+    lauf.schreibe(MASS, WERT)
+
+    def schliesse(titel):
+        raise OSError("Schließen kaputt")
+
+    lauf.app.CloseDoc = schliesse
+    with pytest.raises(BauAbbruch) as e:
+        lauf.baue()
+    assert f"{GRUND}: Schließen kaputt" == e.value.daten["fehler"]["meldung"] and HAUPT not in lauf.geoeffnet()
+
+
+def test_messung_fuehrt_jede_scheibe(lauf):
+    lauf.schreibe(MASS, MASS2)
+    lauf.baue()
+    m = lauf.protokoll()["messung"]
+    assert all({"s", "mb"} <= set(m[f"teile:{rel}"]) for rel in (GRUND, SCHLITTEN)) and "teile" in m
+
+
+# --- Gemeinsame Regeln -----------------------------------------------------------------------------------------------------
+
+def test_bekannte_fehler_aus_neuaufbau_und_verknuepfungen():
+    aufnahme = {"neuaufbau": [{"konfiguration": "A", "feature": "F1", "code": 1, "warnung": False},
+                              {"konfiguration": "A", "feature": "F2", "code": 1, "warnung": True},
+                              {"konfiguration": "B", "feature": "F3", "code": 1, "warnung": False}],
+                "verknuepfungen": {"M1": {"fehler": {"A": 7, "B": 0}}, "M2": {"fehler": {"A": 0, "B": 7}},
+                                   "M3": {"fehler": None}}}
+    assert bekannte_fehler_baugruppe(aufnahme, "A") == {"F1", "M1"}
+    assert bekannte_fehler_baugruppe(aufnahme, "B") == {"F3", "M2"}
+    assert bekannte_fehler_baugruppe({}, "A") == set()
+
+
+@pytest.mark.parametrize("vorher, code, text", [({"fehler": {"A": 7}}, 7, None), ({"fehler": {"A": 7}}, 8, "Fehler 8 in A"),
+                                                ({"fehler": {"A": 0}}, 0, None), ({"fehler": {"A": 0}}, 7, "Fehler 7 in A"),
+                                                ({"fehler": {"B": 7}}, 7, "Fehler 7 in A"), (None, 0, None),
+                                                (None, 7, "Fehler 7 in A"), (None, None, "Fehlercode in A nicht lesbar")])
+def test_neuer_verknuepfungsfehler(vorher, code, text):
+    assert neuer_verknuepfungsfehler(vorher, {"fehler": {"A": code}}, "A") == text
 
 
 # --- Weiche ----------------------------------------------------------------------------------------------------------------

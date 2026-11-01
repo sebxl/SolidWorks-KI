@@ -55,7 +55,7 @@ from swki.bestand.spec_baugruppe import quelle_schluessel
 from swki.bestand.sw_baugruppe_bestand import SW_UNTERDRUECKT, _je_konfiguration, lies_komponenten, lies_verknuepfungen
 from swki.bestand.sw_bestand import SW_BENANNTE_KONFIGURATIONEN, bstr_array
 from swki.bestand.vergleich_baugruppe import (_ahnen, _gleich, _wert_gelesen, _wert_gleich, abbild_name, ersetzen_ziele,
-                                              namen_im_lauf, soll_ausrichtung, soll_werte)
+                                              namen_im_lauf, neuer_verknuepfungsfehler, soll_ausrichtung, soll_werte)
 from swki.compiler import sw
 from swki.compiler.bauen import baue_teil_dokument
 from swki.compiler.fehler import UNBEKANNTER_TYP, BauFehler, fehler_dict
@@ -389,14 +389,6 @@ def _ziele(b: BauKontext, p: dict) -> list[str]:
     return ziele
 
 
-def _fehler_neu(vorher: dict, nachher: dict, k: str) -> str | None:
-    """Text, wenn die Verknüpfung in `k` einen neuen Fehler trägt. Ein Code, der sich nicht lesen lässt, zählt wie ein Fehler."""
-    code = nachher["fehler"].get(k)
-    if code is None:
-        return f"Fehlercode in {k} nicht lesbar"
-    return f"Fehler {code} in {k}" if code != 0 and code != vorher["fehler"].get(k) else None
-
-
 def _pruefe_verknuepfungen_nach_ersetzen(b: BauKontext, name: str, zuordnung: dict[str, str], vorher: dict,
                                          nachher: dict) -> None:
     """Sie bleiben, soweit sie sich neu zuordnen lassen. Was verloren ging, hat keinen Punkt, also Abbruch mit allen Namen; ein
@@ -408,7 +400,7 @@ def _pruefe_verknuepfungen_nach_ersetzen(b: BauKontext, name: str, zuordnung: di
             falsch.append(f"{n} (nicht lesbar)")
         elif Counter(m["partner"]) != Counter(abbild_name(x, zuordnung) for x in v["partner"]):
             falsch.append(n)
-        if meldungen := [text for k in b.konfigurationen if (text := _fehler_neu(v, m, k))]:
+        if meldungen := [text for k in b.konfigurationen if (text := neuer_verknuepfungsfehler(v, m, k))]:
             fehlerhaft.append(f"{n}: {', '.join(meldungen)}")
     if verloren or falsch or fehlerhaft:
         teile = [*([f"verloren: {', '.join(verloren)}"] if verloren else []),
@@ -617,7 +609,7 @@ def _nachmesse_wert(b: BauKontext, name: str, feld: str, neu: float, genannt: li
                 probleme.append(f"{f} in {k} nicht lesbar")
             elif not _wert_gleich(ist, soll):
                 probleme.append(f"{f} steht in {k} auf {ist} statt {soll}")
-        if text := _fehler_neu(vorher[name], nachher[name], k):
+        if text := neuer_verknuepfungsfehler(vorher[name], nachher[name], k):
             probleme.append(text)
     if probleme:
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name}: {'; '.join(probleme)} – gesteuert?", schritt="nachmessen")

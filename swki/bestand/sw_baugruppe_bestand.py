@@ -39,6 +39,7 @@ from swki.bestand.folgen import vergleichsname
 from swki.bestand.sw_bestand import (SW_EINHEITENSYSTEM, baum_features, datei_referenzen, eigenschaften_von, feature_eintrag,
                                      gleichungen_von, gleichungsdatei, ist_ordner, leite_masse, lies_masse, schalte, unterdrueckt,
                                      whats_wrong)
+from swki.bestand.vergleich_baugruppe import bekannte_fehler_baugruppe
 from swki.compiler.fehler import REBUILD_FEHLER, BauFehler
 from swki.pruefung.messen import skizzenstatus
 from swki.verbindung import in_mm, in_mm3
@@ -406,7 +407,5 @@ def mechanik_fuer(app, asm, grenzen: dict, aufnahme: dict, ordner: Path | None) 
         return gelesen[seite["index"]]
 
     komponenten = {k.Name2: k for k in sw_baugruppe.komponenten(asm) if primitiv(k.GetSuppression2) != SW_UNTERDRUECKT}
-    aktiv = aufnahme["aktiv"]
-    bekannt = {n for n, v in (aufnahme.get("verknuepfungen") or {}).items() if (v.get("fehler") or {}).get(aktiv)}
-    bekannt |= {e["feature"] for e in aufnahme.get("neuaufbau") or [] if e["konfiguration"] == aktiv and not e["warnung"]}
+    bekannt = bekannte_fehler_baugruppe(aufnahme, aufnahme["aktiv"])
     return BestandMechanik(app, asm, verknuepfungen, entitaet, komponenten, ordner, bekannt)
