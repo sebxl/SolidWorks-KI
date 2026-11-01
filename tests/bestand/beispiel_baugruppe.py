@@ -151,3 +151,40 @@ SPEC = {
                            "soll": "=A_neu", "tol": 0.01}],
     },
 }
+
+
+NEUE_DATEI = "ISO4762M6x16.SLDPRT"
+NEUE_KOMPONENTE = "ISO4762M6x16-1"
+
+
+def komponente(datei: str, fixiert: bool = False, virtuell: bool = False) -> dict:
+    """Eine Komponente im Format der Aufnahme (Standard-Lage, voll bestimmt)."""
+    return _komp(datei, fixiert, virtuell)
+
+
+def verknuepfung(typ: int, partner: list[str], **felder) -> dict:
+    """Eine Verknüpfung im Format der Aufnahme (`wert`, `min_`, `max_`, `grenze`, `gesteuert`)."""
+    return _mate(typ, partner, **felder)
+
+
+def dateien_json() -> dict:
+    """`dateien.json` der Aufnahme: die Hauptdatei (`haupt: true`) und jede Datei mit Original und SHA-256."""
+    return {HAUPT: {"original": "D:\\Kunde\\Haupt.SLDASM", "sha256": SHA_BG, "haupt": True},
+            **{rel: {"original": d["original"], "sha256": d["sha256"]} for rel, d in DATEIEN.items()}}
+
+
+def lauf_shas(**geaendert) -> dict[str, str]:
+    """rel → SHA-256 der Dateien im Lauf: wie die Bestandskopie, `geaendert` (rel → SHA-256 oder None) ersetzt einzelne."""
+    shas = {rel: d["sha256"] for rel, d in dateien_json().items()}
+    return {rel: geaendert.get(rel, sha) for rel, sha in shas.items()} | {k: v for k, v in geaendert.items() if k not in shas}
+
+
+def nachher_zu_spec() -> tuple[dict, dict, dict]:
+    """Der Lauf-Stand, den `SPEC` verlangt (Baugruppen-Punkte): neue Schraube `k1` mit Abstand `v1` zum Gehäuse, Abstand1 auf 12 mm,
+    Deckel-1 durch `lage_folgen` leicht verschoben. Dazu `neue` und `ersetzt` des Protokolls."""
+    a = baugruppen_aufnahme()
+    a["komponenten"][NEUE_KOMPONENTE] = _komp(NEUE_DATEI)
+    a["verknuepfungen"]["Abstand4"] = _mate(5, [NEUE_KOMPONENTE, "Gehaeuse-1"], wert=12.0)
+    a["verknuepfungen"]["Abstand1"]["wert"] = 12.0
+    a["komponenten"]["Deckel-1"]["transform"]["Standard"][9] += 0.0005
+    return a, {"k1": [NEUE_KOMPONENTE]}, {}
