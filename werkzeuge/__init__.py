@@ -13,6 +13,7 @@ Aufruf immer aus dem Repo-Wurzelordner: .venv\\Scripts\\python.exe -m werkzeuge.
 - kaufteil_vollanalyse STEP importieren (nichts speichern), je Körper Hüllquader und Flächenübersicht
 - kaufteil_vorpruefung Aufnahmeprüfung eines noch nicht freigegebenen Kaufteil-Eintrags, Ablage im Arbeitsordner
 - bestand_muster       Musterdateien der Bestandsdateien für das SolidWorks-Jahr dieses Rechners im Arbeitsordner erzeugen
+- bestand_gross        große Baugruppe erzeugen (40 Dateien, 200 Komponenten, 2000 Flächen) und Bestandsdateien daran messen
 - stdin_sperre         PreToolUse-Hook (.claude/settings.json): lehnt Bash-Befehle ab, die auf stdin warten
                        (`python -`, Python-Heredoc, `python`/`cat` ohne Eingabe)
 - schnellbau_abgleich  Referenz-Suite durch SolidWorks und den Schnellbau (Volumen, Hüllquader, STL je Eigenteil);
