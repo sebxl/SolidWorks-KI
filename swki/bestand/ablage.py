@@ -338,17 +338,37 @@ def aufnahmen_aus_lauf(r: Rechner, ordner: Path) -> list[dict]:
     lauf = _LAUF.match(ordner.name)
     if lauf is None or not r.arbeitsordner.is_dir():
         return []
-    auftrag, nummer = ordner.parent.name, int(lauf.group(1))
+    auftrag, nummer = ordner.parent.name.lower(), int(lauf.group(1))
     treffer = []
     for pfad in sorted(r.arbeitsordner.glob(f"*/bestand-*/{HERKUNFT_DATEI}")):
         m = _ORDNER.match(pfad.parent.name)
-        try:
-            herkunft = json.loads(pfad.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        if m and isinstance(herkunft, dict) and herkunft.get("auftrag") == auftrag and herkunft.get("lauf") == nummer:
+        herkunft, _ = _lies_herkunft(pfad)
+        # Der Auftrag heißt unter Windows ohne Beachtung der Schreibweise gleich (der Ordner), die Laufnummer kann als Text stehen
+        if m and herkunft is not None and str(herkunft["auftrag"]).lower() == auftrag and str(herkunft["lauf"]) == str(nummer):
             treffer.append({"auftrag": pfad.parent.parent.name, "nummer": int(m.group(1)), "herkunft": herkunft})
     return sorted(treffer, key=lambda t: (t["auftrag"], t["nummer"]))
+
+
+def _lies_herkunft(pfad: Path) -> tuple[dict | None, str | None]:
+    """(Inhalt, None) einer `herkunft.json`; unlesbar ist sie bei einem Lesefehler, ungültigem JSON, einem anderen Typ als Objekt
+    oder ohne `auftrag` und `lauf`. Dann (None, Grund)."""
+    try:
+        herkunft = json.loads(pfad.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return None, f"{type(e).__name__}: {e}"
+    if not isinstance(herkunft, dict) or "auftrag" not in herkunft or "lauf" not in herkunft:
+        return None, "kein Objekt mit auftrag und lauf"
+    return herkunft, None
+
+
+def unlesbare_herkunft(r: Rechner) -> list[dict]:
+    """`[{pfad, grund}]` der `herkunft.json` in `<arbeitsordner>/*/bestand-*/`, die sich nicht lesen lassen. Ob so eine Datei zu einem
+    Lauf gehört, ist nicht zu erkennen: Wer einen Lauf öffnen will, muss sie als möglichen Treffer behandeln (Schutz schlägt nicht
+    offen fehl, Spec §8.5)."""
+    if not r.arbeitsordner.is_dir():
+        return []
+    return [{"pfad": str(pfad), "grund": grund} for pfad in sorted(r.arbeitsordner.glob(f"*/bestand-*/{HERKUNFT_DATEI}"))
+            if (grund := _lies_herkunft(pfad)[1]) is not None]
 
 
 # --- Rohdaten je weitere Datei einer Baugruppen-Aufnahme: aufnahme/<rel>.json -------------------------------------------

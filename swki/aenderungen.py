@@ -121,6 +121,14 @@ def aufnahmen_des_laufs(r: Rechner, auftrag: str, lauf: int) -> list[dict]:
     return [{"auftrag": t["auftrag"], "aufnahme": t["nummer"]} for t in aufnahmen_aus_lauf(r, lauf_ordner(r, auftrag, lauf))]
 
 
+def unlesbare_herkunft_des_rechners(r: Rechner) -> list[dict]:
+    """`[{pfad, grund}]` unlesbarer `herkunft.json` im Arbeitsordner. Ob sie zu einem Lauf gehört, ist nicht zu erkennen: Der Lauf
+    gilt dann als möglicherweise aufgenommen und wird nicht geöffnet (Spec Bestandsdateien §8.5)."""
+    from swki.bestand.ablage import unlesbare_herkunft  # spät importiert: swki.bestand.ablage nutzt sha256_datei
+
+    return unlesbare_herkunft(r)
+
+
 def _kommandozeile(pfad: Path) -> str:
     text = str(pfad)
     return f'"{text}"' if " " in text else text
@@ -130,10 +138,16 @@ def _abgleich_befehl(aufnahme: dict, spec_pfad: Path) -> str:
     return f"swki bestand abgleich {aufnahme['auftrag']} --spec {_kommandozeile(spec_pfad)}"
 
 
-def _text_geaendert(b: dict, genannt: str, aufnahmen: list[dict], spec_pfad: Path) -> str:
+def _text_geaendert(b: dict, genannt: str, aufnahmen: list[dict], spec_pfad: Path, unlesbar: list[dict]) -> str:
     """Meldung der Sperre MANUELL_GEAENDERT mit den drei Wegen (Spec §8.5). Hat der Lauf eine Aufnahme, steht dort `swki bestand
     abgleich` statt `swki aenderungen` (das den Lauf in SolidWorks öffnen würde)."""
     kopf = f"Lauf {b['lauf']} wurde nach dem Bau verändert ({genannt}). "
+    if unlesbar and not aufnahmen:
+        dateien = ", ".join(u["pfad"] for u in unlesbar)
+        return (kopf + f"Eine herkunft.json ist nicht lesbar ({dateien}): Ob der Lauf aufgenommen wurde, ist unklar, darum öffnet swki "
+                       "ihn nicht in SolidWorks. Die Datei prüfen (korrigieren oder die Aufnahme neu anlegen), "
+                       "dann den Nutzer fragen: übernehmen (Spezifikation ändern, validieren, neu freigeben, swki bauen --uebernommen) "
+                       "oder verwerfen (swki bauen --verwerfen)")
     if aufnahmen:
         nennung = ", ".join(f"Auftrag {a['auftrag']}, Aufnahme {a['aufnahme']}" for a in aufnahmen)
         return (kopf + f"Er ist schon aufgenommen ({nennung}); was geändert wurde, zeigt {_abgleich_befehl(aufnahmen[-1], spec_pfad)} "
@@ -162,6 +176,7 @@ def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bo
         return b
     genannt = ", ".join(b["geaendert"] + b["fehlend"])
     aufnahmen = aufnahmen_des_laufs(r, auftrag, b["lauf"])
+    unlesbar = unlesbare_herkunft_des_rechners(r)
     if uebernommen:
         freigabe, lauf = _freigabe_zeitpunkt(spec_pfad), _lauf_zeitpunkt(spec_pfad, b["lauf"])
         if freigabe is not None and freigabe > lauf:
@@ -169,8 +184,10 @@ def pruefe_unveraendert(r: Rechner, auftrag: str, spec_pfad: Path, verwerfen: bo
         raise AenderungFehler(
             f"Freigabe ist nicht neuer als Lauf {b['lauf']} (geändert: {genannt}) – erst die Änderung in die "
             "Spezifikation übernehmen, validieren, vom Nutzer bestätigen lassen und per swki freigeben neu freigeben, "
-            "dann swki bauen --uebernommen", code=UEBERNAHME_OHNE_NEUE_FREIGABE, aufnahmen=aufnahmen, **b)
-    raise AenderungFehler(_text_geaendert(b, genannt, aufnahmen, spec_pfad), aufnahmen=aufnahmen, **b)
+            "dann swki bauen --uebernommen", code=UEBERNAHME_OHNE_NEUE_FREIGABE, aufnahmen=aufnahmen,
+            herkunft_unlesbar=unlesbar, **b)
+    raise AenderungFehler(_text_geaendert(b, genannt, aufnahmen, spec_pfad, unlesbar), aufnahmen=aufnahmen,
+                          herkunft_unlesbar=unlesbar, **b)
 
 
 def vermerke_befund(protokoll, b: dict | None, verwerfen: bool) -> None:
@@ -318,6 +335,26 @@ def soll_verknuepfungswerte(spec: dict, quellen: dict, parameter: dict | None = 
             if v.wert is not None or v.min is not None}
 
 
+def soll_verknuepfungen(spec: dict, quellen: dict, parameter: dict | None, komponenten: list[dict]) -> dict[str, dict]:
+    """Soll je aufgelöster Verknüpfung für swki.bestand.abgleich.abgleich_baugruppe: Verknüpfungs-ID → `{typ, partner, ausrichtung,
+    wert, min, max}`. `partner` sind die SolidWorks-Namen der beiden Seiten aus `komponenten` (Bauprotokoll: `[{id, sw_name}]`, None
+    ohne Namen); `ausrichtung` ist `gleich`/`entgegengesetzt` oder None, wenn die Spec keine nennt; Zahlen in mm bzw. Grad, die
+    Ausdrücke mit `parameter` (die freigegebenen) ausgewertet. Eine Grenzverknüpfung trägt min, max und in `wert` ihren Wert in
+    Grundstellung (min), wie `soll_verknuepfungswerte`. Rein, ohne SolidWorks."""
+    from swki.baugruppe.aufloesen import verknuepfungen  # spät importiert (Kreisimport)
+
+    p = spec.get("parameter", {}) if parameter is None else parameter
+    namen = {k["id"]: k.get("sw_name") for k in komponenten}
+
+    def zahl(x):
+        return None if x is None else auswerten(x, p)
+
+    return {v.id: {"typ": v.typ, "partner": [namen.get(seite["komponente"]) for seite in (v.a, v.b)],
+                   "ausrichtung": v.ausrichtung, "wert": zahl(v.wert if v.wert is not None else v.min), "min": zahl(v.min),
+                   "max": zahl(v.max)}
+            for v in verknuepfungen(spec, quellen)}
+
+
 def soll_parameter(spec_pfad: Path, auftrag: str, standard: dict) -> dict[str, dict]:
     """Dateiname im Lauf → Parameter der freigegebenen Spezifikation (Teil bzw. Baugruppe und ihre Teile)."""
     soll = freigegebene_spec(spec_pfad)
@@ -431,13 +468,18 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
         return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], **neu_feld, "text": _TEXT_AENDERUNG,
                 "geaendert": [{"datei": n, "parameter": [], "hinweis": "Datei geändert (nicht ausgelesen)"} for n in a["geaendert"]]}
     aufnahmen = aufnahmen_des_laufs(r, auftrag, lauf)
-    if aufnahmen:  # der Lauf ist das Original einer Aufnahme (§8.5): nichts öffnen, die Kopie vergleicht swki bestand abgleich
-        return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], **neu_feld, "aufnahmen": aufnahmen,
-                "abgleich": _abgleich_befehl(aufnahmen[-1], spec_pfad),
-                "text": "Der Lauf hat eine Bestandsaufnahme: swki öffnet ihn nicht in SolidWorks. Geändert ist laut SHA-256:",
+    unlesbar = unlesbare_herkunft_des_rechners(r)
+    if aufnahmen or unlesbar:  # Lauf = Original einer Aufnahme (§8.5), oder ob er es ist, ist unklar: nichts öffnen
+        text = ("Der Lauf hat eine Bestandsaufnahme: swki öffnet ihn nicht in SolidWorks. Geändert ist laut SHA-256:" if aufnahmen else
+                "Eine herkunft.json ist nicht lesbar (" + ", ".join(u["pfad"] for u in unlesbar) + "): Ob der Lauf aufgenommen wurde, "
+                "ist unklar, darum öffnet swki ihn nicht in SolidWorks. Geändert ist laut SHA-256:")
+        hinweis = ("Datei geändert (SHA-256) – Befund über swki bestand abgleich, siehe abgleich" if aufnahmen else
+                   "Datei geändert (SHA-256) – herkunft.json prüfen, dann entscheiden")
+        return {"spec": spec_pfad.name, "lauf": lauf, "fehlend": a["fehlend"], **neu_feld, "text": text,
+                **({"aufnahmen": aufnahmen, "abgleich": _abgleich_befehl(aufnahmen[-1], spec_pfad)} if aufnahmen else {}),
+                **({"unlesbar": unlesbar} if unlesbar else {}),
                 "geaendert": [{"datei": n, "parameter": [], "sha256": {"soll": soll_sha[n], "ist": sha256_datei(ordner / n)},
-                               "hinweis": "Datei geändert (SHA-256) – Befund über swki bestand abgleich, siehe abgleich"}
-                              for n in a["geaendert"]]}
+                               "hinweis": hinweis} for n in a["geaendert"]]}
     soll = soll_parameter(spec_pfad, auftrag, standard)  # erst jetzt: braucht eine gültige Freigabe
     soll_m = soll_masse(protokoll, spec_pfad, auftrag, standard)
     ergebnis = []

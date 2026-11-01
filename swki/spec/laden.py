@@ -26,8 +26,8 @@ SCHEMA_ORDNER = PROJEKT / "schema"
 _POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "laenge", "gewindetiefe", "modul", "zaehne"}
 _WINKEL = {"winkel"}
 _TOL_KONTUR_MM = 1e-6
-_RESERVIERT = re.compile(r"^achse_[xyz]$")  # Referenzachsen der Muster (handler/muster.py)
-_COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen")  # vom Compiler angelegte Skizzen/Features
+RESERVIERT = re.compile(r"^achse_[xyz]$")  # Referenzachsen der Muster (handler/muster.py)
+COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen")  # vom Compiler angelegte Skizzen/Features
 
 
 class SpecFehler(SwkiFehler):
@@ -376,7 +376,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] =
     skripte = [f["id"] for f in features if f["typ"] == "skript"]
     for i, fid in enumerate(ids):
         zusatz = any(re.fullmatch(rf"{re.escape(s)}_\d+", fid) for s in skripte)  # weitere Features eines Skripts
-        if _RESERVIERT.match(fid) or fid.endswith(_COMPILER_ENDUNGEN) or zusatz:
+        if RESERVIERT.match(fid) or fid.endswith(COMPILER_ENDUNGEN) or zusatz:
             befunde.append({"pfad": f"features[{i}].id",
                             "meldung": f"ID {fid!r} ist für vom Compiler angelegte Features reserviert "
                                        "(achse_x|y|z, <id>_skizze, <id>_senkung, <id>_positionen, <skript-id>_<n>)"})

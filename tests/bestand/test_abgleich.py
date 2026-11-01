@@ -46,9 +46,9 @@ def _ist_teil():
             _f("Ebene vorne", "RefPlane"), _f("Ebene oben", "RefPlane"), _f("Ebene rechts", "RefPlane"),
             _f("Ursprung", "OriginProfileFeature"),
             _f("f1_skizze", "ProfileFeature", kinder=["f1"]),
-            _f("f1", "Boss", eltern=["f1_skizze"], unter=["f1_skizze"]),
+            _f("f1", "Extrusion", eltern=["f1_skizze"], unter=["f1_skizze"]),
             _f("winkel_skizze", "ProfileFeature", kinder=["winkel"]),
-            _f("winkel", "Cut", eltern=["winkel_skizze"], unter=["winkel_skizze"]),
+            _f("winkel", "ICE", eltern=["winkel_skizze"], unter=["winkel_skizze"]),
             _f("Skizze5", "ProfileFeature"), _f("gewinde_positionen", "ProfileFeature"),
             _f("gewinde", "HoleWzd", unter=["Skizze5", "gewinde_positionen"])],
         "masse": [_ist_masse("D1@f1_skizze", "f1_skizze", 40.0), _ist_masse("D2@f1_skizze", "f1_skizze", 20.0),
@@ -180,16 +180,18 @@ def test_ebene_des_compilers_ueber_das_massprotokoll_erklaert():
 
 
 def test_referenzachse_des_musters_ist_erklaert():
+    protokoll = copy.deepcopy(PROTOKOLL_TEIL)
+    protokoll["knoten"].append({"id": "m1", "typ": "muster_linear", "sw_name": "m1", "status": "ok", "masse": []})
     ist = _ist_teil()
-    ist["features"].insert(5, _f("achse_x", "RefAxis"))
-    assert abgleich_teil(PROTOKOLL_TEIL, SPEC_TEIL, ist, auftrag="A")["features_neu"] == []
+    ist["features"] += [_f("achse_x", "RefAxis"), _f("m1", "LPattern")]
+    assert abgleich_teil(protokoll, SPEC_TEIL, ist, auftrag="A")["features_neu"] == []
 
 
 def test_skript_features_mit_nummer_stehen_im_sw_namen():
     protokoll = copy.deepcopy(PROTOKOLL_TEIL)
     protokoll["knoten"][0]["sw_name"] = "f1, f1_2"
     ist = _ist_teil()
-    ist["features"].insert(6, _f("f1_2", "Boss"))
+    ist["features"].insert(6, _f("f1_2", "Extrusion"))
     a = abgleich_teil(protokoll, SPEC_TEIL, ist, auftrag="A")
     assert a["features_neu"] == [] and a["features_fehlen"] == []
     del ist["features"][6]
@@ -201,7 +203,7 @@ def test_sw_namen_haben_vorrang_vor_sw_name():
     protokoll["knoten"][0]["sw_name"] = "f1, f1_2"
     protokoll["knoten"][0]["sw_namen"] = ["f1", "f1_2"]
     ist = _ist_teil()
-    ist["features"].insert(6, _f("f1_2", "Boss"))
+    ist["features"].insert(6, _f("f1_2", "Extrusion"))
     assert abgleich_teil(protokoll, SPEC_TEIL, ist, auftrag="A")["features_neu"] == []
 
 
@@ -351,7 +353,15 @@ PROTOKOLL_BG = {
                {"id": "v2", "typ": "abstand", "sw_name": "v2", "status": "ok"},
                {"id": "v3", "typ": "grenze_abstand", "sw_name": "v3", "status": "ok"},
                {"id": "grundstellung:schlitten", "typ": "grundstellung", "sw_name": None, "status": "ok"}]}
-SOLL_WERTE = {"v2": 5.0, "v3": 0.0}
+_PARTNER = ["Platte-1", "Schraube-1"]
+
+
+def _soll(typ, wert=None, mn=None, mx=None, ausrichtung=None, partner=None):
+    return {"typ": typ, "partner": list(partner or _PARTNER), "ausrichtung": ausrichtung, "wert": wert, "min": mn, "max": mx}
+
+
+# Soll je Verknüpfung wie `soll_verknuepfungen` (swki.aenderungen) es aus Spec und Protokoll baut
+SOLL_VERKNUEPFUNGEN = {"v1": _soll("konzentrisch"), "v2": _soll("abstand", 5.0), "v3": _soll("grenze_abstand", 0.0, 0.0, 25.0)}
 
 
 def _mate(typ, wert=None, mn=None, mx=None, fehler=0, unterdrueckt=False, partner=("Platte-1", "Schraube-1")):
@@ -367,7 +377,7 @@ def _komp(datei, lage=None, virtuell=False, unterdrueckt=False):
 
 
 def _ist_bg():
-    return {"aktiv": "Standard",
+    return {"aktiv": "Standard", "konfigurationen": ["Standard"],
             "komponenten": {"Platte-1": _komp("A_Platte_1.sldprt"),
                             "Schraube-1": _komp("ISO4762_M5x20.sldprt", _lage(0.01, 0, 0)),
                             "Schraube-2": _komp("teile/ISO4762_M5x20.sldprt", _lage(0.02, 0, 0))},
@@ -378,7 +388,7 @@ SOLL_LAGEN = {"Platte-1": _lage(), "Schraube-1": _lage(0.01, 0, 0), "Schraube-2"
 
 
 def test_unveraenderte_baugruppe_nennt_nichts():
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, _ist_bg(), SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, _ist_bg(), SOLL_LAGEN)
     for schluessel in ("komponenten_neu", "komponenten_weg", "andere_datei", "verknuepfungen_neu", "verknuepfungen_weg", "werte",
                        "fehler", "unterdrueckt", "lagen"):
         assert a[schluessel] == [], schluessel
@@ -388,7 +398,7 @@ def test_unveraenderte_baugruppe_nennt_nichts():
 def test_neue_komponente_und_gleiche_datei():
     ist = _ist_bg()
     ist["komponenten"]["Schraube-3"] = _komp("ISO4762_M5x20.sldprt", _lage(0.03, 0, 0))
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert a["komponenten_neu"] == [{"name": "Schraube-3", "datei": "ISO4762_M5x20.sldprt", "virtuell": False,
                                      "gleiche_datei_wie": ["Schraube-1", "Schraube-2"]}]
     assert a["komponenten_weg"] == [] and a["nicht_erklaert"] is False
@@ -397,27 +407,27 @@ def test_neue_komponente_und_gleiche_datei():
 def test_neue_komponente_neuer_datei_ohne_gleiche():
     ist = _ist_bg()
     ist["komponenten"]["Deckel-1"] = _komp("Deckel.SLDPRT")
-    [neu] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["komponenten_neu"]
+    [neu] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["komponenten_neu"]
     assert neu["name"] == "Deckel-1" and neu["gleiche_datei_wie"] == []
 
 
 def test_untergeordnete_komponente_ist_neu():
     ist = _ist_bg()
     ist["komponenten"]["Unter-1/Teil-1"] = _komp("teile/Teil.SLDPRT")
-    assert [k["name"] for k in abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["komponenten_neu"]] == ["Unter-1/Teil-1"]
+    assert [k["name"] for k in abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["komponenten_neu"]] == ["Unter-1/Teil-1"]
 
 
 def test_virtuelle_komponente_wird_als_virtuell_genannt():
     ist = _ist_bg()
     ist["komponenten"]["Teil1^Haupt-1"] = _komp("Teil1^Haupt.sldprt", virtuell=True)
-    [neu] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["komponenten_neu"]
+    [neu] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["komponenten_neu"]
     assert neu["virtuell"] is True
 
 
 def test_umbenannte_komponente():
     ist = _ist_bg()
     ist["komponenten"]["Stift-1"] = ist["komponenten"].pop("Schraube-1")
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert [k["name"] for k in a["komponenten_weg"]] == ["Schraube-1"] and a["komponenten_weg"][0]["datei"] == "ISO4762_M5x20.sldprt"
     assert [k["name"] for k in a["komponenten_neu"]] == ["Stift-1"]
     assert a["umbenannt"] == [{"von": "Schraube-1", "nach": "Stift-1", "datei": "ISO4762_M5x20.sldprt"}]
@@ -426,14 +436,14 @@ def test_umbenannte_komponente():
 def test_geloeschte_komponente_ist_weg():
     ist = _ist_bg()
     del ist["komponenten"]["Schraube-2"]
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert [k["name"] for k in a["komponenten_weg"]] == ["Schraube-2"] and a["umbenannt"] == []
 
 
 def test_andere_datei_bei_gleichem_namen():
     ist = _ist_bg()
     ist["komponenten"]["Platte-1"]["datei"] = "Platte_V2.SLDPRT"
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert a["andere_datei"] == [{"name": "Platte-1", "soll": "A_Platte_1.sldprt", "ist": "Platte_V2.SLDPRT"}]
     assert a["komponenten_neu"] == [] and a["komponenten_weg"] == []
 
@@ -442,13 +452,13 @@ def test_datei_vergleich_ignoriert_ordner_und_schreibweise():
     ist = _ist_bg()
     ist["komponenten"]["Platte-1"]["datei"] = "teile/a_platte_1.SLDPRT"
     ist["komponenten"]["Schraube-1"]["datei"] = "teile\\ISO4762_M5x20.sldprt"
-    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["andere_datei"] == []
+    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["andere_datei"] == []
 
 
 def test_unterdrueckte_komponente_wird_genannt_und_lage_bleibt_ungeprueft():
     ist = _ist_bg()
     ist["komponenten"]["Schraube-2"] = _komp("ISO4762_M5x20.sldprt", unterdrueckt=True)
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert a["komponenten_unterdrueckt"] == [{"name": "Schraube-2", "konfiguration": "Standard"}]
     assert a["lage_geprueft"] is False and a["lage_ungeprueft"] == ["Schraube-2"]
 
@@ -458,7 +468,7 @@ def test_neue_verknuepfung_und_geaenderter_wert():
     ist["verknuepfungen"]["Deckungsgleich9"] = _mate(0)
     ist["verknuepfungen"]["v2"]["wert"] = 7.5
     del ist["verknuepfungen"]["v1"]
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert [v["name"] for v in a["verknuepfungen_neu"]] == ["Deckungsgleich9"]
     assert a["verknuepfungen_neu"][0]["typ"] == "deckungsgleich"
     assert [v["name"] for v in a["verknuepfungen_weg"]] == ["v1"] and a["verknuepfungen_weg"][0]["id"] == "v1"
@@ -469,7 +479,7 @@ def test_neue_verknuepfung_und_geaenderter_wert():
 def test_wert_ohne_ist_wird_genannt():
     ist = _ist_bg()
     ist["verknuepfungen"]["v2"]["wert"] = None
-    [w] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["werte"]
+    [w] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["werte"]
     assert w["ist"] is None and w["delta"] is None and w["soll"] == 5.0
 
 
@@ -477,15 +487,14 @@ def test_geaenderter_typ_einer_verknuepfung():
     ist = _ist_bg()
     ist["verknuepfungen"]["v2"]["typ"] = 0
     ist["verknuepfungen"]["v2"]["wert"] = None
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
-    assert a["typ_geaendert"] == [{"id": "v2", "name": "v2", "soll": "abstand", "ist": 0}]
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
+    assert a["typ_geaendert"] == [{"id": "v2", "name": "v2", "soll": "abstand", "ist": "deckungsgleich"}]
 
 
 def test_grenzen_werden_mit_dem_bereich_verglichen():
-    soll = {"v2": 5.0, "v3": {"wert": 0.0, "min": 0.0, "max": 25.0}}
     ist = _ist_bg()
     ist["verknuepfungen"]["v3"]["max"] = 30.0
-    a = abgleich_baugruppe(PROTOKOLL_BG, soll, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert a["werte"] == [{"id": "v3", "name": "v3", "feld": "max", "soll": 25.0, "ist": 30.0, "delta": 5.0}]
 
 
@@ -494,7 +503,7 @@ def test_verknuepfung_mit_fehler():
     ist["verknuepfungen"]["v1"]["fehler"] = {"Standard": 3}
     ist["verknuepfungen"]["v2"]["unterdrueckt"] = {"Standard": True}
     ist["verknuepfungen"]["Neu1"] = _mate(0, fehler=2)
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert a["fehler"] == [{"name": "Neu1", "konfiguration": "Standard", "code": 2, "neu": True},
                            {"name": "v1", "konfiguration": "Standard", "code": 3, "neu": False}]
     assert a["unterdrueckt"] == [{"name": "v2", "konfiguration": "Standard", "neu": False}]
@@ -506,7 +515,7 @@ def test_lage_aus_export():
                                                for n, t in SOLL_LAGEN.items()]}
     ist = _ist_bg()
     ist["komponenten"]["Schraube-1"]["transform"]["Standard"] = _lage(0.011, 0.0, 0.0)   # 1 mm in x verschoben
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, export)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, export)
     assert a["lage_geprueft"] is True
     [lage] = a["lagen"]
     assert lage["name"] == "Schraube-1" and lage["verschiebung_mm"] == pytest.approx(1.0)
@@ -517,26 +526,26 @@ def test_lage_aus_export():
 def test_lage_aus_dem_pruefbericht_und_aus_einer_liste_gleich():
     ist = _ist_bg()
     ist["komponenten"]["Platte-1"]["transform"]["Standard"] = _lage(0, 0.005, 0)
-    a1 = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
-    a2 = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, [{"name": n, "transform": t} for n, t in SOLL_LAGEN.items()])
+    a1 = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
+    a2 = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, [{"name": n, "transform": t} for n, t in SOLL_LAGEN.items()])
     assert a1["lagen"] == a2["lagen"] and a1["lagen"][0]["verschiebung_mm"] == pytest.approx(5.0)
 
 
 def test_drehung_wird_als_lageabweichung_erkannt():
     ist = _ist_bg()
     ist["komponenten"]["Platte-1"]["transform"]["Standard"] = [0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
-    [lage] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["lagen"]
+    [lage] = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["lagen"]
     assert lage["name"] == "Platte-1" and lage["verschiebung_mm"] == 0.0 and lage["abweichung"] == pytest.approx(1.0)
 
 
 def test_kleine_lageabweichung_unter_der_toleranz_zaehlt_nicht():
     ist = _ist_bg()
     ist["komponenten"]["Platte-1"]["transform"]["Standard"] = _lage(1e-9, 0, 0)
-    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)["lagen"] == []
+    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)["lagen"] == []
 
 
 def test_ohne_lagen_steht_das_da():
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, _ist_bg(), None)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, _ist_bg(), None)
     assert a["lage_geprueft"] is False and a["lagen"] == []
     assert a["lage_ungeprueft"] == ["Platte-1", "Schraube-1", "Schraube-2"]
     assert a["vollstaendig"] is False and any("Lage" in text for text in a["luecken"])
@@ -545,17 +554,17 @@ def test_ohne_lagen_steht_das_da():
 
 def test_lagen_ohne_eine_komponente_sind_nicht_vollstaendig_geprueft():
     soll = {k: v for k, v in SOLL_LAGEN.items() if k != "Schraube-2"}
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, _ist_bg(), soll)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, _ist_bg(), soll)
     assert a["lage_geprueft"] is False and a["lage_ungeprueft"] == ["Schraube-2"]
 
 
 def test_leere_lagen_sind_nicht_geprueft():
-    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, _ist_bg(), {})["lage_geprueft"] is False
-    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, _ist_bg(), {"komponenten": []})["lage_geprueft"] is False
+    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, _ist_bg(), {})["lage_geprueft"] is False
+    assert abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, _ist_bg(), {"komponenten": []})["lage_geprueft"] is False
 
 
 def test_protokoll_ohne_komponenten_und_knoten_ist_nie_unveraendert():
-    a = abgleich_baugruppe({"status": "ok"}, SOLL_WERTE, _ist_bg(), SOLL_LAGEN)
+    a = abgleich_baugruppe({"status": "ok"}, SOLL_VERKNUEPFUNGEN, _ist_bg(), SOLL_LAGEN)
     assert a["komponenten_geprueft"] is False and a["verknuepfungen_geprueft"] is False
     assert a["vollstaendig"] is False and a["nicht_erklaert"] is True
     assert a["komponenten_neu"] == [] and a["verknuepfungen_neu"] == []   # nichts behauptet
@@ -564,7 +573,7 @@ def test_protokoll_ohne_komponenten_und_knoten_ist_nie_unveraendert():
 def test_ist_ohne_komponenten_ist_eine_luecke():
     ist = _ist_bg()
     del ist["komponenten"]
-    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_WERTE, ist, SOLL_LAGEN)
+    a = abgleich_baugruppe(PROTOKOLL_BG, SOLL_VERKNUEPFUNGEN, ist, SOLL_LAGEN)
     assert a["komponenten_geprueft"] is False and a["komponenten_weg"] == [] and a["vollstaendig"] is False
 
 

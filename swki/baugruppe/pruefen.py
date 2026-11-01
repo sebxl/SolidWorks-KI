@@ -163,7 +163,7 @@ def _messe_baugruppe(asm, bg: Baugruppe, protokoll: dict, geometrie: dict, teilb
 def lagen_nach_sw_namen(lagen: dict[str, list[float]], protokoll: dict) -> dict[str, list[float]]:
     """Lagen (Instanz-ID → Transform2.ArrayData) unter dem SolidWorks-Namen der Komponente, wie ihn der Export und
     `swki bestand abgleich --lagen` kennen. Eine Instanz ohne Namen im Protokoll bleibt unter ihrer ID (wie in `_messe_baugruppe`)."""
-    namen = {k["id"]: k["sw_name"] for k in protokoll.get("komponenten", [])}
+    namen = {k["id"]: k["sw_name"] for k in protokoll.get("komponenten", []) if k.get("sw_name")}   # None wäre ein Schlüssel None
     return {namen.get(iid, iid): t for iid, t in lagen.items()}
 
 

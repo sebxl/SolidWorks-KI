@@ -144,7 +144,7 @@ def whats_wrong(model) -> list[dict]:
             for f, c, w in zip(features.value or (), codes.value or (), warnungen.value or ())]
 
 
-def _ist_ordner(typ: str) -> bool:
+def ist_ordner(typ: str) -> bool:
     return typ.endswith("Folder") or typ == "DetailCabinet"
 
 
@@ -153,7 +153,7 @@ def baum_features(model) -> list:
     (Unterskizzen und Gewinde eines `HoleWzd`, S18b), folgen ihrem Feature. Nach jedem Umschalten neu holen (S18c)."""
     kette, f = [], model.FirstFeature
     while f is not None:
-        if not _ist_ordner(f.GetTypeName2):
+        if not ist_ordner(f.GetTypeName2):
             kette.append(f)
         f = f.GetNextFeature
     bekannt, aus = {f.Name for f in kette}, []
