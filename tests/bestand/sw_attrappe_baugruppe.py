@@ -1,12 +1,17 @@
 """Attrappe einer offenen fremden Baugruppe und von ISldWorks für `aufnehmen`, ohne SolidWorks.
 
 UNGEMESSEN: Die Attrappe folgt dem API-Index, nicht einer Messung; S19 kann sie korrigieren. Sie bildet nach, was die Schicht
-aushalten muss: `Transform2` steht bis zum Neuaufbau veraltet; `GetComponents` liefert je aktiver Konfiguration, Kinder einer
-dort unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); `FeatureManager.GetFeatures`
-kennt auch, was der Baum nicht zeigt (`versteckt`); `pfade_wie_gespeichert`: `GetPathName` einer unterdrückten Komponente nennt
-laut Index den gespeicherten Pfad, die Attrappe tut das nur auf Wunsch; Grenzen wirken, solange sie nicht unterdrückt sind; eine
+aushalten muss: `Transform2` steht bis zum Neuaufbau veraltet; `GetComponents` liefert je aktiver Konfiguration, Kinder einer dort
+unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); `FeatureManager.GetFeatures` kennt
+auch, was der Baum nicht zeigt (`versteckt`); `pfade_wie_gespeichert`: `GetPathName` einer unterdrückten Komponente nennt laut
+Index den gespeicherten Pfad, die Attrappe tut das nur auf Wunsch; Grenzen wirken, solange sie nicht unterdrückt sind; eine
 Verknüpfung mit altem Fehler lässt `EditRebuild3` scheitern. Unterdrückte Verknüpfungen geben ihre Entitäten nicht mehr her
-(`entitaeten_nach_dem_unterdruecken`), so fällt auf, wer sie zu spät liest."""
+(`entitaeten_nach_dem_unterdruecken`), so fällt auf, wer sie zu spät liest.
+
+Der Schreibweg (Task 9) ist genauso ungemessen, die Attrappe nimmt nur an, was die API-Hilfe nennt oder was die Handler aushalten
+müssen: Eine neue Komponente oder Verknüpfung ist in den übrigen Konfigurationen unterdrückt (wie Features, S18c); ein doppelter
+Name bleibt still alt; `ReplaceComponents2` lässt den Handle gültig und ändert `Name2` (Beispiel der API-Hilfe);
+`ModifyDefinition` wirkt in der aktiven Konfiguration; alle Rückgaben sagen Erfolg, auch wenn nichts geschah (`wirkungslos`)."""
 
 import os
 from pathlib import Path
@@ -60,22 +65,42 @@ class Knoten:
 
 
 class Masz:
-    def __init__(self, wert):
-        self.SystemValue = wert
+    """IDimension. `mate`: Option 2 und 3 schreiben je Konfiguration in die Verknüpfung."""
+
+    def __init__(self, wert, mate=None):
+        self.SystemValue, self.mate = wert, mate
+        self.status = 0
+        self.aufrufe = []
 
     def SetSystemValue3(self, wert, option, namen):
+        self.aufrufe.append((wert, option, None if namen is None else list(namen.value)))
+        if self.status != 0:
+            return self.status
+        if self.mate is not None and option in (2, 3):
+            self.mate.schreibe_d1(wert, self.mate.asm.konfigurationen if option == 2 else namen.value)
+            return 0
         self.SystemValue = wert
         return 0
 
 
 class Bezug:
-    """Was `IMateEntity2.Reference` liefert: eine Fläche zum Auswählen."""
+    """Was `IMateEntity2.Reference` liefert: eine Fläche zum Auswählen. `komp`: Entität im Baugruppenkontext, die Auswahl wird zur
+    Seite einer neuen Verknüpfung."""
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, name, komp=None):
+        self.name, self.komp, self.Name = name, komp, name
+
+    def _waehle(self, anhaengen):
+        if self.komp is not None:
+            asm = self.komp.asm
+            asm.seiten = [*(asm.seiten if anhaengen else ()), Seite(self.komp, self)]
+        return True
 
     def Select4(self, anhaengen, daten):
-        return True
+        return self._waehle(anhaengen)
+
+    def Select2(self, anhaengen, marke):
+        return self._waehle(anhaengen)
 
 
 class Seite:
@@ -86,11 +111,23 @@ class Seite:
 
 
 class MateDaten:
-    """IMate2."""
+    """IMate2. `spannen`: (Min, Max) der Variation je Konfiguration, sonst `spanne`."""
 
     def __init__(self, feature, typ, seiten, ausrichtung, spanne):
         self.feature, self.Type, self.seiten, self.Alignment = feature, typ, seiten, ausrichtung
-        self.MinimumVariation, self.MaximumVariation = spanne
+        self.spanne = spanne
+        self.spannen: dict[str, tuple] = {}
+
+    def _spanne(self):
+        return self.spannen.get(self.feature.asm.aktiv, self.spanne)
+
+    @property
+    def MinimumVariation(self):
+        return self._spanne()[0]
+
+    @property
+    def MaximumVariation(self):
+        return self._spanne()[1]
 
     @property
     def GetMateEntityCount(self):
@@ -102,16 +139,64 @@ class MateDaten:
         return self.seiten[i]
 
 
+class Definition:
+    """IDistanceMateFeatureData bzw. IAngleMateFeatureData: absolute Werte in m bzw. rad."""
+
+    def __init__(self, typ, wert, unten, oben):
+        art = "Distance" if typ == 5 else "Angle"
+        self.art = art
+        setattr(self, art, wert)
+        setattr(self, f"Minimum{art}", unten)
+        setattr(self, f"Maximum{art}", oben)
+
+
 class Mate(Knoten):
-    """Eine Verknüpfung; `typ` als swMateType_e, Werte in m bzw. rad wie in SolidWorks."""
+    """Eine Verknüpfung; `typ` als swMateType_e, Werte in m bzw. rad wie in SolidWorks. `gesteuert`: Ein neuer Wert kommt still
+    nicht an, wie ein gesteuertes Maß (S18c)."""
 
     def __init__(self, asm, name, typ, seiten=(), wert=None, spanne=(0.0, 0.0), ausrichtung=0, code=0, typname="MateCoincident"):
         super().__init__(asm, name, typname)
         self.daten = MateDaten(self, typ, list(seiten), ausrichtung, spanne)
-        self.wert_d1 = None if wert is None else Masz(wert)
+        self.wert_d1 = None if wert is None else Masz(wert, self)
         self.code = code
         self.je_konfiguration: dict[str, float] = {}
         self.unterdrueckungen = []
+        self.gesteuert = False
+        self.modifiziert = []
+        self.drehung_gesperrt = False
+
+    @property
+    def Name(self):
+        return self._name
+
+    @Name.setter
+    def Name(self, wert):
+        if not any(m is not self and m.Name == wert for m in self.asm.mates):  # wie bei Features: doppelt bleibt still alt (S18c)
+            self._name = wert
+
+    def schreibe_d1(self, wert, konfigurationen):
+        for k in self.asm.konfigurationen:
+            self.je_konfiguration.setdefault(k, self.wert_d1.SystemValue)
+        if not self.gesteuert:
+            self.je_konfiguration.update(dict.fromkeys(konfigurationen, wert))
+
+    def _d1(self):
+        return self.je_konfiguration.get(self.asm.aktiv, self.wert_d1.SystemValue)
+
+    @property
+    def GetDefinition(self):
+        d1 = self._d1()
+        return Definition(self.daten.Type, d1, d1 + self.daten.MinimumVariation, d1 + self.daten.MaximumVariation)
+
+    def ModifyDefinition(self, daten, oben, komponente):
+        self.modifiziert.append((self.asm.aktiv, oben, komponente))
+        if self.asm.wirkungslos:
+            return True
+        d1 = self._d1()
+        spanne = (getattr(daten, f"Minimum{daten.art}") - d1, getattr(daten, f"Maximum{daten.art}") - d1)
+        for k in (self.asm.konfigurationen if self.asm.definition_ueberall else [self.asm.aktiv]):
+            self.daten.spannen[k] = spanne
+        return True
 
     def gesperrt(self):
         return self.asm.entitaeten_nach_dem_unterdruecken is False and self.asm.aktiv in self.unterdrueckt
@@ -132,7 +217,10 @@ class Mate(Knoten):
 
     def SetSuppression2(self, aktion, option, namen):
         self.unterdrueckungen.append(aktion)
-        (self.unterdrueckt.add if aktion == 0 else self.unterdrueckt.discard)(self.asm.aktiv)
+        if self.asm.wirkungslos:
+            return True
+        for k in (namen.value if option == 3 else [self.asm.aktiv]):
+            (self.unterdrueckt.add if aktion == 0 else self.unterdrueckt.discard)(k)
         return True
 
 
@@ -148,6 +236,9 @@ class Komp:
         self.nicht_genannt: set[str] = set()
         self.lagen = {k: lage() for k in asm.konfigurationen}
         self.veraltet: dict[str, list[float]] = {}
+        self.fixiert_in: set[str] = set()         # je Konfiguration über `FixComponent`
+        self.referenzen: dict[str, str] = {}      # je Konfiguration über `ReferencedConfiguration =`
+        self.feature_namen: set[str] = set()      # was `GetModelDoc2.FeatureByName` kennt
 
     @property
     def GetPathName(self):
@@ -158,7 +249,7 @@ class Komp:
 
     @property
     def IsFixed(self):
-        return self.fixiert
+        return self.fixiert or self.asm.aktiv in self.fixiert_in
 
     @property
     def IsPatternInstance(self):
@@ -166,7 +257,22 @@ class Komp:
 
     @property
     def ReferencedConfiguration(self):
-        return self.referenz
+        return self.referenzen.get(self.asm.aktiv, self.referenz)
+
+    @ReferencedConfiguration.setter
+    def ReferencedConfiguration(self, wert):
+        self.referenzen[self.asm.aktiv] = wert
+
+    def SetSuppression2(self, zustand):
+        if not self.asm.wirkungslos:
+            (self.unterdrueckt.add if zustand == UNTERDRUECKT else self.unterdrueckt.discard)(self.asm.aktiv)
+        return 2  # swSuppressionChangeOk
+
+    def GetCorrespondingEntity(self, objekt):
+        return Bezug(f"{objekt.name} in {self.Name2}", self)
+
+    def FeatureByName(self, name):
+        return Bezug(name, self)
 
     @property
     def GetConstrainedStatus(self):
@@ -187,7 +293,7 @@ class Komp:
     def GetModelDoc2(self):
         if self.modell is None or self.asm.aktiv in self.unterdrueckt:
             return None
-        return Modell(self.modell)
+        return Modell(self.modell, self.feature_namen)
 
     def GetBox(self, ebenen, skizzen):
         x = self.lagen[self.asm.aktiv][9]
@@ -201,10 +307,14 @@ class Komp:
 class Modell:
     """IModelDoc2 einer Komponente: Ein Teil hat `GetPartBox`, eine Baugruppe nicht."""
 
-    def __init__(self, art):
+    def __init__(self, art, feature_namen=()):
         self.GetType = 1 if art == "teil" else 2
+        self.feature_namen = feature_namen
         if art == "teil":
             self.GetPartBox = lambda welt: (0.0, 0.0, 0.0, 0.01, 0.01, 0.01)
+
+    def FeatureByName(self, name):
+        return SimpleNamespace(Name=name) if name in self.feature_namen else None
 
 
 class Interferenz:
@@ -264,6 +374,12 @@ class Erweiterung:
     def GetLastFeatureAdded(self):
         return self.asm.mates[-1] if self.asm.mates else None
 
+    def DeleteSelection2(self, option):
+        self.asm.loeschoptionen.append(option)
+        if not self.asm.wirkungslos and isinstance(self.asm.auswahl, Komp):
+            self.asm.entferne(self.asm.auswahl)
+        return True
+
 
 class Baugruppe:
     """IModelDoc2 und IAssemblyDoc in einem. `bewegt`: Grenze → Komponente, die der Antrieb in x verschiebt."""
@@ -290,6 +406,13 @@ class Baugruppe:
         self.entitaeten_nach_dem_unterdruecken = False
         self.pfade_wie_gespeichert: Path | None = None  # Index zu GetPathName: unterdrückt zeigt sie den gespeicherten Pfad
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
+        self.wirkungslos = False                        # Schreibaufrufe melden Erfolg und tun nichts
+        self.definition_ueberall = False                # `ModifyDefinition` wirkt in allen Konfigurationen
+        self.seiten: list[Seite] = []                   # Auswahl für die nächste Verknüpfung
+        self.eingefuegt, self.ersetzungen, self.loeschoptionen = [], [], []
+        self.bleibt_stehen: set[str] = set()            # Verknüpfungen, die das Löschen ihrer Komponente überleben
+        self.verliert: set[str] = set()                 # Verknüpfungen, die `ReplaceComponents2` nicht neu zuordnen kann
+        self.bricht: dict[str, int] = {}                # Verknüpfung → Fehlercode nach `ReplaceComponents2`
         self.Extension = Erweiterung(self)
         self.SelectionManager = SimpleNamespace(CreateSelectData=SimpleNamespace(Mark=0))
 
@@ -394,8 +517,19 @@ class Baugruppe:
         pass
 
     def EditDelete(self):
-        if self.auswahl in self.mates:
+        if self.auswahl in self.mates and not self.wirkungslos:
             self.mates.remove(self.auswahl)
+
+    def FixComponent(self):
+        self.auswahl.fixiert_in.add(self.aktiv)
+
+    def entferne(self, komp) -> None:
+        """Löscht die Komponente samt Kindern und den Verknüpfungen an ihnen."""
+        weg = [k for k in self.komponenten if k is komp or k.Name2.startswith(f"{komp.Name2}/")]
+        self.komponenten = [k for k in self.komponenten if k not in weg]
+        self.glieder = [g for g in self.glieder if g.Name != komp.Name2]
+        self.mates = [m for m in self.mates if m.Name in self.bleibt_stehen
+                      or not any(s.ReferenceComponent in weg for s in m.daten.seiten)]
 
     # IAssemblyDoc
     def GetComponents(self, nur_oberste):
@@ -406,11 +540,48 @@ class Baugruppe:
     def InterferenceDetectionManager(self):
         return self.kollisionen
 
-    def AddMate5(self, typ, ausrichtung, flip, d, d_oben, d_unten, _1, _2, w, w_oben, w_unten, _3, _4, _5, status):
+    def AddMate5(self, typ, ausrichtung, flip, d, d_oben, d_unten, _1, _2, w, w_oben, w_unten, _3, sperre, _5, status):
         status.value = 1
-        m = Mate(self, f"Abstand{len(self.mates) + 100}", typ, wert=d if typ == 5 else w, typname="MateDistanceDim")
+        spanne = (d_unten - d, d_oben - d) if typ == 5 else (w_unten - w, w_oben - w) if typ == 6 else (0.0, 0.0)
+        m = Mate(self, f"Abstand{len(self.mates) + 100}", typ, self.seiten, wert=d if typ == 5 else w, spanne=spanne,
+                 ausrichtung=0 if ausrichtung == 2 else ausrichtung, typname="MateDistanceDim")
+        m.drehung_gesperrt = sperre
+        m.unterdrueckt |= set(self.konfigurationen) - {self.aktiv}
         self.mates.append(m)
         return m
+
+    def _freier_name(self, stamm: str) -> str:
+        nummern = [int(k.Name2.rpartition("-")[2]) for k in self.komponenten if k.Name2.rpartition("-")[0] == stamm]
+        return f"{stamm}-{max(nummern, default=0) + 1}"
+
+    def AddComponent5(self, pfad, option, neuer_name, benutze, konfiguration, x, y, z):
+        self.eingefuegt.append({"pfad": pfad, "option": option, "neuer_name": neuer_name, "benutze": benutze,
+                                "konfiguration": konfiguration, "mitte": (x, y, z)})
+        rel = Path(pfad).relative_to(self.wurzel).as_posix()
+        k = self.komponente(self._freier_name(Path(pfad).stem), rel, referenz=konfiguration if benutze else "Standard")
+        k.unterdrueckt |= set(self.konfigurationen) - {self.aktiv}
+        return k
+
+    def ReplaceComponents2(self, datei, konfiguration, alle, wahl, neu_zuordnen):
+        self.ersetzungen.append({"datei": datei, "konfiguration": konfiguration, "alle": alle, "wahl": wahl,
+                                 "neu_zuordnen": neu_zuordnen})
+        if self.wirkungslos:
+            return True
+        ziel = self.auswahl
+        ziele = [k for k in self.komponenten if k.rel == ziel.rel and "/" not in k.Name2] if alle else [ziel]
+        rel = Path(datei).relative_to(self.wurzel).as_posix()
+        for k in ziele:
+            alt, neu = k.Name2, self._freier_name(Path(datei).stem)
+            k.Name2, k.rel = neu, rel
+            if konfiguration:
+                k.referenz = konfiguration
+            next(g for g in self.glieder if g.Name == alt).Name = neu
+        for m in list(self.mates):
+            if any(s.ReferenceComponent in ziele for s in m.daten.seiten):
+                if m.Name in self.verliert or not neu_zuordnen:
+                    self.mates.remove(m)
+                m.code = self.bricht.get(m.Name, m.code)
+        return True
 
 
 class Einzeldatei:

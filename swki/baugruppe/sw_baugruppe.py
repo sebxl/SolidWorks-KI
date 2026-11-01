@@ -35,6 +35,7 @@ MATE_KOPPLUNG = {"zahnrad": 10, "zahnstange": 13}  # swMateType_e swMateGEAR / s
 REVERSE = {"zahnrad": False, "zahnstange": False}  # IGear-/IRackPinionMateFeatureData.Reverse (Spike S14b Zeile 6)
 MARKE_ZAHNSTANGE, MARKE_RITZEL = 64, 128  # Vorauswahl der Zahnstangenverknüpfung (API-Hilfe EntitiesToMate)
 SW_RITZEL_TEILKREIS = 0  # swRackPinionMateDistanceOptions_e.swPinionPitchDiameter
+SW_KONFIGURATION_VORHANDEN = 0  # swAddComponentConfigOptions_e.swAddComponentConfigOptions_CurrentSelectedConfig
 _TOL_LAGE = 1e-9
 
 
@@ -66,11 +67,12 @@ def neue_baugruppe(app, vorlage: Path):
     return asm
 
 
-def fuege_ein(app, asm, pfad: Path, box_mm: list[float]):
+def fuege_ein(app, asm, pfad: Path, box_mm: list[float], konfiguration: str = ""):
     """Komponente mit Ursprung im Baugruppenursprung, ohne Drehung. AddComponent5 setzt das Zentrum der Bounding-Box
-    (Spike S6) – deshalb das Boxzentrum übergeben; liegt der Ursprung trotzdem nicht im Nullpunkt, Identität setzen."""
+    (Spike S6) – deshalb das Boxzentrum übergeben; liegt der Ursprung trotzdem nicht im Nullpunkt, Identität setzen.
+    `konfiguration`: benannte Konfiguration der Komponente, leer die aktive ihres Dokuments (API-Hilfe AddComponent5)."""
     mitte = [mm((box_mm[i] + box_mm[i + 3]) / 2) for i in range(3)]
-    komp = asm.AddComponent5(str(pfad), 0, "", False, "", *mitte)
+    komp = asm.AddComponent5(str(pfad), SW_KONFIGURATION_VORHANDEN, "", bool(konfiguration), konfiguration, *mitte)
     if komp is None:
         raise BauFehler(KOMPONENTE_FEHLER, f"AddComponent5 {pfad.name} fehlgeschlagen", schritt="einfuegen")
     t = komp.Transform2.ArrayData
