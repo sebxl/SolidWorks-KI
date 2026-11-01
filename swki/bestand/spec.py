@@ -22,13 +22,17 @@ from swki.compiler.skriptpruefung import pruefe_skript
 from swki.konfig import lade_rechner
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.freigabe import freigeben as spec_freigeben
-from swki.spec.freigabe import kopie_pfad, pruefsumme
+from swki.spec.freigabe import kopie_pfad, pruefe_freigabe, pruefsumme
 from swki.spec.hinweise import hinweise as teil_hinweise
-from swki.spec.laden import (SpecFehler, _pfad, _referenzen, _werte, lade_yaml, plausibel_befunde, schema_befunde)
+from swki.spec.laden import (SpecFehler, _pfad, _referenzen, _werte, lade_spec, lade_yaml, plausibel_befunde, schema_befunde)
 
-PRUEF_FELDER = ("art", "name", "bestand", "parameter", "bereiche", "pruefung")
+PRUEF_FELDER = ("art", "name", "bestand", "parameter", "bereiche", "pruefung", "kollision_erlaubt")
 # Bauweg in den Punkten: Anker und Bezug neuer Features, Einfügestelle, Skriptdatei (Reihenfolge: nach id sortiert)
 BAUWEG_SCHLUESSEL = frozenset({"nach", "bezug", "flaeche", "kanten"})
+# Punkte an der Baugruppe selbst (Etappe 2, Spec §4.1); die Anker `a`/`b` einer neuen Verknüpfung sind Bauweg wie in Spec 3b
+BAUGRUPPEN_TYPEN = frozenset({"komponente_neu", "komponente_entfernen", "komponente_ersetzen", "verknuepfung_neu",
+                              "verknuepfung_wert", "verknuepfung_loeschen"})
+ANKER_SCHLUESSEL = frozenset({"a", "b"})
 # Punkte, die Geometrie ändern können: jeder steht in mindestens einem Bereich (Spec §4.4 Punkt 5)
 GEOMETRIE_TYPEN = frozenset({"mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "skript"})
 _TOL_ALT = 1e-6  # mm bzw. Grad: Rauschen beim Lesen aus SolidWorks
@@ -60,12 +64,15 @@ def _ohne_bauweg(obj):
 
 
 def bauweg_frei(spec: dict) -> dict:
-    """Die Anforderungen einer Änderungs-Spec (Grundlage der Prüfsumme): ohne Anker, `bezug`, `nach`, Skriptdateien und
-    ohne die Reihenfolge der Punkte. Die Spec selbst bleibt unverändert."""
+    """Die Anforderungen einer Änderungs-Spec (Grundlage der Prüfsumme): ohne Anker, `bezug`, `nach`, Skriptdateien, ohne die
+    Anker `a`/`b` neuer Verknüpfungen und ohne die Reihenfolge der Punkte. Die Spec selbst bleibt unverändert. Die Teil-Specs
+    der Teil-Quellen gehen über das Argument `teile=` von `pruefsumme` ein (`teil_summen_aenderung`)."""
     kern = {feld: copy.deepcopy(spec[feld]) for feld in PRUEF_FELDER if feld in spec}
     punkte = []
     for punkt in sorted(spec.get("punkte", []), key=lambda p: str(p.get("id", ""))):
-        rest = {k: v for k, v in punkt.items() if not (punkt.get("typ") == "skript" and k == "datei")}
+        typ = punkt.get("typ")
+        rest = {k: v for k, v in punkt.items()
+                if not (typ == "skript" and k == "datei") and not (typ == "verknuepfung_neu" and k in ANKER_SCHLUESSEL)}
         punkte.append(_ohne_bauweg(rest))
     kern["punkte"] = punkte
     return kern
@@ -80,7 +87,9 @@ def _plausibel_befunde(spec: dict) -> list[dict]:
             befunde.append({"pfad": f"punkte[{i}].id", "meldung": f"ID {pid!r} ist doppelt"})
 
     zu_pruefen = [(["punkte", i, "neu"], p["neu"]) for i, p in enumerate(spec["punkte"])
-                  if (p["typ"] == "mass" or "variable" in p) and ist_ausdruck(p.get("neu"))]
+                  if (p["typ"] in ("mass", "verknuepfung_wert") or "variable" in p) and ist_ausdruck(p.get("neu"))]
+    zu_pruefen += [(["punkte", i, feld], p[feld]) for i, p in enumerate(spec["punkte"]) if p["typ"] == "verknuepfung_neu"
+                   for feld in ("wert", "min", "max") if ist_ausdruck(p.get(feld))]
     zu_pruefen += [(pfad, roh) for pfad, _, roh in _werte(spec.get("pruefung", {}), ["pruefung"])]
     for pfad, roh in zu_pruefen:
         try:
@@ -449,12 +458,47 @@ def validieren(pfad: Path) -> dict:
                                     "--hochstufen, danach lässt sie sich nur noch mit SolidWorks "
                                     f"{aufnahme.get('sw_jahr', '')} oder neuer lesen"})
     return {"gueltig": True, "spec": str(pfad), "art": "aenderung", "name": spec["name"], "punkte": len(spec["punkte"]),
-            "pruefsumme": pruefsumme(spec), "hinweise": hinweise, "version_aelter": aelter,
+            "pruefsumme": pruefsumme(spec, teil_summen_aenderung(spec, pfad)), "hinweise": hinweise, "version_aelter": aelter,
             "folgen": {p["id"]: folgen_von(p, aufnahme) for p in spec["punkte"] if p["typ"] in ("mass", "gleichung")}}
+
+
+def _teil_specs(spec: dict, pfad: Path) -> dict[str, dict]:
+    """Die Teil-Specs der Teil-Quellen (`quelle.teil` in `komponente_neu`/`komponente_ersetzen`), Dateiname → Spec, je Datei
+    einmal. Sie liegen im Auftragsordner neben der Änderungs-Spec; ein Befund nennt die Teil-Spec im Pfad."""
+    teile = {}
+    for datei in sorted({p["quelle"]["teil"] for p in spec["punkte"] if "teil" in p.get("quelle", {})}):
+        try:
+            teile[datei] = lade_spec(pfad.parent / datei)
+        except SpecFehler as e:
+            raise SpecFehler([{**b, "pfad": f"{datei}: {b['pfad']}"} for b in e.daten["befunde"]]) from None
+    return teile
+
+
+def _summen(teile: dict[str, dict]) -> dict[str, str] | None:
+    return {datei: pruefsumme(teil) for datei, teil in teile.items()} or None
+
+
+def teil_summen_aenderung(spec: dict, pfad: Path) -> dict[str, str] | None:
+    """Prüfsummen der Teil-Specs, die die Punkte als Quelle nennen (Dateiname → Summe), für das Argument `teile=` von
+    `pruefsumme` und `pruefe_freigabe`. Ohne Teil-Quelle `None`: ein leeres Dict änderte die Prüfsumme von Etappe 1."""
+    return _summen(_teil_specs(spec, pfad))
+
+
+def pruefe_freigabe_aenderung(spec_pfad: Path, spec: dict) -> dict:
+    """Erst jede Teil-Spec der Teil-Quellen (die Meldung nennt die Datei), dann die Änderungs-Spec mit den Prüfsummen der Teile;
+    wirft FreigabeFehler. Alle Stellen, die eine Änderungs-Spec auf Freigabe prüfen (bauen, prüfen, Ausgabe), gehen hier durch."""
+    teile = _teil_specs(spec, spec_pfad)
+    for datei, teil in teile.items():
+        pruefe_freigabe(spec_pfad.parent / datei, teil)
+    return pruefe_freigabe(spec_pfad, spec, _summen(teile))
 
 
 def freigeben(pfad: Path) -> dict:
     """Freigabe der Anforderungen – nur nach ausdrücklichem OK des Nutzers. Prüft voll wie `validieren`: Der Weg `swki freigeben`,
-    `swki bauen --hochstufen` führt an `swki validieren` vorbei, und `bauen` prüft die Punkte nicht gegen die Aufnahme."""
+    `swki bauen --hochstufen` führt an `swki validieren` vorbei, und `bauen` prüft die Punkte nicht gegen die Aufnahme.
+    Teil-Quellen bekommen wie bei Baugruppen eine eigene Freigabe samt Kopie; ihre Prüfsummen gehen in die der Änderung ein."""
     spec = _geprueft(pfad)[0]
-    return {"spec": str(pfad), "art": "aenderung", "kopie": str(kopie_pfad(pfad)), **spec_freigeben(pfad, spec)}
+    teile = _teil_specs(spec, pfad)
+    eintraege = {datei: spec_freigeben(pfad.parent / datei, teil) for datei, teil in teile.items()}
+    return {"spec": str(pfad), "art": "aenderung", "kopie": str(kopie_pfad(pfad)), **spec_freigeben(pfad, spec, teile=_summen(teile)),
+            **({"teile": eintraege} if eintraege else {})}

@@ -19,6 +19,7 @@
     "punkte": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt"}},
     "bereiche": {"type": "array", "items": {"$ref": "#/$defs/bereich"}},
     "pruefung": {"$ref": "#/$defs/pruefung"},
+    "kollision_erlaubt": {"type": "array", "items": {"$ref": "#/$defs/kollision"}},
     "max_nachbesserungen": {"type": "integer", "minimum": 1}
   },
   "$defs": {
@@ -35,11 +36,54 @@
       ]
     },
     "folgen": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"}},
+    "in_datei": {"type": "string", "minLength": 1,
+                 "description": "Datei in der Bestandskopie (relativer Pfad); ohne in_datei gilt die Hauptdatei (Spec §4.1)"},
+    "lage_folgen": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"},
+                    "description": "Komponenten, deren Lage sich durch den Punkt ändern darf (Spec §8.3)"},
+    "instanz": {"oneOf": [{"type": "integer", "minimum": 1}, {"const": "je"}]},
+    "standardebene": {"enum": ["vorne", "oben", "rechts"]},
+    "quelle": {"oneOf": [
+      {"type": "object", "required": ["teil"], "additionalProperties": false,
+       "properties": {"teil": {"type": "string", "pattern": "^[^/\\\\]+\\.yaml$"}}},
+      {"type": "object", "required": ["normteil"], "additionalProperties": false,
+       "properties": {"normteil": {"type": "string", "pattern": "^\\S.*\\s\\S+$"},
+                      "variante": {"type": "string", "minLength": 1}}},
+      {"type": "object", "required": ["kaufteil"], "additionalProperties": false,
+       "properties": {"kaufteil": {"type": "string", "pattern": "^\\S+\\s+\\S(.*\\S)?$"}}}
+    ], "description": "wie #/$defs/quelle in schema/baugruppe.schema.json"},
+    "anker": {"oneOf": [
+      {"type": "object", "required": ["komponente", "feature"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "feature": {"$ref": "#/$defs/name"}}},
+      {"type": "object", "required": ["komponente", "referenz"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "referenz": {"$ref": "#/$defs/name"}}},
+      {"type": "object", "required": ["komponente", "feature", "flaeche"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "feature": {"$ref": "#/$defs/name"},
+                      "instanz": {"$ref": "#/$defs/instanz"}, "flaeche": {"$ref": "#/$defs/richtung"}}},
+      {"type": "object", "required": ["komponente", "feature", "instanz", "achse"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "feature": {"$ref": "#/$defs/name"},
+                      "instanz": {"$ref": "#/$defs/instanz"}, "achse": {"const": true}}},
+      {"type": "object", "required": ["komponente", "gewinde", "instanz", "achse"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "gewinde": {"$ref": "#/$defs/name"},
+                      "instanz": {"$ref": "#/$defs/instanz"}, "achse": {"const": true}}},
+      {"type": "object", "required": ["komponente", "ebene"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "ebene": {"$ref": "#/$defs/standardebene"}}},
+      {"type": "object", "required": ["komponente", "nahe"], "additionalProperties": false,
+       "properties": {"komponente": {"$ref": "#/$defs/name"}, "nahe": {"$ref": "#/$defs/punkt3"}}}
+    ], "description": "Anker einer Verknüpfung: komponente (SW-Name oder Punkt-ID) plus Referenz wie in schema/baugruppe.schema.json"},
+    "kollision": {
+      "type": "object", "required": ["paar", "grund"], "additionalProperties": false,
+      "properties": {
+        "paar": {"type": "array", "items": {"$ref": "#/$defs/name"}, "minItems": 2, "maxItems": 2},
+        "grund": {"type": "string", "minLength": 1}
+      }
+    },
     "punkt": {
       "type": "object",
       "required": ["id", "typ"],
       "properties": {
-        "typ": {"enum": ["mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "material", "eigenschaft", "skript"]}
+        "typ": {"enum": ["mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "material", "eigenschaft", "skript",
+                         "komponente_neu", "komponente_entfernen", "komponente_ersetzen", "verknuepfung_neu", "verknuepfung_wert",
+                         "verknuepfung_loeschen"]}
       },
       "allOf": [
         {
@@ -48,7 +92,7 @@
             "required": ["mass", "alt", "neu"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "mass": {"$ref": "#/$defs/name"}, "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"},
               "konfigurationen": {"$ref": "#/$defs/konfigurationen"}
             }
@@ -62,7 +106,7 @@
                 "required": ["variable", "alt", "neu"], "additionalProperties": false,
                 "properties": {
                   "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-                  "folgen": {"$ref": "#/$defs/folgen"},
+                  "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
                   "variable": {"$ref": "#/$defs/name"}, "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"}
                 }
               },
@@ -70,7 +114,7 @@
                 "required": ["gleichung", "alt", "neu"], "additionalProperties": false,
                 "properties": {
                   "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-                  "folgen": {"$ref": "#/$defs/folgen"},
+                  "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
                   "gleichung": {"$ref": "#/$defs/name"}, "alt": {"type": "string", "minLength": 1},
                   "neu": {"type": "string", "minLength": 1}
                 }
@@ -84,7 +128,7 @@
             "required": ["feature"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "feature": {"$ref": "#/$defs/name"}, "konfigurationen": {"$ref": "#/$defs/konfigurationen"}
             }
           }
@@ -95,7 +139,7 @@
             "required": ["feature"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "feature": {"$ref": "#/$defs/name"},
               "kinder": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"}}
             }
@@ -107,7 +151,7 @@
             "required": ["name", "feature"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "name": {"$ref": "#/$defs/name"},
               "feature": {"type": "object", "description": "Inhalt wie ein Eintrag in features einer Teil-Spec (prüft validieren gegen die Aufnahme)"},
               "nach": {"$ref": "#/$defs/name"}
@@ -120,7 +164,7 @@
             "required": ["neu"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "neu": {"type": "string", "minLength": 1}
             }
           }
@@ -131,7 +175,7 @@
             "required": ["name", "neu"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "name": {"$ref": "#/$defs/name"}, "neu": {"type": ["string", "null"]},
               "konfiguration": {"$ref": "#/$defs/name"}
             }
@@ -143,8 +187,97 @@
             "required": ["datei", "luecke"], "additionalProperties": false,
             "properties": {
               "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
-              "folgen": {"$ref": "#/$defs/folgen"},
+              "folgen": {"$ref": "#/$defs/folgen"}, "in_datei": {"$ref": "#/$defs/in_datei"}, "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
               "datei": {"type": "string", "minLength": 1}, "luecke": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "komponente_neu"}}},
+          "then": {
+            "oneOf": [
+              {
+                "required": ["quelle"], "additionalProperties": false,
+                "properties": {
+                  "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+                  "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+                  "quelle": {"$ref": "#/$defs/quelle"}, "konfiguration": {"$ref": "#/$defs/name"},
+                  "fixiert": {"type": "boolean"}
+                }
+              },
+              {
+                "required": ["wie"], "additionalProperties": false,
+                "properties": {
+                  "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+                  "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+                  "wie": {"$ref": "#/$defs/name"}, "konfiguration": {"$ref": "#/$defs/name"},
+                  "fixiert": {"type": "boolean"}
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "komponente_entfernen"}}},
+          "then": {
+            "required": ["komponente", "verknuepfungen"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+              "komponente": {"$ref": "#/$defs/name"},
+              "verknuepfungen": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/name"}}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "komponente_ersetzen"}}},
+          "then": {
+            "required": ["komponente", "quelle"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+              "komponente": {"$ref": "#/$defs/name"}, "quelle": {"$ref": "#/$defs/quelle"},
+              "alle_instanzen": {"type": "boolean"}, "konfiguration": {"$ref": "#/$defs/name"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "verknuepfung_neu"}}},
+          "then": {
+            "required": ["art", "a", "b"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+              "art": {"enum": ["deckungsgleich", "konzentrisch", "parallel", "senkrecht", "abstand", "winkel",
+                               "grenze_abstand", "grenze_winkel", "scharnier", "zahnrad", "zahnstange"]},
+              "a": {"$ref": "#/$defs/anker"}, "b": {"$ref": "#/$defs/anker"},
+              "ausrichtung": {"enum": ["gleich", "entgegengesetzt"]},
+              "wert": {"$ref": "#/$defs/wert"}, "min": {"$ref": "#/$defs/wert"}, "max": {"$ref": "#/$defs/wert"},
+              "drehung_sperren": {"type": "boolean"},
+              "anlage_a": {"$ref": "#/$defs/anker"}, "anlage_b": {"$ref": "#/$defs/anker"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "verknuepfung_wert"}}},
+          "then": {
+            "required": ["verknuepfung", "alt", "neu"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+              "verknuepfung": {"$ref": "#/$defs/name"}, "grenze": {"enum": ["min", "max"]},
+              "alt": {"type": "number"}, "neu": {"$ref": "#/$defs/wert"}
+            }
+          }
+        },
+        {
+          "if": {"required": ["typ"], "properties": {"typ": {"const": "verknuepfung_loeschen"}}},
+          "then": {
+            "required": ["verknuepfung"], "additionalProperties": false,
+            "properties": {
+              "id": {"$ref": "#/$defs/id"}, "typ": {}, "was": {"type": "string", "minLength": 1},
+              "lage_folgen": {"$ref": "#/$defs/lage_folgen"},
+              "verknuepfung": {"$ref": "#/$defs/name"}
             }
           }
         }
@@ -154,6 +287,7 @@
       "type": "object", "required": ["punkte"], "additionalProperties": false,
       "properties": {
         "punkte": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+        "in_datei": {"$ref": "#/$defs/in_datei"},
         "box": {
           "type": "object", "required": ["min", "max"], "additionalProperties": false,
           "properties": {"min": {"$ref": "#/$defs/zahl3"}, "max": {"$ref": "#/$defs/zahl3"}}
@@ -182,7 +316,7 @@
           "items": {
             "type": "object", "required": ["was", "von", "zu", "soll"], "additionalProperties": false,
             "properties": {
-              "was": {"type": "string", "minLength": 1},
+              "was": {"type": "string", "minLength": 1}, "in_datei": {"$ref": "#/$defs/in_datei"},
               "von": {"$ref": "#/$defs/messpunkt"}, "zu": {"$ref": "#/$defs/messpunkt"},
               "soll": {"$ref": "#/$defs/wert"}, "tol": {"type": "number", "exclusiveMinimum": 0}
             }

@@ -14,7 +14,7 @@ from swki.auftrag import auftrag_name, lauf_belegt, lauf_datei, lauf_ordner, nae
 from swki.bestand import punkte
 from swki.bestand.ablage import bestand_ordner, lauf_kopie, pruefe_kopie
 from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
-from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, lade_aenderung
+from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, lade_aenderung, pruefe_freigabe_aenderung
 from swki.bestand.sw_bestand import _geometrie, _schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
 from swki.bestand.vergleich import neue_fehler
 from swki.cli import SwkiFehler
@@ -25,7 +25,6 @@ from swki.compiler.fehler import REBUILD_FEHLER, BauFehler, fehler_dict
 from swki.compiler.protokoll import Knoten, Protokoll
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
-from swki.spec.freigabe import pruefe_freigabe
 from swki.verbindung import verbinde
 
 _TOL_VOLUMEN_MM3, _TOL_VOLUMEN_ANTEIL = 0.01, 1e-6  # Rauschen der Massenberechnung; feine Abweichungen zeigt die Differenz
@@ -133,7 +132,7 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
           hochstufen: bool = False) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_aenderung(spec_pfad)
-    pruefe_freigabe(spec_pfad, spec)
+    pruefe_freigabe_aenderung(spec_pfad, spec)  # Teil-Quellen eingeschlossen
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
     if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):

@@ -18,11 +18,10 @@ from swki.auftrag import auftrag_name, lauf_datei, lauf_ordner
 from swki.bestand.ablage import bestand_ordner
 from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, LAUF_NICHT_BESTANDEN,
                                  BestandFehler)
-from swki.bestand.spec import aufnahme_zu, lade_aenderung, pruefe_lauf_bestand
+from swki.bestand.spec import aufnahme_zu, lade_aenderung, pruefe_freigabe_aenderung, pruefe_lauf_bestand
 from swki.cli import SwkiFehler
 from swki.konfig import Rechner, lade_rechner
 from swki.pruefung.schleife import lies_laeufe
-from swki.spec.freigabe import pruefe_freigabe
 
 AUSGABE_ORDNER = "ausgabe"
 # swLicenseType_e: Full, Full_Office, Full_Professional, Full_Premium, Full_Ultimate; alles andere (Educational, Student,
@@ -121,7 +120,7 @@ def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
     """(Plan, Lauf-Ordner): alle Prüfungen, nichts wird geschrieben."""
     spec_pfad = spec_pfad.resolve()
     spec = lade_aenderung(spec_pfad)
-    pruefe_freigabe(spec_pfad, spec)
+    pruefe_freigabe_aenderung(spec_pfad, spec)  # Teil-Quellen eingeschlossen
     r, auftrag = lade_rechner(), auftrag_name(spec_pfad)
     lauf = _bestandener_lauf(spec_pfad, auftrag, lauf)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
