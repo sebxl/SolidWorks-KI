@@ -441,6 +441,7 @@ class Baugruppe:
         self.vom_original: set[str] = set()             # Komponenten, die aktiv vom gespeicherten Pfad laden (S18g)
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
         self.wirkungslos = False                        # Schreibaufrufe melden Erfolg und tun nichts
+        self.neu_nur_in_der_aktiven = False             # Annahme vor S19e: neue Komponente, Verknüpfung sonst unterdrückt
         self.definition_ueberall = True                 # `ModifyDefinition` wirkt in allen Konfigurationen (S19e T9.27)
         self.unterdrueckt_nach_definition: set[str] = set()  # dort unterdrückt `ModifyDefinition` die Verknüpfung (S19e3)
         self.seiten: list[Seite] = []                   # Auswahl für die nächste Verknüpfung
@@ -557,7 +558,7 @@ class Baugruppe:
             self.mates.remove(self.auswahl)
 
     def FixComponent(self):
-        self.auswahl.fixiert_in.add(self.aktiv)
+        self.auswahl.fixiert_in.update(self.konfigurationen)  # wirkt in allen Konfigurationen (S19e T9.6)
 
     def entferne(self, komp) -> None:
         """Löscht die Komponente samt Kindern und den Verknüpfungen an ihnen."""
@@ -582,7 +583,8 @@ class Baugruppe:
         m = Mate(self, f"Abstand{len(self.mates) + 100}", typ, self.seiten, wert=d if typ == 5 else w, spanne=spanne,
                  ausrichtung=0 if ausrichtung == 2 else ausrichtung, typname="MateDistanceDim")
         m.drehung_gesperrt = sperre
-        m.unterdrueckt |= set(self.konfigurationen) - {self.aktiv}
+        if self.neu_nur_in_der_aktiven:
+            m.unterdrueckt |= set(self.konfigurationen) - {self.aktiv}
         self.mates.append(m)
         return m
 
@@ -595,7 +597,8 @@ class Baugruppe:
                                 "konfiguration": konfiguration, "mitte": (x, y, z)})
         rel = Path(pfad).relative_to(self.wurzel).as_posix()
         k = self.komponente(self._freier_name(Path(pfad).stem), rel, referenz=konfiguration if benutze else "Standard")
-        k.unterdrueckt |= set(self.konfigurationen) - {self.aktiv}
+        if self.neu_nur_in_der_aktiven:
+            k.unterdrueckt |= set(self.konfigurationen) - {self.aktiv}
         return k
 
     def ReplaceComponents2(self, datei, konfiguration, alle, wahl, neu_zuordnen):

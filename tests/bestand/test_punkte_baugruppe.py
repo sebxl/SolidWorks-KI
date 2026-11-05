@@ -348,15 +348,30 @@ def test_neu_wie_unbekannte_vorlage(b):
 
 
 def test_neu_in_allen_konfigurationen_aktiv(b):
-    """S18c gilt für Features, für Komponenten ist es die Annahme bis S19e: Sie sind in den übrigen Konfigurationen
-    unterdrückt."""
+    """S19e T9.2: Eine neue Komponente ist anders als ein neues Feature (S18c) in allen Konfigurationen aktiv. Wäre sie es nicht,
+    hebt der Handler auf (nächster Test)."""
     punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"})
     assert komponenten(b)["Schraube-12"]["unterdrueckt"] == {"Standard": False, "Leicht": False}
     assert b.asm.aktiv == "Standard"
 
 
+def test_neu_nur_in_der_aktiven_wird_aufgehoben(b):
+    b.asm.neu_nur_in_der_aktiven = True
+    punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"})
+    assert komponenten(b)["Schraube-12"]["unterdrueckt"] == {"Standard": False, "Leicht": False}
+
+
+def test_fixieren_wirkt_in_allen_konfigurationen(b, monkeypatch):
+    """S19e T9.6: `FixComponent` in einer Konfiguration fixiert in allen; die Schleife je Konfiguration ruft es einmal."""
+    aufrufe, echt = [], b.asm.FixComponent
+    monkeypatch.setattr(b.asm, "FixComponent", lambda: (aufrufe.append(b.asm.aktiv), echt())[1])
+    punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1", "fixiert": True})
+    assert aufrufe == ["Standard"] and komponenten(b)["Schraube-12"]["fixiert"] == {"Standard": True, "Leicht": True}
+
+
 def test_neu_bleibt_unterdrueckt_ist_ein_fehler(b):
     b.asm.wirkungslos = True  # alle Rückgaben melden Erfolg, nur das Nachmessen sieht es
+    b.asm.neu_nur_in_der_aktiven = True
     with pytest.raises(BauFehler) as e:
         punkt_handler("komponente_neu")(b, {"id": "p1", "wie": "Schraube-1"})
     assert e.value.code == KOMPONENTE_FEHLER and "Leicht" in str(e.value) and e.value.schritt == "nachmessen"
@@ -639,6 +654,7 @@ def test_verknuepfung_neu_nach_ersetzen_folgt_dem_neuen_namen(b, anker):
 
 
 def test_verknuepfung_neu_in_allen_konfigurationen_aktiv(b, anker):
+    """S19e T9.18: aktiv in allen Konfigurationen, das Aufheben je Konfiguration schadet nicht."""
     p = verbinde()
     punkt_handler("verknuepfung_neu")(b, p)
     assert mates(b)["v1"]["unterdrueckt"] == {"Standard": False, "Leicht": False}
@@ -646,6 +662,7 @@ def test_verknuepfung_neu_in_allen_konfigurationen_aktiv(b, anker):
 
 def test_verknuepfung_neu_bleibt_unterdrueckt_ist_ein_fehler(b, anker):
     b.asm.wirkungslos = True
+    b.asm.neu_nur_in_der_aktiven = True
     p = verbinde()
     with pytest.raises(BauFehler) as e:
         punkt_handler("verknuepfung_neu")(b, p)

@@ -2,10 +2,10 @@
 und Verknüpfungen, Signatur `(b: BauKontext, p) -> list[str]` mit den betroffenen SolidWorks-Namen. Die Teil-Punkte laufen weiter
 über `swki.bestand.punkte`, auch `eigenschaft` und `skript` an der Hauptbaugruppe.
 
-UNGEMESSEN: Diese Schicht steht gegen den API-Index, seine Hilfetexte und Attrappen, Spike S19 Zeile e korrigiert sie. Belegt sind
-nur `AddMate5`, `Select2` mit `EditDelete` und `SetSystemValue3` an `D1` (S6, S12, S13). Offen sind die Schreibwege
-`ReplaceComponents2`, `ModifyDefinition`, `IComponent2.SetSuppression2`, `ReferencedConfiguration =`, `DeleteSelection2` an einer
-Komponente und alles, was davon je Konfiguration wirkt.
+Gemessen in S19 Zeile e (2026-11-05, `docs/bestandsdateien/ergebnisse.md` §2): Alle Schreibwege gehen. Je Konfiguration wirken
+`IComponent2.SetSuppression2` und `ReferencedConfiguration =` (nur in der aktiven, T9.3, T9.5) und `SetSystemValue3` Option 3; in
+allen wirken `FixComponent` (T9.6), `ModifyDefinition` (T9.27) und `SetSystemValue3` Option 2 (T9.24). Eine neue Komponente und eine
+neue Verknüpfung sind anders als ein neues Feature überall aktiv (T9.2, T9.18).
 
 Rückgaben von SolidWorks beweisen nichts (S18c): Jeder Handler misst nach dem Neuaufbau nach, über `lies_komponenten` bzw.
 `lies_verknuepfungen`, in allen Konfigurationen. Am Ende steht die aktive der Aufnahme. Ein Handler bricht mit `BauFehler` ab,
@@ -281,8 +281,9 @@ def _waehle(asm, komp) -> None:
 
 
 def _in_allen_aktiv(b: BauKontext, name: str, soll: dict[str, str], fixiert: bool) -> None:
-    """Je Konfiguration aufheben, referenzierte Konfiguration setzen, fixieren: Alle drei gelten je Konfiguration (Annahme bis
-    S19e, S18c misst das nur für Features). Ein neues Objekt ist in den übrigen unterdrückt."""
+    """Je Konfiguration aufheben, referenzierte Konfiguration setzen, fixieren. Nötig ist das nur für die referenzierte
+    Konfiguration (T9.5); eine neue Komponente ist schon überall aktiv (T9.2), `FixComponent` wirkt in allen (T9.6), dort tut die
+    Schleife nichts mehr. Das Nachmessen verlangt alles je Konfiguration."""
 
     def setze(k: str) -> None:
         komp = _komponente(b, name)
@@ -534,9 +535,9 @@ def _nachmesse_neue(b: BauKontext, p: dict, teile: list, vorher: set[str]) -> No
 
 @punkt("verknuepfung_neu")
 def verknuepfung_neu(b: BauKontext, p: dict) -> list[str]:
-    """Über `aufloesen._einzeln` und `sw_baugruppe.verknuepfe`, der Name ist die Punkt-ID. Eine neue Verknüpfung ist in den
-    übrigen Konfigurationen unterdrückt (Annahme wie bei Features, S18c), darum aufheben. Kopplungen brauchen Verzahnungsdaten aus
-    einer freigegebenen Spec, die eine fremde Datei nicht hat: Notausgang `skript`."""
+    """Über `aufloesen._einzeln` und `sw_baugruppe.verknuepfe`, der Name ist die Punkt-ID. Eine neue Verknüpfung ist in allen
+    Konfigurationen aktiv (S19e T9.18); das Aufheben je Konfiguration schadet nicht und bleibt, das Nachmessen verlangt es.
+    Kopplungen brauchen Verzahnungsdaten aus einer freigegebenen Spec, die eine fremde Datei nicht hat: Notausgang `skript`."""
     art = p["art"]
     if art in KOPPLUNGEN:
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Eine {art}-Kopplung in einer fremden Baugruppe gibt es in Etappe 2 nicht (keine "
