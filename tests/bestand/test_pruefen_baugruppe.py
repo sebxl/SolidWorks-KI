@@ -236,10 +236,13 @@ def test_datei_mit_punkt_unveraendert_laesst_den_punkt_nicht_stumm(u):
 
 
 def test_fehlende_lauf_datei_ist_nie_gleich(u):
+    """Fehlt eine Datei im Lauf, lösen die Suchregeln aufs Original auf (S19c P.c3, die Attrappe seit Task 13 ebenso): Sperre 1
+    öffnet die Baugruppe nicht (§8.1a), die Prüfung bricht ab statt zu bestehen."""
     u.gebaut()
     u.lauf_pfad(GRUND).unlink()
-    b = u.pruefe()
-    assert ids(b)["dateien"]["ok"] is None and ids(b)["punkt:p1"]["ok"] is None and b["bestanden"] is False
+    with pytest.raises(BestandFehler) as e:
+        u.pruefe()
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and GRUND.split("/")[-1] in str(e.value)
 
 
 # --- Präfixe, Hauptdatei ------------------------------------------------------------------------------------------------------

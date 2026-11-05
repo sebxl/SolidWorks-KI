@@ -9,6 +9,7 @@ import pytest
 from swki.bestand import ablage, fehler
 from swki.bestand.ablage import (aufnahmen, aufnahmen_aus_lauf, bestand_ordner, herkunft_von, kopiere_baugruppe,
                                  kopiere_original, lade_datei_aufnahme, lade_dateien, lauf_kopie_alle, ordne_referenzen,
+                                 pruefe_aufloesung,
                                  pruefe_auftrag_frei, schreibe_datei_aufnahme, schreibe_herkunft, sperrdateien,
                                  verwirf_aufnahme)
 from swki.bestand.fehler import (BESTAND_ANDERE_DATEI, BESTAND_AUFTRAG_BELEGT, BESTAND_NICHT_LESBAR, BESTAND_REFERENZ_EXTERN,
@@ -65,6 +66,31 @@ def test_fremder_ordner_liegt_flach(tmp_path):
     haupt = _datei(tmp_path / "kunde", "Haupt.SLDASM", b"h")
     norm = _datei(tmp_path / "norm", "S.sldprt", b"s")
     assert ordne_referenzen(haupt, [str(norm)]) == {"S.sldprt": norm}
+
+
+def test_aufloesung_gleich_dem_gespeicherten_oder_im_ordner(tmp_path):
+    """Korrektur Task 13: gespeichert gleich aufgelöst, oder aufgelöst unter dem Ordner der Baugruppe (`teile/` oder flach, S19c
+    P.c1, P.c2). Virtuelle Komponenten und `None` zählen nicht."""
+    haupt = tmp_path / "kunde" / "Haupt.SLDASM"
+    gespeichert = [str(tmp_path / "gebaut" / "teile" / "A.SLDPRT"), str(tmp_path / "norm" / "S.SLDPRT"), None,
+                   str(tmp_path / "t" / "Teil^Haupt.sldprt"), str(tmp_path / "gebaut" / "B.SLDPRT")]
+    aufgeloest = [str(tmp_path / "kunde" / "teile" / "A.SLDPRT"), str(tmp_path / "norm" / "S.SLDPRT"),
+                  str(tmp_path / "kunde" / "B.SLDPRT")]
+    assert pruefe_aufloesung(haupt, gespeichert, aufgeloest) == aufgeloest
+
+
+def test_aufloesung_an_einem_dritten_ort(tmp_path):
+    """Korrektur Task 13: Die Suchregeln beginnen mit offenen Dokumenten (S19c P.c4). Ein gleichnamiges Dokument von anderswo
+    (eine frühere Ausgabe) ist weder gespeichert noch im Ordner: Abbruch mit beiden Pfaden."""
+    haupt = tmp_path / "kunde" / "Haupt.SLDASM"
+    gespeichert, dritter = tmp_path / "kunde" / "teile" / "A.SLDPRT", tmp_path / "ausgabe" / "A.SLDPRT"
+    with pytest.raises(BestandFehler) as e:
+        pruefe_aufloesung(haupt, [str(gespeichert)], [str(dritter)])
+    assert e.value.daten["code"] == BESTAND_REFERENZ_EXTERN and str(dritter) in str(e.value) and str(gespeichert) in str(e.value)
+    (a,) = e.value.daten["abweichend"]
+    assert a["datei"] == "a.sldprt" and a["aufgeloest"] == [str(dritter)] and a["gespeichert"] == [str(gespeichert)]
+    with pytest.raises(BestandFehler):  # auch ohne gespeichertes Gegenstück
+        pruefe_aufloesung(haupt, [], [str(dritter)])
 
 
 def test_gleiche_namen_aus_zwei_ordnern(tmp_path):

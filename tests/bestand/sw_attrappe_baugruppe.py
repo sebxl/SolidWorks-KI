@@ -676,10 +676,17 @@ class App:
         return self.versionen.get(Path(pfad).name, ("18000[2025/268]",))
 
     def _kopie_von(self, ziel: Path, pfad: Path) -> Path:
+        """Suchregeln wie gemessen (S19c): ein offenes Dokument gleichen Namens (P.c4), sonst die Datei flach neben `pfad`
+        (P.c2), sonst die relative Struktur vom Speicherort aus (P.c1), sonst der gespeicherte Pfad (P.c3)."""
+        offen = next((Path(d.GetPathName) for d in self.offen if Path(d.GetPathName).name.lower() == ziel.name.lower()), None)
+        if offen is not None:
+            return offen
+        kandidaten = [Path(pfad).parent / ziel.name]
         try:
-            return Path(pfad).parent / ziel.relative_to(self.gespeichert_in or self.original.parent)
+            kandidaten.append(Path(pfad).parent / ziel.relative_to(self.gespeichert_in or self.original.parent))
         except ValueError:
-            return Path(pfad).parent / ziel.name
+            pass
+        return next((k for k in kandidaten if k.is_file()), ziel)
 
     def GetDocumentDependencies2(self, pfad, tief, suche, nur_lesen):
         if suche and Path(pfad).name == self.original.name:
@@ -710,6 +717,10 @@ class App:
     @property
     def GetDocuments(self):
         return tuple(self.offen) or None
+
+    @property
+    def GetDocumentCount(self):
+        return len(self.offen)
 
     def CloseDoc(self, titel):
         self.ereignisse.append(("zu", titel))

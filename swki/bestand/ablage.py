@@ -175,9 +175,39 @@ def ist_virtuell(pfad: Path | str) -> bool:
     return "^" in PureWindowsPath(pfad).name
 
 
+def _je_name(pfade) -> dict[str, dict[str, str]]:
+    """Dateiname klein → {Vergleichsform: Pfad in der gelesenen Schreibweise}, ohne `None` und virtuelle Komponenten."""
+    aus: dict[str, dict[str, str]] = {}
+    for p in pfade:
+        if p and not ist_virtuell(p):
+            aus.setdefault(PureWindowsPath(p).name.lower(), {})[_schluessel(p)] = str(p)
+    return aus
+
+
+def pruefe_aufloesung(haupt: Path, gespeichert: list, aufgeloest: list) -> list[str]:
+    """Die aufgelösten Referenzen (`GetDocumentDependencies2` mit Suche, S19c P.c3), wenn jede zu ihrem gespeicherten Pfad
+    passt: gleich, oder unter dem Ordner der Hauptbaugruppe (`teile/` oder flach daneben, P.c1, P.c2). Ein anderer Ort hieße,
+    die Suchregeln haben woanders gefunden, etwa ein gleichnamiges offenes Dokument (P.c4): `BESTAND_REFERENZ_EXTERN` mit
+    beiden Pfaden. Zugeordnet wird über den Dateinamen; gleiche Namen aus zwei Ordnern meldet `ordne_referenzen`."""
+    ordner = PureWindowsPath(_schluessel(haupt.parent))
+    soll, ist = _je_name(gespeichert), _je_name(aufgeloest)
+    abweichend = []
+    for name in sorted(soll.keys() | ist.keys()):
+        g, a = soll.get(name, {}), ist.get(name, {})
+        if not g or not a or any(p not in g and not PureWindowsPath(p).is_relative_to(ordner) for p in a):
+            abweichend.append({"datei": name, "gespeichert": sorted(g.values()), "aufgeloest": sorted(a.values())})
+    if abweichend:
+        text = "; ".join(f"{x['datei']}: gespeichert {', '.join(x['gespeichert']) or '–'}, "
+                         f"aufgelöst {', '.join(x['aufgeloest']) or '–'}" for x in abweichend)
+        raise BestandFehler(BESTAND_REFERENZ_EXTERN, f"SolidWorks fände {len(abweichend)} Referenzen von {haupt.name} an "
+                            f"einem dritten Ort, weder am gespeicherten Pfad noch im Ordner der Baugruppe: {text}",
+                            abweichend=abweichend)
+    return [p for p in aufgeloest if p and not ist_virtuell(p)]
+
+
 def ordne_referenzen(haupt: Path, pfade: list[str]) -> dict[str, Path]:
-    """Relativer Pfad in der Kopie → Quelle für alle Pfade der Referenzen (`GetDocumentDependencies2`, nach den Suchregeln aufgelöst,
-    S19c P.c3). Wie beim Öffnen hat die Datei neben der Hauptbaugruppe Vorrang (S18g, P.c2). Sonst: was im Ordner der
+    """Relativer Pfad in der Kopie → Quelle für alle Pfade der Referenzen (`GetDocumentDependencies2`, nach den Suchregeln
+    aufgelöst, S19c P.c3). Wie beim Öffnen hat die Datei neben der Hauptbaugruppe Vorrang (S18g, P.c2). Sonst: was im Ordner der
     Baugruppe liegt, behält seine relative Struktur, alles andere liegt flach daneben. Virtuelle Komponenten (Name mit `^`)
     und die Hauptbaugruppe selbst sind keine Referenz."""
     ordner = PureWindowsPath(haupt.parent)
@@ -202,8 +232,8 @@ def ordne_referenzen(haupt: Path, pfade: list[str]) -> dict[str, Path]:
         if _schluessel(quelle) != _schluessel(haupt):
             gefunden.append((rel, pfad.name.lower(), quelle))
     if fehlen:
-        raise BestandFehler(BESTAND_REFERENZ_FEHLT, f"{len(fehlen)} referenzierte Dateien fehlen (weder neben {haupt.name} noch am "
-                                                    f"gespeicherten Pfad): {', '.join(fehlen)}", fehlen=fehlen)
+        raise BestandFehler(BESTAND_REFERENZ_FEHLT, f"{len(fehlen)} referenzierte Dateien fehlen (nach den Suchregeln aufgelöst, "
+                                                    f"auch nicht neben {haupt.name}): {', '.join(fehlen)}", fehlen=fehlen)
     je_name: dict[str, dict[str, Path]] = {}
     for _, name, quelle in gefunden:
         je_name.setdefault(name, {})[_schluessel(quelle)] = quelle

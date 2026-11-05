@@ -290,6 +290,8 @@ Anker und `bezug` neuer Features, `nach`, die Skriptdateien und die Reihenfolge 
    *Nachgezogen bei der Umsetzung, 2026-10-31:* `VersionHistory` liefert z. B. `18000[2025/268]`, Vergleich gegen `GetLatestSupportedFileVersion`.
    `GetDocumentDependencies2(pfad, True, False, False)` geht ohne Öffnen (gespeicherte Pfade, Paare Titel/Pfad, `None` ohne
    Referenz). Die schreibgeschützte Kopie öffnet still mit Warnung 2, `Save3` scheitert mit Fehler 2 (S18b).
+   *Nachgezogen 2026-11-05 (S19c P.c3, Task 13):* Für Baugruppen zählt, was das Öffnen lädt: `GetDocumentDependencies2(pfad,
+   True, True, False)` (nach den Suchregeln aufgelöst), siehe §8.1.
 4. Erneutes `aufnehmen` derselben Datei: gleiche SHA-256 → vorhandene Aufnahme; andere → neue Aufnahme `bestand-<n+1>`
    (der Kollege hat weitergearbeitet); eine Spec auf die alte Aufnahme meldet `BESTAND_VERALTET`.
 
@@ -440,6 +442,13 @@ was die Punkte ändern – Weg im Spike).
   Öffnen; `~$`-Dateien kommen nicht mit, sie stehen als Warnung `BESTAND_OFFEN` in der Ausgabe (die Datei hat jemand offen, kopiert wird der gespeicherte Stand).
   `dateien.json` nennt je relativem Pfad Original, SHA-256, Art und Version. Gleiche Aufnahme heißt: alle SHA-256 gleich. Eine ältere Einzeldatei
   zählt nur, wenn sie gespeichert werden muss.
+- *Nachgezogen bei der Umsetzung, 2026-11-05 (S19c P.c1–P.c4, Task 13):* Kopiert wird, was das Öffnen lädt: die nach den
+  Suchregeln aufgelösten Pfade (`GetDocumentDependencies2(pfad, True, True, False)`), nicht die gespeicherten. Nach dem Verschieben
+  eines Ordners zeigen die gespeicherten Pfade dorthin, wo gebaut wurde; geladen wird die Datei flach neben der Baugruppe, sonst
+  `teile/` mit relativer Struktur, sonst der gespeicherte Pfad. Ein aufgelöster Pfad gilt nur, wenn er gleich dem gespeicherten ist
+  oder unter dem Ordner der Hauptbaugruppe liegt; jeder andere Ort (die Suchregeln beginnen mit offenen Dokumenten, P.c4) ist
+  `BESTAND_REFERENZ_EXTERN` mit beiden Pfaden. Darum nimmt `aufnehmen` nur in einer SolidWorks-Sitzung ohne offene Dokumente auf
+  (`BESTAND_SITZUNG_BELEGT`: Dokumente schließen oder `-m werkzeuge.sw_neustart`).
 - **Dateien außerhalb des Ordners der Baugruppe** liegen flach neben der Hauptbaugruppe, nicht unter `extern/`: Belegt ist nur der Vorrang der Datei daneben (S18g). Gleiche Namen aus
   zwei Ordnern sind `BESTAND_REFERENZ_EXTERN`. Ob eine relative Struktur (`teile/A.SLDPRT`) bei noch vorhandenem Original aus der Kopie lädt, klärt S19c.
 - **Rohdaten.** `bestand.json` trägt die Hauptdatei, `aufnahme/<rel>.json` jede weitere im Format von Etappe 1. Gelesen wird jede Datei einmal, einzeln, unsichtbar, nach dem Schließen
@@ -626,7 +635,8 @@ geprüft“, wo zutreffend.
 | `BESTAND_VERSION_NEUER` | Datei in neuerem SW-Jahr gespeichert |
 | `BESTAND_VERSION_AELTER` | `swki bauen` an einer Datei aus älterem SW-Jahr ohne `--hochstufen` |
 | `BESTAND_REFERENZ_FEHLT` | referenzierte Datei nicht gefunden |
-| `BESTAND_REFERENZ_EXTERN` | Teil mit externen Referenzen (Etappe 1); ab Etappe 2 Ziel außerhalb der Kopie, gleiche Dateinamen aus zwei Ordnern, Punkt auf ein Teil mit Referenz im Kontext |
+| `BESTAND_REFERENZ_EXTERN` | Teil mit externen Referenzen (Etappe 1); ab Etappe 2 Ziel außerhalb der Kopie, gleiche Dateinamen aus zwei Ordnern, Punkt auf ein Teil mit Referenz im Kontext, Referenz an einem dritten Ort aufgelöst (§8.1) |
+| `BESTAND_SITZUNG_BELEGT` | `aufnehmen` einer Baugruppe, während in SolidWorks Dokumente offen sind (§8.1) |
 | `BESTAND_PFAD_FREMD` | SolidWorks würde eine Datei außerhalb des Kopie-Ordners laden oder hat es getan (§8.1a) |
 | `BESTAND_AUFTRAG_BELEGT` | Auftrag hat Läufe aus eigenen Specs (§8.5) |
 | `BESTAND_OFFEN` | Warnung: `~$`-Datei neben einer aufgenommenen Datei, jemand hat sie offen |

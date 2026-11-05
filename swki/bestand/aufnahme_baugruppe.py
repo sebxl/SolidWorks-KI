@@ -2,12 +2,13 @@
 
 Das Original wird nur gelesen (Version, Abhängigkeiten, Kopie), geöffnet wird nur die schreibgeschützte Bestandskopie, jedes
 Dokument über `oeffne_in`, und gespeichert wird nichts, auch nicht nach der Fahrt: Die treibende Verknüpfung bleibt im Speicher.
-Ablauf: Format, Auftrag frei, Version und Abhängigkeiten (nach den Suchregeln aufgelöst) am Original, Zuordnung der Dateien, Version je Datei, Kopie; dann die
-Baugruppe unsichtbar lesen, schließen; danach jede Datei einmal einzeln lesen (das Durchschalten der Konfigurationen soll nicht in
-einer geladenen Baugruppe laufen), zuletzt die Baugruppe im Fenster: Kollision, Bilder, Fahrt. Ohne Fenster ist
-`InterferenceDetectionManager` `None` (S19d P.d1, T8.12): keine Kollision lesbar, und die Fahrt bräche an jeder Grenze ab. Lesen
-bleibt unsichtbar, dort kostet es +1 MB statt +2,9 GB (S19d P.d2). `bestand.json` entsteht als Letztes: Fehlt sie, lässt sich das
-Lesen nachholen, eine abgelehnte Aufnahme entfernt ihren Ordner. Zeit und Private Bytes je Phase stehen in `messung` (§8.7)."""
+Ablauf: Format, Auftrag frei, leere Sitzung, Version und Abhängigkeiten (nach den Suchregeln aufgelöst) am Original, Zuordnung
+der Dateien, Version je Datei, Kopie; dann die Baugruppe unsichtbar lesen, schließen; danach jede Datei einmal einzeln lesen
+(das Durchschalten der Konfigurationen soll nicht in einer geladenen Baugruppe laufen), zuletzt die Baugruppe im Fenster:
+Kollision, Bilder, Fahrt. Ohne Fenster ist `InterferenceDetectionManager` `None` (S19d P.d1, T8.12): keine Kollision lesbar, und
+die Fahrt bräche an jeder Grenze ab. Lesen bleibt unsichtbar, dort kostet es +1 MB statt +2,9 GB (S19d P.d2). `bestand.json`
+entsteht als Letztes: Fehlt sie, lässt sich das Lesen nachholen, eine abgelehnte Aufnahme entfernt ihren Ordner. Zeit und
+Private Bytes je Phase stehen in `messung` (§8.7)."""
 
 import time
 from contextlib import contextmanager
@@ -15,12 +16,12 @@ from pathlib import Path
 
 from swki.bestand.abgleich import mate_name
 from swki.bestand.ablage import (AUFNAHME_DATEI, bestand_ordner, herkunft_von, ist_baugruppe, ist_virtuell, kopiere_baugruppe,
-                                 lade_aufnahme,
-                                 lade_herkunft, ordne_referenzen, pruefe_auftrag_frei, schreibe_aufnahme, schreibe_datei_aufnahme,
-                                 schreibe_dateien, schreibe_herkunft, sha_original, spec_laeufe, sperrdateien, verwirf_aufnahme)
+                                 lade_aufnahme, lade_herkunft, ordne_referenzen, pruefe_aufloesung, pruefe_auftrag_frei,
+                                 schreibe_aufnahme, schreibe_datei_aufnahme, schreibe_dateien, schreibe_herkunft, sha_original,
+                                 spec_laeufe, sperrdateien, verwirf_aufnahme)
 from swki.bestand.befehle import zusammenfassung
 from swki.bestand.bewegung_bestand import abdeckung, fahre_bestand, grenzen_der_aufnahme, ohne_fahrt, statische_paare
-from swki.bestand.fehler import BESTAND_OFFEN, BESTAND_PFAD_FREMD, BESTAND_REFERENZ_EXTERN, BestandFehler
+from swki.bestand.fehler import BESTAND_OFFEN, BESTAND_PFAD_FREMD, BESTAND_REFERENZ_EXTERN, BESTAND_SITZUNG_BELEGT, BestandFehler
 from swki.bestand.pfade import aufgeloeste_referenzen, oeffne_in
 from swki.bestand.sw_baugruppe_bestand import lies_baugruppe, lies_kollisionen, mechanik_fuer
 from swki.bestand.sw_bestand import externe_referenzen, lies_bestand, pruefe_version
@@ -28,7 +29,7 @@ from swki.compiler import sw
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.bilder import screenshots
 from swki.speicher import privat_mb
-from swki.verbindung import verbinde
+from swki.verbindung import verbinde, wert
 
 BEWEGUNG_ABDECKUNG = "BEWEGUNG_ABDECKUNG"  # Warnung der Aufnahme: was die Bewegungsprüfung nicht abdeckt
 _ABLEHNUNG = (BESTAND_PFAD_FREMD, BESTAND_REFERENZ_EXTERN)
@@ -59,10 +60,22 @@ def _art(rel: str) -> str:
     return "baugruppe" if ist_baugruppe(rel) else "teil"
 
 
+def pruefe_sitzung_leer(app) -> None:
+    """Die Suchregeln von SolidWorks beginnen mit den offenen Dokumenten (S19c P.c4): Ein gleichnamiges Dokument von
+    anderswo (frühere Ausgabe, Lauf, Bestandskopie) würde aufgelöst und kopiert. Darum nimmt `aufnehmen` nur in einer leeren
+    Sitzung auf."""
+    if anzahl := int(wert(app.GetDocumentCount) or 0):
+        raise BestandFehler(BESTAND_SITZUNG_BELEGT, f"In SolidWorks sind {anzahl} Dokumente offen: Die Aufnahme fände "
+                            "gleichnamige Dateien von dort statt aus dem Original. Dokumente schließen oder "
+                            "`-m werkzeuge.sw_neustart`",
+                            offen=anzahl)
+
+
 def _angaben_der_datei(app, rel: str, quelle: Path, namen: dict[str, str]) -> dict:
     """Art, Version und eigene Referenzen einer Datei, am Original ohne Öffnen (`BESTAND_VERSION_NEUER`, kein Dokument offen).
     Ein Ziel, das nicht zur Baugruppe gehört, läge nicht in der Kopie: `BESTAND_REFERENZ_EXTERN`. Referenzen stehen als
-    relativer Pfad."""
+    relativer Pfad. Hier zählen die gespeicherten Pfade, anders als bei der Hauptbaugruppe (aufgelöst, `pruefe_aufloesung`):
+    Zugeordnet wird nur über den Dateinamen, und der Name ist an beiden Orten derselbe."""
     versionen, aelter = pruefe_version(app, quelle)
     ziele = [z for z in externe_referenzen(app, quelle) if z and not ist_virtuell(z)]
     fremd = [z for z in ziele if Path(z).name.lower() not in namen]
@@ -177,11 +190,13 @@ def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict
     r, standard = lade_rechner(), lade_standard()
     pruefe_auftrag_frei(r, auftrag, spec_laeufe(r, auftrag))
     app = verbinde(r.sw_jahr)
+    pruefe_sitzung_leer(app)  # die Suchregeln beginnen mit offenen Dokumenten (S19c P.c4)
     pfad = original.absolute()
     versionen, aelter = pruefe_version(app, pfad)
-    # Aufgelöst wie beim Öffnen (S19c P.c3): Die gespeicherten Pfade zeigen nach einem Verschieben dorthin, wo gebaut wurde, geladen wird
-    # `teile/` neben der Baugruppe (P.c1, Task 13 am Muster im Git)
-    quellen = ordne_referenzen(pfad, aufgeloeste_referenzen(app, pfad))
+    # Aufgelöst wie beim Öffnen (S19c P.c3): Die gespeicherten Pfade zeigen nach einem Verschieben dorthin, wo gebaut wurde,
+    # geladen wird `teile/` neben der Baugruppe (P.c1, Task 13 am Muster im Git). Ein dritter Ort bricht ab (`pruefe_aufloesung`).
+    aufgeloest = pruefe_aufloesung(pfad, externe_referenzen(app, pfad), aufgeloeste_referenzen(app, pfad))
+    quellen = ordne_referenzen(pfad, aufgeloest)
     namen = {Path(rel).name.lower(): rel for rel in quellen} | {pfad.name.lower(): pfad.name}  # auch ein In-Context-Teil
     angaben = {rel.lower(): _angaben_der_datei(app, rel, quelle, namen) for rel, quelle in quellen.items()}
     angaben[pfad.name.lower()] = {"art": "baugruppe", "versionen": versionen, "version_aelter": aelter,

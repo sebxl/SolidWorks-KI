@@ -15,7 +15,7 @@ from swki.bestand.ablage import (aufnahmen, bestand_ordner, lade_aufnahme, lade_
 from swki.bestand.sw_baugruppe_bestand import VERKNUEPFUNG_UNERREICHT
 from swki.bestand.bewegung_bestand import vergleiche_bewegungen
 from swki.bestand.fehler import (BESTAND_AUFTRAG_BELEGT, BESTAND_OFFEN, BESTAND_PFAD_FREMD, BESTAND_REFERENZ,
-                                 BESTAND_REFERENZ_EXTERN,
+                                 BESTAND_REFERENZ_EXTERN, BESTAND_SITZUNG_BELEGT,
                                  BESTAND_VERSION_NEUER, BestandFehler)
 from swki.cli import main
 from swki.compiler.fehler import BauFehler
@@ -116,17 +116,63 @@ def test_dateien_json_traegt_die_angaben_und_die_hauptdatei(u):
 
 
 def test_verschobenes_original_kopiert_was_solidworks_laedt(u):
-    """Task 13 live (Muster im Git): Die gespeicherten Pfade zeigen in den Ordner, in dem gebaut wurde, und dort liegen noch Dateien.
-    SolidWorks lädt aber `teile/` neben der Baugruppe (S19c P.c1); kopiert wird, was das Öffnen lädt, mit relativer Struktur."""
+    """Task 13 live (Muster im Git): Die gespeicherten Pfade zeigen in den Ordner, in dem gebaut wurde, und dort liegen noch
+    Dateien. SolidWorks lädt aber `teile/` neben der Baugruppe (S19c P.c1); kopiert wird, was das Öffnen lädt, mit relativer
+    Struktur."""
     alt = u.kunde.parent / "gebaut"
     for rel in ORIGINALE:
         (alt / rel).parent.mkdir(parents=True, exist_ok=True)
         (alt / rel).write_bytes(b"anderer Stand " + rel.encode())
     u.app.referenzen, u.app.gespeichert_in = [alt / rel for rel in ORIGINALE], alt
+    u.app.abhaengig["Unter.SLDASM"] = [str(alt / "teile" / "Welle.SLDPRT")]
     aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
     d = lade_dateien(u.r, "a1", 1)
     assert sorted(rel for rel in d if not d[rel].get("haupt")) == sorted(ORIGINALE)
     assert {rel: d[rel]["original"] for rel in ORIGINALE} == {rel: str(u.kunde / rel) for rel in ORIGINALE}
+
+
+def test_teile_fehlen_am_neuen_ort_alter_ort_vorhanden(u):
+    """Korrektur Task 13: Fehlt `teile/` neben der Baugruppe, lösen die Suchregeln auf den gespeicherten Pfad auf (S19c P.c3);
+    das ist der Ort, den das Öffnen lädt, also wird von dort kopiert, flach wie jede Datei außerhalb des Ordners."""
+    alt = u.kunde.parent / "gebaut"
+    for rel in ORIGINALE:
+        (alt / rel).parent.mkdir(parents=True, exist_ok=True)
+        (alt / rel).write_bytes(b"gebauter Stand " + rel.encode())
+    for rel in ORIGINALE[1:]:
+        (u.kunde / rel).unlink()
+    u.app.referenzen, u.app.gespeichert_in = [alt / rel for rel in ORIGINALE], alt
+    u.app.abhaengig["Unter.SLDASM"] = [str(alt / "teile" / "Welle.SLDPRT")]
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    d = lade_dateien(u.r, "a1", 1)
+    soll = {"Unter.SLDASM": u.kunde / "Unter.SLDASM", **{Path(rel).name: alt / rel for rel in ORIGINALE[1:]}}
+    assert {rel: e["original"] for rel, e in d.items() if not e.get("haupt")} == {rel: str(q) for rel, q in soll.items()}
+
+
+def test_dokument_aus_anderem_ort_offen_bricht_ab(u):
+    """Korrektur Task 13: Ein gleichnamiges offenes Dokument (frühere Ausgabe) gewinnt die Suche (S19c P.c4). `aufnehmen` verlangt
+    darum eine leere Sitzung und kopiert nichts."""
+    ausgabe = u.kunde.parent / "ausgabe" / "Schlitten.SLDPRT"
+    ausgabe.parent.mkdir()
+    ausgabe.write_bytes(b"alte Ausgabe")
+    u.app.OpenDoc6(str(ausgabe), 1, 0, "", None, None)
+    with pytest.raises(BestandFehler) as e:
+        aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert e.value.daten["code"] == BESTAND_SITZUNG_BELEGT and "sw_neustart" in str(e.value)
+    assert aufnahmen(u.r, "a1") == []
+
+
+def test_dokument_aus_anderem_ort_trotz_leerer_sitzung(u, monkeypatch):
+    """Die zweite Verteidigung: Löst eine Referenz trotzdem an einen dritten Ort auf, weder gespeichert noch im Ordner der
+    Baugruppe, bricht die Aufnahme mit beiden Pfaden ab (`pruefe_aufloesung`)."""
+    ausgabe = u.kunde.parent / "ausgabe" / "Schlitten.SLDPRT"
+    ausgabe.parent.mkdir()
+    ausgabe.write_bytes(b"alte Ausgabe")
+    u.app.OpenDoc6(str(ausgabe), 1, 0, "", None, None)
+    monkeypatch.setattr(type(u.app), "GetDocumentCount", property(lambda self: 0))
+    with pytest.raises(BestandFehler) as e:
+        aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert e.value.daten["code"] == BESTAND_REFERENZ_EXTERN and str(ausgabe) in str(e.value)
+    assert aufnahmen(u.r, "a1") == []
 
 
 def test_abgeleitetes_teil_traegt_seine_referenz_relativ(u):
@@ -262,6 +308,7 @@ def test_herkunft_und_belegter_auftrag(u):
     haupt.write_bytes(b"haupt")
     u.app.original = haupt
     u.app.referenzen = [lauf / rel for rel in ORIGINALE]
+    u.app.abhaengig["Unter.SLDASM"] = [str(lauf / "teile" / "Welle.SLDPRT")]
     (lauf / "teile").mkdir()
     for rel in ORIGINALE:
         (lauf / rel).write_bytes(rel.encode())
