@@ -450,6 +450,33 @@ def test_zeige_komponente_oeffnet_ueber_den_pfadschutz(aufgenommen):
     assert u.app.offen == []
 
 
+def test_zeige_komponente_schaltet_hinter_der_sperre_um(u, monkeypatch):
+    """§8.1a: `zeige` wählt die Konfiguration, in der die aktiv unterdrückte Komponente lädt. Lädt sie dort vom gespeicherten Pfad,
+    sperrt die zweite Sperre nach dem Wechsel, gezeigt wird nichts, geschlossen ohne Speichern (Korrektur 1, I1)."""
+    asm = muster_baugruppe(u.asm.wurzel, konfigurationen=("Standard", "Variante"))
+    u.app.baugruppe = asm
+    asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    asm.pfade_wie_gespeichert = u.kunde
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    asm.vom_original = {"Schraube-1"}
+    gesehen = []
+    monkeypatch.setattr(befehle, "zeige_komponente", lambda app, m, name, ziel: gesehen.append(m.aktiv))
+    with pytest.raises(BestandFehler) as e:
+        befehle.zeige("a1", None, None, "Schraube-1")
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and "Umschalten auf Variante" in e.value.daten["wo"]
+    assert gesehen == [] and u.app.offen == [] and asm.gespeichert == []
+
+
+def test_zeige_komponente_in_der_anderen_konfiguration_ohne_fund(u, monkeypatch):
+    asm = muster_baugruppe(u.asm.wurzel, konfigurationen=("Standard", "Variante"))
+    u.app.baugruppe = asm
+    asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    gesehen = []
+    monkeypatch.setattr(befehle, "zeige_komponente", lambda app, m, name, ziel: gesehen.append(m.aktiv))
+    assert befehle.zeige("a1", None, None, "Schraube-1")["konfiguration"] == "Variante" and gesehen == ["Variante"]
+
+
 def test_zeige_unbekannte_komponente(aufgenommen):
     with pytest.raises(BestandFehler) as e:
         befehle.zeige("a1", None, None, "Gibt-es-nicht")

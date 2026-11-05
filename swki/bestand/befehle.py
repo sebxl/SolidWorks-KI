@@ -11,10 +11,10 @@ from swki.bestand.ablage import (AUFNAHME_DATEI, aufnahmen, bestand_ordner, herk
                                  lade_aufnahme, pruefe_auftrag_frei, pruefe_format, schreibe_aufnahme, schreibe_herkunft,
                                  sha_original, spec_laeufe, verwirf_aufnahme)
 from swki.bestand.fehler import BESTAND_PFAD_FREMD, BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, BESTAND_UNBEKANNT, BestandFehler
-from swki.bestand.pfade import oeffne_in
+from swki.bestand.pfade import oeffne_in, sperre_beim_umschalten
 from swki.bestand.spec import einheit_text
-from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, zeige_feature, zeige_komponente,
-                                     zeige_mass)
+from swki.bestand.sw_bestand import (externe_referenzen, lies_bestand, pruefe_version, schalte, zeige_feature,
+                                     zeige_komponente, zeige_mass)
 from swki.cli import ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import lade_rechner
@@ -128,6 +128,14 @@ def _dateiname(name: str) -> str:
     return re.sub(r'[\\/:*?"<>|@\s]+', "_", name)
 
 
+def _schalte_fuers_bild(model, konfiguration: str, aktiv: str) -> None:
+    """Wechsel hinter der zweiten Sperre (§8.1a): In der gewählten Konfiguration lädt womöglich gerade die Komponente, die in der
+    aktiven unterdrückt war, und das vom gespeicherten Pfad. Geschlossen wird vom Aufrufer."""
+    if konfiguration != aktiv:
+        with sperre_beim_umschalten(model, konfiguration):
+            schalte(model, konfiguration)
+
+
 def komponente_sichtbar_in(aufnahme: dict, name: str) -> str:
     """Konfiguration für ein Bild der Komponente: die aktive, außer sie ist dort unterdrückt."""
     weg = aufnahme["komponenten"][name]["unterdrueckt"]
@@ -146,8 +154,7 @@ def _zeige_komponente(r, auftrag: str, nummer: int, a: dict, name: str) -> dict:
     app = verbinde(r.sw_jahr)
     asm = oeffne_in(app, ordner / a["datei"]["name"], ordner, sichtbar=True, nur_lesen=True)
     try:
-        if konfiguration != a["aktiv"]:
-            asm.ShowConfiguration2(konfiguration)
+        _schalte_fuers_bild(asm, konfiguration, a["aktiv"])
         zeige_komponente(app, asm, name, ziel)
     finally:
         sw.schliesse(app, asm)
@@ -182,8 +189,7 @@ def zeige(auftrag: str, mass: str | None, feature: str | None, komponente: str |
     app = verbinde(r.sw_jahr)
     model = oeffne_in(app, ordner / a["datei"]["name"], ordner, sichtbar=True, nur_lesen=True)
     try:
-        if konfiguration != a["aktiv"]:
-            model.ShowConfiguration2(konfiguration)
+        _schalte_fuers_bild(model, konfiguration, a["aktiv"])
         if mass is not None:
             zeige_mass(app, model, eintrag, ziel)
         else:
