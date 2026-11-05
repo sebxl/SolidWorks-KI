@@ -21,7 +21,7 @@ from swki.compiler.fehler import REFERENZ_NICHT_GEFUNDEN, UNBEKANNTER_TYP, BauFe
 from swki.compiler.protokoll import Protokoll
 from swki.normteile.fehler import NormteilFehler
 from swki.pruefung.geometrie import Messgeometrie
-from tests.bestand.sw_attrappe_baugruppe import lage, muster_baugruppe
+from tests.bestand.sw_attrappe_baugruppe import geschuetzt, lage, muster_baugruppe
 
 KONFIGURATIONEN = ("Standard", "Leicht")
 QUELLE = {"normteil": "ISO 4762 M5x20"}
@@ -32,7 +32,7 @@ ALLE_SCHRAUBEN = {"id": "p1", "komponente": "Schraube-1", "quelle": QUELLE, "all
 def kontext_von(tmp_path: Path, spec: dict | None = None, konfigurationen=KONFIGURATIONEN) -> BauKontext:
     ordner = tmp_path / "A1" / "lauf-3"
     ordner.mkdir(parents=True)
-    asm = muster_baugruppe(ordner, konfigurationen)
+    asm = geschuetzt(muster_baugruppe(ordner, konfigurationen))
     auftrag = tmp_path / "auftraege" / "A1"
     auftrag.mkdir(parents=True)
     aufnahme = {"konfigurationen": list(konfigurationen), "aktiv": konfigurationen[0], "dateien": {},
@@ -304,6 +304,7 @@ def test_neu_wie_nimmt_den_pfad_im_lauf_nie_den_gespeicherten(b, tmp_path, monke
 
     monkeypatch.setattr(punkte_baugruppe, "oeffne_in", oeffne_in)
     b.asm.pfade_wie_gespeichert = tmp_path / "kundenordner"
+    geschuetzt(b.asm, [b.ordner / "teile" / "Schraube.SLDPRT"])  # Sperre 1 hat die Kopie aufgelöst
     b.aufnahme["dateien"] = {"teile/Schraube.SLDPRT": {}}
     for n in range(1, 12):
         b.asm.komp(f"Schraube-{n}").unterdrueckt.add("Standard")

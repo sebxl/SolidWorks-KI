@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 
+from swki.bestand import pfade
 from tests.bestand.sw_attrappe import Eigenschaften, Gleichungen
 
 EINS = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
@@ -712,6 +713,13 @@ class App:
     def CloseDoc(self, titel):
         self.ereignisse.append(("zu", titel))
         self.offen = [d for d in self.offen if d.GetTitle != titel]
+
+
+def geschuetzt(asm: Baugruppe, aufgeloest=()) -> Baugruppe:
+    """Wie nach `oeffne_in`: Der Pfadschutz kennt die Baugruppe, ein Wechsel prüft sie (eine unbekannte unter `bestand-<n>` bzw.
+    `lauf-<n>` sperrte er). Ohne Dokumente im Speicher; `aufgeloest`: was Sperre 1 aufgelöst hätte."""
+    pfade.schuetze(SimpleNamespace(GetDocuments=None), asm, Path(asm.GetPathName), asm.wurzel, [str(p) for p in aufgeloest])
+    return asm
 
 
 def muster_baugruppe(wurzel: Path, konfigurationen=("Standard",)) -> Baugruppe:

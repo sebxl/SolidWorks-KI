@@ -18,7 +18,8 @@ from swki.bestand.sw_baugruppe_bestand import (VERKNUEPFUNG_UNERREICHT, baum_ohn
                                                lies_komponenten, lies_verknuepfungen, mechanik_fuer)
 from swki.bestand.vergleich_baugruppe import vergleiche_baugruppe
 from swki.compiler.fehler import BauFehler
-from tests.bestand.sw_attrappe_baugruppe import Bezug, Interferenz, Knoten, Kollisionen, Mate, Seite, lage, muster_baugruppe
+from tests.bestand.sw_attrappe_baugruppe import (Bezug, Interferenz, Knoten, Kollisionen, Mate, Seite, geschuetzt, lage,
+                                                 muster_baugruppe)
 
 SPEC = {"art": "aenderung", "punkte": [], "bereiche": []}
 APP = SimpleNamespace(GetProcessID=os.getpid())
@@ -26,7 +27,7 @@ APP = SimpleNamespace(GetProcessID=os.getpid())
 
 @pytest.fixture
 def asm(tmp_path):
-    return muster_baugruppe(tmp_path / "bestand-1", ("Standard", "Leicht"))
+    return geschuetzt(muster_baugruppe(tmp_path / "bestand-1", ("Standard", "Leicht")))
 
 
 # --- Komponenten ------------------------------------------------------------------------------------------------------
@@ -113,9 +114,11 @@ def test_virtuelle_komponente_traegt_den_namen_ohne_pfad_in_der_kopie(asm):
 
 
 def test_pfad_ausserhalb_der_kopie_wird_ueber_den_namen_zugeordnet(asm):
-    """API-Hilfe `GetPathName`: Bei einer unterdrückten Komponente steht der gespeicherte Pfad da, nicht der aufgelöste."""
+    """S19c T8.9: Bei einer unterdrückten Komponente steht der gespeicherte Pfad da, nicht der aufgelöste."""
     k = asm.komp("Schraube-1")
     k.__class__ = type("Gespeichert", (k.__class__,), {"GetPathName": "D:\\Kunde\\teile\\Schraube.SLDPRT"})
+    k.unterdrueckt.add("Standard")
+    geschuetzt(asm, [asm.wurzel / "teile" / "Schraube.SLDPRT"])
     aus = lies_komponenten(asm, ["Standard"], ["teile/Schraube.SLDPRT"])
     assert aus["Schraube-1"]["datei"] == "teile/Schraube.SLDPRT"
 

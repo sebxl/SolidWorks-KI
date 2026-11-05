@@ -177,6 +177,67 @@ def test_unterdrueckte_komponente_mit_gespeichertem_pfad_sichert_die_erste_sperr
     assert pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel) is app.dok and app.geschlossen == []
 
 
+def test_unterdrueckt_nicht_aufgeloest_sagt_das_auch(wurzel, tmp_path):
+    """Sie lädt nicht, sie ist nur nicht gesichert: Die Meldung sagt es so (Korrektur 1, M3)."""
+    fremd = tmp_path / "kunde" / "orig.SLDPRT"
+    app = App(wurzel, komponenten=[Komp(fremd, unterdrueckt=True)])
+    with pytest.raises(BestandFehler) as e:
+        pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    assert "unterdrückt, von Sperre 1 nicht aufgelöst" in str(e.value) and "würde" not in str(e.value)
+    assert e.value.daten["unaufgeloest"] == [str(fremd)] and e.value.daten["pfade"] == [str(fremd)]
+
+
+@pytest.mark.parametrize("unter, ok", [("A", True), ("B", False)])
+def test_unterdrueckte_nach_relativer_lage_in_der_kopie(wurzel, tmp_path, unter, ok):
+    """Gleicher Dateiname in zwei Unterordnern: Gesichert ist nur, was Sperre 1 an derselben relativen Lage aufgelöst hat
+    (Korrektur 1, M1)."""
+    gespeichert = tmp_path / "kunde" / unter / "X.SLDPRT"
+    app = App(wurzel, abhaengig=[wurzel / "A" / "X.SLDPRT"], komponenten=[Komp(gespeichert, unterdrueckt=True)])
+    if ok:
+        pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    else:
+        with pytest.raises(BestandFehler):
+            pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+
+
+def test_flach_aufgeloest_sichert_jede_lage(wurzel, tmp_path):
+    """Die Datei neben der Baugruppe hat Vorrang (S18g, S19c P.c2): Sie sichert den gespeicherten Pfad in jedem Unterordner."""
+    app = App(wurzel, abhaengig=[wurzel / "X.SLDPRT"], komponenten=[Komp(tmp_path / "kunde" / "B" / "X.SLDPRT", unterdrueckt=True)])
+    pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+
+
+def test_umschalten_ohne_eintrag_im_bestandsordner_bricht_ab(tmp_path):
+    """Fällt geschlossen aus (Korrektur 1, M2): Ein Dokument unter `bestand-<n>`/`lauf-<n>`, das `oeffne_in` nicht kennt."""
+    for ordner in ("bestand-2", "lauf-7"):
+        with pytest.raises(BestandFehler) as e:
+            with pfade.sperre_beim_umschalten(Dok(tmp_path / "A" / ordner / "Asm.SLDASM", []), "Standard"):
+                pass
+        assert e.value.daten["code"] == BESTAND_PFAD_FREMD and "oeffne_in" in str(e.value)
+
+
+def test_umschalten_findet_den_eintrag_unabhaengig_von_der_schreibweise(wurzel, tmp_path):
+    app = App(wurzel, komponenten=[Komp(wurzel / "a.SLDPRT")])
+    pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    anders = Dok(Path(str(wurzel / "unter" / ".." / "ASM.sldasm").upper()), [Komp(wurzel / "a.SLDPRT")])
+    fremd = tmp_path / "kunde" / "Nachgeladen.SLDPRT"
+    with pytest.raises(BestandFehler) as e:
+        with pfade.sperre_beim_umschalten(anders, "Standard"):
+            app.offen.append(Dok(fremd))
+    assert e.value.daten["pfade"] == [str(fremd)]
+
+
+def test_eintrag_verschwindet_mit_dem_dokument(wurzel):
+    """`_GESCHUETZT` hält das Dokument schwach: Ist es weg, steht kein alter App-Handle mehr da."""
+    import gc
+
+    app = App(wurzel, komponenten=[])
+    model = pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    assert pfade._eintrag(model) is not None
+    app.dok = app.offen = model = None
+    gc.collect()
+    assert all(s.wurzel != wurzel for s in pfade._GESCHUETZT.values())
+
+
 def test_gleicher_pfad_aktiv_und_unterdrueckt_bleibt_ein_fund(wurzel, tmp_path):
     """Eine aktive Instanz lädt wirklich von dort: Die unterdrückte daneben entschuldigt sie nicht."""
     fremd = tmp_path / "kunde" / "a.SLDPRT"
@@ -215,8 +276,8 @@ def test_umschalten_ohne_fund_und_ohne_pfadschutz_geht_durch(wurzel):
     model = pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
     with pfade.sperre_beim_umschalten(model, "Standard"):
         pass
-    with pfade.sperre_beim_umschalten(Dok(wurzel / "Fremd.SLDASM", []), "Standard"):
-        pass
+    with pfade.sperre_beim_umschalten(Dok(wurzel.parent.parent / "Fremd.SLDASM", []), "Standard"):
+        pass  # liegt nicht unter bestand-<n>/lauf-<n>
 
 
 def test_komponenten_aller_ebenen_und_hauptdokument_werden_gelesen(wurzel):

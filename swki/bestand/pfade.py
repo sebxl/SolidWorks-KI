@@ -5,10 +5,13 @@ Speichern geschlossen.
 
 Unterdrückte Komponenten (S19c, T8.9): `GetPathName` nennt in der aktiven Konfiguration den gespeicherten Pfad, geladen ist
 nichts; nach dem Umschalten nennen sie und ihre Kinder die Kopie. Die zweite Sperre nimmt sie darum aus, ihren Pfad sichert die
-erste: Ihre Datei muss unter den aufgelösten Referenzen im Ordner stehen. Nach jedem Konfigurationswechsel beim Lesen läuft die
-zweite Sperre erneut (`sperre_beim_umschalten`), dann ist die Komponente geladen und zeigt, woher."""
+erste: Ihre Datei muss an derselben relativen Lage (oder flach daneben) unter den aufgelösten Referenzen im Ordner stehen. Nach
+jedem Konfigurationswechsel beim Lesen läuft die zweite Sperre erneut (`sperre_beim_umschalten`), dann ist die Komponente geladen
+und zeigt, woher. Kennt der Pfadschutz ein Dokument unter `bestand-<n>`/`lauf-<n>` nicht, bricht der Wechsel ab."""
 
 import os
+import re
+import weakref
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
@@ -23,16 +26,21 @@ from swki.verbindung import wert
 SW_UNTERDRUECKT = 0  # swComponentSuppressionState_e.swComponentSuppressed
 
 
+ARBEITSORDNER = re.compile(r"(bestand|lauf)-\d+", re.IGNORECASE)  # Bestandskopie und Lauf (`ablage`, `auftrag`)
+
+
 @dataclass(frozen=True)
 class _Schutz:
-    """Was `oeffne_in` für die Sperre nach einem Konfigurationswechsel braucht."""
+    """Was `oeffne_in` für die Sperre nach einem Konfigurationswechsel braucht. `dokument`: schwach gehalten, ein Eintrag lebt
+    nicht länger als das Dokument (und sein `app`-Handle)."""
 
     app: object
     wurzel: Path
     aufgeloest: tuple[str, ...]  # Sperre 1: aufgelöste Referenzen, alle unter `wurzel`
+    dokument: object             # weakref.ref auf das Dokument, ohne Weakref-Unterstützung eine Funktion, die es liefert
 
 
-_GESCHUETZT: dict[str, _Schutz] = {}  # normierter Pfad → Schutz, je über `oeffne_in` geöffnetes Dokument
+_GESCHUETZT: dict[PureWindowsPath, _Schutz] = {}  # `_schluessel` des Pfads → Schutz, je über `oeffne_in` geöffnetes Dokument
 
 
 def _schluessel(pfad: str) -> PureWindowsPath:
@@ -56,10 +64,18 @@ def aufgeloeste_referenzen(app, pfad: Path) -> list[str]:
     return [p for p in paare[1::2] if p and not ist_virtuell(p)]
 
 
-def _fremd(fremd: list[dict], wo: str, datei: Path) -> BestandFehler:
-    liste = [e["pfad"] for e in fremd]
-    return BestandFehler(BESTAND_PFAD_FREMD, f"SolidWorks würde bei {datei.name} {len(liste)} Dateien außerhalb des Ordners "
-                                             f"laden ({wo}): {', '.join(liste)}", pfade=liste, wo=wo, datei=str(datei))
+def _fremd(fremd: list[dict], wo: str, datei: Path, unaufgeloest: list[str] = ()) -> BestandFehler:
+    """`unaufgeloest`: unterdrückte Komponenten, deren gespeicherter Pfad außerhalb liegt und die Sperre 1 nicht gesichert hat.
+    Sie laden (noch) nicht, die Meldung sagt das."""
+    liste, weg = [e["pfad"] for e in fremd], list(unaufgeloest)
+    teile = []
+    if aktiv := [p for p in liste if p not in weg]:
+        teile.append(f"SolidWorks würde bei {datei.name} {len(aktiv)} Dateien außerhalb des Ordners laden ({wo}): {', '.join(aktiv)}")
+    if weg:
+        teile.append(f"{datei.name}: {len(weg)} Komponenten mit gespeichertem Pfad außerhalb des Ordners ({wo}), unterdrückt, von "
+                     f"Sperre 1 nicht aufgelöst: {', '.join(weg)}")
+    return BestandFehler(BESTAND_PFAD_FREMD, "; ".join(teile), pfade=liste, wo=wo, datei=str(datei),
+                         **({"unaufgeloest": weg} if weg else {}))
 
 
 def _eintraege(pfade: list[str]) -> list[dict]:
@@ -123,12 +139,27 @@ def pruefe_geladen(app, model, wurzel: Path, vorher: set[str], aufgeloest: list[
     `wurzel`. Eine unterdrückte Komponente außerhalb zählt nicht, wenn Sperre 1 ihre Datei im Ordner aufgelöst hat (`aufgeloest`,
     ohne Angabe die von `oeffne_in`; fehlt beides, ist sie ein Fund)."""
     if aufgeloest is None:
-        schutz = _GESCHUETZT.get(_norm(wert(model.GetPathName)))
+        schutz = _eintrag(model)
         aufgeloest = list(schutz.aufgeloest) if schutz else []
-    im_ordner = {e["name"].casefold() for e in _eintraege(aufgeloest) if not fremde_pfade([e], wurzel)}
-    geladen = geladene_pfade(app, model, vorher)
-    fremd = [e["pfad"] for e in fremde_pfade(geladen, wurzel) if not (e["unterdrueckt"] and e["name"].casefold() in im_ordner)]
-    return eintrag("pfade", not fremd, geladen=len(geladen), fremd=fremd)
+    ordner = _schluessel(str(wurzel))
+    gesichert = [_schluessel(p).relative_to(ordner).parts for p in aufgeloest if _schluessel(p).is_relative_to(ordner)]
+    fremd, unaufgeloest, geladen = [], [], geladene_pfade(app, model, vorher)
+    for e in fremde_pfade(geladen, wurzel):
+        if not e["unterdrueckt"]:
+            fremd.append(e["pfad"])
+        elif not _an_derselben_lage(e["pfad"], gesichert):
+            fremd.append(e["pfad"])
+            unaufgeloest.append(e["pfad"])
+    return eintrag("pfade", not fremd, geladen=len(geladen), fremd=fremd,
+                   **({"unaufgeloest": unaufgeloest} if unaufgeloest else {}))
+
+
+def _an_derselben_lage(gespeichert: str, gesichert: list[tuple[str, ...]]) -> bool:
+    """Der gespeicherte Pfad endet auf eine relative Lage, die Sperre 1 im Ordner aufgelöst hat: `teile/X` sichert `…/teile/X`,
+    eine flache `X` jede Lage (die Datei daneben hat Vorrang, S18g, S19c P.c2). Gleiche Namen in zwei Unterordnern bleiben
+    getrennt."""
+    teile = PureWindowsPath(gespeichert.lower()).parts
+    return any(len(rel) <= len(teile) and teile[len(teile) - len(rel):] == rel for rel in gesichert)
 
 
 def _schliesse_still(app, model) -> str | None:
@@ -154,13 +185,36 @@ def oeffne_in(app, pfad: Path, wurzel: Path, sichtbar: bool = False, nur_lesen: 
         _schliesse_still(app, model)  # scheitert die Prüfung selbst, bleibt das Dokument nicht offen; die Ursache kommt durch
         raise
     if not geladen["ok"]:
-        fehler = _fremd([{"pfad": p} for p in geladen["fremd"]], "nach dem Öffnen", pfad)
+        fehler = _fremd([{"pfad": p} for p in geladen["fremd"]], "nach dem Öffnen", pfad, geladen.get("unaufgeloest", ()))
         schliessfehler = _schliesse_still(app, model)
         if schliessfehler is not None:
             fehler.daten["schliessen_fehlgeschlagen"] = schliessfehler  # der Pfadbefund bleibt, das Dokument ist noch offen
         raise fehler
-    _GESCHUETZT[_norm(str(pfad))] = _Schutz(app, Path(wurzel), tuple(aufgeloest))
+    schuetze(app, model, pfad, wurzel, aufgeloest)
     return model
+
+
+def schuetze(app, model, pfad: Path, wurzel: Path, aufgeloest=()) -> None:
+    """Eintrag für `sperre_beim_umschalten`. Stirbt das Dokument, verschwindet er, außer ein späteres Öffnen hat ihn ersetzt."""
+    schluessel = _schluessel(str(pfad))
+    try:
+        ref = weakref.ref(model)
+        weakref.finalize(model, _vergiss, schluessel, ref)
+    except TypeError:  # kein Weakref (Attrappe ohne `__weakref__`): stark gehalten, ein späteres Öffnen ersetzt ihn
+        ref = lambda: model  # noqa: E731
+    _GESCHUETZT[schluessel] = _Schutz(app, Path(wurzel), tuple(aufgeloest), ref)
+
+
+def _vergiss(schluessel: PureWindowsPath, ref) -> None:
+    if (s := _GESCHUETZT.get(schluessel)) is not None and s.dokument is ref:
+        del _GESCHUETZT[schluessel]
+
+
+def _eintrag(model) -> _Schutz | None:
+    """Der Eintrag zum Pfad des Dokuments, verglichen nach `resolve` ohne Schreibweise; einer, dessen Dokument tot ist, zählt nicht."""
+    pfad = wert(model.GetPathName)
+    s = _GESCHUETZT.get(_schluessel(pfad)) if pfad else None
+    return s if s is not None and s.dokument() is not None else None
 
 
 @contextmanager
@@ -168,14 +222,20 @@ def sperre_beim_umschalten(model, konfiguration: str):
     """Sperre 2 nach einem Konfigurationswechsel (§8.1a, S19c T8.9): Der Block schaltet um und baut neu auf, danach muss alles
     Geladene wieder im Ordner liegen, auch eine eben aufgehobene Komponente; ein Dokument, das der Wechsel nachlädt, zählt mit.
     `BESTAND_PFAD_FREMD`, geschlossen wird vom Aufrufer (alle schließen im `finally`). Ein Dokument, das nicht über `oeffne_in`
-    aufging, gehört nicht zum Bestand und wird nicht geprüft."""
+    aufging, gehört nicht zum Bestand und wird nicht geprüft; liegt es aber unter `bestand-<n>`/`lauf-<n>`, fällt die Sperre
+    geschlossen aus: `BESTAND_PFAD_FREMD`, bevor umgeschaltet wird."""
     pfad = wert(model.GetPathName)
-    schutz = _GESCHUETZT.get(_norm(pfad)) if pfad else None
+    schutz = _eintrag(model)
     if schutz is None:
+        if pfad and any(ARBEITSORDNER.fullmatch(t) for t in PureWindowsPath(pfad).parts[:-1]):
+            raise BestandFehler(BESTAND_PFAD_FREMD, f"{Path(pfad).name} liegt in einem Bestands- oder Lauf-Ordner, ist aber nicht "
+                                                    f"über oeffne_in geöffnet: Der Wechsel auf {konfiguration} bliebe ungeprüft",
+                                pfade=[], wo=f"vor dem Umschalten auf {konfiguration}", datei=pfad)
         yield
         return
     vorher = offene_dokumente(schutz.app)
     yield
     geladen = pruefe_geladen(schutz.app, model, schutz.wurzel, vorher, list(schutz.aufgeloest))
     if not geladen["ok"]:
-        raise _fremd([{"pfad": p} for p in geladen["fremd"]], f"nach dem Umschalten auf {konfiguration}", Path(pfad))
+        raise _fremd([{"pfad": p} for p in geladen["fremd"]], f"nach dem Umschalten auf {konfiguration}", Path(pfad),
+                     geladen.get("unaufgeloest", ()))
