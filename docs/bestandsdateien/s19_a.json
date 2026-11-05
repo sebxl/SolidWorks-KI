@@ -1,0 +1,2154 @@
+{
+ "zeile": "a",
+ "start_mb": 437,
+ "spitze_mb": 3212,
+ "halt": [],
+ "fragen": {
+  "T8.1": {
+   "frage": "Ist Variation ungleich 0 der richtige Test auf eine Grenze, oder Typname MateLimitDistanceDim, IsAdvancedMate? min = max?",
+   "antworten": [
+    {
+     "fall": "Grenze gegen Abstand",
+     "wert": {
+      "Hub": {
+       "name": "Hub",
+       "typname": "MateLimitDistanceDim",
+       "unterdrueckt_alt": false,
+       "unterdrueckt": false,
+       "fehler": 0,
+       "typ": 5,
+       "ausrichtung": 0,
+       "entitaeten": [
+        {
+         "komponente_none": false,
+         "name": "'Schlitten-1'",
+         "referenz_typ": 2
+        },
+        {
+         "komponente_none": false,
+         "name": "'Grundplatte-1'",
+         "referenz_typ": 2
+        }
+       ],
+       "variation": [
+        0.0,
+        0.025
+       ],
+       "d1": 0.0,
+       "masse": [
+        "D1@Hub@Hubeinheit.Assembly"
+       ],
+       "definition": {
+        "Distance": 0.0,
+        "MinimumDistance": 0.0,
+        "MaximumDistance": 0.025,
+        "Angle": {
+         "fehler": "AttributeError: <unknown>.Angle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+        },
+        "MinimumAngle": {
+         "fehler": "AttributeError: <unknown>.MinimumAngle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+        },
+        "MaximumAngle": {
+         "fehler": "AttributeError: <unknown>.MaximumAngle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+        },
+        "FlipDimension": false,
+        "IsAdvancedMate": true
+       }
+      },
+      "Abstand": {
+       "name": "Schlitten Seite",
+       "typname": "MateDistanceDim",
+       "unterdrueckt_alt": false,
+       "unterdrueckt": false,
+       "fehler": 0,
+       "typ": 5,
+       "ausrichtung": 0,
+       "entitaeten": [
+        {
+         "komponente_none": false,
+         "name": "'Schlitten-1'",
+         "referenz_typ": 2
+        },
+        {
+         "komponente_none": false,
+         "name": "'Grundplatte-1'",
+         "referenz_typ": 2
+        }
+       ],
+       "variation": [
+        0.0,
+        0.0
+       ],
+       "d1": 0.015,
+       "masse": [
+        "D1@Schlitten Seite@Hubeinheit.Assembly"
+       ],
+       "definition": {
+        "Distance": 0.015,
+        "MinimumDistance": 0.015,
+        "MaximumDistance": 0.015,
+        "Angle": {
+         "fehler": "AttributeError: <unknown>.Angle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+        },
+        "MinimumAngle": {
+         "fehler": "AttributeError: <unknown>.MinimumAngle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+        },
+        "MaximumAngle": {
+         "fehler": "AttributeError: <unknown>.MaximumAngle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+        },
+        "FlipDimension": false,
+        "IsAdvancedMate": false
+       }
+      }
+     }
+    },
+    {
+     "fall": "min gleich max",
+     "wert": {
+      "anlegen": {
+       "status": 1,
+       "neu": [
+        "Hub gleich"
+       ]
+      },
+      "neuaufbau": true,
+      "roh": {
+       "name": "Hub gleich",
+       "typname": "MateDistanceDim",
+       "unterdrueckt_alt": false,
+       "unterdrueckt": false,
+       "fehler": 0,
+       "typ": 5,
+       "ausrichtung": 0,
+       "entitaeten": [
+        {
+         "komponente_none": false,
+         "name": "'Schlitten-1'",
+         "referenz_typ": 2
+        },
+        {
+         "komponente_none": false,
+         "name": "'Grundplatte-1'",
+         "referenz_typ": 2
+        }
+       ],
+       "variation": [
+        0.0,
+        0.0
+       ],
+       "d1": 0.01,
+       "masse": [
+        "D1@Hub gleich@Hubeinheit.Assembly"
+       ],
+       "definition": {
+        "Distance": 0.01,
+        "MinimumDistance": 0.01,
+        "MaximumDistance": 0.01,
+        "Angle": {
+         "fehler": "AttributeError: <unknown>.Angle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+        },
+        "MinimumAngle": {
+         "fehler": "AttributeError: <unknown>.MinimumAngle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+        },
+        "MaximumAngle": {
+         "fehler": "AttributeError: <unknown>.MaximumAngle",
+         "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+        },
+        "FlipDimension": false,
+        "IsAdvancedMate": false
+       }
+      },
+      "lesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 10.0,
+       "min": null,
+       "max": null,
+       "werte": {
+        "Standard": {
+         "wert": 10.0,
+         "min": null,
+         "max": null
+        }
+       },
+       "grenze": false,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0
+       },
+       "unterdrueckt": {
+        "Standard": false
+       }
+      }
+     }
+    }
+   ]
+  },
+  "P.a1": {
+   "frage": "Woran erkennt man eine Grenzverknüpfung: IMate2 oder GetDefinition?",
+   "antworten": [
+    {
+     "wert": {
+      "Hub": {
+       "Distance": 0.0,
+       "MinimumDistance": 0.0,
+       "MaximumDistance": 0.025,
+       "Angle": {
+        "fehler": "AttributeError: <unknown>.Angle",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+       },
+       "MinimumAngle": {
+        "fehler": "AttributeError: <unknown>.MinimumAngle",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+       },
+       "MaximumAngle": {
+        "fehler": "AttributeError: <unknown>.MaximumAngle",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+       },
+       "FlipDimension": false,
+       "IsAdvancedMate": true
+      },
+      "variation": [
+       0.0,
+       0.025
+      ],
+      "typname": "MateLimitDistanceDim"
+     }
+    }
+   ]
+  },
+  "P.a2": {
+   "frage": "Werte in mm?",
+   "antworten": [
+    {
+     "wert": {
+      "d1_roh": 0.015,
+      "soll_mm": 15,
+      "lesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 15.0,
+       "min": null,
+       "max": null,
+       "werte": {
+        "Standard": {
+         "wert": 15.0,
+         "min": null,
+         "max": null
+        }
+       },
+       "grenze": false,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0
+       },
+       "unterdrueckt": {
+        "Standard": false
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T8.2": {
+   "frage": "Trägt jeder Abstand und Winkel ein Maß D1? Heißen fremde anders, gibt es Variation ohne Grenze?",
+   "antworten": [
+    {
+     "wert": {
+      "Schlitten Auflage": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Schlitten Seite": {
+       "d1": 0.015,
+       "masse": [
+        "D1@Schlitten Seite@Hubeinheit.Assembly"
+       ],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Hub": {
+       "d1": 0.0,
+       "masse": [
+        "D1@Hub@Hubeinheit.Assembly"
+       ],
+       "variation": [
+        0.0,
+        0.025
+       ]
+      },
+      "Anschlag1 Auflage": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Anschlag1 Mitte": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Anschlag1 Lage": {
+       "d1": 0.03,
+       "masse": [
+        "D1@Anschlag1 Lage@Hubeinheit.Assembly"
+       ],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Anschlag2 Auflage": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Anschlag2 Mitte": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Anschlag2 Lage": {
+       "d1": 0.07,
+       "masse": [
+        "D1@Anschlag2 Lage@Hubeinheit.Assembly"
+       ],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Antrieb vorne": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Antrieb rechts": {
+       "d1": null,
+       "masse": [],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      },
+      "Antrieb Abstand": {
+       "d1": 0.08,
+       "masse": [
+        "D1@Antrieb Abstand@Hubeinheit.Assembly"
+       ],
+       "variation": [
+        0.0,
+        0.0
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "T8.4": {
+   "frage": "ReferenceComponent an einer Ebene der Hauptbaugruppe: None oder Wurzelkomponente? In einer Unterbaugruppe?",
+   "antworten": [
+    {
+     "fall": "Hauptbaugruppe",
+     "wert": {
+      "Antrieb vorne": [
+       {
+        "komponente_none": false,
+        "name": "'Muster-1'",
+        "referenz_typ": 4
+       },
+       {
+        "komponente_none": false,
+        "name": "'Hubeinheit'",
+        "referenz_typ": 4
+       }
+      ],
+      "Antrieb rechts": [
+       {
+        "komponente_none": false,
+        "name": "'Muster-1'",
+        "referenz_typ": 4
+       },
+       {
+        "komponente_none": false,
+        "name": "'Hubeinheit'",
+        "referenz_typ": 4
+       }
+      ],
+      "Antrieb Abstand": [
+       {
+        "komponente_none": false,
+        "name": "'Muster-1/Lagerdeckel-1'",
+        "referenz_typ": 2
+       },
+       {
+        "komponente_none": false,
+        "name": "'Grundplatte-1'",
+        "referenz_typ": 2
+       }
+      ]
+     }
+    },
+    {
+     "fall": "Verknüpfung in der Unterbaugruppe",
+     "wert": {
+      "Deckungsgleich1": [
+       {
+        "komponente_none": false,
+        "name": "'Lagerdeckel-1'",
+        "referenz_typ": 2
+       },
+       {
+        "komponente_none": false,
+        "name": "'gm42-10-1'",
+        "referenz_typ": 4
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "P.a3": {
+   "frage": "Partner bei Ebene der Baugruppe?",
+   "antworten": [
+    {
+     "wert": {
+      "lesen": [
+       "Muster-1",
+       "Hubeinheit"
+      ],
+      "roh": [
+       {
+        "komponente_none": false,
+        "name": "'Muster-1'",
+        "referenz_typ": 4
+       },
+       {
+        "komponente_none": false,
+        "name": "'Hubeinheit'",
+        "referenz_typ": 4
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "T8.5": {
+   "frage": "Gibt eine unterdrückte Verknüpfung GetSpecificFeature2, Type, MateEntity, Parameter(D1) her?",
+   "antworten": [
+    {
+     "wert": {
+      "name": "Antrieb Abstand",
+      "typname": "MateDistanceDim",
+      "unterdrueckt_alt": false,
+      "unterdrueckt": false,
+      "fehler": 0,
+      "typ": 5,
+      "ausrichtung": 1,
+      "entitaeten": [
+       {
+        "komponente_none": false,
+        "name": "'Hubeinheit'",
+        "referenz_typ": 2
+       },
+       {
+        "komponente_none": false,
+        "name": "'Grundplatte-1'",
+        "referenz_typ": 2
+       }
+      ],
+      "variation": [
+       0.0,
+       0.0
+      ],
+      "d1": 0.08,
+      "masse": [
+       "D1@Antrieb Abstand@Hubeinheit.Assembly"
+      ],
+      "definition": {
+       "Distance": 0.08,
+       "MinimumDistance": 0.08,
+       "MaximumDistance": 0.08,
+       "Angle": {
+        "fehler": "AttributeError: <unknown>.Angle",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+       },
+       "MinimumAngle": {
+        "fehler": "AttributeError: <unknown>.MinimumAngle",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+       },
+       "MaximumAngle": {
+        "fehler": "AttributeError: <unknown>.MaximumAngle",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+       },
+       "FlipDimension": false,
+       "IsAdvancedMate": false
+      }
+     }
+    }
+   ]
+  },
+  "T8.26": {
+   "frage": "IsSuppressed2 an einer Verknüpfung je Konfiguration?",
+   "antworten": [
+    {
+     "wert": {
+      "Schlitten Auflage": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Schlitten Seite": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Hub": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Anschlag1 Auflage": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Anschlag1 Mitte": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Anschlag1 Lage": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Anschlag2 Auflage": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Anschlag2 Mitte": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Anschlag2 Lage": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Antrieb vorne": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Antrieb rechts": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      },
+      "Antrieb Abstand": {
+       "Standard": false,
+       "Ohne Antrieb": false
+      }
+     }
+    }
+   ]
+  },
+  "P.a5": {
+   "frage": "Fehlercode 0 heißt kein Fehler (Task 5)?",
+   "antworten": [
+    {
+     "wert": {
+      "Schlitten Auflage": 0,
+      "Schlitten Seite": 0,
+      "Hub": 0,
+      "Anschlag1 Auflage": 0,
+      "Anschlag1 Mitte": 0,
+      "Anschlag1 Lage": 0,
+      "Anschlag2 Auflage": 0,
+      "Anschlag2 Mitte": 0,
+      "Anschlag2 Lage": 0,
+      "Antrieb vorne": 0,
+      "Antrieb rechts": 0,
+      "Antrieb Abstand": 0
+     }
+    }
+   ]
+  },
+  "P.a7": {
+   "frage": "Solving und IsPatternInstance lesbar (Task 5)?",
+   "antworten": [
+    {
+     "wert": {
+      "Schlitten-1": {
+       "loesen": 0,
+       "muster": false
+      },
+      "Grundplatte-1": {
+       "loesen": 0,
+       "muster": false
+      },
+      "Muster-1": {
+       "loesen": 0,
+       "muster": false
+      },
+      "Muster-1/Lagerdeckel-1": {
+       "loesen": 0,
+       "muster": false
+      },
+      "Muster-1/gm42-10-1": {
+       "loesen": 0,
+       "muster": false
+      },
+      "Anschlag-2": {
+       "loesen": 0,
+       "muster": false
+      },
+      "Anschlag-1": {
+       "loesen": 0,
+       "muster": false
+      }
+     }
+    }
+   ]
+  },
+  "P.a4": {
+   "frage": "Abstandswerte exakt oder Betrag (Task 5)?",
+   "antworten": [
+    {
+     "fall": "Abstand 10 umgekehrt",
+     "wert": {
+      "fehler": "com_error: (-2147417848, 'Das aufgerufene Objekt wurde von den Clients getrennt.', None, None)",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\baugruppe\\sw_baugruppe.py\", line 110, in waehle\n    ok = objekt.Select4(anhaengen, daten)\n  File \"<COMObject <unknown>>\", line 2, in Select4\npywintypes.com_error: (-2147417848, 'Das aufgerufene Objekt wurde von den Clients getrennt.', None, None)\n"
+     }
+    }
+   ]
+  },
+  "T8.3": {
+   "frage": "Tragen andere Typen Werte (Breite, Nut, Schraube, Symmetrie)?",
+   "antworten": [
+    {
+     "wert": {
+      "breite": {
+       "angelegt": true,
+       "name_vorher": "Breite1",
+       "roh": {
+        "name": "Probe Breite",
+        "typname": "MateWidth",
+        "unterdrueckt_alt": false,
+        "unterdrueckt": false,
+        "fehler": 0,
+        "typ": 11,
+        "ausrichtung": 0,
+        "entitaeten": [
+         {
+          "komponente_none": false,
+          "name": "'Grundplatte-1'",
+          "referenz_typ": 2
+         },
+         {
+          "komponente_none": false,
+          "name": "'Grundplatte-1'",
+          "referenz_typ": 2
+         },
+         {
+          "komponente_none": false,
+          "name": "'Schlitten-1'",
+          "referenz_typ": 2
+         },
+         {
+          "komponente_none": false,
+          "name": "'Schlitten-1'",
+          "referenz_typ": 2
+         }
+        ],
+        "variation": [
+         0.0,
+         0.0
+        ],
+        "d1": null,
+        "masse": [],
+        "definition": {
+         "Distance": {
+          "fehler": "AttributeError: <unknown>.Distance",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+         },
+         "MinimumDistance": {
+          "fehler": "AttributeError: <unknown>.MinimumDistance",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+         },
+         "MaximumDistance": {
+          "fehler": "AttributeError: <unknown>.MaximumDistance",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+         },
+         "Angle": {
+          "fehler": "AttributeError: <unknown>.Angle",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+         },
+         "MinimumAngle": {
+          "fehler": "AttributeError: <unknown>.MinimumAngle",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+         },
+         "MaximumAngle": {
+          "fehler": "AttributeError: <unknown>.MaximumAngle",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+         },
+         "FlipDimension": false,
+         "IsAdvancedMate": {
+          "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+         }
+        }
+       }
+      },
+      "symmetrie": {
+       "angelegt": true,
+       "name_vorher": "Symmetrisch1",
+       "roh": {
+        "name": "Probe Symmetrie",
+        "typname": "MateSymmetric",
+        "unterdrueckt_alt": false,
+        "unterdrueckt": false,
+        "fehler": 0,
+        "typ": 8,
+        "ausrichtung": 0,
+        "entitaeten": [
+         {
+          "komponente_none": false,
+          "name": "'Grundplatte-1'",
+          "referenz_typ": 4
+         },
+         {
+          "komponente_none": false,
+          "name": "'Schlitten-1'",
+          "referenz_typ": 2
+         },
+         {
+          "komponente_none": false,
+          "name": "'Schlitten-1'",
+          "referenz_typ": 2
+         }
+        ],
+        "variation": [
+         0.0,
+         0.0
+        ],
+        "d1": null,
+        "masse": [],
+        "definition": {
+         "Distance": {
+          "fehler": "AttributeError: <unknown>.Distance",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+         },
+         "MinimumDistance": {
+          "fehler": "AttributeError: <unknown>.MinimumDistance",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+         },
+         "MaximumDistance": {
+          "fehler": "AttributeError: <unknown>.MaximumDistance",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+         },
+         "Angle": {
+          "fehler": "AttributeError: <unknown>.Angle",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+         },
+         "MinimumAngle": {
+          "fehler": "AttributeError: <unknown>.MinimumAngle",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+         },
+         "MaximumAngle": {
+          "fehler": "AttributeError: <unknown>.MaximumAngle",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+         },
+         "FlipDimension": {
+          "fehler": "AttributeError: <unknown>.FlipDimension",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+         },
+         "IsAdvancedMate": {
+          "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+          "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+         }
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ "oeffnen": {
+  "fehler": 0,
+  "warnungen": [],
+  "s": 5.3
+ },
+ "sekunden": 35.4,
+ "ende_mb": 1266,
+ "roh": {
+  "Standard": {
+   "Schlitten Auflage": {
+    "name": "Schlitten Auflage",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 1,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Schlitten-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Schlitten Seite": {
+    "name": "Schlitten Seite",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Schlitten-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.015,
+    "masse": [
+     "D1@Schlitten Seite@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.015,
+     "MinimumDistance": 0.015,
+     "MaximumDistance": 0.015,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": false,
+     "IsAdvancedMate": false
+    }
+   },
+   "Hub": {
+    "name": "Hub",
+    "typname": "MateLimitDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Schlitten-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.025
+    ],
+    "d1": 0.0,
+    "masse": [
+     "D1@Hub@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.0,
+     "MinimumDistance": 0.0,
+     "MaximumDistance": 0.025,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": false,
+     "IsAdvancedMate": true
+    }
+   },
+   "Anschlag1 Auflage": {
+    "name": "Anschlag1 Auflage",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag1 Mitte": {
+    "name": "Anschlag1 Mitte",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag1 Lage": {
+    "name": "Anschlag1 Lage",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.03,
+    "masse": [
+     "D1@Anschlag1 Lage@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.03,
+     "MinimumDistance": 0.03,
+     "MaximumDistance": 0.03,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": true,
+     "IsAdvancedMate": false
+    }
+   },
+   "Anschlag2 Auflage": {
+    "name": "Anschlag2 Auflage",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-2'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag2 Mitte": {
+    "name": "Anschlag2 Mitte",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-2'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag2 Lage": {
+    "name": "Anschlag2 Lage",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-2'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.07,
+    "masse": [
+     "D1@Anschlag2 Lage@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.07,
+     "MinimumDistance": 0.07,
+     "MaximumDistance": 0.07,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": true,
+     "IsAdvancedMate": false
+    }
+   },
+   "Antrieb vorne": {
+    "name": "Antrieb vorne",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Muster-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Hubeinheit'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Antrieb rechts": {
+    "name": "Antrieb rechts",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Muster-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Hubeinheit'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Antrieb Abstand": {
+    "name": "Antrieb Abstand",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 1,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Muster-1/Lagerdeckel-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.08,
+    "masse": [
+     "D1@Antrieb Abstand@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.08,
+     "MinimumDistance": 0.08,
+     "MaximumDistance": 0.08,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": false,
+     "IsAdvancedMate": false
+    }
+   }
+  },
+  "Ohne Antrieb": {
+   "Schlitten Auflage": {
+    "name": "Schlitten Auflage",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 1,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Schlitten-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Schlitten Seite": {
+    "name": "Schlitten Seite",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Schlitten-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.015,
+    "masse": [
+     "D1@Schlitten Seite@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.015,
+     "MinimumDistance": 0.015,
+     "MaximumDistance": 0.015,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": false,
+     "IsAdvancedMate": false
+    }
+   },
+   "Hub": {
+    "name": "Hub",
+    "typname": "MateLimitDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Schlitten-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.025
+    ],
+    "d1": 0.0,
+    "masse": [
+     "D1@Hub@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.0,
+     "MinimumDistance": 0.0,
+     "MaximumDistance": 0.025,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": false,
+     "IsAdvancedMate": true
+    }
+   },
+   "Anschlag1 Auflage": {
+    "name": "Anschlag1 Auflage",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag1 Mitte": {
+    "name": "Anschlag1 Mitte",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag1 Lage": {
+    "name": "Anschlag1 Lage",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.03,
+    "masse": [
+     "D1@Anschlag1 Lage@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.03,
+     "MinimumDistance": 0.03,
+     "MaximumDistance": 0.03,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": true,
+     "IsAdvancedMate": false
+    }
+   },
+   "Anschlag2 Auflage": {
+    "name": "Anschlag2 Auflage",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-2'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag2 Mitte": {
+    "name": "Anschlag2 Mitte",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-2'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Anschlag2 Lage": {
+    "name": "Anschlag2 Lage",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Anschlag-2'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.07,
+    "masse": [
+     "D1@Anschlag2 Lage@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.07,
+     "MinimumDistance": 0.07,
+     "MaximumDistance": 0.07,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": true,
+     "IsAdvancedMate": false
+    }
+   },
+   "Antrieb vorne": {
+    "name": "Antrieb vorne",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Muster-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Hubeinheit'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Antrieb rechts": {
+    "name": "Antrieb rechts",
+    "typname": "MateCoincident",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 0,
+    "ausrichtung": 0,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Muster-1'",
+      "referenz_typ": 4
+     },
+     {
+      "komponente_none": false,
+      "name": "'Hubeinheit'",
+      "referenz_typ": 4
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": null,
+    "masse": [],
+    "definition": {
+     "Distance": {
+      "fehler": "AttributeError: <unknown>.Distance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Distance\n"
+     },
+     "MinimumDistance": {
+      "fehler": "AttributeError: <unknown>.MinimumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumDistance\n"
+     },
+     "MaximumDistance": {
+      "fehler": "AttributeError: <unknown>.MaximumDistance",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumDistance\n"
+     },
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": {
+      "fehler": "AttributeError: <unknown>.FlipDimension",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.FlipDimension\n"
+     },
+     "IsAdvancedMate": {
+      "fehler": "AttributeError: <unknown>.IsAdvancedMate",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.IsAdvancedMate\n"
+     }
+    }
+   },
+   "Antrieb Abstand": {
+    "name": "Antrieb Abstand",
+    "typname": "MateDistanceDim",
+    "unterdrueckt_alt": false,
+    "unterdrueckt": false,
+    "fehler": 0,
+    "typ": 5,
+    "ausrichtung": 1,
+    "entitaeten": [
+     {
+      "komponente_none": false,
+      "name": "'Hubeinheit'",
+      "referenz_typ": 2
+     },
+     {
+      "komponente_none": false,
+      "name": "'Grundplatte-1'",
+      "referenz_typ": 2
+     }
+    ],
+    "variation": [
+     0.0,
+     0.0
+    ],
+    "d1": 0.08,
+    "masse": [
+     "D1@Antrieb Abstand@Hubeinheit.Assembly"
+    ],
+    "definition": {
+     "Distance": 0.08,
+     "MinimumDistance": 0.08,
+     "MaximumDistance": 0.08,
+     "Angle": {
+      "fehler": "AttributeError: <unknown>.Angle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.Angle\n"
+     },
+     "MinimumAngle": {
+      "fehler": "AttributeError: <unknown>.MinimumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MinimumAngle\n"
+     },
+     "MaximumAngle": {
+      "fehler": "AttributeError: <unknown>.MaximumAngle",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 929, in <lambda>\n    aus[\"definition\"] = {n: versuch(lambda n=n: getattr(d, n))\n                                                ~~~~~~~^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 631, in __getattr__\n    raise AttributeError(f\"{self._username_}.{attr}\")\nAttributeError: <unknown>.MaximumAngle\n"
+     },
+     "FlipDimension": false,
+     "IsAdvancedMate": false
+    }
+   }
+  }
+ },
+ "unbeantwortet": []
+}

@@ -1,0 +1,610 @@
+{
+ "zeile": "d",
+ "start_mb": 436,
+ "spitze_mb": 1756,
+ "halt": [],
+ "fragen": {
+  "P.d1": {
+   "frage": "Unsichtbar mit Option 1|64|2: Kollision, Transform2, Status lesbar?",
+   "antworten": [
+    {
+     "fall": "sichtbar",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "nur_lesen",
+        "neuaufbau_noetig"
+       ],
+       "s": 0.99
+      },
+      "nur_lesen": true,
+      "lesen_s": 7.81,
+      "lesen_schnell_s": 0.51,
+      "kollision": {
+       "anzahl": 1,
+       "laenge": 1,
+       "zweite_anzahl": 1,
+       "gelesen": [
+        {
+         "paar": [
+          "Anschlag-1",
+          "Anschlag-2"
+         ],
+         "volumen": 6000.0
+        }
+       ],
+       "zaehlen_s": 0.383,
+       "liste_s": 0.28,
+       "lesen_s": 0.274,
+       "nach_done": {
+        "fehler": "com_error: (-2147417851, 'Ausnahmefehler des Servers.', None, None)",
+        "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1310, in <lambda>\n    nach_done = versuch(lambda: [round(i.Volume * 1e9, 3) for i in liste])\n                                       ^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 620, in __getattr__\n    ret = self._oleobj_.Invoke(retEntry.dispid, 0, invoke_type, 1)\npywintypes.com_error: (-2147417851, 'Ausnahmefehler des Servers.', None, None)\n"
+       }
+      },
+      "kollision_swki": [
+       {
+        "paar": [
+         "Anschlag-1",
+         "Anschlag-2"
+        ],
+        "volumen": 6000.0
+       }
+      ],
+      "lagen": {
+       "Anschlag-2": {
+        "t": [
+         0.07,
+         0.0,
+         0.015
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Muster-1": {
+        "t": [
+         0.0,
+         0.15,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Muster-1/Lagerdeckel-1": {
+        "t": [
+         0.0,
+         0.15,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Muster-1/gm42-10-1": {
+        "t": [
+         0.2,
+         0.1215,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Anschlag-1": {
+        "t": [
+         0.06,
+         0.0,
+         0.015
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Grundplatte-1": {
+        "t": [
+         0.0,
+         0.0,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Schlitten-1": {
+        "t": [
+         -0.07,
+         0.0,
+         0.015
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       }
+      },
+      "speicher": {
+       "vorher": 899.8,
+       "spitze": 3803.3,
+       "nachher": 1150.5
+      }
+     }
+    },
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "nur_lesen",
+        "neuaufbau_noetig"
+       ],
+       "s": 0.17
+      },
+      "nur_lesen": true,
+      "lesen_s": 2.55,
+      "lesen_schnell_s": 0.34,
+      "kollision": {
+       "fehler": "AttributeError: 'NoneType' object has no attribute 'TreatCoincidenceAsInterference' and no __dict__ for setting new attributes",
+       "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1329, in <lambda>\n    z[\"kollision\"] = versuch(lambda: d_kollision(asm))\n                                     ~~~~~~~~~~~^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1300, in d_kollision\n    idm.TreatCoincidenceAsInterference = False\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'TreatCoincidenceAsInterference' and no __dict__ for setting new attributes\n"
+      },
+      "kollision_swki": null,
+      "lagen": {
+       "Anschlag-1": {
+        "t": [
+         0.06,
+         0.0,
+         0.015
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Anschlag-2": {
+        "t": [
+         0.07,
+         0.0,
+         0.015
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Schlitten-1": {
+        "t": [
+         -0.07,
+         0.0,
+         0.015
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Grundplatte-1": {
+        "t": [
+         0.0,
+         0.0,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Muster-1": {
+        "t": [
+         0.0,
+         0.15,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Muster-1/Lagerdeckel-1": {
+        "t": [
+         0.0,
+         0.15,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       },
+       "Muster-1/gm42-10-1": {
+        "t": [
+         0.2,
+         0.1215,
+         0.0
+        ],
+        "status": {
+         "Standard": 3,
+         "Ohne Antrieb": 3
+        }
+       }
+      },
+      "speicher": {
+       "vorher": 1150.5,
+       "spitze": 1151.0,
+       "nachher": 978.9
+      }
+     }
+    }
+   ]
+  },
+  "P.d2": {
+   "frage": "Zeit und Speicher gegenüber sichtbar?",
+   "antworten": [
+    {
+     "fall": "sichtbar",
+     "wert": {
+      "oeffnen_s": 0.99,
+      "lesen_s": 7.81,
+      "speicher": {
+       "vorher": 899.8,
+       "spitze": 3803.3,
+       "nachher": 1150.5
+      }
+     }
+    },
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "oeffnen_s": 0.17,
+      "lesen_s": 2.55,
+      "speicher": {
+       "vorher": 1150.5,
+       "spitze": 1151.0,
+       "nachher": 978.9
+      }
+     }
+    }
+   ]
+  },
+  "T8.12": {
+   "frage": "GetInterferenceCount unsichtbar und nur lesend verlässlich, gleich Länge von GetInterferences? Läuft die Berechnung zweimal?",
+   "antworten": [
+    {
+     "fall": "sichtbar",
+     "wert": {
+      "anzahl": 1,
+      "laenge": 1,
+      "zweite_anzahl": 1,
+      "gelesen": [
+       {
+        "paar": [
+         "Anschlag-1",
+         "Anschlag-2"
+        ],
+        "volumen": 6000.0
+       }
+      ],
+      "zaehlen_s": 0.383,
+      "liste_s": 0.28,
+      "lesen_s": 0.274,
+      "nach_done": {
+       "fehler": "com_error: (-2147417851, 'Ausnahmefehler des Servers.', None, None)",
+       "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1310, in <lambda>\n    nach_done = versuch(lambda: [round(i.Volume * 1e9, 3) for i in liste])\n                                       ^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 620, in __getattr__\n    ret = self._oleobj_.Invoke(retEntry.dispid, 0, invoke_type, 1)\npywintypes.com_error: (-2147417851, 'Ausnahmefehler des Servers.', None, None)\n"
+      }
+     }
+    },
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "fehler": "AttributeError: 'NoneType' object has no attribute 'TreatCoincidenceAsInterference' and no __dict__ for setting new attributes",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1329, in <lambda>\n    z[\"kollision\"] = versuch(lambda: d_kollision(asm))\n                                     ~~~~~~~~~~~^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1300, in d_kollision\n    idm.TreatCoincidenceAsInterference = False\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'TreatCoincidenceAsInterference' and no __dict__ for setting new attributes\n"
+     }
+    }
+   ]
+  },
+  "T8.13": {
+   "frage": "Darf Done nach dem Lesen der IInterference kommen?",
+   "antworten": [
+    {
+     "fall": "sichtbar",
+     "wert": {
+      "fehler": "com_error: (-2147417851, 'Ausnahmefehler des Servers.', None, None)",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1310, in <lambda>\n    nach_done = versuch(lambda: [round(i.Volume * 1e9, 3) for i in liste])\n                                       ^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.venv\\Lib\\site-packages\\win32com\\client\\dynamic.py\", line 620, in __getattr__\n    ret = self._oleobj_.Invoke(retEntry.dispid, 0, invoke_type, 1)\npywintypes.com_error: (-2147417851, 'Ausnahmefehler des Servers.', None, None)\n"
+     }
+    },
+    {
+     "fall": "unsichtbar",
+     "wert": null
+    }
+   ]
+  },
+  "T11.10": {
+   "frage": "Speicher: Spitze mit Fenstern und Fahrt, SPEICHER_KNAPP mit frisch",
+   "antworten": [
+    {
+     "fall": "sichtbar",
+     "wert": {
+      "vorher": 899.8,
+      "spitze": 3803.3,
+      "nachher": 1150.5
+     }
+    },
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "vorher": 1150.5,
+      "spitze": 1151.0,
+      "nachher": 978.9
+     }
+    }
+   ]
+  },
+  "T11.11": {
+   "frage": "Laufzeit: lies_baugruppe ohne sw.schnell",
+   "antworten": [
+    {
+     "fall": "sichtbar",
+     "wert": {
+      "lesen_s": 7.81,
+      "schnell_s": 0.51
+     }
+    },
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "lesen_s": 2.55,
+      "schnell_s": 0.34
+     }
+    }
+   ]
+  },
+  "T11.3": {
+   "frage": "ForceRebuild3 am read-only Lauf je Konfiguration: Lage und Status, geändertes Teil neben ungespeicherter Baugruppe?",
+   "antworten": [
+    {
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.19
+      },
+      "nur_lesen": true,
+      "vor_neuaufbau": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "Standard": {
+       "edit": true,
+       "nach_edit": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "force": true,
+       "nach_force": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "status": 3
+      },
+      "Ohne Antrieb": {
+       "edit": true,
+       "nach_edit": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "force": true,
+       "nach_force": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "status": 3
+      }
+     }
+    }
+   ]
+  },
+  "T11.K1": {
+   "frage": "Wirkt ForceRebuild3(False) am nur lesend geöffneten Lauf?",
+   "antworten": [
+    {
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.19
+      },
+      "nur_lesen": true,
+      "vor_neuaufbau": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "Standard": {
+       "edit": true,
+       "nach_edit": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "force": true,
+       "nach_force": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "status": 3
+      },
+      "Ohne Antrieb": {
+       "edit": true,
+       "nach_edit": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "force": true,
+       "nach_force": [
+        -70.0,
+        0.0,
+        18.0
+       ],
+       "status": 3
+      }
+     }
+    }
+   ]
+  },
+  "T11.6": {
+   "frage": "Zweimal öffnen, erst unsichtbar, dann mit Fenster: zu, kein Titel-Fehler, Komponenten im Speicher?",
+   "antworten": [
+    {
+     "wert": {
+      "unsichtbar_offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Muster.SLDASM"
+      ],
+      "zu": [],
+      "fenster_offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Muster.SLDASM"
+      ],
+      "pfade": {
+       "id": "pfade",
+       "ok": true,
+       "geladen": 7,
+       "fremd": []
+      }
+     }
+    }
+   ]
+  },
+  "T11.7": {
+   "frage": "Teil nach CloseDoc aus dem Speicher? vorher_*-Datei in vergleich/: Greift eine Suchregel darauf zu?",
+   "antworten": [
+    {
+     "wert": {
+      "nach_closedoc": [],
+      "geladen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\teile\\Anschlag.SLDPRT"
+      ],
+      "vorher_geladen": []
+     }
+    }
+   ]
+  },
+  "T11.9": {
+   "frage": "Bilder: gleiche Ansicht und Zoom in Bestand und Lauf, aktive Konfiguration?",
+   "antworten": [
+    {
+     "wert": {
+      "bestand": {
+       "aktiv": "Standard",
+       "bilder": {
+        "iso": 315079,
+        "vorne": 217038,
+        "oben": 230529,
+        "rechts": 215156
+       }
+      },
+      "lauf": {
+       "aktiv": "Standard",
+       "bilder": {
+        "iso": 315081,
+        "vorne": 217038,
+        "oben": 230540,
+        "rechts": 215162
+       }
+      },
+      "gleich": {
+       "iso.png": false,
+       "oben.png": false,
+       "rechts.png": false,
+       "vorne.png": false
+      }
+     }
+    }
+   ]
+  },
+  "T11.K2": {
+   "frage": "Lässt sich ausgabe/ umbenennen, wenn der Explorer den Ordner zeigt?",
+   "antworten": [
+    {
+     "wert": "nicht messbar: im Explorer von Hand prüfen (ausgabe/ offen, swki bestand ausgabe zweimal)"
+    }
+   ]
+  },
+  "T11.K3": {
+   "frage": "Geht messe an einem unsichtbaren, nur lesend geöffneten Teil?",
+   "antworten": [
+    {
+     "wert": {
+      "volumen": 12000.0,
+      "felder": [
+       "box",
+       "durchmesser",
+       "eigenschaften",
+       "formschraegen",
+       "gleichungen",
+       "koerper",
+       "material",
+       "messpunkte",
+       "normbohrungen",
+       "rebuild_fehler",
+       "schwerpunkt",
+       "skizzen",
+       "verzahnungen",
+       "volumen"
+      ]
+     }
+    }
+   ]
+  },
+  "T8.21": {
+   "frage": "Ist eine per Select4 gewählte Komponente im gespeicherten Bild sichtbar?",
+   "antworten": [
+    {
+     "wert": {
+      "ohne": 315127,
+      "mit": 316672,
+      "unterschiedlich": true,
+      "bild": "C:\\Users\\User\\.swki\\arbeit\\S19\\d\\k\\iso_mit.png"
+     }
+    }
+   ]
+  }
+ },
+ "sekunden": 42.1,
+ "ende_mb": 1756,
+ "unbeantwortet": []
+}

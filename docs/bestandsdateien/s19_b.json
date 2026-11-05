@@ -1,0 +1,1049 @@
+{
+ "zeile": "b",
+ "start_mb": 436,
+ "spitze_mb": 4068,
+ "halt": [],
+ "fragen": {
+  "T8.6": {
+   "frage": "Typ von MateEntity(i).Reference, ist eine Ebene ein IFeature, Entität im Baugruppenkontext? Sonst EntitiesToMate",
+   "antworten": [
+    {
+     "fall": "Hub",
+     "wert": {
+      "typ": "MateLimitDistanceDim",
+      "seiten": [
+       {
+        "i": 0,
+        "referenz_typ": 2,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Schlitten-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Schlitten-1"
+        },
+        "als_feature": {
+         "gewaehlt": 0,
+         "art": 0,
+         "komponente": null
+        }
+       },
+       {
+        "i": 1,
+        "referenz_typ": 2,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Grundplatte-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Grundplatte-1"
+        },
+        "als_feature": {
+         "gewaehlt": 0,
+         "art": 0,
+         "komponente": null
+        }
+       }
+      ],
+      "entities_to_mate": [
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Schlitten-1"
+        }
+       },
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Grundplatte-1"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "fall": "Anschlag1 Lage",
+     "wert": {
+      "typ": "MateDistanceDim",
+      "seiten": [
+       {
+        "i": 0,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Anschlag-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Anschlag-1"
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Anschlag-1"
+        }
+       },
+       {
+        "i": 1,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Grundplatte-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Grundplatte-1"
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Grundplatte-1"
+        }
+       }
+      ],
+      "entities_to_mate": [
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Anschlag-1"
+        }
+       },
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Grundplatte-1"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "fall": "Antrieb vorne",
+     "wert": {
+      "typ": "MateCoincident",
+      "seiten": [
+       {
+        "i": 0,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Muster-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Muster-1"
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Muster-1"
+        }
+       },
+       {
+        "i": 1,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Hubeinheit",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": null
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": null
+        }
+       }
+      ],
+      "entities_to_mate": [
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Muster-1"
+        }
+       },
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": null
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "P.b1": {
+   "frage": "Reference oder EntitiesToMate für treibe auswählbar?",
+   "antworten": [
+    {
+     "fall": "Hub",
+     "wert": {
+      "typ": "MateLimitDistanceDim",
+      "seiten": [
+       {
+        "i": 0,
+        "referenz_typ": 2,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Schlitten-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Schlitten-1"
+        },
+        "als_feature": {
+         "gewaehlt": 0,
+         "art": 0,
+         "komponente": null
+        }
+       },
+       {
+        "i": 1,
+        "referenz_typ": 2,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Grundplatte-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Grundplatte-1"
+        },
+        "als_feature": {
+         "gewaehlt": 0,
+         "art": 0,
+         "komponente": null
+        }
+       }
+      ],
+      "entities_to_mate": [
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Schlitten-1"
+        }
+       },
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 2,
+         "komponente": "Grundplatte-1"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "fall": "Anschlag1 Lage",
+     "wert": {
+      "typ": "MateDistanceDim",
+      "seiten": [
+       {
+        "i": 0,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Anschlag-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Anschlag-1"
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Anschlag-1"
+        }
+       },
+       {
+        "i": 1,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Grundplatte-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Grundplatte-1"
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Grundplatte-1"
+        }
+       }
+      ],
+      "entities_to_mate": [
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Anschlag-1"
+        }
+       },
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Grundplatte-1"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "fall": "Antrieb vorne",
+     "wert": {
+      "typ": "MateCoincident",
+      "seiten": [
+       {
+        "i": 0,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Muster-1",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Muster-1"
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Muster-1"
+        }
+       },
+       {
+        "i": 1,
+        "referenz_typ": 4,
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "komponente": "Hubeinheit",
+        "als_entitaet": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": null
+        },
+        "als_feature": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": null
+        }
+       }
+      ],
+      "entities_to_mate": [
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": "Muster-1"
+        }
+       },
+       {
+        "objekt": "<class 'win32com.client.dynamic.CDispatch'>",
+        "wahl": {
+         "gewaehlt": 1,
+         "art": 4,
+         "komponente": null
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "P.b6": {
+   "frage": "Index in als_verknuepfung: Entität 0 ist Partner 0 (Task 6)?",
+   "antworten": [
+    {
+     "wert": {
+      "partner": [
+       "Schlitten-1",
+       "Grundplatte-1"
+      ],
+      "entitaeten": [
+       "Schlitten-1",
+       "Grundplatte-1"
+      ]
+     }
+    }
+   ]
+  },
+  "T8.22": {
+   "frage": "Bleiben die Zeiger aus MateEntity(i).Reference über Neuaufbauten gültig?",
+   "antworten": [
+    {
+     "fall": "nur lesend, unsichtbar",
+     "wert": {
+      "lage_vorher": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "frisch": [
+       true,
+       true
+      ],
+      "nach_unterdruecken": [
+       true,
+       true
+      ],
+      "treibe": "Hub.antrieb",
+      "lage_10": [
+       -60.0,
+       0.0,
+       15.0
+      ],
+      "stelle_20": null,
+      "lage_20": [
+       -50.0,
+       0.0,
+       15.0
+      ],
+      "d1_grenze_gefahren": 0.0,
+      "nach_neuaufbau": [
+       true,
+       true
+      ],
+      "lage_zurueck": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_loeschen": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_aktivieren": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "zum_schluss": [
+       true,
+       true
+      ]
+     }
+    }
+   ]
+  },
+  "P.b2": {
+   "frage": "Überleben die Zeiger das Unterdrücken der Grenze und den Neuaufbau?",
+   "antworten": [
+    {
+     "wert": {
+      "lage_vorher": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "frisch": [
+       true,
+       true
+      ],
+      "nach_unterdruecken": [
+       true,
+       true
+      ],
+      "treibe": "Hub.antrieb",
+      "lage_10": [
+       -60.0,
+       0.0,
+       15.0
+      ],
+      "stelle_20": null,
+      "lage_20": [
+       -50.0,
+       0.0,
+       15.0
+      ],
+      "d1_grenze_gefahren": 0.0,
+      "nach_neuaufbau": [
+       true,
+       true
+      ],
+      "lage_zurueck": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_loeschen": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_aktivieren": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "zum_schluss": [
+       true,
+       true
+      ]
+     }
+    }
+   ]
+  },
+  "T8.7": {
+   "frage": "Ist D1 der Grenze der Abstand, den treibe braucht, auch bei umgekehrter Bemaßung?",
+   "antworten": [
+    {
+     "fall": "Bemaßung wie angelegt",
+     "wert": {
+      "lage_vorher": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "frisch": [
+       true,
+       true
+      ],
+      "nach_unterdruecken": [
+       true,
+       true
+      ],
+      "treibe": "Hub.antrieb",
+      "lage_10": [
+       -60.0,
+       0.0,
+       15.0
+      ],
+      "stelle_20": null,
+      "lage_20": [
+       -50.0,
+       0.0,
+       15.0
+      ],
+      "d1_grenze_gefahren": 0.0,
+      "nach_neuaufbau": [
+       true,
+       true
+      ],
+      "lage_zurueck": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_loeschen": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_aktivieren": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "zum_schluss": [
+       true,
+       true
+      ]
+     }
+    },
+    {
+     "fall": "umgekehrte Bemaßung",
+     "wert": {
+      "lage_vorher": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "frisch": [
+       true,
+       true
+      ],
+      "nach_unterdruecken": [
+       true,
+       true
+      ],
+      "treibe": "Hub.antrieb",
+      "lage_10": [
+       -60.0,
+       0.0,
+       15.0
+      ],
+      "stelle_20": null,
+      "lage_20": [
+       -50.0,
+       0.0,
+       15.0
+      ],
+      "d1_grenze_gefahren": 0.0,
+      "nach_neuaufbau": [
+       true,
+       true
+      ],
+      "lage_zurueck": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_loeschen": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_aktivieren": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "zum_schluss": [
+       true,
+       true
+      ]
+     }
+    }
+   ]
+  },
+  "T8.8": {
+   "frage": "Reicht Probeschritt plus stelle zurück, oder springt die Komponente nach loese und Reaktivieren?",
+   "antworten": [
+    {
+     "wert": {
+      "seite": "Schlitten-1",
+      "hinweise": [],
+      "vorher": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nachher": [
+       -70.0,
+       0.0,
+       15.0
+      ]
+     }
+    }
+   ]
+  },
+  "P.b4": {
+   "frage": "Fährt das an nur lesend geöffneter Kopie?",
+   "antworten": [
+    {
+     "fall": "unsichtbar, nur lesend",
+     "wert": {
+      "fehler": "BauFehler: Kollision in der Fahrt nicht lesbar",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\baugruppe\\bewegungslauf.py\", line 113, in _durchlauf\n    for kollision in mech.interferenzen():\n                     ~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\sw_baugruppe_bestand.py\", line 379, in interferenzen\n    raise BauFehler(REBUILD_FEHLER, \"Kollision in der Fahrt nicht lesbar\", schritt=\"kollision\")\nswki.compiler.fehler.BauFehler: Kollision in der Fahrt nicht lesbar\n"
+     }
+    },
+    {
+     "fall": "Fenster, nur lesend",
+     "wert": {
+      "Hub": {
+       "komponente": "Schlitten-1",
+       "art": "abstand",
+       "min": 0.0,
+       "max": 25.0,
+       "gefahren": true,
+       "stellungen": 9,
+       "bewegt": [
+        "Schlitten-1"
+       ],
+       "raum": [
+        -100.0,
+        -25.0,
+        15.0,
+        -15.0,
+        25.0,
+        35.0
+       ],
+       "kollisionen": [],
+       "pruefungen": [
+        {
+         "id": "freiheitsgrad:Schlitten-1",
+         "ok": true,
+         "ist": {
+          "ohne_antrieb": 2,
+          "mit_antrieb": 3
+         },
+         "knoten": [
+          "Schlitten-1"
+         ]
+        },
+        {
+         "id": "bewegung:Hub",
+         "ok": true,
+         "ist": [],
+         "knoten": []
+        },
+        {
+         "id": "bewegung_kollision:Hub",
+         "ok": true,
+         "ist": [],
+         "knoten": []
+        },
+        {
+         "id": "grenze:Hub",
+         "ok": true,
+         "ist": {
+          "oben": false,
+          "unten": null
+         },
+         "knoten": []
+        },
+        {
+         "id": "sollweg:Hub:Schlitten-1",
+         "ok": true,
+         "ist": {
+          "erste_abweichung": null,
+          "groesste_abweichung": null,
+          "abweichende_stellungen": 0
+         },
+         "stellungen": 9,
+         "knoten": []
+        }
+       ],
+       "hinweis": null,
+       "bilder": {
+        "Hub-min": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\Hub-min.png",
+        "Hub-mitte": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\Hub-mitte.png",
+        "Hub-max": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\Hub-max.png"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T11.2": {
+   "frage": "CloseDoc nach der Fahrt still, Lauf-Datei byteweise gleich?",
+   "antworten": [
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "close": null,
+      "s": 0.05,
+      "offen": []
+     }
+    },
+    {
+     "fall": "Fenster",
+     "wert": {
+      "gleich": true
+     }
+    }
+   ]
+  },
+  "P.b5": {
+   "frage": "SHA-256 danach gleich?",
+   "antworten": [
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "gleich": true,
+      "abweichend": []
+     }
+    },
+    {
+     "fall": "Fenster",
+     "wert": {
+      "gleich": true
+     }
+    }
+   ]
+  },
+  "T11.1": {
+   "frage": "Read-only-Lauf: treibende Verknüpfung anlegen, stellen, löschen, Iso-Bild speichern?",
+   "antworten": [
+    {
+     "fall": "Fenster, nur lesend",
+     "wert": {
+      "Hub": {
+       "komponente": "Schlitten-1",
+       "art": "abstand",
+       "min": 0.0,
+       "max": 25.0,
+       "gefahren": true,
+       "stellungen": 9,
+       "bewegt": [
+        "Schlitten-1"
+       ],
+       "raum": [
+        -100.0,
+        -25.0,
+        15.0,
+        -15.0,
+        25.0,
+        35.0
+       ],
+       "kollisionen": [],
+       "pruefungen": [
+        {
+         "id": "freiheitsgrad:Schlitten-1",
+         "ok": true,
+         "ist": {
+          "ohne_antrieb": 2,
+          "mit_antrieb": 3
+         },
+         "knoten": [
+          "Schlitten-1"
+         ]
+        },
+        {
+         "id": "bewegung:Hub",
+         "ok": true,
+         "ist": [],
+         "knoten": []
+        },
+        {
+         "id": "bewegung_kollision:Hub",
+         "ok": true,
+         "ist": [],
+         "knoten": []
+        },
+        {
+         "id": "grenze:Hub",
+         "ok": true,
+         "ist": {
+          "oben": false,
+          "unten": null
+         },
+         "knoten": []
+        },
+        {
+         "id": "sollweg:Hub:Schlitten-1",
+         "ok": true,
+         "ist": {
+          "erste_abweichung": null,
+          "groesste_abweichung": null,
+          "abweichende_stellungen": 0
+         },
+         "stellungen": 9,
+         "knoten": []
+        }
+       ],
+       "hinweis": null,
+       "bilder": {
+        "Hub-min": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\Hub-min.png",
+        "Hub-mitte": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\Hub-mitte.png",
+        "Hub-max": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\Hub-max.png"
+       }
+      }
+     }
+    },
+    {
+     "fall": "Bilder",
+     "wert": {
+      "bilder": [
+       "Hub-max.png",
+       "Hub-min.png",
+       "Hub-mitte.png"
+      ],
+      "groesse": 944582,
+      "iso": "C:\\Users\\User\\.swki\\arbeit\\S19\\b\\bilder\\iso_ro.png"
+     }
+    }
+   ]
+  },
+  "P.b3": {
+   "frage": "Antrieb bei umgekehrter Bemaßung auf der richtigen Seite (verknuepfe setzt Flip False)?",
+   "antworten": [
+    {
+     "fall": "gelesen",
+     "wert": {
+      "gelesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 0.0,
+       "min": 0.0,
+       "max": 25.0,
+       "werte": {
+        "Standard": {
+         "wert": 0.0,
+         "min": 0.0,
+         "max": 25.0
+        },
+        "Ohne Antrieb": {
+         "wert": 0.0,
+         "min": 0.0,
+         "max": 25.0
+        }
+       },
+       "grenze": true,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": false,
+        "Ohne Antrieb": false
+       }
+      },
+      "definition": {
+       "Distance": 0.0,
+       "MinimumDistance": 0.0,
+       "MaximumDistance": 0.025,
+       "FlipDimension": false,
+       "IsAdvancedMate": true
+      }
+     }
+    },
+    {
+     "fall": "Antrieb von Hand",
+     "wert": {
+      "lage_vorher": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "frisch": [
+       true,
+       true
+      ],
+      "nach_unterdruecken": [
+       true,
+       true
+      ],
+      "treibe": "Hub.antrieb",
+      "lage_10": [
+       -60.0,
+       0.0,
+       15.0
+      ],
+      "stelle_20": null,
+      "lage_20": [
+       -50.0,
+       0.0,
+       15.0
+      ],
+      "d1_grenze_gefahren": 0.0,
+      "nach_neuaufbau": [
+       true,
+       true
+      ],
+      "lage_zurueck": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_loeschen": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "nach_aktivieren": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "zum_schluss": [
+       true,
+       true
+      ]
+     }
+    },
+    {
+     "fall": "Fahrt",
+     "wert": {
+      "fehler": "BauFehler: Kollision in der Fahrt nicht lesbar",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\baugruppe\\bewegungslauf.py\", line 113, in _durchlauf\n    for kollision in mech.interferenzen():\n                     ~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\sw_baugruppe_bestand.py\", line 379, in interferenzen\n    raise BauFehler(REBUILD_FEHLER, \"Kollision in der Fahrt nicht lesbar\", schritt=\"kollision\")\nswki.compiler.fehler.BauFehler: Kollision in der Fahrt nicht lesbar\n"
+     }
+    }
+   ]
+  },
+  "T11.12": {
+   "frage": "Neuer Verknüpfungsfehler in der Fahrt: StellungFehler oder BauFehler?",
+   "antworten": [
+    {
+     "wert": {
+      "anlegen": {
+       "status": 1,
+       "neu": [
+        "Konflikt"
+       ]
+      },
+      "fehler_vor_der_fahrt": [],
+      "fahrt": {
+       "Hub": {
+        "komponente": "Schlitten-1",
+        "art": "abstand",
+        "min": 0.0,
+        "max": 25.0,
+        "gefahren": false,
+        "stellungen": 0,
+        "bewegt": [],
+        "raum": null,
+        "kollisionen": [],
+        "pruefungen": [],
+        "hinweis": "Bewegung Hub: Stellung 0 nicht herstellbar (Antrieb nicht angelegt: Hub.antrieb (abstand): AddMate5 meldet Status 5); Schlitten-1 steht womöglich nicht in der Ausgangslage: Bewegung Hub: Stellung 0 nicht herstellbar (Antrieb nicht angelegt: Hub.antrieb (abstand): AddMate5 meldet Status 5)"
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ "oeffnen": {
+  "fehler": 0,
+  "warnungen": [
+   "nur_lesen"
+  ],
+  "s": 1.61,
+  "nur_lesen": true
+ },
+ "sekunden": 79.6,
+ "ende_mb": 1945,
+ "hub": {
+  "typ": 5,
+  "ausrichtung": 0,
+  "wert": 0.0,
+  "min": 0.0,
+  "max": 25.0,
+  "werte": {
+   "Standard": {
+    "wert": 0.0,
+    "min": 0.0,
+    "max": 25.0
+   },
+   "Ohne Antrieb": {
+    "wert": 0.0,
+    "min": 0.0,
+    "max": 25.0
+   }
+  },
+  "grenze": true,
+  "gesteuert": false,
+  "partner": [
+   "Schlitten-1",
+   "Grundplatte-1"
+  ],
+  "fehler": {
+   "Standard": 0,
+   "Ohne Antrieb": 0
+  },
+  "unterdrueckt": {
+   "Standard": false,
+   "Ohne Antrieb": false
+  }
+ },
+ "flip_anlegen": {
+  "status": 1,
+  "neu": [
+   "Hub"
+  ]
+ },
+ "flip_speichern": {
+  "ok": true,
+  "fehler": 0,
+  "warnungen": []
+ },
+ "unbeantwortet": []
+}

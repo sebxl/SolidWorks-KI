@@ -102,8 +102,8 @@ WARNUNGEN = {1: "id_abweichung", 2: "nur_lesen", 32: "neuaufbau_noetig", 128: "s
 AUFSATZ = "Aufsatz-Linear austragen1"
 DICKE = f"D1@{AUFSATZ}"  # Dicke der Grundplatte, Höhe von Schlitten und Anschlag
 
-ZEIT = {"c": 600, "b": 600, "a": 300, "f": 300, "d": 600, "e": 900, "v": 1500}  # Sekunden, Zeitlimit von außen
-REIHENFOLGE = ("c", "b", "a", "f", "d", "e", "v")
+ZEIT = {"c": 600, "b": 600, "a": 300, "f": 300, "d": 600, "e": 900, "e2": 600, "v": 1500}  # Sekunden, Zeitlimit von außen
+REIHENFOLGE = ("c", "b", "a", "f", "d", "e", "e2", "v")
 
 FRAGEN: dict[str, tuple[str, str]] = {
     # Bericht Task 8
@@ -381,7 +381,7 @@ def sha(p: Path) -> str:
 
 def shas(ordner: Path) -> dict:
     return {p.relative_to(ordner).as_posix(): sha(p) for p in sorted(ordner.rglob("*"))
-            if p.is_file() and p.suffix.lower() in (".sldprt", ".sldasm")}
+            if p.is_file() and p.suffix.lower() in (".sldprt", ".sldasm") and not p.name.startswith("~$")}  # ~$: Sperrdatei offener
 
 
 def schreibschuetze(ordner: Path) -> None:
@@ -553,6 +553,9 @@ def fahrt(app, asm, ordner: Path | None, gelesen: dict, mech_aufnahme: dict | No
     standard = lade_standard()
     grenzen = grenzen_der_aufnahme(gelesen)
     mech = mechanik_fuer(app, asm, grenzen, mech_aufnahme or gelesen, ordner)
+    # Umgehung im Spike (Zeile b, live): `ForceRebuild3` trennt die Zeiger aus `MateEntity(i).Reference`, `mechanik_fuer` liest sie
+    # aber nur einmal. Hier je Antrieb frisch aus der (dann unterdrückten) Grenze, das geht auch nach `ForceRebuild3`.
+    mech.entitaet = lambda seite: _entitaeten(mate(asm, seite["grenze"]))[seite["index"]]
     return fahre_bestand(mech, gelesen, grenzen, standard["bewegung_schritte"], statische_paare(gelesen),
                          standard["speicher_grenze_mb"],
                          standard["toleranzen"]["anker_mm"], None)
@@ -1107,9 +1110,14 @@ def zeile_f(app) -> None:
         lauf.frage("T8.25", {"baum": f_baum(asm)[:12], "verknuepfungen": [f.Name for f in sw_baugruppe.verknuepfungen(asm)]})
         lauf.frage("T8.24", lambda: f_gegenprobe(asm), fall="mit Ordner")
         lauf.frage("T11.5", lambda: f_reihenfolge(app, asm, ordner))
+    # Jede Probe beginnt leer: Eine gescheiterte ließe ihre Hubeinheit offen, die nächste bekäme „gleicher Titel“ (Zeile f, live)
+    alle_zu(app)
     lauf.frage("P.f2", lambda: f_virtuell(app))
+    alle_zu(app)
     lauf.frage("T8.20", lambda: f_schreibgeschuetzt(app))
+    alle_zu(app)
     lauf.frage("T11.13", lambda: f_unterbaugruppe(app))
+    alle_zu(app)
     lauf.frage("P.f8", lambda: f_abdeckung(app))
     alle_zu(app)
     lauf.schliesse()
@@ -1177,9 +1185,13 @@ def f_komponentenmuster(asm) -> dict:
 
 
 def f_neues_virtuelles(asm) -> dict:
-    neu = byref_variant()
-    status = asm.InsertNewVirtualPart(None, neu)
-    k = neu.value
+    # Umgehung (Zeile f, live): `None` und `byref_variant` geben „Typenkonflikt“; Ebene vorne der Baugruppe und ein Dispatch-Byref
+    neu = win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_DISPATCH, None)
+    vorher = {x.Name2 for x in komponenten(asm)}
+    status = asm.InsertNewVirtualPart(sw.standardebenen(asm)[0].GetSpecificFeature2, neu)  # IRefPlane wie im Beispiel der Hilfe
+    k = neu.value or next((x for x in komponenten(asm) if x.Name2 not in vorher), None)  # das Byref bleibt unter late binding leer
+    if k is None:
+        return {"status": status, "neu": None, "namen": [x.Name2 for x in komponenten(asm)]}
     return {"status": status, "name": k.Name2, "pfad": k.GetPathName, "virtuell": bool(primitiv(k.IsVirtual)),
             "typ": next((f.GetTypeName2 for f in asm.FeatureManager.GetFeatures(False) or () if f.Name == k.Name2), None),
             "namen": [x.Name2 for x in komponenten(asm)]}
@@ -1811,27 +1823,45 @@ def e_speichern(app, lauf: Lauf) -> None:
     e_haupt(app, lauf)
 
 
-def e_unsichtbar(app, lauf: Lauf) -> dict:
-    """T10.3: Handler von Etappe 1 an einem Teil ohne Fenster, Normbohrung auf der fremden Oberseite."""
+def e_unsichtbar(app, lauf: Lauf, sichtbar: bool = False) -> dict:
+    """T10.3: Handler von Etappe 1 an einem Teil ohne Fenster, Normbohrung auf der fremden Oberseite; zum Vergleich mit Fenster."""
     from swki.compiler.handler.normbohrung import normbohrung
     from swki.compiler.kontext import Kontext
 
-    ordner = bestuecke("e/scheibe")
-    with Spitzenmessung(lauf.pid) as spitze:
-        m = oeffne_in(app, ordner / "teile/Grundplatte.SLDPRT", ordner, sichtbar=False, nur_lesen=False)
-        v0 = volumen(m)
-        f = {"id": "neu1", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [50, 0, 15]},
-             "positionen": [[50, 20]], "tiefe": 10}
-        ctx = Kontext(app, m, {"parameter": {}, "features": [f]}, ordner / "spec.yaml", 0.01)
-        ctx.knoten = "neu1"
-        normbohrung(ctx, f)
-        aus = {"volumen": [v0, volumen(m)], "baum": m.FeatureByPositionReverse(0).Name, "speichern": speichern(m)}
-        alle_zu(app)
+    ordner = bestuecke(f"e/scheibe_{'fenster' if sichtbar else 'unsichtbar'}")
+    try:
+        with Spitzenmessung(lauf.pid) as spitze:
+            m = oeffne_in(app, ordner / "teile/Grundplatte.SLDPRT", ordner, sichtbar=sichtbar, nur_lesen=False)
+            v0 = volumen(m)
+            f = {"id": "neu1", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "flaeche": {"nahe": [50, 0, 15]},
+                 "positionen": [[50, 20]], "tiefe": 10}
+            ctx = Kontext(app, m, {"parameter": {}, "features": [f]}, ordner / "spec.yaml", 0.01)
+            ctx.knoten = "neu1"
+            normbohrung(ctx, f)
+            aus = {"volumen": [v0, volumen(m)], "baum": m.FeatureByPositionReverse(0).Name, "speichern": speichern(m)}
+    finally:
+        alle_zu(app)  # ein offenes Teil gewänne sonst beim nächsten Auflösen (P.c4)
     return aus | {"speicher": spitze.als_dict()}
 
 
+def e_partner_unterdrueckt(app, lauf: Lauf) -> None:
+    """T9.19 neu: eine neue Komponente ohne andere Bindung, Verknüpfung an die Unterbaugruppe, die in „Ohne Antrieb“ unterdrückt ist."""
+    with arbeit(app, "e/partner") as (asm, ordner):
+        b = e_kontext(app, asm, ordner)
+        quelle = e_neue_datei(app, b, ordner / "Zusatz.SLDPRT")
+        b.spec["punkte"] = [{"id": "k1", "typ": "komponente_neu", "quelle": quelle}]
+        punkte_baugruppe.PUNKTE["komponente_neu"](b, b.spec["punkte"][0])
+        neu = b.neue.get("k1", ["Zusatz-1"])[0]
+        p = {"id": "m3", "typ": "verknuepfung_neu", "art": "deckungsgleich", "a": {"komponente": neu, "ebene": "rechts"},
+             "b": {"komponente": "Muster-1/Lagerdeckel-1", "ebene": "rechts"}}
+        lauf.frage("T9.19", lambda: {"handler": punkte_baugruppe.PUNKTE["verknuepfung_neu"](b, p)}, fall="Handler, ohne Widerspruch")
+        lauf.frage("T9.19", lambda: {"lesen": lies_verknuepfungen(asm, b.konfigurationen).get("m3"),
+                                     "je": e_je_konfiguration(asm, neu)}, fall="Stand danach")
+
+
 def e_haupt(app, lauf: Lauf) -> None:
-    lauf.frage("T10.3", lambda: e_unsichtbar(app, lauf))
+    lauf.frage("T10.3", lambda: e_unsichtbar(app, lauf), fall="unsichtbar")
+    lauf.frage("T10.3", lambda: e_unsichtbar(app, lauf, sichtbar=True), fall="Fenster")
     with arbeit(app, "e/skript") as (asm, ordner):
         skript = ordner / "skript.py"
         skript.write_text('def bauen(ctx):\n    ctx.model.Extension.CustomPropertyManager("").Add3("Skript", 30, "ja", 2)\n',
@@ -1930,10 +1960,33 @@ def zeile_v(app) -> None:
                         if n.startswith("s1")})
     lauf["fahrt"] = versuch(lambda: fahrt(app, asm, None, gelesen))
     alle_zu(app)
+    # unsichtbar gibt es keine Kollision (Zeile d): die Fahrt mit Fenster, wie `swki pruefen` sie fährt
+    asm, s = oeffne(app, haupt, OFFEN | VOLL | NUR_LESEN)
+    gelesen = lies_baugruppe(app, asm, {})
+    lauf["fahrt_fenster"] = versuch(lambda: fahrt(app, asm, frisch("v/bilder"), gelesen))
+    alle_zu(app)
+    lauf["kopie_danach_gleich"] = shas(ziel) == lauf["kopie"]
     lauf.schliesse()
 
 
-ZEILEN = {"a": zeile_a, "b": zeile_b, "c": zeile_c, "d": zeile_d, "e": zeile_e, "f": zeile_f, "v": zeile_v}
+def zeile_e2(app) -> None:
+    """Nachlauf zu Zeile e: `e_speichern` brach im ersten Lauf ab, T9.19 brauchte eine Komponente ohne Widerspruch."""
+    lauf = Lauf(app, "e2")
+    alt = app.GetUserPreferenceToggle(10)
+    app.SetUserPreferenceToggle(10, False)
+    try:
+        for abschnitt in (e_partner_unterdrueckt, e_speichern):
+            try:
+                abschnitt(app, lauf)
+            except Exception:
+                lauf[f"abbruch_{abschnitt.__name__}"] = traceback.format_exc()
+                alle_zu(app)
+    finally:
+        app.SetUserPreferenceToggle(10, alt)
+    lauf.schliesse()
+
+
+ZEILEN = {"a": zeile_a, "b": zeile_b, "c": zeile_c, "d": zeile_d, "e": zeile_e, "e2": zeile_e2, "f": zeile_f, "v": zeile_v}
 
 
 def main(argv: list[str] | None = None) -> None:

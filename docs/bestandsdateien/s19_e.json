@@ -1,0 +1,1162 @@
+{
+ "zeile": "e",
+ "start_mb": 439,
+ "spitze_mb": 7553,
+ "halt": [],
+ "fragen": {
+  "T9.1": {
+   "frage": "AddComponent5 mit benannter Konfiguration: Wird sie genommen?",
+   "antworten": [
+    {
+     "wert": {
+      "angelegt": true,
+      "name": "Lagerdeckel-1",
+      "referenziert": "Variante B",
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\einfuegen\\Lagerdeckel.SLDPRT"
+     }
+    }
+   ]
+  },
+  "P.e1": {
+   "frage": "Einfügen an fremder Baugruppe",
+   "antworten": [
+    {
+     "wert": {
+      "name": "Lagerdeckel-1",
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\einfuegen\\Lagerdeckel.SLDPRT"
+     }
+    },
+    {
+     "fall": "Handler, aus Quelle",
+     "wert": {
+      "handler": [
+       "Zusatz-1"
+      ],
+      "neue": {
+       "k1": [
+        "Zusatz-1"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "T9.2": {
+   "frage": "Neue Komponente in den übrigen Konfigurationen unterdrückt?",
+   "antworten": [
+    {
+     "wert": {
+      "Standard": {
+       "zustand": 2,
+       "referenziert": "Variante B",
+       "fixiert": false
+      },
+      "Ohne Antrieb": {
+       "zustand": 2,
+       "referenziert": "Variante B",
+       "fixiert": false
+      }
+     }
+    }
+   ]
+  },
+  "T9.4": {
+   "frage": "Nennt GetComponents(False) die neue Komponente auch dort, wo sie unterdrückt ist?",
+   "antworten": [
+    {
+     "wert": {
+      "Standard": {
+       "zustand": 2,
+       "referenziert": "Variante B",
+       "fixiert": false
+      },
+      "Ohne Antrieb": {
+       "zustand": 2,
+       "referenziert": "Variante B",
+       "fixiert": false
+      }
+     }
+    }
+   ]
+  },
+  "T9.3": {
+   "frage": "IComponent2.SetSuppression2: nur aktive Konfiguration? 2 oder 3? Rückgabe 2 verlässlich?",
+   "antworten": [
+    {
+     "fall": "aufheben in der zweiten Konfiguration",
+     "wert": {
+      "auf_2": 2,
+      "stand": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": false
+       },
+       "Ohne Antrieb": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": false
+       }
+      }
+     }
+    },
+    {
+     "fall": "unterdrücken nur dort",
+     "wert": {
+      "auf_0": 2,
+      "stand": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": false
+       },
+       "Ohne Antrieb": {
+        "zustand": 0,
+        "referenziert": "Variante B",
+        "fixiert": false
+       }
+      }
+     }
+    },
+    {
+     "fall": "Resolved",
+     "wert": {
+      "auf_3": 2,
+      "stand": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": false
+       },
+       "Ohne Antrieb": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": false
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T9.5": {
+   "frage": "ReferencedConfiguration = x: je Baugruppen-Konfiguration, Neuaufbau nötig?",
+   "antworten": [
+    {
+     "wert": {
+      "ohne_neuaufbau": "Standard",
+      "stand": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": false
+       },
+       "Ohne Antrieb": {
+        "zustand": 2,
+        "referenziert": "Standard",
+        "fixiert": false
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T9.6": {
+   "frage": "FixComponent je Konfiguration?",
+   "antworten": [
+    {
+     "wert": {
+      "fixiere": null,
+      "stand": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Variante B",
+        "fixiert": true
+       },
+       "Ohne Antrieb": {
+        "zustand": 2,
+        "referenziert": "Standard",
+        "fixiert": true
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T9.7": {
+   "frage": "wie: Identität bewegt nur die neue? Keine aktive Instanz: reicht oeffne_in? wie an einer Unterbaugruppe?",
+   "antworten": [
+    {
+     "fall": "wie Teil",
+     "wert": {
+      "handler": [
+       "Anschlag-3"
+      ],
+      "bewegt": []
+     }
+    },
+    {
+     "fall": "wie Unterbaugruppe",
+     "wert": {
+      "handler": [
+       "Muster-2"
+      ]
+     }
+    },
+    {
+     "fall": "keine aktive Instanz",
+     "wert": {
+      "handler": [
+       "Muster-3"
+      ]
+     }
+    }
+   ]
+  },
+  "T9.8": {
+   "frage": "Bleibt ein unsichtbar geöffnetes Teil geladen, wenn die Baugruppe sichtbar öffnet?",
+   "antworten": [
+    {
+     "wert": {
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Zusatz.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Muster.SLDASM"
+      ],
+      "titel": "Zusatz",
+      "sichtbar": false
+     }
+    }
+   ]
+  },
+  "T10.8": {
+   "frage": "Baugruppe öffnen, während neue Teile unsichtbar offen sind: Meldung, trifft oeffne_in alles Geladene?",
+   "antworten": [
+    {
+     "wert": {
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Zusatz.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\verdeckt\\Muster.SLDASM"
+      ],
+      "einfuegen": "Zusatz-1"
+     }
+    }
+   ]
+  },
+  "T10.10": {
+   "frage": "Schließreihenfolge, schließt SolidWorks Unsichtbare mit, toter Handle AttributeError oder com_error?",
+   "antworten": [
+    {
+     "wert": {
+      "offen": [],
+      "alter_handle": "AttributeError",
+      "schliesse": "ohne Fehler"
+     }
+    }
+   ]
+  },
+  "T9.9": {
+   "frage": "Name einer Datei mit .sldprt klein (Name2-Stamm, GetPathName)?",
+   "antworten": [
+    {
+     "wert": {
+      "name": "klein-1",
+      "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\klein\\klein.sldprt",
+      "datei": [
+       "klein.sldprt"
+      ]
+     }
+    }
+   ]
+  },
+  "T9.10": {
+   "frage": "DeleteSelection2(0) an einer Komponente: reicht 0, Verknüpfungen und Kinder, Dialog?",
+   "antworten": [
+    {
+     "fall": "Teil mit Verknüpfungen",
+     "wert": {
+      "handler": [
+       "Anschlag-2"
+      ],
+      "uebrig": [
+       "Schlitten-1",
+       "Anschlag-1",
+       "Muster-1",
+       "Muster-1/gm42-10-1",
+       "Muster-1/Lagerdeckel-1",
+       "Grundplatte-1"
+      ]
+     }
+    },
+    {
+     "fall": "Unterbaugruppe mit Kindern",
+     "wert": {
+      "handler": [
+       "Muster-1",
+       "Muster-1/Lagerdeckel-1",
+       "Muster-1/gm42-10-1"
+      ],
+      "uebrig": [
+       "Schlitten-1",
+       "Anschlag-1",
+       "Grundplatte-1"
+      ]
+     }
+    }
+   ]
+  },
+  "P.e3": {
+   "frage": "Löschen",
+   "antworten": [
+    {
+     "wert": {
+      "handler": [
+       "Anschlag-2"
+      ],
+      "uebrig": [
+       "Schlitten-1",
+       "Anschlag-1",
+       "Muster-1",
+       "Muster-1/gm42-10-1",
+       "Muster-1/Lagerdeckel-1",
+       "Grundplatte-1"
+      ]
+     }
+    }
+   ]
+  },
+  "T9.11": {
+   "frage": "Verknüpfung in einem Ordner unter MateGroup: Geht sie mit?",
+   "antworten": [
+    {
+     "wert": {
+      "handler": [
+       "Anschlag-2"
+      ],
+      "uebrig": [
+       "Schlitten Auflage",
+       "Schlitten Seite",
+       "Hub",
+       "Anschlag1 Auflage",
+       "Anschlag1 Mitte",
+       "Anschlag1 Lage",
+       "Antrieb vorne",
+       "Antrieb rechts",
+       "Antrieb Abstand"
+      ]
+     }
+    }
+   ]
+  },
+  "T9.12": {
+   "frage": "Reicht die Vorauswahl über Select4 für ReplaceComponents2?",
+   "antworten": [
+    {
+     "wert": {
+      "select4": true,
+      "gewaehlt": 1
+     }
+    }
+   ]
+  },
+  "T9.14": {
+   "frage": "ConfigName leer mit MatchName und Name mit ManuallySelect, in allen Konfigurationen?",
+   "antworten": [
+    {
+     "fall": "leer, MatchName",
+     "wert": {
+      "ersetzen": true
+     }
+    },
+    {
+     "fall": "leer, in allen Konfigurationen",
+     "wert": {
+      "je_konfiguration": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Standard",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\Zusatz.SLDPRT"
+       },
+       "Ohne Antrieb": {
+        "zustand": 2,
+        "referenziert": "Standard",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\Zusatz.SLDPRT"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T9.13": {
+   "frage": "Zeigt der alte IComponent2 danach den neuen Name2?",
+   "antworten": [
+    {
+     "wert": {
+      "alter_handle": "Zusatz-1",
+      "ersetzen": {
+       "ersetzen": true
+      },
+      "namen": [
+       "Zusatz-1",
+       "Schlitten-1",
+       "Muster-1",
+       "Muster-1/Lagerdeckel-1",
+       "Muster-1/gm42-10-1",
+       "Anschlag-2",
+       "Grundplatte-1"
+      ]
+     }
+    }
+   ]
+  },
+  "P.e2": {
+   "frage": "ReplaceComponents2: Bleibt Name2?",
+   "antworten": [
+    {
+     "wert": {
+      "alter_handle": "Zusatz-1",
+      "namen": [
+       "Zusatz-1",
+       "Schlitten-1",
+       "Muster-1",
+       "Muster-1/Lagerdeckel-1",
+       "Muster-1/gm42-10-1",
+       "Anschlag-2",
+       "Grundplatte-1"
+      ]
+     }
+    },
+    {
+     "fall": "Handler",
+     "wert": {
+      "handler": [
+       "Zusatz-1"
+      ],
+      "ersetzt": {
+       "Anschlag-1": "Zusatz-1"
+      },
+      "neue": {
+       "r1": [
+        "Zusatz-1"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "T9.15": {
+   "frage": "Bleiben neues Dokument, ctx.model, b.kontexte, b.offen nach dem Ersetzen gültig?",
+   "antworten": [
+    {
+     "wert": {
+      "neu_titel": "Zusatz",
+      "ctx_flaechen": "<bound method GetFaceCount of <COMObject GetBodies2>>",
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\Zusatz.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\ersetzen\\Muster.SLDASM"
+      ],
+      "handles_offen": [
+       "Zusatz"
+      ]
+     }
+    }
+   ]
+  },
+  "T9.16": {
+   "frage": "Verknüpfung, die sich nicht neu zuordnen lässt: gelöscht oder Fehlercode, Name?",
+   "antworten": [
+    {
+     "fall": "Handler, Flächen-Verknüpfungen",
+     "wert": {
+      "fehler": "BauFehler: Das Ersetzen von Schlitten-1 trifft Verknüpfungen, Hub: Fehler 48 in Standard, Fehler 48 in Ohne Antrieb; Schlitten Auflage: Fehler 48 in Standard, Fehler 48 in Ohne Antrieb; Schlitten Seite: Fehler 48 in Standard, Fehler 48 in Ohne Antrieb. Muss eine gehen: verknuepfung_loeschen davor",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 450, in komponente_ersetzen\n    _pruefe_verknuepfungen_nach_ersetzen(b, name, zuordnung, vorher_v, nachher_v)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 408, in _pruefe_verknuepfungen_nach_ersetzen\n    raise BauFehler(VERKNUEPFUNG_FEHLER, f\"Das Ersetzen von {name} trifft Verknüpfungen, {'; '.join(teile)}. Muss eine \"\n                                         \"gehen: verknuepfung_loeschen davor\", schritt=\"nachmessen\")\nswki.compiler.fehler.BauFehler: Das Ersetzen von Schlitten-1 trifft Verknüpfungen, Hub: Fehler 48 in Standard, Fehler 48 in Ohne Antrieb; Schlitten Auflage: Fehler 48 in Standard, Fehler 48 in Ohne Antrieb; Schlitten Seite: Fehler 48 in Standard, Fehler 48 in Ohne Antrieb. Muss eine gehen: verknuepfung_loeschen davor\n"
+     }
+    },
+    {
+     "fall": "Stand",
+     "wert": {
+      "verknuepfungen": {
+       "Schlitten Auflage": 48,
+       "Schlitten Seite": 48,
+       "Hub": 48,
+       "Anschlag1 Auflage": 0,
+       "Anschlag1 Mitte": 0,
+       "Anschlag1 Lage": 0,
+       "Anschlag2 Auflage": 0,
+       "Anschlag2 Mitte": 0,
+       "Anschlag2 Lage": 0,
+       "Antrieb vorne": 0,
+       "Antrieb rechts": 0,
+       "Antrieb Abstand": 0
+      }
+     }
+    }
+   ]
+  },
+  "T9.17": {
+   "frage": "Lässt sich eine unterdrückte Instanz wählen und ersetzen?",
+   "antworten": [
+    {
+     "fall": "Anschlag-2 unterdrücken",
+     "wert": {
+      "unterdruecken": 2
+     }
+    },
+    {
+     "fall": "alle_instanzen",
+     "wert": {
+      "handler": [
+       "Zusatz-1",
+       "Zusatz-2"
+      ]
+     }
+    }
+   ]
+  },
+  "T11.14": {
+   "frage": "Trägt protokoll.neue_dateien den Namen, den GetPathName zeigt?",
+   "antworten": [
+    {
+     "wert": {
+      "protokoll": [
+       "Zusatz.SLDPRT"
+      ],
+      "get_path_name": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\mate\\Zusatz.SLDPRT"
+     }
+    }
+   ]
+  },
+  "T9.18": {
+   "frage": "IFeature.SetSuppression2(1, 3, Namen) an einer neuen Verknüpfung: wirkt es, ist sie dort unterdrückt?",
+   "antworten": [
+    {
+     "fall": "Standardebenen",
+     "wert": {
+      "handler": [
+       "m1"
+      ],
+      "lesen": {
+       "typ": 0,
+       "ausrichtung": 0,
+       "wert": null,
+       "min": null,
+       "max": null,
+       "werte": {
+        "Standard": {
+         "wert": null,
+         "min": null,
+         "max": null
+        },
+        "Ohne Antrieb": {
+         "wert": null,
+         "min": null,
+         "max": null
+        }
+       },
+       "grenze": false,
+       "gesteuert": false,
+       "partner": [
+        "Grundplatte-1",
+        "Zusatz-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": false,
+        "Ohne Antrieb": false
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T9.20": {
+   "frage": "Doppelter Name an einer Verknüpfung still alt? Name mit Punkt in einer fremden Datei?",
+   "antworten": [
+    {
+     "wert": {
+      "doppelt": {
+       "gewollt": "Schlitten Seite",
+       "ist": "Hub"
+      },
+      "mit_punkt": [
+       "v1.anlage"
+      ]
+     }
+    }
+   ]
+  },
+  "T9.19": {
+   "frage": "Partner in einer Konfiguration unterdrückt: Gilt die neue Verknüpfung dort als unterdrückt?",
+   "antworten": [
+    {
+     "wert": {
+      "fehler": "BauFehler: m3 (deckungsgleich): AddMate5 meldet Status 5",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\baugruppe\\sw_baugruppe.py\", line 248, in verknuepfe\n    raise BauFehler(VERKNUEPFUNG_FEHLER, f\"AddMate5 meldet Status {status.value}\", schritt=\"verknuepfung\")\nswki.compiler.fehler.BauFehler: AddMate5 meldet Status 5\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 551, in verknuepfung_neu\n    f = sw_baugruppe.verknuepfe(b.asm, t, _entitaet(b, t.a), _entitaet(b, t.b), b.spec.get(\"parameter\", {}), b.gesetzt)\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\baugruppe\\sw_baugruppe.py\", line 268, in verknuepfe\n    raise BauFehler(VERKNUEPFUNG_FEHLER, f\"{v.id} ({v.typ}): {meldung}\", schritt=\"verknuepfung\") from e\nswki.compiler.fehler.BauFehler: m3 (deckungsgleich): AddMate5 meldet Status 5\n"
+     }
+    },
+    {
+     "fall": "Stand danach",
+     "wert": {
+      "lesen": null
+     }
+    }
+   ]
+  },
+  "T9.23": {
+   "frage": "komp.FeatureByName für referenz in einem fremden Teil?",
+   "antworten": [
+    {
+     "wert": {
+      "referenz": "True",
+      "feature": true
+     }
+    }
+   ]
+  },
+  "T9.22": {
+   "frage": "GetCorrespondingEntity bei mehreren Instanzen und in einer Unterbaugruppe, nimmt Select4 das? Name2 mit /?",
+   "antworten": [
+    {
+     "fall": "zweite Instanz",
+     "wert": {
+      "gewaehlt": 1,
+      "komponente": "Anschlag-2"
+     }
+    },
+    {
+     "fall": "Unterbaugruppe",
+     "wert": {
+      "gewaehlt": 1,
+      "komponente": "Muster-1/Lagerdeckel-1"
+     }
+    }
+   ]
+  },
+  "T9.30": {
+   "frage": "IFeature in ctx.ergebnisse gültig, wenn zwischen zwei Punkten die Konfiguration umschaltet?",
+   "antworten": [
+    {
+     "wert": {
+      "name": "Aufsatz-Linear austragen1",
+      "flaechen": 6
+     }
+    }
+   ]
+  },
+  "T9.21": {
+   "frage": "GetModelDoc2 gegen ReferencedConfiguration: Passen nahe, flaeche, GetCorrespondingEntity bei Abweichung?",
+   "antworten": [
+    {
+     "wert": {
+      "komponente": "Variante B",
+      "dokument": "Variante B",
+      "nahe": {
+       "gewaehlt": 1,
+       "komponente": "Lagerdeckel-1"
+      },
+      "fase": {
+       "fehler": "BauFehler: Komponente Lagerdeckel-1: keine ebene Fläche mit Normale +y",
+       "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\compiler\\topologie.py\", line 89, in loese_flaeche\n    return flaeche_in_richtung(flaechen(feature), anker[\"flaeche\"])\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\compiler\\anker.py\", line 74, in flaeche_in_richtung\n    raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f\"keine ebene Fläche mit Normale {richtung}\")\nswki.compiler.anker.AnkerFehler: keine ebene Fläche mit Normale +y\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1690, in e_gegenstueck\n    objekt, ist_feature = _entitaet(b, seite)\n                          ~~~~~~~~~^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 489, in _entitaet\n    raise _mit_kontext(e, VERKNUEPFUNG_FEHLER, f\"Komponente {name}\", \"referenz\") from e\nswki.compiler.fehler.BauFehler: Komponente Lagerdeckel-1: keine ebene Fläche mit Normale +y\n"
+      }
+     }
+    }
+   ]
+  },
+  "T9.24": {
+   "frage": "SetSystemValue3 an D1 mit Option 3 und 2: je Konfiguration, nach ForceRebuild3? Status? Vorzeichen?",
+   "antworten": [
+    {
+     "fall": "alle, Option 2",
+     "wert": {
+      "handler": [
+       "Schlitten Seite"
+      ],
+      "lesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 16.0,
+       "min": null,
+       "max": null,
+       "werte": {
+        "Standard": {
+         "wert": 16.0,
+         "min": null,
+         "max": null
+        },
+        "Ohne Antrieb": {
+         "wert": 16.0,
+         "min": null,
+         "max": null
+        }
+       },
+       "grenze": false,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": false,
+        "Ohne Antrieb": false
+       }
+      }
+     }
+    },
+    {
+     "fall": "benannt, Option 3",
+     "wert": {
+      "handler": [
+       "Schlitten Seite"
+      ],
+      "lesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 16.0,
+       "min": null,
+       "max": null,
+       "werte": {
+        "Standard": {
+         "wert": 16.0,
+         "min": null,
+         "max": null
+        },
+        "Ohne Antrieb": {
+         "wert": 17.0,
+         "min": null,
+         "max": null
+        }
+       },
+       "grenze": false,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": false,
+        "Ohne Antrieb": false
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T9.25": {
+   "frage": "GetDefinition über late binding: MinimumDistance direkt, IsAdvancedMate bei fremden Grenzen immer wahr?",
+   "antworten": [
+    {
+     "wert": {
+      "MinimumDistance": 0.0,
+      "MaximumDistance": 0.025,
+      "Distance": 0.0,
+      "IsAdvancedMate": true,
+      "FlipDimension": false
+     }
+    }
+   ]
+  },
+  "T9.27": {
+   "frage": "ModifyDefinition je Konfiguration oder in allen?",
+   "antworten": [
+    {
+     "fall": "alle",
+     "wert": {
+      "handler": [
+       "Hub"
+      ],
+      "lesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 0.0,
+       "min": 0.0,
+       "max": 30.0,
+       "werte": {
+        "Standard": {
+         "wert": 0.0,
+         "min": 0.0,
+         "max": 30.0
+        },
+        "Ohne Antrieb": {
+         "wert": 0.0,
+         "min": 0.0,
+         "max": 30.0
+        }
+       },
+       "grenze": true,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": true,
+        "Ohne Antrieb": false
+       }
+      }
+     }
+    },
+    {
+     "fall": "nur Standard",
+     "wert": {
+      "fehler": "BauFehler: Verknüpfung Hub: max steht in Ohne Antrieb auf 28.0 statt 30.0 – gesteuert?",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 634, in verknuepfung_wert\n    _nachmesse_wert(b, name, feld, neu, genannt, vorher, _verknuepfungen(b))\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 615, in _nachmesse_wert\n    raise BauFehler(VERKNUEPFUNG_FEHLER, f\"Verknüpfung {name}: {'; '.join(probleme)} – gesteuert?\", schritt=\"nachmessen\")\nswki.compiler.fehler.BauFehler: Verknüpfung Hub: max steht in Ohne Antrieb auf 28.0 statt 30.0 – gesteuert?\n"
+     }
+    }
+   ]
+  },
+  "P.e4": {
+   "frage": "Grenze über ModifyDefinition, je Konfiguration",
+   "antworten": [
+    {
+     "wert": {
+      "handler": [
+       "Hub"
+      ],
+      "lesen": {
+       "typ": 5,
+       "ausrichtung": 0,
+       "wert": 0.0,
+       "min": 0.0,
+       "max": 30.0,
+       "werte": {
+        "Standard": {
+         "wert": 0.0,
+         "min": 0.0,
+         "max": 30.0
+        },
+        "Ohne Antrieb": {
+         "wert": 0.0,
+         "min": 0.0,
+         "max": 30.0
+        }
+       },
+       "grenze": true,
+       "gesteuert": false,
+       "partner": [
+        "Schlitten-1",
+        "Grundplatte-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": true,
+        "Ohne Antrieb": false
+       }
+      }
+     }
+    },
+    {
+     "fall": "je Konfiguration",
+     "wert": {
+      "Standard": {
+       "wert": 0.0,
+       "min": 0.0,
+       "max": 28.0
+      },
+      "Ohne Antrieb": {
+       "wert": 0.0,
+       "min": 0.0,
+       "max": 28.0
+      }
+     }
+    }
+   ]
+  },
+  "T9.26": {
+   "frage": "Minimum/Maximum absolut, konsistent zu D1 und Variation? D1 außerhalb der neuen Grenzen?",
+   "antworten": [
+    {
+     "fall": "D1 unter der neuen Grenze",
+     "wert": {
+      "fehler": "BauFehler: Verknüpfung Hub: min steht in Standard auf 0.0 statt 5.0; min steht in Ohne Antrieb auf 0.0 statt 5.0 – gesteuert?",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 634, in verknuepfung_wert\n    _nachmesse_wert(b, name, feld, neu, genannt, vorher, _verknuepfungen(b))\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\punkte_baugruppe.py\", line 615, in _nachmesse_wert\n    raise BauFehler(VERKNUEPFUNG_FEHLER, f\"Verknüpfung {name}: {'; '.join(probleme)} – gesteuert?\", schritt=\"nachmessen\")\nswki.compiler.fehler.BauFehler: Verknüpfung Hub: min steht in Standard auf 0.0 statt 5.0; min steht in Ohne Antrieb auf 0.0 statt 5.0 – gesteuert?\n"
+     }
+    }
+   ]
+  },
+  "T9.28": {
+   "frage": "ModifyDefinition(daten, asm, callout_leer()): VT_DISPATCH None als Nothing, oder None? AccessSelections?",
+   "antworten": [
+    {
+     "fall": "callout_leer",
+     "wert": {
+      "rueckgabe": true,
+      "ohne_neuaufbau": 0.026000000000000002,
+      "nach_neuaufbau": 0.026000000000000002
+     }
+    },
+    {
+     "fall": "None",
+     "wert": {
+      "fehler": "com_error: (-2147352571, 'Typenkonflikt.', None, 3)",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1733, in setze\n    r = f.ModifyDefinition(daten, asm, leer)\n  File \"<COMObject <unknown>>\", line 2, in ModifyDefinition\npywintypes.com_error: (-2147352571, 'Typenkonflikt.', None, 3)\n"
+     }
+    },
+    {
+     "fall": "AccessSelections",
+     "wert": "IDistanceMateFeatureData hat laut Index kein AccessSelections, nur IMateControllerFeatureData"
+    }
+   ]
+  },
+  "T9.31": {
+   "frage": "Neuaufbau nach ModifyDefinition nötig, bevor die nächste Konfiguration umschaltet?",
+   "antworten": [
+    {
+     "wert": {
+      "zweite": 0.04,
+      "zurueck": 0.04
+     }
+    }
+   ]
+  },
+  "T9.29": {
+   "frage": "Select2 plus EditDelete an einer fremden Verknüpfung, in allen Konfigurationen und im Ordner?",
+   "antworten": [
+    {
+     "fall": "fremd",
+     "wert": {
+      "handler": [
+       "Anschlag1 Mitte"
+      ]
+     }
+    },
+    {
+     "fall": "im Ordner",
+     "wert": {
+      "handler": [
+       "Anschlag2 Mitte"
+      ],
+      "je": {
+       "Standard": 10
+      }
+     }
+    }
+   ]
+  },
+  "T10.1": {
+   "frage": "Save3 an der Baugruppe: schreibt es geänderte Komponenten mit? Baugruppe ohne echte Änderung neu?",
+   "antworten": [
+    {
+     "fall": "ohne Änderung",
+     "wert": {
+      "dirty": false,
+      "speichern": {
+       "ok": true,
+       "fehler": 0,
+       "warnungen": []
+      },
+      "geaendert": [
+       "Hubeinheit.SLDASM"
+      ]
+     }
+    },
+    {
+     "fall": "Komponente im Speicher geändert",
+     "wert": {
+      "dirty": [
+       true,
+       true
+      ],
+      "speichern": {
+       "ok": true,
+       "fehler": 0,
+       "warnungen": []
+      },
+      "geaendert": [
+       "Hubeinheit.SLDASM"
+      ]
+     }
+    }
+   ]
+  },
+  "T10.2": {
+   "frage": "Teil in einer Unterbaugruppe geändert: bleibt Unter.SLDASM ungespeichert, zeigt die Hauptbaugruppe den neuen Stand?",
+   "antworten": [
+    {
+     "wert": {
+      "fehler": "KeyError: 'teile/~$Anschlag.SLDPRT'",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 304, in versuch\n    return lesen() if callable(lesen) else lesen\n           ~~~~~^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1787, in <lambda>\n    lauf.frage(\"T10.2\", lambda: {\"geaendert\": [k for k, v in shas(ordner).items() if vorher[k] != v],\n                                                                                     ~~~~~~^^^\nKeyError: 'teile/~$Anschlag.SLDPRT'\n"
+     }
+    }
+   ]
+  },
+  "T10.4": {
+   "frage": "GetWhatsWrong an Verknüpfungen: nennt es sie, Feature-Name, Code gleich GetErrorCode2?",
+   "antworten": [
+    {
+     "wert": {
+      "whats_wrong": [
+       {
+        "feature": "Verknüpfungen",
+        "code": 1,
+        "warnung": true
+       },
+       {
+        "feature": "Schlitten Seite",
+        "code": 1,
+        "warnung": true
+       },
+       {
+        "feature": "Konflikt",
+        "code": 47,
+        "warnung": false
+       }
+      ],
+      "codes": {
+       "Schlitten Auflage": 0,
+       "Schlitten Seite": 1,
+       "Hub": 0,
+       "Anschlag1 Auflage": 0,
+       "Anschlag1 Mitte": 0,
+       "Anschlag1 Lage": 0,
+       "Anschlag2 Auflage": 0,
+       "Anschlag2 Mitte": 0,
+       "Anschlag2 Lage": 0,
+       "Antrieb vorne": 0,
+       "Antrieb rechts": 0,
+       "Antrieb Abstand": 0,
+       "Konflikt": 47
+      }
+     }
+    }
+   ]
+  },
+  "T10.5": {
+   "frage": "Rückgabe von ForceRebuild3 bei alten Fehlern?",
+   "antworten": [
+    {
+     "wert": {
+      "force": true,
+      "edit": true,
+      "fehler": 3
+     }
+    }
+   ]
+  },
+  "T10.9": {
+   "frage": "CloseDoc einer neu aufgebauten, ungespeicherten Baugruppe: still, Frage nach Komponenten?",
+   "antworten": [
+    {
+     "wert": {
+      "dirty": true,
+      "zu": null,
+      "offen": [],
+      "dateien_gleich": false
+     }
+    }
+   ]
+  },
+  "T10.6": {
+   "frage": "EditRebuild3 nach einem Punkt: reicht das an der Baugruppe oder braucht es ForceRebuild3?",
+   "antworten": [
+    {
+     "wert": {
+      "vor": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "edit": true,
+      "nach_edit": [
+       -70.0,
+       0.0,
+       18.0
+      ],
+      "force": true,
+      "nach_force": [
+       -70.0,
+       0.0,
+       18.0
+      ]
+     }
+    }
+   ]
+  },
+  "T10.12": {
+   "frage": "Öffnet die Lauf-Kopie in aufnahme[aktiv]?",
+   "antworten": [
+    {
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.9
+      },
+      "aktiv": "Ohne Antrieb",
+      "soll": "Ohne Antrieb"
+     }
+    }
+   ]
+  },
+  "T10.13": {
+   "frage": "Teil gespeichert in seiner aktiven Konfiguration: bleibt ReferencedConfiguration unverändert?",
+   "antworten": [
+    {
+     "wert": {
+      "referenziert": "Standard",
+      "dokument": "Variante B"
+     }
+    }
+   ]
+  },
+  "T10.3": {
+   "frage": "Teil-Scheibe unsichtbar: laufen die Handler von Etappe 1 ohne Fenster? Speicher?",
+   "antworten": [
+    {
+     "wert": {
+      "fehler": "BauFehler: normbohrung neu1: Fläche an Position 1 nicht getroffen",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1839, in e_unsichtbar\n    normbohrung(ctx, f)\n    ~~~~~~~~~~~^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\compiler\\handler\\normbohrung.py\", line 143, in normbohrung\n    raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f\"normbohrung {f['id']}: Fläche an Position 1 nicht getroffen\",\n                    schritt=\"auswahl\")\nswki.compiler.fehler.BauFehler: normbohrung neu1: Fläche an Position 1 nicht getroffen\n"
+     }
+    }
+   ]
+  }
+ },
+ "sekunden": 395.7,
+ "ende_mb": 5411,
+ "konflikt": {
+  "status": 5,
+  "neu": [
+   "Konflikt"
+  ]
+ },
+ "abbruch_e_speichern": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1886, in zeile_e\n    abschnitt(app, lauf)\n    ~~~~~~~~~^^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1823, in e_speichern\n    e_haupt(app, lauf)\n    ~~~~~~~^^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1847, in e_haupt\n    with arbeit(app, \"e/skript\") as (asm, ordner):\n         ~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\contextlib.py\", line 141, in __enter__\n    return next(self.gen)\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 438, in arbeit\n    asm = oeffne_in(app, ordner / HUBEINHEIT, ordner, sichtbar=True, nur_lesen=False)\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\pfade.py\", line 106, in oeffne_in\n    pruefe_vor_dem_oeffnen(app, pfad, wurzel)\n    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\pfade.py\", line 49, in pruefe_vor_dem_oeffnen\n    raise _fremd(fremd, \"vor dem Öffnen\", pfad)\nswki.bestand.fehler.BestandFehler: SolidWorks würde bei Hubeinheit.SLDASM 1 Dateien außerhalb des Ordners laden (vor dem Öffnen): C:\\Users\\User\\.swki\\arbeit\\S19\\e\\scheibe\\teile\\Grundplatte.SLDPRT\n",
+ "unbeantwortet": [
+  "T10.14",
+  "T10.15",
+  "T10.16",
+  "T11.K4"
+ ]
+}

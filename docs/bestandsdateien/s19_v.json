@@ -1,0 +1,814 @@
+{
+ "zeile": "v",
+ "start_mb": 437,
+ "spitze_mb": 6094,
+ "halt": [],
+ "fragen": {
+  "P.f5": {
+   "frage": "Abgleich auf unverändertem Lauf leer (Task 7)?",
+   "antworten": [
+    {
+     "fall": "swki aenderungen am unveränderten Lauf",
+     "wert": {
+      "spec": "linearschlitten.yaml",
+      "lauf": 2,
+      "geaendert": [],
+      "fehlend": []
+     }
+    }
+   ]
+  },
+  "P.f6": {
+   "frage": "TYP_TABELLE gegen echte Dateien (Task 7, Extrusion, ICE, Cut)",
+   "antworten": [
+    {
+     "wert": {
+      "spec": "linearschlitten.yaml",
+      "lauf": 2,
+      "geaendert": [],
+      "fehlend": []
+     }
+    }
+   ]
+  },
+  "P.f7": {
+   "frage": "VORLAGE_TYPEN an einem swki-Teil, Fehlalarme (Task 8)?",
+   "antworten": [
+    {
+     "wert": {
+      "spec": "linearschlitten.yaml",
+      "lauf": 2,
+      "geaendert": [],
+      "fehlend": []
+     }
+    }
+   ]
+  },
+  "P.a6": {
+   "frage": "Scharnier gleich zwei Verknüpfungen (Task 5)?",
+   "antworten": [
+    {
+     "wert": {
+      "s1": {
+       "typ": 1,
+       "partner": [
+        "ISO8734_8x30_St-1",
+        "LIVE-S19-SCHLITTEN_Hebel-1"
+       ]
+      },
+      "s1.anlage": {
+       "typ": 0,
+       "partner": [
+        "LIVE-S19-SCHLITTEN_Schlitten-1",
+        "LIVE-S19-SCHLITTEN_Hebel-1"
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ "gebaut": "C:\\Users\\User\\.swki\\arbeit\\LIVE-S19-SCHLITTEN\\lauf-2",
+ "sekunden": 133.9,
+ "ende_mb": 3458,
+ "kopie": {
+  "ISO4762_M8x25_8_8.sldprt": "692bf48459d2ebc3",
+  "ISO8734_8x30_St.sldprt": "998d7c278d602b8c",
+  "LIVE-S19-SCHLITTEN_Grundplatte.SLDPRT": "8e987229d6cb028d",
+  "LIVE-S19-SCHLITTEN_Hebel.SLDPRT": "cf97fe20358ebf8a",
+  "LIVE-S19-SCHLITTEN_Leiste.SLDPRT": "933ca13e2dd99ecc",
+  "LIVE-S19-SCHLITTEN_Linearschlitten.SLDASM": "65ee99bd3282027a",
+  "LIVE-S19-SCHLITTEN_Schlitten.SLDPRT": "f173bd77bc00ad0b"
+ },
+ "oeffnen": {
+  "fehler": 0,
+  "warnungen": [],
+  "s": 0.18
+ },
+ "verknuepfungen": {
+  "v1": {
+   "typ": 0,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Leiste-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v2": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Leiste-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v3": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Leiste-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v4": {
+   "typ": 0,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Leiste-2"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v5": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Leiste-2"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v6": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Leiste-2"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v10.1": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-1",
+    "ISO4762_M8x25_8_8-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v10.2": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-1",
+    "ISO4762_M8x25_8_8-2"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v11.1": {
+   "typ": 1,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-1",
+    "ISO4762_M8x25_8_8-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v11.2": {
+   "typ": 1,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-1",
+    "ISO4762_M8x25_8_8-2"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v12.1": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-2",
+    "ISO4762_M8x25_8_8-3"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v12.2": {
+   "typ": 0,
+   "ausrichtung": 0,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-2",
+    "ISO4762_M8x25_8_8-4"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v13.1": {
+   "typ": 1,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-2",
+    "ISO4762_M8x25_8_8-3"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v13.2": {
+   "typ": 1,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-2",
+    "ISO4762_M8x25_8_8-4"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v20": {
+   "typ": 0,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Grundplatte-1",
+    "LIVE-S19-SCHLITTEN_Schlitten-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v21": {
+   "typ": 0,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Leiste-1",
+    "LIVE-S19-SCHLITTEN_Schlitten-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "g1": {
+   "typ": 5,
+   "ausrichtung": 0,
+   "wert": 0.0,
+   "min": 0.0,
+   "max": 220.0,
+   "werte": {
+    "Standard": {
+     "wert": 0.0,
+     "min": 0.0,
+     "max": 220.0
+    }
+   },
+   "grenze": true,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Schlitten-1",
+    "LIVE-S19-SCHLITTEN_Grundplatte-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v22": {
+   "typ": 0,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Schlitten-1",
+    "ISO8734_8x30_St-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "v23": {
+   "typ": 1,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Schlitten-1",
+    "ISO8734_8x30_St-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "s1": {
+   "typ": 1,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "ISO8734_8x30_St-1",
+    "LIVE-S19-SCHLITTEN_Hebel-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "s1.anlage": {
+   "typ": 0,
+   "ausrichtung": 1,
+   "wert": null,
+   "min": null,
+   "max": null,
+   "werte": {
+    "Standard": {
+     "wert": null,
+     "min": null,
+     "max": null
+    }
+   },
+   "grenze": false,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Schlitten-1",
+    "LIVE-S19-SCHLITTEN_Hebel-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  },
+  "g2": {
+   "typ": 6,
+   "ausrichtung": 0,
+   "wert": 0.0,
+   "min": 0.0,
+   "max": 90.0,
+   "werte": {
+    "Standard": {
+     "wert": 0.0,
+     "min": 0.0,
+     "max": 90.0
+    }
+   },
+   "grenze": true,
+   "gesteuert": false,
+   "partner": [
+    "LIVE-S19-SCHLITTEN_Hebel-1",
+    "LIVE-S19-SCHLITTEN_Schlitten-1"
+   ],
+   "fehler": {
+    "Standard": 0
+   },
+   "unterdrueckt": {
+    "Standard": false
+   }
+  }
+ },
+ "fahrt": {
+  "fehler": "BauFehler: Kollision in der Fahrt nicht lesbar",
+  "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\baugruppe\\bewegungslauf.py\", line 113, in _durchlauf\n    for kollision in mech.interferenzen():\n                     ~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\bestand\\sw_baugruppe_bestand.py\", line 379, in interferenzen\n    raise BauFehler(REBUILD_FEHLER, \"Kollision in der Fahrt nicht lesbar\", schritt=\"kollision\")\nswki.compiler.fehler.BauFehler: Kollision in der Fahrt nicht lesbar\n"
+ },
+ "fahrt_fenster": {
+  "g1": {
+   "komponente": "LIVE-S19-SCHLITTEN_Schlitten-1",
+   "art": "abstand",
+   "min": 0.0,
+   "max": 220.0,
+   "gefahren": true,
+   "stellungen": 9,
+   "bewegt": [
+    "LIVE-S19-SCHLITTEN_Schlitten-1",
+    "ISO8734_8x30_St-1",
+    "LIVE-S19-SCHLITTEN_Hebel-1"
+   ],
+   "raum": [
+    -150.0,
+    20.0,
+    -30.0,
+    150.0,
+    55.0,
+    30.0
+   ],
+   "kollisionen": [],
+   "pruefungen": [
+    {
+     "id": "freiheitsgrad:LIVE-S19-SCHLITTEN_Schlitten-1",
+     "ok": true,
+     "ist": {
+      "ohne_antrieb": 2,
+      "mit_antrieb": 3
+     },
+     "knoten": [
+      "LIVE-S19-SCHLITTEN_Schlitten-1"
+     ]
+    },
+    {
+     "id": "bewegung:g1",
+     "ok": true,
+     "ist": [],
+     "knoten": []
+    },
+    {
+     "id": "bewegung_kollision:g1",
+     "ok": true,
+     "ist": [],
+     "knoten": []
+    },
+    {
+     "id": "grenze:g1",
+     "ok": true,
+     "ist": {
+      "oben": false,
+      "unten": null
+     },
+     "knoten": []
+    },
+    {
+     "id": "sollweg:g1:LIVE-S19-SCHLITTEN_Schlitten-1",
+     "ok": true,
+     "ist": {
+      "erste_abweichung": null,
+      "groesste_abweichung": null,
+      "abweichende_stellungen": 0
+     },
+     "stellungen": 9,
+     "knoten": []
+    }
+   ],
+   "hinweis": null,
+   "bilder": {
+    "g1-min": "C:\\Users\\User\\.swki\\arbeit\\S19\\v\\bilder\\g1-min.png",
+    "g1-mitte": "C:\\Users\\User\\.swki\\arbeit\\S19\\v\\bilder\\g1-mitte.png",
+    "g1-max": "C:\\Users\\User\\.swki\\arbeit\\S19\\v\\bilder\\g1-max.png"
+   }
+  },
+  "g2": {
+   "komponente": "LIVE-S19-SCHLITTEN_Hebel-1",
+   "art": "winkel",
+   "min": 0.0,
+   "max": 90.0,
+   "gefahren": true,
+   "stellungen": 9,
+   "bewegt": [
+    "LIVE-S19-SCHLITTEN_Hebel-1"
+   ],
+   "raum": [
+    -141.314,
+    45.0,
+    -11.314,
+    -77.438,
+    55.0,
+    52.562
+   ],
+   "kollisionen": [],
+   "pruefungen": [
+    {
+     "id": "freiheitsgrad:LIVE-S19-SCHLITTEN_Hebel-1",
+     "ok": true,
+     "ist": {
+      "ohne_antrieb": 2,
+      "mit_antrieb": 3
+     },
+     "knoten": [
+      "LIVE-S19-SCHLITTEN_Hebel-1"
+     ]
+    },
+    {
+     "id": "bewegung:g2",
+     "ok": true,
+     "ist": [],
+     "knoten": []
+    },
+    {
+     "id": "bewegung_kollision:g2",
+     "ok": true,
+     "ist": [],
+     "knoten": []
+    },
+    {
+     "id": "grenze:g2",
+     "ok": true,
+     "ist": {
+      "oben": false,
+      "unten": null
+     },
+     "knoten": []
+    },
+    {
+     "id": "sollweg:g2:LIVE-S19-SCHLITTEN_Hebel-1",
+     "ok": true,
+     "ist": {
+      "erste_abweichung": null,
+      "groesste_abweichung": null,
+      "abweichende_stellungen": 0
+     },
+     "stellungen": 9,
+     "knoten": []
+    }
+   ],
+   "hinweis": null,
+   "bilder": {
+    "g2-min": "C:\\Users\\User\\.swki\\arbeit\\S19\\v\\bilder\\g2-min.png",
+    "g2-mitte": "C:\\Users\\User\\.swki\\arbeit\\S19\\v\\bilder\\g2-mitte.png",
+    "g2-max": "C:\\Users\\User\\.swki\\arbeit\\S19\\v\\bilder\\g2-max.png"
+   }
+  }
+ },
+ "kopie_danach_gleich": true,
+ "unbeantwortet": []
+}
