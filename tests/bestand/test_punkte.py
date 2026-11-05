@@ -209,6 +209,16 @@ def test_variable_wirkt_nicht(aufnahme):
         _anwenden(teil, VARIABLE, aufnahme)
 
 
+def test_variable_in_teil_mit_einer_konfiguration():
+    """Task 13 live: Bei einer Konfiguration liefert `SetEquationAndConfigurationOption` -1 und ändert nichts (API-Hilfe: dann
+    `Equation`); der Schlitten der Hubeinheit hat nur „Standard“."""
+    a = _aufnahme(konfigurationen=["Standard"])
+    teil = teil_aus(a)
+    namen, _ = _anwenden(teil, VARIABLE, a)
+    assert namen == ["L"] and teil.gleichungen.Value(0) == 110
+    assert teil.gleichungen.gesetzt == [(0, '"L" = 110', "Equation", None)]
+
+
 GLEICHUNG = {"id": "p1", "typ": "gleichung", "gleichung": "D3@Skizze2", "alt": '"D1@Skizze1"  +5', "neu": '"D1@Skizze1" + 7'}
 
 

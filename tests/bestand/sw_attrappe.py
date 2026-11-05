@@ -112,14 +112,35 @@ class Gleichungen:
     def Value(self, i):
         return self._stand(i, "wert")
 
-    def SetEquationAndConfigurationOption(self, i, text, option, namen):
-        self.gesetzt.append((i, text, option, namen))
+    def _setze(self, i, text):
         self.zeilen[i].pop("je", None)
         self.zeilen[i]["text"] = text
         rechts = text.split("=", 1)[1].strip()
         if rechts.replace(".", "", 1).isdigit():
             self.zeilen[i]["wert"] = float(rechts)
+
+    def SetEquationAndConfigurationOption(self, i, text, option, namen):
+        self.gesetzt.append((i, text, option, namen))
+        if self.teil is not None and len(self.teil.konfigurationen) == 1:
+            return -1  # Task 13 live (Schlitten der Hubeinheit): bei einer Konfiguration -1, nichts geändert
+        self._setze(i, text)
         return i  # S18c: kein Status
+
+    @property
+    def _oleobj_(self):
+        """`Equation(i) = text` über `Invoke` mit DISPATCH_PROPERTYPUT (4), wie pywin32 es an IDispatch schickt."""
+        gleichungen = self
+
+        class Ole:
+            def GetIDsOfNames(self, name):
+                return name
+
+            def Invoke(self, dispid, lcid, art, ergebnis, i, text):
+                assert (dispid, art) == ("Equation", 4), (dispid, art)
+                gleichungen.gesetzt.append((i, text, "Equation", None))
+                gleichungen._setze(i, text)
+
+        return Ole()
 
 
 class Eigenschaften:

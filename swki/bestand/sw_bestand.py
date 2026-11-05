@@ -20,7 +20,7 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
   IDisplayDimension.GetDimension2(1), .IsLinked, .GetLinkedText(0), .GetAnnotation(0); IAnnotation.Color
   IDimension.FullName, .GetType(0: swDimensionParamType_e Linear 0, Angular 1, Integer 2), .DrivenState (swDimensionDriven
     1), .IsDesignTableDimension(0), .GetSystemValue3(2: swSetValue_InThisConfiguration 1), .ReferencePoints
-  IEquationMgr.GetCount(0), .Equation(Index), .GlobalVariable(Index), .Value(Index), .LinkToFile, .FilePath
+  IEquationMgr.GetCount(0), .Equation(Index, auch Property-Put), .GlobalVariable(Index), .Value(Index), .LinkToFile, .FilePath
   ISketch.ModelToSketchTransform; IMathVector.MultiplyTransform(1); IModelView.Scale2
   IModelDoc2.Save3(3: swSaveAsOptions_Silent 1); ISldWorks.GetCurrentLicenseType(0); IModelDocExtension.GetLicenseType(0)
   IComponent2.Name2, .Select4(3); IAssemblyDoc.GetComponents(1); ISelectionMgr.CreateSelectData(0)
@@ -66,6 +66,14 @@ def bstr_array(namen):
     import win32com.client
 
     return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_BSTR, list(namen))
+
+
+def setze_gleichung(gleichungen, i: int, text: str) -> None:
+    """`IEquationMgr.Equation(i) = text`: Property-Put mit Index, über IDispatch nur per `Invoke` (Spike S18c c4)."""
+    import pythoncom
+
+    ole = gleichungen._oleobj_
+    ole.Invoke(ole.GetIDsOfNames("Equation"), 0, pythoncom.DISPATCH_PROPERTYPUT, False, i, text)
 
 
 def massname(voll: str) -> str:
