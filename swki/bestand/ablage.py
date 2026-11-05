@@ -175,15 +175,15 @@ def ist_virtuell(pfad: Path | str) -> bool:
     return "^" in PureWindowsPath(pfad).name
 
 
-def ordne_referenzen(haupt: Path, gespeichert: list[str]) -> dict[str, Path]:
-    """Relativer Pfad in der Kopie → Quelle für alle gespeicherten Pfade der Referenzen (`GetDocumentDependencies2`). Wie beim
-    Öffnen hat die Datei neben der Hauptbaugruppe Vorrang vor dem gespeicherten Pfad (S18g). Sonst: was im Ordner der
+def ordne_referenzen(haupt: Path, pfade: list[str]) -> dict[str, Path]:
+    """Relativer Pfad in der Kopie → Quelle für alle Pfade der Referenzen (`GetDocumentDependencies2`, nach den Suchregeln aufgelöst,
+    S19c P.c3). Wie beim Öffnen hat die Datei neben der Hauptbaugruppe Vorrang (S18g, P.c2). Sonst: was im Ordner der
     Baugruppe liegt, behält seine relative Struktur, alles andere liegt flach daneben. Virtuelle Komponenten (Name mit `^`)
     und die Hauptbaugruppe selbst sind keine Referenz."""
     ordner = PureWindowsPath(haupt.parent)
     gefunden: list[tuple[str, str, Path]] = []  # (rel, Name klein, Quelle), nie überschreiben: gleiche rel prüft der Namensvergleich
     fehlen: list[str] = []
-    for text in gespeichert:
+    for text in pfade:
         pfad = PureWindowsPath(text)
         if ist_virtuell(pfad):
             continue

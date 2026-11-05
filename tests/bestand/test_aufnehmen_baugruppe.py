@@ -115,6 +115,20 @@ def test_dateien_json_traegt_die_angaben_und_die_hauptdatei(u):
     assert d["teile/Grund.SLDPRT"]["art"] == "teil"
 
 
+def test_verschobenes_original_kopiert_was_solidworks_laedt(u):
+    """Task 13 live (Muster im Git): Die gespeicherten Pfade zeigen in den Ordner, in dem gebaut wurde, und dort liegen noch Dateien.
+    SolidWorks lädt aber `teile/` neben der Baugruppe (S19c P.c1); kopiert wird, was das Öffnen lädt, mit relativer Struktur."""
+    alt = u.kunde.parent / "gebaut"
+    for rel in ORIGINALE:
+        (alt / rel).parent.mkdir(parents=True, exist_ok=True)
+        (alt / rel).write_bytes(b"anderer Stand " + rel.encode())
+    u.app.referenzen, u.app.gespeichert_in = [alt / rel for rel in ORIGINALE], alt
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    d = lade_dateien(u.r, "a1", 1)
+    assert sorted(rel for rel in d if not d[rel].get("haupt")) == sorted(ORIGINALE)
+    assert {rel: d[rel]["original"] for rel in ORIGINALE} == {rel: str(u.kunde / rel) for rel in ORIGINALE}
+
+
 def test_abgeleitetes_teil_traegt_seine_referenz_relativ(u):
     u.app.abhaengig["Schlitten.SLDPRT"] = [str(u.kunde / "teile" / "Grund.SLDPRT")]
     aufnahme_baugruppe.aufnehmen(u.haupt, "a1")

@@ -661,10 +661,11 @@ class Einzeldatei:
 
 class App:
     """ISldWorks. `referenzen`: gespeicherte Pfade der Hauptbaugruppe; `baugruppe`: was beim Öffnen von `Haupt.SLDASM` offen
-    ist."""
+    ist; `gespeichert_in`: wo die Baugruppe gespeichert wurde, die Suchregeln lösen relativ dazu auf (S19c P.c1)."""
 
     def __init__(self, original: Path, referenzen: list[Path], baugruppe: Baugruppe | None = None):
         self.original, self.referenzen, self.baugruppe = Path(original), [Path(p) for p in referenzen], baugruppe
+        self.gespeichert_in: Path | None = None  # None: neben `original`
         self.versionen: dict[str, tuple] = {}
         self.abhaengig: dict[str, list[str]] = {}  # Dateiname → eigene Referenzen
         self.GetLatestSupportedFileVersion = 18000
@@ -676,7 +677,7 @@ class App:
 
     def _kopie_von(self, ziel: Path, pfad: Path) -> Path:
         try:
-            return Path(pfad).parent / ziel.relative_to(self.original.parent)
+            return Path(pfad).parent / ziel.relative_to(self.gespeichert_in or self.original.parent)
         except ValueError:
             return Path(pfad).parent / ziel.name
 

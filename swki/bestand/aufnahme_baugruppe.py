@@ -2,7 +2,7 @@
 
 Das Original wird nur gelesen (Version, Abhängigkeiten, Kopie), geöffnet wird nur die schreibgeschützte Bestandskopie, jedes
 Dokument über `oeffne_in`, und gespeichert wird nichts, auch nicht nach der Fahrt: Die treibende Verknüpfung bleibt im Speicher.
-Ablauf: Format, Auftrag frei, Version und Abhängigkeiten am Original, Zuordnung der Dateien, Version je Datei, Kopie; dann die
+Ablauf: Format, Auftrag frei, Version und Abhängigkeiten (nach den Suchregeln aufgelöst) am Original, Zuordnung der Dateien, Version je Datei, Kopie; dann die
 Baugruppe unsichtbar lesen, schließen; danach jede Datei einmal einzeln lesen (das Durchschalten der Konfigurationen soll nicht in
 einer geladenen Baugruppe laufen), zuletzt die Baugruppe im Fenster: Kollision, Bilder, Fahrt. Ohne Fenster ist
 `InterferenceDetectionManager` `None` (S19d P.d1, T8.12): keine Kollision lesbar, und die Fahrt bräche an jeder Grenze ab. Lesen
@@ -21,7 +21,7 @@ from swki.bestand.ablage import (AUFNAHME_DATEI, bestand_ordner, herkunft_von, i
 from swki.bestand.befehle import zusammenfassung
 from swki.bestand.bewegung_bestand import abdeckung, fahre_bestand, grenzen_der_aufnahme, ohne_fahrt, statische_paare
 from swki.bestand.fehler import BESTAND_OFFEN, BESTAND_PFAD_FREMD, BESTAND_REFERENZ_EXTERN, BestandFehler
-from swki.bestand.pfade import oeffne_in
+from swki.bestand.pfade import aufgeloeste_referenzen, oeffne_in
 from swki.bestand.sw_baugruppe_bestand import lies_baugruppe, lies_kollisionen, mechanik_fuer
 from swki.bestand.sw_bestand import externe_referenzen, lies_bestand, pruefe_version
 from swki.compiler import sw
@@ -179,7 +179,9 @@ def aufnehmen(original: Path, auftrag: str, ohne_bewegung: bool = False) -> dict
     app = verbinde(r.sw_jahr)
     pfad = original.absolute()
     versionen, aelter = pruefe_version(app, pfad)
-    quellen = ordne_referenzen(pfad, externe_referenzen(app, pfad))
+    # Aufgelöst wie beim Öffnen (S19c P.c3): Die gespeicherten Pfade zeigen nach einem Verschieben dorthin, wo gebaut wurde, geladen wird
+    # `teile/` neben der Baugruppe (P.c1, Task 13 am Muster im Git)
+    quellen = ordne_referenzen(pfad, aufgeloeste_referenzen(app, pfad))
     namen = {Path(rel).name.lower(): rel for rel in quellen} | {pfad.name.lower(): pfad.name}  # auch ein In-Context-Teil
     angaben = {rel.lower(): _angaben_der_datei(app, rel, quelle, namen) for rel, quelle in quellen.items()}
     angaben[pfad.name.lower()] = {"art": "baugruppe", "versionen": versionen, "version_aelter": aelter,
