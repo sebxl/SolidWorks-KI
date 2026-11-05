@@ -169,14 +169,24 @@ def _komponenten_leser(asm, roh: dict[str, dict], dateien):
 
 # --- Verknüpfungen -----------------------------------------------------------------------------------------------------
 
-def _partner(mate) -> list:
-    """Komponentennamen der Entitäten; `None` an einer Stelle ist eine Ebene oder Achse der Hauptbaugruppe (`ReferenceComponent`
-    ohne Komponente, S19a)."""
+def _partner(mate, namen: set[str]) -> list:
+    """Komponentennamen der Entitäten; `None` an einer Stelle ist eine Ebene oder Achse der Hauptbaugruppe. `ReferenceComponent`
+    ist dort die Wurzelkomponente mit dem Titel der Baugruppe als `Name2` (S19a T8.4), ebenso am Kind einer in dieser
+    Konfiguration unterdrückten Unterbaugruppe (T8.5): Was `GetComponents(False)` nicht nennt (`namen`), ist `None`."""
     aus = []
     for i in range(int(primitiv(mate.GetMateEntityCount))):
         komp = mate.MateEntity(i).ReferenceComponent
-        aus.append(None if komp is None else komp.Name2 or None)
+        name = None if komp is None else komp.Name2 or None
+        aus.append(name if name in namen else None)
     return aus
+
+
+def _vereine(alt: list | None, neu: list | None) -> list | None:
+    """Partner über die Konfigurationen: Je Stelle zählt der erste gelesene Name. Ein Kind, das in der aktiven Konfiguration
+    unterdrückt ist, liest sich dort als `None` (T8.5) und in einer anderen richtig; `None` in allen bleibt `None`."""
+    if alt is None or neu is None or len(alt) != len(neu):
+        return alt if alt is not None else neu
+    return [a if a is not None else n for a, n in zip(alt, neu)]
 
 
 def _zahlen(feature, mate, typ: int) -> dict | None:
@@ -195,9 +205,9 @@ def _zahlen(feature, mate, typ: int) -> dict | None:
             "max": round(einheit(roh + oben), 6) if grenze else None}
 
 
-def _verknuepfung_stand(f, k: str, e: dict) -> None:
-    """Eine Verknüpfung in der aktiven Konfiguration `k` nach `e`. Unterdrückt gibt sie womöglich nichts her: Das bleibt
-    ungelesen."""
+def _verknuepfung_stand(f, k: str, e: dict, namen: set[str]) -> None:
+    """Eine Verknüpfung in der aktiven Konfiguration `k` nach `e`, `namen`: die Komponenten dort. Unterdrückt gibt sie womöglich
+    nichts her: Das bleibt ungelesen. Die Partner werden in jeder Konfiguration gelesen (`_vereine`)."""
     if (weg := _versuch(lambda: unterdrueckt(f, k))) is not None:
         e["unterdrueckt"][k] = weg
     if (code := _versuch(lambda: sw_baugruppe.fehlercode(f))) is not None:
@@ -209,8 +219,7 @@ def _verknuepfung_stand(f, k: str, e: dict) -> None:
         e["typ"] = _versuch(lambda: int(mate.Type))
     if e["ausrichtung"] is None:
         e["ausrichtung"] = _versuch(lambda: int(mate.Alignment))
-    if e["partner"] is None:
-        e["partner"] = _versuch(lambda: _partner(mate))
+    e["partner"] = _vereine(e["partner"], _versuch(lambda: _partner(mate, namen)))
     if e["typ"] is not None and (zahlen := _zahlen(f, mate, e["typ"])) is not None:
         e["werte"][k] = zahlen
 
@@ -227,10 +236,11 @@ def _gesteuerte(gleichungen: list[dict]) -> set[str]:
 
 def _verknuepfungen_leser(asm, roh: dict[str, dict], gesteuert: set[str]):
     def lies(k: str) -> None:
+        namen = {komp.Name2 for komp in asm.GetComponents(False) or ()}
         for f in sw_baugruppe.verknuepfungen(asm):
             name = f.Name
             e = roh.setdefault(name, _leere_verknuepfung(vergleichsname(f"{sw_baugruppe.MASS_NAME}@{name}") in gesteuert))
-            _verknuepfung_stand(f, k, e)
+            _verknuepfung_stand(f, k, e, namen)
 
     return lies
 

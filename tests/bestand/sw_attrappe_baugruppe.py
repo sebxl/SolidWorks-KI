@@ -159,8 +159,11 @@ class MateDaten:
     def MateEntity(self, i):
         if self.feature.gesperrt():
             raise RuntimeError("Grenze unterdrückt: keine Entitäten")
-        s = self.seiten[i]
-        return Seite(s.ReferenceComponent, Zeiger(s.Reference, self.feature.asm), s.ReferenceType2)
+        s, asm = self.seiten[i], self.feature.asm
+        komp = s.ReferenceComponent
+        if komp is None or asm.aktiv in komp.nicht_genannt:
+            komp = asm.wurzelkomponente  # Ebene der Hauptbaugruppe, Kind einer dort unterdrückten Unterbaugruppe (S19a T8.4, T8.5)
+        return Seite(komp, Zeiger(s.Reference, asm), s.ReferenceType2)
 
 
 class Definition:
@@ -430,6 +433,7 @@ class Baugruppe:
         self.auswahl = None
         self.entitaeten_nach_dem_unterdruecken = True   # auch eine unterdrückte Grenze gibt sie her (S19b T8.22)
         self.neuaufbau_stand = 0                        # zählt `ForceRebuild3`, `Zeiger` vergleicht
+        self.wurzelkomponente = SimpleNamespace(Name2=Path(name).stem, nicht_genannt=set())  # `ReferenceComponent` der Wurzel
         self.pfade_wie_gespeichert: Path | None = None  # unterdrückt zeigt `GetPathName` den gespeicherten Pfad (S19c T8.9)
         self.vom_original: set[str] = set()             # Komponenten, die aktiv vom gespeicherten Pfad laden (S18g)
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum

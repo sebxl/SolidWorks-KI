@@ -152,7 +152,27 @@ def test_verknuepfung_ohne_zahl_traegt_null(asm):
 
 
 def test_partner_an_ebene_der_hauptbaugruppe_ist_null(asm):
+    """S19a T8.4: `ReferenceComponent` ist die Wurzelkomponente (`Name2` wie der Titel der Baugruppe), nicht `None`. Was
+    `GetComponents` nicht nennt, ist keine Komponente."""
+    assert asm.mates[2].daten.MateEntity(1).ReferenceComponent.Name2 == "Haupt"
     assert lies_verknuepfungen(asm, ["Standard"])["Deckungsgleich1"]["partner"] == ["Grund-1", None]
+
+
+def test_partner_einer_in_der_aktiven_unterdrueckten_komponente(asm):
+    """S19a T8.5: Ist die Unterbaugruppe in der aktiven Konfiguration unterdrückt, meldet `ReferenceComponent` für ihr Kind die
+    Wurzel; die Verknüpfung selbst ist nicht unterdrückt. Den Partner nennt die Konfiguration, in der das Kind geladen ist."""
+    asm.mate("Wellenlage", 0, [asm.seite("Unter-1/Welle-1"), asm.seite("Grund-1")])
+    asm.komp("Unter-1").unterdrueckt.add("Standard")
+    asm.komp("Unter-1/Welle-1").nicht_genannt.add("Standard")
+    v = lies_verknuepfungen(asm, ["Standard", "Leicht"])["Wellenlage"]
+    assert v["partner"] == ["Unter-1/Welle-1", "Grund-1"] and v["unterdrueckt"] == {"Standard": False, "Leicht": False}
+
+
+def test_partner_ueberall_unterdrueckt_bleibt_null(asm):
+    """Keine Konfiguration lädt das Kind: Bestand und Lauf lesen dasselbe `None`, der Vergleich sieht keinen Unterschied."""
+    asm.mate("Wellenlage", 0, [asm.seite("Unter-1/Welle-1"), asm.seite("Grund-1")])
+    asm.komp("Unter-1/Welle-1").nicht_genannt.update({"Standard", "Leicht"})
+    assert lies_verknuepfungen(asm, ["Standard", "Leicht"])["Wellenlage"]["partner"] == [None, "Grund-1"]
 
 
 def test_winkel_in_grad(asm):
