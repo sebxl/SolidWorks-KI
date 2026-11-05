@@ -367,6 +367,7 @@ Erwartung war falsch, nicht das Muster. Eine unterdrückte Unterbaugruppe meldet
 | e | T9.28 `ModifyDefinition(…, None)` | `None` gibt „Typenkonflikt“, `callout_leer()` geht; `AccessSelections` kennt der Index an dieser Schnittstelle nicht | | |
 | e | T9.29 Fremde Verknüpfung löschen | `Select2` plus `EditDelete` geht, auch im Ordner, keine andere geht mit | | |
 | e | T9.30 `IFeature` über Umschaltungen | Bleibt gültig (Name, 6 Flächen) | | |
+| e3 | T9.27 wiederholt (Mini-Lauf, `spikes/s19_e3_grenze.py`, `s19_e3.json`) | **Bestätigt, mit Ursache:** `ModifyDefinition` einmal in Standard lässt `Hub` überall aktiv; einmal aus „Ohne Antrieb“ oder je Konfiguration (Handler) ist `Hub` danach in Standard unterdrückt. max steht in beiden auf 30 | je frische Kopie mit Fenster | 45 s, 440 → 1123 MB |
 | e | T10.1 `Save3` der Baugruppe | **Schreibt die Baugruppe immer neu**, auch ohne Änderung (neue SHA-256, `GetSaveFlag` falsch); eine im Speicher geänderte Komponente schreibt es nicht mit | | |
 | e | T10.2 Teil in der Unterbaugruppe geändert | Nur das Teil ändert sich auf der Platte, die Hauptbaugruppe zeigt das neue Volumen, ist dann aber `dirty` | e2 | |
 | e | T10.3 Teil-Scheibe ohne Fenster | **Nein:** `normbohrung` meldet „Fläche an Position 1 nicht getroffen“; mit Fenster geht dieselbe Bohrung (−206,18 mm³), Spitze +2,3 GB | e2 | |
@@ -402,7 +403,8 @@ Namens aus einem anderen Ordner gewinnt beim Auflösen, die erste Sperre sieht e
 
 ### Folgen für den Code
 
-Code unverändert, zu entscheiden.
+Umgesetzt 2026-11-05 (Task 12 Step 3, Bericht `.superpowers/sdd/2026-11-01-bestandsdateien-etappe-2/task-12b-report.md`): 1 bis 8 und
+11 im Code, 9, 10, 12 als Kommentar, 13 bleibt Minor. Zu 7: Der Handler setzt eine Grenze einmal in der aktiven Konfiguration (e3).
 
 1. **§8.1a, `swki/bestand/pfade.py:75–76` (`geladene_pfade`), `:101–120` (`oeffne_in`):** Regel oben umsetzen: unterdrückte Komponenten
    (`GetSuppression2` 0) aus der zweiten Sperre, ihren Pfad gegen `aufgeloeste_referenzen`; Sperre 2 nach jedem `schalte` beim Lesen

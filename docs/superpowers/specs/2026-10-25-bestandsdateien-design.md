@@ -460,6 +460,14 @@ Fehlt eine Datei neben der Baugruppe, lädt SolidWorks still vom gespeicherten P
 Gilt für jedes Öffnen in `aufnehmen`, `bauen`, `pruefen`, auch für einzelne Teile. Die zweite Sperre greift erst nach dem Laden, die erste ist also die eigentliche: Löst sie anders auf als das Öffnen (S19c), ist
 das ein Halt für die Etappe, keine Kleinigkeit. Im Prüfbericht steht die Prüfung `pfade`.
 
+*Nachgezogen bei der Umsetzung, 2026-11-05 (S19):* Die erste Sperre löst in allen sieben Fällen auf wie das Öffnen (S19c P.c3), auch
+ein offenes Original-Teil sieht sie (P.c4). Eine in der aktiven Konfiguration unterdrückte Komponente zeigt aber den gespeicherten
+Pfad, geladen ist nichts (T8.9). **Regel (Entscheidung des Auftraggebers):** Die zweite Sperre nimmt unterdrückte Komponenten aus,
+ihre Datei muss unter den aufgelösten Referenzen der ersten Sperre im Ordner stehen, sonst bleibt sie ein Fund. Nach jedem
+Konfigurationswechsel beim Lesen (Aufnahme, Nachmessen der Handler, Stand vor dem Speichern) läuft die zweite Sperre erneut: Dann ist
+die Komponente geladen und zeigt die Kopie (gemessen) oder eben nicht. Ein Fund dort ist `BESTAND_PFAD_FREMD` „nach dem Umschalten auf
+<Konfiguration>“, geschlossen wird ohne Speichern.
+
 ### 8.2 Komponenten und Verknüpfungen
 
 - Neue Normteile über `swki normteil hole`, Kaufteile über `swki kaufteil hole`, eigene Teile über eine Teil-Spec im Auftrag;
@@ -472,6 +480,20 @@ das ein Halt für die Etappe, keine Kleinigkeit. Im Prüfbericht steht die Prüf
 *Präzisiert im Plan Etappe 2, 2026-11-01:* Neue Dateien liegen flach neben der Hauptbaugruppe, nicht unter `swki/`: Der Rückweg ist nur für die Datei daneben belegt (S18g). Ein gleicher Name
 im Bestand ist ein Befund. Gewindepaarungen setzen freigegebene Bohrungsdaten voraus, die eine fremde Datei nicht hat. Eine neue Schraube in einem fremden Gewinde ist darum zunächst eine neue
 Kollision; ist sie gewollt, nennt `kollision_erlaubt` das Paar mit Grund, der Prüfer sieht das Volumen im Bericht.
+
+*Nachgezogen bei der Umsetzung, 2026-11-05 (S19):*
+
+- **Neue Komponenten und Verknüpfungen** sind anders als neue Features in allen Konfigurationen aktiv (S19e T9.2, T9.18), `FixComponent`
+  wirkt in allen (T9.6); die Handler heben trotzdem je Konfiguration auf, das schadet nicht.
+- **Grenzen** (`verknuepfung_wert` mit `grenze`) gehen über `ModifyDefinition`, das in allen Konfigurationen wirkt (T9.27). `validieren`
+  weist `konfigurationen` ungleich `alle` an einem Grenz-Punkt ab, je Konfiguration nur über `skript`. Eine Grenze, die den aktuellen Wert
+  ausschlösse, übernimmt SolidWorks nicht (T9.26): Befund in `validieren`, im Handler `BauFehler` nach dem Nachmessen. Gesetzt wird einmal
+  in der aktiven Konfiguration: je Konfiguration gesetzt, oder einmal aus „Ohne Antrieb“, war die Grenze danach in Standard unterdrückt
+  (zweimal gemessen, S19e und Mini-Lauf e3). Das Nachmessen prüft darum auch die Unterdrückung.
+- **Partner:** `ReferenceComponent` an einer Ebene der Hauptbaugruppe ist die Wurzelkomponente (`Name2` = Titel), am Kind einer in der
+  Konfiguration unterdrückten Unterbaugruppe ebenso (T8.4, T8.5). Was `GetComponents(False)` nicht nennt, steht als `null`; gelesen wird
+  je Konfiguration, je Stelle zählt der erste gelesene Name.
+- **Komponentenmuster** (`LocalLPattern` und die übrigen `Local…Pattern`) zählen wie Komponenten nicht zum Baum (T11.5).
 
 ### 8.3 Prüfungen zusätzlich
 
@@ -518,6 +540,12 @@ deshalb gilt die Datei: **Jede Grenzverknüpfung der Hauptbaugruppe ist eine Bew
 - **Ein Punkt ändert die Grenze** (`verknuepfung_wert`, `verknuepfung_loeschen`): gefahren wird der neue Bereich bzw. nichts. `punkt:<id>` belegt das.
 - **Nicht abgedeckt:** Grenzen in Unterbaugruppen und bewegliche Komponenten ohne Grenze. Beides steht als Hinweis im Bericht, nie stumm. Speicher wie Stufe 4a: `SPEICHER_KNAPP`, `--neustart`.
 
+*Nachgezogen bei der Umsetzung, 2026-11-05 (S19):* Kollision und Fahrt laufen mit Fenster, in `aufnehmen` und `pruefen`: Ohne Fenster ist
+`InterferenceDetectionManager` `None` (S19d P.d1), keine Kollision lesbar, die Fahrt bräche an jeder Grenze ab. Die Entitäten der Grenze
+liest die Mechanik je Antrieb frisch: Nach `ForceRebuild3` ist ein gelesener Zeiger getrennt (T8.22), aus der Grenze lassen sie sich
+auch unterdrückt neu lesen. So fährt die Grenze am nur lesend geöffneten Stand (P.b4, T11.1). Ein Partner einer aktiven Grenze mit
+weiteren freien Richtungen bleibt in `abdeckung` still (P.f8, bekannt).
+
 ### 8.5 Dateien, die swki selbst gebaut hat
 
 Quelle ist die Datei, nicht die Spec, sobald sie von Hand geändert ist und der Nutzer sie als Stand erklärt (Nutzer 2026-10-30: Weitere Änderungen kommen vom Konstrukteur; wird das Tool
@@ -559,6 +587,11 @@ wieder gebraucht, zuerst eine neue Bestandsaufnahme). Drei Wege, sie schließen 
 Bisher gemessen sind Aufnahme und Differenz bis 23 Flächen. Etappe 2 misst `lauf-30` (rund 35 Dateien, 74 Komponenten, 171 Verknüpfungen) und eine erzeugte große Baugruppe (`-m werkzeuge.bestand_gross`:
 200 Komponenten, 40 Dateien, ein Teil mit rund 2000 Flächen). Je Phase Zeit und Private Bytes, in `bestand.json` und im Protokoll (`messung`). Gelesen wird unsichtbar, nur Bilder und Bewegungsbilder
 öffnen ein Fenster. Kein Zeitlimit als Abnahme, die Zahlen stehen in den Ergebnissen.
+
+*Nachgezogen bei der Umsetzung, 2026-11-05 (S19):* Gelesen wird unsichtbar und in `sw.schnell` (S19d: `lies_baugruppe` 0,34 s statt
+2,55 s, mit Fenster 0,51 s statt 7,81 s; unsichtbar +1 MB statt +2,9 GB). Ein Fenster haben Kollision, Bilder und Fahrt sowie die
+Teil-Scheiben im Bau (ohne trifft `normbohrung` keine Fläche, T10.3). `Save3` schreibt die Baugruppe immer neu, auch ohne Änderung
+(T10.1): Gespeichert wird sie nur bei `aenderung_an_haupt`.
 
 ## 9. Ausgabe
 
