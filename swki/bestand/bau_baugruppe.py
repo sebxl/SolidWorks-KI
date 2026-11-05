@@ -33,7 +33,7 @@ from swki.bestand.ablage import bestand_ordner, lade_datei_aufnahme, lade_dateie
 from swki.bestand.aufnahme_baugruppe import _Messung
 from swki.bestand.bau import _aendere_und_speichere, _pruefe_baum, schliesse_lauf
 from swki.bestand.fehler import BESTAND_ABWEICHEND, BESTAND_VERSION_AELTER, BestandFehler
-from swki.bestand.pfade import oeffne_in, pruefe_vor_dem_oeffnen
+from swki.bestand.pfade import oeffne_in, pruefe_vor_dem_oeffnen, sperre_beim_umschalten
 from swki.bestand.punkte_baugruppe import BauKontext, hole_neue_dateien, punkt_handler
 from swki.bestand.scheiben import HAUPT_TYPEN, aenderung_an_haupt, dateien_mit_punkten, haupt_punkte, haupt_scheibe, scheibe
 from swki.bestand.spec import bestand_kennung
@@ -175,14 +175,15 @@ def pruefe_stand_baugruppe(asm, aufnahme: dict, spec: dict, neue: dict) -> None:
     """Neuaufbau in **allen** Konfigurationen, unmittelbar vor dem Speichern (S18c3): keine neuen Fehler gegen die Aufnahme, auch
     nicht an Verknüpfungen, die kein Punkt nennt, Features wie aufgenommen, nichts aus dem Bestand verschwunden, alle
     Punkt-Wirkungen stehen. `neue`: Punkt-ID → SolidWorks-Namen. Die aktive Konfiguration kommt zuletzt und bleibt für `Save3`
-    stehen."""
+    stehen. Nach jedem Wechsel läuft die zweite Sperre des Pfadschutzes erneut."""
     aktiv, konfigurationen = aufnahme["aktiv"], aufnahme["konfigurationen"]
     komponenten, mates = {}, {}
     lies_komponenten = _komponenten_leser(asm, komponenten, aufnahme.get("dateien", ()))
     lies_verknuepfungen = _verknuepfungen_leser(asm, mates, set())
     for k in [*(x for x in konfigurationen if x != aktiv), aktiv]:
-        schalte(asm, k)
-        ok = asm.ForceRebuild3(False)  # wie `lies_komponenten`: Lage und Status stehen sonst über Unterbaugruppen veraltet
+        with sperre_beim_umschalten(asm, k):  # §8.1a: nach jedem Wechsel, eine aufgehobene Komponente ist jetzt geladen
+            schalte(asm, k)
+            ok = asm.ForceRebuild3(False)  # wie `lies_komponenten`: Lage und Status stehen sonst über Unterbaugruppen veraltet
         fehler = whats_wrong(asm)
         neu = neue_fehler_baugruppe(fehler, aufnahme, k)
         if neu or not (ok or any(not e["warnung"] for e in fehler)):

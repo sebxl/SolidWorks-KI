@@ -18,7 +18,7 @@ from swki.auftrag import lauf_datei, lauf_ordner
 from swki.baugruppe import bau as baugruppe_bau
 from swki.baugruppe.modell import Quelle
 from swki.baugruppe.referenzen import TeilReferenz
-from swki.bestand import ablage, bau, bau_baugruppe, punkte_baugruppe, spec as spec_modul, sw_bestand
+from swki.bestand import ablage, bau, bau_baugruppe, pfade, punkte_baugruppe, spec as spec_modul, sw_bestand
 from swki.bestand.bau_baugruppe import bauen_baugruppe, pruefe_stand_baugruppe
 from swki.bestand.fehler import BESTAND_ABWEICHEND, BESTAND_PFAD_FREMD, BESTAND_VERSION_AELTER, BestandFehler
 from swki.bestand.sw_baugruppe_bestand import lies_baugruppe
@@ -500,7 +500,7 @@ def test_pfadschutz_nach_dem_oeffnen_speichert_nicht(lauf):
     """Sperre 2: Die Baugruppe lädt doch vom gespeicherten Pfad; sie wird ohne Speichern geschlossen."""
     lauf.schreibe(WERT)
     lauf.asm.pfade_wie_gespeichert = lauf.kunde
-    lauf.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    lauf.asm.vom_original.add("Schraube-1")
     with pytest.raises(BauAbbruch) as e:
         lauf.baue()
     assert e.value.daten["fehler"]["code"] == BESTAND_PFAD_FREMD
@@ -816,7 +816,7 @@ def test_sperre_2_nach_gespeicherter_scheibe(lauf):
     """Die Scheibe ist gespeichert, die Baugruppe wird abgewiesen: Nichts mehr speichern, der Lauf gilt nicht."""
     lauf.schreibe(MASS, WERT)
     lauf.asm.pfade_wie_gespeichert = lauf.kunde
-    lauf.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    lauf.asm.vom_original.add("Schraube-1")
     with pytest.raises(BauAbbruch) as e:
         lauf.baue()
     p = lauf.protokoll()
@@ -830,7 +830,7 @@ def test_fehlgeschlagenes_schliessen_nach_sperre_2_steht_im_protokoll(lauf):
     """Das Dokument ist noch offen: `fehler_dict` allein verlöre das."""
     lauf.schreibe(WERT)
     lauf.asm.pfade_wie_gespeichert = lauf.kunde
-    lauf.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    lauf.asm.vom_original.add("Schraube-1")
 
     def schliesse(titel):
         raise OSError("Schließen kaputt")
@@ -948,6 +948,21 @@ def stand(lauf):
 
 def _pruefe(stand, *punkte, neue=None):
     pruefe_stand_baugruppe(stand.asm, stand.aufnahme, {"punkte": list(punkte), "parameter": {}}, neue or {})
+
+
+def test_stand_prueft_den_pfadschutz_nach_jedem_wechsel(stand, tmp_path):
+    """§8.1a nach S19c: Aktiv unterdrückt, in `Leicht` lädt Schraube-1 vom gespeicherten Pfad; die Baugruppe ging über
+    `oeffne_in` auf, nach dem Wechsel sperrt die zweite Sperre."""
+    stand.asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    stand.asm.pfade_wie_gespeichert, stand.asm.vom_original = tmp_path / "kunde", {"Schraube-1"}
+    ordner = stand.asm.wurzel
+    (ordner / "teile").mkdir(parents=True, exist_ok=True)
+    stand.app.GetDocumentDependencies2 = lambda pfad, *rest: ("Schraube", str(ordner / "teile" / "Schraube.SLDPRT"))
+    stand.app.baugruppe = stand.asm
+    asm = pfade.oeffne_in(stand.app, ordner / HAUPT, ordner)
+    with pytest.raises(BestandFehler) as e:
+        _pruefe(stand)
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and "Umschalten auf Leicht" in e.value.daten["wo"] and asm is stand.asm
 
 
 def test_stand_unveraendert_besteht_und_endet_in_der_aktiven(stand):

@@ -330,7 +330,7 @@ def test_baugruppe_geht_auch_nach_einem_lesefehler_zu(u, monkeypatch):
 
 def test_pfad_fremd_bricht_ohne_bericht_ab(u, tmp_path):
     u.gebaut()
-    u.asm.komp("Grund-1").unterdrueckt.add(u.asm.aktiv)
+    u.asm.vom_original.add("Grund-1")
     u.asm.pfade_wie_gespeichert = tmp_path / "kunde"
     with pytest.raises(BestandFehler) as e:
         u.pruefe()

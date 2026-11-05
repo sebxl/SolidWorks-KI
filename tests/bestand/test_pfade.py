@@ -23,6 +23,10 @@ class Komp:
     def IsVirtual(self):
         return self.virtuell
 
+    @property
+    def GetSuppression2(self):
+        return 0 if self.unterdrueckt else 3  # swComponentSuppressionState_e: Suppressed 0, Resolved 3
+
 
 class Dok:
     """Ein offenes Dokument (Teil oder Baugruppe). Ein Teil hat kein `GetComponents`, wie in SolidWorks."""
@@ -155,12 +159,64 @@ def test_vorpruefung_oeffnet_nicht(wurzel, tmp_path):
 # --- Nach dem Laden ----------------------------------------------------------------------------------------------------
 
 def test_unterdrueckte_komponente_wird_mitgeprueft(wurzel, tmp_path):
+    """Ihren Pfad sichert nur die erste Sperre: Löst sie die Datei nicht im Ordner auf, bleibt der gespeicherte Pfad ein Fund."""
     fremd = tmp_path / "kunde" / "orig.SLDPRT"
     komponenten = [Komp(wurzel / "a.SLDPRT"), Komp(fremd, unterdrueckt=True)]
     app = App(wurzel, komponenten=komponenten)  # die Vorprüfung sieht nichts, erst das Laden zeigt es
     with pytest.raises(BestandFehler) as e:
         pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
     assert e.value.daten["pfade"] == [str(fremd)]
+
+
+def test_unterdrueckte_komponente_mit_gespeichertem_pfad_sichert_die_erste_sperre(wurzel, tmp_path):
+    """§8.1a nach S19c (T8.9): Unterdrückt nennt `GetPathName` den gespeicherten Pfad, geladen ist nichts. Steht ihre Datei
+    aufgelöst im Ordner, lädt SolidWorks sie beim Aufheben von dort."""
+    gespeichert = tmp_path / "kunde" / "Muster.SLDASM"
+    app = App(wurzel, abhaengig=[wurzel / "a.SLDPRT", wurzel / "Muster.SLDASM"],
+              komponenten=[Komp(wurzel / "a.SLDPRT"), Komp(gespeichert, unterdrueckt=True)])
+    assert pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel) is app.dok and app.geschlossen == []
+
+
+def test_gleicher_pfad_aktiv_und_unterdrueckt_bleibt_ein_fund(wurzel, tmp_path):
+    """Eine aktive Instanz lädt wirklich von dort: Die unterdrückte daneben entschuldigt sie nicht."""
+    fremd = tmp_path / "kunde" / "a.SLDPRT"
+    app = App(wurzel, abhaengig=[wurzel / "a.SLDPRT"], komponenten=[Komp(fremd, unterdrueckt=True), Komp(fremd)])
+    with pytest.raises(BestandFehler) as e:
+        pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    assert e.value.daten["pfade"] == [str(fremd)]
+
+
+def test_nach_dem_umschalten_laeuft_die_zweite_sperre_erneut(wurzel, tmp_path):
+    """Lädt die aufgehobene Komponente doch vom gespeicherten Pfad, fällt es nach dem Wechsel auf; geschlossen wird vom Aufrufer."""
+    gespeichert = tmp_path / "kunde" / "Muster.SLDASM"
+    komp = Komp(gespeichert, unterdrueckt=True)
+    app = App(wurzel, abhaengig=[wurzel / "Muster.SLDASM"], komponenten=[komp])
+    model = pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    with pytest.raises(BestandFehler) as e:
+        with pfade.sperre_beim_umschalten(model, "Standard"):
+            komp.unterdrueckt = False  # aufgehoben, aber vom gespeicherten Pfad geladen
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and e.value.daten["pfade"] == [str(gespeichert)]
+    assert "Umschalten auf Standard" in e.value.daten["wo"] and app.geschlossen == []
+
+
+def test_nach_dem_umschalten_nachgeladenes_dokument_ist_ein_fund(wurzel, tmp_path):
+    app = App(wurzel, komponenten=[Komp(wurzel / "a.SLDPRT")])
+    model = pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    fremd = tmp_path / "kunde" / "Nachgeladen.SLDPRT"
+    with pytest.raises(BestandFehler) as e:
+        with pfade.sperre_beim_umschalten(model, "Variante"):
+            app.offen.append(Dok(fremd))
+    assert e.value.daten["pfade"] == [str(fremd)]
+
+
+def test_umschalten_ohne_fund_und_ohne_pfadschutz_geht_durch(wurzel):
+    """Ein Dokument, das nicht über `oeffne_in` aufging (eigene swki-Baugruppe, Attrappe), prüft der Wechsel nicht."""
+    app = App(wurzel, komponenten=[Komp(wurzel / "a.SLDPRT")])
+    model = pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
+    with pfade.sperre_beim_umschalten(model, "Standard"):
+        pass
+    with pfade.sperre_beim_umschalten(Dok(wurzel / "Fremd.SLDASM", []), "Standard"):
+        pass
 
 
 def test_komponenten_aller_ebenen_und_hauptdokument_werden_gelesen(wurzel):

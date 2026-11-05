@@ -3,8 +3,8 @@
 UNGEMESSEN: Die Attrappe folgt dem API-Index, nicht einer Messung; S19 kann sie korrigieren. Sie bildet nach, was die Schicht
 aushalten muss: `Transform2` steht bis zum Neuaufbau veraltet; `GetComponents` liefert je aktiver Konfiguration, Kinder einer dort
 unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); `FeatureManager.GetFeatures` kennt
-auch, was der Baum nicht zeigt (`versteckt`); `pfade_wie_gespeichert`: `GetPathName` einer unterdrückten Komponente nennt laut
-Index den gespeicherten Pfad, die Attrappe tut das nur auf Wunsch; Grenzen wirken, solange sie nicht unterdrückt sind; eine
+auch, was der Baum nicht zeigt (`versteckt`); `pfade_wie_gespeichert`: `GetPathName` einer unterdrückten Komponente nennt den
+gespeicherten Pfad (S19c T8.9), die Attrappe tut das nur auf Wunsch, `vom_original` lädt eine aktive von dort (S18g); Grenzen wirken, solange sie nicht unterdrückt sind; eine
 Verknüpfung mit altem Fehler lässt `EditRebuild3` scheitern. Unterdrückte Verknüpfungen geben ihre Entitäten nicht mehr her
 (`entitaeten_nach_dem_unterdruecken`), so fällt auf, wer sie zu spät liest.
 
@@ -243,7 +243,7 @@ class Komp:
     @property
     def GetPathName(self):
         gespeichert = self.asm.pfade_wie_gespeichert
-        if gespeichert is not None and self.asm.aktiv in self.unterdrueckt:
+        if gespeichert is not None and (self.asm.aktiv in self.unterdrueckt or self.Name2 in self.asm.vom_original):
             return str(Path(gespeichert) / self.rel)
         return str(self.asm.wurzel / self.rel)
 
@@ -404,7 +404,8 @@ class Baugruppe:
         self.gespeichert = []
         self.auswahl = None
         self.entitaeten_nach_dem_unterdruecken = False
-        self.pfade_wie_gespeichert: Path | None = None  # Index zu GetPathName: unterdrückt zeigt sie den gespeicherten Pfad
+        self.pfade_wie_gespeichert: Path | None = None  # unterdrückt zeigt `GetPathName` den gespeicherten Pfad (S19c T8.9)
+        self.vom_original: set[str] = set()             # Komponenten, die aktiv vom gespeicherten Pfad laden (S18g)
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
         self.wirkungslos = False                        # Schreibaufrufe melden Erfolg und tun nichts
         self.definition_ueberall = False                # `ModifyDefinition` wirkt in allen Konfigurationen

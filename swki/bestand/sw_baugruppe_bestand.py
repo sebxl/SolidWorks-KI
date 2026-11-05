@@ -36,6 +36,7 @@ from swki.baugruppe.bewegungslauf import StellungFehler
 from swki.baugruppe.sw_bewegung import SwMechanik
 from swki.bestand.bewegung_bestand import SW_ABSTAND, SW_WINKEL, als_verknuepfung
 from swki.bestand.folgen import vergleichsname
+from swki.bestand.pfade import SW_UNTERDRUECKT, sperre_beim_umschalten
 from swki.bestand.sw_bestand import (SW_EINHEITENSYSTEM, baum_features, datei_referenzen, eigenschaften_von, feature_eintrag,
                                      gleichungen_von, gleichungsdatei, ist_ordner, leite_masse, lies_masse, schalte, unterdrueckt,
                                      whats_wrong)
@@ -46,7 +47,6 @@ from swki.verbindung import in_mm, in_mm3
 from swki.verbindung import wert as primitiv
 
 VERKNUEPFUNG_UNERREICHT = "VERKNUEPFUNG_UNERREICHT"  # Warnung der Aufnahme: Der Baum erreicht nicht jede Verknüpfung
-SW_UNTERDRUECKT = 0  # swComponentSuppressionState_e.swComponentSuppressed
 SW_MATE_UNBEKANNT = 7  # swMateType_e.swMateUNKNOWN: Ersatz, wenn eine überall unterdrückte Verknüpfung nichts hergibt
 AUSRICHTUNG_UNBEKANNT = -1  # kein swMateAlign_e: nur als Ersatz, in Bestand und Lauf gleich
 SW_BEZUGSGEOMETRIE = frozenset({4, 5, 6})  # swSelectType_e: Ebene, Achse, Punkt sind Features, wählbar mit Select2
@@ -74,12 +74,14 @@ def baum_ohne_glieder(model) -> list:
 def _je_konfiguration(asm, konfigurationen: list[str], lies) -> None:
     """`lies(k)` je Konfiguration nach dem Neuaufbau. `ForceRebuild3` statt `EditRebuild3`: Lage und Status stehen sonst über
     Unterbaugruppen veraltet (Diagnose 4b, Task 13), und ein geändertes Teil neben einer ungespeicherten Baugruppe zeigte die
-    alte Lage. Die aktive Konfiguration steht danach wieder, auch nach einem Fehler."""
+    alte Lage. Nach jedem Wechsel läuft die zweite Sperre des Pfadschutzes erneut (§8.1a, S19c T8.9): Eine eben aufgehobene
+    Komponente ist jetzt geladen. Die aktive Konfiguration steht danach wieder, auch nach einem Fehler."""
     aktiv = asm.ConfigurationManager.ActiveConfiguration.Name
     try:
         for k in konfigurationen:
-            schalte(asm, k)
-            asm.ForceRebuild3(False)
+            with sperre_beim_umschalten(asm, k):
+                schalte(asm, k)
+                asm.ForceRebuild3(False)
             lies(k)
     finally:
         schalte(asm, aktiv)

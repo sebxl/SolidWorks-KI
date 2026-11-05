@@ -320,16 +320,27 @@ def test_pfad_fremd_nach_dem_oeffnen_entfernt_die_aufnahme(u):
     assert ("zu", "Haupt.SLDASM") in u.app.ereignisse
 
 
-def test_heute_meldet_eine_unterdrueckte_komponente_mit_gespeichertem_pfad_pfad_fremd(u):
-    """Hält das heutige Verhalten fest, ohne es gutzuheißen: Laut Index nennt `GetPathName` einer unterdrückten Komponente den
-    gespeicherten Pfad, §8.1a prüft sie mit, die Aufnahme verwirft sich. Stimmt der Index, geht das an echten Baugruppen nicht
-    auf. Die Entscheidung trifft S19c, der Pfadschutz wird ohne Messung nicht aufgeweicht."""
+def test_unterdrueckte_komponente_mit_gespeichertem_pfad_sichert_die_erste_sperre(u):
+    """§8.1a nach S19c (T8.9, Entscheidung 2026-11-05): `GetPathName` einer unterdrückten Komponente nennt den gespeicherten Pfad,
+    geladen ist nichts. Die Kopie ihrer Datei hat die erste Sperre aufgelöst, die Aufnahme geht durch."""
     u.asm.komp("Schraube-1").unterdrueckt.add("Standard")
     u.asm.pfade_wie_gespeichert = u.kunde
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    assert lade_aufnahme(u.r, "a1", 1)["komponenten"]["Schraube-1"]["unterdrueckt"] == {"Standard": True}
+
+
+def test_nach_dem_umschalten_vom_original_geladen_verwirft_die_aufnahme(u):
+    """Aktiv unterdrückt, in der anderen Konfiguration lädt die Komponente vom gespeicherten Pfad: Die zweite Sperre läuft nach
+    jedem Wechsel beim Lesen erneut."""
+    asm = muster_baugruppe(u.asm.wurzel, konfigurationen=("Standard", "Variante"))
+    u.app.baugruppe = asm
+    asm.komp("Schraube-1").unterdrueckt.add("Standard")
+    asm.pfade_wie_gespeichert, asm.vom_original = u.kunde, {"Schraube-1"}
     with pytest.raises(BestandFehler) as e:
         aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
-    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and str(u.kunde / "teile" / "Schraube.SLDPRT") in e.value.daten["pfade"]
-    assert aufnahmen(u.r, "a1") == []
+    assert e.value.daten["code"] == BESTAND_PFAD_FREMD and "Umschalten auf Variante" in e.value.daten["wo"]
+    assert e.value.daten["pfade"] == [str(u.kunde / "teile" / "Schraube.SLDPRT")]
+    assert aufnahmen(u.r, "a1") == [] and ("zu", "Haupt.SLDASM") in u.app.ereignisse
 
 
 def test_lesefehler_laesst_sich_nachholen(u):
