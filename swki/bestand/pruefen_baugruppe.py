@@ -9,7 +9,8 @@ Baugruppen. Eine geänderte Datei ohne Punkt ist ein Mangel `dateien`, sie brauc
 
 Die Bestandskopie der Baugruppe bleibt zu: Vorher steht in der Aufnahme, ihre Bilder hat `aufnehmen` gemacht. Teile gehen einzeln
 über `vorher_<rel flach>` in die Differenz und sind zu, bevor die Baugruppe aufgeht, gleiche Dateinamen sind nie zugleich offen
-(S18d). Alles geht nur lesend auf, gelesen wird unsichtbar, nur Bilder und Fahrt haben ein Fenster; nichts wird gespeichert, die
+(S18d). Alles geht nur lesend auf, gelesen wird unsichtbar, Kollision, Bilder und Fahrt haben ein Fenster: Ohne Fenster ist
+`InterferenceDetectionManager` `None` (S19d P.d1), `kollision` stünde immer auf `ok: None`. Nichts wird gespeichert, die
 treibenden Verknüpfungen der Fahrt bleiben im Speicher.
 
 `SpeicherKnapp` bricht ohne Bericht ab wie in Stufe 4a. Ein `BauFehler` der Fahrt (Kollision nicht lesbar, Stand kippt) nimmt nur
@@ -131,7 +132,7 @@ def _pruefe_neue_teile(app, m: _Messung, spec: dict, spec_pfad: Path, ordner: Pa
 
 
 def _lies_lauf(app, m: _Messung, asm_pfad: Path, ordner: Path, weitere: list[str]) -> tuple[dict, dict]:
-    """(Aufnahme des Laufs nach dem Neuaufbau, Eintrag `pfade`): unsichtbar, die Baugruppe geht wieder zu."""
+    """(Aufnahme des Laufs nach dem Neuaufbau ohne `kollisionen`, Eintrag `pfade`): unsichtbar, die Baugruppe geht wieder zu."""
     with m.phase("oeffnen"):
         offen = offene_dokumente(app)
         asm = oeffne_in(app, asm_pfad, ordner, sichtbar=False, nur_lesen=True)
@@ -139,8 +140,6 @@ def _lies_lauf(app, m: _Messung, asm_pfad: Path, ordner: Path, weitere: list[str
         pfade = pruefe_geladen(app, asm, ordner, offen)
         with m.phase("lesen"):
             nachher = lies_baugruppe(app, asm, weitere, kollision=False)
-        with m.phase("kollision"):
-            nachher["kollisionen"] = lies_kollisionen(asm)
     finally:
         sw.schliesse(app, asm)
     return nachher, pfade
@@ -161,19 +160,23 @@ def _fahre(app, asm, spec: dict, vorher: dict, nachher: dict, neue: dict, ersetz
         return ohne_fahrt(grenzen, f"Fahrt abgebrochen: {e}")
 
 
-def _bilder_und_fahrt(app, m: _Messung, asm_pfad: Path, ordner: Path, spec: dict, vorher: dict, nachher: dict, neue: dict,
-                      ersetzt: dict, standard: dict, start_mb: float | None) -> tuple[dict, dict]:
-    """(Bilder, `bewegungen`) im Fenster; geschlossen wird ohne Speichern, auch nach `SpeicherKnapp`. Neu aufgebaut wird zuerst: Ein
-    geändertes Teil neben einer ungespeicherten Baugruppe zeigte sonst den alten Stand, Bilder und Fahrt gälten nicht dem Lauf."""
+def _im_fenster(app, m: _Messung, asm_pfad: Path, ordner: Path, spec: dict, vorher: dict, nachher: dict, neue: dict,
+               ersetzt: dict, standard: dict, start_mb: float | None) -> tuple[list[dict] | None, dict, dict]:
+    """(`kollisionen`, Bilder, `bewegungen`) im Fenster, Kollision und Fahrt brauchen es (S19d); geschlossen wird ohne Speichern,
+    auch nach `SpeicherKnapp`. Neu aufgebaut wird zuerst: Ein geändertes Teil neben einer ungespeicherten Baugruppe zeigte sonst
+    den alten Stand, Kollision, Bilder und Fahrt gälten nicht dem Lauf. `nachher` bekommt die Kollisionen vor der Fahrt."""
     with m.phase("fenster"):
         asm = oeffne_in(app, asm_pfad, ordner, sichtbar=True, nur_lesen=True)
     try:
         with m.phase("neuaufbau"):
             asm.ForceRebuild3(False)
+        with m.phase("kollision"):
+            kollisionen = lies_kollisionen(asm)
         with m.phase("bilder"):
             bilder = screenshots(app, asm, ordner / "bilder")
         with m.phase("fahrt"):
-            return bilder, _fahre(app, asm, spec, vorher, nachher, neue, ersetzt, ordner / "bilder", standard, start_mb)
+            nachher = {**nachher, "kollisionen": kollisionen}
+            return kollisionen, bilder, _fahre(app, asm, spec, vorher, nachher, neue, ersetzt, ordner / "bilder", standard, start_mb)
     finally:
         sw.schliesse(app, asm)
 
@@ -262,8 +265,8 @@ def pruefen_baugruppe(spec_pfad: Path, spec: dict, vorher: dict, lauf: int, prot
                                           standard, protokoll)
     neue_teile, teil_uebersicht = _pruefe_neue_teile(app, m, spec, spec_pfad, ordner, neue_dateien, standard, protokoll)
     gelesen, pfade = _lies_lauf(app, m, asm_pfad, ordner, [*vorher["dateien"], *neue_dateien])
-    bilder, bewegungen = _bilder_und_fahrt(app, m, asm_pfad, ordner, spec, vorher, gelesen, neue, ersetzt, standard, start_mb)
-    nachher = {**gelesen, "bewegungen": bewegungen}
+    kollisionen, bilder, bewegungen = _im_fenster(app, m, asm_pfad, ordner, spec, vorher, gelesen, neue, ersetzt, standard, start_mb)
+    nachher = {**gelesen, "kollisionen": kollisionen, "bewegungen": bewegungen}
 
     datei_pruefung = _dateien_pruefung(spec, dateien, ist, neue_dateien, protokoll)
     pruefungen = [pfade, datei_pruefung, *vergleiche_baugruppe(spec, vorher, nachher, neue, ersetzt, neue_dateien),

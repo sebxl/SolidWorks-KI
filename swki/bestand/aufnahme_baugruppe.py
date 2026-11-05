@@ -3,9 +3,10 @@
 Das Original wird nur gelesen (Version, Abhängigkeiten, Kopie), geöffnet wird nur die schreibgeschützte Bestandskopie, jedes
 Dokument über `oeffne_in`, und gespeichert wird nichts, auch nicht nach der Fahrt: Die treibende Verknüpfung bleibt im Speicher.
 Ablauf: Format, Auftrag frei, Version und Abhängigkeiten am Original, Zuordnung der Dateien, Version je Datei, Kopie; dann die
-Baugruppe unsichtbar lesen, Kollision, Fahrt, schließen; danach jede Datei einmal einzeln lesen (das Durchschalten der
-Konfigurationen soll nicht in einer geladenen Baugruppe laufen), zuletzt das Bild im Fenster. `bestand.json` entsteht als
-Letztes: Fehlt sie, lässt sich das Lesen nachholen, eine abgelehnte Aufnahme entfernt ihren Ordner. Zeit und Private Bytes je
+Baugruppe unsichtbar lesen, schließen; danach jede Datei einmal einzeln lesen (das Durchschalten der Konfigurationen soll nicht in
+einer geladenen Baugruppe laufen), zuletzt die Baugruppe im Fenster: Kollision, Bilder, Fahrt. Ohne Fenster ist
+`InterferenceDetectionManager` `None` (S19d P.d1, T8.12): keine Kollision lesbar, und die Fahrt bräche an jeder Grenze ab. Lesen
+bleibt unsichtbar, dort kostet es +1 MB statt +2,9 GB (S19d P.d2). `bestand.json` entsteht als Letztes: Fehlt sie, lässt sich das Lesen nachholen, eine abgelehnte Aufnahme entfernt ihren Ordner. Zeit und Private Bytes je
 Phase stehen in `messung` (§8.7)."""
 
 import time
@@ -80,8 +81,9 @@ def _warnungen_offen(quellen: dict[str, Path]) -> list[dict]:
 
 
 def _bewegungen(app, asm, gelesen: dict, standard: dict, ohne_bewegung: bool, start_mb: float | None) -> dict:
-    """Das Feld `bewegungen`: Jede Grenzverknüpfung der Hauptbaugruppe wird an der Kopie gefahren. Ohne Fenster, also ohne
-    Bilder. `start_mb`: Private Bytes vor dem Öffnen, `SPEICHER_KNAPP` erkennt daran frisches SolidWorks."""
+    """Das Feld `bewegungen`: Jede Grenzverknüpfung der Hauptbaugruppe wird an der Kopie gefahren, im Fenster (die Kollision in der
+    Fahrt braucht es, S19d), ohne Bilder der Fahrt. `start_mb`: Private Bytes vor dem Öffnen, `SPEICHER_KNAPP` erkennt daran
+    frisches SolidWorks."""
     grenzen = grenzen_der_aufnahme(gelesen)
     if ohne_bewegung:
         return ohne_fahrt(grenzen, "ohne Bewegung aufgenommen (--ohne-bewegung)")
@@ -119,21 +121,22 @@ def _lies_kopie(app, m: _Messung, r, auftrag: str, nummer: int, ordner: Path, pf
     try:
         with m.phase("lesen"):
             gelesen = lies_baugruppe(app, asm, weitere, kollision=False)
-        with m.phase("kollision"):
-            gelesen["kollisionen"] = lies_kollisionen(asm)
-        with m.phase("fahrt"):
-            gelesen["bewegungen"] = _bewegungen(app, asm, gelesen, standard, ohne_bewegung, start_mb)
     finally:
         sw.schliesse(app, asm)
     with m.phase("dateien"):
         for rel, d in weitere.items():
             _lies_datei(app, r, auftrag, nummer, ordner, rel, d)
-    with m.phase("bilder"):
+    with m.phase("fenster"):
         asm = oeffne_in(app, pfad, ordner, sichtbar=True, nur_lesen=True)
-        try:
+    try:
+        with m.phase("kollision"):
+            gelesen["kollisionen"] = lies_kollisionen(asm)
+        with m.phase("bilder"):
             screenshots(app, asm, ordner / "bilder")
-        finally:
-            sw.schliesse(app, asm)
+        with m.phase("fahrt"):
+            gelesen["bewegungen"] = _bewegungen(app, asm, gelesen, standard, ohne_bewegung, start_mb)
+    finally:
+        sw.schliesse(app, asm)
     gelesen["messung"] = m.daten
     return gelesen
 

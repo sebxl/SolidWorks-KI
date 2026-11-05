@@ -98,7 +98,7 @@ def test_format_von_bestand_json(u):
     unter = a["dateien"]["Unter.SLDASM"]
     assert unter["art"] == "baugruppe" and unter["referenzen"] == ["teile/Welle.SLDPRT"]
     assert a["kollisionen"] == [] and a["bewegungen"]["Hub"]["gefahren"] is True
-    assert set(a["messung"]) == {"kopieren", "oeffnen", "lesen", "kollision", "fahrt", "dateien", "bilder"}
+    assert set(a["messung"]) == {"kopieren", "oeffnen", "lesen", "dateien", "fenster", "kollision", "bilder", "fahrt"}
     assert a["messung"]["lesen"]["s"] >= 0 and "mb" in a["messung"]["lesen"]
 
 
@@ -158,6 +158,15 @@ def test_liest_unsichtbar_nur_das_bild_im_fenster(u):
     aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
     assert u.app.sichtbarkeit.count(False) == len(ORIGINALE) + 1   # Baugruppe und jede Datei
     assert len(u.app.geoeffnet) == len(ORIGINALE) + 2 and u.bilder == [bestand_ordner(u.r, "a1", 1) / "Haupt.SLDASM"]
+
+
+def test_kollision_und_fahrt_im_fenster(u, monkeypatch):
+    """S19d P.d1: Ohne Fenster ist `InterferenceDetectionManager` `None`, die Kollision wäre nie gelesen und die Fahrt bräche ab."""
+    gelesen, echt = [], aufnahme_baugruppe.lies_kollisionen
+    monkeypatch.setattr(aufnahme_baugruppe, "lies_kollisionen", lambda asm: gelesen.append(asm.sichtbar) or echt(asm))
+    aufnahme_baugruppe.aufnehmen(u.haupt, "a1")
+    a = lade_aufnahme(u.r, "a1", 1)
+    assert gelesen == [True] and a["kollisionen"] == [] and a["bewegungen"]["Hub"]["gefahren"] is True
 
 
 def test_datei_aus_neuerem_jahr(u):

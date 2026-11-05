@@ -400,6 +400,7 @@ class Baugruppe:
         self.aufgebaut: set[str] = set()
         self.neuaufbauten = []
         self.kollisionen = Kollisionen()
+        self.sichtbar = True                            # mit Fenster geöffnet; `App.OpenDoc6` setzt es
         self.bewegt: dict[str, str] = {}
         self.gespeichert = []
         self.auswahl = None
@@ -539,7 +540,7 @@ class Baugruppe:
 
     @property
     def InterferenceDetectionManager(self):
-        return self.kollisionen
+        return self.kollisionen if self.sichtbar else None  # ohne Fenster `None` (S19d P.d1, T8.12)
 
     def AddMate5(self, typ, ausrichtung, flip, d, d_oben, d_unten, _1, _2, w, w_oben, w_unten, _3, sperre, _5, status):
         status.value = 1
@@ -640,6 +641,7 @@ class App:
         if Path(pfad).name == self.original.name and self.baugruppe is not None:
             self.baugruppe.wurzel = Path(pfad).parent
             self.baugruppe.aufgebaut.clear()
+            self.baugruppe.sichtbar = not self.sichtbarkeit or self.sichtbarkeit[-1] is not False  # `messen.oeffne`
             dok = self.baugruppe
         else:
             dok = Einzeldatei(pfad)
