@@ -265,6 +265,12 @@ def _alt_je_konfiguration(p: dict, v: dict, feld: str, b: _Bestand) -> dict:
     return ist if any(w is not None for w in ist.values()) else {b.aktiv or "aktiv": v.get(feld)}
 
 
+def _je_konfiguration(v: dict, feld: str, b: _Bestand) -> dict:
+    """Das Feld (`wert`, `min`, `max`) je Konfiguration aus `werte`; eine Aufnahme ohne `werte` trägt nur die aktive."""
+    ist = {k: ((v.get("werte") or {}).get(k) or {}).get(feld) for k in b.konfigurationen}
+    return ist if any(w is not None for w in ist.values()) else {b.aktiv or "aktiv": v.get(feld)}
+
+
 def _grenze_befunde(p: dict, pfad: str, v: dict, grenze: str, b: _Bestand, parameter: dict) -> list[dict]:
     """Eine Grenze setzt `ModifyDefinition` in allen Konfigurationen, auch wenn sie nur in einer gesetzt wird (S19e T9.27, P.e4);
     eine Grenze, die den aktuellen Wert ausschlösse, übernimmt SolidWorks nicht (T9.26). Der Wert je Konfiguration steht in der
@@ -277,17 +283,13 @@ def _grenze_befunde(p: dict, pfad: str, v: dict, grenze: str, b: _Bestand, param
     neu = _zahl_oder_none(p["neu"], parameter)
     if neu is None:
         return befunde
-    werte = {k: ((v.get("werte") or {}).get(k) or {}).get("wert") for k in b.konfigurationen}
-    if all(w is None for w in werte.values()):  # Aufnahme ohne `werte`: nur der Wert der aktiven
-        werte = {b.aktiv or "aktiv": v.get("wert")}
-    aus = {k: w for k, w in werte.items() if w is not None and grenze_schliesst_aus(grenze, neu, w)}
+    aus = {k: w for k, w in _je_konfiguration(v, "wert", b).items() if w is not None and grenze_schliesst_aus(grenze, neu, w)}
     if aus:
         stand = ", ".join(f"{k}: {w:g}" for k, w in aus.items())
         befunde.append(_befund(f"{pfad}.neu", f"{grenze} {neu:g} schlösse den aktuellen Wert von {p['verknuepfung']!r} aus "
                                f"({stand}): So eine Grenze übernimmt SolidWorks nicht. Dem Nutzer nennen", werte=aus))
     andere = "max" if grenze == "min" else "min"
-    gleich = {k: w for k in b.konfigurationen
-              if (w := ((v.get("werte") or {}).get(k) or {}).get(andere)) is not None and _gleich(neu, w)}
+    gleich = {k: w for k, w in _je_konfiguration(v, andere, b).items() if w is not None and _gleich(neu, w)}
     if gleich:
         befunde.append(_befund(f"{pfad}.neu", f"{grenze} {neu:g} gleich {andere} ({', '.join(gleich)}): Eine Grenze ohne Weg "
                                "legt SolidWorks als normaler Abstand an (S19a T8.1), die Datei kennt sie danach nicht mehr als "

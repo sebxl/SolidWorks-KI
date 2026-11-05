@@ -957,6 +957,17 @@ def test_grenz_punkt_auf_die_andere_grenze_ist_ein_befund():
     assert b["pfad"] == "punkte[0].neu" and "normaler Abstand" in b["meldung"]
 
 
+def test_grenz_punkt_auf_die_andere_grenze_auch_ohne_werte():
+    """Eine Aufnahme ohne `werte` trägt nur die aktive Konfiguration, wie beim Ausschluss (Korrektur 2)."""
+    a = baugruppen_aufnahme()
+    v = a["verknuepfungen"]["Grenze_Abstand1"]
+    v["wert"] = 0.0
+    del v["werte"]
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 0}
+    (b,) = _befunde(_spec(w), a)
+    assert b["pfad"] == "punkte[0].neu" and "normaler Abstand" in b["meldung"]
+
+
 def test_grenze_schliesst_den_wert_einer_anderen_konfiguration_aus():
     a = _zwei_konfigurationen_10_20()
     a["verknuepfungen"]["Grenze_Abstand1"]["werte"]["Variante B"]["wert"] = 4.5
