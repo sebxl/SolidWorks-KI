@@ -70,10 +70,11 @@ def _fremd(fremd: list[dict], wo: str, datei: Path, unaufgeloest: list[str] = ()
     liste, weg = [e["pfad"] for e in fremd], list(unaufgeloest)
     teile = []
     if aktiv := [p for p in liste if p not in weg]:
-        teile.append(f"SolidWorks würde bei {datei.name} {len(aktiv)} Dateien außerhalb des Ordners laden ({wo}): {', '.join(aktiv)}")
+        teile.append(f"SolidWorks würde bei {datei.name} {len(aktiv)} Dateien außerhalb des Ordners laden ({wo}): "
+                     f"{', '.join(aktiv)}")
     if weg:
-        teile.append(f"{datei.name}: {len(weg)} Komponenten mit gespeichertem Pfad außerhalb des Ordners ({wo}), unterdrückt, von "
-                     f"Sperre 1 nicht aufgelöst: {', '.join(weg)}")
+        teile.append(f"{datei.name}: {len(weg)} Komponenten mit gespeichertem Pfad außerhalb des Ordners ({wo}), unterdrückt, "
+                     f"von Sperre 1 nicht aufgelöst: {', '.join(weg)}")
     return BestandFehler(BESTAND_PFAD_FREMD, "; ".join(teile), pfade=liste, wo=wo, datei=str(datei),
                          **({"unaufgeloest": weg} if weg else {}))
 
@@ -211,7 +212,7 @@ def _vergiss(schluessel: PureWindowsPath, ref) -> None:
 
 
 def _eintrag(model) -> _Schutz | None:
-    """Der Eintrag zum Pfad des Dokuments, verglichen nach `resolve` ohne Schreibweise; einer, dessen Dokument tot ist, zählt nicht."""
+    """Der Eintrag zum Pfad des Dokuments, verglichen nach `resolve` ohne Schreibweise; ist sein Dokument tot, zählt er nicht."""
     pfad = wert(model.GetPathName)
     s = _GESCHUETZT.get(_schluessel(pfad)) if pfad else None
     return s if s is not None and s.dokument() is not None else None
@@ -228,9 +229,9 @@ def sperre_beim_umschalten(model, konfiguration: str):
     schutz = _eintrag(model)
     if schutz is None:
         if pfad and any(ARBEITSORDNER.fullmatch(t) for t in PureWindowsPath(pfad).parts[:-1]):
-            raise BestandFehler(BESTAND_PFAD_FREMD, f"{Path(pfad).name} liegt in einem Bestands- oder Lauf-Ordner, ist aber nicht "
-                                                    f"über oeffne_in geöffnet: Der Wechsel auf {konfiguration} bliebe ungeprüft",
-                                pfade=[], wo=f"vor dem Umschalten auf {konfiguration}", datei=pfad)
+            raise BestandFehler(BESTAND_PFAD_FREMD, f"{Path(pfad).name} liegt in einem Bestands- oder Lauf-Ordner, ist aber "
+                                                    f"nicht über oeffne_in geöffnet: Der Wechsel auf {konfiguration} bliebe "
+                                                    "ungeprüft", pfade=[], wo=f"vor dem Umschalten auf {konfiguration}", datei=pfad)
         yield
         return
     vorher = offene_dokumente(schutz.app)

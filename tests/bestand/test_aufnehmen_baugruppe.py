@@ -451,8 +451,8 @@ def test_zeige_komponente_oeffnet_ueber_den_pfadschutz(aufgenommen):
 
 
 def test_zeige_komponente_schaltet_hinter_der_sperre_um(u, monkeypatch):
-    """§8.1a: `zeige` wählt die Konfiguration, in der die aktiv unterdrückte Komponente lädt. Lädt sie dort vom gespeicherten Pfad,
-    sperrt die zweite Sperre nach dem Wechsel, gezeigt wird nichts, geschlossen ohne Speichern (Korrektur 1, I1)."""
+    """§8.1a: `zeige` wählt die Konfiguration, in der die aktiv unterdrückte Komponente lädt. Lädt sie dort vom gespeicherten
+    Pfad, sperrt die zweite Sperre nach dem Wechsel, gezeigt wird nichts, geschlossen ohne Speichern (Korrektur 1, I1)."""
     asm = muster_baugruppe(u.asm.wurzel, konfigurationen=("Standard", "Variante"))
     u.app.baugruppe = asm
     asm.komp("Schraube-1").unterdrueckt.add("Standard")

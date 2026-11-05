@@ -436,8 +436,8 @@ def test_mechanik_liest_entitaeten_je_antrieb_frisch(asm, stand):
 
 
 def test_mechanik_holt_das_feature_der_grenze_frisch(asm, stand):
-    """Gemessen ist nur der Weg, der die Grenze je Antrieb frisch im Baum nachschlägt (S19b, `spikes/s19_baugruppe.py` `fahrt`); ein
-    vor dem Unterdrücken gehaltenes `IFeature` ist nicht belegt (Korrektur 1, I2)."""
+    """Gemessen ist nur der Weg, der die Grenze je Antrieb frisch im Baum nachschlägt (S19b, `spikes/s19_baugruppe.py` `fahrt`);
+    ein vor dem Unterdrücken gehaltenes `IFeature` ist nicht belegt (Korrektur 1, I2)."""
     a, g = stand
     asm.handle_nach_unterdruecken_ungueltig = True
     e = _fahre(mechanik_fuer(APP, asm, g, a, None), a, g)["Hub"]

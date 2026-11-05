@@ -463,10 +463,13 @@ das ein Halt für die Etappe, keine Kleinigkeit. Im Prüfbericht steht die Prüf
 *Nachgezogen bei der Umsetzung, 2026-11-05 (S19):* Die erste Sperre löst in allen sieben Fällen auf wie das Öffnen (S19c P.c3), auch
 ein offenes Original-Teil sieht sie (P.c4). Eine in der aktiven Konfiguration unterdrückte Komponente zeigt aber den gespeicherten
 Pfad, geladen ist nichts (T8.9). **Regel (Entscheidung des Auftraggebers):** Die zweite Sperre nimmt unterdrückte Komponenten aus,
-ihre Datei muss unter den aufgelösten Referenzen der ersten Sperre im Ordner stehen, sonst bleibt sie ein Fund. Nach jedem
-Konfigurationswechsel beim Lesen (Aufnahme, Nachmessen der Handler, Stand vor dem Speichern) läuft die zweite Sperre erneut: Dann ist
+ihre Datei muss an derselben relativen Lage (oder flach neben der Baugruppe) unter den aufgelösten Referenzen der ersten Sperre im
+Ordner stehen, sonst bleibt sie ein Fund („unterdrückt, von Sperre 1 nicht aufgelöst“). Nach jedem Konfigurationswechsel an einer
+Baugruppe (Aufnahme, Nachmessen der Handler, Stand vor dem Speichern, `swki bestand zeige`) läuft die zweite Sperre erneut: Dann ist
 die Komponente geladen und zeigt die Kopie (gemessen) oder eben nicht. Ein Fund dort ist `BESTAND_PFAD_FREMD` „nach dem Umschalten auf
-<Konfiguration>“, geschlossen wird ohne Speichern.
+<Konfiguration>“, geschlossen wird ohne Speichern. Die Sperre fällt geschlossen aus: Kennt sie ein Dokument unter `bestand-<n>` oder
+`lauf-<n>` nicht (nicht über `oeffne_in` geöffnet), wird nicht umgeschaltet. Der Teil-Weg schaltet nur Teile um, sie haben keine
+Komponenten; Sperre 1 deckt ihre Referenzen.
 
 ### 8.2 Komponenten und Verknüpfungen
 
@@ -489,7 +492,9 @@ Kollision; ist sie gewollt, nennt `kollision_erlaubt` das Paar mit Grund, der Pr
   weist `konfigurationen` ungleich `alle` an einem Grenz-Punkt ab, je Konfiguration nur über `skript`. Eine Grenze, die den aktuellen Wert
   ausschlösse, übernimmt SolidWorks nicht (T9.26): Befund in `validieren`, im Handler `BauFehler` nach dem Nachmessen. Gesetzt wird einmal
   in der aktiven Konfiguration: je Konfiguration gesetzt, oder einmal aus „Ohne Antrieb“, war die Grenze danach in Standard unterdrückt
-  (zweimal gemessen, S19e und Mini-Lauf e3). Das Nachmessen prüft darum auch die Unterdrückung.
+  (zweimal gemessen, S19e und Mini-Lauf e3). Das Nachmessen prüft darum auch die Unterdrückung. Ausschluss und Gleichheit mit einer
+  Toleranz (`grenze_schliesst_aus`, `TOL`) in `validieren` und Handler. min gleich max (neue Grenze oder Grenz-Punkt auf die andere
+  Grenze) ist ein Befund: SolidWorks legt das als normalen Abstand an (S19a T8.1).
 - **Partner:** `ReferenceComponent` an einer Ebene der Hauptbaugruppe ist die Wurzelkomponente (`Name2` = Titel), am Kind einer in der
   Konfiguration unterdrückten Unterbaugruppe ebenso (T8.4, T8.5). Was `GetComponents(False)` nicht nennt, steht als `null`; gelesen wird
   je Konfiguration, je Stelle zählt der erste gelesene Name.

@@ -12,6 +12,7 @@ from swki.bestand.fehler import (BEREICH_FEHLT, BESTAND_ALTWERT, BESTAND_REFEREN
                                  BESTAND_VERALTET, MASS_GESTEUERT, NAME_BELEGT, VERKNUEPFUNGEN_FEHLEN, BestandFehler)
 from swki.bestand.spec import aufnahme_zu, freigeben, validieren
 from swki.bestand.spec_baugruppe import befunde_baugruppe, freigabe_angaben, pruefe_baugruppe
+from swki.bestand.vergleich_baugruppe import grenze_schliesst_aus
 from swki.cli import main
 from swki.konfig import Rechner
 from swki.spec.freigabe import pruefsumme
@@ -391,6 +392,13 @@ def test_ersetzen_und_entfernen_derselben_komponente_ist_ein_befund():
 def test_freigabe_zaehlt_die_instanzen_ohne_die_entfernten():
     angaben = freigabe_angaben(_spec(_entfernen(), _ersetzen(alle_instanzen=True)), baugruppen_aufnahme())
     assert angaben["e1"]["instanzen"] == 10
+
+
+def test_verknuepfung_neu_grenze_min_gleich_max():
+    """S19a T8.1: Eine Grenze ohne Weg legt SolidWorks als normalen Abstand an (Korrektur 1, M5)."""
+    v = {**_punkt("v1"), "art": "grenze_abstand", "min": 15, "max": 15}
+    (b,) = _befunde(_spec(_punkt("k1"), v))
+    assert b["pfad"] == "punkte[1].max" and "normaler Abstand" in b["meldung"]
 
 
 def test_verknuepfung_neu_grenze_min_ueber_max():
@@ -928,6 +936,25 @@ def test_grenze_die_den_aktuellen_wert_ausschliesst(grenze, neu, ok):
     else:
         (b,) = befunde
         assert b["pfad"] == "punkte[0].neu" and "2.5" in b["meldung"] and "Standard" in b["meldung"]
+
+
+def test_ausschluss_und_toleranz_wie_im_handler():
+    """Eine Regel, eine Toleranz (`vergleich_baugruppe.grenze_schliesst_aus`, Korrektur 1, M4): Rauschen unter `TOL` schließt
+    nichts aus."""
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 2.5 - 5e-7}
+    assert _befunde(_spec(w)) == []
+    assert grenze_schliesst_aus("max", 2.5 - 5e-7, 2.5) is False and grenze_schliesst_aus("max", 2.4, 2.5) is True
+    assert grenze_schliesst_aus("min", 2.6, 2.5) is True and grenze_schliesst_aus("min", 2.4, 2.5) is False
+
+
+def test_grenz_punkt_auf_die_andere_grenze_ist_ein_befund():
+    """S19a T8.1: min gleich max legt SolidWorks als normalen Abstand an, die Datei unterscheidet ihn nicht (Korrektur 1, M5)."""
+    a = baugruppen_aufnahme()
+    v = a["verknuepfungen"]["Grenze_Abstand1"]
+    v["wert"] = v["werte"]["Standard"]["wert"] = 0.0
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 0}
+    (b,) = _befunde(_spec(w), a)
+    assert b["pfad"] == "punkte[0].neu" and "normaler Abstand" in b["meldung"]
 
 
 def test_grenze_schliesst_den_wert_einer_anderen_konfiguration_aus():

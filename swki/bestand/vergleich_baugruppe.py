@@ -70,6 +70,12 @@ def _gleich(a: float, b: float) -> bool:
     return abs(a - b) <= TOL + 1e-12
 
 
+def grenze_schliesst_aus(feld: str, neu: float, wert: float) -> bool:
+    """Ein neues `min` über bzw. `max` unter dem aktuellen Wert schließt ihn aus, so eine Grenze übernimmt SolidWorks nicht
+    (S19e T9.26); gleich innerhalb `TOL` nicht. Eine Regel für `validieren` und den Handler."""
+    return not _gleich(neu, wert) and (neu > wert if feld == "min" else neu < wert)
+
+
 def _rang(status) -> int:
     return SKIZZE_RANG.get(status, -1)
 

@@ -55,7 +55,8 @@ from swki.bestand.spec_baugruppe import quelle_schluessel
 from swki.bestand.sw_baugruppe_bestand import SW_UNTERDRUECKT, _je_konfiguration, lies_komponenten, lies_verknuepfungen
 from swki.bestand.sw_bestand import SW_BENANNTE_KONFIGURATIONEN, bstr_array
 from swki.bestand.vergleich_baugruppe import (_ahnen, _gleich, _wert_gelesen, _wert_gleich, abbild_name, ersetzen_ziele,
-                                              namen_im_lauf, neuer_verknuepfungsfehler, soll_ausrichtung, soll_werte)
+                                              grenze_schliesst_aus, namen_im_lauf, neuer_verknuepfungsfehler, soll_ausrichtung,
+                                              soll_werte)
 from swki.compiler import sw
 from swki.compiler.bauen import baue_teil_dokument
 from swki.compiler.fehler import UNBEKANNTER_TYP, BauFehler, fehler_dict
@@ -594,8 +595,7 @@ def _ausgeschlossen(feld: str, neu: float, genannt: list[str], vorher: dict) -> 
     die Aufnahme den Wert kennt."""
     if feld not in ("min", "max"):
         return []
-    aus = {k: w for k in genannt if (w := _wert_gelesen(vorher, k, "wert")[1]) is not None and not _gleich(w, neu)
-           and (neu > w if feld == "min" else neu < w)}
+    aus = {k: w for k in genannt if (w := _wert_gelesen(vorher, k, "wert")[1]) is not None and grenze_schliesst_aus(feld, neu, w)}
     if not aus:
         return []
     return [f"{feld} {neu:g} schlösse den aktuellen Wert aus ({punkte._werte_text(aus)}), so eine Grenze übernimmt SolidWorks "

@@ -202,7 +202,8 @@ def test_unterdrueckte_nach_relativer_lage_in_der_kopie(wurzel, tmp_path, unter,
 
 def test_flach_aufgeloest_sichert_jede_lage(wurzel, tmp_path):
     """Die Datei neben der Baugruppe hat Vorrang (S18g, S19c P.c2): Sie sichert den gespeicherten Pfad in jedem Unterordner."""
-    app = App(wurzel, abhaengig=[wurzel / "X.SLDPRT"], komponenten=[Komp(tmp_path / "kunde" / "B" / "X.SLDPRT", unterdrueckt=True)])
+    gespeichert = tmp_path / "kunde" / "B" / "X.SLDPRT"
+    app = App(wurzel, abhaengig=[wurzel / "X.SLDPRT"], komponenten=[Komp(gespeichert, unterdrueckt=True)])
     pfade.oeffne_in(app, wurzel / "Asm.SLDASM", wurzel)
 
 

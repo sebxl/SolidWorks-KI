@@ -21,9 +21,9 @@ from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, MASS_
 from swki.bestand.folgen import folgen_von
 from swki.bestand.scheiben import (aenderung_an_haupt, datei_schluessel, dateien_mit_punkten, haupt_scheibe, scheibe, scheiben_karte,
                                    zurueck)
-from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _alt_befund, _befund, _gewaehlt, _ist_relativ, _konfig_befunde, _nahe,
+from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _alt_befund, _befund, _gewaehlt, _ist_relativ, _konfig_befunde,
                                befunde_gegen_aufnahme, feature_befunde)
-from swki.bestand.vergleich_baugruppe import ersetzen_ziele
+from swki.bestand.vergleich_baugruppe import _gleich, ersetzen_ziele, grenze_schliesst_aus
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.laden import SpecFehler, lade_spec, lade_yaml
 
@@ -249,6 +249,9 @@ def _verknuepfung_neu_befunde(p: dict, pfad: str, b: _Bestand, neu: set[str], pa
         kleinste, groesste = _zahl_oder_none(p["min"], parameter), _zahl_oder_none(p["max"], parameter)
         if kleinste is not None and groesste is not None and kleinste > groesste:
             befunde.append(_befund(f"{pfad}.min", f"min ({kleinste:g}) ist größer als max ({groesste:g})"))
+        elif kleinste is not None and groesste is not None and _gleich(kleinste, groesste):
+            befunde.append(_befund(f"{pfad}.max", f"min gleich max ({kleinste:g}): Eine Grenze ohne Weg legt SolidWorks als "
+                                   "normaler Abstand an (S19a T8.1); dafür art: abstand"))
     for seite in ANKER:
         if seite in p:
             befunde += _komponente(f"{pfad}.{seite}.komponente", p[seite]["komponente"], b, neu)
@@ -277,11 +280,18 @@ def _grenze_befunde(p: dict, pfad: str, v: dict, grenze: str, b: _Bestand, param
     werte = {k: ((v.get("werte") or {}).get(k) or {}).get("wert") for k in b.konfigurationen}
     if all(w is None for w in werte.values()):  # Aufnahme ohne `werte`: nur der Wert der aktiven
         werte = {b.aktiv or "aktiv": v.get("wert")}
-    aus ={k: w for k, w in werte.items() if w is not None and not _nahe(neu, w) and (neu > w if grenze == "min" else neu < w)}
+    aus = {k: w for k, w in werte.items() if w is not None and grenze_schliesst_aus(grenze, neu, w)}
     if aus:
         stand = ", ".join(f"{k}: {w:g}" for k, w in aus.items())
         befunde.append(_befund(f"{pfad}.neu", f"{grenze} {neu:g} schlösse den aktuellen Wert von {p['verknuepfung']!r} aus "
                                f"({stand}): So eine Grenze übernimmt SolidWorks nicht. Dem Nutzer nennen", werte=aus))
+    andere = "max" if grenze == "min" else "min"
+    gleich = {k: w for k in b.konfigurationen
+              if (w := ((v.get("werte") or {}).get(k) or {}).get(andere)) is not None and _gleich(neu, w)}
+    if gleich:
+        befunde.append(_befund(f"{pfad}.neu", f"{grenze} {neu:g} gleich {andere} ({', '.join(gleich)}): Eine Grenze ohne Weg "
+                               "legt SolidWorks als normaler Abstand an (S19a T8.1), die Datei kennt sie danach nicht mehr als "
+                               "Grenze. Dem Nutzer nennen", werte=gleich))
     return befunde
 
 
