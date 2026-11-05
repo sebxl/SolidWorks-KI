@@ -270,6 +270,53 @@ Der Live-Lauf des Lagerdeckels steht seither in `tests/referenz/test_bestand.py`
 - Rechner A ist eine **Student-Lizenz** (Lizenztyp 2), die Firmenrechner nicht. Für den Firmenbetrieb ist die Frage damit erledigt. Offen bleibt nur, wie eine auf
   Rechner A gespeicherte Datei bei einer Vollversion erscheint (Wasserzeichen, Hinweis); `BESTAND_LIZENZ` warnt dort weiter.
 
+## 2. Spike S19 (Etappe 2, live)
+
+Rechner A, SW 2025, Skripte `werkzeuge/bestand_muster.py` (Hubeinheit), `spikes/s19_baugruppe.py`, Rohdaten `docs/bestandsdateien/s19_<zeile>.json`.
+Alles an Kopien der selbst erzeugten Musterbaugruppe unter `<arbeitsordner>/S19/`, vor jeder Zeile frisches SolidWorks. Die Pflichtfragen
+tragen ihre Nummer aus `FRAGEN` im Skript. Zeit und Speicher je Zeile: Sekunden, Private Bytes Start → Spitze.
+
+### Musterbaugruppe Hubeinheit (2026-11-05)
+
+`tests/referenz/bestand/muster/baugruppe/`: `Hubeinheit.SLDASM`, `teile/{Grundplatte,Schlitten,Anschlag}.SLDPRT`, dazu `Muster.SLDASM`,
+`Lagerdeckel.SLDPRT`, `gm42-10.SLDPRT` byteweise wie in `muster/` (das `Save3` der neuen Baugruppe hat sie nicht angefasst). Erzeugung 54 s.
+Erster Lauf abgelehnt: `Schlitten-1 hat Status 3 statt 2`. Am offenen Dokument gemessen: mit aktiver Grenze `Hub` ist der Schlitten 3, mit
+unterdrückter 2, in beiden Konfigurationen; die Grenze zählt als Bindung wie in S13b (`docs/stufe4a/ergebnisse.md`, Ruling Z. 4). Die
+Erwartung war falsch, nicht das Muster. Eine unterdrückte Unterbaugruppe meldet `GetConstrainedStatus` 5 (`swNoSolution`).
+
+### Tabelle
+
+| Zeile | Frage | Ergebnis | Weg | Zeit/Speicher |
+|---|---|---|---|---|
+| c | P.c1 Struktur `teile/` bei vorhandenem Original | **Aus der Kopie.** Kennzeichen (Grundplatte 17 mm, 272000 mm³) kommt an, Original am gespeicherten Pfad bleibt liegen; ohne Original ebenso | Kopie des als Original gespeicherten Ordners, `OpenDoc6` Option 1\|64 | 38 s, 436 → 4432 MB |
+| c | P.c2 Datei flach daneben | **Flach geht**, auch wenn `teile/` fehlt; liegen beide da, gewinnt die flache neben der Baugruppe | wie P.c1 | |
+| c | P.c3 Auflösung vor dem Öffnen gleich dem Öffnen | **Ja, in allen sieben Fällen.** Fehlt `teile/Schlitten.SLDPRT` in der Kopie, nennen `GetDocumentDependencies2(…, True, True, False)` und das Öffnen beide das Original: Sperre 1 sieht es vor dem Laden | `aufgeloeste_referenzen` gegen `GetPathName` aller Komponenten und neu offener Dokumente | |
+| c | P.c4 Original im Speicher | **Das Offene gewinnt, die Auflösung sieht es auch:** Ist der Schlitten des Originals offen, lösen beide auf ihn auf; Sperre 1 sperrt | Original-Teil unsichtbar offen, dann Kopie | |
+| c | P.c5, P.c7 zurückkopierte Baugruppe mit Lauf-Pfaden | **Lädt alles neben sich**, mit und ohne Lauf-Ordner, auch das flache Fremdteil; nur Warnung 32 | geänderte, im Lauf gespeicherte Baugruppe neben Kopie der Originale | |
+| c | P.c6 Pfad-Fund schließt Nachgeladenes? | Bei Sperre 1 wird nichts geöffnet, danach 0 Dokumente offen | `oeffne_in` an der Kopie ohne Schlitten | |
+| c | T8.9 `GetPathName` unterdrückter Komponenten | **Gespeicherter Pfad:** Muster-1 (unterdrückt, aktive Konfiguration „Ohne Antrieb“) nennt `original_b\Muster.SLDASM`, mit und ohne Option 64. Nach dem Umschalten auf Standard lädt sie aus der Kopie, Kinder ebenso. `oeffne_in` wirft deshalb `BESTAND_PFAD_FREMD` nach dem Öffnen, obwohl nichts vom Original geladen ist. **Halt** | Original in „Ohne Antrieb“ gespeichert, Kopie geöffnet, dann `ShowConfiguration2` | |
+| c | T8.10 als-gespeichert-Pfad nach Option 64 | **Bleibt.** Ohne 64 sind die übrigen leicht geladen (Zustand 1, kein Dokument), mit 64 voll (2) | wie T8.9 | |
+| c | T8.11 Dateitypen in den Abhängigkeiten | Nur `.sldasm`, `.sldprt`; der STEP-Import `gm42-10` hat keine; das Teil mit Konstruktionstabelle aus S18t keine | `GetDocumentDependencies2` | |
+| c | T8.23 Verdeckte Dokumente nach `CloseDoc` | **Keine.** Unsichtbare Baugruppe hält 7 Dokumente, nach `CloseDoc` 0; ein Teil daraus öffnet danach ohne Titelfehler | `oeffne_in` unsichtbar, `sw.schliesse` | |
+| c | T10.7 Öffnen nach geändertem Teil | Warnung 32, kein Fehler, kein Dialog | | |
+| c | T10.11 Sperre 1 am Lauf | Löst auf den Lauf-Ordner auf, `teile/` und flach | | |
+| c | T11.8 `vorher_<rel>` | Abhängigkeiten leer, auch beim Lagerdeckel mit zwei Konfigurationen | | |
+
+### Halt nach Zeile c (Plan Task 12 Step 3, Frage an den Nutzer)
+
+Die beiden Stopps des Plans treten **nicht** ein: `teile/` trägt, und die Auflösung vor dem Öffnen ist in jedem Fall gleich dem Öffnen. Es
+hält aber Bedenken 1 aus Task 8: Eine Komponente, die in der aktiven Konfiguration unterdrückt ist, zeigt ihren gespeicherten Pfad. Ist das
+Original da (beim Kollegen fast immer), sperrt Sperre 2 jede solche Baugruppe, obwohl Sperre 1 richtig aufgelöst hat und beim Aktivieren
+die Kopie lädt. Die Zeilen b, a, f, d, e, v sind noch nicht gelaufen.
+
+### Folgen für den Code
+
+- `swki/bestand/pfade.py:75–76` (`geladene_pfade`): `GetPathName` einer unterdrückten Komponente ist der gespeicherte Pfad, kein geladener. Zu
+  entscheiden: unterdrückte (`GetSuppression2` 0) aus Sperre 2 nehmen, weil Sperre 1 sie schon nach Suchregeln geprüft hat, oder ihren Pfad
+  gegen `aufgeloeste_referenzen` statt gegen den Ordner halten.
+- `swki/bestand/sw_baugruppe_bestand.py:90–98` (`_rel`): Der Weg über den Dateinamen ist nötig und trägt (Pfad außerhalb, Name eindeutig).
+- `werkzeuge/bestand_muster.py` `HUB_STATUS`: schon korrigiert (Commit `4a96e0e`), Schlitten 3.
+
 ## Offene Kleinigkeiten aus den Reviews
 
 Stand 2026-10-31, zurückgestellt, nichts davon führt zu einem falschen Bestanden. Teilweise inzwischen erledigt (Abschlusskorrekturen, siehe oben).
