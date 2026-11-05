@@ -29,7 +29,7 @@ from swki.compiler.bauen import BauAbbruch
 from swki.konfig import PROJEKT, lade_rechner
 from swki.pruefung.messen import oeffne
 from swki.spec.laden import SpecFehler
-from swki.verbindung import byref_long, mm, verbinde
+from swki.verbindung import byref_long, mm, r8_array, verbinde
 from werkzeuge.bestand_muster import (HUB_DATEIEN, HUB_KOMPONENTEN, HUB_LAGE, HUB_STATUS, HUB_VERKNUEPFUNGEN, HUBEINHEIT, KONFIG_OHNE, SW_MASS,
                                       TEILE_HUB, hubeinheit_ordner)
 
@@ -202,19 +202,27 @@ def test_datei_fehlt_im_lauf_laedt_nicht_vom_original(auftrag, tmp_path, r, monk
 
 
 def test_von_hand_verschobene_komponente(auftrag, tmp_path, r):
+    """Verschiebbar ist nur, was keine Verknüpfung hält: Der Schlitten ist voll bestimmt, `Hub` stellt ihn beim Neuaufbau auf seinen
+    Wert 0 zurück, auch innerhalb 0…25 (Task 13 live). Die fixierte Grundplatte nimmt eine neue Lage an, alles auf ihr wandert mit."""
     _, a = _aufgenommen(r, auftrag)
     spec = _freigegeben(tmp_path, auftrag, _eigenschaft(a))
     nummer = bau.bauen(spec)["lauf"]
+    z = {}
 
-    def schiebe(app, asm):
-        k = next(x for x in asm.GetComponents(True) if x.Name2 == "Schlitten-1")
+    def hebe(app, asm):
+        k = next(x for x in asm.GetComponents(True) if x.Name2 == "Grundplatte-1")
         t = list(k.Transform2.ArrayData)
-        t[9] += mm(10)
-        sw_baugruppe.setze_lage(app, asm, k, t)
+        t[11] += mm(10)
+        k.Transform2 = sw.mathutil(app).CreateTransform(r8_array(t))
+        assert asm.EditRebuild3
+        z.update({x.Name2: x.Transform2.ArrayData[11] for x in asm.GetComponents(True)})
 
-    _im_lauf(r, spec, nummer, HUBEINHEIT, schiebe)
+    _im_lauf(r, spec, nummer, HUBEINHEIT, hebe)
+    assert (z["Grundplatte-1"], z["Schlitten-1"]) == pytest.approx((mm(10), mm(25))), z  # die Handänderung ist wirklich geschehen
     b = pruefen(spec)
     assert b["bestanden"] is False and "lage" in _maengel(b), b["maengel"]
+    lage = next(e for e in b["pruefungen"] if e["id"] == "lage")
+    assert {"Grundplatte-1", "Schlitten-1"} <= {q["komponente"] for q in lage["ist"]}, lage
 
 
 def test_von_hand_geloeschte_verknuepfung(auftrag, tmp_path, r):
@@ -250,7 +258,10 @@ def test_neue_schraube_mit_erlaubnis_besteht(auftrag, tmp_path, r):
 
 
 def test_neue_komponente_blockiert_die_grenze(auftrag, tmp_path, r):
-    """Ein weiterer Anschlag im Weg des Schlittens: bei x = -20 steht er still daneben, ab 10 mm Hub trifft ihn der Schlitten."""
+    """Ein weiterer Anschlag im Weg des Schlittens: bei x = -20 steht er still daneben, ab 10 mm Hub trifft ihn der Schlitten. Der Abstand
+    zählt in Richtung der Flächennormalen (Task 13 live: 80 mm von der linken Stirn der Grundplatte lagen bei x = -180, neben der Platte),
+    darum 40 mm von der linken Stirn von Anschlag-1 (x = 20). Die Lage wird nachgemessen, sonst bestünde der Test mit einem Anschlag
+    außerhalb des Wegs."""
     _, a = _aufgenommen(r, auftrag)
     k = "k1"
     punkte = [{"id": k, "typ": "komponente_neu", "wie": "Anschlag-1"},
@@ -258,10 +269,19 @@ def test_neue_komponente_blockiert_die_grenze(auftrag, tmp_path, r):
                "b": {"komponente": "Grundplatte-1", "feature": "Aufsatz-Linear austragen1", "flaeche": "+z"}},
               {"id": "b2", "typ": "verknuepfung_neu", "art": "deckungsgleich", "a": {"komponente": k, "ebene": "oben"},
                "b": {"komponente": "Grundplatte-1", "ebene": "oben"}},
-              {"id": "b3", "typ": "verknuepfung_neu", "art": "abstand", "wert": 80, "a": {"komponente": k, "ebene": "rechts"},
-               "b": {"komponente": "Grundplatte-1", "nahe": [-100, 0, 7]}}]
+              {"id": "b3", "typ": "verknuepfung_neu", "art": "abstand", "wert": 40, "a": {"komponente": k, "ebene": "rechts"},
+               "b": {"komponente": "Anschlag-1", "nahe": [-10, 0, 15]}}]
     spec = _freigegeben(tmp_path, auftrag, _spec_daten(punkte, a))
-    bau.bauen(spec)
+    erg = bau.bauen(spec)
+    name = next(x["sw_name"] for x in erg["knoten"] if x["id"] == k)
+    ordner = lauf_ordner(r, auftrag, erg["lauf"])
+    app = verbinde(r.sw_jahr)
+    asm = oeffne_in(app, ordner / HUBEINHEIT, ordner, sichtbar=False, nur_lesen=True)
+    try:
+        lage = next(x for x in asm.GetComponents(True) if x.Name2 == name).Transform2.ArrayData[9:12]
+    finally:
+        sw.schliesse(app, asm)
+    assert [round(c * 1000, 3) for c in lage] == pytest.approx([-20, 0, 15], abs=0.01), lage
     b = pruefen(spec)
     assert {"bewegung_kollision:Hub", "bewegung:Hub"} & set(_maengel(b)), b["maengel"]
 
@@ -362,15 +382,15 @@ def test_rueckweg_neben_kopie_der_originale(auftrag, tmp_path, r):
         sw.schliesse(app, asm)
 
 
-def test_grenze_in_einer_konfiguration_bleibt_in_der_anderen(auftrag, tmp_path, r):
-    """Spec §4.1: Ein Wert nur in den genannten Konfigurationen. S19e klärt, ob `ModifyDefinition` das kann; sonst wird der Punkt abgewiesen."""
+def test_grenze_nur_in_einer_konfiguration_wird_abgewiesen(auftrag, tmp_path, r):
+    """Spec §8.2 (S19e T9.27): `ModifyDefinition` setzt eine Grenze in allen Konfigurationen, also weist `validieren` einen Grenz-Punkt mit
+    `konfigurationen` ungleich `alle` ab; je Konfiguration nur über `skript`. Ohne `konfigurationen` ist derselbe Punkt gültig."""
     _, a = _aufgenommen(r, auftrag)
-    punkte = [{"id": "p1", "typ": "verknuepfung_wert", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30, "konfigurationen": ["Standard"]}]
-    spec = _freigegeben(tmp_path, auftrag, _spec_daten(punkte, a))
-    bau.bauen(spec)
-    b = pruefen(spec)
-    assert b["bestanden"] is True, b["maengel"]
-    assert b["bewegungen"]["Hub"]["max"] == pytest.approx(30)
+    punkt = {"id": "p1", "typ": "verknuepfung_wert", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30}
+    with pytest.raises(SpecFehler) as e:
+        validieren(_schreibe(tmp_path, auftrag, _spec_daten([punkt | {"konfigurationen": ["Standard"]}], a)))
+    assert [b["pfad"] for b in e.value.daten["befunde"]] == ["punkte[0].konfigurationen"], e.value.daten["befunde"]
+    assert validieren(_schreibe(tmp_path, auftrag, _spec_daten([punkt], a)))["gueltig"] is True
 
 
 def test_abstand_ueber_d1_in_allen_konfigurationen(auftrag, tmp_path, r):
