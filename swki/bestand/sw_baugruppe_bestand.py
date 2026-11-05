@@ -50,7 +50,11 @@ VERKNUEPFUNG_UNERREICHT = "VERKNUEPFUNG_UNERREICHT"  # Warnung der Aufnahme: Der
 SW_MATE_UNBEKANNT = 7  # swMateType_e.swMateUNKNOWN: Ersatz, wenn eine überall unterdrückte Verknüpfung nichts hergibt
 AUSRICHTUNG_UNBEKANNT = -1  # kein swMateAlign_e: nur als Ersatz, in Bestand und Lauf gleich
 SW_BEZUGSGEOMETRIE = frozenset({4, 5, 6})  # swSelectType_e: Ebene, Achse, Punkt sind Features, wählbar mit Select2
-GLIEDER = frozenset({"Reference", "ReferencePattern"})  # IFeature.GetTypeName2 von Komponenten und Komponentenmustern, laut Index
+# IFeature.GetTypeName2 von Komponenten und Komponentenmustern: Komponente `Reference`, Muster `LocalLPattern` mit der Instanz
+# (`ReferencePattern`) als Unterfeature (S19f T11.5, P.f1); die übrigen `Local…Pattern` laut Index. Die Instanzen stehen in
+# `komponenten`, das Muster im Baum sähe eine neue Instanz als Feature.
+GLIEDER = frozenset({"Reference", "ReferencePattern", "LocalLPattern", "LocalCirPattern", "LocalChainPattern", "LocalCurvePattern",
+                     "LocalSketchPattern"})
 MATE_VORSILBE = "Mate"   # MateGroup und alle Verknüpfungen (MateCoincident, MateDistanceDim …), laut Index
 
 

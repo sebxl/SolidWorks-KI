@@ -259,6 +259,18 @@ def test_baum_ohne_glieder(asm):
     assert [f.Name for f in baum_ohne_glieder(asm)] == ["Ebene vorne"]
 
 
+@pytest.mark.parametrize("typ", ["LocalLPattern", "LocalCirPattern", "LocalChainPattern", "LocalCurvePattern",
+                                 "LocalSketchPattern"])
+def test_komponentenmuster_ist_ein_glied(asm, typ):
+    """S19f T11.5, P.f1: Ein Komponentenmuster steht als `LocalLPattern` im Baum, seine Instanz als Unterfeature; die Instanzen
+    stehen in `komponenten`. Sonst sähen `reihenfolge` und `_pruefe_baum` eine neue Musterinstanz als Feature."""
+    asm.komponente("Schraube-12", "teile/Schraube.SLDPRT", muster=True)
+    asm.glieder = [g for g in asm.glieder if g.Name != "Schraube-12"]
+    asm.glieder.append(Knoten(asm, "Lokales lineares Muster1", typ, [Knoten(asm, "Schraube-12", "ReferencePattern")]))
+    assert [f.Name for f in baum_ohne_glieder(asm)] == ["Ebene vorne"]
+    assert lies_baugruppe(None, asm)["reihenfolge"] == {"Standard": ["Ebene vorne"], "Leicht": ["Ebene vorne"]}
+
+
 def test_lies_baugruppe_format(asm):
     d = lies_baugruppe(None, asm)
     assert d["version"] == 2 and d["art"] == "baugruppe" and d["konfigurationen"] == ["Standard",
