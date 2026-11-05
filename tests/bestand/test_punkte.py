@@ -229,6 +229,15 @@ def test_gleichung_aendert_rechte_seite(aufnahme):
     assert teil.gleichungen.gesetzt == [(2, '"D3@Skizze2" = "D1@Skizze1" + 7', 2, None)]
 
 
+def test_gleichung_in_teil_mit_einer_konfiguration():
+    """Korrektur Task 13: auch die rechte Seite einer Gleichung geht bei einer Konfiguration über `Equation`."""
+    a = _aufnahme(konfigurationen=["Standard"])
+    teil = teil_aus(a)
+    namen, _ = _anwenden(teil, GLEICHUNG, a)
+    assert namen == ["D3@Skizze2"] and teil.gleichungen.Equation(2) == '"D3@Skizze2" = "D1@Skizze1" + 7'
+    assert teil.gleichungen.gesetzt == [(2, '"D3@Skizze2" = "D1@Skizze1" + 7', "Equation", None)]
+
+
 def test_gleichung_altwert_live(aufnahme):
     teil = teil_aus(aufnahme)
     with pytest.raises(BauFehler) as e:

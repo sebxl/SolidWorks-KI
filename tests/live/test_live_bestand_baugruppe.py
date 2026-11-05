@@ -202,8 +202,9 @@ def test_datei_fehlt_im_lauf_laedt_nicht_vom_original(auftrag, tmp_path, r, monk
 
 
 def test_von_hand_verschobene_komponente(auftrag, tmp_path, r):
-    """Verschiebbar ist nur, was keine Verknüpfung hält: Der Schlitten ist voll bestimmt, `Hub` stellt ihn beim Neuaufbau auf seinen
-    Wert 0 zurück, auch innerhalb 0…25 (Task 13 live). Die fixierte Grundplatte nimmt eine neue Lage an, alles auf ihr wandert mit."""
+    """Verschiebbar ist nur, was keine Verknüpfung hält: Der Schlitten ist voll bestimmt, `Hub` stellt ihn beim Neuaufbau auf
+    seinen Wert 0 zurück, auch innerhalb 0…25 (Task 13 live). Die fixierte Grundplatte nimmt eine neue Lage an, alles auf ihr
+    wandert mit."""
     _, a = _aufgenommen(r, auftrag)
     spec = _freigegeben(tmp_path, auftrag, _eigenschaft(a))
     nummer = bau.bauen(spec)["lauf"]
@@ -258,10 +259,10 @@ def test_neue_schraube_mit_erlaubnis_besteht(auftrag, tmp_path, r):
 
 
 def test_neue_komponente_blockiert_die_grenze(auftrag, tmp_path, r):
-    """Ein weiterer Anschlag im Weg des Schlittens: bei x = -20 steht er still daneben, ab 10 mm Hub trifft ihn der Schlitten. Der Abstand
-    zählt in Richtung der Flächennormalen (Task 13 live: 80 mm von der linken Stirn der Grundplatte lagen bei x = -180, neben der Platte),
-    darum 40 mm von der linken Stirn von Anschlag-1 (x = 20). Die Lage wird nachgemessen, sonst bestünde der Test mit einem Anschlag
-    außerhalb des Wegs."""
+    """Ein weiterer Anschlag im Weg des Schlittens: bei x = -20 steht er still daneben, ab 10 mm Hub trifft ihn der Schlitten.
+    Der Abstand zählt in Richtung der Flächennormalen (Task 13 live: 80 mm von der linken Stirn der Grundplatte lagen bei
+    x = -180, neben der Platte), darum 40 mm von der linken Stirn von Anschlag-1 (x = 20). Die Lage wird nachgemessen, sonst
+    bestünde der Test mit einem Anschlag außerhalb des Wegs."""
     _, a = _aufgenommen(r, auftrag)
     k = "k1"
     punkte = [{"id": k, "typ": "komponente_neu", "wie": "Anschlag-1"},
@@ -383,8 +384,9 @@ def test_rueckweg_neben_kopie_der_originale(auftrag, tmp_path, r):
 
 
 def test_grenze_nur_in_einer_konfiguration_wird_abgewiesen(auftrag, tmp_path, r):
-    """Spec §8.2 (S19e T9.27): `ModifyDefinition` setzt eine Grenze in allen Konfigurationen, also weist `validieren` einen Grenz-Punkt mit
-    `konfigurationen` ungleich `alle` ab; je Konfiguration nur über `skript`. Ohne `konfigurationen` ist derselbe Punkt gültig."""
+    """Spec §8.2 (S19e T9.27): `ModifyDefinition` setzt eine Grenze in allen Konfigurationen, also weist `validieren` einen
+    Grenz-Punkt mit `konfigurationen` ungleich `alle` ab; je Konfiguration nur über `skript`. Ohne `konfigurationen` ist derselbe
+    Punkt gültig."""
     _, a = _aufgenommen(r, auftrag)
     punkt = {"id": "p1", "typ": "verknuepfung_wert", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30}
     with pytest.raises(SpecFehler) as e:
