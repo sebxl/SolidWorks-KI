@@ -21,8 +21,8 @@ from swki.bestand.fehler import BESTAND_REFERENZ, BESTAND_REFERENZ_EXTERN, MASS_
 from swki.bestand.folgen import folgen_von
 from swki.bestand.scheiben import (aenderung_an_haupt, datei_schluessel, dateien_mit_punkten, haupt_scheibe, scheibe, scheiben_karte,
                                    zurueck)
-from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _alt_befund, _befund, _gewaehlt, _ist_relativ, _konfig_befunde, befunde_gegen_aufnahme,
-                               feature_befunde)
+from swki.bestand.spec import (BAUGRUPPEN_TYPEN, _alt_befund, _befund, _gewaehlt, _ist_relativ, _konfig_befunde, _nahe,
+                               befunde_gegen_aufnahme, feature_befunde)
 from swki.bestand.vergleich_baugruppe import ersetzen_ziele
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.laden import SpecFehler, lade_spec, lade_yaml
@@ -262,7 +262,30 @@ def _alt_je_konfiguration(p: dict, v: dict, feld: str, b: _Bestand) -> dict:
     return ist if any(w is not None for w in ist.values()) else {b.aktiv or "aktiv": v.get(feld)}
 
 
-def _verknuepfung_wert_befunde(p: dict, pfad: str, b: _Bestand) -> list[dict]:
+def _grenze_befunde(p: dict, pfad: str, v: dict, grenze: str, b: _Bestand, parameter: dict) -> list[dict]:
+    """Eine Grenze setzt `ModifyDefinition` in allen Konfigurationen, auch wenn sie nur in einer gesetzt wird (S19e T9.27, P.e4);
+    eine Grenze, die den aktuellen Wert ausschlösse, übernimmt SolidWorks nicht (T9.26). Der Wert je Konfiguration steht in der
+    Aufnahme."""
+    befunde = []
+    if set(_gewaehlt(p, b.konfigurationen)) != set(b.konfigurationen):
+        befunde.append(_befund(f"{pfad}.konfigurationen", f"Die Grenze von {p['verknuepfung']!r} ändert SolidWorks für alle "
+                               "Konfigurationen (ModifyDefinition): konfigurationen weglassen. Je Konfiguration geht das nur über "
+                               "einen skript-Punkt mit luecke, dem Nutzer nennen"))
+    neu = _zahl_oder_none(p["neu"], parameter)
+    if neu is None:
+        return befunde
+    werte = {k: ((v.get("werte") or {}).get(k) or {}).get("wert") for k in b.konfigurationen}
+    if all(w is None for w in werte.values()):  # Aufnahme ohne `werte`: nur der Wert der aktiven
+        werte = {b.aktiv or "aktiv": v.get("wert")}
+    aus ={k: w for k, w in werte.items() if w is not None and not _nahe(neu, w) and (neu > w if grenze == "min" else neu < w)}
+    if aus:
+        stand = ", ".join(f"{k}: {w:g}" for k, w in aus.items())
+        befunde.append(_befund(f"{pfad}.neu", f"{grenze} {neu:g} schlösse den aktuellen Wert von {p['verknuepfung']!r} aus "
+                               f"({stand}): So eine Grenze übernimmt SolidWorks nicht. Dem Nutzer nennen", werte=aus))
+    return befunde
+
+
+def _verknuepfung_wert_befunde(p: dict, pfad: str, b: _Bestand, parameter: dict) -> list[dict]:
     name = p["verknuepfung"]
     v = b.verknuepfungen.get(name)
     if v is None:
@@ -277,7 +300,8 @@ def _verknuepfung_wert_befunde(p: dict, pfad: str, b: _Bestand) -> list[dict]:
         if grenze is None:
             return [_befund(f"{pfad}.grenze", f"{name!r} ist eine Grenzverknüpfung (min {v.get('min')}, max {v.get('max')}): grenze: "
                             "min oder max nennen")]
-        return _alt_befund(f"{pfad}.alt", p["alt"], _alt_je_konfiguration(p, v, grenze, b))
+        return (_grenze_befunde(p, pfad, v, grenze, b, parameter)
+                + _alt_befund(f"{pfad}.alt", p["alt"], _alt_je_konfiguration(p, v, grenze, b)))
     if grenze is not None:
         return [_befund(f"{pfad}.grenze", f"{name!r} ist keine Grenzverknüpfung: grenze weglassen")]
     if v.get("wert") is None:
@@ -330,7 +354,7 @@ def _punkt_befunde(i: int, p: dict, b: _Bestand, neu: set[str], q: _Quellen, par
     elif typ == "verknuepfung_neu":
         befunde += _verknuepfung_neu_befunde(p, pfad, b, neu, parameter)
     elif typ == "verknuepfung_wert":
-        befunde += _konfig_befunde(p, pfad, b.konfigurationen) + _verknuepfung_wert_befunde(p, pfad, b)
+        befunde += _konfig_befunde(p, pfad, b.konfigurationen) + _verknuepfung_wert_befunde(p, pfad, b, parameter)
     elif typ == "verknuepfung_loeschen" and p["verknuepfung"] not in b.verknuepfungen:
         befunde.append(_befund(f"{pfad}.verknuepfung", f"Verknüpfung {p['verknuepfung']!r} gibt es in der Aufnahme nicht "
                                f"(vorhanden: {_beispiele(sorted(b.verknuepfungen))})", BESTAND_REFERENZ))

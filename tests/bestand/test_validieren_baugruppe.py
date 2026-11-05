@@ -237,8 +237,8 @@ def test_verknuepfung_wert_altwert_auch_fuer_die_grenze():
     assert _befunde(_spec(w)) == []
     (b,) = _befunde(_spec({**w, "alt": 6}))
     assert b["code"] == BESTAND_ALTWERT and b["werte"] == {"Standard": 5.0}
-    assert _befunde(_spec({**w, "grenze": "min", "alt": 0})) == []
-    (b,) = _befunde(_spec({**w, "grenze": "min", "alt": 1}))
+    assert _befunde(_spec({**w, "grenze": "min", "alt": 0, "neu": 1})) == []  # min 6 schlösse den Wert 2,5 aus
+    (b,) = _befunde(_spec({**w, "grenze": "min", "alt": 1, "neu": 1}))
     assert b["code"] == BESTAND_ALTWERT
 
 
@@ -904,7 +904,38 @@ def test_verknuepfung_wert_altwert_der_grenze_je_konfiguration():
     w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 6}
     (b,) = _befunde(_spec(w), a)
     assert b["code"] == BESTAND_ALTWERT and b["werte"] == {"Standard": 5.0, "Variante B": 9.0}
-    assert _befunde(_spec({**w, "konfigurationen": ["Standard"]}), a) == []
+
+
+def test_grenze_nur_in_allen_konfigurationen():
+    """S19e T9.27, P.e4: `ModifyDefinition` wirkt in allen Konfigurationen, auch wenn nur in einer gesetzt. Je Konfiguration geht
+    eine Grenze nur über einen skript-Punkt."""
+    a = _zwei_konfigurationen_10_20()
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 6}
+    assert _befunde(_spec(w), a) == [] and _befunde(_spec({**w, "konfigurationen": "alle"}), a) == []
+    assert _befunde(_spec({**w, "konfigurationen": ["Variante B", "Standard"]}), a) == []
+    (b,) = _befunde(_spec({**w, "konfigurationen": ["Standard"]}), a)
+    assert b["pfad"] == "punkte[0].konfigurationen" and "skript" in b["meldung"] and "alle Konfigurationen" in b["meldung"]
+
+
+@pytest.mark.parametrize("grenze, neu, ok", [("max", 2.0, False), ("max", 2.5, True), ("min", 3.0, False), ("min", 2.5, True)])
+def test_grenze_die_den_aktuellen_wert_ausschliesst(grenze, neu, ok):
+    """S19e T9.26: Eine Grenze über `D1` hinaus übernimmt SolidWorks nicht. Grenze_Abstand1 steht auf 2,5 mm."""
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": grenze,
+         "alt": 5 if grenze == "max" else 0, "neu": neu}
+    befunde = _befunde(_spec(w))
+    if ok:
+        assert befunde == []
+    else:
+        (b,) = befunde
+        assert b["pfad"] == "punkte[0].neu" and "2.5" in b["meldung"] and "Standard" in b["meldung"]
+
+
+def test_grenze_schliesst_den_wert_einer_anderen_konfiguration_aus():
+    a = _zwei_konfigurationen_10_20()
+    a["verknuepfungen"]["Grenze_Abstand1"]["werte"]["Variante B"]["wert"] = 4.5
+    w = {"id": "w2", "typ": "verknuepfung_wert", "verknuepfung": "Grenze_Abstand1", "grenze": "max", "alt": 5, "neu": 4}
+    (b,) = _befunde(_spec(w), a)
+    assert b["pfad"] == "punkte[0].neu" and "Variante B" in b["meldung"] and "Standard" not in b["meldung"]
 
 
 def test_verknuepfung_wert_unbekannte_konfiguration():

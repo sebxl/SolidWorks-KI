@@ -888,13 +888,37 @@ def test_grenze_aendern_misst_nach(b):
 
 
 def test_grenze_aendern_ueber_die_definition(b):
+    """Einmal, in der aktiven Konfiguration: `ModifyDefinition` wirkt in allen (S19e T9.27); je Konfiguration gesetzt war die
+    Verknüpfung danach in Standard unterdrückt (S19e3)."""
     punkt_handler("verknuepfung_wert")(b, {"id": "p1", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30})
     w = mates(b)["Hub"]["werte"]
     assert w["Standard"] == {"wert": 10, "min": 0, "max": 30} and w["Leicht"] == {"wert": 10, "min": 0, "max": 30}
     aktiv, oben, komponente = mate(b, "Hub").modifiziert[0]
-    assert [x[0] for x in mate(b, "Hub").modifiziert] == ["Standard", "Leicht"]
+    assert [x[0] for x in mate(b, "Hub").modifiziert] == ["Standard"]
     assert oben is b.asm and komponente is not None and komponente.value is None  # Nothing wie im Beispiel der API-Hilfe
     assert b.asm.aktiv == "Standard"
+
+
+def test_grenze_danach_unterdrueckt_ist_ein_fehler(b):
+    """S19e3: `ModifyDefinition` außerhalb der ersten Konfiguration unterdrückte Hub in Standard, still."""
+    b.asm.unterdrueckt_nach_definition = {"Leicht"}
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_wert")(b, {"id": "p1", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30})
+    assert e.value.code == VERKNUEPFUNG_FEHLER and e.value.schritt == "nachmessen" and "unterdrückt in Leicht" in str(e.value)
+
+
+def test_unterdrueckt_wie_im_bestand_ist_kein_fehler(b):
+    """Was der Kollege unterdrückt hat, bleibt so: Nur eine neu unterdrückte Verknüpfung ist ein Fehler."""
+    mate(b, "Hub").unterdrueckt.add("Leicht")
+    punkt_handler("verknuepfung_wert")(b, {"id": "p1", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30})
+    assert mates(b)["Hub"]["unterdrueckt"] == {"Standard": False, "Leicht": True}
+
+
+def test_grenze_die_den_wert_ausschliesst_bricht_mit_grund_ab(b):
+    """S19e T9.26: min 15 bei Hub auf 10 übernimmt SolidWorks nicht, die Rückgabe sagt trotzdem Erfolg."""
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_wert")(b, {"id": "p1", "verknuepfung": "Hub", "grenze": "min", "alt": 0, "neu": 15})
+    assert e.value.schritt == "nachmessen" and "schlösse den aktuellen Wert" in str(e.value) and "Standard: 10" in str(e.value)
 
 
 def test_grenze_min_und_winkel(b):
@@ -913,21 +937,21 @@ def test_grenze_alt_live_je_konfiguration(b):
     assert mate(b, "Hub").modifiziert == []
 
 
-def test_grenze_nur_in_den_genannten(b):
-    p = {"id": "p1", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30, "konfigurationen": ["Leicht"]}
-    punkt_handler("verknuepfung_wert")(b, p)
-    w = mates(b)["Hub"]["werte"]
-    assert w["Leicht"]["max"] == 30 and w["Standard"]["max"] == 25
-    assert [x[0] for x in mate(b, "Hub").modifiziert] == ["Leicht"]
-
-
-def test_grenze_wirkt_auch_in_den_uebrigen_ist_ein_fehler(b):
-    """Ob `ModifyDefinition` je Konfiguration wirkt, sagt die Hilfe nicht (S19e); die übrigen dürfen sich nie mit ändern."""
-    b.asm.definition_ueberall = True
+def test_grenze_nur_in_den_genannten_gibt_es_nicht(b):
+    """`ModifyDefinition` wirkt in allen Konfigurationen (S19e T9.27): `validieren` weist das ab, der Handler als zweite Linie."""
     p = {"id": "p1", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30, "konfigurationen": ["Leicht"]}
     with pytest.raises(BauFehler) as e:
         punkt_handler("verknuepfung_wert")(b, p)
-    assert e.value.code == VERKNUEPFUNG_FEHLER and "Standard" in str(e.value)
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "alle Konfigurationen" in str(e.value) and mate(b, "Hub").modifiziert == []
+
+
+def test_grenze_wirkt_auch_in_den_uebrigen_ist_ein_fehler(b):
+    """Wirkte `ModifyDefinition` doch nur in der aktiven, stünde die andere Konfiguration still alt: Das Nachmessen sieht es."""
+    b.asm.definition_ueberall = False
+    p = {"id": "p1", "verknuepfung": "Hub", "grenze": "max", "alt": 25, "neu": 30}
+    with pytest.raises(BauFehler) as e:
+        punkt_handler("verknuepfung_wert")(b, p)
+    assert e.value.code == VERKNUEPFUNG_FEHLER and "max steht in Leicht auf 25" in str(e.value)
 
 
 # --- verknuepfung_loeschen -----------------------------------------------------------------------------------------------

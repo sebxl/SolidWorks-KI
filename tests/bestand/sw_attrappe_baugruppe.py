@@ -221,8 +221,11 @@ class Mate(Knoten):
             return True
         d1 = self._d1()
         spanne = (getattr(daten, f"Minimum{daten.art}") - d1, getattr(daten, f"Maximum{daten.art}") - d1)
+        if spanne[0] > 1e-12 or spanne[1] < -1e-12:
+            return True  # schlösse D1 aus: nicht übernommen, Rückgabe trotzdem True (S19e T9.26)
         for k in (self.asm.konfigurationen if self.asm.definition_ueberall else [self.asm.aktiv]):
             self.daten.spannen[k] = spanne
+        self.unterdrueckt |= self.asm.unterdrueckt_nach_definition - {self.asm.aktiv}
         return True
 
     def gesperrt(self):
@@ -438,7 +441,8 @@ class Baugruppe:
         self.vom_original: set[str] = set()             # Komponenten, die aktiv vom gespeicherten Pfad laden (S18g)
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
         self.wirkungslos = False                        # Schreibaufrufe melden Erfolg und tun nichts
-        self.definition_ueberall = False                # `ModifyDefinition` wirkt in allen Konfigurationen
+        self.definition_ueberall = True                 # `ModifyDefinition` wirkt in allen Konfigurationen (S19e T9.27)
+        self.unterdrueckt_nach_definition: set[str] = set()  # dort unterdrückt `ModifyDefinition` die Verknüpfung (S19e3)
         self.seiten: list[Seite] = []                   # Auswahl für die nächste Verknüpfung
         self.eingefuegt, self.ersetzungen, self.loeschoptionen = [], [], []
         self.bleibt_stehen: set[str] = set()            # Verknüpfungen, die das Löschen ihrer Komponente überleben

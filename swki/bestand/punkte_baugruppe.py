@@ -569,18 +569,14 @@ def _setze_wert(b: BauKontext, p: dict, name: str, si: float) -> None:
 
 
 def _setze_grenze(b: BauKontext, p: dict, name: str, abstand: bool, si: float) -> None:
-    """Über die Definition, die Maße gibt es nur als `D1` (S13). Absolute Werte, anders als `IMate2.Min/MaximumVariation`. Ob das
-    je Konfiguration wirkt, sagt die Hilfe nicht: Darum je genannter umschalten, das Nachmessen sieht, wenn die übrigen mitgehen.
-    Die Rückgabe von `ModifyDefinition` zählt laut Hilfe nicht (True auch ohne Änderung)."""
-    attribut = GRENZ_ATTRIBUT[abstand][p["grenze"]]
-
-    def setze(_: str) -> None:
-        f = _verknuepfung(b, name)
-        daten = f.GetDefinition
-        setattr(daten, attribut, si)
-        f.ModifyDefinition(daten, b.asm, callout_leer())
-
-    _je_konfiguration(b.asm, punkte._konfigurationen(p, b.aufnahme), setze)
+    """Über die Definition, die Maße gibt es nur als `D1` (S13). Absolute Werte, anders als `IMate2.Min/MaximumVariation`.
+    Einmal, in der aktiven Konfiguration: `ModifyDefinition` wirkt in allen (S19e T9.27, P.e4), und je Konfiguration gesetzt war die
+    Grenze danach in Standard unterdrückt, ebenso nach einem Aufruf aus „Ohne Antrieb“ (S19e3); das Nachmessen sieht es. Die
+    Rückgabe zählt nicht (True auch ohne Änderung, T9.26)."""
+    f = _verknuepfung(b, name)
+    daten = f.GetDefinition
+    setattr(daten, GRENZ_ATTRIBUT[abstand][p["grenze"]], si)
+    f.ModifyDefinition(daten, b.asm, callout_leer())
 
 
 def _pruefe_alt(p: dict, name: str, feld: str, mate: dict, konfigurationen: list[str]) -> None:
@@ -592,14 +588,29 @@ def _pruefe_alt(p: dict, name: str, feld: str, mate: dict, konfigurationen: list
                                          f"({punkte._werte_text(abweichend)})", schritt="alt")
 
 
+def _ausgeschlossen(feld: str, neu: float, genannt: list[str], vorher: dict) -> list[str]:
+    """Eine Grenze, die den aktuellen Wert ausschlösse, übernimmt SolidWorks nicht (S19e T9.26); `validieren` meldet das schon, wo
+    die Aufnahme den Wert kennt."""
+    if feld not in ("min", "max"):
+        return []
+    aus = {k: w for k in genannt if (w := _wert_gelesen(vorher, k, "wert")[1]) is not None and not _gleich(w, neu)
+           and (neu > w if feld == "min" else neu < w)}
+    if not aus:
+        return []
+    return [f"{feld} {neu:g} schlösse den aktuellen Wert aus ({punkte._werte_text(aus)}), SolidWorks übernimmt so eine Grenze nicht"]
+
+
 def _nachmesse_wert(b: BauKontext, name: str, feld: str, neu: float, genannt: list[str], vorher: dict, nachher: dict) -> None:
-    """Das Feld steht in den genannten auf `neu`, alles andere wie vorher, in allen Konfigurationen. Eine geänderte Grenze darf
-    den aktuellen Wert mitnehmen, wie `vergleich_baugruppe.wert_frei`. Nicht gelesen ist nie gleich; `None` in einem gelesenen
+    """Das Feld steht in den genannten auf `neu`, alles andere wie vorher, in allen Konfigurationen, auch die Unterdrückung (S19e3:
+    nach `ModifyDefinition` war die Grenze in Standard unterdrückt). Eine geänderte Grenze darf den aktuellen Wert mitnehmen, wie
+    `vergleich_baugruppe.wert_frei`, ausschließen darf sie ihn nicht. Nicht gelesen ist nie gleich; `None` in einem gelesenen
     Eintrag heißt, das Feld trägt keinen Wert (Abstand ohne Grenzen)."""
     if name not in nachher:
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name} ist nach dem Setzen weg", schritt="nachmessen")
-    probleme = []
+    probleme = _ausgeschlossen(feld, neu, genannt, vorher[name])
     for k in b.konfigurationen:
+        if vorher[name]["unterdrueckt"].get(k) is False and nachher[name]["unterdrueckt"].get(k) is not False:
+            probleme.append(f"unterdrückt in {k}")
         for f in WERTFELDER:
             if k in genannt and f == "wert" != feld:
                 continue
@@ -620,7 +631,11 @@ def verknuepfung_wert(b: BauKontext, p: dict) -> list[str]:
     """Wert oder Grenze, nur in den genannten Konfigurationen (Vorgabe alle). `alt` wird live je genannter gegengeprüft, auch für
     `grenze`; nachgemessen wird in allen. Die Art liest `lies_verknuepfungen`, die Einheit folgt aus ihr."""
     name, feld = p["verknuepfung"], p.get("grenze") or "wert"
-    genannt, vorher = punkte._konfigurationen(p, b.aufnahme), _verknuepfungen(b)
+    genannt = punkte._konfigurationen(p, b.aufnahme)
+    if "grenze" in p and set(genannt) != set(b.konfigurationen):  # `validieren` weist das ab, hier die zweite Linie
+        raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name}: Eine Grenze gilt für alle Konfigurationen (ModifyDefinition), "
+                                             f"nicht nur für {', '.join(genannt)}: Notausgang skript", schritt="referenz")
+    vorher = _verknuepfungen(b)
     if name not in vorher:
         raise BauFehler(BESTAND_REFERENZ, f"Verknüpfung {name!r} gibt es in der Baugruppe nicht", schritt="referenz")
     _pruefe_alt(p, name, feld, vorher[name], genannt)
