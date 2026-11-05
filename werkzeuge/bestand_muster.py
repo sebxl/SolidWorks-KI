@@ -75,7 +75,9 @@ SOLL_VOLUMEN_HUB = {"Grundplatte": 240000.0, "Schlitten": 59764.38, "Anschlag": 
 HUB_LAGE = {"Grundplatte-1": (0, 0, 0), "Schlitten-1": (-70, 0, 15), "Anschlag-1": (30, 0, 15), "Anschlag-2": (70, 0, 15),
             "Muster-1": (0, 150, 0)}  # Ursprung der Komponente in der Baugruppe (mm)
 HUB_KOMPONENTEN = (*HUB_LAGE, "Muster-1/Lagerdeckel-1", "Muster-1/gm42-10-1")
-HUB_STATUS = {"Grundplatte-1": 3, "Schlitten-1": 2, "Anschlag-1": 3, "Anschlag-2": 3, "Muster-1": 3}  # swConstrainedStatus_e
+# swConstrainedStatus_e. Die aktive Grenze `Hub` zählt als Bindung (S13b, Ruling Z. 4 in docs/stufe4a/ergebnisse.md, an der Hubeinheit
+# gemessen): Schlitten-1 ist 3, mit unterdrückter Grenze 2.
+HUB_STATUS = {"Grundplatte-1": 3, "Schlitten-1": 3, "Anschlag-1": 3, "Anschlag-2": 3, "Muster-1": 3}
 HUB_VERKNUEPFUNGEN = ("Schlitten Auflage", "Schlitten Seite", "Hub", "Anschlag1 Auflage", "Anschlag1 Mitte", "Anschlag1 Lage",
                       "Anschlag2 Auflage", "Anschlag2 Mitte", "Anschlag2 Lage", "Antrieb vorne", "Antrieb rechts", "Antrieb Abstand")
 HUB_GRENZE = {"Hub": (0.0, 25.0)}  # mm

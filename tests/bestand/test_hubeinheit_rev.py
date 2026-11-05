@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from swki.aenderungen import sha256_datei
 from swki.bestand.ablage import schreibe_aufnahme, schreibe_datei_aufnahme
 from swki.bestand.spec import validieren
 from swki.konfig import PROJEKT, Rechner
@@ -20,7 +21,7 @@ from werkzeuge.bestand_muster import HUB_DATEIEN, HUB_KOMPONENTEN, HUB_VERKNUEPF
 REFERENZ = PROJEKT / "tests" / "referenz" / "bestand"
 SPEC = REFERENZ / "hubeinheit_rev.yaml"
 TEIL_SPEC = REFERENZ / "anschlag_neu.yaml"
-PLATZHALTER = "0" * 64
+SHA_HUB = yaml.safe_load(SPEC.read_text(encoding="utf-8"))["bestand"]["sha256"]
 KONFIGURATIONEN = ["Standard", KONFIG_OHNE]
 ABSTAND, DECKUNGSGLEICH = 5, 0
 AUFSATZ = "Aufsatz-Linear austragen1"
@@ -77,7 +78,7 @@ def _aufnahme() -> dict:
     verknuepfungen["Schlitten Seite"] = _mate(ABSTAND, partner["Schlitten"], wert=15.0)
     bewegungen = {"Hub": {"komponente": "Schlitten-1", "art": "abstand", "min": 0.0, "max": 25.0, "gefahren": True,
                           "bewegt": ["Schlitten-1"], "kollisionen": [], "pruefungen": [], "hinweis": None}}
-    return baugruppen_aufnahme(datei={"name": HUBEINHEIT, "original": f"D:\\Kollege\\{HUBEINHEIT}", "sha256": PLATZHALTER, "versionen": [],
+    return baugruppen_aufnahme(datei={"name": HUBEINHEIT, "original": f"D:\\Kollege\\{HUBEINHEIT}", "sha256": SHA_HUB, "versionen": [],
                                       "version_aelter": False},
                                konfigurationen=KONFIGURATIONEN, dateien=dateien, komponenten=komponenten, verknuepfungen=verknuepfungen,
                                bewegungen=bewegungen, kollisionen=[], eigenschaften={"datei": {"Revision": "A"}, "konfiguration": _je({})},
@@ -113,9 +114,15 @@ def test_referenz_nennt_alle_punkt_typen_aus_dem_plan():
     assert next(p for p in _spec()["punkte"] if p["typ"] == "verknuepfung_wert")["grenze"] == "max"
 
 
-def test_sha_ist_der_benannte_platzhalter():
-    """Bis das Muster im Git liegt: Der Live-Test setzt die SHA-256 der erzeugten Datei ein, `lagerdeckel_rev.yaml` macht es für andere Jahre genauso."""
-    assert _spec()["bestand"]["sha256"] == PLATZHALTER and "PLATZHALTER" in SPEC.read_text(encoding="utf-8")
+def test_sha_gehoert_zum_muster_im_git():
+    """Wie `lagerdeckel_rev.yaml`: Die Summe ist die der Datei im Git, ein anderes SolidWorks-Jahr setzt der Live-Test selbst ein."""
+    assert SHA_HUB == sha256_datei(REFERENZ / "muster" / "baugruppe" / HUBEINHEIT)
+
+
+def test_unterbaugruppe_im_muster_ist_die_vorhandene():
+    """Die Hubeinheit kopiert `Muster.SLDASM` samt Teilen nur: Ihre Summen sind die der Muster von Etappe 1."""
+    for name in ("Muster.SLDASM", "Lagerdeckel.SLDPRT", "gm42-10.SLDPRT"):
+        assert sha256_datei(REFERENZ / "muster" / "baugruppe" / name) == sha256_datei(REFERENZ / "muster" / name), name
 
 
 def test_referenz_ist_gueltig_gegen_die_soll_namen(auftrag):

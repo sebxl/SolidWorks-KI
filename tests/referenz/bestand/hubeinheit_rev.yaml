@@ -1,15 +1,15 @@
 # Referenz Bestandsdateien Etappe 2: Revision der Musterbaugruppe Hubeinheit (Spec Bestandsdateien §12, Plan Task 13), Auftrag laut
 # eingabe/aufgabe_baugruppe.md. Namen von Komponenten und Verknüpfungen setzt werkzeuge/bestand_muster.py (HUB_KOMPONENTEN, HUB_VERKNUEPFUNGEN).
 #
-# PLATZHALTER sha256: Die Musterdateien gibt es erst nach `-m werkzeuge.bestand_muster hubeinheit`. Die Nullen ersetzt der Live-Test durch die
-# SHA-256 der erzeugten Datei; liegt das Muster im Git, kommt hier die echte Summe hin, wie in lagerdeckel_rev.yaml.
+# sha256: Hubeinheit.SLDASM in muster/baugruppe/ (SolidWorks 2025, erzeugt 2026-11-05). Ein anderes Jahr erzeugt sich das Muster selbst, der
+# Live-Test setzt dann dessen Summe ein, wie bei lagerdeckel_rev.yaml.
 # Live zu bestätigen, S19 und Aufnahme: Mass-Name D1@Aufsatz-Linear austragen1, Datei und Komponentenname des Normteils, Anker `nahe` auf der
 # Bohrungswand, Ersatz über die Standardebenen.
 art: aenderung
 name: Hubeinheit_Rev
 bestand:
   datei: Hubeinheit.SLDASM
-  sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256: 787f3f87c44806feede3db127d25513f82f45e1c10cee5de2559d1ab876162e7
   aufnahme: 1
 parameter: {DICKE_NEU: 18, L_NEU: 70, HUB_NEU: 30}
 punkte:

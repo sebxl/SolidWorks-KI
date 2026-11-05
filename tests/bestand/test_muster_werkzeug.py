@@ -171,7 +171,7 @@ def test_gute_hubeinheit_hat_keine_abweichung():
     (lambda n: n["Standard"]["komponenten"].pop("Anschlag-2"), "Anschlag-2"),
     (lambda n: n["Standard"]["komponenten"].pop("Muster-1/gm42-10-1"), "gm42-10"),
     (lambda n: n["Standard"]["komponenten"]["Schlitten-1"].update(lage=[-70, 0, 30]), "Schlitten-1"),
-    (lambda n: n["Standard"]["komponenten"]["Schlitten-1"].update(status=3), "Schlitten-1"),
+    (lambda n: n["Standard"]["komponenten"]["Schlitten-1"].update(status=2), "Schlitten-1"),
     (lambda n: n["Standard"]["komponenten"]["Muster-1"].update(unterdrueckt=True), "Muster-1"),
     (lambda n: n[KONFIG_OHNE]["komponenten"]["Muster-1"].update(unterdrueckt=False), "Muster-1"),
     (lambda n: n[KONFIG_OHNE]["komponenten"]["Schlitten-1"].update(unterdrueckt=True), "Schlitten-1"),
