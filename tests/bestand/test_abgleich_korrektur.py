@@ -374,7 +374,7 @@ def _herkunft(r, text, auftrag="B", nummer=1):
 def _attrappen(monkeypatch, r, datei, geoeffnet):
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: geoeffnet.append("verbinde") or "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad, **k: geoeffnet.append(pfad) or "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: geoeffnet.append(pfad) or "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100}})
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {})

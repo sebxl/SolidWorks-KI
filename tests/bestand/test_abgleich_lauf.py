@@ -18,6 +18,7 @@ from swki.konfig import Rechner
 from tests.bestand.beispiel_aufnahme import AUFNAHME
 from tests.bestand.beispiel_baugruppe import baugruppen_aufnahme, teil_aufnahme
 from tests.bestand.sw_attrappe import Teil
+from tests.bestand.sw_attrappe_baugruppe import App as BaugruppenApp, muster_baugruppe
 
 REL = "teile/Deckel.SLDPRT"
 ANDERE = "teile/Platte.SLDPRT"
@@ -356,7 +357,8 @@ def lauf(tmp_path, monkeypatch):
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {})
     monkeypatch.setattr(aenderungen, "soll_verknuepfungen_lauf", lambda p, pr: {})
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: SimpleNamespace(CloseDoc=lambda t: None))
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad, **k: x.oeffnen.append(k) or SimpleNamespace(GetTitle=pfad.name))
+    monkeypatch.setattr(aenderungen, "oeffne_lauf",
+                        lambda app, pfad, wo: x.oeffnen.append((pfad, wo)) or SimpleNamespace(GetTitle=pfad.name))
     monkeypatch.setattr(aenderungen, "lies_globale_variablen", lambda m: {})
     monkeypatch.setattr("swki.baugruppe.sw_baugruppe.verknuepfungswerte", lambda m: {})
     monkeypatch.setattr("swki.bestand.sw_baugruppe_bestand.lies_baugruppe", lies)
@@ -366,7 +368,7 @@ def lauf(tmp_path, monkeypatch):
 def test_aenderungen_block_baugruppe(lauf):
     e = aenderungen.aenderungen(lauf.spec_pfad)["geaendert"][0]
     assert "komponenten_neu" in e["baugruppe"] and e["baugruppe"]["luecken"]
-    assert lauf.oeffnen == [{"sichtbar": False, "nur_lesen": True, "voll": True}]
+    assert [wo.name for _, wo in lauf.oeffnen] == ["lauf-1"]
 
 
 def test_aenderungen_baugruppe_erklaert_den_hinweis(lauf):
@@ -380,6 +382,36 @@ def test_aenderungen_nicht_lesbar_ist_ein_befund(lauf):
     lauf.lesefehler = RuntimeError("COM weg")
     e = aenderungen.aenderungen(lauf.spec_pfad)["geaendert"][0]
     assert e["baugruppe"]["vollstaendig"] is False and "COM weg" in e["baugruppe"]["luecken"][0] and e["nicht_erklaert"] is True
+
+
+def test_aenderungen_liest_den_eigenen_lauf_ueber_den_pfadschutz(tmp_path, monkeypatch):
+    """Korrektur 2: Die echte `lies_baugruppe` an der Muster-Attrappe unter `lauf-<n>`, geöffnet wie im Befehl. Mit `oeffne` statt
+    `oeffne_in` sperrte der erste Konfigurationswechsel (`BESTAND_PFAD_FREMD`), der Block wäre still `ungeprueft_baugruppe`."""
+    r = Rechner(2025, Path("C:/SW"), Path("C:/t.prtdot"), None, None, tmp_path / "arbeit")
+    spec_pfad = tmp_path / "A" / "b.yaml"
+    spec_pfad.parent.mkdir()
+    ordner = r.arbeitsordner / "A" / "lauf-1"
+    ordner.mkdir(parents=True)
+    datei = ordner / "Haupt.SLDASM"
+    datei.write_bytes(b"von Hand")
+    asm = muster_baugruppe(tmp_path / "irgendwo", ("Standard", "Leicht"))
+    teile = ("Unter.SLDASM", "teile/Grund.SLDPRT", "teile/Schlitten.SLDPRT", "teile/Schraube.SLDPRT", "teile/Welle.SLDPRT")
+    app = BaugruppenApp(datei, [ordner / rel for rel in teile], asm)
+    protokoll = {"status": "ok", "sha256": {datei.name: "0" * 64}, "komponenten": [], "knoten": []}
+    monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
+    monkeypatch.setattr(aenderungen, "lade_standard", lambda: {})
+    monkeypatch.setattr(aenderungen, "letzter_gebauter_lauf", lambda p: (1, protokoll))
+    monkeypatch.setattr(aenderungen, "art_der_datei", lambda p: "baugruppe")
+    monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {}})
+    monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {})
+    monkeypatch.setattr(aenderungen, "soll_verknuepfungen_lauf", lambda p, pr: {})
+    monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: app)
+    monkeypatch.setattr(aenderungen, "lies_globale_variablen", lambda m: {})
+    monkeypatch.setattr("swki.baugruppe.sw_baugruppe.verknuepfungswerte", lambda m: {})
+    e = aenderungen.aenderungen(spec_pfad)["geaendert"][0]["baugruppe"]
+    assert not any("nicht lesbar" in x for x in e["luecken"]), e["luecken"]
+    assert e["komponenten_geprueft"] is True and "Grund-1" in [k["name"] for k in e["komponenten_neu"]]
+    assert app.geoeffnet == [datei] and app.sichtbarkeit[:2] == [False, True] and app.offen == []
 
 
 def test_ungeprueft_baugruppe_ist_nie_unveraendert():

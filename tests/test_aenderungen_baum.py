@@ -38,7 +38,7 @@ def _aufbau(umgebung, monkeypatch, ist, geaendert=True):
     oeffnen, lesen = [], []
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad, **kw: oeffnen.append((pfad, kw)) or "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner: oeffnen.append((pfad, ordner)) or "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100}})
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {datei.name: masse})
@@ -53,10 +53,20 @@ def _momentaufnahme(ordner):
 
 
 def test_aenderungen_oeffnet_nur_lesend(umgebung, monkeypatch):
+    """Über den Pfadschutz im Lauf-Ordner (Bestandsdateien Korrektur 2), unsichtbar und schreibgeschützt."""
     datei, oeffnen, lesen = _aufbau(umgebung, monkeypatch, _ist_teil())
     aenderungen.aenderungen(umgebung[1])
-    assert oeffnen == [(datei.parent / datei.name, {"sichtbar": False, "nur_lesen": True})]
+    assert oeffnen == [(datei.parent / datei.name, datei.parent)]
     assert lesen == [("app", "modell")]
+
+
+def test_oeffne_lauf_geht_ueber_den_pfadschutz(monkeypatch, tmp_path):
+    from swki.bestand import pfade
+
+    aufrufe = []
+    monkeypatch.setattr(pfade, "oeffne_in", lambda app, pfad, wurzel, **k: aufrufe.append((pfad, wurzel, k)) or "modell")
+    assert aenderungen.oeffne_lauf("app", tmp_path / "A.sldprt", tmp_path) == "modell"
+    assert aufrufe == [(tmp_path / "A.sldprt", tmp_path, {"sichtbar": False, "nur_lesen": True})]
 
 
 def test_aenderungen_nennt_den_baum_und_schweigt_dann_ueber_gleiche_masse(umgebung, monkeypatch):
@@ -140,7 +150,7 @@ def test_aenderungen_oeffnet_lauf_mit_aufnahme_nicht(umgebung, monkeypatch):
     _herkunft(r)
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: pytest.fail("Lauf mit Aufnahme nicht in SolidWorks öffnen"))
-    monkeypatch.setattr(aenderungen, "oeffne", lambda *a, **k: pytest.fail("Lauf mit Aufnahme nicht öffnen"))
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda *a, **k: pytest.fail("Lauf mit Aufnahme nicht öffnen"))
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: pytest.fail("keine Freigabe nötig"))
     ergebnis = aenderungen.aenderungen(spec_pfad)
     assert ergebnis["aufnahmen"] == [{"auftrag": "B", "aufnahme": 1}]
@@ -167,7 +177,7 @@ def test_aenderungen_aufnahme_eines_anderen_laufs_gilt_nicht(umgebung, monkeypat
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
     oeffnen = []
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad, **kw: oeffnen.append(pfad) or "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **kw: oeffnen.append(pfad) or "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100}})
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {})

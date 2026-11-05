@@ -21,7 +21,6 @@ from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.compiler.kontext import einheit_der_art
 from swki.konfig import Rechner, lade_rechner, lade_standard
-from swki.pruefung.messen import oeffne
 from swki.spec.ausdruck import auswerten
 from swki.spec.freigabe import freigabe_pfad, freigegebene_spec
 from swki.spec.laden import art_der_datei
@@ -464,6 +463,15 @@ def _lies_baum(app, model) -> tuple[dict | None, str | None]:
         return None, f"{type(e).__name__}: {e}"
 
 
+def oeffne_lauf(app, pfad: Path, ordner: Path):
+    """Eine Datei des Laufs unsichtbar, schreibgeschützt und voll geladen über den Pfadschutz (Spec Bestandsdateien §8.1a):
+    Sperre 1 vor dem Öffnen, Sperre 2 danach, und `lies_baugruppe` darf umschalten (`sperre_beim_umschalten` kennt das
+    Dokument). Mit `oeffne` fiel der Baugruppen-Block still auf `ungeprueft_baugruppe`."""
+    from swki.bestand.pfade import oeffne_in  # spät importiert: swki.bestand.ablage braucht dieses Modul
+
+    return oeffne_in(app, pfad, ordner, sichtbar=False, nur_lesen=True)
+
+
 def _baugruppe_block(app, model, spec_pfad: Path, lauf: int, protokoll: dict) -> dict:
     """Der Block `baugruppe` einer geöffneten Baugruppe (swki.bestand.abgleich.abgleich_baugruppe, nur im Speicher gelesen). Ein
     Lesefehler ist ein Befund, kein Abbruch: Die Maße gelten weiter, die Baugruppe bleibt unerklärt."""
@@ -540,8 +548,8 @@ def aenderungen(spec_pfad: Path, lauf: int | None = None) -> dict:
             massweg = name in soll_m  # Lauf mit Maßprotokoll: einzelne Maße, keine globalen Variablen
             ist_teil = name.lower().endswith(".sldprt")
             ist_bestand, lesefehler, block = None, None, None
-            # unsichtbar, schreibgeschützt, nie gespeichert; eine Baugruppe voll geladen, sonst zeigen ihre Komponenten nichts
-            model = oeffne(app, ordner / name, sichtbar=False, nur_lesen=True, **({} if ist_teil else {"voll": True}))
+            # unsichtbar, schreibgeschützt, voll geladen, nie gespeichert, über den Pfadschutz
+            model = oeffne_lauf(app, ordner / name, ordner)
             try:
                 ist = {} if massweg else lies_globale_variablen(model)
                 if name.lower().endswith(".sldasm"):
