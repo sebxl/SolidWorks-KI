@@ -432,6 +432,15 @@ def test_mechanik_liest_entitaeten_je_antrieb_frisch(asm, stand):
     assert mech.entitaet(v.b)[0].name == "Fläche von Grund-1"
 
 
+def test_mechanik_holt_das_feature_der_grenze_frisch(asm, stand):
+    """Gemessen ist nur der Weg, der die Grenze je Antrieb frisch im Baum nachschlägt (S19b, `spikes/s19_baugruppe.py` `fahrt`); ein
+    vor dem Unterdrücken gehaltenes `IFeature` ist nicht belegt (Korrektur 1, I2)."""
+    a, g = stand
+    asm.handle_nach_unterdruecken_ungueltig = True
+    e = _fahre(mechanik_fuer(APP, asm, g, a, None), a, g)["Hub"]
+    assert e["gefahren"] is True and e["stellungen"] == 6
+
+
 def test_bezugsebene_wird_als_feature_gewaehlt(asm):
     asm.mate("Hub2", 5, [asm.seite("Schlitten-1"), sw_seite_ebene(asm)], wert=0.0, spanne=(0.0, 0.01))
     a = lies_baugruppe(None, asm)

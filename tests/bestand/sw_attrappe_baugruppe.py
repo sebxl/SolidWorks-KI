@@ -16,6 +16,7 @@ Schreibweg nach S19e: Neue Komponenten und Verknüpfungen sind überall aktiv (T
 bleibt still alt; `ReplaceComponents2` lässt den Handle gültig und ändert `Name2` (T9.13); alle Rückgaben sagen Erfolg, auch wenn
 nichts geschah (`wirkungslos`)."""
 
+import copy
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -234,10 +235,6 @@ class Mate(Knoten):
     def gesperrt(self):
         return self.asm.entitaeten_nach_dem_unterdruecken is False and self.asm.aktiv in self.unterdrueckt
 
-    @property
-    def GetSpecificFeature2(self):
-        return self.daten
-
     def GetErrorCode2(self, warnung):
         return self.code
 
@@ -254,7 +251,23 @@ class Mate(Knoten):
             return True
         for k in (namen.value if option == 3 else [self.asm.aktiv]):
             (self.unterdrueckt.add if aktion == 0 else self.unterdrueckt.discard)(k)
+        if self.asm.handle_nach_unterdruecken_ungueltig:
+            self._ersetze_handle()
         return True
+
+    def _ersetze_handle(self) -> None:
+        """Im Baum steht danach ein neuer Handle, der alte gibt nichts mehr her (ungemessen, nur der frische Weg ist belegt)."""
+        neu = copy.copy(self)
+        neu.daten.feature, self.tot = neu, True
+        for liste in (self.asm.mates, *(m.unter for m in self.asm.mates)):
+            if self in liste:
+                liste[liste.index(self)] = neu
+
+    @property
+    def GetSpecificFeature2(self):
+        if getattr(self, "tot", False):
+            raise RuntimeError("RPC_E_DISCONNECTED: alter Handle der Verknüpfung")
+        return self.daten
 
 
 class Komp:
@@ -445,6 +458,7 @@ class Baugruppe:
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
         self.wirkungslos = False                        # Schreibaufrufe melden Erfolg und tun nichts
         self.neu_nur_in_der_aktiven = False             # Annahme vor S19e: neue Komponente, Verknüpfung sonst unterdrückt
+        self.handle_nach_unterdruecken_ungueltig = False  # `SetSuppression2` ersetzt das `IFeature` im Baum
         self.definition_ueberall = True                 # `ModifyDefinition` wirkt in allen Konfigurationen (S19e T9.27)
         self.unterdrueckt_nach_definition: set[str] = set()  # dort unterdrückt `ModifyDefinition` die Verknüpfung (S19e3)
         self.seiten: list[Seite] = []                   # Auswahl für die nächste Verknüpfung

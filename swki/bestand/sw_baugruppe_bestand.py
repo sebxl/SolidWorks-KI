@@ -403,10 +403,10 @@ def mechanik_fuer(app, asm, grenzen: dict, aufnahme: dict, ordner: Path | None) 
     """Mechanik der Grenzen (Name → Eintrag aus `verknuepfungen`) an der offenen Baugruppe: nur oberste Ebene, nur nicht
     unterdrückte Komponenten. Die Entitäten liest `entitaet` je Antrieb frisch aus der Grenze (S19b T8.22, P.b4:
     `SwMechanik.status` ruft `ForceRebuild3`, ein vorher gelesener Zeiger ist danach getrennt); gibt eine Grenze sie nicht her,
-    fällt nur sie heraus (`StellungFehler` beim Anlegen des Antriebs). Die `IFeature` der Grenzen halten über Neuaufbau und
-    Umschalten (T9.30). Die Verknüpfungsfehler der Aufnahme gehen als `bekannte_fehler` mit: Alte Fehler stoppen die Fahrt nicht,
-    neue schon. `ordner`: Bilder der Fahrt, `None` ohne."""
-    handles = {f.Name: f for f in sw_baugruppe.verknuepfungen(asm)}
+    fällt nur sie heraus (`StellungFehler` beim Anlegen des Antriebs). Auch die Grenze selbst schlägt `entitaet` im Baum frisch
+    nach: Gemessen ist nur dieser Weg (S19b, Umgehung im Spike), ein vor dem Unterdrücken gehaltenes `IFeature` nicht. Die
+    Verknüpfungsfehler der Aufnahme gehen als `bekannte_fehler` mit: Alte Fehler stoppen die Fahrt nicht, neue schon. `ordner`:
+    Bilder der Fahrt, `None` ohne."""
     verknuepfungen = {}
     for name, v in grenzen.items():
         if v.get("typ") not in (SW_ABSTAND, SW_WINKEL):
@@ -417,7 +417,10 @@ def mechanik_fuer(app, asm, grenzen: dict, aufnahme: dict, ordner: Path | None) 
     def entitaet(seite: dict) -> tuple[object, bool]:
         name = seite["grenze"]
         try:
-            gelesen = _entitaeten(handles[name])
+            grenze = next((f for f in sw_baugruppe.verknuepfungen(asm) if f.Name == name), None)
+            if grenze is None:
+                raise LookupError(f"{name} steht nicht im Baum")
+            gelesen = _entitaeten(grenze)
             grund = None if seite["index"] < len(gelesen) else f"Entität {seite['index']} fehlt"
         except Exception as e:
             grund = f"{type(e).__name__}: {e}"
