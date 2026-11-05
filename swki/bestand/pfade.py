@@ -231,7 +231,8 @@ def sperre_beim_umschalten(model, konfiguration: str):
         if pfad and any(ARBEITSORDNER.fullmatch(t) for t in PureWindowsPath(pfad).parts[:-1]):
             raise BestandFehler(BESTAND_PFAD_FREMD, f"{Path(pfad).name} liegt in einem Bestands- oder Lauf-Ordner, ist aber "
                                                     f"nicht über oeffne_in geöffnet: Der Wechsel auf {konfiguration} bliebe "
-                                                    "ungeprüft", pfade=[], wo=f"vor dem Umschalten auf {konfiguration}", datei=pfad)
+                                                    "ungeprüft",
+                                pfade=[], wo=f"vor dem Umschalten auf {konfiguration}", datei=pfad)
         yield
         return
     vorher = offene_dokumente(schutz.app)
