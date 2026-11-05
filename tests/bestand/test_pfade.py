@@ -187,7 +187,7 @@ def test_gleicher_pfad_aktiv_und_unterdrueckt_bleibt_ein_fund(wurzel, tmp_path):
 
 
 def test_nach_dem_umschalten_laeuft_die_zweite_sperre_erneut(wurzel, tmp_path):
-    """Lädt die aufgehobene Komponente doch vom gespeicherten Pfad, fällt es nach dem Wechsel auf; geschlossen wird vom Aufrufer."""
+    """Lädt die aufgehobene Komponente doch vom gespeicherten Pfad, fällt es nach dem Wechsel auf; schließen muss der Aufrufer."""
     gespeichert = tmp_path / "kunde" / "Muster.SLDASM"
     komp = Komp(gespeichert, unterdrueckt=True)
     app = App(wurzel, abhaengig=[wurzel / "Muster.SLDASM"], komponenten=[komp])

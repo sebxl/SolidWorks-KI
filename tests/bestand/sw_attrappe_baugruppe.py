@@ -1,17 +1,20 @@
 """Attrappe einer offenen fremden Baugruppe und von ISldWorks für `aufnehmen`, ohne SolidWorks.
 
-UNGEMESSEN: Die Attrappe folgt dem API-Index, nicht einer Messung; S19 kann sie korrigieren. Sie bildet nach, was die Schicht
-aushalten muss: `Transform2` steht bis zum Neuaufbau veraltet; `GetComponents` liefert je aktiver Konfiguration, Kinder einer dort
-unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); `FeatureManager.GetFeatures` kennt
-auch, was der Baum nicht zeigt (`versteckt`); `pfade_wie_gespeichert`: `GetPathName` einer unterdrückten Komponente nennt den
-gespeicherten Pfad (S19c T8.9), die Attrappe tut das nur auf Wunsch, `vom_original` lädt eine aktive von dort (S18g); Grenzen wirken, solange sie nicht unterdrückt sind; eine
-Verknüpfung mit altem Fehler lässt `EditRebuild3` scheitern. Unterdrückte Verknüpfungen geben ihre Entitäten nicht mehr her
-(`entitaeten_nach_dem_unterdruecken`), so fällt auf, wer sie zu spät liest.
+Die Attrappe folgt dem API-Index und, wo gemessen, Spike S19 (`docs/bestandsdateien/ergebnisse.md` §2). Sie bildet nach, was die
+Schicht aushalten muss: `Transform2` steht bis zum Neuaufbau veraltet; `GetComponents` liefert je aktiver Konfiguration, Kinder
+einer dort unterdrückten Unterbaugruppe fehlen; `Min/MaximumVariation` sind relativ zu `D1` (S13b D); `FeatureManager.GetFeatures`
+kennt auch, was der Baum nicht zeigt (`versteckt`); Grenzen wirken, solange sie nicht unterdrückt sind; eine Verknüpfung mit altem
+Fehler lässt `EditRebuild3` scheitern. Gemessen: `GetPathName` einer unterdrückten Komponente nennt den gespeicherten Pfad (S19c
+T8.9; nur auf Wunsch, `pfade_wie_gespeichert`), `vom_original` lädt eine aktive von dort (S18g); `ReferenceComponent` ist an einer
+Ebene der Hauptbaugruppe und am Kind einer unterdrückten Unterbaugruppe die Wurzel (S19a T8.4, T8.5); `MateEntity(i).Reference`
+ist nach `ForceRebuild3` getrennt, aus einer unterdrückten Grenze frisch lesbar (S19b T8.22); ohne Fenster ist
+`InterferenceDetectionManager` `None` (S19d P.d1).
 
-Der Schreibweg (Task 9) ist genauso ungemessen, die Attrappe nimmt nur an, was die API-Hilfe nennt oder was die Handler aushalten
-müssen: Eine neue Komponente oder Verknüpfung ist in den übrigen Konfigurationen unterdrückt (wie Features, S18c); ein doppelter
-Name bleibt still alt; `ReplaceComponents2` lässt den Handle gültig und ändert `Name2` (Beispiel der API-Hilfe);
-`ModifyDefinition` wirkt in der aktiven Konfiguration; alle Rückgaben sagen Erfolg, auch wenn nichts geschah (`wirkungslos`)."""
+Schreibweg nach S19e: Neue Komponenten und Verknüpfungen sind überall aktiv (T9.2, T9.18; die alte Annahme als
+`neu_nur_in_der_aktiven`), `FixComponent` und `ModifyDefinition` wirken in allen Konfigurationen (T9.6, T9.27), eine Grenze, die
+`D1` ausschlösse, übernimmt `ModifyDefinition` nicht (T9.26), `unterdrueckt_nach_definition` bildet S19e3 nach; ein doppelter Name
+bleibt still alt; `ReplaceComponents2` lässt den Handle gültig und ändert `Name2` (T9.13); alle Rückgaben sagen Erfolg, auch wenn
+nichts geschah (`wirkungslos`)."""
 
 import os
 from pathlib import Path
@@ -162,7 +165,7 @@ class MateDaten:
         s, asm = self.seiten[i], self.feature.asm
         komp = s.ReferenceComponent
         if komp is None or asm.aktiv in komp.nicht_genannt:
-            komp = asm.wurzelkomponente  # Ebene der Hauptbaugruppe, Kind einer dort unterdrückten Unterbaugruppe (S19a T8.4, T8.5)
+            komp = asm.wurzelkomponente  # Ebene der Hauptbaugruppe, Kind einer unterdrückten Unterbaugruppe (S19a T8.4, T8.5)
         return Seite(komp, Zeiger(s.Reference, asm), s.ReferenceType2)
 
 

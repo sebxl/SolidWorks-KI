@@ -161,7 +161,7 @@ def test_liest_unsichtbar_nur_das_bild_im_fenster(u):
 
 
 def test_kollision_und_fahrt_im_fenster(u, monkeypatch):
-    """S19d P.d1: Ohne Fenster ist `InterferenceDetectionManager` `None`, die Kollision wäre nie gelesen und die Fahrt bräche ab."""
+    """S19d P.d1: Ohne Fenster ist `InterferenceDetectionManager` `None`, keine Kollision wäre gelesen, die Fahrt bräche ab."""
     gelesen, echt = [], aufnahme_baugruppe.lies_kollisionen
     monkeypatch.setattr(aufnahme_baugruppe, "lies_kollisionen", lambda asm: gelesen.append(asm.sichtbar) or echt(asm))
     aufnahme_baugruppe.aufnehmen(u.haupt, "a1")

@@ -16,8 +16,8 @@ treibenden Verknüpfungen der Fahrt bleiben im Speicher.
 `SpeicherKnapp` bricht ohne Bericht ab wie in Stufe 4a. Ein `BauFehler` der Fahrt (Kollision nicht lesbar, Stand kippt) nimmt nur
 den Nachweis: `bewegung:*` steht dann auf `ok: None`, sonst fehlte der Bericht zu allem anderen.
 
-UNGEMESSEN: Diese Schicht steht gegen Attrappen, S19 kann sie korrigieren. Offen: Fahrt und Bilder an einem nur lesend geöffneten
-Lauf, Dauer von `lies_baugruppe` ohne `sw.schnell`, Fenster je Teil-Bild neben der großen Baugruppe."""
+Gemessen in S19: Fahrt und Bilder gehen am nur lesend geöffneten Lauf mit Fenster (T11.1), `lies_baugruppe` läuft in
+`sw.schnell` (T11.11). Offen: Fenster je Teil-Bild neben der großen Baugruppe (lauf-30, Task 16)."""
 
 from pathlib import Path
 
@@ -176,7 +176,8 @@ def _im_fenster(app, m: _Messung, asm_pfad: Path, ordner: Path, spec: dict, vorh
             bilder = screenshots(app, asm, ordner / "bilder")
         with m.phase("fahrt"):
             nachher = {**nachher, "kollisionen": kollisionen}
-            return kollisionen, bilder, _fahre(app, asm, spec, vorher, nachher, neue, ersetzt, ordner / "bilder", standard, start_mb)
+            bewegungen = _fahre(app, asm, spec, vorher, nachher, neue, ersetzt, ordner / "bilder", standard, start_mb)
+            return kollisionen, bilder, bewegungen
     finally:
         sw.schliesse(app, asm)
 
@@ -265,7 +266,8 @@ def pruefen_baugruppe(spec_pfad: Path, spec: dict, vorher: dict, lauf: int, prot
                                           standard, protokoll)
     neue_teile, teil_uebersicht = _pruefe_neue_teile(app, m, spec, spec_pfad, ordner, neue_dateien, standard, protokoll)
     gelesen, pfade = _lies_lauf(app, m, asm_pfad, ordner, [*vorher["dateien"], *neue_dateien])
-    kollisionen, bilder, bewegungen = _im_fenster(app, m, asm_pfad, ordner, spec, vorher, gelesen, neue, ersetzt, standard, start_mb)
+    kollisionen, bilder, bewegungen = _im_fenster(app, m, asm_pfad, ordner, spec, vorher, gelesen, neue, ersetzt, standard,
+                                                  start_mb)
     nachher = {**gelesen, "kollisionen": kollisionen, "bewegungen": bewegungen}
 
     datei_pruefung = _dateien_pruefung(spec, dateien, ist, neue_dateien, protokoll)

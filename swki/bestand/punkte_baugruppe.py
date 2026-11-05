@@ -4,8 +4,8 @@ und Verknüpfungen, Signatur `(b: BauKontext, p) -> list[str]` mit den betroffen
 
 Gemessen in S19 Zeile e (2026-11-05, `docs/bestandsdateien/ergebnisse.md` §2): Alle Schreibwege gehen. Je Konfiguration wirken
 `IComponent2.SetSuppression2` und `ReferencedConfiguration =` (nur in der aktiven, T9.3, T9.5) und `SetSystemValue3` Option 3; in
-allen wirken `FixComponent` (T9.6), `ModifyDefinition` (T9.27) und `SetSystemValue3` Option 2 (T9.24). Eine neue Komponente und eine
-neue Verknüpfung sind anders als ein neues Feature überall aktiv (T9.2, T9.18).
+allen wirken `FixComponent` (T9.6), `ModifyDefinition` (T9.27) und `SetSystemValue3` Option 2 (T9.24). Eine neue Komponente und
+eine neue Verknüpfung sind anders als ein neues Feature überall aktiv (T9.2, T9.18).
 
 Rückgaben von SolidWorks beweisen nichts (S18c): Jeder Handler misst nach dem Neuaufbau nach, über `lies_komponenten` bzw.
 `lies_verknuepfungen`, in allen Konfigurationen. Am Ende steht die aktive der Aufnahme. Ein Handler bricht mit `BauFehler` ab,
@@ -570,8 +570,8 @@ def _setze_wert(b: BauKontext, p: dict, name: str, si: float) -> None:
 
 
 def _setze_grenze(b: BauKontext, p: dict, name: str, abstand: bool, si: float) -> None:
-    """Über die Definition, die Maße gibt es nur als `D1` (S13). Absolute Werte, anders als `IMate2.Min/MaximumVariation`.
-    Einmal, in der aktiven Konfiguration: `ModifyDefinition` wirkt in allen (S19e T9.27, P.e4), und je Konfiguration gesetzt war die
+    """Über die Definition, die Maße gibt es nur als `D1` (S13). Absolute Werte, anders als `IMate2.Min/MaximumVariation`. Einmal,
+    in der aktiven Konfiguration: `ModifyDefinition` wirkt in allen (S19e T9.27, P.e4), und je Konfiguration gesetzt war die
     Grenze danach in Standard unterdrückt, ebenso nach einem Aufruf aus „Ohne Antrieb“ (S19e3); das Nachmessen sieht es. Die
     Rückgabe zählt nicht (True auch ohne Änderung, T9.26)."""
     f = _verknuepfung(b, name)
@@ -598,14 +598,15 @@ def _ausgeschlossen(feld: str, neu: float, genannt: list[str], vorher: dict) -> 
            and (neu > w if feld == "min" else neu < w)}
     if not aus:
         return []
-    return [f"{feld} {neu:g} schlösse den aktuellen Wert aus ({punkte._werte_text(aus)}), SolidWorks übernimmt so eine Grenze nicht"]
+    return [f"{feld} {neu:g} schlösse den aktuellen Wert aus ({punkte._werte_text(aus)}), so eine Grenze übernimmt SolidWorks "
+            "nicht"]
 
 
 def _nachmesse_wert(b: BauKontext, name: str, feld: str, neu: float, genannt: list[str], vorher: dict, nachher: dict) -> None:
-    """Das Feld steht in den genannten auf `neu`, alles andere wie vorher, in allen Konfigurationen, auch die Unterdrückung (S19e3:
-    nach `ModifyDefinition` war die Grenze in Standard unterdrückt). Eine geänderte Grenze darf den aktuellen Wert mitnehmen, wie
-    `vergleich_baugruppe.wert_frei`, ausschließen darf sie ihn nicht. Nicht gelesen ist nie gleich; `None` in einem gelesenen
-    Eintrag heißt, das Feld trägt keinen Wert (Abstand ohne Grenzen)."""
+    """Das Feld steht in den genannten auf `neu`, alles andere wie vorher, in allen Konfigurationen, auch die Unterdrückung
+    (S19e3: nach `ModifyDefinition` war die Grenze in Standard unterdrückt). Eine geänderte Grenze darf den aktuellen Wert
+    mitnehmen, wie `vergleich_baugruppe.wert_frei`, ausschließen darf sie ihn nicht. Nicht gelesen ist nie gleich; `None` in einem
+    gelesenen Eintrag heißt, das Feld trägt keinen Wert (Abstand ohne Grenzen)."""
     if name not in nachher:
         raise BauFehler(VERKNUEPFUNG_FEHLER, f"Verknüpfung {name} ist nach dem Setzen weg", schritt="nachmessen")
     probleme = _ausgeschlossen(feld, neu, genannt, vorher[name])

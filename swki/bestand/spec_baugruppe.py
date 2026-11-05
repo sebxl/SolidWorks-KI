@@ -268,9 +268,9 @@ def _grenze_befunde(p: dict, pfad: str, v: dict, grenze: str, b: _Bestand, param
     Aufnahme."""
     befunde = []
     if set(_gewaehlt(p, b.konfigurationen)) != set(b.konfigurationen):
-        befunde.append(_befund(f"{pfad}.konfigurationen", f"Die Grenze von {p['verknuepfung']!r} ändert SolidWorks für alle "
-                               "Konfigurationen (ModifyDefinition): konfigurationen weglassen. Je Konfiguration geht das nur über "
-                               "einen skript-Punkt mit luecke, dem Nutzer nennen"))
+        befunde.append(_befund(f"{pfad}.konfigurationen", f"Die Grenze von {p['verknuepfung']!r} ändert SolidWorks für "
+                               "alle Konfigurationen (ModifyDefinition): konfigurationen weglassen. Je Konfiguration geht das "
+                               "nur über einen skript-Punkt mit luecke, dem Nutzer nennen"))
     neu = _zahl_oder_none(p["neu"], parameter)
     if neu is None:
         return befunde

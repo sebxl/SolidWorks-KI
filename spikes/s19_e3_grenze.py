@@ -1,6 +1,6 @@
 """S19 Zeile e3: Einzelbefund aus Zeile e wiederholen (Task 12 Step 3, Folge 7): „Nach `ModifyDefinition` ist `Hub` in Standard
-unterdrückt“ (T9.27, eine Messung). Drei Fälle an je einer frischen beschreibbaren Kopie der Hubeinheit unter <arbeitsordner>/S19/,
-Baugruppe mit Fenster wie im Bau (`spikes.s19_baugruppe.arbeit`):
+unterdrückt“ (T9.27, eine Messung). Drei Fälle an je einer frischen beschreibbaren Kopie der Hubeinheit unter
+<arbeitsordner>/S19/, Baugruppe mit Fenster wie im Bau (`spikes.s19_baugruppe.arbeit`):
 
 - `roh`: `GetDefinition`, `MaximumDistance` 25 → 30 mm, `ModifyDefinition(daten, asm, callout_leer())` einmal in der aktiven
   Konfiguration, kein Umschalten dazwischen.
@@ -10,7 +10,8 @@ Baugruppe mit Fenster wie im Bau (`spikes.s19_baugruppe.arbeit`):
 Stand vorher und nachher je Konfiguration nach `ForceRebuild3`: `IsSuppressed2`, `GetErrorCode2`, D1, Min/Max der Definition, Lage
 des Schlittens. Im Lauf vom 2026-11-05 las `fehler` die Methode statt des Codes (Rohdaten zeigen `bound method`), jetzt
 `sw_baugruppe.fehlercode`. Ergebnis: `roh` in Standard lässt Hub überall aktiv; `roh_andere` und `handler` unterdrücken Hub in
-Standard, max steht in beiden auf 30. Wegwerf-Qualität wie S19, Schutz aus `spikes.s19_baugruppe` (nur unter S19/, nie AP68-Pruefstation, SolidWorks leer).
+Standard, max steht in beiden auf 30. Wegwerf-Qualität wie S19, Schutz aus `spikes.s19_baugruppe` (nur unter S19/, nie
+AP68-Pruefstation, SolidWorks leer).
 
 Aufruf (frisches SolidWorks, frei): timeout 600 ..\\..\\..\\.venv\\Scripts\\python.exe -m spikes.s19_e3_grenze
 

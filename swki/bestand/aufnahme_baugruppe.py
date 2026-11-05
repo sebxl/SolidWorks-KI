@@ -6,8 +6,8 @@ Ablauf: Format, Auftrag frei, Version und Abhängigkeiten am Original, Zuordnung
 Baugruppe unsichtbar lesen, schließen; danach jede Datei einmal einzeln lesen (das Durchschalten der Konfigurationen soll nicht in
 einer geladenen Baugruppe laufen), zuletzt die Baugruppe im Fenster: Kollision, Bilder, Fahrt. Ohne Fenster ist
 `InterferenceDetectionManager` `None` (S19d P.d1, T8.12): keine Kollision lesbar, und die Fahrt bräche an jeder Grenze ab. Lesen
-bleibt unsichtbar, dort kostet es +1 MB statt +2,9 GB (S19d P.d2). `bestand.json` entsteht als Letztes: Fehlt sie, lässt sich das Lesen nachholen, eine abgelehnte Aufnahme entfernt ihren Ordner. Zeit und Private Bytes je
-Phase stehen in `messung` (§8.7)."""
+bleibt unsichtbar, dort kostet es +1 MB statt +2,9 GB (S19d P.d2). `bestand.json` entsteht als Letztes: Fehlt sie, lässt sich das
+Lesen nachholen, eine abgelehnte Aufnahme entfernt ihren Ordner. Zeit und Private Bytes je Phase stehen in `messung` (§8.7)."""
 
 import time
 from contextlib import contextmanager
@@ -81,8 +81,8 @@ def _warnungen_offen(quellen: dict[str, Path]) -> list[dict]:
 
 
 def _bewegungen(app, asm, gelesen: dict, standard: dict, ohne_bewegung: bool, start_mb: float | None) -> dict:
-    """Das Feld `bewegungen`: Jede Grenzverknüpfung der Hauptbaugruppe wird an der Kopie gefahren, im Fenster (die Kollision in der
-    Fahrt braucht es, S19d), ohne Bilder der Fahrt. `start_mb`: Private Bytes vor dem Öffnen, `SPEICHER_KNAPP` erkennt daran
+    """Das Feld `bewegungen`: Jede Grenzverknüpfung der Hauptbaugruppe wird an der Kopie gefahren, im Fenster (die Kollision in
+    der Fahrt braucht es, S19d), ohne Bilder der Fahrt. `start_mb`: Private Bytes vor dem Öffnen, `SPEICHER_KNAPP` erkennt daran
     frisches SolidWorks."""
     grenzen = grenzen_der_aufnahme(gelesen)
     if ohne_bewegung:

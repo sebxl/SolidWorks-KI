@@ -12,9 +12,11 @@ sie ungespeichert, wird sie trotzdem geöffnet und neu aufgebaut, nur so zeigen 
 auslöst. Nach einem Fehler wird nichts mehr gespeichert. Ein Lauf-Ordner bleibt dann liegen, Dateien früherer Scheiben darin sind
 schon geändert; er trägt immer ein `protokoll.json`, auch wenn das Kopieren scheitert, sonst sperrte er `BESTAND_AUFTRAG_BELEGT`.
 
-UNGEMESSEN: Diese Schicht steht gegen Attrappen. Der Kern der Teil-Scheibe ist in Etappe 1 mit Fenster gemessen, darum öffnet auch
-sie mit Fenster. Offen für S19: was `Save3` an der Baugruppe mit im Speicher geänderten Komponenten tut, ob `GetWhatsWrong` die
-Fehler einer Verknüpfung nennt und mit welchem Code, und ob ein geändertes Teil in der ungespeicherten Baugruppe ankommt.
+Gemessen in S19 Zeile e (2026-11-05): `Save3` schreibt die Baugruppe immer neu, auch ohne Änderung (neue SHA-256, T10.1), eine im
+Speicher geänderte Komponente schreibt es nicht mit. Darum speichert der Bau die Hauptbaugruppe nur bei `aenderung_an_haupt`,
+sonst stünde sie in `dateien` als geändert. Die Teil-Scheibe braucht ein Fenster: ohne trifft `normbohrung` keine Fläche (T10.3),
+darum öffnet sie sichtbar. `GetWhatsWrong` nennt die Verknüpfung mit ihrem Namen und dem Code von `GetErrorCode2` (T10.4); ein
+geändertes Teil kommt in der ungespeicherten Baugruppe an, `EditRebuild3` reicht für die Lage (T10.2, T10.6).
 
 Bekannt ist, was die Aufnahme kennt, je Konfiguration: `neuaufbau` und die Fehlercodes der Verknüpfungen. Die Handler laufen unter
 den bekannten Fehlern der aktiven Konfiguration, ein alter Fehler des Kollegen bräche `sw.rebuild` sonst ab.

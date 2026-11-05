@@ -3,10 +3,10 @@ vom Original (S18g, Warnung 0). Zwei Sperren für jedes Öffnen einer Bestandsko
 Abhängigkeiten nach Suchregeln auflösen, nach dem Öffnen alles Geladene gegen den Ordner prüfen. Bei einem Fund wird ohne
 Speichern geschlossen.
 
-Unterdrückte Komponenten (S19c, T8.9): `GetPathName` nennt in der aktiven Konfiguration den gespeicherten Pfad, geladen ist nichts;
-nach dem Umschalten nennen sie und ihre Kinder die Kopie. Die zweite Sperre nimmt sie darum aus, ihren Pfad sichert die erste: Ihre
-Datei muss unter den aufgelösten Referenzen im Ordner stehen. Nach jedem Konfigurationswechsel beim Lesen läuft die zweite Sperre
-erneut (`sperre_beim_umschalten`), dann ist die Komponente geladen und zeigt, woher."""
+Unterdrückte Komponenten (S19c, T8.9): `GetPathName` nennt in der aktiven Konfiguration den gespeicherten Pfad, geladen ist
+nichts; nach dem Umschalten nennen sie und ihre Kinder die Kopie. Die zweite Sperre nimmt sie darum aus, ihren Pfad sichert die
+erste: Ihre Datei muss unter den aufgelösten Referenzen im Ordner stehen. Nach jedem Konfigurationswechsel beim Lesen läuft die
+zweite Sperre erneut (`sperre_beim_umschalten`), dann ist die Komponente geladen und zeigt, woher."""
 
 import os
 from contextlib import contextmanager

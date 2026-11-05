@@ -1,10 +1,11 @@
 """Baugruppen in SolidWorks lesen und fahren (Spec Bestandsdateien §8.1–§8.4, Plan Etappe 2 Task 8), Format `bestand.json` einer
 Baugruppe. Liest Bestandskopie und Lauf gleich und ändert nur den Speicher, gespeichert wird hier nie.
 
-UNGEMESSEN: Diese Schicht steht gegen den API-Index und Attrappen, Spike S19 kann sie korrigieren. Belegt sind nur `D1` und die
-Variationen relativ zu `D1` (S13b D), `GetDocumentDependencies2` und das Öffnen (S18). Offen für S19: wie sich Grenzen erkennen
-lassen, was `MateEntity(i).Reference` liefert, die Typnamen im Baum, ein Ordner unter den Verknüpfungen, `GetPathName` und
-`GetComponents` bei Unterdrücktem, `IsFixed` in Unterbaugruppen (die API-Hilfe nennt nur die oberste Ebene).
+Gemessen in S19 (2026-11-05, `docs/bestandsdateien/ergebnisse.md` §2): Grenze `MateLimitDistanceDim` mit Variation ungleich 0,
+min gleich max legt SolidWorks als normalen Abstand an (T8.1); `MateEntity(i).Reference` ist im Baugruppenkontext wählbar, nach
+`ForceRebuild3` aber getrennt (T8.6, T8.22); `ReferenceComponent` an einer Ebene der Hauptbaugruppe ist die Wurzel (T8.4);
+Ordner unter den Verknüpfungen sind flach (T8.18); `GetComponents(False)` nennt Unterdrücktes, dessen Kinder nicht (T8.14);
+`IsFixed` ist bei Kindern falsch (T8.16).
 
 Grundsatz: Was sich nicht lesen lässt, fehlt (bzw. `None`), `vergleich_baugruppe` macht daraus `ok: None`. Ausnahme ist die
 unterdrückte Komponente: Sie hat kein Soll, trägt aber in jedem Feld je Konfiguration einen Eintrag, sonst wäre eine
@@ -24,8 +25,7 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
   IMateEntity2.Reference, .ReferenceComponent, .ReferenceType2 (swSelectType_e swSelDATUMPLANES 4, swSelDATUMAXES 5,
     swSelDATUMPOINTS 6)
   IModelDoc2.ForceRebuild3(1), .GetType(0: swDocumentTypes_e), .FeatureManager; IFeatureManager.GetFeatures(1: False alle Ebenen)
-Typnamen laut Index zu IFeature.GetTypeName2: Reference, ReferencePattern, MateGroup, Mate…; ob die Baugruppe sie so meldet,
-klärt S19f."""
+Typnamen zu IFeature.GetTypeName2 (S19f T8.17): Reference, LocalLPattern mit ReferencePattern, MateGroup, Mate…"""
 
 import math
 from dataclasses import replace
@@ -41,6 +41,7 @@ from swki.bestand.sw_bestand import (SW_EINHEITENSYSTEM, baum_features, datei_re
                                      gleichungen_von, gleichungsdatei, ist_ordner, leite_masse, lies_masse, schalte, unterdrueckt,
                                      whats_wrong)
 from swki.bestand.vergleich_baugruppe import bekannte_fehler_baugruppe
+from swki.compiler import sw
 from swki.compiler.fehler import REBUILD_FEHLER, BauFehler
 from swki.pruefung.messen import skizzenstatus
 from swki.verbindung import in_mm, in_mm3
@@ -53,8 +54,8 @@ SW_BEZUGSGEOMETRIE = frozenset({4, 5, 6})  # swSelectType_e: Ebene, Achse, Punkt
 # IFeature.GetTypeName2 von Komponenten und Komponentenmustern: Komponente `Reference`, Muster `LocalLPattern` mit der Instanz
 # (`ReferencePattern`) als Unterfeature (S19f T11.5, P.f1); die übrigen `Local…Pattern` laut Index. Die Instanzen stehen in
 # `komponenten`, das Muster im Baum sähe eine neue Instanz als Feature.
-GLIEDER = frozenset({"Reference", "ReferencePattern", "LocalLPattern", "LocalCirPattern", "LocalChainPattern", "LocalCurvePattern",
-                     "LocalSketchPattern"})
+GLIEDER = frozenset({"Reference", "ReferencePattern", "LocalLPattern", "LocalCirPattern", "LocalChainPattern",
+                     "LocalCurvePattern", "LocalSketchPattern"})
 MATE_VORSILBE = "Mate"   # MateGroup und alle Verknüpfungen (MateCoincident, MateDistanceDim …), laut Index
 
 
@@ -325,9 +326,9 @@ def lies_kollisionen(asm) -> list[dict] | None:
 
 def lies_baugruppe(app, asm, dateien=(), kollision: bool = True) -> dict:
     """Aufnahme einer offenen Baugruppe im Format `bestand.json` ohne `datei`, `dateien`, `bewegungen`, `sw_jahr` (setzt der
-    Aufrufer). Die Felder von `eigenschaften` bis `geometrie` sind die von Etappe 1, `features`, `reihenfolge` und `masse`
-    lassen Komponenten und Verknüpfungen aus; Material und Geometrie hat die Baugruppe nicht. Liest in einem Durchgang je
-    Konfiguration, die aktive steht vorn und ist danach wieder aktiv, gespeichert wird nichts. `kollision=False`: `kollisionen`
+    Aufrufer). Die Felder von `eigenschaften` bis `geometrie` sind die von Etappe 1, `features`, `reihenfolge` und `masse` lassen
+    Komponenten und Verknüpfungen aus; Material und Geometrie hat die Baugruppe nicht. Liest in einem Durchgang je Konfiguration
+    in `sw.schnell`, die aktive steht vorn und ist danach wieder aktiv, gespeichert wird nichts. `kollision=False`: `kollisionen`
     bleibt `None` (Aufrufer misst sie extra oder braucht sie nicht, Unterbaugruppe)."""
     aktiv = asm.ConfigurationManager.ActiveConfiguration.Name
     konfigurationen = [aktiv] + [k for k in asm.GetConfigurationNames if k != aktiv]
@@ -354,7 +355,8 @@ def lies_baugruppe(app, asm, dateien=(), kollision: bool = True) -> dict:
         lies_komp(k)
         lies_mate(k)
 
-    _je_konfiguration(asm, konfigurationen, lies)
+    with sw.schnell(app, asm):  # 0,34 s statt 2,55 s unsichtbar, 0,51 s statt 7,81 s mit Fenster (S19d T11.11)
+        _je_konfiguration(asm, konfigurationen, lies)
     return d | {"reihenfolge": reihenfolge, "masse": leite_masse(list(masse.values()), gleichungen), "neuaufbau": neuaufbau,
                 "komponenten": _vervollstaendige(komponenten, konfigurationen, aktiv),
                 "verknuepfungen": _werte_der_aktiven(verknuepfungen, konfigurationen, aktiv),
@@ -399,11 +401,11 @@ class BestandMechanik(SwMechanik):
 
 def mechanik_fuer(app, asm, grenzen: dict, aufnahme: dict, ordner: Path | None) -> SwMechanik:
     """Mechanik der Grenzen (Name → Eintrag aus `verknuepfungen`) an der offenen Baugruppe: nur oberste Ebene, nur nicht
-    unterdrückte Komponenten. Die Entitäten liest `entitaet` je Antrieb frisch aus der Grenze (S19b T8.22, P.b4: `SwMechanik.status`
-    ruft `ForceRebuild3`, ein vorher gelesener Zeiger ist danach getrennt); gibt eine Grenze sie nicht her, fällt nur sie heraus
-    (`StellungFehler` beim Anlegen des Antriebs). Die `IFeature` der Grenzen halten über Neuaufbau und Umschalten (T9.30). Die
-    Verknüpfungsfehler der Aufnahme gehen als `bekannte_fehler` mit: Alte Fehler stoppen die Fahrt nicht, neue schon. `ordner`:
-    Bilder der Fahrt, `None` ohne."""
+    unterdrückte Komponenten. Die Entitäten liest `entitaet` je Antrieb frisch aus der Grenze (S19b T8.22, P.b4:
+    `SwMechanik.status` ruft `ForceRebuild3`, ein vorher gelesener Zeiger ist danach getrennt); gibt eine Grenze sie nicht her,
+    fällt nur sie heraus (`StellungFehler` beim Anlegen des Antriebs). Die `IFeature` der Grenzen halten über Neuaufbau und
+    Umschalten (T9.30). Die Verknüpfungsfehler der Aufnahme gehen als `bekannte_fehler` mit: Alte Fehler stoppen die Fahrt nicht,
+    neue schon. `ordner`: Bilder der Fahrt, `None` ohne."""
     handles = {f.Name: f for f in sw_baugruppe.verknuepfungen(asm)}
     verknuepfungen = {}
     for name, v in grenzen.items():

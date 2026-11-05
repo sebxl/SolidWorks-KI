@@ -271,6 +271,16 @@ def test_komponentenmuster_ist_ein_glied(asm, typ):
     assert lies_baugruppe(None, asm)["reihenfolge"] == {"Standard": ["Ebene vorne"], "Leicht": ["Ebene vorne"]}
 
 
+def test_lies_baugruppe_ohne_bildschirmarbeit(asm):
+    """S19d T11.11: In `sw.schnell` liest `lies_baugruppe` 5- bis 15-mal schneller (2,55 s → 0,34 s unsichtbar). Danach ist alles
+    zurückgestellt."""
+    app = SimpleNamespace(CommandInProgress=False, GetProcessID=os.getpid())
+    gesehen, rebuild = [], asm.ForceRebuild3
+    asm.ForceRebuild3 = lambda nur_oben: (gesehen.append(app.CommandInProgress), rebuild(nur_oben))[1]
+    lies_baugruppe(app, asm)
+    assert gesehen == [True, True] and app.CommandInProgress is False
+
+
 def test_lies_baugruppe_format(asm):
     d = lies_baugruppe(None, asm)
     assert d["version"] == 2 and d["art"] == "baugruppe" and d["konfigurationen"] == ["Standard",
