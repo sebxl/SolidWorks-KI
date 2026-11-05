@@ -103,6 +103,29 @@ class Bezug:
         return self._waehle(anhaengen)
 
 
+class Zeiger:
+    """`IMateEntity2.Reference`, wie gelesen: Nach `ForceRebuild3` getrennt (`RPC_E_DISCONNECTED`, S19b T8.22), `EditRebuild3`,
+    Unterdrücken und Umschalten überlebt er. Sonst wie der `Bezug` dahinter."""
+
+    def __init__(self, bezug, asm):
+        self.bezug, self.asm, self.stand = bezug, asm, asm.neuaufbau_stand
+
+    def _pruefe(self):
+        if self.asm.neuaufbau_stand != self.stand:
+            raise RuntimeError("RPC_E_DISCONNECTED: Das Objekt ist von seinen Clients getrennt")
+
+    def Select4(self, anhaengen, daten):
+        self._pruefe()
+        return self.bezug.Select4(anhaengen, daten)
+
+    def Select2(self, anhaengen, marke):
+        self._pruefe()
+        return self.bezug.Select2(anhaengen, marke)
+
+    def __getattr__(self, name):
+        return getattr(self.bezug, name)
+
+
 class Seite:
     """IMateEntity2."""
 
@@ -136,7 +159,8 @@ class MateDaten:
     def MateEntity(self, i):
         if self.feature.gesperrt():
             raise RuntimeError("Grenze unterdrückt: keine Entitäten")
-        return self.seiten[i]
+        s = self.seiten[i]
+        return Seite(s.ReferenceComponent, Zeiger(s.Reference, self.feature.asm), s.ReferenceType2)
 
 
 class Definition:
@@ -404,7 +428,8 @@ class Baugruppe:
         self.bewegt: dict[str, str] = {}
         self.gespeichert = []
         self.auswahl = None
-        self.entitaeten_nach_dem_unterdruecken = False
+        self.entitaeten_nach_dem_unterdruecken = True   # auch eine unterdrückte Grenze gibt sie her (S19b T8.22)
+        self.neuaufbau_stand = 0                        # zählt `ForceRebuild3`, `Zeiger` vergleicht
         self.pfade_wie_gespeichert: Path | None = None  # unterdrückt zeigt `GetPathName` den gespeicherten Pfad (S19c T8.9)
         self.vom_original: set[str] = set()             # Komponenten, die aktiv vom gespeicherten Pfad laden (S18g)
         self.versteckt: list[Mate] = []                 # Verknüpfungen, die nur `GetFeatures` kennt, nicht der Baum
@@ -490,6 +515,7 @@ class Baugruppe:
 
     def ForceRebuild3(self, nur_oben):
         self.neuaufbauten.append(self.aktiv)
+        self.neuaufbau_stand += 1  # gelesene Zeiger auf Entitäten sind danach getrennt (S19b T8.22)
         self._loese()
         return True
 

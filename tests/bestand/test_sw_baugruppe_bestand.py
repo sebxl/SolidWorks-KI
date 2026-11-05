@@ -377,14 +377,17 @@ def test_mechanik_nur_oberste_nicht_unterdrueckte(asm):
     assert "Unter-1" in mech.komponenten and "Unter-1/Welle-1" not in mech.komponenten and "Schraube-2" not in mech.komponenten
 
 
-def test_mechanik_liest_entitaeten_vor_dem_unterdruecken(asm, stand):
-    """`fahre` unterdrückt die Grenze, danach gibt sie ihre Entitäten nicht mehr her."""
+def test_mechanik_liest_entitaeten_je_antrieb_frisch(asm, stand):
+    """S19b T8.22, P.b4: `SwMechanik.status` ruft `ForceRebuild3`, danach ist jeder vorher gelesene Zeiger getrennt
+    (`RPC_E_DISCONNECTED`), kein Antrieb ließe sich anlegen. Aus der unterdrückten Grenze lassen sie sich frisch lesen."""
     a, g = stand
     mech = mechanik_fuer(None, asm, g, a, None)
     asm.mates[0].unterdrueckt.add("Standard")  # wie `fahre`
+    asm.ForceRebuild3(False)                    # wie `SwMechanik.status`
     v = mech.grenzen["Hub"]
-    assert mech.entitaet(v.a)[0].name == "Fläche von Schlitten-1" and mech.entitaet(v.b)[0].name == "Fläche von Grund-1"
-    assert mech.entitaet(v.a)[1] is False
+    objekt, feature = mech.entitaet(v.a)
+    assert objekt.Select4(False, None) is True and objekt.name == "Fläche von Schlitten-1" and feature is False
+    assert mech.entitaet(v.b)[0].name == "Fläche von Grund-1"
 
 
 def test_bezugsebene_wird_als_feature_gewaehlt(asm):
@@ -405,9 +408,8 @@ def test_unlesbare_entitaeten_lassen_nur_diese_grenze_herausfallen(asm, stand):
     def kaputt(i):
         raise RuntimeError("COM weg")
 
-    alt, teile.MateEntity = teile.MateEntity, kaputt
     mech = mechanik_fuer(None, asm, g, a, None)
-    teile.MateEntity = alt
+    teile.MateEntity = kaputt  # erst beim Anlegen des Antriebs gelesen
     with pytest.raises(StellungFehler) as e:
         mech.entitaet(mech.grenzen["Hub"].a)
     assert e.value.bewegung == "Hub" and "COM weg" in str(e.value)

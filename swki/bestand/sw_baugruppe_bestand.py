@@ -351,8 +351,9 @@ def lies_baugruppe(app, asm, dateien=(), kollision: bool = True) -> dict:
 # --- Mechanik -----------------------------------------------------------------------------------------------------------------
 
 def _entitaeten(feature) -> list[tuple[object, bool]]:
-    """Die Entitäten einer Grenze wie `sw_baugruppe.in_baugruppe`: (Objekt, ist Feature). Für `treibe` an denselben Flächen
-    (S19b)."""
+    """Die Entitäten einer Grenze wie `sw_baugruppe.in_baugruppe`: (Objekt, ist Feature), schon im Baugruppenkontext wählbar
+    (S19b T8.6). Für `treibe` an denselben Flächen. Nur frisch gültig: Nach `ForceRebuild3` ist jeder gelesene Zeiger getrennt
+    (`RPC_E_DISCONNECTED`, T8.22), aus der Grenze lassen sie sich auch unterdrückt neu lesen."""
     mate = feature.GetSpecificFeature2
     seiten = [mate.MateEntity(i) for i in range(int(primitiv(mate.GetMateEntityCount)))]
     return [(s.Reference, primitiv(s.ReferenceType2) in SW_BEZUGSGEOMETRIE) for s in seiten]
@@ -384,27 +385,27 @@ class BestandMechanik(SwMechanik):
 
 def mechanik_fuer(app, asm, grenzen: dict, aufnahme: dict, ordner: Path | None) -> SwMechanik:
     """Mechanik der Grenzen (Name → Eintrag aus `verknuepfungen`) an der offenen Baugruppe: nur oberste Ebene, nur nicht
-    unterdrückte Komponenten. Die Entitäten werden hier gelesen, vor `fahre`, das die Grenzen unterdrückt; gibt eine sie nicht
-    her, fällt nur diese Grenze heraus (`StellungFehler` beim Anlegen des Antriebs). Die Verknüpfungsfehler der Aufnahme gehen
-    als `bekannte_fehler` mit: Alte Fehler stoppen die Fahrt nicht, neue schon. `ordner`: Bilder der Fahrt, `None` ohne
-    Fenster."""
+    unterdrückte Komponenten. Die Entitäten liest `entitaet` je Antrieb frisch aus der Grenze (S19b T8.22, P.b4: `SwMechanik.status`
+    ruft `ForceRebuild3`, ein vorher gelesener Zeiger ist danach getrennt); gibt eine Grenze sie nicht her, fällt nur sie heraus
+    (`StellungFehler` beim Anlegen des Antriebs). Die `IFeature` der Grenzen halten über Neuaufbau und Umschalten (T9.30). Die
+    Verknüpfungsfehler der Aufnahme gehen als `bekannte_fehler` mit: Alte Fehler stoppen die Fahrt nicht, neue schon. `ordner`:
+    Bilder der Fahrt, `None` ohne."""
     handles = {f.Name: f for f in sw_baugruppe.verknuepfungen(asm)}
-    entitaeten: dict[str, list | str] = {}
     verknuepfungen = {}
     for name, v in grenzen.items():
         if v.get("typ") not in (SW_ABSTAND, SW_WINKEL):
             continue  # `fahre_bestand` vermerkt sie als nicht fahrbar
-        try:
-            entitaeten[name] = _entitaeten(handles[name])
-        except Exception as e:
-            entitaeten[name] = f"{type(e).__name__}: {e}"
         roh = als_verknuepfung(name, v)
         verknuepfungen[name] = replace(roh, a={**roh.a, "grenze": name}, b={**roh.b, "grenze": name})
 
     def entitaet(seite: dict) -> tuple[object, bool]:
-        name, gelesen = seite["grenze"], entitaeten[seite["grenze"]]
-        if isinstance(gelesen, str) or seite["index"] >= len(gelesen):
-            grund = gelesen if isinstance(gelesen, str) else f"Entität {seite['index']} fehlt"
+        name = seite["grenze"]
+        try:
+            gelesen = _entitaeten(handles[name])
+            grund = None if seite["index"] < len(gelesen) else f"Entität {seite['index']} fehlt"
+        except Exception as e:
+            grund = f"{type(e).__name__}: {e}"
+        if grund is not None:
             raise StellungFehler(name, float(grenzen[name].get("min") or 0.0), f"Entitäten der Grenze nicht lesbar: {grund}")
         return gelesen[seite["index"]]
 
