@@ -11,7 +11,7 @@ from swki import aenderungen
 from swki.bestand import abgleich_lauf, sw_bestand
 from swki.bestand.abgleich import ungeprueft_baugruppe
 from swki.bestand.ablage import bestand_ordner, schreibe_aufnahme, schreibe_datei_aufnahme, schreibe_herkunft
-from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BestandFehler
+from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_PFAD_FREMD, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BestandFehler
 from swki.cli import main
 from swki.compiler.fehler import SPEICHERN_FEHLGESCHLAGEN, BauFehler
 from swki.konfig import Rechner
@@ -174,11 +174,15 @@ def test_cli_abgleich(u, monkeypatch, tmp_path):
 # --- Referenzbau -----------------------------------------------------------------------------------------------------------
 
 class App:
+    """`offen`: Titel → Ordner (None: noch nicht gespeichert) der offenen Dokumente, `ereignisse` in Reihenfolge."""
+
     def __init__(self):
-        self.geoeffnet, self.geschlossen = [], []
+        self.geoeffnet, self.geschlossen, self.offen, self.ereignisse = [], [], {}, []
 
     def CloseDoc(self, titel):
         self.geschlossen.append(titel)
+        self.offen.pop(titel, None)
+        self.ereignisse.append(("zu", titel))
 
 
 @pytest.fixture
@@ -191,10 +195,23 @@ def bau(u, monkeypatch):
 
     def baue(app_, r, standard, spec, spec_pfad, auftrag, protokoll):
         gebaut.append((spec["name"], spec_pfad, auftrag))
-        return SimpleNamespace(GetTitle=f"Teil{len(gebaut)}"), None, u.baufehler
+        titel = f"Teil{len(gebaut)}"
+        app.offen[titel] = None
+        app.ereignisse.append(("gebaut", titel))
+        return SimpleNamespace(GetTitle=titel), None, u.baufehler
 
     def oeffne_in(app_, pfad, wurzel, sichtbar=False, nur_lesen=True):
+        """Abnahme lauf-30, gemessen: Ist ein Dokument aus einem anderen Ordner offen (auch die gebaute Referenz), lösen die
+        Suchregeln die Referenz eines Teils (im Kontext, Basisteil) auf ihren gespeicherten Pfad auf, Sperre 1 sperrt; ohne
+        andere Dokumente lösen sie neben die Kopie auf."""
+        rel = Path(pfad).relative_to(wurzel).as_posix()
+        referenzen = (u.aufnahme["dateien"].get(rel) or {}).get("referenzen") or []
+        if referenzen and any(ordner != Path(wurzel) for ordner in app.offen.values()):
+            raise BestandFehler(BESTAND_PFAD_FREMD, f"SolidWorks würde bei {Path(pfad).name} 1 Dateien außerhalb des Ordners "
+                                                    "laden (vor dem Öffnen): lauf-30", datei=str(pfad))
         app.geoeffnet.append((Path(pfad), Path(wurzel), sichtbar, nur_lesen))
+        app.offen[Path(pfad).name] = Path(wurzel)
+        app.ereignisse.append(("offen", Path(pfad).name))
         return SimpleNamespace(GetTitle=Path(pfad).name)
 
     monkeypatch.setattr(abgleich_lauf, "verbinde", lambda jahr: app)
@@ -228,7 +245,7 @@ def test_referenzbau_vergleicht_mit_der_bestandskopie(bau):
     assert bau.app.geoeffnet == [(ordner / REL, ordner, False, True)]
     assert t["features"]["id"] == "baum" and t["features"]["ok"] is True and t["masse"]["id"] == "masse"
     assert t["differenzen"] == {"Standard": [], "Variante B": []}
-    assert bau.app.geschlossen == ["Deckel.SLDPRT", "Teil1"]
+    assert bau.app.geschlossen == ["Teil1", "Deckel.SLDPRT"]  # die Kopie ging vor dem Bau auf, zuletzt zu
 
 
 def test_referenzbau_meldet_differenzen(bau, monkeypatch):
@@ -254,7 +271,7 @@ def test_referenzbau_ohne_gemeinsame_konfiguration_steht_das_da(bau, monkeypatch
     """Leere `differenzen` hieße sonst: gleich."""
     monkeypatch.setattr(abgleich_lauf, "lies_bestand", lambda a, m: {**_gelesen(REL), "konfigurationen": ["Andere"]})
     t = abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]["teile"][REL]
-    assert t["differenzen"] == {} and "keine gemeinsame Konfiguration" in t["hinweis"] and bau.app.geoeffnet == []
+    assert t["differenzen"] == {} and "keine gemeinsame Konfiguration" in t["hinweis"] and bau.app.offen == {}
 
 
 def test_referenzbau_mit_gemeinsamer_konfiguration_ohne_hinweis(bau):
@@ -269,13 +286,50 @@ def test_referenzbau_zaehlt_weiter(bau):
 def test_referenzbau_fehler_im_bau_steht_da(bau):
     bau.baufehler = BauFehler("REBUILD_FEHLER", "f1 kaputt", schritt="rebuild")
     t = abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]["teile"][REL]
-    assert t["fehler"]["code"] == "REBUILD_FEHLER" and bau.gespeichert == [] and bau.app.geschlossen == ["Teil1"]
+    assert t["fehler"]["code"] == "REBUILD_FEHLER" and bau.gespeichert == []
+    assert bau.app.geschlossen == ["Teil1", "Deckel.SLDPRT"]
 
 
 def test_referenzbau_ohne_teil_spec_steht_da(bau, monkeypatch):
     monkeypatch.setattr(abgleich_lauf, "teil_specs", lambda *x: {})
     aus = abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]
     assert aus["teile"] == {} and aus["nicht_gebaut"][0]["datei"] == REL and bau.gebaut == []
+
+
+def _im_kontext(bau, monkeypatch):
+    """Der Deckel hat eine Referenz im Kontext der Hauptbaugruppe (wie der Kanalträger in lauf-30), die Platte ist ebenfalls
+    geändert und hat eine Teil-Spec."""
+    haupt = bau.aufnahme["datei"]["name"]
+    bau.aufnahme["dateien"][REL]["referenzen"] = [haupt]
+    bau.aufnahme["dateien"][ANDERE]["sha256"] = "8" * 64
+    schreibe_aufnahme(bau.r, "neu", 1, bau.aufnahme)
+    specs = {"Deckel.SLDPRT": (SPEC_TEIL, bau.spec_pfad.parent / "deckel.yaml"),
+             "Platte.SLDPRT": ({**SPEC_TEIL, "name": "Platte"}, bau.spec_pfad.parent / "platte.yaml")}
+    monkeypatch.setattr(abgleich_lauf, "teil_specs", lambda *x: specs)
+    return haupt
+
+
+def test_referenzbau_teil_im_kontext_oeffnet_die_kopie_vor_dem_bau(bau, monkeypatch):
+    """Abnahme lauf-30: Die gebaute Referenz war offen, als die Bestandskopie des Teils aufging, Sperre 1 sperrte und der ganze
+    Abgleich brach ab. Jetzt geht die Kopie zuerst auf, dann wird gebaut; die Baugruppe bleibt zu (sie lüde das Teil mit)."""
+    _im_kontext(bau, monkeypatch)
+    aus = abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]
+    assert set(aus["teile"]) == {REL, ANDERE} and aus["luecken"] == []
+    assert aus["teile"][REL]["differenzen"] == {"Standard": [], "Variante B": []}
+    deckel = bau.app.ereignisse[:bau.app.ereignisse.index(("gebaut", "Teil1")) + 1]
+    assert deckel == [("offen", "Deckel.SLDPRT"), ("gebaut", "Teil1")]
+    assert bau.app.offen == {}  # alles wieder zu
+
+
+def test_referenzbau_teil_im_kontext_als_luecke(bau, monkeypatch):
+    """Sperrt Sperre 1 trotzdem (eine fremde Datei in der Sitzung), ist das eine Lücke dieses Teils, der Rest läuft weiter."""
+    _im_kontext(bau, monkeypatch)
+    bau.app.offen["Fremd.SLDPRT"] = Path("C:/anderswo")
+    aus = abgleich_lauf.abgleich("neu", bau.spec_pfad, referenz=True)["referenzbau"]
+    assert "Referenz im Kontext" in aus["teile"][REL]["luecke"] and [x["datei"] for x in aus["luecken"]] == [REL]
+    assert aus["teile"][ANDERE]["differenzen"] == {"Standard": [], "Variante B": []}
+    assert [g[0] for g in bau.gebaut] == ["Platte"]  # das gesperrte Teil wird nicht gebaut
+    assert set(bau.app.offen) == {"Fremd.SLDPRT"}
 
 
 def test_referenzbau_ohne_geaenderte_datei_baut_nichts(u, monkeypatch):

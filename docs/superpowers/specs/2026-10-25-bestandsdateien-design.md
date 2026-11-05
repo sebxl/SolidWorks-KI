@@ -595,6 +595,10 @@ wieder gebraucht, zuerst eine neue Bestandsaufnahme). Drei Wege, sie schließen 
 - **Grenze:** Ein Feature, das bei gleichem Namen und gleichen Maßen anders ist (Skizze verschoben, Endbedingung), sieht dieser Vergleich nicht. Die Datei bleibt „geändert, nicht
   erklärt“. Dafür gibt es `--referenzbau` (Nutzer 2026-11-01): Es baut nur die geänderten Eigenteile aus der freigegebenen Spec in `<auftrag>/referenz-<n>/` und vergleicht exakt (`vergleiche`, `koerper_differenz`). Das ist eine
   Messlatte, kein Nachbau im Sinn der Regel vom 2026-10-30: Weitergearbeitet wird nur an der Bestandskopie, der Referenzordner fließt in keinen Lauf und keine Ausgabe ein.
+  *Nachgezogen 2026-11-05 (Abnahme `lauf-30`):* Die Bestandskopie des Teils geht vor dem Bau der Referenz auf. Ist ein Dokument aus
+  einem anderen Ordner offen, lösen die Suchregeln die Referenz eines Teils (im Kontext, Basisteil) auf ihren gespeicherten Pfad auf
+  und Sperre 1 sperrt; ohne andere Dokumente lösen sie neben die Kopie auf. Sperrt sie trotzdem, ist das Teil eine Lücke
+  (`referenzbau.luecken`), der Rest läuft weiter.
 
 ### 8.7 Größe
 

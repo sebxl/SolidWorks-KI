@@ -5,7 +5,11 @@ kein SolidWorks. Die Logik steht in `swki.bestand.abgleich`, hier werden nur die
 `--referenzbau` schließt die Lücke des Vergleichs (gleicher Name, gleiche Maße, aber anders): Es baut die Eigenteile mit
 geänderter SHA-256 aus der freigegebenen Teil-Spec nach `<auftrag>/referenz-<n>/` und vergleicht sie exakt mit der
 Bestandskopie. Das ist eine Messlatte, kein Nachbau: Der Ordner fließt in keinen Lauf und keine Ausgabe ein, die Referenz heißt
-`referenz_<name>`, weil SolidWorks keine zwei gleichnamigen Dokumente öffnet (S18d)."""
+`referenz_<name>`, weil SolidWorks keine zwei gleichnamigen Dokumente öffnet (S18d). Die Bestandskopie geht vor dem Bau auf: Ist
+ein Dokument aus einem anderen Ordner offen, lösen die Suchregeln die Referenz eines Teils (im Kontext, Basisteil) auf ihren
+gespeicherten Pfad auf (Abnahme `lauf-30`), Sperre 1 sperrt. Ohne andere Dokumente löst sie neben die Kopie auf. Die Baugruppe als
+Kontext zuerst zu öffnen geht nicht: Sie lädt das Teil mit, `oeffne` lehnt es dann als schon offen ab. Sperrt Sperre 1 trotzdem,
+ist das eine Lücke dieses Teils, der Rest läuft weiter."""
 
 import json
 import re
@@ -17,7 +21,7 @@ from swki.auftrag import auftrag_name, lauf_datei
 from swki.bestand.abgleich import abgleich_baugruppe, abgleich_dateien
 from swki.bestand.ablage import ENDUNG, ENDUNGEN, aufnahmen, bestand_ordner, lade_aufnahme, lade_datei_aufnahme, lade_herkunft
 from swki.bestand.differenz import DifferenzFehler, koerper_differenz
-from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BestandFehler
+from swki.bestand.fehler import BESTAND_NICHT_LESBAR, BESTAND_PFAD_FREMD, BESTAND_REFERENZ, BESTAND_UNBEKANNT, BestandFehler
 from swki.bestand.pfade import oeffne_in
 from swki.bestand.scheiben import datei_schluessel
 from swki.bestand.spec import ist_baugruppen_aufnahme
@@ -90,41 +94,49 @@ def _referenz_ordner(r, auftrag: str) -> Path:
     return wurzel / f"referenz-{max(belegt, default=0) + 1}"
 
 
-def _differenzen(app, kopie: Path, wurzel: Path, model, konfigurationen: list[str]) -> dict[str, list | str]:
-    """Bestandskopie gegen die Referenz je gemeinsamer Konfiguration; scheitert eine, steht der Grund da. Die Kopie geht nur
-    lesend auf."""
-    vorher = oeffne_in(app, kopie, wurzel, sichtbar=False, nur_lesen=True)
-    try:
-        aus: dict[str, list | str] = {}
-        for k in konfigurationen:
-            try:
-                aus[k] = [asdict(x) for x in koerper_differenz(app, vorher, model, k)]
-            except DifferenzFehler as e:
-                aus[k] = str(e)
-        return aus
-    finally:
-        sw.schliesse(app, vorher)
+def _differenzen(app, vorher, model, konfigurationen: list[str]) -> dict[str, list | str]:
+    """Bestandskopie gegen die Referenz je gemeinsamer Konfiguration; scheitert eine, steht der Grund da."""
+    aus: dict[str, list | str] = {}
+    for k in konfigurationen:
+        try:
+            aus[k] = [asdict(x) for x in koerper_differenz(app, vorher, model, k)]
+        except DifferenzFehler as e:
+            aus[k] = str(e)
+    return aus
 
 
-def _referenz_teil(app, r, standard: dict, rel: str, spec_teil: dict, spec_pfad: Path, auftrag: str, nummer: int, vorher: dict,
-                   ordner: Path) -> dict:
-    """Ein Teil aus der freigegebenen Spec bauen, unter `ordner` speichern und mit der Bestandskopie vergleichen. Das Dokument
-    geht immer zu, auch nach einem Fehler; ein Baufehler ist ein Befund. Gebaut wird im Auftrag der Spec, nicht in dem der
+def _referenz_teil(app, r, standard: dict, rel: str, referenzen: list[str], spec_teil: dict, spec_pfad: Path, auftrag: str,
+                   nummer: int, vorher: dict, ordner: Path) -> dict:
+    """Ein Teil aus der freigegebenen Spec bauen, unter `ordner` speichern und mit der Bestandskopie vergleichen. Die Kopie geht
+    vor dem Bau auf (Modulkopf); sperrt der Pfadschutz, ist das Teil eine Lücke (`luecke`) und wird nicht gebaut. Alle Dokumente
+    gehen immer zu, auch nach einem Fehler; ein Baufehler ist ein Befund. Gebaut wird im Auftrag der Spec, nicht in dem der
     Aufnahme, sonst wiche die Eigenschaft `Auftrag` immer ab."""
-    eigener = auftrag_name(spec_pfad)
-    protokoll = Protokoll(eigener, spec_pfad.name, 0, r.sw_jahr)
-    model, _, fehler = baue_teil_dokument(app, r, standard, spec_teil, spec_pfad, eigener, protokoll)
+    wurzel = bestand_ordner(r, auftrag, nummer)
     try:
-        if fehler is not None:
-            return {"datei": rel, "fehler": fehler_dict(fehler)}
-        ziel = ordner / f"referenz_{_name(rel)}"
-        sw.speichere(model, ziel)
-        nachher = lies_bestand(app, model)
-        konfigurationen = [k for k in vorher["konfigurationen"] if k in nachher["konfigurationen"]]
-        wurzel = bestand_ordner(r, auftrag, nummer)
-        differenzen = _differenzen(app, wurzel / rel, wurzel, model, konfigurationen) if konfigurationen else {}
+        kopie = oeffne_in(app, wurzel / rel, wurzel, sichtbar=False, nur_lesen=True)
+    except BestandFehler as e:
+        if e.daten.get("code") != BESTAND_PFAD_FREMD:
+            raise
+        art = f"Teil mit Referenz im Kontext ({', '.join(referenzen)})" if referenzen else "Teil"
+        return {"datei": rel, "referenzen": referenzen,
+                "luecke": f"{art}: exakter Vergleich nicht möglich, die Bestandskopie öffnete nicht ohne Datei außerhalb des "
+                          f"Ordners ({e})"}
+    try:
+        eigener = auftrag_name(spec_pfad)
+        protokoll = Protokoll(eigener, spec_pfad.name, 0, r.sw_jahr)
+        model, _, fehler = baue_teil_dokument(app, r, standard, spec_teil, spec_pfad, eigener, protokoll)
+        try:
+            if fehler is not None:
+                return {"datei": rel, "fehler": fehler_dict(fehler)}
+            ziel = ordner / f"referenz_{_name(rel)}"
+            sw.speichere(model, ziel)
+            nachher = lies_bestand(app, model)
+            konfigurationen = [k for k in vorher["konfigurationen"] if k in nachher["konfigurationen"]]
+            differenzen = _differenzen(app, kopie, model, konfigurationen) if konfigurationen else {}
+        finally:
+            sw.schliesse(app, model)
     finally:
-        sw.schliesse(app, model)
+        sw.schliesse(app, kopie)
     pruefungen = vergleiche({"punkte": []}, {**vorher, "datei": {**vorher["datei"], "ordner": str((wurzel / rel).parent)}},
                             {**nachher, "datei": {"name": ziel.name, "ordner": str(ordner)}}, {})
     je_id = {e["id"]: e for e in pruefungen}
@@ -152,9 +164,11 @@ def referenzbau(r, standard: dict, auftrag: str, nummer: int, a: dict, geaendert
     if offen:
         app = verbinde(r.sw_jahr)
         for rel, (spec_teil, spec_pfad) in offen:
-            teile[rel] = _referenz_teil(app, r, standard, rel, spec_teil, spec_pfad, auftrag, nummer,
+            referenzen = ((a.get("dateien") or {}).get(rel) or {}).get("referenzen") or []
+            teile[rel] = _referenz_teil(app, r, standard, rel, referenzen, spec_teil, spec_pfad, auftrag, nummer,
                                         _aufnahme_der_datei(r, auftrag, nummer, a, rel), ordner)
-    return {"ordner": str(ordner), "teile": teile, "nicht_gebaut": nicht_gebaut}
+    luecken = [{"datei": rel, "luecke": t["luecke"]} for rel, t in teile.items() if "luecke" in t]
+    return {"ordner": str(ordner), "teile": teile, "nicht_gebaut": nicht_gebaut, "luecken": luecken}
 
 
 def abgleich(auftrag: str, spec_pfad: Path, aufnahme: int | None = None, lagen_pfad: Path | None = None,
