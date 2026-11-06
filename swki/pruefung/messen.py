@@ -14,9 +14,9 @@ from swki.compiler.kontext import FeatureErgebnis, Kontext
 from swki.compiler.topologie import flaechen, koerper, loese_flaeche, referenz_geometrie
 from swki.formschraege import TYPEN, extrusionsrichtung, schraege, seitenflaechen, skizzennormale
 from swki.konfig import lade_standard
-from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
+from swki.pruefung.bewertung import Messwerte, kanten_soll, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
-from swki.spec.instanzen import traeger
+from swki.spec.instanzen import MUSTER, traeger
 from swki.spec.normen import SW_BEFESTIGUNG
 from swki.verbindung import byref_long, byref_str, in_mm, in_mm3, mm, r8_array
 from swki.verzahnung import ALPHA, Stirnrad, Verzahnung, verzahnung_im_teil
@@ -104,6 +104,57 @@ def lies_normbohrung(feature) -> dict:
         "ende": d.EndCondition, "tiefe": round(in_mm(tiefe), 6), "gewindetiefe": round(in_mm(d.ThreadDepth), 6),
         "positionen": d.GetSketchPointCount,
     }
+
+
+def lies_muster(feature) -> dict:
+    """Definition eines Musters bzw. einer Spiegelung (Spike S20 f; Late Binding ohne "()"): Anzahl, Abstand in mm bzw.
+    Gesamtwinkel in Grad und die Namen der Quellen."""
+    typ = feature.GetTypeName2
+    d = feature.GetDefinition
+    quellen = [q.Name for q in (d.PatternFeatureArray or ())]
+    if typ == "LPattern":
+        return {"typ": typ, "n1": d.D1TotalInstances, "n2": d.D2TotalInstances, "a1": round(in_mm(d.D1Spacing), 6),
+                "a2": round(in_mm(d.D2Spacing), 6), "quellen": quellen}
+    if typ == "CirPattern":
+        return {"typ": typ, "n": d.TotalInstances, "winkel": round(math.degrees(d.Spacing), 6), "quellen": quellen}
+    return {"typ": typ, "quellen": quellen}
+
+
+def lies_kante(feature) -> dict:
+    """Radius einer Verrundung bzw. Abstand und Winkel einer Fase (Spike S20 f) und die Flächenzahl."""
+    typ = feature.GetTypeName2
+    d = feature.GetDefinition
+    if typ == "Chamfer":
+        werte = {"abstand": round(in_mm(d.GetEdgeChamferDistance(0)), 6), "winkel": round(math.degrees(d.EdgeChamferAngle), 6)}
+    else:
+        werte = {"radius": round(in_mm(d.DefaultRadius), 6)}
+    return {"typ": typ, **werte, "flaechen": feature.GetFaceCount}
+
+
+def _definitionen(model, namen: list[str], lesen, art: str) -> dict[str, dict | str]:
+    ergebnis: dict[str, dict | str] = {}
+    for name in namen:
+        feature = model.FeatureByName(name)
+        if feature is None:
+            ergebnis[name] = f"Feature {name} fehlt im Teil"
+            continue
+        try:
+            ergebnis[name] = lesen(feature)
+        except Exception as e:  # COM-Fehler beim Lesen → Mangel statt Abbruch der Prüfung
+            ergebnis[name] = f"{art} {name} nicht lesbar: {e}"
+    return ergebnis
+
+
+def muster(model, *specs: dict) -> dict[str, dict | str]:
+    """Paket Konstruktionsstil: Definition jedes Musters und jeder Spiegelung der Specs (aktuell und freigegeben)."""
+    namen = list(dict.fromkeys(f["id"] for s in specs for f in s["features"] if f["typ"] in MUSTER))
+    return _definitionen(model, namen, lies_muster, "Muster")
+
+
+def kanten(model, *specs: dict) -> dict[str, dict | str]:
+    """Paket Konstruktionsstil: Maße der Verrundungen und Fasen (Knoten und Feld fase → <id>_fase) der Specs."""
+    namen = list(dict.fromkeys(n for s in specs for n in kanten_soll(s)))
+    return _definitionen(model, namen, lies_kante, "Kante")
 
 
 def normbohrungen(model, soll_spec: dict) -> dict[str, dict | str]:
@@ -446,4 +497,6 @@ def messe(ctx, freigegeben: dict | None = None) -> Messwerte:
         verzahnungen=verzahnungen(model, freigegeben or ctx.spec, ctx.tol_mm, ctx.app, ctx.spec),
         formschraegen=formschraegen(ctx, freigegeben or ctx.spec, ctx.spec),
         gleichungen=gleichungen_anzahl(model),
+        muster=muster(model, ctx.spec, *([freigegeben] if freigegeben else [])),
+        kanten=kanten(model, ctx.spec, *([freigegeben] if freigegeben else [])),
     )
