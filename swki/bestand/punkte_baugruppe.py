@@ -475,6 +475,20 @@ def _kontext(b: BauKontext, komp, name: str):
     return ctx
 
 
+def _ergebnis_im_teil(b: BauKontext, komp, ctx, name: str) -> FeatureErgebnis:
+    """Ein fremdes Feature unter seinem Namen. Die ID eines `feature`-Punkts derselben Datei nennt das Feature, das der Teilebau
+    dieses Laufs angelegt hat: In SolidWorks heißt es nach `name`, seine Bohrungsinstanzen (Teilkoordinaten, mm) stehen im
+    Protokoll-Knoten des Punkts (AP68-Pruefstation-Rev1, Lauf 8: sonst `Bohrung … hat nur 0 Instanzen`)."""
+    datei = _dateiname(komp)
+    p = next((q for q in b.spec["punkte"] if q["typ"] == "feature" and q["id"] == name
+              and Path(q.get("in_datei") or "").name.casefold() == datei), None)
+    if p is None:
+        return FeatureErgebnis([punkte._feature(ctx.model, name)])
+    knoten = next((k for k in b.protokoll.knoten if k.id == name), None)
+    instanzen = [tuple(q) for q in ((knoten.punkte if knoten is not None else None) or ())]
+    return FeatureErgebnis([punkte._feature(ctx.model, p["name"])], punkte=instanzen)
+
+
 def _entitaet(b: BauKontext, seite: dict) -> tuple[object, bool]:
     """Anker in Koordinaten des Teils (`{komponente, nahe}`) oder mit fremden Namen (`{komponente, feature, flaeche}`,
     `{komponente, referenz}`): Fremde Namen kommen wie bei `punkte.kontext` in `ctx.ergebnisse`."""
@@ -485,7 +499,7 @@ def _entitaet(b: BauKontext, seite: dict) -> tuple[object, bool]:
         ctx = _kontext(b, komp, name)
         for schluessel in ("feature", "referenz"):
             if schluessel in anker and anker[schluessel] not in ctx.ergebnisse:
-                ctx.ergebnisse[anker[schluessel]] = FeatureErgebnis([punkte._feature(ctx.model, anker[schluessel])])
+                ctx.ergebnisse[anker[schluessel]] = _ergebnis_im_teil(b, komp, ctx, anker[schluessel])
         return sw_baugruppe.in_baugruppe(komp, loese_im_teil(ctx, anker))
     except Exception as e:  # Komponente nennen: Die Anker-Meldungen kennen sie nicht
         raise _mit_kontext(e, VERKNUEPFUNG_FEHLER, f"Komponente {name}", "referenz") from e

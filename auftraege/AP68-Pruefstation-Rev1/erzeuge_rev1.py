@@ -221,8 +221,10 @@ for n in ("v188.1", "v188.2", "v189.1", "v189.2"):
 punkt(id="vd1", was="Durchlicht: alte Lochzuordnung entfällt", typ="verknuepfung_loeschen", verknuepfung="v133")
 punkt(id="vd2", was="Durchlicht: alte Drehlage entfällt", typ="verknuepfung_loeschen", verknuepfung="v134")
 punkt(id="vd3", was="Durchlicht um 180° gedreht: M4 1 des Lichts in M4 4 der Lasche", typ="verknuepfung_neu", art="konzentrisch",
-      a={"komponente": C("DurchlichtEffilux"), "feature": "m4_oben", "instanz": 1, "achse": True},
-      b={"komponente": C("Durchlichtlasche"), "feature": "m4", "instanz": 4, "achse": True}, lage_folgen=[C("DurchlichtEffilux")])
+      # nahe statt instanz: fremde Bohrungen kennen ihre Instanzen nicht (Lauf 8). Licht: Kernlochwand M4 bei z +22,5 (Teil);
+      # Lasche: Durchgang bei X −137,6 / Y 257,4, nach der Drehung um 180° genau darüber.
+      a={"komponente": C("DurchlichtEffilux"), "nahe": [-25.95, 5, 22.5]},
+      b={"komponente": C("Durchlichtlasche"), "nahe": [-135.35, -147, -257.4]}, lage_folgen=[C("DurchlichtEffilux")])
 punkt(id="vd4", was="Durchlicht: Stecker nach +X", typ="verknuepfung_neu", art="parallel",
       a={"komponente": C("DurchlichtEffilux"), "ebene": "vorne"}, b={"komponente": PLATTE, "ebene": "vorne"},
       ausrichtung="entgegengesetzt")

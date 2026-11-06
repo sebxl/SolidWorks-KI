@@ -1179,3 +1179,42 @@ def test_ziele_nicht_lesbare_datei_ist_unbewiesen():
     k = {**KOMPONENTEN, "A-2": {"datei": None}}
     ziele, unlesbar = ersetzen_ziele({"komponente": "A-1", "alle_instanzen": True}, k, [])
     assert ziele == ["A-1", "Sub-1/A-3"] and "A-2" in unlesbar[0]
+
+
+# --- Anker an Features der Teilpunkte (AP68-Pruefstation-Rev1, Lauf 8) ----------------------------------------------------
+
+def _teil_ctx(*namen):
+    feats = {n: SimpleNamespace(Name=n) for n in namen}
+    return SimpleNamespace(model=SimpleNamespace(FeatureByName=lambda n: feats.get(n)), ergebnisse={}), feats
+
+
+def _b_mit_feature_punkt(knoten_punkte=((1.0, 2.0, 3.0), (4.0, 5.0, 6.0))):
+    p = {"id": "ap3", "typ": "feature", "in_datei": "teile/Platte.SLDPRT", "name": "Senkung Kanaltraeger",
+         "feature": {"typ": "normbohrung"}}
+    knoten = [SimpleNamespace(id="ap3", punkte=[list(q) for q in knoten_punkte])]
+    return SimpleNamespace(spec={"punkte": [p]}, protokoll=SimpleNamespace(knoten=knoten))
+
+
+def test_anker_an_feature_punkt_findet_namen_und_instanzen():
+    """Der Anker nennt die Punkt-ID, in SolidWorks heißt das Feature nach `name`; die Instanzen stehen im Protokoll des
+    Teilebaus (Teilkoordinaten, mm). Lauf 8: `Bohrung … hat nur 0 Instanzen`."""
+    ctx, feats = _teil_ctx("Senkung Kanaltraeger")
+    komp = SimpleNamespace(GetPathName="C:/lauf/teile/Platte.SLDPRT")
+    e = punkte_baugruppe._ergebnis_im_teil(_b_mit_feature_punkt(), komp, ctx, "ap3")
+    assert e.features == [feats["Senkung Kanaltraeger"]]
+    assert e.punkte == [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0)]
+
+
+def test_anker_an_feature_punkt_einer_anderen_datei_ist_ein_fremdes_feature():
+    ctx, feats = _teil_ctx("ap3")
+    komp = SimpleNamespace(GetPathName="C:/lauf/teile/Anderes.SLDPRT")
+    e = punkte_baugruppe._ergebnis_im_teil(_b_mit_feature_punkt(), komp, ctx, "ap3")
+    assert e.features == [feats["ap3"]] and e.punkte == []
+
+
+def test_anker_an_fremdem_feature_ohne_namen_meldet_referenz():
+    ctx, _ = _teil_ctx()
+    komp = SimpleNamespace(GetPathName="C:/lauf/teile/Platte.SLDPRT")
+    with pytest.raises(BauFehler) as e:
+        punkte_baugruppe._ergebnis_im_teil(_b_mit_feature_punkt(), komp, ctx, "m4")
+    assert e.value.code == BESTAND_REFERENZ
