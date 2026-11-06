@@ -319,6 +319,43 @@ def test_loeschen_ohne_wirkung(aufnahme):
         _anwenden(teil, {"id": "p1", "typ": "loeschen", "feature": "Verrundung1"}, aufnahme)
 
 
+def _mit_gewinde() -> dict:
+    """Bohrungsassistent `Gewinde1` mit kosmetischem Gewinde `Bohrungsgewinde1` (Unterfeature, wie lauf-30)."""
+    a = _aufnahme()
+    a["features"] += [{"name": "Gewinde1", "typ": "HoleWzd", "eltern": [], "kinder": ["Bohrungsgewinde1"], "unter": [],
+                       "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False},
+                      {"name": "Bohrungsgewinde1", "typ": "CosmeticThread", "eltern": ["Gewinde1"], "kinder": [], "unter": [],
+                       "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False}]
+    a["reihenfolge"] = {k: [f["name"] for f in a["features"]] for k in a["konfigurationen"]}
+    return a
+
+
+def test_loeschen_gewinde_des_assistenten_wartet_auf_seine_position():
+    """Live 06.11.2026 (AP68-Pruefstation-Rev1, Lauf 2): `DeleteSelection2` löscht das kosmetische Gewinde einer
+    Bohrungsassistent-Bohrung nicht, es verschwindet mit seiner Position (Lauf 1). Der Punkt merkt es vor, am Ende muss es weg sein."""
+    a = _mit_gewinde()
+    teil = teil_aus(a)
+    namen, ctx = _anwenden(teil, {"id": "p1", "typ": "loeschen", "feature": "Bohrungsgewinde1"}, a)
+    assert namen == ["Bohrungsgewinde1"] and teil.feature("Bohrungsgewinde1") is not None
+    assert ctx.loeschen_ausstehend == {"Bohrungsgewinde1": "p1"}
+    with pytest.raises(BauFehler, match="p1.*Bohrungsgewinde1.*Position") as e:
+        punkte.pruefe_ausstehend(ctx)
+    assert e.value.code == FEATURE_NICHT_ERZEUGT
+    gewinde = teil.feature("Bohrungsgewinde1")  # ein späterer Punkt löscht die Position, das Gewinde geht mit
+    for k in teil.ordnung:
+        teil.ordnung[k] = [f for f in teil.ordnung[k] if f is not gewinde]
+    punkte.pruefe_ausstehend(ctx)
+
+
+def test_loeschen_ohne_wirkung_bleibt_fehler_ausser_beim_gewinde_des_assistenten():
+    """Gegenprobe: ein kosmetisches Gewinde ohne Bohrungsassistent als Eltern wartet nicht."""
+    a = _mit_gewinde()
+    a["features"][-1]["eltern"] = []
+    teil = teil_aus(a)
+    with pytest.raises(BauFehler, match="nicht gelöscht"):
+        _anwenden(teil, {"id": "p1", "typ": "loeschen", "feature": "Bohrungsgewinde1"}, a)
+
+
 def _bohrung_attrappe(teil, senkung=False):
     """Wie der Handler normbohrung: Feature `id`, Positionsskizze `id_positionen`, weitere Unterskizze ohne Namen."""
 

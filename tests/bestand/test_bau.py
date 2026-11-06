@@ -292,6 +292,37 @@ def test_loeschen_mit_kindern_und_skizze_bleibt_erlaubt(lauf):
     assert lauf.teil.gespeichert == ["Standard"] and lauf.teil.feature("Skizze4") is None
 
 
+def _gewinde_in_aufnahme(lauf):
+    lauf.aufnahme["features"] += [
+        {"name": "Gewinde1", "typ": "HoleWzd", "eltern": [], "kinder": ["Bohrungsgewinde1"], "unter": [],
+         "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False},
+        {"name": "Bohrungsgewinde1", "typ": "CosmeticThread", "eltern": ["Gewinde1"], "kinder": [], "unter": [],
+         "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False}]
+    lauf.aufnahme["reihenfolge"] = {k: [f["name"] for f in lauf.aufnahme["features"]] for k in lauf.aufnahme["konfigurationen"]}
+
+
+GEWINDE_WEG = {"id": "g1", "typ": "loeschen", "feature": "Bohrungsgewinde1"}
+POSITION_WEG = ('def bauen(ctx):\n    t = ctx.model\n    g = t.FeatureByName("Bohrungsgewinde1")\n'
+                "    for k in t.ordnung:\n        t.ordnung[k] = [f for f in t.ordnung[k] if f is not g]\n"
+                '    return t.FeatureByName("Gewinde1")\n')
+
+
+def test_gewinde_des_assistenten_geht_mit_seiner_position(lauf):
+    """AP68-Pruefstation-Rev1 (live 06.11.2026): `loeschen` auf das Gewinde, danach löscht ein Skript die Position."""
+    _gewinde_in_aufnahme(lauf)
+    lauf.schreibe(GEWINDE_WEG, {"id": "s1", "typ": "skript", "luecke": "x", "datei": _skript_datei(lauf, POSITION_WEG)})
+    assert bau.bauen(lauf.spec_pfad)["status"] == "ok"
+    assert lauf.teil.gespeichert == ["Standard"] and lauf.teil.feature("Bohrungsgewinde1") is None
+
+
+def test_gewinde_des_assistenten_bleibt_ohne_position_speichert_nicht(lauf):
+    _gewinde_in_aufnahme(lauf)
+    lauf.schreibe(GEWINDE_WEG)
+    with pytest.raises(BauAbbruch, match="Bohrungsgewinde1"):
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.teil.gespeichert == []
+
+
 def test_schliessfehler_verdeckt_den_baufehler_nicht(lauf):
     lauf.schreibe(MASS)
 

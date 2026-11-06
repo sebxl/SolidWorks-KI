@@ -99,7 +99,13 @@ def _wende_punkte_an(app, model, spec: dict, spec_pfad: Path, tol_mm: float, auf
         if (ergebnis := ctx.ergebnisse.get(p["id"])) is not None:
             knoten.punkte = [list(q) for q in ergebnis.punkte] or None
 
-    return durchlaufe(ctx, protokoll, spec["punkte"], rufe, lambda c: _pruefe_neuaufbau(c, aufnahme))
+    fehler = durchlaufe(ctx, protokoll, spec["punkte"], rufe, lambda c: _pruefe_neuaufbau(c, aufnahme))
+    if fehler is None:
+        try:
+            punkte.pruefe_ausstehend(ctx)
+        except BauFehler as e:
+            fehler = e
+    return fehler
 
 
 def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: float, aufnahme: dict, protokoll: Protokoll,

@@ -27,6 +27,11 @@ def punkt(**p):
 kommentar("Anschlussplatte: 33 näher an den Kanal (Nutzer: Licht drehen, Abstand verringern)")
 punkt(id="ap1", was="Anschlussplatte 33 mm nach +X (Vorderseite X −212 statt −245)", typ="mass", in_datei=AP,
       mass="D1@Ebene1", alt=257, neu="=257-NAEHER")
+# Die kosmetischen Gewinde der beiden M5 verschwinden mit ihren Positionen (Lauf 1: Bestandsfeature fehlt); sie gehören zu den
+# alten Gewinden, die der Nutzer entfernt haben will, und werden vor dem Skript gelöscht.
+for i, g in enumerate(("Bohrungsgewinde13", "Bohrungsgewinde14"), 1):
+    punkt(id=f"ag{i}", was="Kosmetisches Gewinde einer der beiden entfallenden M5 (Kanalträger)", typ="loeschen", in_datei=AP,
+          feature=g)
 punkt(id="ap2", was="Die beiden Gewinde M5 für den Kanalträger (Y 293,75 / 368,75, Z −160) entfallen", typ="skript", in_datei=AP,
       datei="skripte/ap_gewinde_weg.py", luecke="Einzelne Positionen einer fremden Bohrungsassistent-Bohrung löschen")
 punkt(id="ap3", was="Dort Durchgang mit Flachsenkung für M5 von hinten in den Kanalträger", typ="feature", in_datei=AP,
@@ -57,7 +62,7 @@ punkt(id="kt3", was="2 Stiftbohrungen Ø 4 in der Stirn", typ="feature", in_date
                "positionen": [[310, -160], [352, -160]], "tiefe": 9, "bezug": {"u": "-rand", "v": "-rand"}})
 punkt(id="kt4", was="2 × M4 von unten für den Weichenwinkel", typ="feature", in_datei=KT, name="Gewinde Weichenwinkel",
       feature={"typ": "normbohrung", "art": "gewinde", "groesse": "M4", "flaeche": {"feature": "f1", "flaeche": "-y"},
-               "positionen": [[-176, 340.7], [-164, 340.7]], "tiefe": 8, "gewindetiefe": 6, "bezug": {"u": "-rand", "v": "-rand"}})
+               "positionen": [[-176, 340.7], [-164, 340.7]], "tiefe": 9, "gewindetiefe": 7, "bezug": {"u": "-rand", "v": "-rand"}})
 punkt(id="kt5", was="2 Stiftbohrungen Ø 4 von unten für den Weichenwinkel", typ="feature", in_datei=KT, name="Stifte Weichenwinkel",
       feature={"typ": "normbohrung", "art": "stift", "groesse": "4", "flaeche": {"feature": "f1", "flaeche": "-y"},
                "positionen": [[-184, 340.7], [-156, 340.7]], "tiefe": 8.5, "bezug": {"u": "-rand", "v": "-rand"}})
@@ -120,14 +125,30 @@ punkt(id="fs4", was="+X-Wand entfällt, sie wird der Schachtdeckel", typ="featur
                "elemente": [{"polygon": {"punkte": [[239.974, -139], [276.37, -139], [276.37, -66.64], [313.332, 23],
                                                     [286.772, 23], [239.974, -90.5]]}}]},
                "ende": {"typ": "blind", "tiefe": 2}})
-AUGEN = [(237.274, -115, 8), (279.07, -115, 8), (279.75, 10, 8.5), (309.0, 10, 8)]
+# Augen und Deckelohren aus einer Quelle (Konstruktionsreview: Lochlagen wichen bis 0,78 ab). Außenflächen der Wände in der
+# Deckelebene (Y, Z): vorn senkrecht Y 240,274 bis Z −90,5, dann geneigt bis Y 287,072 bei Z 23; hinten senkrecht Y 276,07 bis
+# Z −66,64, dann geneigt bis Y 313,032 bei Z 23. Auge: 9 aus der Wand heraus, 1 in die Wand (2 dick), 10 hoch, 8 tief (Boden 2
+# unter der Einschmelzmutter); Loch 4,5 vor der Wand. Gleiche Zahlen in schachtdeckel.yaml (YVU, YHU, YVOO, YHOO, Ohren).
+def _yv(z):   # Vorderwand außen
+    return 240.274 if z <= -90.5 else 240.274 + (z + 90.5) * (287.072 - 240.274) / (23 + 90.5)
+def _yh(z):   # Rückwand außen
+    return 276.07 if z <= -66.64 else 276.07 + (z + 66.64) * (313.032 - 276.07) / (23 + 66.64)
+OB, OH, IN = 9, 10, 1
+def _auge(wand, aussen, z):   # aussen −1: Ohr nach −Y (Vorderwand), +1: nach +Y (Rückwand)
+    pts = []
+    for zz in (z - OH / 2, z + OH / 2):
+        w = wand(zz)
+        pts.append(((round(w + aussen * OB, 3), zz), (round(w - aussen * IN, 3), zz)))
+    (a0, b0), (a1, b1) = pts
+    return [list(a0), list(b0), list(b1), list(a1)], [round(wand(z) + aussen * OB / 2, 3), z]
+AUGEN = [_auge(_yv, -1, -115), _auge(_yh, 1, -115), _auge(_yv, -1, 10), _auge(_yh, 1, 10)]
 punkt(id="fs5", was="4 Augen für den Deckel hinter der Deckelebene", typ="feature", in_datei=FS, name="Augen Deckel",
       feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "rechts", "abstand": -160}},
-               "elemente": [{"rechteck": {"mitte": [y, z], "breite": b, "hoehe": 8}} for y, z, b in AUGEN]},
-               "ende": {"typ": "blind", "tiefe": 6, "umkehren": True}})
+               "elemente": [{"polygon": {"punkte": p}} for p, _ in AUGEN]},
+               "ende": {"typ": "blind", "tiefe": 8, "umkehren": True}})
 punkt(id="fs6", was="4 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 (Deckel)", typ="feature", in_datei=FS, name="Einschmelz Deckel",
       feature={"typ": "bohrung", "flaeche": {"feature": "fs5", "flaeche": "+x"},
-               "positionen": [[236.774, -115], [279.57, -115], [279.0, 10], [311.0, 10]], "durchmesser": "=EM3_D",
+               "positionen": [loch for _, loch in AUGEN], "durchmesser": "=EM3_D",
                "tiefe": "=EM3_T", "bezug": {"u": "-rand", "v": "-rand"}})
 punkt(id="fs7", was="Lasche 2 am Flansch zur Trichtersäule", typ="feature", in_datei=FS, name="Lasche Flansch",
       feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "vorne", "abstand": -327.5}},
@@ -135,8 +156,8 @@ punkt(id="fs7", was="Lasche 2 am Flansch zur Trichtersäule", typ="feature", in_
                "ende": {"typ": "blind", "tiefe": 30}})
 punkt(id="fs8", was="Lasche 3: Strebe von der gefüllten Ecke zur Trichtersäule", typ="feature", in_datei=FS, name="Lasche Ecke",
       feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "oben", "abstand": -92}},
-               "elemente": [{"polygon": {"punkte": [[-197, 297.5], [-197, 312], [-189, 312], [-189, 299], [-181.5, 278],
-                                                    [-181.5, 270], [-187.5, 270]]}}]},
+               "elemente": [{"polygon": {"punkte": [[-197, 297.5], [-197, 312], [-189, 312], [-189, 299], [-180.5, 278],
+                                                    [-180.5, 270], [-187.5, 270]]}}]},
                "ende": {"typ": "blind", "tiefe": 22}})
 punkt(id="fs9", was="2 × Durchgang M5 in Lasche 2", typ="feature", in_datei=FS, name="Durchgang Lasche Flansch",
       feature={"typ": "bohrung", "flaeche": {"nahe": [-191, 40, -312.5]}, "positionen": [[305, 37], [320, 37]],
@@ -311,8 +332,8 @@ def box(pkt, datei, mn, mx):
     return "  - " + j({"punkte": pkt, "in_datei": datei, "box": {"min": mn, "max": mx}})
 B = [
     box(["ap1"], AP, [-257, -210, -443], [-212, -90, -143]),
-    box(["ap2", "ap3"], AP, [-224.1, -166, -299.5], [-211.9, -154, -288]),
-    box(["ap2", "ap3"], AP, [-224.1, -166, -374.5], [-211.9, -154, -363]),
+    box(["ag1", "ag2", "ap2", "ap3"], AP, [-224.1, -166, -299.5], [-211.9, -154, -288]),
+    box(["ag1", "ag2", "ap2", "ap3"], AP, [-224.1, -166, -374.5], [-211.9, -154, -363]),
 ] + [box(["ap4"], AP, [-224.1, z - 2.5, -y - 2.5], [-211.9, z + 2.5, -y + 2.5]) for _, y, z in STIFTE_AP] + [
     box(["aw1", "aw2"], AW, [-317, -210, -195], [-224, -90, -135]),
     box(["kt1"], KT, [-245, -165, -383], [-212, -155, -283]),
@@ -333,9 +354,10 @@ B = [
     box(["fs1", "fs2"], FS, [-172.5, 15, -288.5], [-167.5, 29.5, -283.5]), box(["fs1", "fs2"], FS, [-172.5, 22, -327.5], [-167.5, 29.5, -322.5]),
     box(["fs3"], FS, [-182.1, -91.1, -276.2], [-159.9, -66.5, -265.9]),
     box(["fs4"], FS, [-160.1, -139.1, -313.5], [-157.9, 23.1, -239.8]),
-] + [box(["fs5", "fs6"], FS, [-166.1, z - 4.1, -(y + b / 2) - 0.1], [-159.9, z + 4.1, -(y - b / 2) + 0.1]) for y, z, b in AUGEN] + [
+] + [box(["fs5", "fs6"], FS, [-168.1, min(q[1] for q in p) - 0.1, -max(q[0] for q in p) - 0.1],
+          [-159.9, max(q[1] for q in p) + 0.1, -min(q[0] for q in p) + 0.1]) for p, _ in AUGEN] + [
     box(["fs7", "fs9"], FS, [-197.1, 22.9, -327.6], [-185.4, 45.1, -297.4]),
-    box(["fs8", "fs10"], FS, [-197.1, -92.1, -312.1], [-181.4, -69.9, -269.9]),
+    box(["fs8", "fs10"], FS, [-197.1, -92.1, -312.1], [-180.4, -69.9, -269.9]),
     box(["ru1", "ru2", "ru3", "ru4", "ru5", "ru6", "ru7"], RU, [-256, -324, -218.6], [-157, -174.9, -207.4]),
     box(["ru8"], RU, [-236, -271, -212.1], [-215, -254, -177.9]),
     box(["ru9", "ru10"], RU, [-206.1, -238.8, -208.1], [-191, -212.9, -171.9]),

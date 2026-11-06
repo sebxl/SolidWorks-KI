@@ -86,6 +86,7 @@ def kontext(app, model, spec: dict, spec_pfad: Path, tol_mm: float) -> Kontext:
                   gleichungen=False)
     for name in fremde_namen(spec):
         ctx.ergebnisse[name] = FeatureErgebnis([_feature(model, name)])
+    ctx.loeschen_ausstehend = {}  # Gewinde des Bohrungsassistenten: Name → Punkt-ID, `pruefe_ausstehend` nach allen Punkten
     return ctx
 
 
@@ -280,6 +281,9 @@ def loeschen(ctx, p: dict, aufnahme: dict) -> list[str]:
     sw.auswahl_leeren(model)
     nachher = set(_baum(model))
     if name in nachher:
+        if _gewinde_des_assistenten(name, aufnahme):
+            ctx.loeschen_ausstehend[name] = p["id"]
+            return [name]
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"{name} wurde nicht gelöscht (eine Skizze mit Kind bleibt stehen)", schritt="loeschen")
     weg = [n for n in vorher if n not in nachher]
     if ungenannt := sorted(set(weg) - erlaubt):
@@ -289,6 +293,23 @@ def loeschen(ctx, p: dict, aufnahme: dict) -> list[str]:
         if namen & set(weg):
             del ctx.ergebnisse[s]
     return weg
+
+
+def _gewinde_des_assistenten(name: str, aufnahme: dict) -> bool:
+    """Kosmetisches Gewinde einer Bohrungsassistent-Bohrung laut Aufnahme. `DeleteSelection2` löscht es nicht (live 06.11.2026,
+    AP68-Pruefstation-Rev1 Lauf 2, auch `EditDelete`), es verschwindet nur mit seiner Position (Lauf 1)."""
+    typen = {f["name"]: f["typ"] for f in aufnahme["features"]}
+    eintrag = next((f for f in aufnahme["features"] if f["name"] == name), None)
+    return (eintrag is not None and eintrag["typ"] == "CosmeticThread"
+            and any(typen.get(e) == "HoleWzd" for e in eintrag["eltern"]))
+
+
+def pruefe_ausstehend(ctx) -> None:
+    """Nach allen Punkten: Ein vorgemerktes Gewinde des Bohrungsassistenten muss mit seiner Position verschwunden sein."""
+    if noch := [(n, pid) for n, pid in ctx.loeschen_ausstehend.items() if ctx.model.FeatureByName(n) is not None]:
+        raise BauFehler(FEATURE_NICHT_ERZEUGT, "; ".join(
+            f"Punkt {pid}: {n} ist ein Gewinde des Bohrungsassistenten und verschwindet nur mit seiner Position, kein späterer Punkt "
+            "hat sie gelöscht" for n, pid in noch), schritt="loeschen")
 
 
 def _neuer_name(fid: str, name: str, alt: str) -> str | None:

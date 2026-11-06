@@ -174,6 +174,9 @@ class Erweiterung:
 
     def DeleteSelection2(self, option):
         teil = self.teil
+        if teil.auswahl.typ == "CosmeticThread" and any(teil.auswahl in f.unter or teil.auswahl.Name in teil.loescht_mit.get(f.Name, ())
+                                                        for f in teil.alle() if f.typ == "HoleWzd"):
+            return False  # live 06.11.2026: das Gewinde einer Bohrungsassistent-Bohrung geht nur mit seiner Position
         weg = {teil.auswahl}
         if option & 1:
             offen = [teil.auswahl.Name]
