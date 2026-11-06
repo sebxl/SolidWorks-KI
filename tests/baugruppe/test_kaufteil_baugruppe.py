@@ -97,7 +97,8 @@ def test_hinweis_drehlage_doppelt(tmp_path, monkeypatch):
     katalog(tmp_path / "kat", monkeypatch)
     spec = kopie()
     del spec["verknuepfungen"][1]["drehung_sperren"]
-    [h] = [h for h in hinweise_baugruppe(lade_baugruppe(schreibe(tmp_path / "A", spec))) if h["art"] != "bezug"]
+    [h] = [h for h in hinweise_baugruppe(lade_baugruppe(schreibe(tmp_path / "A", spec)))
+           if h["art"] not in ("bezug", "fertigung")]
     assert (h["art"], h["pfad"]) == ("drehlage_doppelt", "verknuepfungen[1].drehung_sperren")
 
 
