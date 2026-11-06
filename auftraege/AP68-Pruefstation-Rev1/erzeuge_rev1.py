@@ -220,7 +220,7 @@ for n in ("v188.1", "v188.2", "v189.1", "v189.2"):
     punkt(id="vl" + n.replace(".", "_")[1:], was="Lasche-Schrauben: alte Bohrung entfällt", typ="verknuepfung_loeschen", verknuepfung=n)
 punkt(id="vd1", was="Durchlicht: alte Lochzuordnung entfällt", typ="verknuepfung_loeschen", verknuepfung="v133")
 punkt(id="vd2", was="Durchlicht: alte Drehlage entfällt", typ="verknuepfung_loeschen", verknuepfung="v134")
-punkt(id="vd3", was="Durchlicht um 180° gedreht: M4 1 des Lichts in M4 4 der Lasche", typ="verknuepfung_neu", art="konzentrisch",
+punkt(id="vd3", was="Durchlicht um 180° gedreht: äußere M4 des Lichts in die M4 der Lasche bei Y 257,4", typ="verknuepfung_neu", art="konzentrisch",
       # nahe statt instanz: fremde Bohrungen kennen ihre Instanzen nicht (Lauf 8). Licht: Kernlochwand M4 bei z +22,5 (Teil);
       # Lasche: Durchgang bei X −137,6 / Y 257,4, nach der Drehung um 180° genau darüber.
       a={"komponente": C("DurchlichtEffilux"), "nahe": [-25.95, 5, 22.5]},
