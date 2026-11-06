@@ -62,14 +62,19 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
                                                 # | {typ: versatz_von_flaeche, flaeche: <anker>, abstand}
                                                 # optional: umkehren: true, formschraege: {winkel, querschnitt}
     - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [[u, v], …], durchmesser: 6,
-       tiefe: 8, bezug?: …}                     # oder durch: true; senkung?: {durchmesser, tiefe}
+       tiefe: 8, bezug?: …, fase?: 0.5}         # oder durch: true; senkung?: {durchmesser, tiefe}
     - {id: f3, typ: normbohrung, art: gewinde, groesse: M6, flaeche: <anker>, positionen: [[u, v]], tiefe: 12,
-       gewindetiefe: 10, bezug?: …}             # art: gewinde | zylinderschraube | senkschraube | stift (groesse 8)
+       gewindetiefe: 10, bezug?: …, fase?: nenn}  # art: gewinde | zylinderschraube | senkschraube | stift (groesse 8)
     - {id: f4, typ: rotation, skizze: {…, elemente: [<profil>, {mittellinie: …}]}, winkel?: 360, schnitt?: true}
     - {id: f5, typ: verrundung, kanten: [{feature: f1, auswahl: senkrechte_kanten}], radius: 2}   # fase: abstand, winkel?
     - {id: f6, typ: muster_linear, features: [f2], richtung1: {achse: x, abstand: 20, anzahl: 3}}
     - {id: f7, typ: spiegeln, features: [f2], ebene: rechts}
     - {id: f8, typ: referenz, ebene: {basis: oben, abstand: 50}}           # oder achse: x|y|z
+    - id: f9                                    # Profil entlang eines offenen Pfads (Kanal, Nut, Rohr)
+      typ: austragung                           # schnitt?: true
+      profil: {ebene: rechts, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}   # genau ein kreis | rechteck
+      pfad: {ebene: oben, start: [0, 0], segmente: [{linie: [40, 0]}, {bogen: [60, 20], mitte: [40, 20]}]}
+                                                # Bogen optional uhrzeigersinn: true (nur hier)
   ```
   Kanten: `{feature, auswahl: senkrechte_kanten|alle_kanten}`, `{feature, kanten_an: "+y"}`, `{nahe: [x, y, z]}`.
 - Ebenen: `vorne` (Normale +Z), `oben` (+Y), `rechts` (+X). Skizzenkoordinaten (u, v): vorne X=u, Y=v · oben X=u, Z=−v ·
@@ -144,7 +149,11 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   oder einem Flächenanker `{feature, flaeche}` – nicht auf `{nahe}` (`validieren` lehnt das ab).
   `durchmesser_pruefen` findet an schrägen Features keinen Zylinder; Maße über Deck- und Bodenfläche mit
   `masse_pruefen`.
-- Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `<skript-id>_<n>`) nicht als Feature-IDs
+- Kanäle, Nuten und Rohre entlang einer Kurve als `typ: austragung` (Spike S20 e): Profil und Pfad auf Standard- oder
+  Versatzebenen, das Profil senkrecht auf dem ersten Segment mit der Mitte auf dem Pfadanfang, der Pfad offen und
+  tangentenstetig (Bogen zwischen zwei Linien), jeder Bogen weiter als das halbe Profil – `validieren` prüft das.
+  `volumen: auto` rechnet Profilfläche × Pfadlänge; bei einem Aufsatz `huellquader` von Hand angeben.
+- Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `_fase`, `_pfad`, `<skript-id>_<n>`) nicht als Feature-IDs
   verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
 - Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
@@ -184,20 +193,30 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   berechenbar. Das Profil ins Material legen (Halbkreis als `kontur`) oder die Bohrung gleich in die Kontur des
   Aufsatzes nehmen.
 
-### Modellierregeln (kompakter Feature-Baum)
-Änderbarkeit zuerst, sonst so wenige Features wie möglich:
+### Modellierregeln (Feature-Baum wie vom Konstrukteur)
+Änderbarkeit zuerst, dann der Baum, wie ihn ein Konstrukteur anlegt; Standard des Nutzers (01.11.2026) in Regel 3, 6, 8:
 1. Drehteile als eine Rotation eines Halbschnitts.
 2. Gleiche Bohrungen auf derselben Fläche in **einen** Knoten (mehrere `positionen`); `normbohrung` statt Bohrung +
    Senkung, sobald eine Schraube, ein Gewinde oder ein Stift gemeint ist.
-3. Muster und Spiegeln nur, wenn Anzahl, Abstand oder Symmetrie eine Anforderung ist (dann als Parameter); sonst
-   Positionen direkt.
-4. Runde Konturen in der Skizze (Eckradius, Langloch, Kontur) statt nachträglicher Verrundung senkrechter Kanten, wenn
-   die Kontur nur einmal vorkommt.
+3. Symmetrische Formen (Tasche, Aufsatz, Steg) einmal bauen und `spiegeln`, gleiche Formen in Reihe `muster_linear`.
+   Bohrbilder: ≥ 3 Löcher auf einer Linie mit gleicher Teilung (Reihe, auch Raster) als eine Position plus
+   `muster_linear`; alle anderen Bilder aus 2–4 Löchern (Paar, Eckbild) und Lochkreise bleiben `positionen` eines
+   Knotens mit `bezug: mitte`. Abstand und Winkel als Parameter, wenn sie Anforderung sind.
+4. Eckradien als Knoten `verrundung` (`{feature, auswahl: senkrechte_kanten}`) statt Skizzen-`radius`. Den Skizzen-Radius
+   nur, wo die Kontur den Bogen trägt (Langloch, Kontur mit Bögen, Formschräge, gedruckte Teile) und in Specs mit
+   `optimierung` oder Simulation (der Schnellbau kann Verrundungen in Musterquellen noch nicht, Stufe C3a).
 5. Tiefen, die sich auf eine andere Fläche beziehen (Restwandstärke, bis zum Boden), mit `versatz_von_flaeche` /
    `bis_flaeche`, nicht als gerechnete Zahl.
-6. Kantenverrundungen und Fasen gleichen Maßes in einem Knoten, am Ende des Baums.
+6. Eckradien gleichen Maßes in einem Knoten direkt hinter dem letzten Element, das ihn trägt. Gehört die Verrundung zu
+   einer gemusterten oder gespiegelten Form, steht sie als eigener Knoten direkt hinter der Form und mit in `features`
+   des Musters. Kantenverrundungen, die keine Eckradien sind, am Ende des Baums. Fasen an Bohrungseintritten über das
+   Feld `fase` der Bohrung (der Compiler legt das Feature `<id>_fase` an, Muster nehmen es mit): Stift-, Pass- und
+   Durchgangsbohrungen `fase: 0.5`, Gewinde `fase: nenn` (Ansenkung auf Nenn-Ø), nie an `senkschraube`. Außenkanten,
+   Anlage- und Passkanten ohne Fase.
 7. Schräge Wände als `formschraege` an der Extrusion, die das Element erzeugt – nicht als eigenes Feature, nicht als
    Rotation eines Trapezes und nicht als Schnitt mit schräger Skizze.
+8. Innenecken gefräster Teile mit R ≥ T/5 (T = Frästiefe an der Ecke, bei Durchbrüchen die Dicke): ein Schaftfräser
+   Ø D schafft im Betrieb 2,5·D Tiefe (Ø 2 bis 5 mm). Größer ist besser; kleiner nur mit Grund (Kommentar in der Spec).
 
 ## 3. Validieren und Rückfragen
 - `swki validieren <spec>` bis `"gueltig": true` (ohne SolidWorks, schnell).
@@ -206,8 +225,10 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
     Freigabe ausdrücklich nennen.
   - `art: bezug` – Lagekoordinate ≠ 0 auf einer Skizzenfläche ohne `bezug` auf dieser Achse: `mitte` oder `rand` setzen,
     sonst wird zum Ursprung bemaßt. Nicht für Konturen, Mittellinien und Skizzen auf Standard- oder Versatzebenen.
-  - `art: zusammenfassen` – Knoten (`knoten`) lassen sich nach den Modellierregeln zusammenfassen: umbauen oder dem
-    Nutzer begründen, warum nicht (z. B. Anzahl und Abstand sind Anforderungen).
+  - `art: zusammenfassen` – Knoten (`knoten`) lassen sich nach den Modellierregeln zusammenfassen oder als Muster bzw.
+    Spiegelung bauen (Regel 3): umbauen oder dem Nutzer begründen, warum nicht.
+  - `art: fertigung` – Innenecke unter R ≥ T/5 (Regel 8) oder Bohrungseintritt ohne `fase` (Regel 6): umbauen oder in
+    der Freigabe-Vorlage begründen (gedrucktes Teil, Ersatzkörper eines Kaufteils, Funktion verlangt scharfe Ecke).
 - **Ansage = Entscheidung:** Was der Nutzer als Änderung nennt, umsetzen (durchrechnen ja; zurückfragen nur, wenn die
   Rechnung widerspricht). Kleine Entscheidungen (Halbzeug, Schraubengröße, Lage) selbst treffen. Echte Gabelungen und
   Unklarheiten in der Eingabe (fehlende Maße, Toleranzen, Material) gesammelt in **einer** Nachricht erfragen, nicht raten.

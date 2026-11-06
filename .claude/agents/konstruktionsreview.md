@@ -31,6 +31,10 @@ Koordinaten, Parameter und Featuresyntax liest du aus den Specs; das Schema brau
    Kernloch passend zur Last.
 6. **Montage:** Jede Schraube ist in der Montagereihenfolge mit Werkzeug erreichbar; Teile lassen sich tauschen, ohne
    Nachbarbaugruppen zu zerlegen.
+7. **Konstruktionsstil (Standard des Nutzers):** Innenecken gefräster Teile R ≥ T/5 (T = Frästiefe, bei Durchbrüchen die
+   Dicke), größer ist besser. Bohrungseintritte mit `fase` (Stift, Durchgang 0,5; Gewinde `nenn`), Außen-, Anlage- und
+   Passkanten ohne Fase. Symmetrische Formen gespiegelt, gleiche Formen und Lochreihen ab 3 gemustert; kleine
+   Bohrbilder (2–4) und Lochkreise bleiben ein Knoten. Abweichung ohne Grund ist ein Befund (`wahl: false`).
 
 ## Antwort (genau dieses JSON, sonst nichts)
 

@@ -23,6 +23,8 @@
   },
   "$defs": {
     "wert": {"oneOf": [{"type": "number"}, {"type": "string", "pattern": "^=.+"}]},
+    "bohrungsfase": {"oneOf": [{"$ref": "#/$defs/wert"}, {"const": "nenn"}],
+                     "description": "Fase c × 45° am Bohrungseintritt (Feature <id>_fase); nenn = Ansenkung auf Gewinde-Nenn-Ø"},
     "punkt2": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 2, "maxItems": 2},
     "punkt3": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
     "richtung": {"enum": ["+x", "-x", "+y", "-y", "+z", "-z"]},
@@ -168,7 +170,8 @@
         },
         {
           "type": "object", "required": ["bogen", "mitte"], "additionalProperties": false,
-          "properties": {"bogen": {"$ref": "#/$defs/punkt2"}, "mitte": {"$ref": "#/$defs/punkt2"}}
+          "properties": {"bogen": {"$ref": "#/$defs/punkt2"}, "mitte": {"$ref": "#/$defs/punkt2"},
+                         "uhrzeigersinn": {"const": true, "description": "nur im Pfad einer austragung"}}
         }
       ]
     },
@@ -219,6 +222,36 @@
         "winkel": {"$ref": "#/$defs/wert"}, "schnitt": {"type": "boolean"}
       }
     },
+    "f_austragung": {
+      "required": ["profil", "pfad"], "additionalProperties": false,
+      "properties": {
+        "id": true, "typ": true,
+        "profil": {
+          "type": "object", "required": ["ebene", "elemente"], "additionalProperties": false,
+          "properties": {
+            "ebene": {"$ref": "#/$defs/ebene_fest"},
+            "elemente": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"oneOf": [
+              {"type": "object", "required": ["kreis"], "additionalProperties": false, "properties": {"kreis": {
+                "type": "object", "required": ["mitte", "durchmesser"], "additionalProperties": false,
+                "properties": {"mitte": {"$ref": "#/$defs/punkt2"}, "durchmesser": {"$ref": "#/$defs/wert"}}}}},
+              {"type": "object", "required": ["rechteck"], "additionalProperties": false, "properties": {"rechteck": {
+                "type": "object", "required": ["mitte", "breite", "hoehe"], "additionalProperties": false,
+                "properties": {"mitte": {"$ref": "#/$defs/punkt2"}, "breite": {"$ref": "#/$defs/wert"},
+                               "hoehe": {"$ref": "#/$defs/wert"}}}}}
+            ]}}
+          }
+        },
+        "pfad": {
+          "type": "object", "required": ["ebene", "start", "segmente"], "additionalProperties": false,
+          "properties": {
+            "ebene": {"$ref": "#/$defs/ebene_fest"},
+            "start": {"$ref": "#/$defs/punkt2"},
+            "segmente": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/segment"}}
+          }
+        },
+        "schnitt": {"const": true}
+      }
+    },
     "f_bohrung": {
       "required": ["flaeche", "positionen", "durchmesser"], "additionalProperties": false,
       "properties": {
@@ -229,6 +262,7 @@
         "durchmesser": {"$ref": "#/$defs/wert"},
         "tiefe": {"$ref": "#/$defs/wert"},
         "durch": {"const": true},
+        "fase": {"$ref": "#/$defs/bohrungsfase"},
         "senkung": {
           "type": "object", "required": ["durchmesser", "tiefe"], "additionalProperties": false,
           "properties": {"durchmesser": {"$ref": "#/$defs/wert"}, "tiefe": {"$ref": "#/$defs/wert"}}
@@ -251,7 +285,8 @@
         "bezug": {"$ref": "#/$defs/bezug"},
         "durch": {"const": true},
         "tiefe": {"$ref": "#/$defs/wert"},
-        "gewindetiefe": {"$ref": "#/$defs/wert"}
+        "gewindetiefe": {"$ref": "#/$defs/wert"},
+        "fase": {"$ref": "#/$defs/bohrungsfase"}
       },
       "oneOf": [{"required": ["tiefe"]}, {"required": ["durch"]}]
     },
@@ -355,12 +390,13 @@
       "properties": {
         "id": {"$ref": "#/$defs/id"},
         "typ": {"enum": ["extrusion", "schnitt", "rotation", "bohrung", "normbohrung", "verrundung", "fase",
-                         "muster_linear", "muster_kreis", "spiegeln", "skript", "referenz", "verzahnung"]}
+                         "muster_linear", "muster_kreis", "spiegeln", "skript", "referenz", "verzahnung", "austragung"]}
       },
       "allOf": [
         {"if": {"properties": {"typ": {"enum": ["extrusion", "schnitt"]}}}, "then": {"$ref": "#/$defs/f_extrusion"}},
         {"if": {"properties": {"typ": {"const": "rotation"}}}, "then": {"$ref": "#/$defs/f_rotation"}},
         {"if": {"properties": {"typ": {"const": "bohrung"}}}, "then": {"$ref": "#/$defs/f_bohrung"}},
+        {"if": {"properties": {"typ": {"const": "austragung"}}}, "then": {"$ref": "#/$defs/f_austragung"}},
         {"if": {"properties": {"typ": {"const": "normbohrung"}}}, "then": {"$ref": "#/$defs/f_normbohrung"}},
         {"if": {"properties": {"typ": {"const": "verrundung"}}}, "then": {"$ref": "#/$defs/f_verrundung"}},
         {"if": {"properties": {"typ": {"const": "fase"}}}, "then": {"$ref": "#/$defs/f_fase"}},

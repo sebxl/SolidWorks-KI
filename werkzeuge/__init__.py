@@ -17,4 +17,5 @@ Aufruf immer aus dem Repo-Wurzelordner: .venv\\Scripts\\python.exe -m werkzeuge.
                        (`python -`, Python-Heredoc, `python`/`cat` ohne Eingabe)
 - schnellbau_abgleich  Referenz-Suite durch SolidWorks und den Schnellbau (Volumen, Hüllquader, STL je Eigenteil);
                        schreibt tests/schnellbau/sw_referenz.json (SolidWorks frei, frischer Start je Referenz)
+- stil_zaehlung        Feature-Typen und validieren-Hinweise je Art über alle Teil-Specs von Ordnern (ohne SolidWorks)
 """

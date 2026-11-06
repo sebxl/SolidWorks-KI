@@ -10,7 +10,8 @@ from swki.compiler.anker import ACHSEN, differenz, laenge, skalar
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, BauFehler
 from swki.compiler.kontext import FeatureErgebnis
 from swki.compiler.registry import handler
-from swki.compiler.skizze import STANDARD, ebene_aufloesen
+from swki.compiler.skizze import _ORIENTIERUNG_ZU_ACHSE, STANDARD, ebene_aufloesen
+from swki.spec.instanzen import kopien_kreis, kopien_linear, kopien_spiegeln
 from swki.verbindung import in_mm
 
 SW_FM_CIRPATTERN = 5  # swFeatureNameID_e
@@ -45,6 +46,26 @@ def referenzachse(ctx, achse: str):
 
 def _sw_features(ctx, ids: list[str]) -> list:
     return [feature for fid in ids for feature in ctx.ergebnis(fid).features]
+
+
+def _instanzen_der_quellen(ctx, quellen: list[str]) -> dict[str, list]:
+    """Bohrungs-ID → Instanzpunkte, die die Quellen tragen: eigene Positionen einer Bohrung, Kopien eines Musters."""
+    nach_id = {f["id"]: f for f in ctx.spec["features"]}
+    aus: dict[str, list] = {}
+    for q in quellen:
+        f, e = nach_id[q], ctx.ergebnis(q)
+        if f["typ"] in ("bohrung", "normbohrung"):
+            aus.setdefault(q, []).extend(e.punkte[: len(f["positionen"])])
+        for bid, punkte in e.kopien.items():
+            aus.setdefault(bid, []).extend(punkte)
+    return aus
+
+
+def _kopien_eintragen(ctx, feature, kopien: dict[str, list]) -> None:
+    """Kopien an die Bohrung hängen (Instanzen n+1 …) und das Muster als Träger ihrer Zylinder vormerken."""
+    for bid, punkte in kopien.items():
+        ctx.ergebnis(bid).punkte.extend(punkte)
+        ctx.ergebnis(bid).traeger.append(feature)
 
 
 def _umkehren(ctx, richtung: dict) -> bool:
@@ -82,7 +103,10 @@ def muster_linear(ctx, f: dict) -> FeatureErgebnis:
     ctx.mass(f"D3@{f['id']}", r1["abstand"], f"{pfad}.richtung1.abstand", "abstand")
     if r2:
         ctx.mass(f"D4@{f['id']}", r2["abstand"], f"{pfad}.richtung2.abstand", "abstand")
-    return FeatureErgebnis([feature])
+    p = ctx.spec.get("parameter", {})
+    kopien = {b: kopien_linear(q, r1, r2, p) for b, q in _instanzen_der_quellen(ctx, f["features"]).items()}
+    _kopien_eintragen(ctx, feature, kopien)
+    return FeatureErgebnis([feature], kopien=kopien)
 
 
 @handler("muster_kreis")
@@ -103,7 +127,11 @@ def muster_kreis(ctx, f: dict) -> FeatureErgebnis:
     feature.Name = f["id"]
     if "winkel" in f:
         ctx.mass(f"D3@{f['id']}", f["winkel"], f"{ctx.pfad(f['id'])}.winkel", "winkel")  # D1 Anzahl, D3 Gesamtwinkel (live belegt)
-    return FeatureErgebnis([feature], richtung=richtung)
+    winkel = ctx.wert(f.get("winkel", 360))
+    kopien = {b: kopien_kreis(q, richtung, f["anzahl"], winkel)
+              for b, q in _instanzen_der_quellen(ctx, f["features"]).items()}
+    _kopien_eintragen(ctx, feature, kopien)
+    return FeatureErgebnis([feature], richtung=richtung, kopien=kopien)
 
 
 @handler("spiegeln")
@@ -117,4 +145,7 @@ def spiegeln(ctx, f: dict) -> FeatureErgebnis:
     if feature is None:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"spiegeln {f['id']} nicht erzeugt", schritt="feature")
     feature.Name = f["id"]
-    return FeatureErgebnis([feature])
+    achse = _ORIENTIERUNG_ZU_ACHSE[ebene.orientierung]
+    kopien = {b: kopien_spiegeln(q, achse, ebene.lage) for b, q in _instanzen_der_quellen(ctx, f["features"]).items()}
+    _kopien_eintragen(ctx, feature, kopien)
+    return FeatureErgebnis([feature], kopien=kopien)

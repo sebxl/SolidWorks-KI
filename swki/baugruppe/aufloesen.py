@@ -5,6 +5,7 @@ Setzt eine plausible Spezifikation voraus (swki.baugruppe.plausibel prüft vorhe
 from dataclasses import dataclass
 
 from swki.baugruppe.modell import Quelle
+from swki.spec.instanzen import anzahl_instanzen
 
 
 @dataclass(frozen=True)
@@ -46,8 +47,7 @@ def anzahl_positionen(spec: dict, quellen: dict[str, Quelle], kid: str) -> int:
     je = je_position(spec, kid)
     if "gewinde" in je:
         return len(quellen[je["komponente"]].spec["gewinde"][je["gewinde"]]["positionen"])
-    feature = next(f for f in quellen[je["komponente"]].spec["features"] if f["id"] == je["feature"])
-    return len(feature["positionen"])
+    return anzahl_instanzen(quellen[je["komponente"]].spec, je["feature"])
 
 
 def instanzen(spec: dict, quellen: dict[str, Quelle]) -> list[Instanz]:

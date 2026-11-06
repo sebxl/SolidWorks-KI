@@ -402,8 +402,10 @@ def test_versetzte_ebene_protokolliert_versatz(monkeypatch):
     ctx.knoten = "f1"
     ctx.model = SimpleNamespace(FeatureManager=SimpleNamespace(InsertRefPlane=lambda *args: neue))
     monkeypatch.setattr(modul.sw, "standardebenen", lambda model: ["vorne", "oben", "rechts"])
+    ausgeblendet = []
+    monkeypatch.setattr(modul.sw, "ausblenden", lambda model, feature: ausgeblendet.append(feature.Name))
     se = modul.ebene_aufloesen(ctx, {"versatz": {"ebene": "oben", "abstand": "=-T"}}, "features[0].skizze.ebene")
-    assert se.lage == -8
+    assert se.lage == -8 and ausgeblendet == ["Ebene1"]  # Hilfsebene ausgeblendet (Paket Konstruktionsstil)
     assert ctx.masse["f1"] == [{"name": "D1@Ebene1", "pfad": "features[0].skizze.ebene.versatz.abstand", "art": "versatz",
                                 "bezug": None, "roh": "=-T", "vorzeichen": -1, "wert": 8.0, "einheit": "mm"}]
 

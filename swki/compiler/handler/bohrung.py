@@ -7,6 +7,7 @@ berechnet (nicht aus der Flächenreihenfolge, die SolidWorks nicht stabil liefer
 from swki.compiler import sw
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, BauFehler
 from swki.compiler.handler.extrusion import ENDE, schnitt
+from swki.compiler.handler.kanten import bohrungsfase
 from swki.compiler.kontext import FeatureErgebnis
 from swki.compiler.registry import handler
 from swki.compiler.skizze import ebene_aus_flaeche, modellpunkt, richtung, skizziere
@@ -45,4 +46,6 @@ def bohrung(ctx, f: dict) -> FeatureErgebnis:
         senkung, _ = _kreisschnitt(ctx, f, s["durchmesser"], s["tiefe"], f"{f['id']}_senkung", f"{pfad}.senkung")
         features.append(senkung)
     punkte = [modellpunkt(se.orientierung, ctx.wert(u), ctx.wert(v), se.lage) for u, v in f["positionen"]]
+    if (fase := bohrungsfase(ctx, f, features, punkte)) is not None:
+        features.append(fase)
     return FeatureErgebnis(features, richtung=richtung(se, True), punkte=punkte)
