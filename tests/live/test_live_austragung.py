@@ -11,6 +11,7 @@ from swki.pruefung.messen import rebuild_fehler
 from .bauhilfe import gebautes_teil, volumen_mm3
 
 pytestmark = pytest.mark.sw
+SW_AUSGEBLENDET = 1  # IFeature.Visible (swVisibilityState_e: 1 ausgeblendet, 2 sichtbar)
 
 BLOCK = {"id": "f1", "typ": "extrusion",
          "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [30, 0], "breite": 80, "hoehe": 120}}]},
@@ -29,6 +30,12 @@ def _pruefe(spec):
         soll, grund = volumen_auto(spec)
         assert grund == "analytisch"
         assert volumen_mm3(ctx.model) == pytest.approx(soll, abs=1e-3)
+        f, ebenen = ctx.model.FirstFeature, []
+        while f is not None:  # Versatzebenen ausgeblendet wie Standardebenen (Screenshots, Konstruktionsstil)
+            if f.GetTypeName2 == "RefPlane":
+                ebenen.append(f.Visible)
+            f = f.GetNextFeature
+        assert set(ebenen) == {SW_AUSGEBLENDET}, ebenen
         return {m["pfad"] for k in protokoll.knoten for m in (k.masse or [])}
 
 
@@ -41,6 +48,8 @@ def test_austragung_aufsatz():
 def test_austragung_schnitt_im_uhrzeigersinn():
     kanal = copy.deepcopy(KANAL)
     kanal["schnitt"] = True
+    kanal["profil"]["elemente"][0]["kreis"]["mitte"] = [0, 5]            # Kanal 5 über der Mitte, Pfad auf einer
+    kanal["pfad"]["ebene"] = {"versatz": {"ebene": "oben", "abstand": 5}}  # Versatzebene (wird ausgeblendet)
     kanal["pfad"]["segmente"] = [{"linie": ["=L", 0]},
                                  {"bogen": ["=L+R", "=-R"], "mitte": ["=L", "=-R"], "uhrzeigersinn": True},
                                  {"linie": ["=L+R", -50]}]

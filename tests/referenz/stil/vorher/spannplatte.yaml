@@ -1,0 +1,29 @@
+# Vergleich (nicht in der Regression): dieselbe Spannplatte nach den Modellierregeln vor dem Paket Konstruktionsstil –
+# beide Taschen in einer Skizze mit Skizzen-Radius (alte Regel 4), Positionen direkt statt Muster (alte Regel 3), keine
+# Fasen an Bohrungseintritten. Die Kabelnut ging nur als Notausgang (typ: skript) und fehlt hier.
+art: teil
+name: Spannplatte
+material: "1.0503"
+eigenschaften: {Benennung: Spannplatte}
+parameter: {L: 200, B: 120, H: 20, TL: 50, TB: 30, TT: 12, TX: 55, RT: 4, TG: 30, GR: 20, A: 150, SR: 20}
+features:
+  - id: f1
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", bezug: {u: mitte, v: mitte}}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - id: t1
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente:
+        - {rechteck: {mitte: ["=-TX", 0], breite: "=TL", hoehe: "=TB", radius: "=RT", bezug: {u: mitte, v: mitte}}}
+        - {rechteck: {mitte: ["=TX", 0], breite: "=TL", hoehe: "=TB", radius: "=RT", bezug: {u: mitte, v: mitte}}}
+    ende: {typ: blind, tiefe: "=TT"}
+  - {id: g1, typ: normbohrung, art: gewinde, groesse: M6, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-2*TG", "=B/2-GR"], ["=-TG", "=B/2-GR"], [0, "=B/2-GR"], ["=TG", "=B/2-GR"], ["=2*TG", "=B/2-GR"]],
+     tiefe: 12, gewindetiefe: 10, bezug: {u: mitte, v: "+rand"}}
+  - {id: st, typ: normbohrung, art: stift, groesse: 8, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-A/2", "=-B/2+SR"], ["=A/2", "=-B/2+SR"]], tiefe: 15, bezug: {u: mitte, v: "-rand"}}
+pruefung:
+  huellquader: auto
+  volumen: {soll: auto}

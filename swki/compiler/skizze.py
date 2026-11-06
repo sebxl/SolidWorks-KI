@@ -127,6 +127,7 @@ def ebene_aufloesen(ctx, ebene, pfad: str | None = None) -> Skizzenebene:
         # Wechselt der Parameter später das Vorzeichen, kippt die Ebene nicht mit – dann neu bauen.
         ziel, art = _massziel(ctx, None if pfad is None else f"{pfad}.versatz.abstand", "versatz")
         ctx.mass(f"D1@{neu.Name}", ebene["versatz"]["abstand"], ziel, art, -1 if abstand < 0 else 1)
+        sw.ausblenden(ctx.model, neu)  # Hilfsebene wie die Standardebenen ausblenden (Screenshots, Konstruktionsstil)
         return Skizzenebene(neu, basis, abstand, NORMALE[basis])
     return ebene_aus_flaeche(loese_flaeche(ctx, ebene))
 

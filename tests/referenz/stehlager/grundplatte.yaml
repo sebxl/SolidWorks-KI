@@ -1,4 +1,5 @@
 # Referenz Stehlager (Spec 3b): Grundplatte, fixiert. Ursprung Mitte Unterseite, Oberseite y = H.
+# Konstruktionsstil: Fase 0,5 am Eintritt der Durchgangs- und Stiftbohrungen.
 art: teil
 name: Grundplatte
 material: "1.0038"
@@ -10,9 +11,9 @@ features:
     skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B"}}]}
     ende: {typ: blind, tiefe: "=H"}
   - {id: f2, typ: bohrung, flaeche: {feature: f1, flaeche: "+y"}, positionen: [["=-A/2", 0], ["=A/2", 0]],
-     durchmesser: "=DG", durch: true}
+     durchmesser: "=DG", durch: true, fase: 0.5}
   - {id: f3, typ: normbohrung, art: stift, groesse: 8, flaeche: {feature: f1, flaeche: "+y"},
-     positionen: [["=-AS/2", 0], ["=AS/2", 0]], durch: true}
+     positionen: [["=-AS/2", 0], ["=AS/2", 0]], durch: true, fase: 0.5}
 pruefung:
   huellquader: ["=L", "=H", "=B"]
   volumen: {soll: auto}
