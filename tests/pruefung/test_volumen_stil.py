@@ -82,3 +82,18 @@ def test_muster_mit_fase():
     v, _ = _v(loch, muster)
     c = 0.5
     assert v == pytest.approx(VOLL - 3 * (math.pi * 9 * 20 + math.pi * c * (3 * c + c * c / 3)))
+
+
+def test_verrundung_nach_dem_muster_nicht_eingerechnet():
+    """Review: Die Verrundung rundet nur die Quelle, wenn sie nicht in features des Musters steht – nicht berechenbar
+    statt still falsch (Kopien ohne Radius)."""
+    muster = {"id": "m1", "typ": "muster_linear", "features": ["t1"], "richtung1": {"achse": "x", "abstand": 45, "anzahl": 2}}
+    v, grund = _v(TASCHE, muster, RUND)
+    assert v is None and "r1" in grund
+
+
+def test_verrundung_im_muster_eingerechnet():
+    muster = {"id": "m1", "typ": "muster_linear", "features": ["t1", "r1"],
+              "richtung1": {"achse": "x", "abstand": 45, "anzahl": 2}}
+    v, _ = _v(TASCHE, RUND, muster)
+    assert v == pytest.approx(VOLL - 2 * (800 - (4 - math.pi) * 9) * 10)

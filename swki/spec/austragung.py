@@ -48,13 +48,15 @@ def segmente_uv(pfad: dict, p: dict) -> list[dict]:
             b, m = _punkt(s["bogen"], p), _punkt(s["mitte"], p)
             sinn = -1.0 if s.get("uhrzeigersinn") else 1.0
             r = math.hypot(a[0] - m[0], a[1] - m[1])
+            r_ende = math.hypot(b[0] - m[0], b[1] - m[1])
             wa, wb = math.atan2(a[1] - m[1], a[0] - m[0]), math.atan2(b[1] - m[1], b[0] - m[0])
             winkel = (sinn * (wb - wa)) % (2 * math.pi)
 
             def tangente(w: float) -> tuple[float, float]:
                 return (-sinn * math.sin(w), sinn * math.cos(w))
 
-            aus.append({"a": a, "b": b, "t_a": tangente(wa), "t_b": tangente(wb), "laenge": r * winkel, "radius": r})
+            aus.append({"a": a, "b": b, "t_a": tangente(wa), "t_b": tangente(wb), "laenge": r * winkel, "radius": r,
+                        "radius_ende": r_ende})
         a = b
     return aus
 
@@ -102,7 +104,10 @@ def befunde(f: dict, pfad: str, p: dict) -> list[dict]:
     for k, s in enumerate(segmente):
         if s["laenge"] <= _TOL:
             melde(f"pfad.segmente[{k}]", "Segment ohne Länge")
-        if s["radius"] is not None and s["radius"] <= halb + _TOL:
+        if s["radius"] is not None and (s["radius"] <= _TOL or abs(s["radius_ende"] - s["radius"]) > _TOL):
+            melde(f"pfad.segmente[{k}]", f"Bogen: Anfang und Ende liegen nicht gleich weit von der Mitte "
+                                         f"({s['radius']:g} / {s['radius_ende']:g})")
+        elif s["radius"] is not None and s["radius"] <= halb + _TOL:
             melde(f"pfad.segmente[{k}]", f"Bogen R {s['radius']:g} ist nicht weiter als das halbe Profil ({halb:g}): "
                                          "die Austragung schneidet sich selbst")
         vorher = segmente[k - 1]["t_b"] if k else None

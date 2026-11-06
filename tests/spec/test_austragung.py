@@ -128,3 +128,9 @@ def test_uhrzeigersinn_nicht_in_kontur(tmp_path):
          "ende": {"typ": "blind", "tiefe": 5}}
     spec = {"art": "teil", "name": "T", "parameter": {}, "features": [f]}
     assert "features[0].skizze.elemente[0].kontur.segmente[1].uhrzeigersinn" in _meldungen(spec, tmp_path)
+
+
+def test_bogenende_nicht_auf_dem_kreis(tmp_path):
+    k = copy.deepcopy(KANAL)
+    k["pfad"]["segmente"] = [{"linie": [40, 0]}, {"bogen": [65, 20], "mitte": [40, 20]}, {"linie": [65, 50]}]
+    assert "features[1].pfad.segmente[1]: " in _meldungen(_spec(k), tmp_path)

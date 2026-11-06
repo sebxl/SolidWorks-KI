@@ -11,6 +11,7 @@ from swki.compiler.anker import Vektor, differenz, laenge, punkt_achse_abstand, 
 from swki.formschraege import schraege, volumen_feature
 from swki.spec.ausdruck import auswerten
 from swki.spec.austragung import pfad_laenge
+from swki.spec.instanzen import traeger
 from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import bohrspitze_grad, norm_von, normmasse
@@ -317,7 +318,9 @@ def verrundungen_einrechnen(spec: dict) -> tuple[dict, set[str]]:
         ziele = [nach_id.get(k.get("feature")) for k in f["kanten"] if k.get("auswahl") == "senkrechte_kanten"]
         if len(ziele) != len(f["kanten"]) or any(
                 z is None or z["typ"] not in ("extrusion", "schnitt") or schraege(z) is not None
-                or not all(_eckfaehig(e, p) for e in z["skizze"]["elemente"]) for z in ziele):
+                or not all(_eckfaehig(e, p) for e in z["skizze"]["elemente"])
+                # gemustert ohne die Verrundung in den Quellen: nur die Quelle ist gerundet, die Kopien nicht
+                or any(f["id"] not in nach_id[t]["features"] for t in traeger(spec, z["id"])) for z in ziele):
             continue
         for z in ziele:
             for e in z["skizze"]["elemente"]:
