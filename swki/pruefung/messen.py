@@ -354,6 +354,8 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
                 senkung = model.FeatureByName(f"{f['id']}_senkung")
                 if senkung is not None:
                     features.append(senkung)
+            if "fase" in f and (fase := model.FeatureByName(f"{f['id']}_fase")) is not None:  # Fase am Eintritt
+                features.append(fase)
             ctx.ergebnisse[f["id"]] = FeatureErgebnis(features, punkte=[tuple(p) for p in punkte.get(f["id"], [])])
     return ctx
 

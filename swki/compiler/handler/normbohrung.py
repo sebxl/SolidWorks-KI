@@ -18,6 +18,7 @@ from swki.bemassung import MITTE, URSPRUNG, bezug_von
 from swki.compiler import sw
 from swki.compiler.anker import AnkerFehler, zylinder_zu_punkten
 from swki.compiler.fehler import FEATURE_NICHT_ERZEUGT, REFERENZ_NICHT_GEFUNDEN, BauFehler
+from swki.compiler.handler.kanten import bohrungsfase
 from swki.compiler.kontext import FeatureErgebnis
 from swki.compiler.registry import handler
 from swki.compiler.skizze import ebene_aus_flaeche, modellpunkt, positionen_festlegen, richtung
@@ -168,4 +169,7 @@ def normbohrung(ctx, f: dict) -> FeatureErgebnis:
     positionen_festlegen(ctx, feature, lambda: skizzenebene_in_positionsskizze(ctx, f, se), f["positionen"],
                          f"{f['id']}_positionen", f.get("bezug"), f"{ctx.pfad(f['id'])}.positionen")
     _neu_aufbauen_bis_vollstaendig(ctx, feature, f["id"], punkte)
-    return FeatureErgebnis([feature], richtung=richtung(se, True), punkte=punkte)
+    features = [feature]
+    if (fase := bohrungsfase(ctx, f, features, punkte)) is not None:
+        features.append(fase)
+    return FeatureErgebnis(features, richtung=richtung(se, True), punkte=punkte)
