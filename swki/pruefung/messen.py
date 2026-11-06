@@ -16,6 +16,7 @@ from swki.formschraege import TYPEN, extrusionsrichtung, schraege, seitenflaeche
 from swki.konfig import lade_standard
 from swki.pruefung.bewertung import Messwerte, messpunkt_schluessel
 from swki.pruefung.geometrie import Messgeometrie
+from swki.spec.instanzen import traeger
 from swki.spec.normen import SW_BEFESTIGUNG
 from swki.verbindung import byref_long, byref_str, in_mm, in_mm3, mm, r8_array
 from swki.verzahnung import ALPHA, Stirnrad, Verzahnung, verzahnung_im_teil
@@ -357,6 +358,9 @@ def kontext_aus_datei(app, model, spec: dict, spec_pfad: Path, tol_mm: float, pr
             if "fase" in f and (fase := model.FeatureByName(f"{f['id']}_fase")) is not None:  # Fase am Eintritt
                 features.append(fase)
             ctx.ergebnisse[f["id"]] = FeatureErgebnis(features, punkte=[tuple(p) for p in punkte.get(f["id"], [])])
+    for f in spec["features"]:  # Muster und Spiegelungen tragen die Zylinder der Bohrungskopien
+        if f["typ"] in ("bohrung", "normbohrung") and f["id"] in ctx.ergebnisse:
+            ctx.ergebnis(f["id"]).traeger = [t for t in map(model.FeatureByName, traeger(spec, f["id"])) if t is not None]
     return ctx
 
 
@@ -379,7 +383,8 @@ def messgeometrie(ctx, spec: dict, mp: dict) -> Messgeometrie:
     if mp["instanz"] > len(punkte):
         raise AnkerFehler("REFERENZ_NICHT_GEFUNDEN", f"Bohrung {mp['feature']} hat nur {len(punkte)} Instanzen")
     punkt = punkte[mp["instanz"] - 1]
-    [zylinder] = zylinder_zu_punkten(flaechen(feature), [punkt], ctx.tol_mm)
+    alle = [x for traegt in (feature, *ctx.ergebnis(mp["feature"]).traeger) for x in flaechen(traegt)]
+    [zylinder] = zylinder_zu_punkten(alle, [punkt], ctx.tol_mm)
     n = laenge(zylinder.achse)
     # Protokollpunkt diente nur der Zuordnung; gemessen wird der echte Achspunkt der Zylinderfläche.
     return Messgeometrie("achse", zylinder.punkt, tuple(c / n for c in zylinder.achse))

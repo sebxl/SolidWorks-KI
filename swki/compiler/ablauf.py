@@ -39,5 +39,8 @@ def baue_features(ctx, protokoll: Protokoll, handler: dict[str, Callable], nach_
         ctx.ergebnisse[f["id"]] = ergebnis
         knoten.sw_name = ergebnis.sw_name
         knoten.punkte = [list(p) for p in ergebnis.punkte] or None
+        for k in protokoll.knoten:  # Muster/Spiegeln: die Bohrung trägt jetzt auch die Kopien (Instanzen n+1 …)
+            if k.id in ergebnis.kopien:
+                k.punkte = [list(p) for p in ctx.ergebnis(k.id).punkte]
 
     return durchlaufe(ctx, protokoll, ctx.spec["features"], rufe, nach_knoten)

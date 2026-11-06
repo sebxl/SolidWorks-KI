@@ -57,7 +57,7 @@ def _bohrung(ctx, fid: str, instanz: int):
     ergebnis = ctx.ergebnis(fid)
     if instanz > len(ergebnis.punkte):
         raise AnkerFehler(REFERENZ_NICHT_GEFUNDEN, f"Bohrung {fid} hat nur {len(ergebnis.punkte)} Instanzen")
-    return ergebnis.features[0], ergebnis.punkte[instanz - 1]
+    return [ergebnis.features[0], *ergebnis.traeger], ergebnis.punkte[instanz - 1]
 
 
 def kopplung_referenz(ctx, fid: str) -> TeilReferenz:
@@ -117,11 +117,12 @@ def loese_im_teil(ctx, seite: dict) -> TeilReferenz:
         f = loese_flaeche(ctx, {"nahe": seite["nahe"]})
         return TeilReferenz(f.objekt, _geometrie(f), False)
     if "instanz" in seite:
-        feature, punkt = _bohrung(ctx, seite["feature"], seite["instanz"])
+        features, punkt = _bohrung(ctx, seite["feature"], seite["instanz"])
+        alle = [f for feature in features for f in flaechen(feature)]
         if seite.get("achse"):
-            [zylinder] = zylinder_zu_punkten(flaechen(feature), [punkt], ctx.tol_mm)
+            [zylinder] = zylinder_zu_punkten(alle, [punkt], ctx.tol_mm)
             return TeilReferenz(zylinder.objekt, _geometrie(zylinder), False)
-        eben = mit_abstand([f for f in flaechen(feature) if f.art == "ebene"], punkt)
+        eben = mit_abstand([f for f in alle if f.art == "ebene"], punkt)
         f = flaeche_der_instanz(eben, seite["flaeche"])
         return TeilReferenz(f.objekt, _geometrie(f), False)
     if seite["feature"] not in ctx.ergebnisse:

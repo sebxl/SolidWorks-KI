@@ -3,6 +3,7 @@
 import math
 
 from swki.baugruppe.aufloesen import GRENZEN, anzahl_positionen, basis, je_position
+from swki.spec.instanzen import anzahl_instanzen
 from swki.baugruppe.kopplung import (GEKOPPELT, KOPPLUNGEN, antriebsmenge, endlagen_wege, gekoppelte, soll_drehungen,
                                      verzahnung_der_seite)
 from swki.baugruppe.modell import Quelle
@@ -96,8 +97,8 @@ def referenz_befunde(seite: dict, pfad: str, quellen: dict[str, Quelle], spec: d
         elif "instanz" in seite:
             if f["typ"] not in BOHRUNGEN:
                 befunde.append(_b(f"{pfad}.instanz", f"instanz nur bei normbohrung/bohrung ({seite['feature']} ist {f['typ']})"))
-            elif isinstance(seite["instanz"], int) and seite["instanz"] > len(f["positionen"]):
-                befunde.append(_b(f"{pfad}.instanz", f"{seite['feature']} hat nur {len(f['positionen'])} Positionen"))
+            elif isinstance(seite["instanz"], int) and seite["instanz"] > (n := anzahl_instanzen(q.spec, seite["feature"])):
+                befunde.append(_b(f"{pfad}.instanz", f"{seite['feature']} hat nur {n} Instanzen (Positionen und Musterkopien)"))
     return befunde
 
 
