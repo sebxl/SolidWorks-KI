@@ -47,9 +47,11 @@ punkt(id="ap4", was="Stiftbohrungen Ø 4 für alle angeschraubten Teile (Nutzer:
                "positionen": [[y, z] for _, y, z in STIFTE_AP], "durch": True, "bezug": {"u": "-rand", "v": "-rand"}})
 # ------------------------------------------------------------------ Anschlusswinkel
 kommentar("Anschlusswinkel wandert mit der Platte (Bohrungen in der Bettrückwand werden vor Ort gebohrt); keine Stifte (Langlöcher)")
+# Erst der Wandschenkel, dann der Plattenschenkel: umgekehrt zerfällt der Winkel kurz in zwei Körper, und die Bohrung f4
+# schneidet nicht (Lauf 3, Code 71). Bauweg, die Reihenfolge der Punkte steht nicht in der Prüfsumme.
+punkt(id="aw2", was="Schenkel an der Wand 33 nach +X", typ="mass", in_datei=AW, mass="D3@f2_skizze", alt=265, neu="=265-NAEHER")
 punkt(id="aw1", was="Schenkel an der Platte 33 nach +X", typ="mass", in_datei=AW, mass="D1@Ebene1", alt=265, neu="=265-NAEHER",
       lage_folgen=[S("M5x20", 1), S("M5x20", 2), S("M5x20", 3)])
-punkt(id="aw2", was="Schenkel an der Wand 33 nach +X", typ="mass", in_datei=AW, mass="D3@f2_skizze", alt=265, neu="=265-NAEHER")
 # ------------------------------------------------------------------ Kanalträger
 kommentar("Kanalträger: Steg 61 lang, von hinten verschraubt, verstiftet; Gewinde und Stifte für den Weichenwinkel")
 punkt(id="kt1", was="Steg endet an der neuen Plattenvorderseite (94 → 61)", typ="mass", in_datei=KT, mass="D1@f1_skizze", alt=94,
@@ -103,12 +105,14 @@ punkt(id="za3", was="2 Stiftbohrungen Ø 4 zur Platte", typ="feature", in_datei=
                "positionen": [[401.5, -141], [412.9, -141]], "tiefe": 9, "bezug": {"u": "-rand", "v": "-rand"}})
 # ------------------------------------------------------------------ Trichter
 kommentar("Trichter innen 40 in X (Nutzer: ein Drittel), mittig unter dem Rohr; Lasche 1 kürzer")
-punkt(id="tr1", was="Öffnung innen 109 → 40 in X", typ="mass", in_datei=TR, mass="D1@f1_oben", alt=109, neu="=TRICHTER_X")
-punkt(id="tr2", was="+X-Kante der Öffnung X −115 → −151,4 (Mitte X −171,4 unter dem Rohraustritt)", typ="mass", in_datei=TR,
-      mass="D3@f1_oben", alt=115, neu="=171.4-TRICHTER_X/2")
+# Erst die Lasche, dann die Wand, zuletzt die Breite: In der Reihenfolge der Spec schwebt die Lasche zwischendurch
+# frei, und die Bohrung f6 schneidet nicht (Lauf 4, Code 71); tr3, tr4, tr2, tr1 an einer Kopie ohne Fehler. Bauweg.
 punkt(id="tr3", was="Lasche 1 kürzer: von der Säule bis in die neue −X-Wand", typ="mass", in_datei=TR, mass="D1@f5_skizze",
       alt=23.1, neu=19.7)
 punkt(id="tr4", was="Lasche 1 endet bei X −192,3 (0,4 in der Wand)", typ="mass", in_datei=TR, mass="D3@f5_skizze", alt=221.9, neu=192.3)
+punkt(id="tr2", was="+X-Kante der Öffnung X −115 → −151,4 (Mitte X −171,4 unter dem Rohraustritt)", typ="mass", in_datei=TR,
+      mass="D3@f1_oben", alt=115, neu="=171.4-TRICHTER_X/2")
+punkt(id="tr1", was="Öffnung innen 109 → 40 in X", typ="mass", in_datei=TR, mass="D1@f1_oben", alt=109, neu="=TRICHTER_X")
 # ------------------------------------------------------------------ Fallschacht
 kommentar("Fallschacht: Bohrung durch alles weg, Einschmelzmuttern, Ecke gefüllt, +X-Seite abnehmbar, Laschen 2 und 3")
 punkt(id="fs1", was="M3-Gewinde im Flansch reichten 167,5 tief (die „merkwürdige Bohrung“): entfernen", typ="loeschen", in_datei=FS,
@@ -147,7 +151,7 @@ punkt(id="fs5", was="4 Augen für den Deckel hinter der Deckelebene", typ="featu
                "elemente": [{"polygon": {"punkte": p}} for p, _ in AUGEN]},
                "ende": {"typ": "blind", "tiefe": 8, "umkehren": True}})
 punkt(id="fs6", was="4 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 (Deckel)", typ="feature", in_datei=FS, name="Einschmelz Deckel",
-      feature={"typ": "bohrung", "flaeche": {"feature": "fs5", "flaeche": "+x"},
+      feature={"typ": "bohrung", "flaeche": {"nahe": [-160, AUGEN[0][1][1], -(AUGEN[0][1][0] + 0.5)]},
                "positionen": [loch for _, loch in AUGEN], "durchmesser": "=EM3_D",
                "tiefe": "=EM3_T", "bezug": {"u": "-rand", "v": "-rand"}})
 punkt(id="fs7", was="Lasche 2 am Flansch zur Trichtersäule", typ="feature", in_datei=FS, name="Lasche Flansch",
@@ -210,6 +214,10 @@ punkt(id="dl6", was="Bohrungen zur −X-Wand entfallen", typ="loeschen", in_date
 punkt(id="dl7", was="2 × Durchgang M4 mit Flachsenkung zur +X-Wand", typ="feature", in_datei=DL, name="Kanal PX",
       feature={"typ": "normbohrung", "art": "zylinderschraube", "groesse": "M4", "flaeche": {"feature": "f1", "flaeche": "+x"},
                "positionen": [[284, -144.5], [294, -144.5]], "durch": True, "bezug": {"u": "-rand", "v": "-rand"}})
+# Zuerst: Die Verknüpfungen der Lasche-Schrauben an den gelöschten Bohrungen (dl6) sind nach den Teilpunkten gebrochen
+# (Lauf 6, Code 48 schon beim ersten Punkt der Hauptbaugruppe). Bauweg.
+for n in ("v188.1", "v188.2", "v189.1", "v189.2"):
+    punkt(id="vl" + n.replace(".", "_")[1:], was="Lasche-Schrauben: alte Bohrung entfällt", typ="verknuepfung_loeschen", verknuepfung=n)
 punkt(id="vd1", was="Durchlicht: alte Lochzuordnung entfällt", typ="verknuepfung_loeschen", verknuepfung="v133")
 punkt(id="vd2", was="Durchlicht: alte Drehlage entfällt", typ="verknuepfung_loeschen", verknuepfung="v134")
 punkt(id="vd3", was="Durchlicht um 180° gedreht: M4 1 des Lichts in M4 4 der Lasche", typ="verknuepfung_neu", art="konzentrisch",
@@ -218,8 +226,6 @@ punkt(id="vd3", was="Durchlicht um 180° gedreht: M4 1 des Lichts in M4 4 der La
 punkt(id="vd4", was="Durchlicht: Stecker nach +X", typ="verknuepfung_neu", art="parallel",
       a={"komponente": C("DurchlichtEffilux"), "ebene": "vorne"}, b={"komponente": PLATTE, "ebene": "vorne"},
       ausrichtung="entgegengesetzt")
-for n in ("v188.1", "v188.2", "v189.1", "v189.2"):
-    punkt(id="vl" + n.replace(".", "_")[1:], was="Lasche-Schrauben: alte Bohrung entfällt", typ="verknuepfung_loeschen", verknuepfung=n)
 for i in (1, 2):
     punkt(id=f"vlk{i}", was=f"M4x20-{i} in Kanal PX {i}", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": S("M4x20", i), "referenz": "EINBAU_ACHSE"},

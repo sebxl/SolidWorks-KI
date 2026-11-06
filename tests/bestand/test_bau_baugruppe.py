@@ -390,6 +390,37 @@ def test_neuer_fehler_laut_whats_wrong_bricht_beim_punkt_ab(lauf):
     assert e.value.daten["fehler"]["punkt"] == "w1" and lauf.asm.gespeichert == []
 
 
+class _Gebrochen(dict):
+    """`GetWhatsWrong` nennt Code 48 an diesen Verknüpfungen, solange es sie gibt: Teilpunkte haben ihre Bohrungen gelöscht
+    (AP68-Pruefstation-Rev1, Lauf 7)."""
+
+    def __init__(self, asm, namen):
+        super().__init__()
+        self.asm, self.namen = asm, namen
+
+    def get(self, k, d=None):
+        return [(n, 48) for n in self.namen if any(m.Name == n for m in self.asm.mates)]
+
+
+LOESCHE_ABSTAND = {"id": "l1", "typ": "verknuepfung_loeschen", "verknuepfung": "Abstand1"}
+LOESCHE_DECKUNG = {"id": "l2", "typ": "verknuepfung_loeschen", "verknuepfung": "Deckungsgleich1"}
+
+
+def test_gebrochene_verknuepfung_eines_spaeteren_loeschpunkts_wird_geduldet(lauf):
+    lauf.schreibe(LOESCHE_ABSTAND, LOESCHE_DECKUNG, pruefen=False)
+    lauf.asm.fehler = _Gebrochen(lauf.asm, ("Abstand1", "Deckungsgleich1"))
+    assert lauf.baue()["status"] == "ok"
+    assert lauf.asm.gespeichert == ["Standard"]
+
+
+def test_gebrochene_verknuepfung_ohne_loeschpunkt_bricht_ab(lauf):
+    lauf.schreibe(LOESCHE_ABSTAND, pruefen=False)
+    lauf.asm.fehler = _Gebrochen(lauf.asm, ("Abstand1", "Deckungsgleich1"))
+    with pytest.raises(BauAbbruch, match="Deckungsgleich1") as e:
+        lauf.baue()
+    assert e.value.daten["fehler"]["punkt"] == "l1" and lauf.asm.gespeichert == []
+
+
 def test_bekannter_verknuepfungsfehler_bricht_nicht_ab(tmp_path, monkeypatch):
     """Review Focus 5: Der Bestand ist schon nicht sauber, das fällt nicht dem Lauf zur Last."""
     def kaputt(asm):

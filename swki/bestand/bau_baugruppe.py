@@ -62,11 +62,21 @@ def neue_fehler_baugruppe(fehler: list[dict], aufnahme: dict, konfiguration: str
     return neue_fehler(uebrig, aufnahme, konfiguration)
 
 
-def _pruefe_neuaufbau(ctx, aufnahme: dict) -> None:
-    """Nach jedem Haupt-Punkt, wie bei einem Teil (`bau._pruefe_neuaufbau`)."""
-    sw.rebuild(ctx.model)
-    if neu := neue_fehler_baugruppe(whats_wrong(ctx.model), aufnahme, aufnahme["aktiv"]):
+def _pruefe_neuaufbau(ctx, aufnahme: dict, geduldet: frozenset[str] = frozenset()) -> None:
+    """Nach jedem Haupt-Punkt, wie bei einem Teil (`bau._pruefe_neuaufbau`). `geduldet`: Verknüpfungen, die ein späterer
+    `verknuepfung_loeschen`-Punkt entfernt. Teilpunkte können ihre Referenzen schon gelöscht haben (AP68-Pruefstation-Rev1, Lauf 7:
+    Code 48 an allen vier, bis die letzte gelöscht ist); was am Ende bleibt, fängt `pruefe_stand_baugruppe`."""
+    with sw.bekannte_fehler(bekannte_fehler_baugruppe(aufnahme, aufnahme["aktiv"]) | geduldet):
+        sw.rebuild(ctx.model)
+    fehler = [e for e in whats_wrong(ctx.model) if e["feature"] not in geduldet]
+    if neu := neue_fehler_baugruppe(fehler, aufnahme, aufnahme["aktiv"]):
         raise BauFehler(REBUILD_FEHLER, "; ".join(neu), schritt="rebuild")
+
+
+def _spaeter_geloescht(liste: list[dict]) -> dict[str, frozenset[str]]:
+    """Je Punkt die Verknüpfungen, die ein Punkt danach löscht."""
+    return {p["id"]: frozenset(q["verknuepfung"] for q in liste[i + 1:] if q["typ"] == "verknuepfung_loeschen")
+            for i, p in enumerate(liste)}
 
 
 # --- Stand vor dem Speichern --------------------------------------------------------------------------------------------------
@@ -260,12 +270,18 @@ def _aendere_scheibe(b: BauKontext, r, rel: str, teil: dict, tol_mm: float) -> E
 def _wende_punkte_an(b: BauKontext, ctx):
     """`eigenschaft` und `skript` gehen über die Handler von Etappe 1, alles andere über die Baugruppen-Punkte: Ein Teil-Typ ohne
     `in_datei` weist `validieren` ab und trifft hier auf `UNBEKANNTER_TYP`, nie auf die Baugruppe."""
+    liste = haupt_punkte(b.spec)
+    spaeter = _spaeter_geloescht(liste)
+    bekannt = bekannte_fehler_baugruppe(b.aufnahme, b.aufnahme["aktiv"])
+
     def rufe(knoten: Knoten, p: dict) -> None:
-        namen = punkte.punkt_handler(p["typ"])(ctx, p, b.aufnahme) if p["typ"] in HAUPT_TYPEN else punkt_handler(p["typ"])(b, p)
+        with sw.bekannte_fehler(bekannt | spaeter[p["id"]]):  # auch Handler bauen neu auf (`sw_baugruppe.loesche`)
+            namen = (punkte.punkt_handler(p["typ"])(ctx, p, b.aufnahme) if p["typ"] in HAUPT_TYPEN
+                     else punkt_handler(p["typ"])(b, p))
         knoten.sw_name = ", ".join(namen) or None
         knoten.sw_namen = list(namen) or None
 
-    return durchlaufe(ctx, b.protokoll, haupt_punkte(b.spec), rufe, lambda c: _pruefe_neuaufbau(c, b.aufnahme))
+    return durchlaufe(ctx, b.protokoll, liste, rufe, lambda c: _pruefe_neuaufbau(c, b.aufnahme, spaeter.get(c.knoten, frozenset())))
 
 
 def _aendere_haupt(b: BauKontext, ctx, messung: _Messung, pfad: Path) -> Exception | None:
