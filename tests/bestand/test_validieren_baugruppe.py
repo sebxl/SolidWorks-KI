@@ -191,6 +191,15 @@ def test_entfernen_mit_allen_verknuepfungen_ist_gueltig():
     assert _befunde(_spec(e1)) == []
 
 
+def test_entfernen_neben_verknuepfung_ohne_lesbare_partner():
+    # lauf-30 (Abnahme Etappe 2): „Platziert1“ hat keinen lesbaren Typ und keine Partner (`partner: null`); das Entfernen
+    # einer anderen Komponente darf daran nicht mit TypeError abbrechen.
+    aufnahme = baugruppen_aufnahme()
+    aufnahme["verknuepfungen"]["Platziert1"] = {**aufnahme["verknuepfungen"]["Deckungsgleich3"], "typ": None, "partner": None}
+    e1 = {"id": "e1", "typ": "komponente_entfernen", "komponente": "Deckel-1", "verknuepfungen": ["Konzentrisch2", "Deckungsgleich3"]}
+    assert _befunde(_spec(e1), aufnahme) == []
+
+
 def test_entfernen_einer_komponente_ohne_verknuepfung():
     assert _befunde(_spec({"id": "e1", "typ": "komponente_entfernen", "komponente": "Basis-1", "verknuepfungen": []})) == []
 

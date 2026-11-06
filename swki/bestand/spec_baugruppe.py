@@ -94,7 +94,7 @@ class _Bestand:
     def haengt_dran(self, komponente: str) -> list[str]:
         """Verknüpfungen, an denen die Komponente (oder eine in ihr, bei einer Unterbaugruppe) Partner ist."""
         return sorted(n for n, v in self.verknuepfungen.items()
-                      if any(p is not None and (p == komponente or p.startswith(komponente + "/")) for p in v.get("partner", [])))
+                      if any(p is not None and (p == komponente or p.startswith(komponente + "/")) for p in v.get("partner") or []))
 
     def bewegungen_von(self, komponenten: list[str], verknuepfungen: list[str]) -> list[str]:
         """Bewegungen (Grenzverknüpfungen), die eine der Verknüpfungen sind oder eine der Komponenten bewegen."""
