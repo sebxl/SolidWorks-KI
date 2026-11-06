@@ -122,3 +122,51 @@ def test_bewerte_formmuster_fehlt():
                       freigegeben=kopie)
     [mangel] = bericht["maengel"]
     assert mangel["pruefung"] == "muster" and mangel["knoten"] == ["m1"]
+
+
+LOCH = {"id": "b1", "typ": "bohrung", "flaeche": FL, "positionen": [[-60, 0]], "durchmesser": 6, "durch": True}
+
+
+def test_gemischtes_muster_verliert_form_gegen_kopie():
+    """Review: Muster aus Tasche und Bohrung – fällt die Tasche aus den Quellen, ist das ein Mangel."""
+    gemischt = {"id": "m1", "typ": "muster_linear", "features": ["t1", "b1"],
+                "richtung1": {"achse": "x", "abstand": 40, "anzahl": 3}}
+    kopie = _spec(TASCHE, LOCH, gemischt)
+    aktuell = _spec(TASCHE, LOCH, {**gemischt, "features": ["b1"]})
+    ist = {"typ": "LPattern", "n1": 3, "n2": 1, "a1": 40.0, "a2": 0.0, "quellen": ["b1"]}
+    bericht = bewerte(aktuell, _messwerte(muster={"m1": ist}), STANDARD, freigegeben=kopie)
+    [mangel] = [m for m in bericht["maengel"] if m["pruefung"] == "muster"]
+    assert mangel["knoten"] == ["m1"]
+
+
+def test_gemischtes_muster_bohrung_darf_wandern():
+    """Die Bohrung eines gemischten Musters darf in eigene Positionen wechseln (Bauweg), die Form nicht."""
+    gemischt = {"id": "m1", "typ": "muster_linear", "features": ["t1", "b1"],
+                "richtung1": {"achse": "x", "abstand": 40, "anzahl": 3}}
+    assert muster_abweichungen({**gemischt, "features": ["t1"]}, gemischt,
+                               {"typ": "LPattern", "n1": 3, "n2": 1, "a1": 40.0, "a2": 0.0, "quellen": ["t1"]}, {},
+                               bohrungen=frozenset({"b1"})) == []
+
+
+def test_bohrbild_teilung_geaendert():
+    """Review / Design §6: gleiche Anzahl, aber andere Teilung → Lagen weichen von der Freigabe ab."""
+    kopie = _spec(GEWINDE, REIHE)
+    aktuell = _spec(GEWINDE, {**REIHE, "richtung1": {**REIHE["richtung1"], "abstand": 25}})
+    [fehler] = bohrbild_abweichungen(kopie, aktuell)
+    assert "Lagen" in fehler and "gewinde M6" in fehler
+
+
+def test_bohrbild_spiegeln_wie_positionen():
+    loch = {**LOCH, "positionen": [[-40, 10]]}
+    kopie = _spec(loch, {"id": "s1", "typ": "spiegeln", "features": ["b1"], "ebene": "vorne"})
+    aktuell = _spec({**loch, "positionen": [[-40, 10], [-40, -10]]})
+    assert bohrbild_abweichungen(kopie, aktuell) == []
+    falsch = _spec({**loch, "positionen": [[-40, 10], [40, 10]]})
+    assert bohrbild_abweichungen(kopie, falsch)
+
+
+def test_bohrbild_lage_nicht_berechenbar_zaehlt_nur():
+    kreis = {"id": "k1", "typ": "muster_kreis", "features": ["b1"], "achse": "y", "anzahl": 4}
+    kopie = _spec(LOCH, kreis)
+    aktuell = _spec({**LOCH, "positionen": [[-60, 0], [0, 60], [60, 0], [0, -60]]})
+    assert bohrbild_abweichungen(kopie, aktuell) == []

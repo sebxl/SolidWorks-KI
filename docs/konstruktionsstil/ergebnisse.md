@@ -61,7 +61,7 @@ Konstruktionsreview der Spannplatte: keine Befunde.
 | Instanzen gemusterter Bohrungen | `swki/spec/instanzen.py`; Muster-Handler hängen die Kopien an die Bohrung (Protokoll-`punkte`, `traeger`); Messung, Baugruppen-Referenzen und `je_position` zählen sie | `tests/spec/test_instanzen.py`, `tests/baugruppe/test_plausibel.py`, live `test_live_musterinstanzen.py` |
 | Musteranzahl ungeschützt | Prüfung `muster`: Definition gegen aktuelle Spec, Formmuster zusätzlich gegen die freigegebene Kopie | `tests/pruefung/test_muster_kanten.py` |
 | Kantenmaße nur über Volumen | Prüfung `kanten`: Radius bzw. Fasenmaß aus der Definition gegen die Kopie | ebenda |
-| Lochreihe zwischen Positionen und Muster | `normbohrungen` vergleicht die Punktzahl mit der aktuellen Spec, `bohrbild` die Instanzzahl je Art/Größe/Tiefe mit der Kopie | ebenda |
+| Lochreihe zwischen Positionen und Muster | `normbohrungen` vergleicht die Punktzahl mit der aktuellen Spec, `bohrbild` Anzahl und Lagen je Art/Größe/Tiefe mit der Kopie | ebenda |
 | Gewinde mit Ansenkung | `ueberlappung_soll(…, ansenkung)` geschlossen bzw. numerisch | `tests/baugruppe/test_geometrie_baugruppe.py` |
 | Neuer Typ | `austragung` (Kreis/Rechteck entlang offenem, tangentenstetigem Pfad; Bögen auch im Uhrzeigersinn) | `tests/spec/test_austragung.py`, live `test_live_austragung.py` |
 | Hilfsebenen im Bild | Versatzebenen werden nach dem Anlegen ausgeblendet (alle Handler) | live `test_live_austragung.py` |
@@ -89,8 +89,13 @@ Instanzpunkte eines Kreismusters entstehen durch Drehung um die Achsrichtung aus
   - Weiter nicht erkannt: Radien aus Verrundungen mit `nahe`-Anker.
   - Weiter nicht unterschieden: gedruckte Teile und Ersatzkörper von Kaufteilen. Die Freigabe-Vorlage begründet solche
     Hinweise.
-- **`bohrbild`** vergleicht Instanzzahlen, keine Lagen. Lagen prüfen wie bisher `masse_pruefen` und der Steckbrief. Für
-  `normbohrung` vergleicht er schärfer als vorher, `bohrung` wird jetzt mitgezählt.
+- **`bohrbild`** vergleicht je Art, Größe und Tiefe Anzahl und Lagen (Fläche, u, v) aller Positionen und Kopien gegen
+  die Kopie, bei `normbohrung` und `bohrung`. Nicht berechenbar sind Kreismuster, `nahe`-Anker und Spiegeln an einer
+  Fläche. Dort zählt die Prüfung nur die Anzahl; die Lage prüfen dann `masse_pruefen` und der Steckbrief.
+- **Gemischte Muster** (Form und Bohrung als Quellen) werden wie Formmuster gegen die Kopie geprüft. Nur die Bohrungen
+  dürfen beim Nachbessern aus den Quellen in eigene Positionen wandern.
+- **`volumen: auto`** rechnet eine Verrundung nur ein, wenn jedes Muster der gerundeten Form sie in seinen Quellen
+  hat. Sonst ist es nicht berechenbar, weil die Kopien in SolidWorks ungerundet bleiben.
 - **Alte Referenzen** bleiben im alten Stil. Ihre Sollwerte und Läufe gelten weiter; ihre Tests „ohne Hinweise“ ignorieren
   `fertigung`.
 - **Bauzeit:** Ein Fase-Feature kostet ca. 0,5–6 s (Stufe 2c). Die Spannplatte mit 10 Features baute in 6,5 s. Das
