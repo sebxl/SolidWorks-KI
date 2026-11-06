@@ -288,7 +288,10 @@ def _aendere_haupt(b: BauKontext, ctx, messung: _Messung, pfad: Path) -> Excepti
     """Der erste Fehler oder None; gespeichert ist die Baugruppe nur bei None und `aenderung_an_haupt`."""
     aktiv = b.aufnahme["aktiv"]
     try:
-        with _phase(b.protokoll, messung, "bauen"), sw.bekannte_fehler(bekannte_fehler_baugruppe(b.aufnahme, aktiv)):
+        # sw.schnell: lauf-30 (168 Verknüpfungen) liest sie in 3,1 s statt 23 s, je Punkt mindestens zweimal (Rev1, Lauf 9: ~80 s
+        # je Punkt); Einfügen und Verknüpfen laufen beim eigenen Baugruppenbau ebenso (swki.baugruppe.bau)
+        with (_phase(b.protokoll, messung, "bauen"), sw.bekannte_fehler(bekannte_fehler_baugruppe(b.aufnahme, aktiv)),
+              sw.schnell(b.app, b.asm)):
             if fehler := _wende_punkte_an(b, ctx):
                 return fehler
             pruefe_stand_baugruppe(b.asm, b.aufnahme, b.spec, b.neue)

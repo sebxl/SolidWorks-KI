@@ -1168,3 +1168,14 @@ def test_stand_geloeschte_verknuepfung_ist_weg(stand):
     stand.asm.mates.remove(stand.asm.mates[1])
     _pruefe(stand, {"id": "l1", "typ": "verknuepfung_loeschen", "verknuepfung": "Abstand1"})
 
+
+
+def test_haupt_punkte_laufen_ohne_bildschirmarbeit(lauf):
+    """AP68-Pruefstation-Rev1, Lauf 9: `lies_verknuepfungen` an 168 Verknüpfungen 23 s mit Fenster, 3,1 s in `sw.schnell`; jeder
+    Haupt-Punkt liest sie mindestens zweimal (rund 80 s je Punkt). Danach ist alles zurückgestellt."""
+    lauf.app.CommandInProgress = False
+    gesehen, rebuild = [], lauf.asm.ForceRebuild3
+    lauf.asm.ForceRebuild3 = lambda nur_oben: (gesehen.append(lauf.app.CommandInProgress), rebuild(nur_oben))[1]
+    lauf.schreibe(WERT, EIGENSCHAFT)
+    assert lauf.baue()["status"] == "ok"
+    assert gesehen and all(gesehen) and lauf.app.CommandInProgress is False

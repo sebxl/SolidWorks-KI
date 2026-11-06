@@ -240,6 +240,10 @@ kommentar("Verknüpfungen ohne Partner aus dem Handumbau (Zylinderhalter, Kanals
 for n in ("v56.1", "v56.2", "v57.1", "v57.2", "v123", "v124", "v125", "v140", "v141", "v162.1", "v162.2", "v163.1", "v163.2",
           "v172.1", "v172.2", "v173.1", "v173.2"):
     punkt(id="vx" + n.replace(".", "_")[1:], was="Verknüpfung ohne Partner (Handumbau)", typ="verknuepfung_loeschen", verknuepfung=n)
+# Platziert1 (Typ und Partner unlesbar) hängt am Platzhalter-Winkel und ging in Lauf 9 mit wz1; validieren kann sie wz1 nicht
+# zuordnen, darum ein eigener Löschpunkt vor wz1 (UEBERGABE §5.4).
+punkt(id="vxp", was="Verknüpfung Platziert1 des Platzhalter-Winkels (Handumbau, Typ und Partner unlesbar)", typ="verknuepfung_loeschen",
+      verknuepfung="Platziert1")
 # ------------------------------------------------------------------ Kanalträger-Schrauben
 kommentar("Die alten Schrauben M5x20-10/11 neu: von hinten durch die Platte in den Kanalträger (Nutzer)")
 for i, s in ((1, 10), (2, 11)):
