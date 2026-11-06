@@ -78,7 +78,8 @@ hängen bis zum 2-min-Zeitlimit.
   `fixiert: true` (ihr Ursprung = Baugruppenursprung), `je_position: {komponente, feature}` für eine Instanz je
   Position einer `normbohrung`/`bohrung` (Instanzen `<id>.1 …`).
 - **Instanzen** (`je_position`, Quelltext nicht lesen): Instanz `<id>.i` gehört zur i-ten Position des Features (Reihenfolge
-  der `positionen`); das Ziel ist ein Eigenteil ohne `je_position`. Eine Verknüpfung, die eine solche Komponente mit
+  der `positionen`, danach die Kopien jedes `muster_linear`, `muster_kreis` und `spiegeln`, das die Bohrung trägt, in
+  Spec-Reihenfolge; `instanz` am Bohrungsknoten zählt genauso); das Ziel ist ein Eigenteil ohne `je_position`. Eine Verknüpfung, die eine solche Komponente mit
   ihrer `id` nennt, gilt für jede Instanz (`v4.1 …`); `instanz: je` auf der anderen Seite ist dann Position i desselben
   Features. Normteil auf Normteil (Mutter auf Scheibe, Scheibe unter Kopf): beide Komponenten mit **demselben**
   `je_position`, dann paart swki Instanz i mit i. In `pruefung` immer die Instanz nennen (`stift.1`), in Verknüpfungen

@@ -120,6 +120,14 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
 - Firmenrechner: SW 2026, Vollversion; Dateien von dort kann Rechner A (SW 2025, Student) nicht bearbeiten. Dort noch nicht in
   Betrieb, Ablauf: `docs/bestandsdateien/inbetriebnahme-firmenrechner.md`.
 
+## Konstruktionsstil (Paket Konstruktionsstil)
+- Standard des Nutzers (01.11.2026): Bohrungseintritte mit `fase` (0,5; Gewinde `nenn`), keine Fase an Außen-, Anlage-
+  und Passkanten; Innenecken gefräster Teile R ≥ T/5; Formen spiegeln/mustern, Lochreihen ab 3 mustern, kleine
+  Bohrbilder und Lochkreise als `positionen`. Regeln 3, 4, 6, 8 im Skill `konstruieren`; `validieren` meldet Abweichungen
+  als `hinweise` (`zusammenfassen`, `fertigung`), nicht in Bestandsdateien.
+- `swki pruefen` prüft Muster und Kantenmaße gegen die freigegebene Kopie (`muster`, `kanten`), Bohrbilder nach Wirkung.
+- Regressions-Suite enthält die Spannplatte (`tests/referenz/stil/`); Ergebnisse: `docs/konstruktionsstil/ergebnisse.md`.
+
 ## Schnellbau und Simulation (Stufe C1)
 - Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,
   Spec `docs/superpowers/specs/2026-10-25-schnellbau-c1-design.md`): `swki schnellbau teil <spec> [--setze N=w] [--stl]`,
