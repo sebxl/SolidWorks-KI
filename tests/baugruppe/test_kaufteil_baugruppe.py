@@ -29,7 +29,7 @@ def test_laedt_kaufteil(tmp_path, monkeypatch):
     assert q.referenzen == {"EINBAU_ACHSE", "EINBAU_FLANSCH", "EINBAU_DREHLAGE"} and q.eintrag == EINTRAG
     assert list(q.spec["gewinde"]) == ["flansch"] and list(bg.teile) == ["halter.yaml"]
     assert dokument_name(q, "A", {"namensschema": {"datei": "{auftrag}_{name}"}}) == "SWKI-MUSTER_GM42-10.sldprt"
-    assert [h for h in hinweise_baugruppe(bg) if h["art"] != "bezug"] == []  # bezug: Teil ist eingefroren
+    assert [h for h in hinweise_baugruppe(bg) if h["art"] not in ("bezug", "fertigung")] == []  # Teil ist eingefroren
 
 
 def test_unbekannt_nicht_freigegeben_ungeprueft(tmp_path, monkeypatch):

@@ -18,5 +18,5 @@ def test_muster_teile_gueltig_ohne_hinweis(datei):
 
 def test_muster_baugruppe_gueltig():
     v = validieren_baugruppe(MUSTER / "gm42.yaml")
-    hinweise = [h for h in v["hinweise"] if h["art"] != "bezug"]  # bezug: Referenz ist eingefroren
+    hinweise = [h for h in v["hinweise"] if h["art"] not in ("bezug", "fertigung")]  # Referenz eingefroren, alter Stil
     assert (v["komponenten"], v["verknuepfungen"], hinweise) == (2, 2, [])

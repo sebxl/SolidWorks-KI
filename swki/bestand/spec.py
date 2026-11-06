@@ -386,7 +386,8 @@ def feature_befunde(spec: dict, aufnahme: dict, ordner: Path) -> tuple[list[dict
     befunde += [{**b, "pfad": _zurueck(b["pfad"], feature_punkte)} for b in roh]
     if befunde:
         return befunde, []
-    return [], [{**h, "pfad": _zurueck(h["pfad"], feature_punkte)} for h in teil_hinweise(teil)]
+    # Stilhinweise (art fertigung) nicht in fremden Dateien: Punkte nennt der Nutzer, sonst bleibt der Stil des Kollegen
+    return [], [{**h, "pfad": _zurueck(h["pfad"], feature_punkte)} for h in teil_hinweise(teil) if h["art"] != "fertigung"]
 
 
 def aufnahme_zu(spec: dict, pfad: Path) -> dict:

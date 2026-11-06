@@ -12,7 +12,7 @@ REFERENZ = Path(__file__).resolve().parents[1] / "referenz" / "schlitten" / "lin
 
 def test_referenz_schlitten_gueltig_ohne_hinweise():
     ergebnis = validieren(REFERENZ)
-    hinweise = [h for h in ergebnis["hinweise"] if h["art"] != "bezug"]  # bezug: Referenz ist eingefroren
+    hinweise = [h for h in ergebnis["hinweise"] if h["art"] not in ("bezug", "fertigung")]  # Referenz eingefroren, alter Stil
     assert ergebnis["gueltig"] and hinweise == [], hinweise
     assert (ergebnis["komponenten"], ergebnis["verknuepfungen"]) == (10, 22)
 

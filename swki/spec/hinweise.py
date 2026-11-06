@@ -5,13 +5,15 @@ zum Bauweg). Anforderungsmaße sollen deshalb als Parameter geführt werden ("=N
 art "bezug": Lagekoordinaten ≠ 0 ohne Bemaßungsbezug auf dieser Achse (Positionen von bohrung/normbohrung, Mitte von
 rechteck/kreis/langloch in Skizzen auf Flächen) – ohne Bezug wird zum Ursprung bemaßt.
 art "zusammenfassen": Knoten, die sich nach den Modellierregeln (Skill konstruieren) für einen kompakteren
-Feature-Baum zusammenfassen lassen.
+Feature-Baum zusammenfassen lassen, auch Kandidaten für Muster und Spiegeln (Regel 3).
+art "fertigung": Innenecken unter der Fräserregel R ≥ T/5 (Regel 8) und Bohrungseintritte ohne Fase (Regel 6).
 """
 
 import json
 
 from swki.bemassung import ebene_ist_flaeche
 from swki.spec.ausdruck import AusdruckFehler, auswerten
+from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import lade_tabelle
 
 MASS_FELDER = frozenset({
@@ -253,6 +255,111 @@ def zusammenfassen(spec: dict) -> list[dict]:
     return ergebnis
 
 
+FRAESER_TIEFE = 5.0  # R ≥ T/5: Schaftfräser Ø D bis 2,5·D Tiefe (Nutzer 01.11.2026, Ø 2 bis 5 mm)
+_EINTRITT = {"gewinde": "fase: nenn", "stift": "fase: 0,5", "zylinderschraube": "fase: 0,5"}  # bohrung: fase: 0,5
+
+
+def _fraestiefe(f: dict, nach_id: dict, parameter: dict) -> float | None:
+    """Frästiefe an den Ecken eines Schnitts oder Aufsatzes: Tiefe bei blind/mittig, Dicke bei durch_alles, sonst None."""
+    ende = f["ende"]
+    if ende["typ"] in ("blind", "mittig"):
+        return auswerten(ende["tiefe"], parameter)
+    if ende["typ"] == "durch_alles" and f["typ"] == "schnitt":
+        from swki.pruefung.geometrie import _dicke  # spät importiert: swki.pruefung nutzt swki.spec
+
+        return _dicke(nach_id, f["skizze"]["ebene"], parameter)
+    return None
+
+
+def _ecken(punkte: list[tuple[float, float]], scharf: list[bool]) -> list[tuple[int, bool]]:
+    """(Index, konvex) je scharfer Ecke eines geschlossenen Linienzugs; konvex gegen die Umlaufrichtung des Profils."""
+    n = len(punkte)
+    flaeche = sum(punkte[i][0] * punkte[(i + 1) % n][1] - punkte[(i + 1) % n][0] * punkte[i][1] for i in range(n))
+    ecken = []
+    for i in range(n):
+        if not scharf[i]:
+            continue
+        a, b, c = punkte[i - 1], punkte[i], punkte[(i + 1) % n]
+        kreuz = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if abs(kreuz) > _NULL_MM:
+            ecken.append((i, (kreuz > 0) == (flaeche > 0)))
+    return ecken
+
+
+def _eckradien(element: dict, parameter: dict) -> list[tuple[str, float, bool]] | None:
+    """(Ort, Radius, konvex) je Ecke des Elements; None für Elemente ohne Ecken (Kreis, Langloch)."""
+    if "rechteck" in element:
+        r = auswerten(element["rechteck"].get("radius", 0), parameter)
+        return [("Ecken", r, True)]
+    if "polygon" in element:
+        poly = element["polygon"]
+        punkte = [_punkt(q, parameter) for q in poly["punkte"]]
+        radien = eckradien(poly, parameter)
+        return [(_ort(punkte[i]), radien[i], konvex) for i, konvex in _ecken(punkte, [True] * len(punkte))]
+    if "kontur" in element:
+        k = element["kontur"]
+        punkte = kontur_punkte(k, parameter)[:-1]
+        segmente = k["segmente"]
+        # Ecke i liegt am Anfang von Segment i: scharf, wenn das Segment davor und dieses Linien sind
+        scharf = ["linie" in segmente[i - 1] and "linie" in segmente[i] for i in range(len(segmente))]
+        return [(_ort(punkte[i]), 0.0, konvex) for i, konvex in _ecken(punkte, scharf)]
+    return None
+
+
+def _ort(p: tuple[float, float]) -> str:
+    return f"[{_zahl(p[0])}, {_zahl(p[1])}]"
+
+
+def _innenecken(f: dict, element: dict, ist_profil: bool, parameter: dict) -> list[tuple[str, float]]:
+    """Innenecken des Werkstücks (Ort, Radius): beim Schnitt und bei inneren Profilen eines Aufsatzes die konvexen
+    Ecken des Profils, beim äußeren Profil eines Aufsatzes die konkaven."""
+    ecken = _eckradien(element, parameter)
+    if ecken is None:
+        return []
+    innen_konvex = f["typ"] == "schnitt" or not ist_profil
+    return [(ort, r) for ort, r, konvex in ecken if konvex == innen_konvex]
+
+
+def fertigung_hinweise(spec: dict) -> list[dict]:
+    """Paket Konstruktionsstil: Innenecken unter der Fräserregel R ≥ T/5 (Regel 8; Radius aus der Skizze oder aus einem
+    Knoten verrundung mit senkrechte_kanten auf dem Feature) und Bohrungseintritte ohne Feld fase (Regel 6) als
+    Hinweis art "fertigung". Unbekannte Tiefe (bis_flaeche, versatz_von_flaeche) und Ausdrucksfehler: kein Hinweis."""
+    features = spec.get("features", [])
+    parameter = spec.get("parameter", {})
+    nach_id = {f["id"]: f for f in features}
+    ergebnis = []
+    for i, f in enumerate(features):
+        if f.get("typ") in ("bohrung", "normbohrung") and "fase" not in f:
+            vorschlag = "fase: 0,5" if f["typ"] == "bohrung" else _EINTRITT.get(f["art"])
+            if vorschlag:
+                ergebnis.append({"art": "fertigung", "pfad": f"features[{i}]",
+                                 "meldung": f"Bohrungseintritt ohne Fase: {vorschlag} (Regel 6)"})
+            continue
+        if f.get("typ") not in ("extrusion", "schnitt"):
+            continue
+        try:
+            t = _fraestiefe(f, nach_id, parameter)
+            if t is None:
+                continue
+            knoten_r = max((auswerten(v["radius"], parameter) for v in features if v.get("typ") == "verrundung"
+                            and any(k.get("feature") == f["id"] and k.get("auswahl") == "senkrechte_kanten"
+                                    for k in v["kanten"])), default=0.0)
+            r_min = t / FRAESER_TIEFE
+            for k, element in enumerate(f["skizze"]["elemente"]):
+                ecken = [(ort, max(r, knoten_r)) for ort, r in _innenecken(f, element, k == 0, parameter)]
+                if not ecken or (zu_klein := min(ecken, key=lambda e: e[1]))[1] >= r_min - _NULL_MM:
+                    continue
+                ort, r = zu_klein
+                was = "scharfe Innenecke" if r <= _NULL_MM else f"Innenecke R {_zahl(r)}"
+                stelle = "" if ort == "Ecken" else f" bei {ort}"
+                ergebnis.append({"art": "fertigung", "pfad": f"features[{i}].skizze.elemente[{k}]",
+                                 "meldung": f"{was}{stelle} bei Frästiefe {_zahl(t)}: R ≥ {_zahl(r_min)} (Fräser Ø ≥ "
+                                            f"Tiefe/2,5), größer ist besser; kleiner nur mit Grund (Regel 8)"})
+        except AusdruckFehler:
+            continue
+    return ergebnis
+
+
 ABMASS_GROSS = 0.1  # × Modul (Spec 4b §4.3)
 
 
@@ -302,4 +409,4 @@ def hinweise(spec: dict) -> list[dict]:
     """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Bemaßungsbezug, Zusammenfassbares und
     Verzahnung. Hinweise blockieren nie (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
     return (pruefwert_hinweise(spec) + feste_masse(spec) + bezug_hinweise(spec) + zusammenfassen(spec)
-            + verzahnung_hinweise(spec))
+            + fertigung_hinweise(spec) + verzahnung_hinweise(spec))
