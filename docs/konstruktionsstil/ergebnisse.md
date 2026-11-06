@@ -116,8 +116,37 @@ Instanzpunkte eines Kreismusters entstehen durch Drehung um die Achsrichtung aus
 
 ## Regression
 
-- `.venv\Scripts\python.exe -m pytest`: grün (Stand des letzten Laufs in diesem Abschnitt unten).
-- Live gelaufen:
+- `.venv\Scripts\python.exe -m pytest`: 2361 bestanden (06.11.2026, nach dem Review-Durchgang).
+- Live-Regression `-m werkzeuge.live_frisch tests/referenz` (frisches SolidWorks je Test): **13 von 13 bestanden**,
+  darunter das Stehlager mit Bohrungsfasen und Ansenkung (36 s, 4,5 GB) und die Spannplatte (20 s, 3,5 GB).
+- Abschluss-Review (Opus, ganzer Branch): keine kritischen Befunde. Die vier wichtigen Befunde sind behoben:
+  - Bohrbild nach Lagen
+  - gemischte Muster gegen die Kopie
+  - Verrundung nicht auf ungerundete Musterkopien rechnen
+  - Bogenende im Pfad
+
+  Kleinere Befunde sind offen und unten aufgelistet.
+- Weitere Live-Tests:
   - `test_live_bohrungsfase`, `test_live_musterinstanzen`, `test_live_muster`, `test_live_austragung`,
     `test_live_endbedingungen`, `test_live_pruefen`, `test_live_pruefen_normbohrung`
   - Referenz Spannplatte (`test_referenz_besteht[stil-spannplatte.yaml]`)
+
+## Offen (kleinere Review-Befunde, nicht in diesem Paket)
+
+- **Musterquellen:** `_senkung`/`_fase` werden herausgefiltert. Ein Muster, das die Fase-Quelle verliert, fällt nur im
+  Live-Test auf, nicht in `swki pruefen`.
+- **Validierung:** `instanz` in `pruefung.masse_pruefen` einer Teil-Spec wird nicht gegen `anzahl_instanzen` geprüft.
+- **Schnellbau (C3a):**
+  - IndexError bei `instanz` auf Musterkopien (Baugruppe) statt einer Meldung.
+  - Das Kreismuster dreht um +Achse, SolidWorks um die Bezugsachse (`achse_y` = −y).
+- **`bohrbild`:**
+  - Der Schlüssel enthält `fase` nicht.
+  - Der Eintrag nennt keine Knoten-ID.
+  - Ohne Freigabe vergleicht er die Spec mit sich selbst.
+- **Musterprüfung:** Ein Skript als Musterquelle ergibt einen falschen Mangel bei den Quellen.
+- **Fräserhinweis:** Getrennte Aufsätze in einer Skizze gelten als innere Profile.
+- **Testlücken:**
+  - `versatz_von_flaeche` im Fräserhinweis
+  - `swki aenderungen` mit `_fase`
+  - Spiegeln an einer Fläche mit Lage ≠ 0 live
+- **`tests/schnellbau/sw_referenz.json`:** `stehlager/grundplatte` neu erzeugen (`-m werkzeuge.schnellbau_abgleich`).
