@@ -17,6 +17,7 @@ from swki.formschraege import feste_tiefe, grenze_kleiner, quer_zur_richtung, sc
 from swki.konfig import PROJEKT
 from swki.pruefung.geometrie import UEBER_MATERIAL, volumen_auto
 from swki.pruefung.huellquader import huellquader_auto, seitenpunkt
+from swki.spec.austragung import befunde as austragung_befunde
 from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import groesse_text, norm_von, normmasse, verfuegbare_groessen
@@ -27,7 +28,7 @@ _POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "lae
 _WINKEL = {"winkel"}
 _TOL_KONTUR_MM = 1e-6
 _RESERVIERT = re.compile(r"^achse_[xyz]$")  # Referenzachsen der Muster (handler/muster.py)
-_COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen", "_fase")  # vom Compiler angelegte Skizzen/Features
+_COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen", "_fase", "_pfad")  # vom Compiler angelegte Skizzen/Features
 
 
 class SpecFehler(SwkiFehler):
@@ -168,7 +169,10 @@ def _element_befunde(e: dict, pfad: str, p: dict) -> list[dict]:
         if "polygon" in e and "radien" in e["polygon"]:
             return _radien_befunde(e["polygon"], f"{pfad}.polygon", p)
         if "kontur" in e:
-            return _kontur_befunde(e["kontur"], f"{pfad}.kontur", p)
+            return [{"pfad": f"{pfad}.kontur.segmente[{k}].uhrzeigersinn",
+                     "meldung": "uhrzeigersinn nur im Pfad einer austragung; Konturen laufen gegen den Uhrzeigersinn"}
+                    for k, s in enumerate(e["kontur"]["segmente"]) if "uhrzeigersinn" in s
+                    ] or _kontur_befunde(e["kontur"], f"{pfad}.kontur", p)
     except AusdruckFehler:
         pass  # bereits oben gemeldet
     return []
@@ -397,7 +401,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] =
         if _RESERVIERT.match(fid) or fid.endswith(_COMPILER_ENDUNGEN) or zusatz:
             befunde.append({"pfad": f"features[{i}].id",
                             "meldung": f"ID {fid!r} ist für vom Compiler angelegte Features reserviert "
-                                       "(achse_x|y|z, <id>_skizze, <id>_senkung, <id>_positionen, <id>_fase, <skript-id>_<n>)"})
+                                       "(achse_x|y|z, <id>_skizze, <id>_senkung, <id>_positionen, <id>_fase, <id>_pfad, <skript-id>_<n>)"})
 
     for i, f in enumerate(features):
         for pfad, ref in _referenzen({k: v for k, v in f.items() if k != "id"}, ["features", i]):
@@ -458,6 +462,8 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] =
             befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
         if f["typ"] in ("bohrung", "normbohrung"):
             befunde += _fase_befunde(f, f"features[{i}]", parameter)
+        if f["typ"] == "austragung":
+            befunde += austragung_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "verzahnung":
             befunde += _verzahnung_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "referenz" and "umkehren" in f.get("ebene", {}) and "abstand" not in f["ebene"]:

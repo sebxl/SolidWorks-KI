@@ -1,0 +1,47 @@
+"""Live: typ austragung (Paket Konstruktionsstil) – Aufsatz und Schnitt, Bogen in beide Richtungen, Volumen wie
+volumen: auto, Maße im Protokoll. SolidWorks muss laufen."""
+
+import copy
+
+import pytest
+
+from swki.pruefung.geometrie import volumen_auto
+from swki.pruefung.messen import rebuild_fehler
+
+from .bauhilfe import gebautes_teil, volumen_mm3
+
+pytestmark = pytest.mark.sw
+
+BLOCK = {"id": "f1", "typ": "extrusion",
+         "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [30, 0], "breite": 80, "hoehe": 120}}]},
+         "ende": {"typ": "mittig", "tiefe": 20}}
+KANAL = {"id": "k1", "typ": "austragung",
+         "profil": {"ebene": "rechts", "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": "=D"}}]},
+         "pfad": {"ebene": "oben", "start": [0, 0],
+                  "segmente": [{"linie": ["=L", 0]}, {"bogen": ["=L+R", "=R"], "mitte": ["=L", "=R"]}, {"linie": ["=L+R", 50]}]}}
+P = {"D": 8, "L": 40, "R": 20}
+
+
+def _pruefe(spec):
+    with gebautes_teil(spec) as (ctx, fehler, protokoll):
+        assert fehler is None, fehler
+        assert rebuild_fehler(ctx.model) == []
+        soll, grund = volumen_auto(spec)
+        assert grund == "analytisch"
+        assert volumen_mm3(ctx.model) == pytest.approx(soll, abs=1e-3)
+        return {m["pfad"] for k in protokoll.knoten for m in (k.masse or [])}
+
+
+def test_austragung_aufsatz():
+    pfade = _pruefe({"art": "teil", "name": "T", "parameter": P, "features": [KANAL]})
+    assert "features[0].profil.elemente[0].kreis.durchmesser" in pfade
+    assert {"features[0].pfad.segmente[0].linie[0]", "features[0].pfad.segmente[1].mitte[1]"} <= pfade
+
+
+def test_austragung_schnitt_im_uhrzeigersinn():
+    kanal = copy.deepcopy(KANAL)
+    kanal["schnitt"] = True
+    kanal["pfad"]["segmente"] = [{"linie": ["=L", 0]},
+                                 {"bogen": ["=L+R", "=-R"], "mitte": ["=L", "=-R"], "uhrzeigersinn": True},
+                                 {"linie": ["=L+R", -50]}]
+    _pruefe({"art": "teil", "name": "T", "parameter": P, "features": [BLOCK, kanal]})

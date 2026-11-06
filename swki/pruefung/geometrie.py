@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from swki.compiler.anker import Vektor, differenz, laenge, punkt_achse_abstand, skalar
 from swki.formschraege import schraege, volumen_feature
 from swki.spec.ausdruck import auswerten
+from swki.spec.austragung import pfad_laenge
 from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import bohrspitze_grad, norm_von, normmasse
@@ -415,6 +416,9 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             beitrag[f["id"]] = 0.0  # als Skizzen-Radius im Feature eingerechnet
         elif typ == "verzahnung":
             beitrag[f["id"]] = aus_feature(f, p).flaeche() * auswerten(f["breite"], p)
+        elif typ == "austragung":   # Profil senkrecht auf dem Pfad, Mitte auf dem Pfad (validieren): A × Pfadlänge
+            v = _flaeche(f["profil"]["elemente"][0], p) * pfad_laenge(f["pfad"], p)
+            beitrag[f["id"]] = -v if f.get("schnitt") else v
         else:
             return None, f"{f['id']}: {typ} nicht analytisch berechenbar"
     if aussen := schnitte_ausserhalb(spec):

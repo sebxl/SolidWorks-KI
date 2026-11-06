@@ -70,6 +70,11 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
     - {id: f6, typ: muster_linear, features: [f2], richtung1: {achse: x, abstand: 20, anzahl: 3}}
     - {id: f7, typ: spiegeln, features: [f2], ebene: rechts}
     - {id: f8, typ: referenz, ebene: {basis: oben, abstand: 50}}           # oder achse: x|y|z
+    - id: f9                                    # Profil entlang eines offenen Pfads (Kanal, Nut, Rohr)
+      typ: austragung                           # schnitt?: true
+      profil: {ebene: rechts, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=D"}}]}   # genau ein kreis | rechteck
+      pfad: {ebene: oben, start: [0, 0], segmente: [{linie: [40, 0]}, {bogen: [60, 20], mitte: [40, 20]}]}
+                                                # Bogen optional uhrzeigersinn: true (nur hier)
   ```
   Kanten: `{feature, auswahl: senkrechte_kanten|alle_kanten}`, `{feature, kanten_an: "+y"}`, `{nahe: [x, y, z]}`.
 - Ebenen: `vorne` (Normale +Z), `oben` (+Y), `rechts` (+X). Skizzenkoordinaten (u, v): vorne X=u, Y=v · oben X=u, Z=−v ·
@@ -144,7 +149,11 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   oder einem Flächenanker `{feature, flaeche}` – nicht auf `{nahe}` (`validieren` lehnt das ab).
   `durchmesser_pruefen` findet an schrägen Features keinen Zylinder; Maße über Deck- und Bodenfläche mit
   `masse_pruefen`.
-- Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `<skript-id>_<n>`) nicht als Feature-IDs
+- Kanäle, Nuten und Rohre entlang einer Kurve als `typ: austragung` (Spike S20 e): Profil und Pfad auf Standard- oder
+  Versatzebenen, das Profil senkrecht auf dem ersten Segment mit der Mitte auf dem Pfadanfang, der Pfad offen und
+  tangentenstetig (Bogen zwischen zwei Linien), jeder Bogen weiter als das halbe Profil – `validieren` prüft das.
+  `volumen: auto` rechnet Profilfläche × Pfadlänge; bei einem Aufsatz `huellquader` von Hand angeben.
+- Reservierte IDs (`achse_x|y|z`, Endungen `_skizze`, `_senkung`, `_positionen`, `_fase`, `_pfad`, `<skript-id>_<n>`) nicht als Feature-IDs
   verwenden; `validieren` lehnt sie ab, sie gehören dem Compiler.
 - Braucht das Teil Normteile (Schrauben, Stifte …), diese über den Skill `normteile` holen.
 - Was das Schema nicht abbildet: `typ: skript` mit `luecke:` und Datei `skripte/<id>.py` (`def bauen(ctx)`), nie weglassen.
