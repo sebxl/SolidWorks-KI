@@ -13,6 +13,7 @@ from swki.kaufteile.ortung import steigung
 from swki.pruefung.bewertung import beschreibung, eintrag, gleichungen_eintrag, mass_eintrag
 from swki.pruefung.geometrie import Messgeometrie
 from swki.spec.ausdruck import auswerten
+from swki.spec.bohrungsfase import fase_abstand
 from swki.spec.normen import groesse_text, norm_von, normmasse
 
 STATUS_TEXT = {1: "unbekannt", 2: "unterbestimmt", 3: "voll bestimmt", 4: "überbestimmt", 5: "keine Lösung",
@@ -124,30 +125,33 @@ def _paar(a: str, b: str) -> frozenset:
 
 
 def _bohrung(qt: Quelle, feature: str, m: BaugruppenMesswerte) \
-        -> tuple[float, float, str, float | str | None, str | None]:
+        -> tuple[float, float, str, float | str | None, str | None, float]:
     """(tiefe, gewindetiefe, Größe, Kernloch, Hinweis) einer Gewindebohrung: Eigenteil aus der normbohrung (Kernloch der
     Tabelle), Kaufteil aus der Gewindegruppe des Eintrags mit dem Modell aus der Aufnahme (Spec 3c §6.4: kernloch → Ring
-    bis zum gemessenen Ø, nenn → "nenn", Soll 0); die alte Form (nur Text) gilt als unbekannt (Kernloch None)."""
+    bis zum gemessenen Ø, nenn → "nenn", Soll 0); die alte Form (nur Text) gilt als unbekannt (Kernloch None).
+    Letzter Wert: Ansenkung c am Eintritt (Feld fase der Normbohrung, sonst 0)."""
     if qt.art == "kaufteil":
         w = qt.spec["gewinde"][feature]
         modell = m.gewinde_modelle.get(qt.schluessel, {}).get(feature)
         art = modell.get("modell") if isinstance(modell, dict) else None
         if art == "nenn":
-            return w["tiefe"], w["gewindetiefe"], w["groesse"], "nenn", None
+            return w["tiefe"], w["gewindetiefe"], w["groesse"], "nenn", None, 0.0
         if art != "kernloch" or not modell.get("durchmesser"):
             return (w["tiefe"], w["gewindetiefe"], w["groesse"], None,
-                    f"Gewindemodell von {qt.kaufteil}.{feature} unbekannt")
-        return w["tiefe"], w["gewindetiefe"], w["groesse"], modell["durchmesser"], None
+                    f"Gewindemodell von {qt.kaufteil}.{feature} unbekannt", 0.0)
+        return w["tiefe"], w["gewindetiefe"], w["groesse"], modell["durchmesser"], None, 0.0
     f = next(x for x in qt.spec["features"] if x["id"] == feature)
     tp = qt.spec.get("parameter", {})
     kernloch = normmasse("gewinde", f["groesse"], norm_von(f))["kernloch"]
-    return auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp), groesse_text(f["groesse"]), kernloch, None
+    return (auswerten(f["tiefe"], tp), auswerten(f["gewindetiefe"], tp), groesse_text(f["groesse"]), kernloch, None,
+            fase_abstand(f, tp) or 0.0)
 
 
-def _ueberlappung(d: float, p: float, kernloch: float | str | None, laenge: float) -> float | None:
+def _ueberlappung(d: float, p: float, kernloch: float | str | None, laenge: float, ansenkung: float = 0.0) \
+        -> float | None:
     if kernloch == "nenn":
         return 0.0
-    return None if kernloch is None else ueberlappung_soll(d, p, kernloch, laenge)
+    return None if kernloch is None else ueberlappung_soll(d, p, kernloch, laenge, ansenkung)
 
 
 def _durch(qt: Quelle, feature: str) -> bool:
@@ -196,8 +200,8 @@ def _gewinde(g: Gewindepaarung, quellen: dict[str, Quelle], m: BaugruppenMesswer
                "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
     if _durch(qt, g.feature):
         return _gewinde_durch(pid, knoten, bericht, ist, laenge)
-    tiefe, gewindetiefe, _, kernloch, hinweis = _bohrung(qt, g.feature, m)
-    soll = _ueberlappung(qs.masse["d"], qs.masse["p"], kernloch, laenge)
+    tiefe, gewindetiefe, _, kernloch, hinweis, ansenkung = _bohrung(qt, g.feature, m)
+    soll = _ueberlappung(qs.masse["d"], qs.masse["p"], kernloch, laenge, ansenkung)
     band = band_kaufteil(qs.masse["d"], qs.masse["p"], kernloch) if qt.art == "kaufteil" else None
     return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis, band)
 
@@ -217,7 +221,7 @@ def _aussengewinde(a: Aussenpaarung, quellen: dict[str, Quelle], m: BaugruppenMe
                "einschraublaenge": round(laenge, 3), "volumen": round(ist, 3)}
     if _durch(qt, a.feature):
         return _gewinde_durch(pid, knoten, bericht, ist, laenge)
-    tiefe, gewindetiefe, groesse, kernloch, hinweis = _bohrung(qt, a.feature, m)
+    tiefe, gewindetiefe, groesse, kernloch, hinweis, ansenkung = _bohrung(qt, a.feature, m)
     if groesse != a.groesse:
         bericht |= {"soll": None, "gewindetiefe": gewindetiefe, "tiefe": tiefe}
         return eintrag(pid, False, ist=round(ist, 3), einschraublaenge=round(laenge, 3), knoten=knoten,
@@ -230,7 +234,7 @@ def _aussengewinde(a: Aussenpaarung, quellen: dict[str, Quelle], m: BaugruppenMe
         hinweis = hinweis or (f"Gewindemodell von {qk.kaufteil}.{a.gruppe} unbekannt" if d is None
                               else f"Steigung von {a.groesse} unbekannt")
     else:
-        soll = _ueberlappung(d, p, kernloch, laenge)
+        soll = _ueberlappung(d, p, kernloch, laenge, ansenkung)
     band = band_kaufteil(d, p, kernloch) if d is not None and p is not None else None
     return _gewinde_ergebnis(pid, knoten, bericht, ist, laenge, tiefe, gewindetiefe, soll, hinweis, band)
 
