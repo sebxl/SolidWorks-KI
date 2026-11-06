@@ -59,7 +59,8 @@ class Teil:
     features: dict = field(default_factory=dict)
     uebersprungen: list = field(default_factory=list)
     sekunden: float = 0.0
-    bau: "Schnellbau | None" = None   # für Anker-Abfragen (Flächenebenen) der Baugruppe
+    bau: "Schnellbau | None" = None
+    meldungen: list = field(default_factory=list)   # was nicht gebaut wurde, ohne Abbruch (Paket Konstruktionsstil)   # für Anker-Abfragen (Flächenebenen) der Baugruppe
 
 
 def _v(p) -> Vector:
@@ -85,6 +86,7 @@ class Schnellbau:
         self.body = None
         self.features: dict[str, FeatureInfo] = {}
         self.uebersprungen: list[str] = []
+        self.meldungen: list[str] = []
         self.fid: str | None = None
 
     # --- Hilfen ------------------------------------------------------------------------------------------------
@@ -367,6 +369,8 @@ class Schnellbau:
         for x in werkzeuge[1:]:
             werkzeug = werkzeug + x
         self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, "minus", _t(d), [_t(p) for p in punkte])
+        if "fase" in f:
+            self.meldungen.append(f"{f['id']}: fase am Bohrungseintritt nicht gebaut (Stufe C3a)")
         if not self.mit_bohrungen:
             self.uebersprungen.append(f["id"])
             return
@@ -568,7 +572,7 @@ class Schnellbau:
         if len(solids) != 1:
             raise SchnellbauFehler(GEOMETRIE, f"{len(solids)} Volumenkörper statt 1")
         return Teil(self.spec.get("name", "teil"), solids[0], self.p, self.features, self.uebersprungen,
-                    time.perf_counter() - t0, self)
+                    time.perf_counter() - t0, self, self.meldungen)
 
 
 def lade(pfad: Path) -> dict:

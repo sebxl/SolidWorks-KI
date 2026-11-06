@@ -44,7 +44,7 @@ def _teil(args) -> dict:
     erg = {"teil": t.name, "spec": args.spec, "volumen_mm3": round(t.solid.volume, 6),
            "huellquader_mm": [round(bb.size.X, 6), round(bb.size.Y, 6), round(bb.size.Z, 6)],
            "min_mm": [round(bb.min.X, 6), round(bb.min.Y, 6), round(bb.min.Z, 6)],
-           "ms": round(t.sekunden * 1000, 1), "uebersprungen": t.uebersprungen}
+           "ms": round(t.sekunden * 1000, 1), "uebersprungen": t.uebersprungen, "meldungen": t.meldungen}
     if args.stl:
         erg["stl"] = str(exportiere_stl(t.solid, Path(args.stl)))
     return erg
