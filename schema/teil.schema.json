@@ -23,6 +23,8 @@
   },
   "$defs": {
     "wert": {"oneOf": [{"type": "number"}, {"type": "string", "pattern": "^=.+"}]},
+    "bohrungsfase": {"oneOf": [{"$ref": "#/$defs/wert"}, {"const": "nenn"}],
+                     "description": "Fase c × 45° am Bohrungseintritt (Feature <id>_fase); nenn = Ansenkung auf Gewinde-Nenn-Ø"},
     "punkt2": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 2, "maxItems": 2},
     "punkt3": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 3, "maxItems": 3},
     "richtung": {"enum": ["+x", "-x", "+y", "-y", "+z", "-z"]},
@@ -229,6 +231,7 @@
         "durchmesser": {"$ref": "#/$defs/wert"},
         "tiefe": {"$ref": "#/$defs/wert"},
         "durch": {"const": true},
+        "fase": {"$ref": "#/$defs/bohrungsfase"},
         "senkung": {
           "type": "object", "required": ["durchmesser", "tiefe"], "additionalProperties": false,
           "properties": {"durchmesser": {"$ref": "#/$defs/wert"}, "tiefe": {"$ref": "#/$defs/wert"}}
@@ -251,7 +254,8 @@
         "bezug": {"$ref": "#/$defs/bezug"},
         "durch": {"const": true},
         "tiefe": {"$ref": "#/$defs/wert"},
-        "gewindetiefe": {"$ref": "#/$defs/wert"}
+        "gewindetiefe": {"$ref": "#/$defs/wert"},
+        "fase": {"$ref": "#/$defs/bohrungsfase"}
       },
       "oneOf": [{"required": ["tiefe"]}, {"required": ["durch"]}]
     },

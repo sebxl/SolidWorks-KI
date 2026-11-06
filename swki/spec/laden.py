@@ -27,7 +27,7 @@ _POSITIV = {"breite", "hoehe", "durchmesser", "radius", "tiefe", "abstand", "lae
 _WINKEL = {"winkel"}
 _TOL_KONTUR_MM = 1e-6
 _RESERVIERT = re.compile(r"^achse_[xyz]$")  # Referenzachsen der Muster (handler/muster.py)
-_COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen")  # vom Compiler angelegte Skizzen/Features
+_COMPILER_ENDUNGEN = ("_skizze", "_senkung", "_positionen", "_fase")  # vom Compiler angelegte Skizzen/Features
 
 
 class SpecFehler(SwkiFehler):
@@ -278,6 +278,24 @@ def _schraege_anker_befunde(spec: dict) -> list[dict]:
     return befunde
 
 
+def _fase_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
+    """Feld fase an bohrung/normbohrung (Paket Konstruktionsstil): nenn nur bei Gewinde, nie an Senkschrauben, Wert > 0."""
+    if "fase" not in f:
+        return []
+    if f["typ"] == "normbohrung" and f["art"] == "senkschraube":
+        return [{"pfad": f"{pfad}.fase", "meldung": "fase nicht an senkschraube: die Senkung ist schon kegelig"}]
+    if f["fase"] == "nenn":
+        if f["typ"] != "normbohrung" or f["art"] != "gewinde":
+            return [{"pfad": f"{pfad}.fase", "meldung": "fase: nenn nur an normbohrung art gewinde (Ansenkung auf Nenn-Ø)"}]
+        return []
+    try:
+        if auswerten(f["fase"], p) <= 0:
+            return [{"pfad": f"{pfad}.fase", "meldung": "fase muss > 0 sein (Abstand c der Fase c × 45° in mm)"}]
+    except AusdruckFehler:
+        pass  # bereits als Ausdrucksfehler gemeldet
+    return []
+
+
 def _normbohrung_befunde(f: dict, pfad: str, p: dict) -> list[dict]:
     befunde = []
     norm = norm_von(f)
@@ -379,7 +397,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] =
         if _RESERVIERT.match(fid) or fid.endswith(_COMPILER_ENDUNGEN) or zusatz:
             befunde.append({"pfad": f"features[{i}].id",
                             "meldung": f"ID {fid!r} ist für vom Compiler angelegte Features reserviert "
-                                       "(achse_x|y|z, <id>_skizze, <id>_senkung, <id>_positionen, <skript-id>_<n>)"})
+                                       "(achse_x|y|z, <id>_skizze, <id>_senkung, <id>_positionen, <id>_fase, <skript-id>_<n>)"})
 
     for i, f in enumerate(features):
         for pfad, ref in _referenzen({k: v for k, v in f.items() if k != "id"}, ["features", i]):
@@ -438,6 +456,8 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] =
             befunde += _formschraege_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "normbohrung":
             befunde += _normbohrung_befunde(f, f"features[{i}]", parameter)
+        if f["typ"] in ("bohrung", "normbohrung"):
+            befunde += _fase_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "verzahnung":
             befunde += _verzahnung_befunde(f, f"features[{i}]", parameter)
         if f["typ"] == "referenz" and "umkehren" in f.get("ebene", {}) and "abstand" not in f["ebene"]:
