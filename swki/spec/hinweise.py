@@ -11,7 +11,7 @@ Feature-Baum zusammenfassen lassen.
 import json
 
 from swki.bemassung import ebene_ist_flaeche
-from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
+from swki.spec.ausdruck import AusdruckFehler, auswerten
 from swki.spec.normen import lade_tabelle
 
 MASS_FELDER = frozenset({
@@ -20,6 +20,7 @@ MASS_FELDER = frozenset({
 })
 _ANKER = frozenset({"nahe", "kanten", "flaeche"})  # Anker wählen Geometrie aus, sie sind keine Maße
 _TOL_NORM_MM = 0.01
+_MUSTER = ("muster_linear", "muster_kreis", "spiegeln")
 _NULL_MM = 1e-6  # Lage, unterhalb der eine Koordinate als 0 gilt
 _BEZUG_ELEMENTE = ("rechteck", "kreis", "langloch")  # Elemente mit Bemaßungsbezug (Schema)
 
@@ -133,38 +134,118 @@ def _iso_4762(f: dict, parameter: dict) -> str | None:
     return None
 
 
-_REGEL_3 = {
-    "muster_linear": "muster_linear mit festen Abständen: Positionen direkt angeben, außer Anzahl und Abstand sind "
-                     "Anforderungen – dann den Abstand als Parameter (Regel 3)",
-    "muster_kreis": "muster_kreis mit festem Winkel: Positionen direkt angeben, außer die Teilung ist eine Anforderung – "
-                    "dann den Winkel als Parameter; die Anzahl ist immer eine Zahl (Regel 3)",
-    "spiegeln": "spiegeln nur von Bohrungen: Positionen direkt angeben, außer die Symmetrie ist eine Anforderung "
-                "(Regel 3)",
-}
+_TEILUNG_TOL = 1e-6
+_FORM_ELEMENTE = ("rechteck", "kreis", "langloch")  # Elemente mit `mitte`, die als Form gemustert/gespiegelt werden
+_PROFIL_ELEMENTE = ("rechteck", "langloch")  # mehrere gleiche Profile einer Skizze (Kreise sind dort meist Löcher)
+
+
+def _zahl(text: float) -> str:
+    return f"{round(text, 6):g}".replace(".", ",")
+
+
+def _reihe(punkte: list[tuple[float, float]]) -> tuple[int, float, str] | None:
+    """Längste Reihe aus ≥ 3 Punkten auf einer Linie parallel zu u oder v mit gleicher Teilung: (Anzahl, Teilung, Achse)."""
+    beste = None
+    for achse in (0, 1):
+        linien: dict[float, list[float]] = {}
+        for p in punkte:
+            linien.setdefault(round(p[1 - achse], 6), []).append(p[achse])
+        for werte in linien.values():
+            werte = sorted(werte)
+            lauf = 1
+            for k in range(1, len(werte)):
+                schritt = werte[k] - werte[k - 1]
+                if schritt > _TEILUNG_TOL and (lauf == 1 or abs(schritt - (werte[k - 1] - werte[k - 2])) <= _TEILUNG_TOL):
+                    lauf += 1
+                else:
+                    lauf = 2 if schritt > _TEILUNG_TOL else 1
+                if lauf >= 3 and (beste is None or lauf > beste[0]):
+                    beste = (lauf, schritt, "uv"[achse])
+    return beste
+
+
+def _spiegelbildlich(a: tuple[float, float], b: tuple[float, float]) -> bool:
+    """Spiegelbildlich zu einer Mittelebene durch den Ursprung (u = 0 oder v = 0)."""
+    gleich = lambda x, y: abs(x - y) <= _TEILUNG_TOL  # noqa: E731
+    return ((gleich(a[0], -b[0]) and gleich(a[1], b[1]) and abs(a[0]) > _TEILUNG_TOL)
+            or (gleich(a[1], -b[1]) and gleich(a[0], b[0]) and abs(a[1]) > _TEILUNG_TOL))
+
+
+def _punkt(p, parameter: dict) -> tuple[float, float]:
+    return (auswerten(p[0], parameter), auswerten(p[1], parameter))
+
+
+def _form(f: dict) -> tuple[str, tuple] | None:
+    """Schlüssel einer Form (Feature ohne id und ohne Lage seines einzigen Elements) und die Lage des Elements."""
+    if f.get("typ") not in ("extrusion", "schnitt") or len(f["skizze"]["elemente"]) != 1:
+        return None
+    [element] = f["skizze"]["elemente"]
+    art = next((a for a in _FORM_ELEMENTE if a in element), None)
+    if art is None:
+        return None
+    ohne_lage = {**f, "id": None, "skizze": {**f["skizze"], "elemente": [{art: {**element[art], "mitte": None}}]}}
+    return json.dumps(ohne_lage, sort_keys=True, ensure_ascii=False), element[art]["mitte"]
+
+
+def muster_kandidaten(spec: dict) -> list[dict]:
+    """Regel 3 (Paket Konstruktionsstil): Lochreihen ab 3 Stück, gleiche Formen in Reihe, zwei spiegelbildliche Formen
+    und spiegelbildliche Profile einer Skizze als Hinweis art "zusammenfassen". Ausdrucksfehler meldet validieren."""
+    features = spec.get("features", [])
+    parameter = spec.get("parameter", {})
+    ergebnis = []
+    for i, f in enumerate(features):
+        try:
+            if f.get("typ") in ("bohrung", "normbohrung"):
+                if reihe := _reihe([_punkt(p, parameter) for p in f["positionen"]]):
+                    n, t, achse = reihe
+                    ergebnis.append(_hinweis([(i, f)], f"{n} Positionen in einer Reihe (Teilung {_zahl(t)} mm in {achse}): "
+                                                        "eine Position und muster_linear (Regel 3)"))
+            elif "skizze" in f and len(f["skizze"]["elemente"]) >= 2:
+                profile: dict[str, list] = {}
+                for e in f["skizze"]["elemente"]:
+                    art = next((a for a in _PROFIL_ELEMENTE if a in e), None)
+                    if art:
+                        schluessel = json.dumps({art: {**e[art], "mitte": None}}, sort_keys=True, ensure_ascii=False)
+                        profile.setdefault(schluessel, []).append(_punkt(e[art]["mitte"], parameter))
+                if any(len(m) == 2 and _spiegelbildlich(*m) for m in profile.values()):
+                    ergebnis.append(_hinweis([(i, f)], "spiegelbildliche Profile in einer Skizze: ein Profil skizzieren "
+                                                        "und spiegeln (Regel 3)"))
+        except AusdruckFehler:
+            continue
+    formen: dict[str, list[tuple[int, dict, tuple]]] = {}
+    for i, f in enumerate(features):
+        if form := _form(f):
+            formen.setdefault(form[0], []).append((i, f, form[1]))
+    for gruppe in formen.values():
+        try:
+            lagen = [_punkt(m, parameter) for _, _, m in gruppe]
+        except AusdruckFehler:
+            continue
+        eintraege = [(i, f) for i, f, _ in gruppe]
+        if len(gruppe) == 2 and _spiegelbildlich(*lagen):
+            ergebnis.append(_hinweis(eintraege, "zwei spiegelbildliche Formen: eine bauen und spiegeln (Regel 3)"))
+        elif len(gruppe) >= 3 and (reihe := _reihe(lagen)) and reihe[0] == len(gruppe):
+            ergebnis.append(_hinweis(eintraege, f"{len(gruppe)} gleiche Formen in einer Reihe (Teilung "
+                                                f"{_zahl(reihe[1])} mm in {reihe[2]}): eine bauen und muster_linear "
+                                                "(Regel 3)"))
+    return ergebnis
 
 
 def zusammenfassen(spec: dict) -> list[dict]:
-    """Spec 2c §6.2: gleiche Bohrungen (Regel 2), gleiche Kantenmaße (Regel 6), Muster/Spiegeln mit festen Zahlen
-    (Regel 3), Bohrung mit ISO-4762-Senkung (→ normbohrung, Regel 2)."""
+    """Spec 2c §6.2 und Paket Konstruktionsstil: gleiche Bohrungen (Regel 2), gleiche Kantenmaße außerhalb von
+    Musterquellen (Regel 6), Kandidaten für Muster und Spiegeln (Regel 3), Bohrung mit ISO-4762-Senkung (→ normbohrung,
+    Regel 2)."""
     features = spec.get("features", [])
     parameter = spec.get("parameter", {})
     ergebnis = [_hinweis(g, "gleiche Bohrungen auf derselben Fläche: in einen Knoten mit mehreren positionen "
                             "zusammenfassen (Regel 2)")
                 for g in _gruppen(features, ("bohrung", "normbohrung"), "positionen")]
-    ergebnis += [_hinweis(g, "gleiches Maß: Kanten in einem Knoten zusammenfassen, am Ende des Baums (Regel 6)")
-                 for g in _gruppen(features, ("fase", "verrundung"), "kanten")]
-    typ_von = {f["id"]: f["typ"] for f in features}
-    for i, f in enumerate(features):
-        if f["typ"] == "muster_linear":
-            fest = all(not ist_ausdruck(f[r]["abstand"]) for r in ("richtung1", "richtung2") if r in f)
-        elif f["typ"] == "muster_kreis":
-            fest = not ist_ausdruck(f.get("winkel", 360))
-        elif f["typ"] == "spiegeln":
-            fest = all(typ_von.get(q) in ("bohrung", "normbohrung") for q in f["features"])
-        else:
-            continue
-        if fest:
-            ergebnis.append(_hinweis([(i, f)], _REGEL_3[f["typ"]]))
+    in_quellen = {q for f in features if f.get("typ") in _MUSTER for q in f["features"]}
+    kanten = [f for f in features if f["id"] not in in_quellen]
+    ergebnis += [_hinweis([(features.index(f), f) for _, f in g],
+                          "gleiches Maß: Kanten in einem Knoten zusammenfassen (Regel 6)")
+                 for g in _gruppen(kanten, ("fase", "verrundung"), "kanten")]
+    ergebnis += muster_kandidaten(spec)
     for i, f in enumerate(features):
         if f["typ"] == "bohrung" and "senkung" in f and (groesse := _iso_4762(f, parameter)):
             ergebnis.append(_hinweis([(i, f)], f"Bohrung mit Senkung entspricht ISO 4762 {groesse}: als normbohrung "
