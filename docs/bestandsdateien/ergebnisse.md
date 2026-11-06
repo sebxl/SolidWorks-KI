@@ -449,6 +449,42 @@ Umgesetzt 2026-11-05 (Task 12 Step 3, Bericht `.superpowers/sdd/2026-11-01-besta
     `swki/bestand/bewegung_bestand.py:103–118`.
 14. **`werkzeuge/bestand_muster.py` `HUB_STATUS`:** schon korrigiert (Commit `4a96e0e`).
 
+## 3. Abnahme an lauf-30 der Prüfstation (Blindtest, live)
+
+Rechner A, SW 2025. Der Nutzer hat `AP68-Pruefstation/lauf-30` am 01.11.2026 von Hand umgebaut und seine Liste zurückgehalten. Das Tool
+hat die Handänderungen ohne diese Liste gefunden, der Nutzer bestätigte am 06.11.2026: „deine Liste passt“ (nichts übersehen, kein
+Fehlalarm genannt). `lauf-30` wurde nie in SolidWorks geöffnet und ist nach Aufnahme und Abgleich byteweise gleich
+(`lauf30-stand-vorher.json`).
+
+| Schritt | Kennzahl |
+|---|---|
+| Aufnahme (`swki bestand aufnehmen`, Auftrag `AP68-Pruefstation-Rev1`, bestand-1) | 34 Dateien, 70 Komponenten, 168 Verknüpfungen, 2 Grenzen gefahren; Fahrt 268 s, Dateien 92 s, Spitze 4827 MB |
+| Abgleich gegen Protokoll, Spec und Export mit `--referenzbau` (referenz-3) | rund 46 s; geänderte Eigenteile Anschlussplatte und Kanalträger aus der freigegebenen Spec gebaut und exakt verglichen |
+
+Gefunden (Spec → lauf-30):
+
+- **Dateien:** geändert Anschlussplatte, Kanalträger, Hauptbaugruppe; neu `Weichenzylinderhalter.SLDPRT` (kein swki-Teil); Zylinderhalter
+  nicht mehr verwendet.
+- **Anschlussplatte:** 397 → 300 mm (hinteres Ende Y 540 → 443); 4 Gewinde entfallen (Kanalträger-Flansch, Zylinderhalter), 2 neu bei Z −160.
+- **Kanalträger:** Flansch und seine 2 Bohrungen entfernt; Steg in Y 25 → 100 mm; Kanalschrauben-Bohrungen 10 → 30 mm tief, neu als
+  lineares Muster; neue Referenz im Kontext der Hauptbaugruppe.
+- **Baugruppe:** Zylinderhalter → Weichenzylinderhalter (Winkel 40 × 40 × 8, ohne Material, Eigenschaften, Bohrungen, ohne eigene
+  Verknüpfung); 2 × M5×16 und 2 × M5×12 samt 4 Verknüpfungen entfernt; 17 Verknüpfungen mit nicht zuordenbarem Partner (ohne Fehlercode);
+  neue Verknüpfung `Platziert1`; unterbestimmt ADNGF, M5×20-10/11, M4×20-3/4, Weichenzylinderhalter.
+- **Kollisionen:** M5×20-10/11 je 231 mm³ im Vollmaterial der Anschlussplatte (Gewindeeingriff sonst ~66 mm³); M4×20-3/4 je 101 mm³ im
+  Weichenzylinderhalter.
+- **Bewegungen:** beide fahren; beim Weichenhub ist die Zwischenplatte nicht mehr voll bestimmt. Übrige Lagen gleich (< 10 µm).
+
+Im Tool aufgedeckt und behoben: Der erste Abgleich brach am Kanalträger mit `BESTAND_PFAD_FREMD` ab, weil der Referenzbau für die Referenz
+im Kontext ein Dokument aus `lauf-30` geladen hätte; die Sperre hat das verhindert. Fix `281cdd1`: Bestandskopie vor dem Bau öffnen, sonst
+Lücke.
+
+Grenzen des Abgleichs: Skizzengeometrie ohne Maß und Endbedingungen nur über den Referenzbau (für beide geänderten Teile gelaufen); für ein
+neues Fremdteil gibt es kein Soll, nur die Beschreibung; `fixiert` wird nicht verglichen. Unveränderte Dateien sind über die SHA-256 belegt.
+
+Offen: neue Anforderungen des Nutzers über Skill `aendern` umsetzen (Freigabe, Prüfer); Punkte am Kanalträger weist `validieren` wegen der
+Referenz im Kontext ab. Die Abnahme an einer echten Kollegen-Baugruppe auf SW 2026 bleibt eigene, offene Abnahme.
+
 ## Offene Kleinigkeiten aus den Reviews
 
 Stand 2026-10-31, zurückgestellt, nichts davon führt zu einem falschen Bestanden. Teilweise inzwischen erledigt (Abschlusskorrekturen, siehe oben).
