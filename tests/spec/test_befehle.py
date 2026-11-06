@@ -60,7 +60,7 @@ def test_validieren_nennt_auto_werte(capsys, tmp_path):
     pfad.write_text(yaml.safe_dump(spec, allow_unicode=True), encoding="utf-8")
     code, daten = _lauf(capsys, "validieren", str(pfad))
     assert code == 0 and daten["auto"]["huellquader"] == [100, 20, 60]
-    assert daten["auto"]["volumen"].startswith("nicht berechenbar (f3: verrundung")   # Beispiel hat Verrundungen
+    assert daten["auto"]["volumen"].startswith("nicht berechenbar (f4: fase")   # Verrundung f3 ist eingerechnet, Fase nicht
 
 
 def _lagerunterteil(bohrung: dict) -> dict:

@@ -3,12 +3,14 @@
 Alle Längen in mm.
 """
 
+import copy
 import math
 from dataclasses import dataclass
 
 from swki.compiler.anker import Vektor, differenz, laenge, punkt_achse_abstand, skalar
 from swki.formschraege import schraege, volumen_feature
 from swki.spec.ausdruck import auswerten
+from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import bohrspitze_grad, norm_von, normmasse
 from swki.verzahnung import aus_feature
@@ -290,6 +292,51 @@ def _bohrungs_ueberlappung(bohrungen: list, f: dict, d: float, tiefe: float | No
 UEBER_MATERIAL = "Schnitt ragt über das Material hinaus"  # Grund von volumen_auto, den validieren als Befund meldet
 
 
+def _eckfaehig(element: dict, p: dict) -> bool:
+    """Element, dessen senkrechte Kanten eine Verrundung wie ein Skizzen-Radius rundet: Rechteck oder Polygon ohne
+    Radius; Kreis und Langloch haben keine geraden senkrechten Kanten."""
+    if "rechteck" in element:
+        return auswerten(element["rechteck"].get("radius", 0), p) == 0
+    if "polygon" in element:
+        return all(r == 0 for r in eckradien(element["polygon"], p))
+    return "kreis" in element or "langloch" in element
+
+
+def verrundungen_einrechnen(spec: dict) -> tuple[dict, set[str]]:
+    """Paket Konstruktionsstil: Knoten verrundung, deren Kanten nur `{feature, auswahl: senkrechte_kanten}` von
+    Extrusionen/Schnitten ohne Formschräge aus Rechtecken und Polygonen ohne Radius sind, wirken wie ein Skizzen-Radius
+    – Rückgabe: Kopie der Spec mit eingesetzten Radien und die IDs der eingerechneten Verrundungen."""
+    spec = copy.deepcopy(spec)
+    p = spec.get("parameter", {})
+    nach_id = {f["id"]: f for f in spec["features"]}
+    eingerechnet: set[str] = set()
+    for f in spec["features"]:
+        if f["typ"] != "verrundung":
+            continue
+        ziele = [nach_id.get(k.get("feature")) for k in f["kanten"] if k.get("auswahl") == "senkrechte_kanten"]
+        if len(ziele) != len(f["kanten"]) or any(
+                z is None or z["typ"] not in ("extrusion", "schnitt") or schraege(z) is not None
+                or not all(_eckfaehig(e, p) for e in z["skizze"]["elemente"]) for z in ziele):
+            continue
+        for z in ziele:
+            for e in z["skizze"]["elemente"]:
+                if "rechteck" in e:
+                    e["rechteck"]["radius"] = f["radius"]
+                elif "polygon" in e:
+                    e["polygon"]["radien"] = f["radius"]
+        eingerechnet.add(f["id"])
+    return spec, eingerechnet
+
+
+def _fase_mm3(f: dict, p: dict) -> float:
+    """Volumen der Fase c × 45° am Eintritt einer Bohrung (Kegelstumpf ohne Zylinder) je Position: π·c·(r·c + c²/3)."""
+    c = fase_abstand(f, p)
+    if c is None:
+        return 0.0
+    r = eintritt_radius(f, p)
+    return math.pi * c * (r * c + c * c / 3)
+
+
 def volumen_auto(spec: dict) -> tuple[float | None, str]:
     """Sollvolumen aus der Spezifikation, soweit analytisch möglich (Annahme: Schnitte liegen ganz im Material,
     Aufsätze überlappen nicht). Rückgabe (volumen, grund); volumen None = nicht berechenbar, grund sagt warum.
@@ -299,6 +346,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
     hinausragt (BTP Durchgang 1)."""
     from swki.pruefung.huellquader import schnitte_ausserhalb  # spät importiert (Kreisimport)
 
+    spec, eingerechnet = verrundungen_einrechnen(spec)
     p = spec.get("parameter", {})
     beitrag: dict[str, float] = {}
     nach_id = {f["id"]: f for f in spec["features"]}
@@ -342,7 +390,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             if "senkung" in f:
                 ds, ts = auswerten(f["senkung"]["durchmesser"], p), auswerten(f["senkung"]["tiefe"], p)
                 v += math.pi * (ds**2 - d**2) / 4 * ts
-            beitrag[f["id"]] = -v * len(f["positionen"]) + _bohrungs_ueberlappung(
+            beitrag[f["id"]] = -(v + _fase_mm3(f, p)) * len(f["positionen"]) + _bohrungs_ueberlappung(
                 bohrungen, f, d, None if f.get("durch") else t, nach_id, p)
         elif typ == "normbohrung":
             dicke = _dicke(nach_id, f["flaeche"], p) if f.get("durch") else None
@@ -352,7 +400,7 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             v = normbohrung_volumen(f["art"], masse, None if f.get("durch") else auswerten(f["tiefe"], p), dicke=dicke,
                                     spitze_grad=bohrspitze_grad())
             kern = masse.get("kernloch") or masse.get("durchgang") or masse["durchmesser"]
-            beitrag[f["id"]] = -v * len(f["positionen"]) + _bohrungs_ueberlappung(
+            beitrag[f["id"]] = -(v + _fase_mm3(f, p)) * len(f["positionen"]) + _bohrungs_ueberlappung(
                 bohrungen, f, kern, None if f.get("durch") else auswerten(f["tiefe"], p), nach_id, p)
         elif typ == "muster_linear":
             kopien = f["richtung1"]["anzahl"] * f.get("richtung2", {}).get("anzahl", 1) - 1
@@ -363,6 +411,8 @@ def volumen_auto(spec: dict) -> tuple[float | None, str]:
             beitrag[f["id"]] = sum(beitrag[q] for q in f["features"])
         elif typ == "referenz":
             beitrag[f["id"]] = 0.0  # Bezugsgeometrie hat kein Volumen
+        elif typ == "verrundung" and f["id"] in eingerechnet:
+            beitrag[f["id"]] = 0.0  # als Skizzen-Radius im Feature eingerechnet
         elif typ == "verzahnung":
             beitrag[f["id"]] = aus_feature(f, p).flaeche() * auswerten(f["breite"], p)
         else:
