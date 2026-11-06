@@ -5,7 +5,7 @@ from swki.spec.hinweise import fertigung_hinweise, hinweise
 
 PLATTE = {"id": "f1", "typ": "extrusion",
           "skizze": {"ebene": "oben", "elemente": [{"rechteck": {"mitte": [0, 0], "breite": 100, "hoehe": 60}}]},
-          "ende": {"typ": "blind", "tiefe": 10}}
+          "ende": {"typ": "blind", "tiefe": 20}}
 FLAECHE = {"feature": "f1", "flaeche": "+y"}
 
 
@@ -45,7 +45,7 @@ def test_tasche_verrundung_knoten_ok():
 
 def test_durchbruch_dicke():
     [h] = _radius(_spec(_tasche({"typ": "durch_alles"})))
-    assert "R ≥ 2" in h["meldung"]
+    assert "R ≥ 4" in h["meldung"]  # Durchbruch durch 20
 
 
 def test_bis_flaeche_still():
@@ -89,3 +89,15 @@ def test_bohrung_ohne_fase():
 def test_in_hinweise_nach_zusammenfassen():
     arten = [h["art"] for h in hinweise(_spec(_tasche({"typ": "blind", "tiefe": 15})))]
     assert "fertigung" in arten
+
+
+def test_schnitt_ueber_den_rand_still():
+    """Ein Schnitt, der über das Material hinausragt (Absatz, Seite weg), hat dort keine Innenecken – kein Hinweis."""
+    absatz = {"id": "t1", "typ": "schnitt", "skizze": {"ebene": FLAECHE, "elemente": [
+        {"rechteck": {"mitte": [45, 0], "breite": 20, "hoehe": 80}}]}, "ende": {"typ": "blind", "tiefe": 5}}
+    assert _radius(_spec(absatz)) == []
+
+
+def test_mittiger_schnitt_still():
+    """Bei `mittig` ist die Tiefe meist nicht die Frästiefe (Seitenschnitt quer zur Fräsrichtung)."""
+    assert _radius(_spec(_tasche({"typ": "mittig", "tiefe": 15}))) == []

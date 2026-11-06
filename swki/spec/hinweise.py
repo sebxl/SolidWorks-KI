@@ -260,9 +260,10 @@ _EINTRITT = {"gewinde": "fase: nenn", "stift": "fase: 0,5", "zylinderschraube": 
 
 
 def _fraestiefe(f: dict, nach_id: dict, parameter: dict) -> float | None:
-    """Frästiefe an den Ecken eines Schnitts oder Aufsatzes: Tiefe bei blind/mittig, Dicke bei durch_alles, sonst None."""
+    """Frästiefe an den Ecken eines Schnitts oder Aufsatzes: Tiefe bei blind, Dicke bei durch_alles, sonst None (mittig:
+    meist ein Seitenschnitt quer zur Fräsrichtung; bis_flaeche/versatz_von_flaeche: Tiefe hängt von der Geometrie ab)."""
     ende = f["ende"]
-    if ende["typ"] in ("blind", "mittig"):
+    if ende["typ"] == "blind":
         return auswerten(ende["tiefe"], parameter)
     if ende["typ"] == "durch_alles" and f["typ"] == "schnitt":
         from swki.pruefung.geometrie import _dicke  # spät importiert: swki.pruefung nutzt swki.spec
@@ -323,10 +324,14 @@ def _innenecken(f: dict, element: dict, ist_profil: bool, parameter: dict) -> li
 def fertigung_hinweise(spec: dict) -> list[dict]:
     """Paket Konstruktionsstil: Innenecken unter der Fräserregel R ≥ T/5 (Regel 8; Radius aus der Skizze oder aus einem
     Knoten verrundung mit senkrechte_kanten auf dem Feature) und Bohrungseintritte ohne Feld fase (Regel 6) als
-    Hinweis art "fertigung". Unbekannte Tiefe (bis_flaeche, versatz_von_flaeche) und Ausdrucksfehler: kein Hinweis."""
+    Hinweis art "fertigung". Kein Hinweis bei unbekannter Frästiefe (_fraestiefe), bei Schnitten über den Rand des
+    Materials und bei Ausdrucksfehlern; Radien aus Verrundungen mit `nahe`-Anker erkennt der Hinweis nicht."""
     features = spec.get("features", [])
     parameter = spec.get("parameter", {})
     nach_id = {f["id"]: f for f in features}
+    from swki.pruefung.huellquader import schnitte_ausserhalb  # spät importiert: swki.pruefung nutzt swki.spec
+
+    ueber_rand = set(schnitte_ausserhalb(spec))  # Absätze und Seitenschnitte: dort keine Innenecken
     ergebnis = []
     for i, f in enumerate(features):
         if f.get("typ") in ("bohrung", "normbohrung") and "fase" not in f:
@@ -335,7 +340,7 @@ def fertigung_hinweise(spec: dict) -> list[dict]:
                 ergebnis.append({"art": "fertigung", "pfad": f"features[{i}]",
                                  "meldung": f"Bohrungseintritt ohne Fase: {vorschlag} (Regel 6)"})
             continue
-        if f.get("typ") not in ("extrusion", "schnitt"):
+        if f.get("typ") not in ("extrusion", "schnitt") or f["id"] in ueber_rand:
             continue
         try:
             t = _fraestiefe(f, nach_id, parameter)
