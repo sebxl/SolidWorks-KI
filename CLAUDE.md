@@ -1,11 +1,12 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Paket Konstruktionsstil (Bohrungsfasen, Fräserradius, Spiegeln/Muster, `austragung`) – Ergebnisse:
-docs/konstruktionsstil/ergebnisse.md (davor Bestandsdateien Etappe 1, Abnahme an einer echten Kollegen-Datei offen:
+Stand: Stufe C3a (Konstruktionsstil im Schnellbau: Bohrungsfasen, Verrundung in Musterquellen, `austragung`,
+Instanzpunkte gemusterter Bohrungen) – Ergebnisse: docs/schnellbau-c3a/ergebnisse.md (davor Paket Konstruktionsstil:
+docs/konstruktionsstil/ergebnisse.md; davor Bestandsdateien Etappe 1, Abnahme an einer echten Kollegen-Datei offen:
 docs/bestandsdateien/ergebnisse.md; davor Tempo-Optimierung nach Bewertungsbogen BTP, Umbau 1–3, Score 4,9 → Mittel 7,54:
 docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
-`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe C3a (Konstruktionsstil im Schnellbau), Bestandsdateien Etappe 2 (Baugruppen), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Bestandsdateien Etappe 2 (Baugruppen), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
@@ -136,6 +137,9 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
 - Für Simulationen Geometrie nie aus Specs abschreiben, sondern über `swki.schnellbau` (Lage/Gelenke aus der
   Baugruppen-Spec, konvexe Zerlegung, Trägheit aus der B-Rep). Was der Schnellbau nicht kann (skript, Drehungen im
   Lagelöser, Kopplungen), meldet er (`SCHNELLBAU_NICHT_UNTERSTUETZT` bzw. `meldungen`) – nie still weglassen.
+- Seit C3a baut der Schnellbau auch `fase` an Bohrungen, `verrundung`/`fase` in Quellen von Muster und Spiegeln
+  (als Differenzkörper) und `austragung`; Instanzpunkte gemusterter Bohrungen und der Drehsinn des Kreismusters
+  (`BEZUGSACHSE` in `swki/spec/instanzen.py`) wie im Compiler. Specs mit `optimierung` dürfen Eckradien als `verrundung` führen.
 - SolidWorks bleibt der verbindliche Bau. Gleichheit beider Backends: `tests/schnellbau` (ohne SolidWorks, gegen
   `sw_referenz.json`) und live `-m werkzeuge.schnellbau_abgleich` nach Änderungen am Compiler oder am Schnellbau.
 
