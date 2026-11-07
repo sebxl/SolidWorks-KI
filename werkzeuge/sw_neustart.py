@@ -3,6 +3,9 @@
 Nur wenn genau eine (oder keine) Instanz läuft und keine Dokumente offen sind – fremde Dokumente werden nie
 geschlossen. Gestartet wird `SLDWORKS.exe` aus `installationsordner` (config/rechner.yaml). Danach: genau eine
 Instanz, sichtbares Fenster, Einstellungen Toggle 10 (swInputDimValOnCreate) / Integer 6 = False / 1.
+Im Hintergrund (`solidworks_hintergrund` in config/standard.yaml, Nutzer 07.11.2026): minimiert und ohne Fokus gestartet, danach
+FrameState minimiert. Live geprüft: Das Fenster bleibt beim Öffnen von Dokumenten und bei Screenshots minimiert, die Bilder werden
+gerendert.
 
 Aufruf: .venv\\Scripts\\python.exe -m werkzeuge.sw_neustart        (Ausgabe JSON, Exit 1 bei Abbruch)
 Als Funktion: from werkzeuge.sw_neustart import neustart
@@ -14,12 +17,14 @@ import subprocess
 import sys
 import time
 
-from swki.konfig import lade_rechner
+from swki.konfig import lade_rechner, lade_standard
 from swki.speicher import privat_mb
 from swki.verbindung import verbinde
 
 SW_INPUT_DIM_VAL_ON_CREATE = 10  # swUserPreferenceToggle_e (wie swki.compiler.sw)
 EINSTELLUNG_INT_6 = 6            # Skill baugruppe §4: nach dem Start 1 erwartet
+SW_SHOWMINNOACTIVE = 7           # Win32 ShowWindow: minimiert, ohne Fokus
+SW_FENSTER_MINIMIERT = 2         # swWindowState_e.swWindowMinimized (ISldWorks.FrameState)
 
 
 class NeustartFehler(RuntimeError):
@@ -61,18 +66,26 @@ def beenden(r) -> float:
     return round(time.time() - beginn, 1)
 
 
-def _starte_entkoppelt(exe) -> None:
-    """SolidWorks darf das Ende des aufrufenden Prozesses (Python, Shell des Agenten) nicht mitbekommen."""
+def _starte_entkoppelt(exe, hintergrund: bool = False) -> None:
+    """SolidWorks darf das Ende des aufrufenden Prozesses (Python, Shell des Agenten) nicht mitbekommen. `hintergrund`: minimiert
+    und ohne Fokus (der Nutzer arbeitet daneben weiter)."""
     flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    extra = {}
+    if hintergrund:
+        info = subprocess.STARTUPINFO()
+        info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        info.wShowWindow = SW_SHOWMINNOACTIVE
+        extra["startupinfo"] = info
     try:
-        subprocess.Popen([str(exe)], creationflags=flags | subprocess.CREATE_BREAKAWAY_FROM_JOB, close_fds=True)
+        subprocess.Popen([str(exe)], creationflags=flags | subprocess.CREATE_BREAKAWAY_FROM_JOB, close_fds=True, **extra)
     except OSError:   # Job ohne Breakaway-Erlaubnis
-        subprocess.Popen([str(exe)], creationflags=flags, close_fds=True)
+        subprocess.Popen([str(exe)], creationflags=flags, close_fds=True, **extra)
 
 
 def starten(r, frist_s: int = 300) -> tuple:
     """Startet SolidWorks und wartet, bis COM erreichbar und das Fenster sichtbar ist → (app, Sekunden)."""
-    _starte_entkoppelt(r.installationsordner / "SLDWORKS.exe")
+    hintergrund = bool(lade_standard().get("solidworks_hintergrund", True))
+    _starte_entkoppelt(r.installationsordner / "SLDWORKS.exe", hintergrund)
     beginn = time.time()
     while time.time() - beginn < frist_s:
         time.sleep(2)
@@ -80,6 +93,8 @@ def starten(r, frist_s: int = 300) -> tuple:
             app = verbinde(r.sw_jahr)
             if app.StartupProcessCompleted and app.Visible:   # Visible meldet direkt nach dem Start kurz False
                 time.sleep(3)
+                if hintergrund:   # das Startfenster beachtet SW_SHOWMINNOACTIVE nicht immer; ISldWorks.FrameState (Property)
+                    app.FrameState = SW_FENSTER_MINIMIERT
                 return app, round(time.time() - beginn, 1)
         except Exception:
             continue
