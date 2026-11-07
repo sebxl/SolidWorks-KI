@@ -51,7 +51,38 @@ def test_unbekannte_einbaureferenz(tmp_path):
 def test_instanz_zu_gross(tmp_path):
     spec = kopie(BAUGRUPPE)
     spec["verknuepfungen"][1]["b"]["instanz"] = 3
-    assert "hat nur 2 Positionen" in _meldungen(_befunde(tmp_path, spec))
+    assert "hat nur 2 Instanzen" in _meldungen(_befunde(tmp_path, spec))
+
+
+def _platte_mit_muster():
+    """Platte: f2 eine Gewindeposition plus Muster ×3 (Paket Konstruktionsstil) – 3 Instanzen."""
+    from tests.baugruppe.beispiel import PLATTE
+
+    platte = kopie(PLATTE)
+    f2 = next(f for f in platte["features"] if f["id"] == "f2")
+    f2["positionen"] = [["=-A/2", 0]]
+    platte["features"].append({"id": "m1", "typ": "muster_linear", "features": ["f2"],
+                               "richtung1": {"achse": "x", "abstand": "=A/2", "anzahl": 3}})
+    return platte
+
+
+def _befunde_mit(tmp_path, spec, platte):
+    pfad = schreibe(tmp_path / "A", baugruppe=spec, platte=platte)
+    quellen, _, befunde = lade_quellen(spec, pfad.parent)
+    assert befunde == []
+    return plausibel_befunde(spec, quellen)
+
+
+def test_instanz_ueber_muster_ok(tmp_path):
+    spec = kopie(BAUGRUPPE)
+    spec["verknuepfungen"][1]["b"]["instanz"] = 3
+    assert "instanz" not in _meldungen(_befunde_mit(tmp_path, spec, _platte_mit_muster()))
+
+
+def test_instanz_ueber_muster_zu_gross(tmp_path):
+    spec = kopie(BAUGRUPPE)
+    spec["verknuepfungen"][1]["b"]["instanz"] = 4
+    assert "f2 hat nur 3 Instanzen" in _meldungen(_befunde_mit(tmp_path, spec, _platte_mit_muster()))
 
 
 def test_ausrichtung_pflicht(tmp_path):

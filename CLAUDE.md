@@ -1,10 +1,11 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Bestandsdateien Etappe 1 (fremde Teile gezielt ändern, Abnahme an einer echten Kollegen-Datei offen) – Ergebnisse:
-docs/bestandsdateien/ergebnisse.md (davor Tempo-Optimierung nach Bewertungsbogen BTP, Umbau 1–3, Score 4,9 → Mittel 7,54:
+Stand: Paket Konstruktionsstil (Bohrungsfasen, Fräserradius, Spiegeln/Muster, `austragung`) – Ergebnisse:
+docs/konstruktionsstil/ergebnisse.md (davor Bestandsdateien Etappe 1, Abnahme an einer echten Kollegen-Datei offen:
+docs/bestandsdateien/ergebnisse.md; davor Tempo-Optimierung nach Bewertungsbogen BTP, Umbau 1–3, Score 4,9 → Mittel 7,54:
 docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
-`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Bestandsdateien Etappe 2 (Baugruppen), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe C3a (Konstruktionsstil im Schnellbau), Bestandsdateien Etappe 2 (Baugruppen), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
@@ -119,6 +120,14 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
   für ihr SW-Jahr; jedes andere Jahr erzeugt sie mit `-m werkzeuge.bestand_muster` im Arbeitsordner, nicht im Git.
 - Firmenrechner: SW 2026, Vollversion; Dateien von dort kann Rechner A (SW 2025, Student) nicht bearbeiten. Dort noch nicht in
   Betrieb, Ablauf: `docs/bestandsdateien/inbetriebnahme-firmenrechner.md`.
+
+## Konstruktionsstil (Paket Konstruktionsstil)
+- Feature-Baum wie vom Konstrukteur nach dem Standard des Nutzers (Bohrungsfasen, Fräserradius, Spiegeln, Muster,
+  `austragung`): Modellierregeln 3, 4, 6, 8 im Skill `konstruieren`; `validieren` meldet Abweichungen als `hinweise`
+  (`zusammenfassen`, `fertigung`), in Bestandsdateien nur `zusammenfassen`.
+- `swki pruefen` prüft Muster und Kantenmaße gegen die freigegebene Kopie (`muster`, `kanten`), Bohrbilder nach Wirkung
+  (`bohrbild`): eine Lochreihe darf beim Nachbessern zwischen `positionen` und Muster wechseln.
+- Regressions-Suite enthält die Spannplatte (`tests/referenz/stil/`); Ergebnisse: `docs/konstruktionsstil/ergebnisse.md`.
 
 ## Schnellbau und Simulation (Stufe C1)
 - Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,

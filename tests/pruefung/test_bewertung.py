@@ -73,7 +73,7 @@ def test_masspruefung_falsch_und_nicht_messbar():
 def test_volumen_nicht_berechenbar_ist_kein_mangel():
     spec = copy.deepcopy(SPEC)
     spec["features"].append({"id": "f2", "typ": "verrundung", "kanten": [{"nahe": [0, 0, 0]}], "radius": 2})
-    bericht = bewerte(spec, _messwerte(), STANDARD)
+    bericht = bewerte(spec, _messwerte(kanten={"f2": {"typ": "Fillet", "radius": 2.0, "flaechen": 1}}), STANDARD)
     volumen = next(p for p in bericht["pruefungen"] if p["id"] == "volumen")
     assert volumen["ok"] is None and "f2: verrundung" in volumen["hinweis"]
     assert bericht["bestanden"] is True
@@ -138,7 +138,7 @@ def test_normbohrung_soll_aus_freigegebener_kopie():
     nachgebessert["features"][1]["groesse"] = "M10"
     ist = IST_NB | {"groesse": normmasse("zylinderschraube", "M10")["sw_groesse"]}
     bericht = bewerte(nachgebessert, _messwerte(normbohrungen={"f2": ist}), STANDARD, freigegeben=SPEC_NB)
-    assert [m["pruefung"] for m in bericht["maengel"]] == ["normbohrungen"]
+    assert [m["pruefung"] for m in bericht["maengel"]] == ["normbohrungen", "bohrbild"]  # M10 statt M8 auch im Bohrbild
 
 
 def test_normbohrung_tiefen():

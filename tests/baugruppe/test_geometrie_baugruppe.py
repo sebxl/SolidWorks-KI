@@ -52,3 +52,28 @@ def test_ueberlappung_nur_fase():
 
 def test_ueberlappung_ohne_eingriff():
     assert ueberlappung_soll(8, 1.25, 6.8, 0.0) == 0.0 and ueberlappung_soll(8, 1.25, 6.8, -2.0) == 0.0
+
+
+def _numerisch_angesenkt(d, p, kernloch, laenge, c, schritte=200000):
+    """Wie _numerisch, die Bohrung hat am Eintritt eine Ansenkung c × 45° (Radius rk + c am Eintritt); x ab Eintritt."""
+    rn, rk, h = d / 2, kernloch / 2, laenge / schritte
+    summe = 0.0
+    for k in range(schritte):
+        x = (k + 0.5) * h
+        s = laenge - x
+        r = rn - p + s if s < p else rn
+        rh = rk + max(c - x, 0.0)
+        summe += math.pi * max(r * r - rh * rh, 0.0) * h
+    return summe
+
+
+@pytest.mark.parametrize(("laenge", "c"), [(12.0, 0.6), (1.5, 0.6), (0.4, 0.6), (12.0, 0.9)])
+def test_ueberlappung_mit_ansenkung(laenge, c):
+    soll = _numerisch_angesenkt(8, 1.25, 6.8, laenge, c)
+    assert ueberlappung_soll(8, 1.25, 6.8, laenge, ansenkung=c) == pytest.approx(soll, rel=1e-5, abs=1e-6)
+
+
+def test_ansenkung_m8_geschlossen():
+    ohne = ueberlappung_soll(8, 1.25, 6.8, 12.0)
+    assert ohne - ueberlappung_soll(8, 1.25, 6.8, 12.0, ansenkung=0.6) == pytest.approx(
+        math.pi * 0.6 * (3.4 * 0.6 + 0.6 ** 2 / 3))

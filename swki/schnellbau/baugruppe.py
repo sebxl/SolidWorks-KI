@@ -96,6 +96,7 @@ class Baugruppe:
                 tspec = dict(tspec, features=[f for f in tspec["features"] if f["id"] not in ohne[datei]])
             teil = Schnellbau(tspec, (parameter or {}).get(datei), bohrungen=bohrungen).baue()
             self.komp[k["id"]] = Komponente(k["id"], datei, teil)
+            self.meldungen += [f"{k['id']}: {m}" for m in teil.meldungen]
         self.komp[self.fix].t = [0.0, 0.0, 0.0]
         self.nicht_gebaut = [k["id"] for k in spec["komponenten"] if k["id"] not in self.komp]
         self.gelenke: list[Gelenk] = []

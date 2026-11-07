@@ -44,11 +44,32 @@ def einschraublaenge(laenge_schraube: float, kopfauflage: Messgeometrie, eintrit
     return laenge_schraube - abs(skalar(differenz(eintritt.punkt, kopfauflage.punkt), kopfauflage.richtung))
 
 
-def ueberlappung_soll(d: float, p: float, kernloch: float, einschraub: float) -> float:
+def _ansenkung_abzug(d: float, p: float, kernloch: float, einschraub: float, c: float) -> float:
+    """Überlappung, die eine Ansenkung c × 45° am Eintritt wegnimmt (mm³). Geschlossen π·c·(rk·c + c²/3), wenn die
+    Ansenkung im vollen Schaft liegt und nicht über den Nenn-Ø reicht; sonst numerisch (Mittelpunktsumme)."""
+    rn, rk = d / 2, kernloch / 2
+    if einschraub >= c + p and rk + c <= rn + 1e-9:
+        return math.pi * c * (rk * c + c * c / 3)
+    schritte = 20000
+    h = min(c, einschraub) / schritte
+    abzug = 0.0
+    for k in range(schritte):
+        x = (k + 0.5) * h  # Abstand vom Eintritt
+        s = einschraub - x  # Abstand von der Schraubenspitze
+        r = rn - p + s if s < p else rn
+        rh = rk + c - x
+        abzug += math.pi * (max(r * r - rk * rk, 0.0) - max(r * r - rh * rh, 0.0)) * h
+    return abzug
+
+
+def ueberlappung_soll(d: float, p: float, kernloch: float, einschraub: float, ansenkung: float = 0.0) -> float:
     """Soll-Überlappung Schraube (Nenn-Ø d, Endfase p × 45°) ↔ Kernloch (mm³): Ring Nenn-Ø/Kernloch-Ø über die
-    Einschraublänge; im Fasenbereich nur der Teil, der über das Kernloch ragt."""
+    Einschraublänge; im Fasenbereich nur der Teil, der über das Kernloch ragt; eine Ansenkung c × 45° am Eintritt der
+    Bohrung (Feld fase, Paket Konstruktionsstil) nimmt ihren Teil weg."""
     if einschraub <= 0:
         return 0.0
+    if ansenkung > 0:
+        return ueberlappung_soll(d, p, kernloch, einschraub) - _ansenkung_abzug(d, p, kernloch, einschraub, ansenkung)
     rn, rk = d / 2, kernloch / 2
     a = rn - p  # Radius an der Spitze
     v = 0.0

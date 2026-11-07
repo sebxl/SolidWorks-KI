@@ -60,9 +60,13 @@ def _eindeutig(app, edges) -> list:
     return eindeutig
 
 
+def kanten_roh(app, feature) -> list:
+    """IEdge der Flächen eines Features, jede Kante einmal."""
+    return _eindeutig(app, [e for f in (feature.GetFaces or ()) for e in (f.GetEdges or ())])
+
+
 def kanten(app, feature) -> list[Kante]:
-    edges = [e for f in (feature.GetFaces or ()) for e in (f.GetEdges or ())]
-    return [kante_aus(e) for e in _eindeutig(app, edges)]
+    return [kante_aus(e) for e in kanten_roh(app, feature)]
 
 
 def koerper(model) -> list:

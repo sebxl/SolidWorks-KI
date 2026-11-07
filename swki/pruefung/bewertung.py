@@ -1,5 +1,6 @@
 """Bewertung der Messwerte gegen die Spezifikation (ohne SolidWorks) → Prüfungen und Mängel mit Knoten-IDs."""
 
+import json
 from dataclasses import dataclass, field
 
 from swki.compiler.eigenschaften import gleichungen_an, material_passt
@@ -7,6 +8,8 @@ from swki.formschraege import schraege, soll_vorzeichen
 from swki.pruefung.geometrie import Messgeometrie, NichtMessbar, abstand, volumen_auto
 from swki.pruefung.huellquader import huellquader_auto
 from swki.spec.ausdruck import auswerten
+from swki.spec.bohrungsfase import fase_abstand
+from swki.spec.instanzen import MUSTER, anzahl_instanzen, traeger
 from swki.spec.normen import (
     SW_BEFESTIGUNG, SW_BEFESTIGUNG_STIFT_DURCH, SW_END_BLIND, SW_END_DURCH_ALLES, SW_LOCH_DURCH, SW_NORM, groesse_text,
     norm_von, normmasse,
@@ -36,6 +39,8 @@ class Messwerte:
     verzahnungen: dict[str, dict | str] = field(default_factory=dict)  # ID → Messwerte der Verzahnung oder Fehlertext
     formschraegen: dict[str, dict | str] = field(default_factory=dict)  # ID → {"flaechen": [...]} oder Fehlertext
     gleichungen: int = 0  # Anzahl Gleichungen und globale Variablen (EquationMgr.GetCount)
+    muster: dict[str, dict | str] = field(default_factory=dict)  # ID → Definition (Anzahl, Abstand, Quellen) oder Fehlertext
+    kanten: dict[str, dict | str] = field(default_factory=dict)  # Feature-Name → Kantenmaß und Flächenzahl oder Fehlertext
 
 
 def messpunkt_schluessel(messpunkt: dict) -> str:
@@ -92,6 +97,226 @@ def normbohrung_abweichungen(f: dict, ist: dict, parameter: dict) -> list[str]:
             if abs(ist.get(feld, 0.0) - wert) > _TOL_TIEFE:
                 abweichungen.append(f"{feld}: ist {ist.get(feld, 0.0):g} statt {wert:g}")
     return abweichungen
+
+
+_TOL_KANTE_MM, _TOL_KANTE_GRAD = 0.001, 0.01
+_HILFSFEATURES = ("_senkung", "_fase")  # vom Compiler angelegte Teilfeatures einer Bohrung, Quellen eines Musters
+
+
+def _richtungen(f: dict) -> list[tuple[int, dict]]:
+    return [(i, f[r]) for i, r in ((1, "richtung1"), (2, "richtung2")) if r in f]
+
+
+def muster_abweichungen(f_aktuell: dict | None, f_kopie: dict | None, ist: dict | str | None, p: dict,
+                        bohrungen: frozenset[str] = frozenset()) -> list[str]:
+    """Paket Konstruktionsstil: Muster/Spiegeln wie in der aktuellen Spec gebaut (Anzahl, Abstand bzw. Winkel, Quellen
+    aus der Feature-Definition, Spike S20 f) und – für Muster mit einer Form unter den Quellen – gegen die freigegebene
+    Kopie. Bohrungen (`bohrungen`: IDs von Bohrungen und reinen Bohrungsmustern) dürfen dabei aus den Quellen wandern;
+    reine Bohrungsmuster sind Bauweg, ihre Wirkung prüft bohrbild_abweichungen."""
+    if f_aktuell is None:
+        return ["Muster der Freigabe fehlt"]
+    if not isinstance(ist, dict):
+        return [ist or f"Feature {f_aktuell['id']} fehlt im Teil"]
+    fehler = []
+    if f_aktuell["typ"] == "muster_linear":
+        for i, r in _richtungen(f_aktuell):
+            if ist.get(f"n{i}") != r["anzahl"]:
+                fehler.append(f"anzahl Richtung {i}: ist {ist.get(f'n{i}')} statt {r['anzahl']}")
+            if abs(ist.get(f"a{i}", 0.0) - auswerten(r["abstand"], p)) > _TOL_KANTE_MM:
+                fehler.append(f"abstand Richtung {i}: ist {ist.get(f'a{i}'):g} statt {auswerten(r['abstand'], p):g}")
+    elif f_aktuell["typ"] == "muster_kreis":
+        soll_w = auswerten(f_aktuell.get("winkel", 360), p)
+        if ist.get("n") != f_aktuell["anzahl"]:
+            fehler.append(f"anzahl: ist {ist.get('n')} statt {f_aktuell['anzahl']}")
+        if abs(ist.get("winkel", 0.0) - soll_w) > _TOL_KANTE_GRAD:
+            fehler.append(f"winkel: ist {ist.get('winkel'):g} statt {soll_w:g}")
+    quellen = sorted(q for q in ist.get("quellen", []) if not q.endswith(_HILFSFEATURES))
+    if quellen != sorted(f_aktuell["features"]):
+        fehler.append(f"Quellen: ist {quellen} statt {sorted(f_aktuell['features'])}")
+    if f_kopie is not None:
+        fehler += _gegen_kopie(f_aktuell, f_kopie, p, bohrungen)
+    return fehler
+
+
+def _gegen_kopie(f: dict, k: dict, p: dict, bohrungen: frozenset[str]) -> list[str]:
+    if f["typ"] != k["typ"]:
+        return [f"typ {f['typ']} statt {k['typ']} laut Freigabe"]
+    fehler = []
+    formen, formen_soll = (sorted(q for q in x["features"] if q not in bohrungen) for x in (f, k))
+    if formen != formen_soll:
+        fehler.append(f"Quellen {formen} statt {formen_soll} laut Freigabe (ohne Bohrungen)")
+    if f["typ"] == "muster_linear":
+        soll = dict(_richtungen(k))
+        if len(soll) != len(_richtungen(f)):
+            fehler.append("Zahl der Richtungen weicht von der Freigabe ab")
+        for i, r in _richtungen(f):
+            if i not in soll:
+                continue
+            if r["anzahl"] != soll[i]["anzahl"]:
+                fehler.append(f"anzahl Richtung {i}: {r['anzahl']} statt {soll[i]['anzahl']} laut Freigabe")
+            a, a_soll = auswerten(r["abstand"], p), auswerten(soll[i]["abstand"], p)
+            if abs(a - a_soll) > _TOL_KANTE_MM:
+                fehler.append(f"abstand Richtung {i}: {a:g} statt {a_soll:g} laut Freigabe")
+            if (r["achse"], bool(r.get("umkehren"))) != (soll[i]["achse"], bool(soll[i].get("umkehren"))):
+                fehler.append(f"Richtung {i}: Achse oder Umkehrung weicht von der Freigabe ab")
+    elif f["typ"] == "muster_kreis":
+        w, w_soll = auswerten(f.get("winkel", 360), p), auswerten(k.get("winkel", 360), p)
+        if (f["anzahl"], f["achse"]) != (k["anzahl"], k["achse"]) or abs(w - w_soll) > _TOL_KANTE_GRAD:
+            fehler.append("anzahl, achse oder winkel weicht von der Freigabe ab")
+    elif f["ebene"] != k["ebene"]:
+        fehler.append(f"Spiegelebene {f['ebene']} statt {k['ebene']} laut Freigabe")
+    return fehler
+
+
+def kanten_abweichungen(f_kopie: dict, ist: dict | str | None, p: dict) -> list[str]:
+    """Paket Konstruktionsstil: Verrundungsradius bzw. Fasenmaß aus der Feature-Definition gegen die freigegebene Kopie
+    (Knoten verrundung/fase oder Feld fase einer Bohrung → Feature <id>_fase)."""
+    if not isinstance(ist, dict):
+        return [ist or "fehlt im Teil"]
+    if f_kopie["typ"] == "verrundung":
+        soll = {"radius": (auswerten(f_kopie["radius"], p), _TOL_KANTE_MM)}
+    elif f_kopie["typ"] == "fase":
+        soll = {"abstand": (auswerten(f_kopie["abstand"], p), _TOL_KANTE_MM),
+                "winkel": (auswerten(f_kopie.get("winkel", 45), p), _TOL_KANTE_GRAD)}
+    else:
+        soll = {"abstand": (fase_abstand(f_kopie, p), _TOL_KANTE_MM), "winkel": (45.0, _TOL_KANTE_GRAD)}
+    fehler = []
+    for name, (wert, tol) in soll.items():
+        if ist.get(name) is None or abs(ist[name] - wert) > tol:
+            fehler.append(f"{name}: ist {ist.get(name)} statt {round(wert, 6):g}" if ist.get(name) is None
+                          else f"{name}: ist {ist[name]:g} statt {round(wert, 6):g}")
+    if not ist.get("flaechen"):
+        fehler.append("keine Fläche")
+    return fehler
+
+
+def kanten_soll(spec: dict) -> dict[str, dict]:
+    """Feature-Name → Knoten der Spec, deren Kantenmaß `swki pruefen` misst."""
+    aus = {}
+    for f in spec["features"]:
+        if f["typ"] in ("fase", "verrundung"):
+            aus[f["id"]] = f
+        elif f["typ"] in ("bohrung", "normbohrung") and "fase" in f:
+            aus[f"{f['id']}_fase"] = f
+    return aus
+
+
+def _bohrbild_schluessel(f: dict, p: dict) -> str:
+    ende = "durch" if f.get("durch") else f"Tiefe {auswerten(f['tiefe'], p):g}"
+    if f["typ"] == "normbohrung":
+        gewinde = f"/{auswerten(f['gewindetiefe'], p):g}" if "gewindetiefe" in f else ""
+        norm = "" if norm_von(f) == "ISO" else f" {norm_von(f)}"
+        return f"{f['art']} {groesse_text(f['groesse'])}{norm} {ende}{gewinde}"
+    senkung = ""
+    if "senkung" in f:
+        senkung = f" Senkung {auswerten(f['senkung']['durchmesser'], p):g}x{auswerten(f['senkung']['tiefe'], p):g}"
+    return f"bohrung Ø{auswerten(f['durchmesser'], p):g} {ende}{senkung}"
+
+
+def bohrbild(spec: dict) -> dict[str, int]:
+    """Instanzen (Positionen und Musterkopien) je Bohrungsart, -größe und -tiefe."""
+    p = spec.get("parameter", {})
+    aus: dict[str, int] = {}
+    for f in spec["features"]:
+        if f["typ"] in ("bohrung", "normbohrung"):
+            k = _bohrbild_schluessel(f, p)
+            aus[k] = aus.get(k, 0) + anzahl_instanzen(spec, f["id"])
+    return aus
+
+
+# Skizzenachse (0 = u, 1 = v) und Vorzeichen je Modellachse einer Fläche mit dieser Normalenachse (wie
+# swki.compiler.skizze.modellpunkt): oben X = u, Z = −v · vorne X = u, Y = v · rechts Z = −u, Y = v
+_UV_DER_ACHSE = {"y": {"x": (0, 1), "z": (1, -1)}, "z": {"x": (0, 1), "y": (1, 1)}, "x": {"z": (0, -1), "y": (1, 1)}}
+_NORMALE_DER_EBENE = {"vorne": "z", "oben": "y", "rechts": "x"}
+
+
+class _NichtBerechenbar(Exception):
+    pass
+
+
+def _uv_kopien(m: dict, punkte: list[tuple[float, float]], normale: str, p: dict) -> list[tuple[float, float]]:
+    """Kopien der (u, v)-Lagen einer Bohrung auf einer achsparallelen Fläche durch ein Muster bzw. eine Spiegelung."""
+    abbildung = _UV_DER_ACHSE[normale]
+    if m["typ"] == "muster_linear":
+        schritte = []
+        for _, r in _richtungen(m):
+            if r["achse"] not in abbildung:
+                raise _NichtBerechenbar(f"{m['id']}: Richtung quer zur Bohrungsfläche")
+            i, s = abbildung[r["achse"]]
+            d = auswerten(r["abstand"], p) * (-1 if r.get("umkehren") else 1) * s
+            schritte.append((r["anzahl"], (d, 0.0) if i == 0 else (0.0, d)))
+        (n1, s1), (n2, s2) = schritte[0], (schritte[1] if len(schritte) > 1 else (1, (0.0, 0.0)))
+        return [(u + k1 * s1[0] + k2 * s2[0], v + k1 * s1[1] + k2 * s2[1])
+                for k1 in range(n1) for k2 in range(n2) if (k1, k2) != (0, 0) for u, v in punkte]
+    if m["typ"] == "spiegeln" and (isinstance(m["ebene"], str) or "versatz" in m["ebene"]):
+        basis = m["ebene"] if isinstance(m["ebene"], str) else m["ebene"]["versatz"]["ebene"]
+        lage = 0.0 if isinstance(m["ebene"], str) else auswerten(m["ebene"]["versatz"]["abstand"], p)
+        achse = _NORMALE_DER_EBENE[basis]
+        if achse not in abbildung:
+            raise _NichtBerechenbar(f"{m['id']}: Spiegelebene parallel zur Bohrungsfläche")
+        i, s = abbildung[achse]
+        return [tuple(2 * s * lage - c if k == i else c for k, c in enumerate(uv)) for uv in punkte]
+    raise _NichtBerechenbar(f"{m['id']}: {m['typ']} (Lage der Kopien nur im Modell)")
+
+
+def bohrbild_lagen(spec: dict) -> dict[str, list] | None:
+    """Instanzlagen je Bohrungsart, -größe und -tiefe: (Fläche, u, v) aller Positionen und Musterkopien, sortiert.
+    None, wenn eine Lage ohne Geometrie nicht berechenbar ist (Kreismuster, Anker nahe, Spiegeln an einer Fläche)."""
+    p = spec.get("parameter", {})
+    nach_id = {f["id"]: f for f in spec["features"]}
+    aus: dict[str, list] = {}
+    try:
+        for f in spec["features"]:
+            if f["typ"] not in ("bohrung", "normbohrung"):
+                continue
+            fl = f["flaeche"]
+            if "feature" not in fl or "flaeche" not in fl:
+                raise _NichtBerechenbar(f"{f['id']}: Fläche über nahe")
+            normale = fl["flaeche"][-1]
+            eigene = [(auswerten(u, p), auswerten(v, p)) for u, v in f["positionen"]]
+            kopien: dict[str, list] = {}
+            for t in traeger(spec, f["id"]):
+                m = nach_id[t]
+                quellen = (eigene if f["id"] in m["features"] else []) + [
+                    uv for q in m["features"] for uv in kopien.get(q, [])]
+                kopien[t] = _uv_kopien(m, quellen, normale, p)
+            schluessel = _bohrbild_schluessel(f, p)
+            fl_text = json.dumps(fl, sort_keys=True)
+            aus.setdefault(schluessel, []).extend(
+                (fl_text, round(u, 6) + 0.0, round(v, 6) + 0.0) for u, v in eigene + [uv for k in kopien.values() for uv in k])
+    except _NichtBerechenbar:
+        return None
+    return {k: sorted(v) for k, v in aus.items()}
+
+
+def bohrbild_abweichungen(kopie: dict, aktuell: dict) -> list[str]:
+    """Paket Konstruktionsstil, Design §6: Bohrbilder nach Wirkung – je Art, Größe und Tiefe dieselben Instanzlagen
+    wie in der freigegebenen Kopie (Fläche und (u, v)), gleich ob als Positionen oder als Muster gebaut. Ist eine Lage
+    ohne Geometrie nicht berechenbar, vergleicht die Prüfung nur die Anzahl."""
+    soll, ist = bohrbild(kopie), bohrbild(aktuell)
+    fehler = [f"{k}: {ist.get(k, 0)} Instanzen statt {n} laut Freigabe" for k, n in soll.items() if ist.get(k, 0) != n]
+    fehler += [f"{k}: {n} Instanzen, nicht in der Freigabe" for k, n in ist.items() if k not in soll]
+    if fehler:
+        return fehler
+    lagen_soll, lagen_ist = bohrbild_lagen(kopie), bohrbild_lagen(aktuell)
+    if lagen_soll is None or lagen_ist is None:
+        return []
+    return [f"{k}: Lagen weichen von der Freigabe ab" for k in lagen_soll if lagen_soll[k] != lagen_ist.get(k)]
+
+
+def bohrungsquellen(spec: dict) -> frozenset[str]:
+    """IDs der Bohrungen und der Muster/Spiegelungen, deren Quellen nur Bohrungen (oder solche Muster) sind."""
+    ids = {f["id"] for f in spec["features"] if f["typ"] in ("bohrung", "normbohrung")}
+    for f in spec["features"]:
+        if f["typ"] in MUSTER and all(q in ids for q in f["features"]):
+            ids.add(f["id"])
+    return frozenset(ids)
+
+
+def _formmuster(spec: dict) -> list[dict]:
+    """Muster und Spiegelungen mit mindestens einer Form (keine Bohrung) unter den Quellen."""
+    nur_bohrungen = bohrungsquellen(spec)
+    return [f for f in spec["features"] if f["typ"] in MUSTER and f["id"] not in nur_bohrungen]
 
 
 def verzahnung_abweichungen(f: dict, ist: dict, parameter: dict, tol_mm: float) -> list[str]:
@@ -173,17 +398,44 @@ def bewerte(spec: dict, m: Messwerte, standard: dict, freigegeben: dict | None =
     ergebnisse.append(eintrag("skizzen", not offen, ist=offen, knoten=sorted({_knoten_aus(n, ids) for n in offen})))
 
     soll_spec = freigegeben or spec
+    aktuell_nach_id = {f["id"]: f for f in spec["features"]}
     soll_normbohrungen = [f for f in soll_spec["features"] if f["typ"] == "normbohrung"]
     if soll_normbohrungen:
         p_soll = soll_spec.get("parameter", {})
         abweichend = {}
         for f in soll_normbohrungen:
             ist = m.normbohrungen.get(f["id"])
+            jetzt = aktuell_nach_id.get(f["id"])
+            if jetzt is not None and jetzt["typ"] == "normbohrung":
+                f = {**f, "positionen": jetzt["positionen"]}  # Positionen sind Bauweg; ihre Wirkung prüft bohrbild
             if not isinstance(ist, dict):
                 abweichend[f["id"]] = [ist or f"Feature {f['id']} fehlt im Teil"]
             elif fehler := normbohrung_abweichungen(f, ist, p_soll):
                 abweichend[f["id"]] = fehler
         ergebnisse.append(eintrag("normbohrungen", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+
+    aktuell = {f["id"]: f for f in spec["features"]}
+    kopie_form = {f["id"]: f for f in _formmuster(soll_spec)} if freigegeben is not None else {}
+    muster_ids = [f["id"] for f in spec["features"] if f["typ"] in MUSTER] + [i for i in kopie_form if i not in aktuell]
+    if muster_ids:
+        abweichend = {}
+        bohrungen = bohrungsquellen(soll_spec) | bohrungsquellen(spec)
+        for mid in muster_ids:
+            if fehler := muster_abweichungen(aktuell.get(mid), kopie_form.get(mid), m.muster.get(mid), p, bohrungen):
+                abweichend[mid] = fehler
+        ergebnisse.append(eintrag("muster", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+
+    if soll_kanten := kanten_soll(soll_spec):
+        p_soll = soll_spec.get("parameter", {})
+        abweichend = {}
+        for name, f in soll_kanten.items():
+            if fehler := kanten_abweichungen(f, m.kanten.get(name), p_soll):
+                abweichend[f["id"]] = fehler
+        ergebnisse.append(eintrag("kanten", not abweichend, ist=abweichend, knoten=sorted(abweichend)))
+
+    if any(f["typ"] in ("bohrung", "normbohrung") for f in [*soll_spec["features"], *spec["features"]]):
+        fehler = bohrbild_abweichungen(soll_spec, spec)
+        ergebnisse.append(eintrag("bohrbild", not fehler, ist=fehler, knoten=[]))
 
     soll_verzahnungen = [f for f in soll_spec["features"] if f["typ"] == "verzahnung"]
     if soll_verzahnungen:

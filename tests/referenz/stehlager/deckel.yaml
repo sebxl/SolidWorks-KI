@@ -1,5 +1,5 @@
 # Referenz Stehlager (Spec 3b): Lagerdeckel. Unterseite (Trennebene) y = 0, Oberseite y = HD, Halbschale um die
-# Lagerachse in y = 0. Senkungen für ISO 4762 M8 vor der Halbschale.
+# Lagerachse in y = 0. Senkungen für ISO 4762 M8 vor der Halbschale, Fase 0,5 am Senkungsrand (Konstruktionsstil).
 art: teil
 name: Lagerdeckel
 material: "1.0038"
@@ -11,7 +11,7 @@ features:
     skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=LK", hoehe: "=TK"}}]}
     ende: {typ: blind, tiefe: "=HD"}
   - {id: f2, typ: normbohrung, art: zylinderschraube, groesse: M8, flaeche: {feature: f1, flaeche: "+y"},
-     positionen: [["=-AB/2", 0], ["=AB/2", 0]], durch: true}
+     positionen: [["=-AB/2", 0], ["=AB/2", 0]], durch: true, fase: 0.5}
   - id: f3
     typ: schnitt
     skizze: {ebene: vorne, elemente: [{kreis: {mitte: [0, 0], durchmesser: "=DB"}}]}

@@ -1,0 +1,55 @@
+# Referenz Paket Konstruktionsstil: Spannplatte im Stil des Nutzers (Regeln 3, 4, 6, 8 im Skill konstruieren).
+# Ursprung Mitte Unterseite, Oberseite y = H; Skizzen auf der Oberseite: X = u, Z = −v.
+# Ansicht oben: 200 × 120 Platte → L, B; Dicke 20 → H; Taschen 50 × 30 × 12 bei ±55 → TL, TB, TT, TX; R 4 → RT;
+#   M6 Reihe 5 × Teilung 30, erste 40 vom linken Rand → TG (u = −2·TG), 20 vom hinteren Rand → GR;
+#   M6 12 tief, Gewinde 10 → GT, GW; Stifte Ø 8 15 tief, Abstand 150, 20 vom vorderen Rand → ST, A, SR;
+#   Nut 6 × 4 → NB, NT; Nut 27 vor der Mitte → ZN;
+#   Nut gerade bis 10 links der Mitte → XN, Bogen R 20 → RN (= 2·XN, Bogenende 10 rechts der Mitte).
+# Freigabe der Referenz: Nutzer 06.11.2026 (Design Konstruktionsstil, nur Referenzteile).
+art: teil
+name: Spannplatte
+material: "1.0503"
+eigenschaften: {Benennung: Spannplatte}
+parameter: {L: 200, B: 120, H: 20, TL: 50, TB: 30, TT: 12, TX: 55, RT: 4, TG: 30, GR: 20, A: 150, SR: 20,
+            NB: 6, NT: 4, ZN: 27, XN: 10, RN: 20, GT: 12, GW: 10, ST: 15}
+features:
+  - id: f1            # Flachmaterial
+    typ: extrusion
+    skizze: {ebene: oben, elemente: [{rechteck: {mitte: [0, 0], breite: "=L", hoehe: "=B", bezug: {u: mitte, v: mitte}}}]}
+    ende: {typ: blind, tiefe: "=H"}
+  - id: t1            # linke Aufnahmetasche; die rechte entsteht durch s1
+    typ: schnitt
+    skizze:
+      ebene: {feature: f1, flaeche: "+y"}
+      elemente: [{rechteck: {mitte: ["=-TX", 0], breite: "=TL", hoehe: "=TB", bezug: {u: "-rand", v: mitte}}}]
+    ende: {typ: blind, tiefe: "=TT"}
+  - {id: r1, typ: verrundung, kanten: [{feature: t1, auswahl: senkrechte_kanten}], radius: "=RT"}   # R ≥ TT/5
+  - {id: s1, typ: spiegeln, features: [t1, r1], ebene: rechts}
+  - {id: g1, typ: normbohrung, art: gewinde, groesse: M6, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-2*TG", "=B/2-GR"]], tiefe: "=GT", gewindetiefe: "=GW", fase: nenn, bezug: {u: "-rand", v: "+rand"}}
+  - {id: m1, typ: muster_linear, features: [g1], richtung1: {achse: x, abstand: "=TG", anzahl: 5}}
+  - {id: st, typ: normbohrung, art: stift, groesse: 8, flaeche: {feature: f1, flaeche: "+y"},
+     positionen: [["=-A/2", "=-B/2+SR"], ["=A/2", "=-B/2+SR"]], tiefe: "=ST", fase: 0.5, bezug: {u: mitte, v: "-rand"}}
+  - id: k1            # Kabelnut, oben offen, läuft an beiden Rändern aus
+    typ: austragung
+    schnitt: true
+    profil:
+      ebene: {versatz: {ebene: rechts, abstand: "=-L/2"}}
+      elemente: [{rechteck: {mitte: ["=-ZN", "=H-NT/2"], breite: "=NB", hoehe: "=NT"}}]
+    pfad:
+      ebene: {versatz: {ebene: oben, abstand: "=H-NT/2"}}
+      start: ["=-L/2", "=-ZN"]
+      segmente:
+        - {linie: ["=-XN", "=-ZN"]}
+        - {bogen: ["=XN", "=-ZN-RN"], mitte: ["=-XN", "=-ZN-RN"], uhrzeigersinn: true}
+        - {linie: ["=XN", "=-B/2"]}
+pruefung:
+  huellquader: auto
+  volumen: {soll: auto}
+  masse_pruefen:
+    - {was: Reihe M6 erste bis letzte, von: {feature: g1, instanz: 1, achse: true}, zu: {feature: g1, instanz: 5, achse: true},
+       soll: "=4*TG"}
+    - {was: Erstes Gewinde zum linken Rand, von: {feature: f1, flaeche: "-x"}, zu: {feature: g1, instanz: 1, achse: true},
+       soll: "=L/2-2*TG"}
+    - {was: Stiftabstand, von: {feature: st, instanz: 1, achse: true}, zu: {feature: st, instanz: 2, achse: true}, soll: "=A"}
+    - {was: Taschentiefe, von: {feature: t1, flaeche: "+y"}, zu: {feature: f1, flaeche: "+y"}, soll: "=TT"}

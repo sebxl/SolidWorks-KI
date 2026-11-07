@@ -43,7 +43,8 @@ def test_gleiche_kantenmasse_zusammenfassen():
     assert all("Regel 6" in h["meldung"] for h in ergebnis)
 
 
-def test_muster_und_spiegeln_mit_festen_zahlen():
+def test_muster_und_spiegeln_mit_festen_zahlen_ohne_hinweis():
+    """Paket Konstruktionsstil: Regel 3 rät nicht mehr von Muster und Spiegeln ab."""
     klotz = {"id": "f2", "typ": "extrusion", "skizze": {"ebene": "oben", "elemente": [
         {"kreis": {"mitte": [0, 0], "durchmesser": 5}}]}, "ende": {"typ": "blind", "tiefe": 5}}
     spec = {"features": [
@@ -54,9 +55,7 @@ def test_muster_und_spiegeln_mit_festen_zahlen():
         {"id": "f6", "typ": "spiegeln", "features": ["f1"], "ebene": "vorne"},
         {"id": "f7", "typ": "spiegeln", "features": ["f2"], "ebene": "vorne"},
     ]}
-    ergebnis = zusammenfassen(spec)
-    assert [h["knoten"] for h in ergebnis] == [["f3"], ["f5"], ["f6"]]
-    assert all("Regel 3" in h["meldung"] for h in ergebnis)
+    assert zusammenfassen(spec) == []
 
 
 def test_senkung_wie_iso_4762():
@@ -71,7 +70,7 @@ def test_hinweise_erst_feste_zahlen_dann_zusammenfassen():
     alle = hinweise(GUELTIG)
     fest = feste_masse(GUELTIG)
     assert alle[: len(fest)] == fest
-    assert [h["knoten"] for h in alle[len(fest):] if h["art"] == "zusammenfassen"] == [["f5"]]  # muster_linear, Abstand 20
+    assert [h["knoten"] for h in alle[len(fest):] if h["art"] == "zusammenfassen"] == []
 
 
 def test_feste_masse_im_beispiel():
@@ -150,13 +149,6 @@ def test_muster_mit_ausdruecken_kein_hinweis():
         {"id": "f3", "typ": "muster_kreis", "features": ["f1"], "achse": "y", "anzahl": 4, "winkel": "=W"},
     ]}
     assert zusammenfassen(spec) == []
-
-
-def test_kreismuster_text_nennt_anzahl_als_zahl():
-    spec = {"features": [_bohrung("f1"), {"id": "f2", "typ": "muster_kreis", "features": ["f1"], "achse": "y",
-                                          "anzahl": 4}]}
-    [h] = zusammenfassen(spec)
-    assert "Regel 3" in h["meldung"] and "Anzahl ist immer eine Zahl" in h["meldung"]
 
 
 def test_senkung_ohne_iso_treffer_und_mit_ausdrucksfehler():

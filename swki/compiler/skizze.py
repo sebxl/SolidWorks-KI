@@ -127,6 +127,7 @@ def ebene_aufloesen(ctx, ebene, pfad: str | None = None) -> Skizzenebene:
         # Wechselt der Parameter später das Vorzeichen, kippt die Ebene nicht mit – dann neu bauen.
         ziel, art = _massziel(ctx, None if pfad is None else f"{pfad}.versatz.abstand", "versatz")
         ctx.mass(f"D1@{neu.Name}", ebene["versatz"]["abstand"], ziel, art, -1 if abstand < 0 else 1)
+        sw.ausblenden(ctx.model, neu)  # Hilfsebene wie die Standardebenen ausblenden (Screenshots, Konstruktionsstil)
         return Skizzenebene(neu, basis, abstand, NORMALE[basis])
     return ebene_aus_flaeche(loese_flaeche(ctx, ebene))
 
@@ -648,8 +649,9 @@ class Skizzierer:
         self.kennpunkt((mu_, mv), l["mitte"], bezug_von(l), feld_pfad(pfad, "langloch", "mitte"),
                        f"langloch {laenge:.6g} {breite:.6g}", ziel=_Ziel(punkt=mitte_punkt))
 
-    def _kontur(self, k: dict, pfad=None) -> None:
-        """Geschlossener Linienzug aus Linien und Bögen (Bögen gegen den Uhrzeigersinn in (u, v)). Bestimmung:
+    def _kontur(self, k: dict, pfad=None, offen: bool = False) -> None:
+        """Linienzug aus Linien und Bögen, geschlossen (Bögen gegen den Uhrzeigersinn in (u, v)) oder offen (Pfad einer
+        Austragung: der Anfang wird mitbemaßt, Bögen mit `uhrzeigersinn: true` laufen andersherum). Bestimmung:
         Eckpunkte und Bogenmittelpunkte zum Ursprung; der Endpunkt eines Bogens nur in einer Koordinate
         (bogenende_koordinate), die andere folgt aus dem Radius (S10 Frage 5). Benachbarte Segmente teilen ihre
         Endpunkte schon, ein Verschmelzen ist nicht nötig."""
@@ -663,7 +665,8 @@ class Skizzierer:
                 seg = self.sm.CreateLine(xa, ya, 0.0, xb, yb, 0.0)
             else:
                 xm, ym = self.zu_skizze(w(s["mitte"][0]), w(s["mitte"][1]))
-                seg = self.sm.CreateArc(xm, ym, 0.0, xa, ya, 0.0, xb, yb, 0.0, richtung)
+                sinn = -richtung if s.get("uhrzeigersinn") else richtung
+                seg = self.sm.CreateArc(xm, ym, 0.0, xa, ya, 0.0, xb, yb, 0.0, sinn)
             if seg is None:
                 raise BauFehler(SKIZZE_UNGUELTIG, f"Kontur: Segment {i + 1} nicht erzeugt", schritt="skizze")
         bemasst: set[tuple[float, float]] = set()
@@ -677,6 +680,8 @@ class Skizzierer:
             self.kennpunkt(q, p_roh, _NUR_URSPRUNG, p_pfad, "", (0, 1) if nur is None else (nur,))
 
         segmente = feld_pfad(pfad, "kontur", "segmente")
+        if offen:
+            festlegen(roh[0], feld_pfad(pfad, "kontur", "start"))
         for i, s in enumerate(k["segmente"]):
             segment = _index(segmente, i)
             if "bogen" in s:
@@ -755,6 +760,8 @@ class Skizzierer:
             self._langloch(element["langloch"], pfad)
         elif "kontur" in element:
             self._kontur(element["kontur"], pfad)
+        elif "pfad" in element:  # offener Linienzug, nur intern (Pfadskizze einer Austragung)
+            self._kontur(element["pfad"], pfad, offen=True)
         else:
             m = element["mittellinie"]
             xa, ya = self.zu_skizze(w(m["von"][0]), w(m["von"][1]))

@@ -18,7 +18,9 @@ def einheit_der_art(art: str) -> str:
 class FeatureErgebnis:
     features: list  # erzeugte IFeature, das erste ist das Hauptfeature
     richtung: Vektor | None = None  # Extrusions-/Bohr-/Achsrichtung im Modell (für senkrechte_kanten)
-    punkte: list[Vektor] = field(default_factory=list)  # Bohrungsinstanzen: Punkt auf der Achse (mm)
+    punkte: list[Vektor] = field(default_factory=list)  # Bohrungsinstanzen: Punkt auf der Achse (mm), mit Musterkopien
+    traeger: list = field(default_factory=list)  # Bohrung: IFeature der Muster/Spiegelungen, die ihre Kopien tragen
+    kopien: dict[str, list[Vektor]] = field(default_factory=dict)  # Muster/Spiegeln: Bohrungs-ID → neue Instanzpunkte
 
     @property
     def sw_name(self) -> str:

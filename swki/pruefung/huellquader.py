@@ -259,6 +259,8 @@ def _koerper(spec: dict, p: dict, bis: str | None = None) -> dict[str, tuple[Box
             raise _Offen(f"{f['id']}: Verzahnung (die Box hängt von der Lage der Zähne ab)")
         elif typ == "skript":
             raise _Offen(f"{f['id']}: Skript")
+        elif typ == "austragung" and not f.get("schnitt"):
+            raise _Offen(f"{f['id']}: Austragung (Hüllquader von Hand angeben)")
     return koerper
 
 
