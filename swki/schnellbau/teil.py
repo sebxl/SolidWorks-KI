@@ -26,7 +26,7 @@ from swki.schnellbau.fehler import ANKER, GEOMETRIE, NICHT_UNTERSTUETZT, Schnell
 from swki.spec.ausdruck import auswerten
 from swki.spec.austragung import modell, segmente_uv
 from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
-from swki.spec.instanzen import MUSTER
+from swki.spec.instanzen import BEZUGSACHSE, MUSTER, kopien_kreis, kopien_linear, kopien_spiegeln
 from swki.spec.normen import bohrspitze_grad, normmasse, norm_von
 from swki.verzahnung import Bogen, Linie, Stirnrad, aus_feature
 
@@ -53,6 +53,8 @@ class FeatureInfo:
     punkte: list | None = None             # Achspunkte (Bohrung je Instanz, Stirnrad)
     ebene: Ebene | None = None             # referenz-Ebene
     teile: list | None = None              # [(Körper, "plus"|"minus")] in Anwendungsreihenfolge (Verrundung/Fase als Musterquelle)
+    richtungen: list | None = None         # Bohrrichtung je Instanz, parallel zu punkte
+    kopien: dict = field(default_factory=dict)   # Muster/Spiegeln: Bohrungs-ID → (Punkte, Richtungen) dieser Kopien
 
 
 @dataclass
@@ -376,7 +378,8 @@ class Schnellbau:
         werkzeug = werkzeuge[0]
         for x in werkzeuge[1:]:
             werkzeug = werkzeug + x
-        self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, "minus", _t(d), [_t(p) for p in punkte])
+        self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, "minus", _t(d), [_t(p) for p in punkte],
+                                             richtungen=[_t(d)] * len(punkte))
         if not self.mit_bohrungen:
             self.uebersprungen.append(f["id"])
             return
@@ -538,6 +541,35 @@ class Schnellbau:
             alle = w if alle is None else alle + w
         self.features[f["id"]] = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
 
+    def _instanzen_der_quellen(self, quellen: list) -> dict:
+        """Bohrungs-ID → (Punkte, Richtungen), die die Quellen tragen: eigene Positionen einer Bohrung, Kopien eines
+        Musters (wie swki.compiler.handler.muster._instanzen_der_quellen)."""
+        nach_id = {x["id"]: x for x in self.spec["features"]}
+        aus: dict = {}
+        for q in quellen:
+            info = self.features[q]
+            if nach_id[q]["typ"] in BOHRUNGEN:
+                n = len(nach_id[q]["positionen"])
+                pu, ri = aus.setdefault(q, ([], []))
+                pu.extend(info.punkte[:n])
+                ri.extend(info.richtungen[:n])
+            for bid, (pu2, ri2) in info.kopien.items():
+                pu, ri = aus.setdefault(bid, ([], []))
+                pu.extend(pu2)
+                ri.extend(ri2)
+        return aus
+
+    def _kopien_eintragen(self, kopien: dict) -> None:
+        """Kopien als Instanzen n+1 … an die Bohrung hängen – unabhängig davon, ob die Bohrungen gebohrt werden."""
+        for bid, (pu, ri) in kopien.items():
+            self.features[bid].punkte.extend(pu)
+            self.features[bid].richtungen.extend(ri)
+
+    def _muster_mit_instanzen(self, f: dict, kopien: dict, werkzeuge: list) -> None:
+        self._kopien_eintragen(kopien)
+        self._muster_anwenden(f, werkzeuge)
+        self.features[f["id"]].kopien = kopien
+
     def muster_linear(self, f: dict) -> None:
         richtungen = []
         for r in (f["richtung1"], f.get("richtung2")):
@@ -548,20 +580,31 @@ class Schnellbau:
         versaetze = richtungen[0] if len(richtungen) == 1 else [a + b for a in richtungen[0] for b in richtungen[1]]
         kopien = [(w.moved(Location(v)), op) for w, op in self._werkzeuge(f["features"])
                   for v in versaetze if v.length > 1e-12]
-        self._muster_anwenden(f, kopien)
+        r2 = f.get("richtung2")
+        n_kopien = f["richtung1"]["anzahl"] * (r2["anzahl"] if r2 else 1) - 1
+        p = self.p
+        inst = {b: (kopien_linear(pu, f["richtung1"], r2, p), ri * n_kopien)     # Richtung bleibt je Kopie, Reihenfolge wie die Punkte
+                for b, (pu, ri) in self._instanzen_der_quellen(f["features"]).items()}
+        self._muster_mit_instanzen(f, inst, kopien)
 
     def muster_kreis(self, f: dict) -> None:
         n, gesamt = f["anzahl"], self.w(f.get("winkel", 360))
         schritt = gesamt / n if abs(gesamt - 360) < 1e-9 else gesamt / (n - 1)
-        achse = Axis((0, 0, 0), ACHSEN[f["achse"]])
+        richtung = BEZUGSACHSE[f["achse"]]      # wie die Referenzachse achse_<x|y|z> im Compiler (achse_y zeigt nach −y)
+        achse = Axis((0, 0, 0), richtung)
         kopien = [(w.rotate(achse, schritt * i), op) for w, op in self._werkzeuge(f["features"]) for i in range(1, n)]
-        self._muster_anwenden(f, kopien)
+        inst = {b: (kopien_kreis(pu, richtung, n, gesamt), kopien_kreis(ri, richtung, n, gesamt))
+                for b, (pu, ri) in self._instanzen_der_quellen(f["features"]).items()}
+        self._muster_mit_instanzen(f, inst, kopien)
 
     def spiegeln(self, f: dict) -> None:
         se = self.ebene(f["ebene"])
         ebene = Plane(origin=_v(modellpunkt(se.orientierung, 0, 0, se.lage)), z_dir=_v(NORMALE[se.orientierung]))
         kopien = [(w.mirror(ebene), op) for w, op in self._werkzeuge(f["features"])]
-        self._muster_anwenden(f, kopien)
+        i = ACHSE_DER[se.orientierung]
+        inst = {b: (kopien_spiegeln(pu, i, se.lage), kopien_spiegeln(ri, i, 0.0))
+                for b, (pu, ri) in self._instanzen_der_quellen(f["features"]).items()}
+        self._muster_mit_instanzen(f, inst, kopien)
 
     def referenz(self, f: dict) -> None:
         if "achse" in f:

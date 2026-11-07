@@ -70,3 +70,8 @@ def test_kopien_kreis_teilwinkel():
     kopien = kopien_kreis([(30.0, 0.0, 0.0)], (0.0, 0.0, 1.0), 4, 90)
     assert kopien[0] == pytest.approx((30 * 0.8660254037844387, 15.0, 0.0))
     assert kopien[-1] == pytest.approx((0.0, 30.0, 0.0), abs=1e-9)
+
+
+def test_bezugsachse_richtungen():
+    from swki.spec.instanzen import BEZUGSACHSE
+    assert BEZUGSACHSE == {"x": (1.0, 0.0, 0.0), "y": (0.0, -1.0, 0.0), "z": (0.0, 0.0, 1.0)}
