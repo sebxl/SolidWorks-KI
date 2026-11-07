@@ -25,6 +25,7 @@ from swki.konfig import lade_standard
 from swki.schnellbau.fehler import ANKER, GEOMETRIE, NICHT_UNTERSTUETZT, SchnellbauFehler
 from swki.spec.ausdruck import auswerten
 from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
+from swki.spec.instanzen import MUSTER
 from swki.spec.normen import bohrspitze_grad, normmasse, norm_von
 from swki.verzahnung import Bogen, Linie, Stirnrad, aus_feature
 
@@ -50,6 +51,7 @@ class FeatureInfo:
     richtung: tuple | None = None
     punkte: list | None = None             # Achspunkte (Bohrung je Instanz, Stirnrad)
     ebene: Ebene | None = None             # referenz-Ebene
+    teile: list | None = None              # [(Körper, "plus"|"minus")] in Anwendungsreihenfolge (Verrundung/Fase als Musterquelle)
 
 
 @dataclass
@@ -452,27 +454,70 @@ class Schnellbau:
                                 break
         return list(gewaehlt.values())
 
+    def _ist_musterquelle(self, fid: str) -> bool:
+        """Steht fid in den features eines späteren muster_linear/muster_kreis/spiegeln der Spec?"""
+        return any(m["typ"] in MUSTER and fid in m["features"] for m in self.spec["features"])
+
+    @staticmethod
+    def _differenz(a, b) -> list:
+        """Teile von a − b mit Volumen (build123d liefert None, leeren Körper oder Compound)."""
+        try:
+            d = a - b
+        except Exception:
+            return []
+        if d is None:
+            return []
+        return [s for s in d.solids() if s.volume > _VOLUMEN_EPS]
+
+    def _kantenarbeit(self, f: dict, vorher, typ: str) -> None:
+        """Merkt, was Verrundung/Fase abgetragen und aufgefüllt hat, wenn ein Muster das Feature mustert."""
+        info = FeatureInfo(typ)
+        if self._ist_musterquelle(f["id"]):
+            info.teile = ([(s, "minus") for s in self._differenz(vorher, self.body)]
+                          + [(s, "plus") for s in self._differenz(self.body, vorher)])
+        self.features[f["id"]] = info
+
     def verrundung(self, f: dict) -> None:
+        vorher = self.body
         self.body = self.body.fillet(self.w(f["radius"]), self._kanten(f["kanten"]))
-        self.features[f["id"]] = FeatureInfo("verrundung")
+        self._kantenarbeit(f, vorher, "verrundung")
 
     def fase(self, f: dict) -> None:
         if abs(self.w(f.get("winkel", 45)) - 45) > 1e-9:
             raise self.fehler(NICHT_UNTERSTUETZT, "fase mit winkel ≠ 45°")
+        vorher = self.body
         self.body = self.body.chamfer(self.w(f["abstand"]), None, self._kanten(f["kanten"]))
-        self.features[f["id"]] = FeatureInfo("fase")
+        self._kantenarbeit(f, vorher, "fase")
 
     # Muster ------------------------------------------------------------------------------------------------------
     def _werkzeuge(self, ids: list) -> list[tuple[Solid, str]]:
         out = []
         for fid in ids:
             info = self.features.get(fid)
+            if info is not None and info.teile is not None:
+                out.extend(info.teile)
+                continue
             if info is None or info.werkzeug is None or info.op is None:
                 raise self.fehler(NICHT_UNTERSTUETZT, f"{fid!r} lässt sich nicht mustern/spiegeln")
             out.append((info.werkzeug, info.op))
         return out
 
     def _muster_anwenden(self, f: dict, kopien: list[tuple[Solid, str]]) -> None:
+        if any(self.features[i].teile is not None for i in f["features"]):
+            gruppen = []          # Quellreihenfolge: aufeinanderfolgende gleiche Operationen vereinigt
+            for w, op in kopien:
+                if gruppen and gruppen[-1][1] == op:
+                    gruppen[-1][0] = gruppen[-1][0] + w
+                else:
+                    gruppen.append([w, op])
+            for w, op in gruppen:
+                self.anwenden(w, op)
+            ops = {op for _, op in kopien}
+            alle = None
+            for w, _ in kopien:
+                alle = w if alle is None else alle + w
+            self.features[f["id"]] = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
+            return
         plus = [w for w, op in kopien if op == "plus"]
         minus = [w for w, op in kopien if op == "minus"]
         for gruppe, op in ((plus, "plus"), (minus, "minus")):

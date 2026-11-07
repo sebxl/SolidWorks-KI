@@ -76,3 +76,50 @@ def test_austragung_nicht_unterstuetzt():
     with pytest.raises(SchnellbauFehler) as e:
         baue({"art": "teil", "name": "T", "features": [PLATTE, sweep]})
     assert e.value.code == NICHT_UNTERSTUETZT
+
+
+# Verrundung und Fase als Musterquelle ------------------------------------------------------------------------------
+def _tasche(mitte_u=-30):
+    return {"id": "t1", "typ": "schnitt", "skizze": {"ebene": OBEN, "elemente": [
+        {"rechteck": {"mitte": [mitte_u, 0], "breite": 30, "hoehe": 20}}]}, "ende": {"typ": "blind", "tiefe": 12}}
+
+
+RUNDUNG = {"id": "r1", "typ": "verrundung", "kanten": [{"feature": "t1", "auswahl": "senkrechte_kanten"}], "radius": 3}
+TASCHE_RUND = 30 * 20 * 12 - (4 - math.pi) * 9 * 12
+
+
+def test_tasche_mit_verrundung_gespiegelt():
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["t1", "r1"], "ebene": "rechts"}
+    teil = baue(_spec(_tasche(), RUNDUNG, spiegel))
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 2 * TASCHE_RUND, rel=1e-9)
+
+
+def test_tasche_mit_verrundung_gemustert():
+    muster = {"id": "m1", "typ": "muster_linear", "features": ["t1", "r1"],
+              "richtung1": {"achse": "x", "abstand": 40, "anzahl": 2}}
+    teil = baue(_spec(_tasche(), RUNDUNG, muster))
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 2 * TASCHE_RUND, rel=1e-9)
+
+
+def test_aufsatz_kante_verrundet_gespiegelt():
+    aufsatz = {"id": "a1", "typ": "extrusion", "skizze": {"ebene": OBEN, "elemente": [
+        {"rechteck": {"mitte": [-30, 0], "breite": 10, "hoehe": 10}}]}, "ende": {"typ": "blind", "tiefe": 10}}
+    rund = {"id": "r1", "typ": "verrundung", "kanten": [{"feature": "a1", "kanten_an": "+y"}], "radius": 2}
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["a1", "r1"], "ebene": "rechts"}
+    einzeln = baue(_spec(aufsatz, rund)).solid.volume - 100 * 60 * 20
+    zwei = baue(_spec(aufsatz, rund, spiegel))
+    assert einzeln < 1000 and einzeln > 0
+    assert zwei.solid.volume - 100 * 60 * 20 == pytest.approx(2 * einzeln, rel=1e-9)
+
+
+def test_fase_in_musterquelle():
+    fase = {"id": "r1", "typ": "fase", "kanten": [{"feature": "t1", "auswahl": "senkrechte_kanten"}], "abstand": 2}
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["t1", "r1"], "ebene": "rechts"}
+    teil = baue(_spec(_tasche(), fase, spiegel))
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 2 * (30 * 20 * 12 - 4 * 2 * 2 / 2 * 12), rel=1e-9)
+
+
+def test_verrundung_ausserhalb_von_mustern_unveraendert():
+    teil = baue(_spec(_tasche(), RUNDUNG))
+    assert teil.features["r1"].teile is None
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - TASCHE_RUND, rel=1e-9)
