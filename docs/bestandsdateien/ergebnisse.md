@@ -512,7 +512,15 @@ Was die Läufe aufdeckten:
 
 Offen: Wirkung auf andere Baugruppen nicht geprüft; Einschmelzmutter-Bohrungen sind Annahmen; die Ausgabe trägt den Student-Vermerk.
 Die Warnung `BEWEGUNG_ABDECKUNG` vermischt Bestand und Lauf (`_warnungen` nimmt die Warnungen der Aufnahme mit): Nach Lauf 14 nannte sie
-noch 5 Komponenten aus lauf-30, darunter den entfernten Weichenzylinderhalter.
+noch 5 Komponenten aus lauf-30, darunter den entfernten Weichenzylinderhalter. Seit `f4c5a03` getrennt („Nur im Bestand (vorher)“).
+
+Runde 2 (Nutzer 07.11.2026, nach Durchsicht der Ausgabe von Lauf 14): Gewinde und Schrauben Kanalträger → Prüfkanal fehlten, ein
+Deckelauge ragte ins Kamerabild, die Schrauben am Rutschenwinkel waren nicht montierbar, der Fallschacht nicht stehend druckbar, Lasche
+2 nicht montierbar. Vorschlag mit Bild, Nutzer-OK, Konstruktionsreview (6 Befunde übernommen), Freigabe; Lauf 15 Anker auf einer Kante
+(Bauweg), Lauf 16 bestanden nach einem Werkzeug-Fix (Bilanzrauschen wächst mit den Differenzkörpern, `a26ea99`), Prüfer bestanden.
+Ausgabe 22 Dateien (neu: Schachthalter), frühere Ausgaben in `ausgabe_alt_1`/`_2`. Bau 1178 s. Lehre: Die Prüfung findet, was die Spec
+verlangt; Montierbarkeit, Schlüsselzugang, Druckrichtung und Kamerafeld sah erst der Nutzer an der Ausgabe – gehört ins
+Konstruktionsreview vor der ersten Freigabe. SolidWorks startet seit `53873f2` minimiert und ohne Fokus.
 
 ## Offene Kleinigkeiten aus den Reviews
 
