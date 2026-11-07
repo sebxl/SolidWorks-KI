@@ -40,11 +40,17 @@ punkt(id="ap3", was="Dort Durchgang mit Flachsenkung für M5 von hinten in den K
                "positionen": [[293.75, -160], [368.75, -160]], "durch": True, "bezug": {"u": "-rand", "v": "-rand"}})
 STIFTE_AP = [("Kanalträger", 310, -160), ("Kanalträger", 352, -160), ("Trichtersäule", 303, -105), ("Trichtersäule", 322, -105),
              ("Kamerasäule", 177.5, -110), ("Kamerasäule", 177.5, -95), ("Zylinderaufnahme", 401.5, -141),
-             ("Zylinderaufnahme", 412.9, -141), ("Rutschenwinkel", 179, -190), ("Rutschenwinkel", 201, -190)]
+             ("Zylinderaufnahme", 412.9, -141), ("Rutschenwinkel", 180, -205), ("Rutschenwinkel", 198, -205)]
 punkt(id="ap4", was="Stiftbohrungen Ø 4 für alle angeschraubten Teile (Nutzer: verstiften)", typ="feature", in_datei=AP,
       name="Stifte Anbauteile",
       feature={"typ": "normbohrung", "art": "stift", "groesse": "4", "flaeche": {"feature": "f1", "flaeche": "+x"},
                "positionen": [[y, z] for _, y, z in STIFTE_AP], "durch": True, "bezug": {"u": "-rand", "v": "-rand"}})
+# Runde 2 (Nutzer 07.11.2026): In den alten Gewinden (Z −200) lagen die Köpfe der Plattenschrauben 0,25 neben denen der
+# Rutschenschrauben; bei Z −191 sind es 8,75. Die alten Gewinde bleiben (nichts aufräumen).
+punkt(id="ap5", was="2 × M5 durch für den Rutschenwinkel (höher, Köpfe frei von den Rutschenschrauben)", typ="feature",
+      in_datei=AP, name="Gewinde Rutschenwinkel",
+      feature={"typ": "normbohrung", "art": "gewinde", "groesse": "M5", "flaeche": {"feature": "f1", "flaeche": "+x"},
+               "positionen": [[185, -191], [205, -191]], "durch": True, "bezug": {"u": "-rand", "v": "-rand"}})
 # ------------------------------------------------------------------ Anschlusswinkel
 kommentar("Anschlusswinkel wandert mit der Platte (Bohrungen in der Bettrückwand werden vor Ort gebohrt); keine Stifte (Langlöcher)")
 # Erst der Wandschenkel, dann der Plattenschenkel: umgekehrt zerfällt der Winkel kurz in zwei Körper, und die Bohrung f4
@@ -97,15 +103,15 @@ punkt(id="kh5", was="Ein Langloch für die Klemmschraube M5 bei X −204 (5,5 br
                                           "bezug": {"u": "-rand", "v": "-rand"}}}]},
                "ende": {"typ": "durch_alles"}})
 # ------------------------------------------------------------------ Trichtersäule
-kommentar("Trichtersäule mit der Platte; Gewinde für Lasche 2 (Flansch) und Lasche 3 (Ecke)")
+kommentar("Trichtersäule mit der Platte; Gewinde für den Schachthalter (Runde 2: Lasche 2 und 3 entfallen)")
 punkt(id="ts1", was="Trichtersäule 33 nach +X", typ="mass", in_datei=TS, mass="D3@f1_skizze", alt=230, neu="=230-NAEHER",
       lage_folgen=[S("M5x20", 4), S("M5x20", 5), S("M5x20", 6), S("M5x20", 7)])
 punkt(id="ts2", was="2 Stiftbohrungen Ø 4 zur Platte", typ="feature", in_datei=TS, name="Stifte Platte",
       feature={"typ": "normbohrung", "art": "stift", "groesse": "4", "flaeche": {"feature": "f1", "flaeche": "-x"},
                "positionen": [[303, -105], [322, -105]], "tiefe": 9, "bezug": {"u": "-rand", "v": "-rand"}})
-punkt(id="ts3", was="4 × M5 auf der +X-Seite für Lasche 2 und Lasche 3", typ="feature", in_datei=TS, name="Gewinde Laschen",
+punkt(id="ts3", was="2 × M5 auf der +X-Seite für den Schachthalter", typ="feature", in_datei=TS, name="Gewinde Laschen",
       feature={"typ": "normbohrung", "art": "gewinde", "groesse": "M5", "flaeche": {"feature": "f1", "flaeche": "+x"},
-               "positionen": [[305, 37], [320, 37], [305, -87], [305, -75]], "tiefe": 12, "gewindetiefe": 10,
+               "positionen": [[305, -87], [305, -75]], "tiefe": 12, "gewindetiefe": 10,
                "bezug": {"u": "-rand", "v": "-rand"}})
 # ------------------------------------------------------------------ Zylinderaufnahme
 kommentar("Zylinderaufnahme: Flansch an der neuen Plattenvorderseite, verstiftet")
@@ -126,7 +132,7 @@ punkt(id="tr2", was="+X-Kante der Öffnung X −115 → −151,4 (Mitte X −171
       mass="D3@f1_oben", alt=115, neu="=171.4-TRICHTER_X/2")
 punkt(id="tr1", was="Öffnung innen 109 → 40 in X", typ="mass", in_datei=TR, mass="D1@f1_oben", alt=109, neu="=TRICHTER_X")
 # ------------------------------------------------------------------ Fallschacht
-kommentar("Fallschacht: Bohrung durch alles weg, Einschmelzmuttern, Ecke gefüllt, +X-Seite abnehmbar, Laschen 2 und 3")
+kommentar("Fallschacht: Bohrung durch alles weg, Einschmelzmuttern, Ecke gefüllt, +X-Seite abnehmbar, Leiste für den Schachthalter")
 punkt(id="fs1", was="M3-Gewinde im Flansch reichten 167,5 tief (die „merkwürdige Bohrung“): entfernen", typ="loeschen", in_datei=FS,
       feature="f4")
 punkt(id="fs2", was="2 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 im Flansch", typ="feature", in_datei=FS, name="Einschmelz Flansch",
@@ -145,19 +151,22 @@ punkt(id="fs4", was="+X-Wand entfällt, sie wird der Schachtdeckel", typ="featur
 # Deckelebene (Y, Z): vorn senkrecht Y 240,274 bis Z −90,5, dann geneigt bis Y 287,072 bei Z 23; hinten senkrecht Y 276,07 bis
 # Z −66,64, dann geneigt bis Y 313,032 bei Z 23. Auge: 9 aus der Wand heraus, 1 in die Wand (2 dick), 10 hoch, 8 tief (Boden 2
 # unter der Einschmelzmutter); Loch 4,5 vor der Wand. Gleiche Zahlen in schachtdeckel.yaml (YVU, YHU, YVOO, YHOO, Ohren).
+# Runde 2 (Nutzer 07.11.2026): stehend gedruckt, darum Unterseite mindestens 45° (läuft schräg zur Wand hinab); Auge vorn unten
+# bei Z −70 statt −115 (ragte 3 in den Sichtkegel der Kamera, jetzt 7 frei).
 def _yv(z):   # Vorderwand außen
     return 240.274 if z <= -90.5 else 240.274 + (z + 90.5) * (287.072 - 240.274) / (23 + 90.5)
 def _yh(z):   # Rückwand außen
     return 276.07 if z <= -66.64 else 276.07 + (z + 66.64) * (313.032 - 276.07) / (23 + 66.64)
 OB, OH, IN = 9, 10, 1
 def _auge(wand, aussen, z):   # aussen −1: Ohr nach −Y (Vorderwand), +1: nach +Y (Rückwand)
-    pts = []
-    for zz in (z - OH / 2, z + OH / 2):
-        w = wand(zz)
-        pts.append(((round(w + aussen * OB, 3), zz), (round(w - aussen * IN, 3), zz)))
-    (a0, b0), (a1, b1) = pts
-    return [list(a0), list(b0), list(b1), list(a1)], [round(wand(z) + aussen * OB / 2, 3), z]
-AUGEN = [_auge(_yv, -1, -115), _auge(_yh, 1, -115), _auge(_yv, -1, 10), _auge(_yh, 1, 10)]
+    zu, zo = z - OH / 2, z + OH / 2
+    aussen_u = wand(zu) + aussen * OB
+    d = OB + IN                  # Unterseite: von der Außenkante unten schräg zur Wand hinab, mindestens 45°
+    while abs(aussen_u - (wand(zu - d) - aussen * IN)) > d:
+        d += 0.5
+    pts = [(aussen_u, zu), (wand(zu - d) - aussen * IN, zu - d), (wand(zo) - aussen * IN, zo), (wand(zo) + aussen * OB, zo)]
+    return [[round(y, 3), round(zz, 3)] for y, zz in pts], [round(wand(z) + aussen * OB / 2, 3), z]
+AUGEN = [_auge(_yv, -1, -70), _auge(_yh, 1, -115), _auge(_yv, -1, 10), _auge(_yh, 1, 10)]
 punkt(id="fs5", was="4 Augen für den Deckel hinter der Deckelebene", typ="feature", in_datei=FS, name="Augen Deckel",
       feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "rechts", "abstand": -160}},
                "elemente": [{"polygon": {"punkte": p}} for p, _ in AUGEN]},
@@ -166,21 +175,15 @@ punkt(id="fs6", was="4 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 (Deckel)",
       feature={"typ": "bohrung", "flaeche": {"nahe": [-160, AUGEN[0][1][1], -(AUGEN[0][1][0] + 0.5)]},
                "positionen": [loch for _, loch in AUGEN], "durchmesser": "=EM3_D",
                "tiefe": "=EM3_T", "bezug": {"u": "-rand", "v": "-rand"}})
-punkt(id="fs7", was="Lasche 2 am Flansch zur Trichtersäule", typ="feature", in_datei=FS, name="Lasche Flansch",
-      feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "vorne", "abstand": -327.5}},
-               "elemente": [{"polygon": {"punkte": [[-197, 23], [-185.5, 23], [-185.5, 29], [-191, 29], [-191, 45], [-197, 45]]}}]},
-               "ende": {"typ": "blind", "tiefe": 30}})
-punkt(id="fs8", was="Lasche 3: Strebe von der gefüllten Ecke zur Trichtersäule", typ="feature", in_datei=FS, name="Lasche Ecke",
-      feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "oben", "abstand": -92}},
-               "elemente": [{"polygon": {"punkte": [[-197, 297.5], [-197, 312], [-189, 312], [-189, 299], [-180.5, 278],
-                                                    [-180.5, 270], [-187.5, 270]]}}]},
+# Leiste an der Rückwand für den Schachthalter (Runde 2: ersetzt Lasche 2 und 3), Unterseite 45° zur Wand hinab
+punkt(id="fs11", was="Leiste an der Rückwand für den Schachthalter (stehend druckbar)", typ="feature", in_datei=FS, name="Leiste Halter",
+      feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "rechts", "abstand": -182}},
+               "elemente": [{"polygon": {"punkte": [[275.07, -70], [282, -70], [282, -84], [275.07, -90.93]]}}]},
                "ende": {"typ": "blind", "tiefe": 22}})
-punkt(id="fs9", was="2 × Durchgang M5 in Lasche 2", typ="feature", in_datei=FS, name="Durchgang Lasche Flansch",
-      feature={"typ": "bohrung", "flaeche": {"nahe": [-191, 40, -312.5]}, "positionen": [[305, 37], [320, 37]],
-               "durchmesser": 5.5, "tiefe": 6})
-punkt(id="fs10", was="2 × Durchgang M5 in Lasche 3", typ="feature", in_datei=FS, name="Durchgang Lasche Ecke",
-      feature={"typ": "bohrung", "flaeche": {"nahe": [-189, -81, -305.5]}, "positionen": [[305, -87], [305, -75]],
-               "durchmesser": 5.5, "tiefe": 8})
+punkt(id="fs12", was="2 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 (Schachthalter)", typ="feature", in_datei=FS,
+      name="Einschmelz Halter",
+      feature={"typ": "bohrung", "flaeche": {"feature": "fs11", "flaeche": "-z"}, "positionen": [[-176, -77], [-166, -77]],
+               "durchmesser": "=EM3_D", "tiefe": "=EM3_T", "bezug": {"u": "-rand", "v": "-rand"}})
 # ------------------------------------------------------------------ Rutsche
 kommentar("Rutsche: n.i.O. innen 26 (Rückwand an der Abgabekante), Lasche unten weg, Auflage für den Rutschenwinkel, Endstück mit Steg 20")
 punkt(id="ru1", was="Rückwand 9 nach vorn (Y 218,5 → 209,5)", typ="mass", in_datei=RU, mass="D1@Ebene1", alt=218.5, neu="=218.5-NIO_WEG")
@@ -218,6 +221,11 @@ kommentar("Durchlicht gedreht (Stecker nach +X, Nutzer): Lasche an die +X-Wand d
 punkt(id="pk1", was="2 × M4 in der +X-Wand für die Durchlichtlasche", typ="feature", in_datei=PK, name="Gewinde Lasche PX",
       feature={"typ": "normbohrung", "art": "gewinde", "groesse": "M4", "flaeche": {"feature": "f1", "flaeche": "+x"},
                "positionen": [[284, -144.5], [294, -144.5]], "tiefe": 6.5, "gewindetiefe": 6, "bezug": {"u": "-rand", "v": "-rand"}})
+# Runde 2 (Nutzer 07.11.2026): Der Kanalträger hat 4 Senkungen M5 (Y 302,5 / 362,5), der Prüfkanal nur die Gewinde bei 362,5.
+punkt(id="pk2", was="2 × M5 von unten zu den Senkungen des Kanalträgers bei Y 302,5 (wie die vorhandenen bei 362,5)",
+      typ="feature", in_datei=PK, name="Gewinde Kanaltraeger",
+      feature={"typ": "normbohrung", "art": "gewinde", "groesse": "M5", "flaeche": {"feature": "f1", "flaeche": "-y"},
+               "positionen": [[-185, 302.5], [-155, 302.5]], "tiefe": 12, "gewindetiefe": 10, "bezug": {"u": "-rand", "v": "-rand"}})
 punkt(id="dl1", was="Lasche an die +X-Wand (X −151 … −131)", typ="mass", in_datei=DL, mass="D1@Ebene1", alt=189, neu=131,
       lage_folgen=[S("M4x16", i) for i in range(1, 5)] + [S("M4x20", 1), S("M4x20", 2)])
 for i, m in enumerate(("D1@m4_positionen", "D3@m4_positionen", "D5@m4_positionen", "D7@m4_positionen"), 2):
@@ -360,14 +368,36 @@ for i in range(1, 5):
           drehung_sperren=True)
     punkt(id=f"ds{i}b", was="Kopf auf dem Deckel", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": f"ds{i}", "referenz": "EINBAU_EBENE"}, b={"komponente": "sd", "feature": "f1", "flaeche": "+x"}, ausrichtung="gleich")
-LASCHEN = [("fs9", 1, [-191, 42, -312.5]), ("fs9", 2, [-191, 42, -312.5]), ("fs10", 1, [-189, -81, -302]), ("fs10", 2, [-189, -81, -302])]
-for k, (f, inst, nahe) in enumerate(LASCHEN, 1):
-    punkt(id=f"ls{k}", was=f"Laschenschraube {k}", typ="komponente_neu", wie=S("M5x16", 1))
-    punkt(id=f"ls{k}a", was="durch die Lasche in die Säule", typ="verknuepfung_neu", art="konzentrisch",
-          a={"komponente": f"ls{k}", "referenz": "EINBAU_ACHSE"}, b={"komponente": C("Fallschacht"), "feature": f, "instanz": inst, "achse": True},
+kommentar("Schachthalter (Alu-Winkel) statt Lasche 2 und 3: 2 × M5x12 in die Säule, 2 × M3x8 in die Leiste der Rückwand")
+punkt(id="sh", was="Schachthalter L 40 × 30 × 3", typ="komponente_neu", quelle={"teil": "schachthalter.yaml"})
+for e in ("rechts", "oben", "vorne"):
+    punkt(id=f"sh{e[0]}", was=f"Schachthalter in Maschinenkoordinaten ({e})", typ="verknuepfung_neu", art="deckungsgleich",
+          a={"komponente": "sh", "ebene": e}, b={"komponente": PLATTE, "ebene": e}, ausrichtung="gleich")
+for k in (1, 2):
+    punkt(id=f"ls{k}", was=f"Halterschraube Säule {k}", typ="komponente_neu", wie=S("M5x12", 3))
+    punkt(id=f"ls{k}a", was="durch den Halter in die Säule", typ="verknuepfung_neu", art="konzentrisch",
+          a={"komponente": f"ls{k}", "referenz": "EINBAU_ACHSE"}, b={"komponente": "sh", "feature": "f3", "instanz": k, "achse": True},
           drehung_sperren=True)
-    punkt(id=f"ls{k}b", was="Kopf auf der Lasche", typ="verknuepfung_neu", art="deckungsgleich",
-          a={"komponente": f"ls{k}", "referenz": "EINBAU_EBENE"}, b={"komponente": C("Fallschacht"), "nahe": nahe}, ausrichtung="gleich")
+    punkt(id=f"ls{k}b", was="Kopf auf dem Halter", typ="verknuepfung_neu", art="deckungsgleich",
+          a={"komponente": f"ls{k}", "referenz": "EINBAU_EBENE"}, b={"komponente": "sh", "feature": "f1", "flaeche": "+x"},
+          ausrichtung="gleich")
+    punkt(id=f"hs{k}", was=f"Halterschraube Leiste {k}", typ="komponente_neu", wie=S("M3x8", 3))
+    punkt(id=f"hs{k}a", was="durch den Halter in die Einschmelzmutter der Leiste", typ="verknuepfung_neu", art="konzentrisch",
+          a={"komponente": f"hs{k}", "referenz": "EINBAU_ACHSE"}, b={"komponente": "sh", "feature": "f4", "instanz": k, "achse": True},
+          drehung_sperren=True)
+    punkt(id=f"hs{k}b", was="Kopf auf dem Halter", typ="verknuepfung_neu", art="deckungsgleich",
+          a={"komponente": f"hs{k}", "referenz": "EINBAU_EBENE"}, b={"komponente": "sh", "feature": "f2", "flaeche": "-z"},
+          ausrichtung="gleich")
+kommentar("Kanalträger → Prüfkanal: 4 × M5x12 von unten in die Senkungen (Runde 2, der Handumbau hatte die Schrauben entfernt)")
+# Anker nahe: die Senkungen sind fremd (Bohrungsassistent mit Muster, keine Instanzen). Wand Ø 5,5 und Senkungsboden (5,4 tief).
+for k, (x, y) in enumerate(((-185, 302.5), (-155, 302.5), (-185, 362.5), (-155, 362.5)), 1):
+    punkt(id=f"kp{k}", was=f"Kanalschraube {k} (X {x:g}, Y {y:g})".replace(".", ","), typ="komponente_neu", wie=S("M5x12", 3))
+    punkt(id=f"kp{k}a", was="in die Senkung des Kanalträgers", typ="verknuepfung_neu", art="konzentrisch",
+          a={"komponente": f"kp{k}", "referenz": "EINBAU_ACHSE"}, b={"komponente": C("Kanaltraeger"), "nahe": [x + 2.75, -157.3, -y]},
+          drehung_sperren=True)
+    punkt(id=f"kp{k}b", was="Kopf auf dem Senkungsboden", typ="verknuepfung_neu", art="deckungsgleich",
+          a={"komponente": f"kp{k}", "referenz": "EINBAU_EBENE"}, b={"komponente": C("Kanaltraeger"), "nahe": [x + 4, -159.6, -y]},
+          ausrichtung="gleich")
 
 # ------------------------------------------------------------------ Bereiche (Modellkoordinaten der Teile: x = X, y = Z, z = −Y)
 def box(pkt, datei, mn, mx):
@@ -375,7 +405,7 @@ def box(pkt, datei, mn, mx):
 B = [
     # Ein Bereich je Teil, wo das Teil als Ganzes wandert oder die Differenz neue Bohrungen und Kürzung als ein Stück sieht
     # (Lauf 11: „keine Abweichung im Bereich“ der einzelnen Boxen); die Bohrungen weisen Maße und Prüfer nach.
-    box(["ap1", "ag1", "ag2", "ap2", "ap3", "ap4"], AP, [-257.1, -210, -443], [-211.9, -90, -143]),
+    box(["ap1", "ag1", "ag2", "ap2", "ap3", "ap4", "ap5"], AP, [-257.1, -210, -443], [-211.9, -90, -143]),
     box(["aw1", "aw2"], AW, [-317, -210, -195], [-224, -90, -135]),
     box(["kt1", "kt2", "kt3"], KT, [-245, -165, -383], [-194.5, -155, -283]),   # Bohrspitze M5 bis X −194,74 (Lauf 12)
     # bis an den Kanalboden (Bohrspitzen, Lauf 11)
@@ -392,14 +422,14 @@ B = [
     box(["fs4"], FS, [-160.1, -139.1, -313.5], [-157.9, 23.1, -239.8]),
 ] + [box(["fs5", "fs6"], FS, [-168.1, min(q[1] for q in p) - 0.1, -max(q[0] for q in p) - 0.1],
           [-159.9, max(q[1] for q in p) + 0.1, -min(q[0] for q in p) + 0.1]) for p, _ in AUGEN] + [
-    box(["fs7", "fs9"], FS, [-197.1, 22.9, -327.6], [-185.4, 45.1, -297.4]),
     # Füllung und Strebe sind ein Körper (Lauf 12)
-    box(["fs3", "fs8", "fs10"], FS, [-197.1, -92.1, -312.1], [-159.9, -66.5, -265.9]),
+    box(["fs3", "fs11", "fs12"], FS, [-182.1, -91.1, -282.1], [-159.9, -66.5, -265.9]),
     box(["ru1", "ru2", "ru3", "ru4", "ru5", "ru6", "ru7", "ru8"], RU, [-256, -324, -218.6], [-157, -174.9, -177.9]),
     box(["ru9", "ru10"], RU, [-206.1, -238.8, -208.1], [-191, -212.9, -171.9]),
     box(["ru11", "ru12"], RU, [-255.4, -342.1, -227.6], [-227.5, -323.2, -156.4]),
     box(["wk1"], WK, [-196, -202, -236.1], [-182.4, -171.3, -234.9]), box(["wk2"], WK, [-160.5, -202, -236.1], [-143.9, -171.3, -234.9]),
     box(["wk3"], WK, [-187, -201.1, -244.6], [-182.4, -173.9, -233.9]), box(["wk4"], WK, [-160.5, -201.1, -244.6], [-155.9, -173.9, -233.9]),
+    box(["pk2"], PK, [-187.7, -155.1, -305.2], [-182.3, -141.5, -299.8]), box(["pk2"], PK, [-157.7, -155.1, -305.2], [-152.3, -141.5, -299.8]),
     box(["pk1"], PK, [-159, -146.6, -286.1], [-150.9, -142.4, -281.9]), box(["pk1"], PK, [-159, -146.6, -296.1], [-150.9, -142.4, -291.9]),
     box(["dl1", "dl2", "dl3", "dl4", "dl5", "dl6", "dl7"], DL, [-209.1, -149.1, -300.1], [-130.9, -139.9, -207.4]),
 ]
@@ -409,11 +439,12 @@ KOLL = [
     (["wb1", C("Kanaltraeger")], "neue Gewinde M4 (Punkt kt4), Kernloch Ø 3,3"),
     (["wb2", C("Kanaltraeger")], "wie oben"),
     (["ls1", C("Trichtersaeule")], "neue Gewinde M5 (Punkt ts3)"), (["ls2", C("Trichtersaeule")], "wie oben"),
-    (["ls3", C("Trichtersaeule")], "wie oben"), (["ls4", C("Trichtersaeule")], "wie oben"),
+    (["kp1", C("Pruefkanal")], "neue Gewinde M5 (Punkt pk2)"), (["kp2", C("Pruefkanal")], "wie oben"),
+    (["kp3", C("Pruefkanal")], "vorhandene Gewinde M5 des Prüfkanals (kosmetisch)"), (["kp4", C("Pruefkanal")], "wie oben"),
     ([S("M4x20", 1), C("Pruefkanal")], "neue Gewinde M4 (Punkt pk1)"), ([S("M4x20", 2), C("Pruefkanal")], "wie oben"),
     ([S("M4x20", 3), "Festo_ADNGF-16-25-P-A-1"], "RT-Gewinde M4 des Kaufteils (Herstellergeometrie)"),
     ([S("M4x20", 4), "Festo_ADNGF-16-25-P-A-1"], "wie oben"),
-    ([S("M5x16", 9), PLATTE], "Gewinde M5 der Platte (Rutschenwinkel), Eingriff jetzt über die ganze Plattendicke"),
+    ([S("M5x16", 9), PLATTE], "neue Gewinde M5 der Platte (Punkt ap5), Eingriff über die ganze Plattendicke"),
     ([S("M5x16", 10), PLATTE], "wie oben"),
 ]
 kopf = f"""# Änderungs-Spec Runde 1 der Prüfstation AP 6.8 an lauf-30 (Bestand bestand-2), Auftrag laut eingabe/aufgabe.md.
