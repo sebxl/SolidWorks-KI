@@ -488,13 +488,13 @@ Referenz im Kontext ab. Die Abnahme an einer echten Kollegen-Baugruppe auf SW 20
 ### Runde 1 der Änderungen an lauf-30 (Auftrag `AP68-Pruefstation-Rev1`, 06.–07.11.2026, live)
 
 Bestand `bestand-2` (lauf-30 nach Auflösen der Kontext-Referenz), Spec aus `erzeuge_rev1.py`: 195 Punkte (64 in 13 Teilen, 131 in der
-Hauptbaugruppe), 3 neue Teile, 7 neue Normteil-Dateien. Lauf 13 bestanden (Prüfung und Prüfer), Ausgabe 21 Dateien unter
+Hauptbaugruppe), 3 neue Teile, 7 neue Normteil-Dateien. Lauf 13 bestanden (Prüfung und Prüfer); Lauf 14 mit Verdrehsperre an 10 neu verknüpften Bestandsschrauben (live alle Komponenten voll bestimmt) ebenso, Ausgabe 21 Dateien unter
 `AP68-Pruefstation-Rev1\ausgabe`; `lauf-30` nie geöffnet, SHA-256 der Hauptbaugruppe gleich der Aufnahme. Warnungen: `BESTAND_LIZENZ`
 (Student), `BEWEGUNG_ABDECKUNG` für unterbestimmte Bestandsschrauben.
 
 | Kennzahl | Wert |
 |---|---|
-| Läufe bis bestanden | 13 (5 Freigaben: Erstfreigabe, ag1/ag2, vxp, Kamerahalter Variante A, Prüfboxen) |
+| Läufe bis bestanden | 13 (5 Freigaben: Erstfreigabe, ag1/ag2, vxp, Kamerahalter Variante A, Prüfboxen); Lauf 14 nach 6. Freigabe (Verdrehsperre) |
 | Bau / gesamt (Lauf 13, `--neustart`) | 937 s / 25 min |
 | Punkt der Hauptbaugruppe | ~80 s → ~7 s mit `sw.schnell` (Verknüpfungen lesen 23 s → 3,1 s bei 168 Verknüpfungen) |
 | Werkzeug-Fixes mit Tests | 6 Commits (7150ea5, 0c20a8e, f540b13, 50a01f3, 76f913c, 54b554e) |
@@ -511,6 +511,8 @@ Was die Läufe aufdeckten:
   Prüfboxen: ein Bereich je Teil, wo das Teil als Ganzes wandert oder Differenzkörper verschmelzen, Bohrspitzen und Wände mit Rand.
 
 Offen: Wirkung auf andere Baugruppen nicht geprüft; Einschmelzmutter-Bohrungen sind Annahmen; die Ausgabe trägt den Student-Vermerk.
+Die Warnung `BEWEGUNG_ABDECKUNG` vermischt Bestand und Lauf (`_warnungen` nimmt die Warnungen der Aufnahme mit): Nach Lauf 14 nannte sie
+noch 5 Komponenten aus lauf-30, darunter den entfernten Weichenzylinderhalter.
 
 ## Offene Kleinigkeiten aus den Reviews
 
