@@ -522,6 +522,14 @@ Ausgabe 22 Dateien (neu: Schachthalter), frühere Ausgaben in `ausgabe_alt_1`/`_
 verlangt; Montierbarkeit, Schlüsselzugang, Druckrichtung und Kamerafeld sah erst der Nutzer an der Ausgabe – gehört ins
 Konstruktionsreview vor der ersten Freigabe. SolidWorks startet seit `53873f2` minimiert und ohne Fokus.
 
+## 4. Gesamtregression Etappe 2 (Task 15, live, 2026-11-07)
+
+Stand: Branch mit `main` (Paket Konstruktionsstil) gemergt, `9664b3f`. `pytest -q`: 3645 bestanden. `swki api pruefe-code`: keine
+Befunde. `-m werkzeuge.live_frisch tests/referenz --zeit 1500` (SolidWorks im Hintergrund): **14 von 14 OK**, Lagerdeckel 26 s / 2969 MB,
+Hubeinheit 116 s / 3262 MB, größte Spitze Zahnstangentrieb 3679 MB. Beim Neustart vor der Hubeinheit warf der Speicher-Thread einmal
+`WinError 87` (bekannt aus Task 13: der alte Prozess ist weg), ohne Folgen für das Ergebnis. Task 14 (`bestand_gross`, Größenmessung)
+ist nicht gelaufen; gemessen ist die Größe nur an `lauf-30` (§3).
+
 ## Offene Kleinigkeiten aus den Reviews
 
 Stand 2026-10-31, zurückgestellt, nichts davon führt zu einem falschen Bestanden. Teilweise inzwischen erledigt (Abschlusskorrekturen, siehe oben).
