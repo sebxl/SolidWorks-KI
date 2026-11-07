@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("build123d")
 
-from swki.schnellbau.fehler import NICHT_UNTERSTUETZT, SchnellbauFehler  # noqa: E402
+from swki.schnellbau.fehler import GEOMETRIE, NICHT_UNTERSTUETZT, SchnellbauFehler  # noqa: E402
 from swki.schnellbau.teil import baue  # noqa: E402
 from swki.spec.normen import normmasse  # noqa: E402
 
@@ -91,6 +91,7 @@ TASCHE_RUND = 30 * 20 * 12 - (4 - math.pi) * 9 * 12
 def test_tasche_mit_verrundung_gespiegelt():
     spiegel = {"id": "s1", "typ": "spiegeln", "features": ["t1", "r1"], "ebene": "rechts"}
     teil = baue(_spec(_tasche(), RUNDUNG, spiegel))
+    assert len(teil.solid.solids()) == 1
     assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 2 * TASCHE_RUND, rel=1e-9)
 
 
@@ -123,3 +124,23 @@ def test_verrundung_ausserhalb_von_mustern_unveraendert():
     teil = baue(_spec(_tasche(), RUNDUNG))
     assert teil.features["r1"].teile is None
     assert teil.solid.volume == pytest.approx(100 * 60 * 20 - TASCHE_RUND, rel=1e-9)
+
+
+def test_differenzfehler_wird_gemeldet(monkeypatch):
+    """Scheitert die Differenz für die Musterkopien, meldet der Schnellbau es mit Feature-ID – nie still weglassen."""
+    from build123d import Shape
+    from swki.schnellbau.teil import Schnellbau
+    original = Schnellbau._differenz
+
+    def differenz(self, a, b):
+        def sub(x, y):
+            raise RuntimeError("boolesche Differenz kaputt")
+        monkeypatch.setattr(Shape, "__sub__", sub)     # erst hier: die Tasche davor baut normal
+        return original(self, a, b)
+
+    monkeypatch.setattr(Schnellbau, "_differenz", differenz)
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["t1", "r1"], "ebene": "rechts"}
+    with pytest.raises(SchnellbauFehler) as e:
+        baue(_spec(_tasche(), RUNDUNG, spiegel))
+    assert e.value.code == GEOMETRIE
+    assert "r1" in str(e.value)

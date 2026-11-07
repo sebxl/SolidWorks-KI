@@ -458,13 +458,12 @@ class Schnellbau:
         """Steht fid in den features eines späteren muster_linear/muster_kreis/spiegeln der Spec?"""
         return any(m["typ"] in MUSTER and fid in m["features"] for m in self.spec["features"])
 
-    @staticmethod
-    def _differenz(a, b) -> list:
+    def _differenz(self, a, b) -> list:
         """Teile von a − b mit Volumen (build123d liefert None, leeren Körper oder Compound)."""
         try:
             d = a - b
-        except Exception:
-            return []
+        except Exception as e:     # nie still weglassen: sonst fehlt die Verrundung/Fase auf den Kopien
+            raise self.fehler(GEOMETRIE, f"Differenz für das Muster fehlgeschlagen: {type(e).__name__}: {e}") from e
         if d is None:
             return []
         return [s for s in d.solids() if s.volume > _VOLUMEN_EPS]
