@@ -118,6 +118,16 @@ def abdeckung(aufnahme: dict) -> list[str]:
     return hinweise
 
 
+NUR_IM_BESTAND = "Nur im Bestand (vorher): "
+
+
+def abdeckung_getrennt(vorher: dict, nachher: dict) -> list[str]:
+    """`abdeckung` von Lauf und Bestand, getrennt benannt (Nutzer, Rev1 Lauf 14): was der Lauf hat, ohne Vorsatz; was nur der
+    Bestand hatte (entfernte oder inzwischen bestimmte Komponenten), mit `NUR_IM_BESTAND`. Jede Meldung einmal."""
+    lauf = abdeckung(nachher)
+    return lauf + [NUR_IM_BESTAND + h for h in abdeckung(vorher) if h not in lauf]
+
+
 def statische_paare(aufnahme: dict) -> set[frozenset]:
     """Die statischen Kollisionen der Aufnahme als Paare (für `fahre` am Bestand: sie zählen in der Fahrt nicht als neu)."""
     return {frozenset(k["paar"]) for k in aufnahme.get("kollisionen") or []}
@@ -550,7 +560,7 @@ def vergleiche_bewegungen(vorher: dict, nachher: dict, spec: dict, neue: dict[st
     for g in dict.fromkeys([*grenzen_der_aufnahme(nachher), *nb]):
         if g not in im_bestand and g not in c.geloeschte_mates:
             eintraege += _neue_grenze(g, nb.get(g), c, bekannt)
-    if hinweise := abdeckung(vorher):
+    if hinweise := abdeckung_getrennt(vorher, nachher):
         eintraege.append(eintrag("bewegung_abdeckung", True, ist=hinweise, knoten=[],
                                  hinweis="Nicht abgedeckt: " + "; ".join(hinweise)))
     return _zusammen(eintraege)

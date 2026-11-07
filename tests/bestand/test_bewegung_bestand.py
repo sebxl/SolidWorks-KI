@@ -8,7 +8,7 @@ import pytest
 
 from swki.baugruppe.bewegungslauf import StellungFehler
 from swki.baugruppe.sw_baugruppe import NAECHSTE
-from swki.bestand.bewegung_bestand import (SeiteUnklar, abdeckung, als_verknuepfung, bekannte_paare, bewegte_seite, fahre_bestand,
+from swki.bestand.bewegung_bestand import (SeiteUnklar, abdeckung, abdeckung_getrennt, als_verknuepfung, bekannte_paare, bewegte_seite, fahre_bestand,
                                            grenze_als_bewegung, grenzen_der_aufnahme, ohne_fahrt, statische_paare,
                                            vergleiche_bewegungen)
 from tests.baugruppe.attrappe_mechanik import Attrappe
@@ -596,6 +596,22 @@ def test_unterbaugruppe_nur_hinweis(gefahren):
     assert falsche(e) == [] and "Unten" not in " ".join(e) and "Unterbaugruppe" in e["bewegung_abdeckung"]["hinweis"]
     assert "Frei-1" in e["bewegung_abdeckung"]["hinweis"] and e["bewegung_abdeckung"]["ok"] is True
     assert abdeckung(aufnahme()) == []
+
+
+def test_abdeckung_trennt_bestand_und_lauf():
+    """Rev1 Lauf 14: Was nur der Bestand hatte (eine entfernte oder inzwischen bestimmte Komponente), steht als „Nur im Bestand“;
+    was der Lauf noch hat, ohne Vorsatz und einmal."""
+    vorher, nachher = aufnahme(), aufnahme()
+    for a, namen in ((vorher, ("Weg-1", "Beide-1")), (nachher, ("Beide-1", "Neu-1"))):
+        for n in namen:
+            a["komponenten"][n] = komponente("teile/Welle.SLDPRT")
+            a["komponenten"][n]["status"]["Standard"] = 2
+    text = "ist beweglich (unterbestimmt) und hat keine Grenze, nicht gefahren"
+    assert abdeckung_getrennt(vorher, nachher) == [f"Komponente Beide-1 {text}", f"Komponente Neu-1 {text}",
+                                                  f"Nur im Bestand (vorher): Komponente Weg-1 {text}"]
+    e = vergleich(None, None, vorher=vorher, nachher=nachher)
+    assert e["bewegung_abdeckung"]["ist"] == abdeckung_getrennt(vorher, nachher)
+    assert abdeckung_getrennt(aufnahme(), aufnahme()) == []
 
 
 def test_neue_grenze_im_lauf_hat_kein_soll(gefahren):

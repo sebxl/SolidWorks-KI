@@ -525,6 +525,22 @@ def test_warnungen_stehen_einmal_da(tmp_path, monkeypatch):
     assert len([x for x in w if x["code"] == "BEWEGUNG_ABDECKUNG"]) == 1
 
 
+def test_abdeckung_nur_des_bestands_steht_getrennt(tmp_path, monkeypatch):
+    """Rev1 Lauf 14: Eine Komponente, die nur im Bestand beweglich war, nennen Warnungen und „nicht abgedeckt“ als Bestand."""
+    u = Pruefung(tmp_path, monkeypatch, fehlerhaft=frei)
+    u.gebaut()
+    text = "Komponente Weg-1 ist beweglich (unterbestimmt) und hat keine Grenze, nicht gefahren"
+    vorher = ablage.lade_aufnahme(u.r, "A", 1)  # der Bestand nach dem Bau: Weg-1 gab es nur dort
+    vorher["komponenten"]["Weg-1"] = copy.deepcopy(vorher["komponenten"]["Frei-1"])
+    vorher["warnungen"] = [{"code": "BEWEGUNG_ABDECKUNG", "meldung": text}]
+    ablage.schreibe_aufnahme(u.r, "A", 1, vorher)
+    b = u.pruefe()
+    meldungen = [w["meldung"] for w in b["warnungen"] if w["code"] == "BEWEGUNG_ABDECKUNG"]
+    assert f"Nur im Bestand (vorher): {text}" in meldungen and text not in meldungen
+    assert any(m.startswith("Komponente Frei-1") for m in meldungen)  # im Lauf weiter beweglich, ohne Vorsatz
+    assert f"Nur im Bestand (vorher): {text}" in b["nicht_abgedeckt"]
+
+
 def test_bestandsfehler_stehen_im_bericht(tmp_path, monkeypatch):
     def fehlerhaft(asm):
         asm.mate("Kaputt1", 0, [asm.seite("Grund-1"), asm.seite("Schraube-5")], code=7)

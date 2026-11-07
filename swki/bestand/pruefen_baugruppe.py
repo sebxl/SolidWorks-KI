@@ -26,7 +26,7 @@ from swki.auftrag import auftrag_name, lauf_ordner
 from swki.bestand.ablage import bestand_ordner, flach, lade_datei_aufnahme, lade_dateien
 from swki.bestand.aufnahme_baugruppe import BEWEGUNG_ABDECKUNG, _Messung
 from swki.bestand.bau_baugruppe import pruefe_bestand
-from swki.bestand.bewegung_bestand import (abdeckung, bekannte_paare, fahre_bestand, grenzen_der_aufnahme, ohne_fahrt,
+from swki.bestand.bewegung_bestand import (abdeckung_getrennt, bekannte_paare, fahre_bestand, grenzen_der_aufnahme, ohne_fahrt,
                                            vergleiche_bewegungen)
 from swki.bestand.fehler import BestandFehler
 from swki.bestand.pfade import offene_dokumente, oeffne_in, pruefe_geladen
@@ -197,8 +197,10 @@ def _warnungen(r, spec_pfad: Path, spec: dict, vorher: dict, nachher: dict, bild
     """Was der Bericht nennen muss, ohne dass es ein Mangel ist: die Warnungen beider Stände (Gegenprobe `VERKNUEPFUNG_UNERREICHT`,
     `BESTAND_OFFEN`, Abdeckung), die Gegenprobe der Unterbaugruppen aus ihrer Aufnahme, fehlende Vorher-Bilder. Jede einmal."""
     auftrag, nummer = auftrag_name(spec_pfad), spec["bestand"]["aufnahme"]
-    aus = [*(vorher.get("warnungen") or ()), *(nachher.get("warnungen") or ())]
-    aus += [{"code": BEWEGUNG_ABDECKUNG, "meldung": h} for h in abdeckung(nachher)]
+    # Die Abdeckung der Aufnahme beschreibt den Bestand: getrennt vom Lauf neu benannt, sonst stünde etwa eine entfernte Komponente
+    # wie eine offene des Laufs da (Rev1 Lauf 14)
+    aus = [w for w in (*(vorher.get("warnungen") or ()), *(nachher.get("warnungen") or ())) if w["code"] != BEWEGUNG_ABDECKUNG]
+    aus += [{"code": BEWEGUNG_ABDECKUNG, "meldung": h} for h in abdeckung_getrennt(vorher, nachher)]
     for rel in (rel for rel, d in vorher["dateien"].items() if d.get("art") == "baugruppe"):
         try:
             aus += [{**w, "datei": rel} for w in lade_datei_aufnahme(r, auftrag, nummer, rel).get("warnungen") or ()]
@@ -216,7 +218,7 @@ def _warnungen(r, spec_pfad: Path, spec: dict, vorher: dict, nachher: dict, bild
 
 def _nicht_abgedeckt(vorher: dict, nachher: dict) -> list[str]:
     """Was die Prüfung nicht abdeckt, nie stumm (§8.4): Bewegung, und was die Kollision nur in der aktiven Konfiguration sieht."""
-    aus = list(dict.fromkeys([*abdeckung(vorher), *abdeckung(nachher)]))
+    aus = abdeckung_getrennt(vorher, nachher)
     if uebrige := [k for k in nachher["konfigurationen"] if k != nachher["aktiv"]]:
         was = "Kollisionen und Fahrt" if nachher["bewegungen"] else "Kollisionen"
         aus.append(f"{was} nur in der aktiven Konfiguration {nachher['aktiv']} geprüft, nicht in: {', '.join(uebrige)}")
