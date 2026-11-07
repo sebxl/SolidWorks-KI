@@ -1,4 +1,4 @@
-"""Paket Konstruktionsstil im Schnellbau (Stufe C3a): Bohrungsfase; was noch fehlt, meldet er – nie still."""
+"""Konstruktionsstil im Schnellbau (Stufe C3a): Bohrungsfase, Austragung, Verrundung/Fase und Muster als Musterquelle."""
 
 import math
 from pathlib import Path
@@ -172,3 +172,36 @@ def test_differenzfehler_wird_gemeldet(monkeypatch):
         baue(_spec(_tasche(), RUNDUNG, spiegel))
     assert e.value.code == GEOMETRIE
     assert "r1" in str(e.value)
+
+
+# Muster mit Verrundungsquelle bleibt musterbar (Schlussreview C3a) ------------------------------------------------
+KLEIN_RUND = 15 * 20 * 12 - (4 - math.pi) * 9 * 12     # Tasche 15 × 20 × 12 mit R3 an den senkrechten Kanten
+
+
+def _klein():
+    t = _tasche(-40)
+    t["skizze"]["elemente"][0]["rechteck"]["breite"] = 15
+    return t
+
+
+def _muster_gemischt():
+    return {"id": "m1", "typ": "muster_linear", "features": ["t1", "r1"],
+            "richtung1": {"achse": "x", "abstand": 20, "anzahl": 2}}
+
+
+def test_spiegeln_von_muster_mit_quelle_und_verrundung():
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["t1", "r1", "m1"], "ebene": "rechts"}
+    teil = baue(_spec(_klein(), RUNDUNG, _muster_gemischt(), spiegel))
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 4 * KLEIN_RUND, rel=1e-9)
+
+
+def test_spiegeln_nur_des_musters():
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["m1"], "ebene": "rechts"}
+    teil = baue(_spec(_klein(), RUNDUNG, _muster_gemischt(), spiegel))
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 3 * KLEIN_RUND, rel=1e-9)
+
+
+def test_muster_kreis_mit_verrundung_als_quelle():
+    kreis = {"id": "m1", "typ": "muster_kreis", "features": ["t1", "r1"], "achse": "y", "anzahl": 2, "winkel": 180}
+    teil = baue(_spec(_tasche(), RUNDUNG, kreis))
+    assert teil.solid.volume == pytest.approx(100 * 60 * 20 - 2 * TASCHE_RUND, rel=1e-9)

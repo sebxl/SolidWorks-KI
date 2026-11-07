@@ -3,8 +3,9 @@
 Skizzen: (u, v) → Modellpunkt über swki.compiler.skizze.modellpunkt; Elemente rechteck (radius), kreis, polygon (radien),
 kontur (Bögen gegen den Uhrzeigersinn in (u, v)), langloch, mittellinie; mehrere Konturen nach gerade/ungerade.
 Features: extrusion/schnitt (alle Endbedingungen, umkehren, formschraege), rotation, bohrung, normbohrung
-(swki/wissen/bohrungsnormen.yaml; Feld `fase` = Fasenkegel am Eintritt, Maße aus swki.spec.bohrungsfase), verrundung, fase (45°), austragung (Kreis/Rechteck entlang Linien und Bögen), muster_linear, muster_kreis, spiegeln, referenz, verzahnung
-(Profil aus swki.verzahnung). skript und alles Übrige → SchnellbauFehler NICHT_UNTERSTUETZT.
+(swki/wissen/bohrungsnormen.yaml; Feld `fase` = Fasenkegel am Eintritt, Maße aus swki.spec.bohrungsfase), verrundung,
+fase (45°), austragung (Kreis/Rechteck entlang Linien und Bögen), muster_linear, muster_kreis, spiegeln, referenz,
+verzahnung (Profil aus swki.verzahnung). skript und alles Übrige → SchnellbauFehler NICHT_UNTERSTUETZT.
 
 Jedes Feature hinterlässt ein FeatureInfo: Werkzeugkörper und Operation (plus/minus, für Flächenanker, Muster, Spiegeln),
 Richtung, Bohrungs- bzw. Radachspunkte, Bezugsebene. Längen in mm, Teilkoordinaten wie in SolidWorks.
@@ -52,7 +53,8 @@ class FeatureInfo:
     richtung: tuple | None = None
     punkte: list | None = None             # Achspunkte (Bohrung je Instanz, Stirnrad)
     ebene: Ebene | None = None             # referenz-Ebene
-    teile: list | None = None              # [(Körper, "plus"|"minus")] in Anwendungsreihenfolge (Verrundung/Fase als Musterquelle)
+    teile: list | None = None              # [(Körper, "plus"|"minus")] in Anwendungsreihenfolge (Verrundung/Fase,
+                                           # Muster mit Verrundungsquelle)
     richtungen: list | None = None         # Bohrrichtung je Instanz, parallel zu punkte
     kopien: dict = field(default_factory=dict)   # Muster/Spiegeln: Bohrungs-ID → (Punkte, Richtungen) dieser Kopien
 
@@ -66,7 +68,7 @@ class Teil:
     uebersprungen: list = field(default_factory=list)
     sekunden: float = 0.0
     bau: "Schnellbau | None" = None
-    meldungen: list = field(default_factory=list)   # was nicht gebaut wurde, ohne Abbruch (Paket Konstruktionsstil)   # für Anker-Abfragen (Flächenebenen) der Baugruppe
+    meldungen: list = field(default_factory=list)   # nicht Gebautes ohne Abbruch (heute leer)
 
 
 def _v(p) -> Vector:
@@ -472,7 +474,7 @@ class Schnellbau:
             return []
         return [s for s in d.solids() if s.volume > _VOLUMEN_EPS]
 
-    def _kantenarbeit(self, f: dict, vorher, typ: str) -> None:
+    def _kanten_mit_teilen(self, f: dict, vorher, typ: str) -> None:
         """Merkt, was Verrundung/Fase abgetragen und aufgefüllt hat, wenn ein Muster das Feature mustert."""
         info = FeatureInfo(typ)
         if self._ist_musterquelle(f["id"]):
@@ -483,14 +485,14 @@ class Schnellbau:
     def verrundung(self, f: dict) -> None:
         vorher = self.body
         self.body = self.body.fillet(self.w(f["radius"]), self._kanten(f["kanten"]))
-        self._kantenarbeit(f, vorher, "verrundung")
+        self._kanten_mit_teilen(f, vorher, "verrundung")
 
     def fase(self, f: dict) -> None:
         if abs(self.w(f.get("winkel", 45)) - 45) > 1e-9:
             raise self.fehler(NICHT_UNTERSTUETZT, "fase mit winkel ≠ 45°")
         vorher = self.body
         self.body = self.body.chamfer(self.w(f["abstand"]), None, self._kanten(f["kanten"]))
-        self._kantenarbeit(f, vorher, "fase")
+        self._kanten_mit_teilen(f, vorher, "fase")
 
     # Muster ------------------------------------------------------------------------------------------------------
     def _werkzeuge(self, ids: list) -> list[tuple[Solid, str]]:
@@ -515,11 +517,7 @@ class Schnellbau:
                     gruppen.append([w, op])
             for w, op in gruppen:
                 self.anwenden(w, op)
-            ops = {op for _, op in kopien}
-            alle = None
-            for w, _ in kopien:
-                alle = w if alle is None else alle + w
-            self.features[f["id"]] = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
+            self._muster_info(f, kopien, teile=True)
             return
         plus = [w for w, op in kopien if op == "plus"]
         minus = [w for w, op in kopien if op == "minus"]
@@ -535,11 +533,19 @@ class Schnellbau:
                 self.features[f["id"]] = FeatureInfo(f["typ"], w, op)
                 return
             self.anwenden(w, op)
+        self._muster_info(f, kopien)
+
+    def _muster_info(self, f: dict, kopien: list[tuple[Solid, str]], teile: bool = False) -> None:
+        """FeatureInfo des Musters: alle Kopien vereinigt, Operation nur wenn einheitlich. Mit teile tragen die Kopien in
+        Anwendungsreihenfolge, damit das Muster selbst wieder gemustert/gespiegelt werden kann (gemischte Operationen)."""
         ops = {op for _, op in kopien}
         alle = None
         for w, _ in kopien:
             alle = w if alle is None else alle + w
-        self.features[f["id"]] = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
+        info = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
+        if teile:
+            info.teile = list(kopien)
+        self.features[f["id"]] = info
 
     def _instanzen_der_quellen(self, quellen: list) -> dict:
         """Bohrungs-ID → (Punkte, Richtungen), die die Quellen tragen: eigene Positionen einer Bohrung, Kopien eines

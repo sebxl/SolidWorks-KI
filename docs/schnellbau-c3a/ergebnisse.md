@@ -54,14 +54,18 @@ Läufe bleiben erhalten. Getestet in `tests/schnellbau/test_abgleich_kopie.py`.
 - Volumentests der Fase binden die Kegelorientierung nicht. Der Live-Abgleich der Grundplatte belegt sie.
 - Kein Einzeltest für `bohrung` mit `senkung` und `fase`.
 - `senkschraube` mit `fase` ergibt im Schnellbau einen KeyError. `validieren` lehnt die Kombination vorher ab.
-- `_muster_anwenden`: Der Abschlussblock steht doppelt. `_kantenarbeit` ist unklar benannt.
-- Kein Test `muster_kreis` mit Verrundung als Quelle.
-- Ein Muster von einem Muster mit gemischter Operation endet mit `NICHT_UNTERSTUETZT`; das ist ungetestet.
 - `baugruppe.seite` fängt `instanz < 1` nicht ab.
 - Kreismuster: Der Schritt prüft `abs(w − 360) < 1e-9`, `kopien_kreis` dagegen `w == 360`.
 - `referenz`-Achse y zeigt nach +y, die Bezugsachse des Kreismusters nach −y. Wirkt sich nur aus, wenn eine Referenz
   den Richtungssinn braucht.
 - Die Fehlermeldung „0 Volumenkörper“ nennt keine Feature-ID.
+- `bohrungen=False` mit gemischten Musterquellen (Form und Bohrung, z. B. `[t1, f2]`): die Kopien der Bohrung werden
+  geschnitten, die Quelle nicht (schon vor C3a so). Stille Asymmetrie in Simulationen, eigener Punkt.
+- Die Flächen des Bohrungswerkzeugs enthalten die Kegelfläche der Fase (Compiler: eigenes Feature `<id>_fase`). Wirkt nur
+  bei `kanten: [{feature: <bohrung>, …}]` an einer Bohrung mit Fase.
+- `auftrag_aktualisieren` entfernt keine Dateien, die aus der Referenz gelöscht wurden.
+- `sw_neustart` (übernommener Commit): Eine Ausnahme bei `FrameState` wird geschluckt und endet als „nicht erreichbar“;
+  gehört in den Branch Bestandsdateien Etappe 2.
 
 ## Nebenbei übernommen
 
