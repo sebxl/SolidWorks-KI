@@ -398,7 +398,7 @@ for k, (x, y) in enumerate(((-185, 302.5), (-155, 302.5), (-185, 362.5), (-155, 
           a={"komponente": f"kp{k}", "referenz": "EINBAU_ACHSE"}, b={"komponente": C("Kanaltraeger"), "nahe": [x + 2.75, -157.3, -y]},
           drehung_sperren=True)
     punkt(id=f"kp{k}b", was="Kopf auf dem Senkungsboden", typ="verknuepfung_neu", art="deckungsgleich",
-          a={"komponente": f"kp{k}", "referenz": "EINBAU_EBENE"}, b={"komponente": C("Kanaltraeger"), "nahe": [x + 4, -159.6, -y]},
+          a={"komponente": f"kp{k}", "referenz": "EINBAU_EBENE"}, b={"komponente": C("Kanaltraeger"), "nahe": [x - 4, -159.6, -y]},   # nach −X: bei X −155 + 4 läge er auf der Außenkante (Lauf 15)
           ausrichtung="gleich")
 
 # ------------------------------------------------------------------ Bereiche (Modellkoordinaten der Teile: x = X, y = Z, z = −Y)
