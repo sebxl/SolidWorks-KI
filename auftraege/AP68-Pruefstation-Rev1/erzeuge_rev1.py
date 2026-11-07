@@ -111,7 +111,8 @@ punkt(id="ts2", was="2 Stiftbohrungen Ø 4 zur Platte", typ="feature", in_datei=
                "positionen": [[303, -105], [322, -105]], "tiefe": 9, "bezug": {"u": "-rand", "v": "-rand"}})
 punkt(id="ts3", was="2 × M5 auf der +X-Seite für den Schachthalter", typ="feature", in_datei=TS, name="Gewinde Laschen",
       feature={"typ": "normbohrung", "art": "gewinde", "groesse": "M5", "flaeche": {"feature": "f1", "flaeche": "+x"},
-               "positionen": [[305, -87], [305, -75]], "tiefe": 12, "gewindetiefe": 10,
+               # durch die 15 dicke Säule: M5x16 durch 3 Halter, Eingriff 13 (Alu ≥ 2·d, Konstruktionsreview)
+               "positionen": [[305, -84], [305, -72]], "durch": True,
                "bezug": {"u": "-rand", "v": "-rand"}})
 # ------------------------------------------------------------------ Zylinderaufnahme
 kommentar("Zylinderaufnahme: Flansch an der neuen Plattenvorderseite, verstiftet")
@@ -161,12 +162,13 @@ OB, OH, IN = 9, 10, 1
 def _auge(wand, aussen, z):   # aussen −1: Ohr nach −Y (Vorderwand), +1: nach +Y (Rückwand)
     zu, zo = z - OH / 2, z + OH / 2
     aussen_u = wand(zu) + aussen * OB
-    d = OB + IN                  # Unterseite: von der Außenkante unten schräg zur Wand hinab, mindestens 45°
-    while abs(aussen_u - (wand(zu - d) - aussen * IN)) > d:
+    d = OB + IN                  # Unterseite: von der Außenkante unten schräg zur Wand hinab, mindestens 50° (Reserve, Review)
+    while abs(aussen_u - (wand(zu - d) - aussen * IN)) > d * 0.8391:   # tan 40°
         d += 0.5
     pts = [(aussen_u, zu), (wand(zu - d) - aussen * IN, zu - d), (wand(zo) - aussen * IN, zo), (wand(zo) + aussen * OB, zo)]
     return [[round(y, 3), round(zz, 3)] for y, zz in pts], [round(wand(z) + aussen * OB / 2, 3), z]
-AUGEN = [_auge(_yv, -1, -70), _auge(_yh, 1, -115), _auge(_yv, -1, 10), _auge(_yh, 1, 10)]
+# hinten unten Z −105 statt −115: mit der schrägen Unterseite sonst nur 1–3 über dem Schieberkopf (OK −130), jetzt 8
+AUGEN = [_auge(_yv, -1, -70), _auge(_yh, 1, -105), _auge(_yv, -1, 10), _auge(_yh, 1, 10)]
 punkt(id="fs5", was="4 Augen für den Deckel hinter der Deckelebene", typ="feature", in_datei=FS, name="Augen Deckel",
       feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "rechts", "abstand": -160}},
                "elemente": [{"polygon": {"punkte": p}} for p, _ in AUGEN]},
@@ -178,7 +180,7 @@ punkt(id="fs6", was="4 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 (Deckel)",
 # Leiste an der Rückwand für den Schachthalter (Runde 2: ersetzt Lasche 2 und 3), Unterseite 45° zur Wand hinab
 punkt(id="fs11", was="Leiste an der Rückwand für den Schachthalter (stehend druckbar)", typ="feature", in_datei=FS, name="Leiste Halter",
       feature={"typ": "extrusion", "skizze": {"ebene": {"versatz": {"ebene": "rechts", "abstand": -182}},
-               "elemente": [{"polygon": {"punkte": [[275.07, -70], [282, -70], [282, -84], [275.07, -90.93]]}}]},
+               "elemente": [{"polygon": {"punkte": [[275.07, -70], [282, -70], [282, -84], [275.07, -93.5]]}}]},   # 54°
                "ende": {"typ": "blind", "tiefe": 22}})
 punkt(id="fs12", was="2 × Bohrung Ø 4 × 6 für Einschmelzmuttern M3 (Schachthalter)", typ="feature", in_datei=FS,
       name="Einschmelz Halter",
@@ -374,7 +376,7 @@ for e in ("rechts", "oben", "vorne"):
     punkt(id=f"sh{e[0]}", was=f"Schachthalter in Maschinenkoordinaten ({e})", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": "sh", "ebene": e}, b={"komponente": PLATTE, "ebene": e}, ausrichtung="gleich")
 for k in (1, 2):
-    punkt(id=f"ls{k}", was=f"Halterschraube Säule {k}", typ="komponente_neu", wie=S("M5x12", 3))
+    punkt(id=f"ls{k}", was=f"Halterschraube Säule {k}", typ="komponente_neu", wie=S("M5x16", 1))
     punkt(id=f"ls{k}a", was="durch den Halter in die Säule", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": f"ls{k}", "referenz": "EINBAU_ACHSE"}, b={"komponente": "sh", "feature": "f3", "instanz": k, "achse": True},
           drehung_sperren=True)
@@ -423,7 +425,7 @@ B = [
 ] + [box(["fs5", "fs6"], FS, [-168.1, min(q[1] for q in p) - 0.1, -max(q[0] for q in p) - 0.1],
           [-159.9, max(q[1] for q in p) + 0.1, -min(q[0] for q in p) + 0.1]) for p, _ in AUGEN] + [
     # Füllung und Strebe sind ein Körper (Lauf 12)
-    box(["fs3", "fs11", "fs12"], FS, [-182.1, -91.1, -282.1], [-159.9, -66.5, -265.9]),
+    box(["fs3", "fs11", "fs12"], FS, [-182.1, -93.6, -282.1], [-159.9, -66.5, -265.9]),
     box(["ru1", "ru2", "ru3", "ru4", "ru5", "ru6", "ru7", "ru8"], RU, [-256, -324, -218.6], [-157, -174.9, -177.9]),
     box(["ru9", "ru10"], RU, [-206.1, -238.8, -208.1], [-191, -212.9, -171.9]),
     box(["ru11", "ru12"], RU, [-255.4, -342.1, -227.6], [-227.5, -323.2, -156.4]),
