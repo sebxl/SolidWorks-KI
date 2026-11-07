@@ -58,6 +58,13 @@ def _teile(ordner: Path, spec_datei: str) -> list[tuple[str | None, str]]:
     return out
 
 
+def auftrag_aktualisieren(quelle: Path, auftrag: Path) -> None:
+    """Referenzordner in den Auftrag kopieren; ein vorhandener Auftrag bekommt die aktuellen Dateien (frühere Läufe,
+    Protokolle und Freigaben bleiben, `durchlauf --freigeben` gibt neu frei). Sonst liefen beide Backends mit einer
+    veralteten Kopie der Specs."""
+    shutil.copytree(quelle, auftrag, dirs_exist_ok=True)
+
+
 def abgleich(ordner_name: str, spec_datei: str, wurzel: Path) -> dict:
     from swki.durchlauf import durchlauf
     from swki.schnellbau.befehle import exportiere_stl
@@ -67,8 +74,7 @@ def abgleich(ordner_name: str, spec_datei: str, wurzel: Path) -> dict:
     from werkzeuge.messstand.vergleich import vergleiche
 
     auftrag = wurzel / f"SBREF-{ordner_name}"
-    if not auftrag.exists():
-        shutil.copytree(QUELLE / ordner_name, auftrag)
+    auftrag_aktualisieren(QUELLE / ordner_name, auftrag)
     spec_pfad = auftrag / spec_datei
     t0 = time.perf_counter()
     d = durchlauf(spec_pfad, freigeben=True, neustart=True)
