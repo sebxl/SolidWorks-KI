@@ -513,6 +513,18 @@ def _koerper_mit(volumen_mm3: float):
     return SimpleNamespace(GetMassProperties=lambda dichte: (0, 0, 0, volumen_mm3 * 1e-9, 0))
 
 
+def test_bilanz_rauschen_waechst_mit_den_differenzkoerpern():
+    """AP68-Pruefstation-Rev1, Lauf 16: Fallschacht, Laschen weg und Leiste, Augen dazu heben sich fast auf (Körper −206,503 mm³
+    gegen Volumen −206,31 mm³). Das Rauschen kommt aus den Körpern, nicht aus der kleinen Netto-Änderung; ein fehlender Körper
+    bleibt ein Fehler."""
+    from swki.bestand.differenz import _pruefe_bilanz
+    vorher, nachher = [_koerper_mit(30000.0)], [_koerper_mit(30000.0 - 206.31)]
+    koerper = [Abweichung("hinzu", [0.0] * 6, 5000.0, 0.0), Abweichung("weg", [0.0] * 6, 5206.503, 0.0)]
+    _pruefe_bilanz(vorher, nachher, koerper)
+    with pytest.raises(DifferenzFehler, match="Volumen"):
+        _pruefe_bilanz(vorher, nachher, koerper[1:])
+
+
 def test_bilanz_rauschen_waechst_mit_der_aenderung():
     """AP68-Pruefstation-Rev1, Lauf 11: Trichter (Ausformung) −18791,5 mm³ in Körpern gegen −18792,5 mm³ Volumen, Fallschacht
     7761,78 gegen 7761,97. Rechenrauschen an gekrümmten Flächen, kein fehlender Körper; ein fehlender bleibt ein Fehler."""
