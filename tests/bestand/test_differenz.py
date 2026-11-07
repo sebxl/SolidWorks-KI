@@ -507,3 +507,17 @@ def test_feature_boxen_vereinen_vorher_nachher_und_konfigurationen():
 def test_feature_boxen_ohne_namen_schalten_nicht():
     a = Modell({"Standard": []})
     assert alle_feature_boxen([a], ["Standard", "Variante B"], set()) == {} and a.schalter == []
+
+
+def _koerper_mit(volumen_mm3: float):
+    return SimpleNamespace(GetMassProperties=lambda dichte: (0, 0, 0, volumen_mm3 * 1e-9, 0))
+
+
+def test_bilanz_rauschen_waechst_mit_der_aenderung():
+    """AP68-Pruefstation-Rev1, Lauf 11: Trichter (Ausformung) −18791,5 mm³ in Körpern gegen −18792,5 mm³ Volumen, Fallschacht
+    7761,78 gegen 7761,97. Rechenrauschen an gekrümmten Flächen, kein fehlender Körper; ein fehlender bleibt ein Fehler."""
+    from swki.bestand.differenz import _pruefe_bilanz
+    vorher, nachher = [_koerper_mit(60000.0)], [_koerper_mit(60000.0 - 18792.5)]
+    _pruefe_bilanz(vorher, nachher, [Abweichung("weg", [0.0] * 6, 18791.5, 0.0)])
+    with pytest.raises(DifferenzFehler, match="Volumen"):
+        _pruefe_bilanz(vorher, nachher, [Abweichung("weg", [0.0] * 6, 18700.0, 0.0)])

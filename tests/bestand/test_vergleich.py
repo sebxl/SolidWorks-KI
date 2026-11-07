@@ -847,3 +847,68 @@ def test_mehrere_punkte_haben_je_einen_eintrag_in_spec_reihenfolge():
     liste = vergleiche(spec(*punkte), VORHER, n, {})
     assert [x["id"] for x in liste][:2] == ["punkt:p1", "punkt:p2"]
     nur_ok(eintraege(liste))
+
+
+# --- AP68-Pruefstation-Rev1, Lauf 11 ---------------------------------------------------------------------------------------
+
+def test_baum_hilfsebene_des_feature_punkts_ist_erklaert():
+    """Eine Skizze auf `{versatz: …}` legt eine Bezugsebene an, die ihren SolidWorks-Namen behält (Ebene4 …). Erklärt ist sie, wenn
+    der Knoten des Punkts sie laut Protokoll angelegt hat und sie eine Ebene ist; ein anderes Feature bleibt ein Mangel."""
+    n = _neues_feature(_neues_feature(kopie(), "Gewinde M6"), "Ebene4")
+    feature(n, "Ebene4")["typ"] = "RefPlane"
+    assert vergleich(spec(PUNKT_FEATURE), n)["baum"]["ok"] is False
+    e = eintraege(vergleiche(spec(PUNKT_FEATURE), VORHER, n, {}, punkt_features=frozenset({"Gewinde M6", "Ebene4"})))
+    nur_ok(e)
+    _neues_feature(n, "Schnitt-Linear2")
+    e = eintraege(vergleiche(spec(PUNKT_FEATURE), VORHER, n, {},
+                             punkt_features=frozenset({"Gewinde M6", "Ebene4", "Schnitt-Linear2"})))
+    assert e["baum"]["ok"] is False and "Schnitt-Linear2" in e["baum"]["hinweis"]
+
+
+def _mit_gewinde(a: dict) -> dict:
+    """Bohrungsassistent `Gew` mit Positionsskizze und kosmetischem Gewinde als Unterfeatures (wie f4 im Fallschacht)."""
+    a["features"] += [
+        {"name": "Gew_positionen", "typ": "ProfileFeature", "eltern": [], "kinder": ["Gew"], "unter": [],
+         "unterdrueckt": {k: False for k in a["konfigurationen"]}, "tabelle": False},
+        {"name": "Gew", "typ": "HoleWzd", "eltern": ["Gew_positionen"], "kinder": [], "unter": ["Gew_positionen", "Bohrungsgewinde1"],
+         "unterdrueckt": {k: False for k in a["konfigurationen"]}, "tabelle": False},
+        {"name": "Bohrungsgewinde1", "typ": "CosmeticThread", "eltern": ["Gew"], "kinder": [], "unter": [],
+         "unterdrueckt": {k: False for k in a["konfigurationen"]}, "tabelle": False}]
+    for reihe in a["reihenfolge"].values():
+        reihe += ["Gew_positionen", "Gew", "Bohrungsgewinde1"]
+    a["masse"] += [{"name": "D2@Bohrungsgewinde1", "feature": "Gew", "werte": {k: 5.0 for k in a["konfigurationen"]}, "einheit": "mm",
+                    "zustand": "treibend", "quelle": None, "gruppe": None, "punkte": []},
+                   {"name": "D5@Gew_positionen", "feature": "Gew", "werte": {k: 75.0 for k in a["konfigurationen"]}, "einheit": "mm",
+                    "zustand": "treibend", "quelle": None, "gruppe": None, "punkte": []}]
+    return a
+
+
+def test_baum_geloeschtes_feature_nimmt_seine_unterfeatures_mit():
+    """Fallschacht `f4`: Mit dem Bohrungsassistenten gehen seine kosmetischen Gewinde (Unterfeatures laut Aufnahme)."""
+    vorher = _mit_gewinde(kopie())
+    n = _ohne(kopie(vorher), "Gew", "Gew_positionen", "Bohrungsgewinde1")
+    n["masse"] = [m for m in n["masse"] if m["feature"] != "Gew"]
+    e = vergleich(spec({"id": "p1", "typ": "loeschen", "feature": "Gew"}), n, vorher=vorher)
+    assert e["baum"]["ok"] is True and e["masse"]["ok"] is True
+
+
+def test_masse_eines_geloeschten_unterfeatures_und_eines_skript_features_fehlen_zu_recht():
+    """Anschlussplatte: `loeschen` auf das Gewinde nimmt `D2@Bohrungsgewinde1` (Feature laut Aufnahme: der Assistent); das Skript, das
+    Positionen löscht und den Assistenten zurückgibt, nimmt deren Maße. Ein anderes verschwundenes Maß bleibt Mangel."""
+    vorher = _mit_gewinde(kopie())
+    n = _ohne(kopie(vorher), "Bohrungsgewinde1")
+    n["masse"] = [m for m in n["masse"] if m["name"] not in ("D2@Bohrungsgewinde1", "D5@Gew_positionen")]
+    punkte_ = spec({"id": "g1", "typ": "loeschen", "feature": "Bohrungsgewinde1"},
+                   {"id": "s1", "typ": "skript", "datei": "skripte/s1.py", "luecke": "x"})
+    e = eintraege(vergleiche(punkte_, vorher, n, {}, skript_features=frozenset({"Gew"}), skript_gelaufen=frozenset({"s1"})))
+    assert e["masse"]["ok"] is True, e["masse"]
+    e = eintraege(vergleiche(punkte_, vorher, n, {}, skript_gelaufen=frozenset({"s1"})))
+    assert e["masse"]["ok"] is False and e["masse"]["fehlen"] == ["D5@Gew_positionen"]
+
+
+def test_punkt_features_aus_dem_protokoll():
+    from swki.bestand.pruefen import _punkt_features
+    sp = spec(PUNKT_FEATURE, {"id": "p4", "typ": "feature", "name": "Nut", "feature": {"typ": "schnitt"}})
+    protokoll = {"knoten": [{"id": "p3", "status": "ok", "sw_namen": ["Gewinde M6", "Ebene4"]},
+                            {"id": "p4", "status": "fehler", "sw_namen": ["Nut", "Ebene5"]}]}
+    assert _punkt_features(sp, protokoll) == frozenset({"Gewinde M6", "Ebene4"})

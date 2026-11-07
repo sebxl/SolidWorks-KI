@@ -121,6 +121,13 @@ def _skript_lauf(spec: dict, protokoll: dict) -> tuple[frozenset[str], frozenset
     return frozenset(n for k in gelaufen for n in k.get("sw_namen") or ()), frozenset(k["id"] for k in gelaufen)
 
 
+def _punkt_features(spec: dict, protokoll: dict) -> frozenset[str]:
+    """Aus dem Protokoll: was die durchgelaufenen `feature`-Punkte anlegten (`sw_namen`, auch Hilfsebenen)."""
+    knoten = {k["id"]: k for k in protokoll.get("knoten", [])}
+    return frozenset(n for p in spec["punkte"] if p["typ"] == "feature" and knoten.get(p["id"], {}).get("status") == "ok"
+                     for n in knoten[p["id"]].get("sw_namen") or ())
+
+
 _RANG = {False: 0, None: 1, True: 2}
 
 
@@ -201,7 +208,7 @@ def pruefe_teil(app, scheibe: dict, freigegeben: dict, spec_pfad: Path, vorher: 
     bereiche = bewerte_bereiche(scheibe, abweichungen, boxen, volumen_prozent=standard["toleranzen"]["volumen_prozent"])
     feature_messung = bewerte(freigegeben, gemessen, standard["toleranzen"])
     pruefungen = (vergleiche(scheibe, vorher, nachher, scheibe.get("parameter", {}), *_skript_lauf(scheibe, protokoll),
-                             feature_messung)
+                             feature_messung, punkt_features=_punkt_features(scheibe, protokoll))
                   + bereiche + _masse_pruefen(scheibe, punkte, nachher["aktiv"]))
     return {"vorher": str(vorher_pfad), **bewerte_aenderung(pruefungen),
             "differenzen": {e["konfiguration"]: e["ist"] for e in bereiche if e["id"] == "bereich"},

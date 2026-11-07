@@ -39,6 +39,7 @@ from swki.verbindung import in_mm, in_mm3
 SW_BODY_CUT = 15902        # swBodyOperationType_e.SWBODYCUT
 TOL_VOLUMEN = 0.01         # mm³: Rauschen der Massenberechnung, wie im Bau
 _TOL_VOLUMEN_ANTEIL = 1e-6
+_TOL_AENDERUNG_ANTEIL = 1e-4  # der Änderung: Trichter (Ausformung) 1 mm³ bei 18792 mm³ (Rev1, Lauf 11), ein fehlender Körper ist größer
 
 
 class DifferenzFehler(SwkiFehler):
@@ -289,7 +290,7 @@ def _pruefe_bilanz(vorher: list, nachher: list, aus: list[Abweichung]) -> None:
     """Rückgaben nicht glauben (S18c): Eine leere Differenz wäre das falsche `ok` schlechthin, die Volumen sagen es unabhängig davon."""
     alt, neu = _volumen(vorher), _volumen(nachher)
     summe = sum(a.volumen if a.art == "hinzu" else -a.volumen for a in aus)
-    if abs(neu - alt - summe) > max(TOL_VOLUMEN, _TOL_VOLUMEN_ANTEIL * max(alt, neu)):
+    if abs(neu - alt - summe) > max(TOL_VOLUMEN, _TOL_VOLUMEN_ANTEIL * max(alt, neu), _TOL_AENDERUNG_ANTEIL * abs(neu - alt)):
         raise DifferenzFehler(f"Differenzkörper ergeben {summe:g} mm³, das Volumen änderte sich um {neu - alt:g} mm³")
 
 

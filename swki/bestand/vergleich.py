@@ -88,6 +88,7 @@ class _Vergleich:
     skript_gelaufen: frozenset[str] = frozenset()   # Punkt-IDs der Skripte, die laut Protokoll durchliefen
     skript_features: frozenset[str] = frozenset()   # was ihr `bauen(ctx)` zurückgab
     feature_messung: dict = field(default_factory=dict)  # Punkt-ID → Ergebnis von `feature_messung.bewerte`
+    punkt_features: frozenset[str] = frozenset()    # was `feature`-Punkte laut Protokoll anlegten (Hilfsebenen, Rev1 Lauf 11)
     konfigurationen: list[str] = field(init=False)  # die beiden Aufnahmen gemeinsam haben, in der Reihenfolge des Bestands
     geloescht: set[str] = field(init=False)         # was `loeschen`-Punkte nehmen dürfen
     masse_vorher: dict[str, dict] = field(init=False)
@@ -118,9 +119,12 @@ def _eigene_skizzen(namen: set[str], vorher: dict) -> set[str]:
 
 
 def _geloeschte(punkte: list[dict], vorher: dict) -> set[str]:
-    """Features, die verschwinden dürfen: die der `loeschen`-Punkte samt `kinder` und die Skizzen, die dann kein anderes Kind
-    mehr haben (`DeleteSelection2(3)` nimmt die aufgenommene Skizze mit, S18c)."""
+    """Features, die verschwinden dürfen: die der `loeschen`-Punkte samt `kinder`, ihre Unterfeatures laut Aufnahme (aufgenommene
+    Skizzen, beim Bohrungsassistenten die kosmetischen Gewinde, AP68-Pruefstation-Rev1 Lauf 11; wie `punkte.loeschen`) und die
+    Skizzen, die dann kein anderes Kind mehr haben (`DeleteSelection2(3)` nimmt die aufgenommene Skizze mit, S18c)."""
     weg = {n for p in punkte if p["typ"] == "loeschen" for n in (p["feature"], *p.get("kinder", ()))}
+    features = {f["name"]: f for f in vorher["features"]}
+    weg |= {u for n in weg for u in features.get(n, {}).get("unter", ())}
     return weg | _eigene_skizzen(weg, vorher)
 
 
@@ -278,6 +282,8 @@ def _erklaerte(c: _Vergleich) -> set[str]:
     Skript laut Protokoll zurückgab."""
     punkte = c.punkte_vom_typ("feature")
     namen = {p["name"] for p in punkte} | c.skript_features
+    # Hilfsebenen (`{versatz: …}`) behalten ihren SolidWorks-Namen; erklärt nur als Ebene, die der Knoten des Punkts anlegte
+    namen |= {n for n in c.punkt_features if c.features_nachher.get(n, {}).get("typ") == "RefPlane"}
     gebaut = {n for reihe in c.nachher["reihenfolge"].values() for n in reihe}
     namen |= {n for n in gebaut if any(_abgeleitet(n, p["name"]) for p in punkte)}
     return namen | {u for f in c.nachher["features"] if f["name"] in namen for u in f.get("unter", ())}
@@ -357,7 +363,9 @@ def _masse(c: _Vergleich) -> dict:
     for name, m in c.masse_vorher.items():
         n = c.masse_nachher.get(name)
         if n is None:
-            if m["feature"] not in c.geloescht:
+            # Maße eines gelöschten (Unter-)Features, oder eines Features, das ein Skript laut Protokoll zurückgab (der Notausgang
+            # nennt, was er ändert; Positionen löschen nimmt ihre Maße mit, Rev1 Lauf 11)
+            if not ({m["feature"], name.rsplit("@", 1)[-1]} & c.geloescht or m["feature"] in c.skript_features):
                 fehlt.append(name)
             continue
         for feld in ("zustand", "gruppe"):
@@ -531,12 +539,15 @@ def _externe_referenzen(c: _Vergleich) -> dict:
 
 
 def vergleiche(spec: dict, vorher: dict, nachher: dict, parameter: dict, skript_features: frozenset[str] = frozenset(),
-               skript_gelaufen: frozenset[str] = frozenset(), feature_messung: dict | None = None) -> list[dict]:
+               skript_gelaufen: frozenset[str] = frozenset(), feature_messung: dict | None = None,
+               punkt_features: frozenset[str] = frozenset()) -> list[dict]:
     """§7.1: Einträge `punkt:<id>` je Punkt, dann `baum`, `masse`, `gleichungen`, `konfigurationen`, `eigenschaften`,
     `material`, `neuaufbau`, `skizzen`, `externe_referenzen`. `parameter`: die Parameter der Spec für Ausdrücke wie `=A_neu`.
     Aus dem Protokoll: `skript_features`, was `bauen(ctx)` zurückgab, `skript_gelaufen`, die Punkt-IDs der durchgelaufenen Skripte.
-    `feature_messung`: `swki.bestand.feature_messung.bewerte`, ein messbares Feature ohne Messung ist ein Mangel."""
-    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features, feature_messung or {})
+    `feature_messung`: `swki.bestand.feature_messung.bewerte`, ein messbares Feature ohne Messung ist ein Mangel. `punkt_features`:
+    was die `feature`-Punkte laut Protokoll anlegten."""
+    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features, feature_messung or {},
+                   punkt_features)
     return [_punkt(p, c) for p in c.punkte] + [
         _baum(c), _masse(c), _gleichungen(c), _konfigurationen(c), _eigenschaften(c), _material(c), _neuaufbau(c), _skizzen(c),
         _externe_referenzen(c)]
