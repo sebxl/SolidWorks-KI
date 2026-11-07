@@ -243,7 +243,7 @@ punkt(id="vd4", was="Durchlicht: Stecker nach +X", typ="verknuepfung_neu", art="
 for i in (1, 2):
     punkt(id=f"vlk{i}", was=f"M4x20-{i} in Kanal PX {i}", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": S("M4x20", i), "referenz": "EINBAU_ACHSE"},
-          b={"komponente": C("Durchlichtlasche"), "feature": "dl7", "instanz": i, "achse": True})
+          b={"komponente": C("Durchlichtlasche"), "feature": "dl7", "instanz": i, "achse": True}, drehung_sperren=True)
     punkt(id=f"vle{i}", was=f"M4x20-{i} Kopf auf der Flachsenkung", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": S("M4x20", i), "referenz": "EINBAU_EBENE"},
           b={"komponente": C("Durchlichtlasche"), "feature": "dl7", "instanz": i, "flaeche": "+x"}, ausrichtung="gleich")
@@ -267,12 +267,14 @@ for n in ("v56.1", "v56.2", "v57.1", "v57.2", "v123", "v124", "v125", "v140", "v
 # zuordnen, darum ein eigener Löschpunkt vor wz1 (UEBERGABE §5.4).
 punkt(id="vxp", was="Verknüpfung Platziert1 des Platzhalter-Winkels (Handumbau, Typ und Partner unlesbar)", typ="verknuepfung_loeschen",
       verknuepfung="Platziert1")
+# Bestandsschrauben neu verknüpft (vlk, kv, wa, rs, rr): drehung_sperren, die Vorgabe greift nur bei Normteilen (Lauf 13 live:
+# alle 10 unterbestimmt, Nutzer 07.11.2026)
 # ------------------------------------------------------------------ Kanalträger-Schrauben
 kommentar("Die alten Schrauben M5x20-10/11 neu: von hinten durch die Platte in den Kanalträger (Nutzer)")
 for i, s in ((1, 10), (2, 11)):
     punkt(id=f"kv{i}a", was=f"M5x20-{s} in Senkung Kanaltraeger {i}", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": S("M5x20", s), "referenz": "EINBAU_ACHSE"}, b={"komponente": PLATTE, "feature": "ap3", "instanz": i, "achse": True},
-          lage_folgen=[S("M5x20", s)])
+          lage_folgen=[S("M5x20", s)], drehung_sperren=True)
     punkt(id=f"kv{i}b", was=f"M5x20-{s} Kopf auf der Flachsenkung", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": S("M5x20", s), "referenz": "EINBAU_EBENE"},
           b={"komponente": PLATTE, "feature": "ap3", "instanz": i, "flaeche": "-x"}, ausrichtung="gleich")
@@ -295,7 +297,7 @@ punkt(id="wa2", was="ADNGF-Befestigung 1 (X −161 / Z −196) in Winkelbohrung 
 for s, inst in ((3, 2), (4, 1)):
     punkt(id=f"wa{s}a", was=f"M4x20-{s} in Winkelbohrung {inst}", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": S("M4x20", s), "referenz": "EINBAU_ACHSE"}, b={"komponente": "ww", "feature": "f3", "instanz": inst, "achse": True},
-          lage_folgen=[S("M4x20", s)])
+          lage_folgen=[S("M4x20", s)], drehung_sperren=True)
     punkt(id=f"wa{s}b", was=f"M4x20-{s} Kopf am Winkel", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": S("M4x20", s), "referenz": "EINBAU_EBENE"}, b={"komponente": "ww", "feature": "f1", "flaeche": "-z"},
           ausrichtung="gleich")
@@ -323,14 +325,14 @@ for e in ("rechts", "oben", "vorne"):
 for i, s in ((1, 9), (2, 10)):
     punkt(id=f"rs{i}a", was=f"M5x16-{s} durch den Winkel in die Platte", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": S("M5x16", s), "referenz": "EINBAU_ACHSE"}, b={"komponente": "rw", "feature": "f3", "instanz": i, "achse": True},
-          lage_folgen=[S("M5x16", s)])
+          lage_folgen=[S("M5x16", s)], drehung_sperren=True)
     punkt(id=f"rs{i}b", was=f"M5x16-{s} Kopf am Winkel", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": S("M5x16", s), "referenz": "EINBAU_EBENE"}, b={"komponente": "rw", "feature": "f1", "flaeche": "+x"},
           ausrichtung="gleich")
 for i, s in ((1, 3), (2, 4)):
     punkt(id=f"rr{i}a", was=f"M5x12-{s} durch den Winkel in die Einschmelzmutter der Rutsche", typ="verknuepfung_neu", art="konzentrisch",
           a={"komponente": S("M5x12", s), "referenz": "EINBAU_ACHSE"}, b={"komponente": "rw", "feature": "f5", "instanz": i, "achse": True},
-          lage_folgen=[S("M5x12", s)])
+          lage_folgen=[S("M5x12", s)], drehung_sperren=True)
     punkt(id=f"rr{i}b", was=f"M5x12-{s} Kopf auf dem Winkel", typ="verknuepfung_neu", art="deckungsgleich",
           a={"komponente": S("M5x12", s), "referenz": "EINBAU_EBENE"}, b={"komponente": "rw", "feature": "f2", "flaeche": "+y"},
           ausrichtung="gleich")
