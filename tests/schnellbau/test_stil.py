@@ -1,12 +1,14 @@
 """Paket Konstruktionsstil im Schnellbau (Stufe C3a): Bohrungsfase; was noch fehlt, meldet er – nie still."""
 
 import math
+from pathlib import Path
 
 import pytest
+import yaml
 
 pytest.importorskip("build123d")
 
-from swki.schnellbau.fehler import GEOMETRIE, NICHT_UNTERSTUETZT, SchnellbauFehler  # noqa: E402
+from swki.schnellbau.fehler import GEOMETRIE, SchnellbauFehler  # noqa: E402
 from swki.schnellbau.teil import baue  # noqa: E402
 from swki.spec.normen import normmasse  # noqa: E402
 
@@ -71,11 +73,37 @@ def test_fase_ohne_bohrungen():
     assert "f2" in teil.uebersprungen and "f3" in teil.uebersprungen
 
 
-def test_austragung_nicht_unterstuetzt():
-    sweep = {"id": "f2", "typ": "austragung", "profil": {"ebene": "rechts", "elemente": []}, "pfad": {}}
-    with pytest.raises(SchnellbauFehler) as e:
-        baue({"art": "teil", "name": "T", "features": [PLATTE, sweep]})
-    assert e.value.code == NICHT_UNTERSTUETZT
+# austragung ---------------------------------------------------------------------------------------------------------
+KABEL = {"id": "k1", "typ": "austragung",
+         "profil": {"ebene": "rechts", "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 8}}]},
+         "pfad": {"ebene": "vorne", "start": [0, 0], "segmente": [
+             {"linie": [40, 0]}, {"bogen": [60, 20], "mitte": [40, 20]}, {"linie": [60, 60]}]}}
+KABEL_VOLUMEN = math.pi * 16 * (40 + math.pi * 10 + 40)
+
+
+def test_austragung_kreis_aufsatz():
+    teil = baue({"art": "teil", "name": "T", "features": [KABEL]})
+    assert teil.solid.volume == pytest.approx(KABEL_VOLUMEN, rel=1e-9)
+    info = teil.features["k1"]
+    assert (info.typ, info.op) == ("austragung", "plus")
+    assert info.richtung == pytest.approx((1, 0, 0))
+
+
+def test_austragung_rechteck_schnitt_uhrzeigersinn():
+    spec = yaml.safe_load((Path(__file__).parents[1] / "referenz" / "stil" / "spannplatte.yaml").read_text("utf-8"))
+    f1, k1 = (next(f for f in spec["features"] if f["id"] == i) for i in ("f1", "k1"))
+    p = spec["parameter"]
+    teil = baue({"art": "teil", "name": "T", "parameter": p, "features": [f1, k1]})
+    soll = p["L"] * p["B"] * p["H"] - p["NB"] * p["NT"] * (
+        p["L"] / 2 - p["XN"] + math.pi * p["RN"] / 2 + (p["B"] / 2 - p["ZN"] - p["RN"]))
+    assert teil.solid.volume == pytest.approx(soll, rel=1e-9)
+    assert teil.features["k1"].op == "minus"
+
+
+def test_austragung_gespiegelt():
+    spiegel = {"id": "s1", "typ": "spiegeln", "features": ["k1"], "ebene": "rechts"}
+    teil = baue({"art": "teil", "name": "T", "features": [KABEL, spiegel]})
+    assert teil.solid.volume == pytest.approx(2 * KABEL_VOLUMEN, rel=1e-9)
 
 
 # Verrundung und Fase als Musterquelle ------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 Skizzen: (u, v) → Modellpunkt über swki.compiler.skizze.modellpunkt; Elemente rechteck (radius), kreis, polygon (radien),
 kontur (Bögen gegen den Uhrzeigersinn in (u, v)), langloch, mittellinie; mehrere Konturen nach gerade/ungerade.
 Features: extrusion/schnitt (alle Endbedingungen, umkehren, formschraege), rotation, bohrung, normbohrung
-(swki/wissen/bohrungsnormen.yaml; Feld `fase` = Fasenkegel am Eintritt, Maße aus swki.spec.bohrungsfase), verrundung, fase (45°), muster_linear, muster_kreis, spiegeln, referenz, verzahnung
+(swki/wissen/bohrungsnormen.yaml; Feld `fase` = Fasenkegel am Eintritt, Maße aus swki.spec.bohrungsfase), verrundung, fase (45°), austragung (Kreis/Rechteck entlang Linien und Bögen), muster_linear, muster_kreis, spiegeln, referenz, verzahnung
 (Profil aus swki.verzahnung). skript und alles Übrige → SchnellbauFehler NICHT_UNTERSTUETZT.
 
 Jedes Feature hinterlässt ein FeatureInfo: Werkzeugkörper und Operation (plus/minus, für Flächenanker, Muster, Spiegeln),
@@ -24,6 +24,7 @@ from swki.formschraege import schraege
 from swki.konfig import lade_standard
 from swki.schnellbau.fehler import ANKER, GEOMETRIE, NICHT_UNTERSTUETZT, SchnellbauFehler
 from swki.spec.ausdruck import auswerten
+from swki.spec.austragung import modell, segmente_uv
 from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
 from swki.spec.instanzen import MUSTER
 from swki.spec.normen import bohrspitze_grad, normmasse, norm_von
@@ -594,10 +595,32 @@ class Schnellbau:
         self.features[f["id"]] = FeatureInfo("verzahnung", werkzeug, "plus", richt, punkte)
         self.anwenden(werkzeug, "plus")
 
+    def austragung(self, f: dict) -> None:
+        """Profil (kreis/rechteck) entlang eines offenen Pfads aus Linien und Bögen; Pfad und Profil wie im Compiler."""
+        sp, sw = self.ebene(f["profil"]["ebene"]), self.ebene(f["pfad"]["ebene"])
+        profil = Face(self.drahtzuege(sp, f["profil"]["elemente"])[0])
+        akt = (self.w(f["pfad"]["start"][0]), self.w(f["pfad"]["start"][1]))
+        kanten = []
+        for s in f["pfad"]["segmente"]:
+            if "linie" in s:
+                ziel = (self.w(s["linie"][0]), self.w(s["linie"][1]))
+                kanten.append(self._linie(sw, akt, ziel))
+            else:
+                ziel = (self.w(s["bogen"][0]), self.w(s["bogen"][1]))
+                mitte = (self.w(s["mitte"][0]), self.w(s["mitte"][1]))
+                kanten.append(self._bogen(sw, akt, ziel, mitte, not s.get("uhrzeigersinn")))
+            akt = ziel
+        werkzeug = Solid.sweep(profil, Wire(kanten), is_frenet=False)
+        t_a = segmente_uv(f["pfad"], self.p)[0]["t_a"]
+        richt = tuple(modell(sw.orientierung, t_a[0], t_a[1], 0.0))
+        op = "minus" if f.get("schnitt") else "plus"
+        self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, op, richt)
+        self.anwenden(werkzeug, op)
+
     HANDLER = {"extrusion": "extrusion", "schnitt": "extrusion", "rotation": "rotation", "bohrung": "bohrung",
                "normbohrung": "bohrung", "verrundung": "verrundung", "fase": "fase", "muster_linear": "muster_linear",
                "muster_kreis": "muster_kreis", "spiegeln": "spiegeln", "referenz": "referenz",
-               "verzahnung": "verzahnung"}
+               "verzahnung": "verzahnung", "austragung": "austragung"}
 
     def baue(self) -> Teil:
         t0 = time.perf_counter()

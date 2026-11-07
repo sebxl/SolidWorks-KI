@@ -35,7 +35,7 @@ def _groesse(t) -> list[float]:
 @pytest.mark.parametrize("pfad", TEILE, ids=_name)
 def test_referenzteil_wie_eigene_pruefung(pfad):
     spec = lade(pfad)
-    if any(f["typ"] in ("skript", "austragung") for f in spec["features"]):  # austragung: Stufe C3a
+    if any(f["typ"] == "skript" for f in spec["features"]):
         with pytest.raises(SchnellbauFehler) as e:
             baue(spec)
         assert e.value.code == NICHT_UNTERSTUETZT
