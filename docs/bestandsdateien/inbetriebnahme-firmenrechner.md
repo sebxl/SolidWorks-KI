@@ -89,7 +89,9 @@ aus SW 2026 nicht öffnen.
 
 **7. Abnahme**
 
-Sobald eine echte Kollegen-Datei da ist: Spec Bestandsdateien §14, Skill `aendern`. Damit ist Etappe 1 fertig.
+Sobald eine echte Kollegen-Datei da ist: Spec Bestandsdateien §14, Skill `aendern`. Damit ist Etappe 1 fertig. Für Baugruppen
+(Etappe 2) zusätzlich die Hubeinheit aus `tests/referenz/bestand/` (Muster mit `-m werkzeuge.bestand_muster hubeinheit` im
+Arbeitsordner erzeugen) und eine echte Kollegen-Baugruppe; `aufnehmen` verlangt SolidWorks ohne offene Dokumente.
 
 ## Noch nicht belegt
 

@@ -1,11 +1,11 @@
 # SolidWorks-KI – Regeln für Claude
 
 Design: docs/superpowers/specs/2026-09-26-solidworks-ki-design.md
-Stand: Paket Konstruktionsstil (Bohrungsfasen, Fräserradius, Spiegeln/Muster, `austragung`) – Ergebnisse:
-docs/konstruktionsstil/ergebnisse.md (davor Bestandsdateien Etappe 1, Abnahme an einer echten Kollegen-Datei offen:
-docs/bestandsdateien/ergebnisse.md; davor Tempo-Optimierung nach Bewertungsbogen BTP, Umbau 1–3, Score 4,9 → Mittel 7,54:
+Stand: Bestandsdateien Etappe 2 (fremde Baugruppen ändern, abgenommen an `lauf-30` der Prüfstation, Runde 1 und 2;
+Kollegen-Datei auf SW 2026 offen) – Ergebnisse: docs/bestandsdateien/ergebnisse.md (davor Paket Konstruktionsstil
+(Bohrungsfasen, Fräserradius, Spiegeln/Muster, `austragung`): docs/konstruktionsstil/ergebnisse.md; davor Tempo-Optimierung nach Bewertungsbogen BTP, Umbau 1–3, Score 4,9 → Mittel 7,54:
 docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebnisse.md; Messstand und
-`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe C3a (Konstruktionsstil im Schnellbau), Bestandsdateien Etappe 2 (Baugruppen), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
+`huellquader: auto`: docs/messstand/ergebnisse.md; Formschräge: docs/formschraege/ergebnisse.md). Nächste Schritte zur Wahl: Stufe C3a (Konstruktionsstil im Schnellbau), Stufe 4c (Nut- und Kurvenverknüpfung), Paket
 „Messarten“ (Fasen, Gewinde durch, Lagerachse), Paket Speicher.
 
 ## Umgebung
@@ -111,13 +111,19 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
 - Regressions-Suite enthält die Zentrieraufnahme (`tests/referenz/zentrieraufnahme/`).
 
 ## Bestandsdateien (fremde Dateien ändern)
-- Fremde Teile (Datei eines Kollegen, nicht von swki) nur über den Skill `aendern`: `swki bestand aufnehmen` → Punkte zuordnen →
-  Spec `art: aenderung` → `swki validieren` → Nutzer-OK → `swki durchlauf --freigeben` → Prüfer → `swki bestand ausgabe`. Etappe 1:
-  nur Teile.
+- Fremde Teile und Baugruppen (Datei eines Kollegen, nicht von swki) nur über den Skill `aendern`: `swki bestand aufnehmen` → Punkte
+  zuordnen → Spec `art: aenderung` → `swki validieren` → Nutzer-OK → `swki durchlauf --freigeben` (Baugruppen mit `--neustart`) →
+  Prüfer → `swki bestand ausgabe`. Baugruppen (Etappe 2): Teil-Punkte mit `in_datei`, Punkte `komponente_*`/`verknuepfung_*`, neue
+  Teile über Teil-Specs im Auftrag (eine Freigabe); geprüft werden Komponenten, Verknüpfungen, Lage, Bestimmtheit, Kollision, Dateien
+  (SHA-256), Pfade und die Bewegungen gegen den Bestand.
 - Das Original nur lesen, nie in SolidWorks öffnen. Ausgabe im Arbeitsordner unter dem Originalnamen; zurück kopiert der Nutzer.
 - Nichts aufräumen: Punkte nennt der Nutzer, alles andere bleibt, wie der Kollege es gebaut hat.
-- Regressions-Suite enthält den Lagerdeckel (`tests/referenz/bestand/`, Muster als SolidWorks-Dateien im Git). Die Muster gelten nur
-  für ihr SW-Jahr; jedes andere Jahr erzeugt sie mit `-m werkzeuge.bestand_muster` im Arbeitsordner, nicht im Git.
+- Eigene swki-Datei, von Hand weiterbearbeitet und vom Nutzer als Stand erklärt: `swki bestand aufnehmen` in einen **neuen** Auftrag
+  (der Lauf-Ordner ist dann das Original); was von Hand geändert wurde, zeigt `swki bestand abgleich <auftrag> --spec <alte Spec>`.
+- Vor der Freigabe-Vorlage neue Teile und ihren Einbau ins Konstruktionsreview geben (Montierbarkeit, Schlüsselzugang,
+  Druckrichtung, frei zu haltende Felder): Die Prüfung findet nur, was die Spec verlangt.
+- Regressions-Suite enthält den Lagerdeckel und die Hubeinheit (`tests/referenz/bestand/`, Muster als SolidWorks-Dateien im Git).
+  Die Muster gelten nur für ihr SW-Jahr; jedes andere Jahr erzeugt sie mit `-m werkzeuge.bestand_muster` im Arbeitsordner, nicht im Git.
 - Firmenrechner: SW 2026, Vollversion; Dateien von dort kann Rechner A (SW 2025, Student) nicht bearbeiten. Dort noch nicht in
   Betrieb, Ablauf: `docs/bestandsdateien/inbetriebnahme-firmenrechner.md`.
 
