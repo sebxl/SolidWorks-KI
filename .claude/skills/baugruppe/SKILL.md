@@ -158,6 +158,8 @@ hängen bis zum 2-min-Zeitlimit.
   `UEBERNAHME_OHNE_NEUE_FREIGABE`, solange die Freigabe nicht neuer als der Lauf ist); verwerfen → nur auf
   ausdrückliche Anweisung `swki bauen --verwerfen`. Beide Schalter nie zugleich. An der Kopie eines **Kaufteils**
   (Herstellergeometrie, importiert) gibt es kein „übernehmen“: nur verwerfen, und zwar erst nach Nutzer-OK.
+  Gilt die geänderte Datei selbst als Stand (der Konstrukteur arbeitet daran weiter), ist das der dritte Weg: `swki bestand aufnehmen`
+  in einen neuen Auftrag, Skill `aendern` (§1 und §8 dort). Den Weg wählt der Nutzer.
 - `swki pruefen <baugruppe.yaml>` → Prüfbericht mit `verknuepfungen`, `bestimmtheit`, `stueckliste`, `kollision`,
   `gewinde:<schraube>` (Einschraublänge, Volumen ist/soll), `mass:*`, `huellquader`, Teilprüfungen
   `<komponente>: <prüfung>`.
