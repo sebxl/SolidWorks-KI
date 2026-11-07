@@ -265,7 +265,9 @@ punkt(id="wa1", was="ADNGF-Rückseite am Winkel", typ="verknuepfung_neu", art="d
       a={"komponente": "Festo_ADNGF-16-25-P-A-1", "referenz": "EINBAU_RUECKSEITE"}, b={"komponente": "ww", "feature": "f1", "flaeche": "+z"},
       ausrichtung="entgegengesetzt")
 punkt(id="wa2", was="ADNGF-Befestigung 1 (X −161 / Z −196) in Winkelbohrung 2", typ="verknuepfung_neu", art="konzentrisch",
-      a={"komponente": "Festo_ADNGF-16-25-P-A-1", "gewinde": "befestigung", "instanz": 1, "achse": True},
+      # nahe statt gewinde: im Bestand ist der ADNGF eine fremde Komponente ohne Katalogbezug (Lauf 10, KeyError gewinde).
+      # Kernlochwand Ø 3,242 der Befestigung 1 (Katalog: −9/−9, z −56,5 … −43) bei z −50, Teilkoordinaten.
+      a={"komponente": "Festo_ADNGF-16-25-P-A-1", "nahe": [-7.379, -9, -50]},
       b={"komponente": "ww", "feature": "f3", "instanz": 2, "achse": True})
 for s, inst in ((3, 2), (4, 1)):
     punkt(id=f"wa{s}a", was=f"M4x20-{s} in Winkelbohrung {inst}", typ="verknuepfung_neu", art="konzentrisch",
