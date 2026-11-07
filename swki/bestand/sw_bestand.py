@@ -16,7 +16,8 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
     swDisplayFeatureDimensions 32), .CreateMassProperty2(0), .CustomPropertyManager(1)
   ICustomPropertyManager.GetAll3(5)
   IFeature.GetFirstDisplayDimension(0), .GetNextDisplayDimension(1), .GetFirstSubFeature(0), .GetNextSubFeature(0),
-    .GetParents(0), .GetChildren(0), .IsSuppressed2(2: swSpecifyConfiguration 3), .GetSpecificFeature2(0), .Select2(2)
+    .GetParents(0), .GetChildren(0), .IsSuppressed2(2: swSpecifyConfiguration 3), .GetSpecificFeature2(0), .Select2(2),
+    .GetDefinition(0); IWizardHoleFeatureData2.EndCondition (swEndConditions_e: swEndCondBlind 0)
   IDisplayDimension.GetDimension2(1), .IsLinked, .GetLinkedText(0), .GetAnnotation(0); IAnnotation.Color
   IDimension.FullName, .GetType(0: swDimensionParamType_e Linear 0, Angular 1, Integer 2), .DrivenState (swDimensionDriven
     1), .IsDesignTableDimension(0), .GetSystemValue3(2: swSetValue_InThisConfiguration 1), .ReferencePoints
@@ -244,12 +245,26 @@ def unter_namen(feature) -> list[str]:
     return aus
 
 
+def bohrung_ende(feature) -> int | None:
+    """Endbedingung eines Bohrungsassistenten (IWizardHoleFeatureData2.EndCondition, swEndConditions_e); nicht lesbar → None.
+    Die Tiefe einer Bohrung, die nicht blind endet, folgt dem Körper (live Rev1 Lauf 11: durch alles, Körper länger, das Maß
+    Bohrungstiefe 10 → 22,5, HoleDepth liest dabei 0)."""
+    try:
+        return int(feature.GetDefinition.EndCondition)
+    except Exception:
+        return None
+
+
 def feature_eintrag(f, konfigurationen: list[str], tabelle: bool) -> dict:
     """`tabelle`: Tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen (S18b, Offen), jedes Feature einer
     Datei mit Tabelle gilt deshalb als möglicherweise gesteuert."""
-    return {"name": f.Name, "typ": f.GetTypeName2, "eltern": [p.Name for p in f.GetParents or ()],
-            "kinder": [c.Name for c in f.GetChildren or ()], "unter": unter_namen(f),
-            "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen}, "tabelle": tabelle}
+    typ = f.GetTypeName2
+    d = {"name": f.Name, "typ": typ, "eltern": [p.Name for p in f.GetParents or ()],
+         "kinder": [c.Name for c in f.GetChildren or ()], "unter": unter_namen(f),
+         "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen}, "tabelle": tabelle}
+    if typ == "HoleWzd":
+        d["bohrung_ende"] = bohrung_ende(f)
+    return d
 
 
 def gleichungen_von(model) -> tuple[list[dict], dict[str, float]]:

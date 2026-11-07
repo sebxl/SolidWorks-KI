@@ -326,6 +326,44 @@ def test_mass_gelöschter_features_darf_fehlen():
     assert ohne_punkt["masse"]["ok"] is False and ohne_punkt["baum"]["ok"] is False
 
 
+def _bohrung_durch(ende: int | None) -> tuple[dict, dict]:
+    """Bohrungsassistent f3 mit seinen Skizzenmaßen (Kamerahalter, Rev1 Lauf 11: der Körper wurde länger, die Tiefe der
+    Bohrung „durch alles“ folgt 10 → 22,5)."""
+    vorher, nachher = kopie(), kopie()
+    for a in (vorher, nachher):
+        _neues_feature(a, "f3")
+        for name, wert in (("Bohrungstiefe@Skizze7", 10.0), ("Bohrerdurchmesser@Skizze7", 3.4)):
+            m = copy.deepcopy(a["masse"][0])
+            m.update(name=name, feature="f3", werte={"Standard": wert, "Variante B": wert}, zustand="treibend", quelle=None,
+                     gruppe=None)
+            a["masse"].append(m)
+    if ende is not None:
+        feature(nachher, "f3")["bohrung_ende"] = ende
+    setze(nachher, "Bohrungstiefe@Skizze7", "Standard", 22.5)
+    setze(nachher, "Bohrungstiefe@Skizze7", "Variante B", 22.5)
+    return vorher, nachher
+
+
+def test_tiefe_einer_bohrung_durch_alles_folgt_dem_koerper():
+    vorher, nachher = _bohrung_durch(1)  # swEndCondThroughAll
+    nur_ok(vergleich(SPEC_LEER, nachher, vorher=vorher))
+
+
+def test_tiefe_einer_blinden_bohrung_bleibt_ein_mass():
+    for ende in (0, None):  # swEndCondBlind, oder die Aufnahme kennt die Endbedingung nicht
+        vorher, nachher = _bohrung_durch(ende)
+        e = vergleich(SPEC_LEER, nachher, vorher=vorher)
+        assert e["masse"]["ok"] is False and "Bohrungstiefe@Skizze7" in e["masse"]["hinweis"], ende
+
+
+def test_durchmesser_einer_bohrung_durch_alles_bleibt_ein_mass():
+    vorher, nachher = _bohrung_durch(1)
+    setze(nachher, "Bohrerdurchmesser@Skizze7", "Standard", 4.0)
+    e = vergleich(SPEC_LEER, nachher, vorher=vorher)
+    assert e["masse"]["ok"] is False
+    assert [a["name"] for a in e["masse"]["ist"]] == ["Bohrerdurchmesser@Skizze7"]
+
+
 # ------------------------------------------------------------------------------------------------------------------- Baum
 
 def _ohne(a: dict, *namen: str) -> dict:

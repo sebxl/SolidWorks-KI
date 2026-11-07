@@ -506,6 +506,30 @@ def test_unterfeatures_stehen_beim_feature():
     assert sw_bestand.feature_eintrag(Feature(), ["Standard"], False)["unter"] == ["Skizze6", "Bohrungsgewinde1"]
 
 
+def test_bohrungsassistent_nennt_seine_endbedingung():
+    """Die Tiefe einer Bohrung „durch alles“ folgt dem Körper (live Rev1: HoleDepth liest dann 0, das Maß 22,5)."""
+    class Feature:
+        Name, GetTypeName2, GetParents, GetChildren, GetFirstSubFeature = "f3", "HoleWzd", None, None, None
+        GetDefinition = SimpleNamespace(EndCondition=1)
+
+        def IsSuppressed2(self, art, namen):
+            return (False,)
+
+    assert sw_bestand.feature_eintrag(Feature(), ["Standard"], False)["bohrung_ende"] == 1
+
+    class Kaputt(Feature):
+        @property
+        def GetDefinition(self):
+            raise RuntimeError("nicht lesbar")
+
+    assert sw_bestand.feature_eintrag(Kaputt(), ["Standard"], False)["bohrung_ende"] is None
+
+    class Fase(Feature):
+        GetTypeName2 = "Chamfer"
+
+    assert "bohrung_ende" not in sw_bestand.feature_eintrag(Fase(), ["Standard"], False)
+
+
 def test_externe_referenzen_paare():
     app = App(abhaengig=("Basis", "D:\\A\\Basis.SLDPRT", "Zweite", "D:\\A\\Zweite.SLDPRT"))
     assert sw_bestand.externe_referenzen(app, Path("x.SLDPRT")) == ["D:\\A\\Basis.SLDPRT", "D:\\A\\Zweite.SLDPRT"]

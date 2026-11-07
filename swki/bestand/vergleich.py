@@ -36,6 +36,11 @@ TOL = 1e-6  # mm bzw. Grad; die Aufnahme rundet auf 6 Stellen, die Reserve fäng
 # die durch die Änderung widersprüchlich wird, ist schlechter, auch wenn sie vorher unterbestimmt war.
 SKIZZE_RANG = {6: 0, 5: 0, 4: 1, 1: 2, 7: 2, 2: 3, 3: 4}
 
+SW_ENDE_BLIND = 0  # swEndConditions_e.swEndCondBlind
+# Das Tiefenmaß in der Skizze eines Bohrungsassistenten (deutsche Oberfläche, live Rev1 Lauf 11: Bohrungstiefe@Skizze4). Endet die
+# Bohrung nicht blind (durch alles, bis Fläche …), folgt es dem Körper; die übrigen Maße der Skizze (Durchmesser, Senkung) nicht.
+BOHRUNGSTIEFE = "Bohrungstiefe@"
+
 
 def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
     """Features, deren Fehler die Datei in dieser Konfiguration schon hatte. Warnungen zählen nicht."""
@@ -353,6 +358,13 @@ def _erlaubte_masse(c: _Vergleich) -> dict[str, set[str] | None]:
     return aus
 
 
+def _folgt_dem_koerper(name: str, nachher: dict, c: _Vergleich) -> bool:
+    """Tiefe eines Bohrungsassistenten, der nicht blind endet: Sie ist keine Vorgabe, sondern folgt dem Körper. Die
+    Endbedingung kommt aus der Aufnahme des Laufs; kennt sie sie nicht (ältere Aufnahme, nicht lesbar), bleibt es ein Maß."""
+    ende = c.features_nachher.get(nachher["feature"], {}).get("bohrung_ende")
+    return name.startswith(BOHRUNGSTIEFE) and ende is not None and ende != SW_ENDE_BLIND
+
+
 def _masse(c: _Vergleich) -> dict:
     """Alle nicht getriebenen Maße außer den erlaubten. `None` auf einer Seite heißt: Lesen gescheitert, also nicht
     nachgewiesen (`ok: None`), und zwar ausnahmslos, auch bei unterdrückten Features und Punkt-Zielen. Zustand und Gruppe
@@ -372,6 +384,8 @@ def _masse(c: _Vergleich) -> dict:
             if m.get(feld) != n.get(feld):
                 umgestuft.append({"name": name, "feld": feld, "vorher": m.get(feld), "nachher": n.get(feld)})
         ist_getrieben = m.get("zustand") == "getrieben"
+        if _folgt_dem_koerper(name, n, c):
+            continue
         frei = erlaubt.get(name, set())
         verschieden = {}
         for k in c.konfigurationen:
