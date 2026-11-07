@@ -3,7 +3,7 @@
 Skizzen: (u, v) → Modellpunkt über swki.compiler.skizze.modellpunkt; Elemente rechteck (radius), kreis, polygon (radien),
 kontur (Bögen gegen den Uhrzeigersinn in (u, v)), langloch, mittellinie; mehrere Konturen nach gerade/ungerade.
 Features: extrusion/schnitt (alle Endbedingungen, umkehren, formschraege), rotation, bohrung, normbohrung
-(swki/wissen/bohrungsnormen.yaml), verrundung, fase (45°), muster_linear, muster_kreis, spiegeln, referenz, verzahnung
+(swki/wissen/bohrungsnormen.yaml; Feld `fase` = Fasenkegel am Eintritt, Maße aus swki.spec.bohrungsfase), verrundung, fase (45°), muster_linear, muster_kreis, spiegeln, referenz, verzahnung
 (Profil aus swki.verzahnung). skript und alles Übrige → SchnellbauFehler NICHT_UNTERSTUETZT.
 
 Jedes Feature hinterlässt ein FeatureInfo: Werkzeugkörper und Operation (plus/minus, für Flächenanker, Muster, Spiegeln),
@@ -24,6 +24,7 @@ from swki.formschraege import schraege
 from swki.konfig import lade_standard
 from swki.schnellbau.fehler import ANKER, GEOMETRIE, NICHT_UNTERSTUETZT, SchnellbauFehler
 from swki.spec.ausdruck import auswerten
+from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
 from swki.spec.normen import bohrspitze_grad, normmasse, norm_von
 from swki.verzahnung import Bogen, Linie, Stirnrad, aus_feature
 
@@ -365,12 +366,14 @@ class Schnellbau:
                              + self._loch(p, d, [(m["durchgang"], 0.0)], durch, tiefe, True) for p in punkte]
             else:
                 raise self.fehler(NICHT_UNTERSTUETZT, f"Normbohrung {f['art']}")
+        c = fase_abstand(f, self.p)
+        if c is not None:    # Fase c × 45° am Eintritt: Kegel vom Radius r + c auf r, wie das Feature <id>_fase im Compiler
+            r = eintritt_radius(f, self.p)
+            werkzeuge = [w + Solid.make_cone(r + c, r, c, Plane(origin=p, z_dir=d)) for w, p in zip(werkzeuge, punkte)]
         werkzeug = werkzeuge[0]
         for x in werkzeuge[1:]:
             werkzeug = werkzeug + x
         self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, "minus", _t(d), [_t(p) for p in punkte])
-        if "fase" in f:
-            self.meldungen.append(f"{f['id']}: fase am Bohrungseintritt nicht gebaut (Stufe C3a)")
         if not self.mit_bohrungen:
             self.uebersprungen.append(f["id"])
             return
