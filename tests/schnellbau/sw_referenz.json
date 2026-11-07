@@ -84,17 +84,17 @@
    30.0,
    50.0
   ],
-  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-1"
+  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-4"
  },
  "stehlager/grundplatte": {
   "spec": "stehlager/grundplatte.yaml",
-  "volumen": 394188.054,
+  "volumen": 394172.607,
   "huellquader": [
    200.0,
    20.0,
    100.0
   ],
-  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-1"
+  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-4"
  },
  "stehlager/unterteil": {
   "spec": "stehlager/unterteil.yaml",
@@ -103,7 +103,17 @@
    50.0,
    60.0
   ],
-  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-1"
+  "quelle": "SolidWorks stehlager/stehlager.yaml lauf-4"
+ },
+ "stil/spannplatte": {
+  "spec": "stil/spannplatte.yaml",
+  "volumen": 438270.87,
+  "huellquader": [
+   200.0,
+   20.0,
+   120.0
+  ],
+  "quelle": "SolidWorks stil/spannplatte.yaml lauf-2"
  },
  "zahnstangentrieb/antriebswelle": {
   "spec": "zahnstangentrieb/antriebswelle.yaml",
