@@ -27,7 +27,7 @@ REFERENZEN = [("buchse", "buchse.yaml"), ("formplatte", "formplatte_ds.yaml"),
               ("schlitten", "linearschlitten.yaml"), ("zahnstangentrieb", "zahnstange.yaml"),
               ("zahnstangentrieb", "ritzelwelle.yaml"), ("zahnstangentrieb", "antriebswelle.yaml"),
               ("zahnstangentrieb", "zahnstangentrieb.yaml"), ("motorhalter", "motorhalter.yaml"),
-              ("zentrieraufnahme", "zentrieraufnahme.yaml")]
+              ("zentrieraufnahme", "zentrieraufnahme.yaml"), ("stil", "spannplatte.yaml")]
 QUELLE = PROJEKT / "tests" / "referenz"
 SW_REFERENZ = PROJEKT / "tests" / "schnellbau" / "sw_referenz.json"
 
