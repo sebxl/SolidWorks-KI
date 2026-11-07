@@ -485,6 +485,33 @@ neues Fremdteil gibt es kein Soll, nur die Beschreibung; `fixiert` wird nicht ve
 Offen: neue Anforderungen des Nutzers über Skill `aendern` umsetzen (Freigabe, Prüfer); Punkte am Kanalträger weist `validieren` wegen der
 Referenz im Kontext ab. Die Abnahme an einer echten Kollegen-Baugruppe auf SW 2026 bleibt eigene, offene Abnahme.
 
+### Runde 1 der Änderungen an lauf-30 (Auftrag `AP68-Pruefstation-Rev1`, 06.–07.11.2026, live)
+
+Bestand `bestand-2` (lauf-30 nach Auflösen der Kontext-Referenz), Spec aus `erzeuge_rev1.py`: 195 Punkte (64 in 13 Teilen, 131 in der
+Hauptbaugruppe), 3 neue Teile, 7 neue Normteil-Dateien. Lauf 13 bestanden (Prüfung und Prüfer), Ausgabe 21 Dateien unter
+`AP68-Pruefstation-Rev1\ausgabe`; `lauf-30` nie geöffnet, SHA-256 der Hauptbaugruppe gleich der Aufnahme. Warnungen: `BESTAND_LIZENZ`
+(Student), `BEWEGUNG_ABDECKUNG` für unterbestimmte Bestandsschrauben.
+
+| Kennzahl | Wert |
+|---|---|
+| Läufe bis bestanden | 13 (5 Freigaben: Erstfreigabe, ag1/ag2, vxp, Kamerahalter Variante A, Prüfboxen) |
+| Bau / gesamt (Lauf 13, `--neustart`) | 937 s / 25 min |
+| Punkt der Hauptbaugruppe | ~80 s → ~7 s mit `sw.schnell` (Verknüpfungen lesen 23 s → 3,1 s bei 168 Verknüpfungen) |
+| Werkzeug-Fixes mit Tests | 6 Commits (7150ea5, 0c20a8e, f540b13, 50a01f3, 76f913c, 54b554e) |
+
+Was die Läufe aufdeckten:
+- **Werkzeug:** Das kosmetische Gewinde eines Bohrungsassistenten lässt sich nicht löschen, es geht mit seiner Position. Verknüpfungen,
+  die ein späterer Punkt löscht, dürfen vorher Fehler zeigen. Ein Anker an einem `feature`-Punkt trägt dessen Instanzen. Haupt-Punkte
+  laufen ohne Bildschirmarbeit. Unterfeatures gelöschter Features, Hilfsebenen neuer Features und Maße gelöschter Positionen sind
+  erklärt. Das Rauschen der Volumenbilanz wächst mit der Änderung. Die Tiefe einer Bohrung, die nicht blind endet, folgt dem Körper.
+- **Bauweg:** Reihenfolge der Punkte (Anschlusswinkel, Trichter, gebrochene Verknüpfungen der Lasche zuerst); `nahe`-Anker, wo eine
+  Fläche zweigeteilt ist oder ein fremdes Kaufteil keinen Katalogbezug hat.
+- **Spec (neue Freigabe):** fehlende Löschpunkte, die der Handumbau hinterließ (Gewinde, `Platziert1`); am Kamerahalter eine
+  Konstruktionsfolge (Säule näher → zweite Klemmschraube in Schenkel B, Kamera an der falschen Fläche verknüpft), entschieden vom Nutzer;
+  Prüfboxen: ein Bereich je Teil, wo das Teil als Ganzes wandert oder Differenzkörper verschmelzen, Bohrspitzen und Wände mit Rand.
+
+Offen: Wirkung auf andere Baugruppen nicht geprüft; Einschmelzmutter-Bohrungen sind Annahmen; die Ausgabe trägt den Student-Vermerk.
+
 ## Offene Kleinigkeiten aus den Reviews
 
 Stand 2026-10-31, zurückgestellt, nichts davon führt zu einem falschen Bestanden. Teilweise inzwischen erledigt (Abschlusskorrekturen, siehe oben).
