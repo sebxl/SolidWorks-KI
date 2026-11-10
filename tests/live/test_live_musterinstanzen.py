@@ -5,7 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from swki.compiler.handler.muster import referenzachse
 from swki.pruefung.messen import kontext_aus_datei, messgeometrie
+from swki.spec.instanzen import BEZUGSACHSE
 
 from .bauhilfe import gebautes_teil
 
@@ -37,3 +39,13 @@ def test_reihe_und_spiegel_instanzen():
         ctx2 = kontext_aus_datei(ctx.app, ctx.model, SPEC, Path("live.yaml"), 0.1, protokoll.als_dict())
         assert [t.Name for t in ctx2.ergebnis("f2").traeger] == ["m1", "s1"]
         assert messgeometrie(ctx2, SPEC, {"feature": "f2", "instanz": 9, "achse": True}).punkt[0] == pytest.approx(20)
+
+
+def test_bezugsachsen_wie_konstante():
+    """Die Richtung der Referenzachsen in SolidWorks stimmt mit BEZUGSACHSE (Schnellbau) überein."""
+    with gebautes_teil({"art": "teil", "name": "T", "features": [PLATTE]}) as (ctx, fehler, _protokoll):
+        assert fehler is None
+        for a in ("x", "y", "z"):
+            richtung = referenzachse(ctx, a)[1]
+            for ist, soll in zip(richtung, BEZUGSACHSE[a]):
+                assert ist == pytest.approx(soll, abs=1e-9)

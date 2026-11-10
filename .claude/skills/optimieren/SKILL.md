@@ -11,9 +11,7 @@ ist **eingefroren**: Prüfaufgabe, Simulations-Datei, Ziel und Szenarien währen
 Zahlen, Claude nur Startpunkte (`start`, ≤ 20) und Formen.
 
 ## 1. Auftrag
-- Spec wie gewohnt (Skill `konstruieren` bzw. `baugruppe`), dazu der Block `optimierung` (Syntax: Spec §2). Bis Stufe C3a
-  Eckradien als Skizzen-`radius` statt `verrundung` in Musterquellen (der Schnellbau kann sie dort noch nicht); `fase` an
-  Bohrungen meldet der Schnellbau nur.
+- Spec wie gewohnt (Skill `konstruieren` bzw. `baugruppe`), dazu der Block `optimierung` (Syntax: Spec §2).
   Stellschrauben verweisen auf Zahlen-Parameter; abhängige Maße schreibt man als Ausdruck der Stellschraube in die
   Features. `rahmen` = Grenzen des Auftrags (vom Nutzer), `bereich` = Startbereich der Suche. Parameter für erlaubte
   Formen gleich mit anlegen, sonst braucht ihre Stellschraube später eine neue Freigabe.

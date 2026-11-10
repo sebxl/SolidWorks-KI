@@ -130,7 +130,11 @@ class Baugruppe:
             info = self.komp[kid].teil.features[s["feature"]]
             if not info.punkte:
                 raise SchnellbauFehler(ANKER, f"{kid}.{s['feature']}: keine Achse")
-            return _Seite(kid, "achse", punkt=info.punkte[s.get("instanz", 1) - 1], richtung=info.richtung)
+            n = s.get("instanz", 1)
+            if n > len(info.punkte):
+                raise SchnellbauFehler(ANKER, f"{kid}.{s['feature']}: Instanz {n}, es gibt {len(info.punkte)}")
+            richtung = info.richtungen[n - 1] if info.richtungen else info.richtung
+            return _Seite(kid, "achse", punkt=info.punkte[n - 1], richtung=richtung)
         if "flaeche" in s:
             e = bau.flaechenebene({"feature": s["feature"], "flaeche": s["flaeche"]})
             return _Seite(kid, "ebene", ACHSE_DER[e.orientierung], e.lage, e.normale)
