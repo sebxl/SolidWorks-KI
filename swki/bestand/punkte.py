@@ -14,7 +14,8 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
   IModelDoc2.Parameter(1), .FeatureByName(1), .GetEquationMgr(0), .EditRebuild3(0)
   IDimension.GetSystemValue3(2), .SetSystemValue3(3: swSetValue_InAllConfigurations 2, _InSpecificConfigurations 3 →
     swSetValue_Successful 0)
-  IEquationMgr.GetCount(0), .Equation(Index), .Value(Index), .SetEquationAndConfigurationOption(4: swAllConfiguration 2)
+  IEquationMgr.GetCount(0), .Equation(Index, auch Property-Put), .Value(Index), .SetEquationAndConfigurationOption(4:
+    swAllConfiguration 2); IModelDoc2.GetConfigurationNames(0)
   IFeature.SetSuppression2(3: swSuppressFeature 0, swUnSuppressFeature 1; swSpecifyConfiguration 3), .IsSuppressed2(2),
     .Select2(2), .GetFirstSubFeature(0), .GetNextSubFeature(0)
   IModelDocExtension.DeleteSelection2(1: swDelete_Children 1 | swDelete_Absorbed 2), .ReorderFeature(3: swMoveAfter 3),
@@ -29,8 +30,8 @@ from pathlib import Path
 from swki.bestand.fehler import BESTAND_ALTWERT, BESTAND_REFERENZ, KINDER_FEHLEN
 from swki.bestand.folgen import gleicher_ausdruck, namen_in, rechte_seite
 from swki.bestand.spec import _nahe
-from swki.bestand.sw_bestand import (SW_BENANNTE_KONFIGURATIONEN, _eigenschaften, _schalte, _wert, baum_features, bstr_array,
-                                     links_von, material_von, unter_namen, unterdrueckt)
+from swki.bestand.sw_bestand import (SW_BENANNTE_KONFIGURATIONEN, eigenschaften_von, schalte, _wert, baum_features, bstr_array,
+                                     links_von, material_von, setze_gleichung, unter_namen, unterdrueckt)
 from swki.compiler import sw
 from swki.compiler.eigenschaften import SW_CUSTOM_INFO_TEXT, SW_CUSTOM_PROPERTY_REPLACE_VALUE, finde_material
 from swki.compiler.fehler import (FEATURE_NICHT_ERZEUGT, GLEICHUNG_FEHLER, MATERIAL_UNBEKANNT, UNBEKANNTER_TYP, BauFehler)
@@ -85,6 +86,7 @@ def kontext(app, model, spec: dict, spec_pfad: Path, tol_mm: float) -> Kontext:
                   gleichungen=False)
     for name in fremde_namen(spec):
         ctx.ergebnisse[name] = FeatureErgebnis([_feature(model, name)])
+    ctx.loeschen_ausstehend = {}  # Gewinde des Bohrungsassistenten: Name → Punkt-ID, `pruefe_ausstehend` nach allen Punkten
     return ctx
 
 
@@ -115,10 +117,10 @@ def _je_konfiguration(ctx, aufnahme: dict, konfigurationen: list[str], messen: C
     aktive der Aufnahme. Kein `finally`: Nach einem Fehler wird ohnehin nicht gespeichert."""
     aus = {}
     for k in konfigurationen:
-        _schalte(ctx.model, k)
+        schalte(ctx.model, k)
         ctx.model.EditRebuild3
         aus[k] = messen(k)
-    _schalte(ctx.model, aufnahme["aktiv"])
+    schalte(ctx.model, aufnahme["aktiv"])
     _frisch(ctx)
     return aus
 
@@ -189,10 +191,14 @@ def _gleichung_stand(ctx, aufnahme: dict, links: str) -> dict[str, tuple[str, fl
 
 def _setze_gleichung(ctx, aufnahme: dict, links: str, rechts: str, stimmt: Callable) -> None:
     """Setzt die rechte Seite in allen Konfigurationen; die Rückgabe ist kein Status (S18c), es zählt `stimmt(mgr, i)` nach dem
-    Neuaufbau. `GetEquationMgr` nach jedem Wechsel neu holen."""
+    Neuaufbau. `GetEquationMgr` nach jedem Wechsel neu holen. Bei nur einer Konfiguration liefert
+    `SetEquationAndConfigurationOption` -1 und ändert nichts (Task 13 live, API-Hilfe: dann `Equation`)."""
     gleichungen = ctx.model.GetEquationMgr
-    gleichungen.SetEquationAndConfigurationOption(_gleichung_index(gleichungen, links), f'"{links}" = {rechts}',
-                                                  SW_KONFIGURATIONEN_ALLE, None)
+    i, text = _gleichung_index(gleichungen, links), f'"{links}" = {rechts}'
+    if len(ctx.model.GetConfigurationNames or ()) == 1:
+        setze_gleichung(gleichungen, i, text)
+    else:
+        gleichungen.SetEquationAndConfigurationOption(i, text, SW_KONFIGURATIONEN_ALLE, None)
 
     def messen(_):
         mgr = ctx.model.GetEquationMgr
@@ -275,6 +281,9 @@ def loeschen(ctx, p: dict, aufnahme: dict) -> list[str]:
     sw.auswahl_leeren(model)
     nachher = set(_baum(model))
     if name in nachher:
+        if _gewinde_des_assistenten(name, aufnahme):
+            ctx.loeschen_ausstehend[name] = p["id"]
+            return [name]
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"{name} wurde nicht gelöscht (eine Skizze mit Kind bleibt stehen)", schritt="loeschen")
     weg = [n for n in vorher if n not in nachher]
     if ungenannt := sorted(set(weg) - erlaubt):
@@ -284,6 +293,23 @@ def loeschen(ctx, p: dict, aufnahme: dict) -> list[str]:
         if namen & set(weg):
             del ctx.ergebnisse[s]
     return weg
+
+
+def _gewinde_des_assistenten(name: str, aufnahme: dict) -> bool:
+    """Kosmetisches Gewinde einer Bohrungsassistent-Bohrung laut Aufnahme. `DeleteSelection2` löscht es nicht (live 06.11.2026,
+    AP68-Pruefstation-Rev1 Lauf 2, auch `EditDelete`), es verschwindet nur mit seiner Position (Lauf 1)."""
+    typen = {f["name"]: f["typ"] for f in aufnahme["features"]}
+    eintrag = next((f for f in aufnahme["features"] if f["name"] == name), None)
+    return (eintrag is not None and eintrag["typ"] == "CosmeticThread"
+            and any(typen.get(e) == "HoleWzd" for e in eintrag["eltern"]))
+
+
+def pruefe_ausstehend(ctx) -> None:
+    """Nach allen Punkten: Ein vorgemerktes Gewinde des Bohrungsassistenten muss mit seiner Position verschwunden sein."""
+    if noch := [(n, pid) for n, pid in ctx.loeschen_ausstehend.items() if ctx.model.FeatureByName(n) is not None]:
+        raise BauFehler(FEATURE_NICHT_ERZEUGT, "; ".join(
+            f"Punkt {pid}: {n} ist ein Gewinde des Bohrungsassistenten und verschwindet nur mit seiner Position, kein späterer Punkt "
+            "hat sie gelöscht" for n, pid in noch), schritt="loeschen")
 
 
 def _neuer_name(fid: str, name: str, alt: str) -> str | None:
@@ -406,7 +432,7 @@ def eigenschaft(ctx, p: dict, aufnahme: dict) -> list[str]:
         verwalter.Delete2(name)
     else:
         verwalter.Add3(name, SW_CUSTOM_INFO_TEXT, neu, SW_CUSTOM_PROPERTY_REPLACE_VALUE)
-    if _eigenschaften(ctx.model, wo).get(name) != neu:
+    if eigenschaften_von(ctx.model, wo).get(name) != neu:
         raise BauFehler(FEATURE_NICHT_ERZEUGT, f"Eigenschaft {name} ließ sich nicht {'entfernen' if neu is None else 'setzen'}",
                         schritt="eigenschaft")
     return [name]

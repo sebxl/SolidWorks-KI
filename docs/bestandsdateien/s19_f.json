@@ -1,0 +1,1117 @@
+{
+ "zeile": "f",
+ "start_mb": 437,
+ "spitze_mb": 3697,
+ "halt": [],
+ "fragen": {
+  "T8.17": {
+   "frage": "Typnamen Reference, ReferencePattern, MateGroup; Komponenten als Features in der Kette, Unterfeatures?",
+   "antworten": [
+    {
+     "wert": {
+      "baum": [
+       {
+        "name": "Kommentare",
+        "typ": "CommentsFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Favoriten",
+        "typ": "FavoriteFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Historie",
+        "typ": "HistoryFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Auswahlsätze",
+        "typ": "SelectionSetFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Sensoren",
+        "typ": "SensorFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Aktivierte Schnittebenen",
+        "typ": "LiveSectionFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Konstruktionsordner",
+        "typ": "DocsFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Beschriftungen",
+        "typ": "DetailCabinet",
+        "unter": [
+         {
+          "name": "Hinweise",
+          "typ": "NotesAreaFtrFolder"
+         },
+         {
+          "name": "Hinweise1___EndTag___",
+          "typ": "NotesAreaFtrFolder"
+         }
+        ],
+        "unter_anzahl": 2
+       },
+       {
+        "name": "Beleuchtung und Kameras",
+        "typ": "EnvFolder",
+        "unter": [
+         {
+          "name": "Umgebungslicht",
+          "typ": "AmbientLight"
+         },
+         {
+          "name": "Gerichtet1",
+          "typ": "DirectionLight"
+         },
+         {
+          "name": "Gerichtet2",
+          "typ": "DirectionLight"
+         },
+         {
+          "name": "Gerichtet3",
+          "typ": "DirectionLight"
+         }
+        ],
+        "unter_anzahl": 4
+       },
+       {
+        "name": "Markierungen",
+        "typ": "InkMarkupFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Gleichungen",
+        "typ": "EqnFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Ebene vorne",
+        "typ": "RefPlane",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Ebene oben",
+        "typ": "RefPlane",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Ebene rechts",
+        "typ": "RefPlane",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Ursprung",
+        "typ": "OriginProfileFeature",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Grundplatte-1",
+        "typ": "Reference",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Schlitten-1",
+        "typ": "Reference",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Anschlag-1",
+        "typ": "Reference",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Anschlag-2",
+        "typ": "Reference",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Muster-1",
+        "typ": "Reference",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Verknüpfungen",
+        "typ": "MateGroup",
+        "unter": [
+         {
+          "name": "Schlitten Auflage",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Schlitten Seite",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Hub",
+          "typ": "MateLimitDistanceDim"
+         },
+         {
+          "name": "Anschlag1 Auflage",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag1 Mitte",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag1 Lage",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Anschlag2 Auflage",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag2 Mitte",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag2 Lage",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Antrieb vorne",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Antrieb rechts",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Antrieb Abstand",
+          "typ": "MateDistanceDim"
+         }
+        ],
+        "unter_anzahl": 12
+       }
+      ],
+      "ohne_glieder": [
+       "Ebene vorne",
+       "Ebene oben",
+       "Ebene rechts",
+       "Ursprung"
+      ]
+     }
+    }
+   ]
+  },
+  "T8.14": {
+   "frage": "Liefert GetComponents(False) Unterdrückte und Kinder unterdrückter Unterbaugruppen?",
+   "antworten": [
+    {
+     "wert": {
+      "Standard": [
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "Ohne Antrieb": [
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\Muster.SLDASM",
+        "zustand": 0,
+        "dokument": false,
+        "virtuell": false,
+        "status": 5,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "P.f3": {
+   "frage": "Name2 und Transform2 in Unterbaugruppen: Bezug oberste Baugruppe?",
+   "antworten": [
+    {
+     "wert": {
+      "lage": {
+       "Anschlag-1": [
+        30.0,
+        0.0,
+        15.0
+       ],
+       "Muster-1": [
+        0.0,
+        150.0,
+        0.0
+       ],
+       "Muster-1/Lagerdeckel-1": [
+        0.0,
+        150.0,
+        0.0
+       ],
+       "Muster-1/gm42-10-1": [
+        200.0,
+        121.5,
+        0.0
+       ],
+       "Grundplatte-1": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "Anschlag-2": [
+        70.0,
+        0.0,
+        15.0
+       ],
+       "Schlitten-1": [
+        -70.0,
+        0.0,
+        15.0
+       ]
+      },
+      "muster": [
+       0.0,
+       150.0,
+       0.0
+      ]
+     }
+    }
+   ]
+  },
+  "T8.16": {
+   "frage": "IsFixed bei Kindern?",
+   "antworten": [
+    {
+     "wert": {
+      "Anschlag-1": false,
+      "Muster-1": false,
+      "Muster-1/Lagerdeckel-1": false,
+      "Muster-1/gm42-10-1": false,
+      "Grundplatte-1": true,
+      "Anschlag-2": false,
+      "Schlitten-1": false
+     }
+    }
+   ]
+  },
+  "T8.19": {
+   "frage": "Was meldet ListExternalFileReferences an einer Baugruppe, nennt es Komponenten?",
+   "antworten": [
+    {
+     "wert": {
+      "roh": {
+       "modell": [],
+       "komponente": [],
+       "feature": [],
+       "typ": [],
+       "status": [],
+       "entity": []
+      },
+      "datei_referenzen": []
+     }
+    }
+   ]
+  },
+  "P.f4": {
+   "frage": "Was meldet ListExternalFileReferences an einer Baugruppe?",
+   "antworten": [
+    {
+     "wert": {
+      "modell": [],
+      "komponente": [],
+      "feature": [],
+      "typ": [],
+      "status": [],
+      "entity": []
+     }
+    }
+   ]
+  },
+  "T11.4": {
+   "frage": "datei_referenzen der Hauptbaugruppe: Nennt es Komponentendateien?",
+   "antworten": [
+    {
+     "wert": []
+    }
+   ]
+  },
+  "T8.24": {
+   "frage": "GetFeatures(False): Verknüpfungen auch in Ordnern, nur die der Hauptbaugruppe? Weitere Typen mit Mate vorn?",
+   "antworten": [
+    {
+     "fall": "ohne Ordner",
+     "wert": {
+      "typen": [
+       "AmbientLight",
+       "CommentsFolder",
+       "DetailCabinet",
+       "DirectionLight",
+       "DocsFolder",
+       "EnvFolder",
+       "EqnFolder",
+       "FavoriteFolder",
+       "HistoryFolder",
+       "InkMarkupFolder",
+       "LiveSectionFolder",
+       "MateCoincident",
+       "MateDistanceDim",
+       "MateGroup",
+       "MateLimitDistanceDim",
+       "NotesAreaFtrFolder",
+       "OriginProfileFeature",
+       "RefPlane",
+       "Reference",
+       "SelectionSetFolder",
+       "SensorFolder"
+      ],
+      "mate_typen": [
+       "MateCoincident",
+       "MateDistanceDim",
+       "MateGroup",
+       "MateLimitDistanceDim"
+      ],
+      "mate_namen": [
+       "Anschlag1 Auflage",
+       "Anschlag1 Lage",
+       "Anschlag1 Mitte",
+       "Anschlag2 Auflage",
+       "Anschlag2 Lage",
+       "Anschlag2 Mitte",
+       "Antrieb Abstand",
+       "Antrieb rechts",
+       "Antrieb vorne",
+       "Hub",
+       "Schlitten Auflage",
+       "Schlitten Seite",
+       "Verknüpfungen"
+      ],
+      "warnung": []
+     }
+    },
+    {
+     "fall": "mit Ordner",
+     "wert": {
+      "typen": [
+       "AmbientLight",
+       "CommentsFolder",
+       "DetailCabinet",
+       "DirectionLight",
+       "DocsFolder",
+       "EnvFolder",
+       "EqnFolder",
+       "FavoriteFolder",
+       "FtrFolder",
+       "HistoryFolder",
+       "InkMarkupFolder",
+       "LiveSectionFolder",
+       "LocalLPattern",
+       "MateCoincident",
+       "MateDistanceDim",
+       "MateGroup",
+       "MateInPlace",
+       "MateLimitDistanceDim",
+       "NotesAreaFtrFolder",
+       "OriginProfileFeature",
+       "RefPlane",
+       "Reference",
+       "ReferencePattern",
+       "SelectionSetFolder",
+       "SensorFolder"
+      ],
+      "mate_typen": [
+       "MateCoincident",
+       "MateDistanceDim",
+       "MateGroup",
+       "MateInPlace",
+       "MateLimitDistanceDim"
+      ],
+      "mate_namen": [
+       "Anschlag1 Auflage",
+       "Anschlag1 Lage",
+       "Anschlag1 Mitte",
+       "Anschlag2 Auflage",
+       "Anschlag2 Lage",
+       "Anschlag2 Mitte",
+       "Antrieb Abstand",
+       "Antrieb rechts",
+       "Antrieb vorne",
+       "Hub",
+       "Platziert1",
+       "Schlitten Auflage",
+       "Schlitten Seite",
+       "Verknüpfungen"
+      ],
+      "warnung": []
+     }
+    }
+   ]
+  },
+  "T8.15": {
+   "frage": "Name2 in IInterference.Components und ReferenceComponent gleich wie in GetComponents, auch in Unterbaugruppen?",
+   "antworten": [
+    {
+     "fall": "Kollision und Partner",
+     "wert": {
+      "kollisionen": [
+       {
+        "paar": [
+         "Anschlag-1",
+         "Anschlag-2"
+        ],
+        "volumen": 6000.0
+       }
+      ],
+      "partner": [
+       "Muster-1/Lagerdeckel-1",
+       "Grundplatte-1"
+      ],
+      "komponenten": [
+       "Anschlag-1",
+       "Muster-1",
+       "Muster-1/Lagerdeckel-1",
+       "Muster-1/gm42-10-1",
+       "Grundplatte-1",
+       "Anschlag-2",
+       "Schlitten-1"
+      ]
+     }
+    }
+   ]
+  },
+  "P.f1": {
+   "frage": "GetTypeName2 von Komponente, Verknüpfung, Komponentenmuster, virtuellem Teil",
+   "antworten": [
+    {
+     "fall": "Komponente, Verknüpfung, Muster, virtuell",
+     "wert": {
+      "komponente": "Reference",
+      "verknuepfung": "MateLimitDistanceDim",
+      "muster": {
+       "feature": {
+        "name": "Lokales lineares Muster1",
+        "typ": "LocalLPattern"
+       },
+       "komponenten": [
+        {
+         "name": "Anschlag-3",
+         "muster": true,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT"
+        },
+        {
+         "name": "Anschlag-1",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT"
+        },
+        {
+         "name": "Muster-1",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\Muster.SLDASM"
+        },
+        {
+         "name": "Muster-1/Lagerdeckel-1",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\Lagerdeckel.SLDPRT"
+        },
+        {
+         "name": "Muster-1/gm42-10-1",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\gm42-10.SLDPRT"
+        },
+        {
+         "name": "Grundplatte-1",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Grundplatte.SLDPRT"
+        },
+        {
+         "name": "Anschlag-2",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Anschlag.SLDPRT"
+        },
+        {
+         "name": "Schlitten-1",
+         "muster": false,
+         "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\k\\teile\\Schlitten.SLDPRT"
+        }
+       ]
+      },
+      "virtuell": {
+       "status": 1,
+       "name": "Teil1^Hubeinheit-1",
+       "pfad": "C:\\Users\\User\\AppData\\Local\\Temp\\swx29932\\VC~~\\Hubeinheit\\Teil1^Hubeinheit.sldprt",
+       "virtuell": true,
+       "typ": "Reference",
+       "namen": [
+        "Anschlag-3",
+        "Anschlag-1",
+        "Muster-1",
+        "Muster-1/Lagerdeckel-1",
+        "Muster-1/gm42-10-1",
+        "Grundplatte-1",
+        "Anschlag-2",
+        "Schlitten-1",
+        "Teil1^Hubeinheit-1"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "T8.18": {
+   "frage": "Wo stehen Verknüpfungen in einem Ordner unter MateGroup?",
+   "antworten": [
+    {
+     "fall": "Ordner mit Verknüpfungen",
+     "wert": {
+      "ordner": {
+       "name": "Ordner1",
+       "typ": "FtrFolder"
+      },
+      "baum": [
+       {
+        "name": "Verknüpfungen",
+        "typ": "MateGroup",
+        "unter": [
+         {
+          "name": "Schlitten Auflage",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Schlitten Seite",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Hub",
+          "typ": "MateLimitDistanceDim"
+         },
+         {
+          "name": "Anschlag1 Auflage",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag1 Mitte",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag1 Lage",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Ordner1",
+          "typ": "FtrFolder"
+         },
+         {
+          "name": "Anschlag2 Auflage",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag2 Mitte",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Anschlag2 Lage",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Ordner1___EndTag___",
+          "typ": "FtrFolder"
+         },
+         {
+          "name": "Antrieb vorne",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Antrieb rechts",
+          "typ": "MateCoincident"
+         },
+         {
+          "name": "Antrieb Abstand",
+          "typ": "MateDistanceDim"
+         },
+         {
+          "name": "Platziert1",
+          "typ": "MateInPlace"
+         }
+        ],
+        "unter_anzahl": 15
+       }
+      ],
+      "verknuepfungen": [
+       "Schlitten Auflage",
+       "Schlitten Seite",
+       "Hub",
+       "Anschlag1 Auflage",
+       "Anschlag1 Mitte",
+       "Anschlag1 Lage",
+       "Anschlag2 Auflage",
+       "Anschlag2 Mitte",
+       "Anschlag2 Lage",
+       "Antrieb vorne",
+       "Antrieb rechts",
+       "Antrieb Abstand",
+       "Platziert1"
+      ]
+     }
+    }
+   ]
+  },
+  "T8.25": {
+   "frage": "Ordner-Verknüpfung: Abstieg über GetFirstSubFeature oder flach mit Abschluss-Eintrag?",
+   "antworten": [
+    {
+     "wert": {
+      "baum": [
+       {
+        "name": "Kommentare",
+        "typ": "CommentsFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Favoriten",
+        "typ": "FavoriteFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Historie",
+        "typ": "HistoryFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Auswahlsätze",
+        "typ": "SelectionSetFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Sensoren",
+        "typ": "SensorFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Aktivierte Schnittebenen",
+        "typ": "LiveSectionFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Konstruktionsordner",
+        "typ": "DocsFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Beschriftungen",
+        "typ": "DetailCabinet",
+        "unter": [
+         {
+          "name": "Hinweise",
+          "typ": "NotesAreaFtrFolder"
+         },
+         {
+          "name": "Hinweise1___EndTag___",
+          "typ": "NotesAreaFtrFolder"
+         }
+        ],
+        "unter_anzahl": 2
+       },
+       {
+        "name": "Beleuchtung und Kameras",
+        "typ": "EnvFolder",
+        "unter": [
+         {
+          "name": "Umgebungslicht",
+          "typ": "AmbientLight"
+         },
+         {
+          "name": "Gerichtet1",
+          "typ": "DirectionLight"
+         },
+         {
+          "name": "Gerichtet2",
+          "typ": "DirectionLight"
+         },
+         {
+          "name": "Gerichtet3",
+          "typ": "DirectionLight"
+         }
+        ],
+        "unter_anzahl": 4
+       },
+       {
+        "name": "Markierungen",
+        "typ": "InkMarkupFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Gleichungen",
+        "typ": "EqnFolder",
+        "unter": [],
+        "unter_anzahl": 0
+       },
+       {
+        "name": "Ebene vorne",
+        "typ": "RefPlane",
+        "unter": [],
+        "unter_anzahl": 0
+       }
+      ],
+      "verknuepfungen": [
+       "Schlitten Auflage",
+       "Schlitten Seite",
+       "Hub",
+       "Anschlag1 Auflage",
+       "Anschlag1 Mitte",
+       "Anschlag1 Lage",
+       "Anschlag2 Auflage",
+       "Anschlag2 Mitte",
+       "Anschlag2 Lage",
+       "Antrieb vorne",
+       "Antrieb rechts",
+       "Antrieb Abstand",
+       "Platziert1"
+      ]
+     }
+    }
+   ]
+  },
+  "T11.5": {
+   "frage": "baum, masse, skizzen, neuaufbau über vergleiche: Reihenfolge nach neuer Komponente, Codes GetWhatsWrong gegen GetErrorCode2?",
+   "antworten": [
+    {
+     "wert": {
+      "neu": "Anschlag-4",
+      "mate": {
+       "status": 1,
+       "neu": [
+        "Probe neu"
+       ]
+      },
+      "reihenfolge_gleich": true,
+      "vorher": {
+       "Standard": [
+        "Ebene vorne",
+        "Ebene oben",
+        "Ebene rechts",
+        "Ursprung",
+        "Lokales lineares Muster1",
+        "Anschlag-3"
+       ],
+       "Ohne Antrieb": [
+        "Ebene vorne",
+        "Ebene oben",
+        "Ebene rechts",
+        "Ursprung",
+        "Lokales lineares Muster1",
+        "Anschlag-3"
+       ]
+      },
+      "nachher": {
+       "Standard": [
+        "Ebene vorne",
+        "Ebene oben",
+        "Ebene rechts",
+        "Ursprung",
+        "Lokales lineares Muster1",
+        "Anschlag-3"
+       ],
+       "Ohne Antrieb": [
+        "Ebene vorne",
+        "Ebene oben",
+        "Ebene rechts",
+        "Ursprung",
+        "Lokales lineares Muster1",
+        "Anschlag-3"
+       ]
+      },
+      "masse_gleich": true,
+      "skizzen": [
+       {},
+       {}
+      ],
+      "externe": [
+       [],
+       []
+      ],
+      "neuaufbau": [
+       [],
+       []
+      ]
+     }
+    }
+   ]
+  },
+  "P.f2": {
+   "frage": "Wie erscheint ein virtuelles Teil in GetDocumentDependencies2?",
+   "antworten": [
+    {
+     "wert": {
+      "neu": {
+       "status": 1,
+       "name": "Teil2^Hubeinheit-1",
+       "pfad": "C:\\Users\\User\\AppData\\Local\\Temp\\swx29932\\VC~~\\Hubeinheit\\Teil2^Hubeinheit.sldprt",
+       "virtuell": true,
+       "typ": "Reference",
+       "namen": [
+        "Anschlag-2",
+        "Grundplatte-1",
+        "Schlitten-1",
+        "Muster-1",
+        "Muster-1/gm42-10-1",
+        "Muster-1/Lagerdeckel-1",
+        "Anschlag-1",
+        "Teil2^Hubeinheit-1"
+       ]
+      },
+      "speichern": {
+       "ok": true,
+       "fehler": 0,
+       "warnungen": []
+      },
+      "abhaengigkeiten": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\gm42-10.SLDPRT",
+       "Teil2^Hubeinheit",
+       "C:\\Users\\User\\AppData\\Local\\Temp\\swx29932\\VC~~\\Hubeinheit\\Teil2^Hubeinheit.SLDPRT"
+      ],
+      "aufgeloest": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\f\\virtuell\\gm42-10.SLDPRT"
+      ],
+      "oeffne_in": {
+       "code": null,
+       "meldung": "oeffne_in ließ durch"
+      }
+     }
+    }
+   ]
+  },
+  "T8.20": {
+   "frage": "Geht Anlegen und Löschen der treibenden Verknüpfung am schreibgeschützten Dokument?",
+   "antworten": [
+    {
+     "wert": {
+      "anlegen": {
+       "status": 1,
+       "neu": [
+        "Probe"
+       ]
+      },
+      "loeschen": "gelöscht",
+      "uebrig": []
+     }
+    }
+   ]
+  },
+  "T11.13": {
+   "frage": "lies_baugruppe_einzeln: Gegenprobe je Unterbaugruppe gleich, wenn sich ein Kind geändert hat?",
+   "antworten": [
+    {
+     "wert": {
+      "vorher": [],
+      "nachher": []
+     }
+    }
+   ]
+  },
+  "P.f8": {
+   "frage": "abdeckung: Partner mit weiteren freien Richtungen (Task 11)?",
+   "antworten": [
+    {
+     "wert": {
+      "bestand": [],
+      "ohne_seite": [],
+      "status": {
+       "Standard": 2,
+       "Ohne Antrieb": 2
+      }
+     }
+    }
+   ]
+  }
+ },
+ "sekunden": 78.1,
+ "ende_mb": 1592,
+ "unbeantwortet": []
+}

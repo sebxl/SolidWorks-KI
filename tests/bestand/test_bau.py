@@ -23,6 +23,7 @@ from swki.konfig import Rechner
 from swki.spec.freigabe import FreigabeFehler
 from swki.spec.freigabe import freigeben as freigabe_ohne_pruefung
 from tests.bestand.beispiel_aufnahme import aufnahme as beispiel
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, freigabe_der_teil_quelle, schreibe_teil
 from tests.bestand.sw_attrappe import Teil, teil_aus
 
 INHALT = b"bestandskopie"
@@ -291,6 +292,37 @@ def test_loeschen_mit_kindern_und_skizze_bleibt_erlaubt(lauf):
     assert lauf.teil.gespeichert == ["Standard"] and lauf.teil.feature("Skizze4") is None
 
 
+def _gewinde_in_aufnahme(lauf):
+    lauf.aufnahme["features"] += [
+        {"name": "Gewinde1", "typ": "HoleWzd", "eltern": [], "kinder": ["Bohrungsgewinde1"], "unter": [],
+         "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False},
+        {"name": "Bohrungsgewinde1", "typ": "CosmeticThread", "eltern": ["Gewinde1"], "kinder": [], "unter": [],
+         "unterdrueckt": {"Standard": False, "Variante B": False}, "tabelle": False}]
+    lauf.aufnahme["reihenfolge"] = {k: [f["name"] for f in lauf.aufnahme["features"]] for k in lauf.aufnahme["konfigurationen"]}
+
+
+GEWINDE_WEG = {"id": "g1", "typ": "loeschen", "feature": "Bohrungsgewinde1"}
+POSITION_WEG = ('def bauen(ctx):\n    t = ctx.model\n    g = t.FeatureByName("Bohrungsgewinde1")\n'
+                "    for k in t.ordnung:\n        t.ordnung[k] = [f for f in t.ordnung[k] if f is not g]\n"
+                '    return t.FeatureByName("Gewinde1")\n')
+
+
+def test_gewinde_des_assistenten_geht_mit_seiner_position(lauf):
+    """AP68-Pruefstation-Rev1 (live 06.11.2026): `loeschen` auf das Gewinde, danach löscht ein Skript die Position."""
+    _gewinde_in_aufnahme(lauf)
+    lauf.schreibe(GEWINDE_WEG, {"id": "s1", "typ": "skript", "luecke": "x", "datei": _skript_datei(lauf, POSITION_WEG)})
+    assert bau.bauen(lauf.spec_pfad)["status"] == "ok"
+    assert lauf.teil.gespeichert == ["Standard"] and lauf.teil.feature("Bohrungsgewinde1") is None
+
+
+def test_gewinde_des_assistenten_bleibt_ohne_position_speichert_nicht(lauf):
+    _gewinde_in_aufnahme(lauf)
+    lauf.schreibe(GEWINDE_WEG)
+    with pytest.raises(BauAbbruch, match="Bohrungsgewinde1"):
+        bau.bauen(lauf.spec_pfad)
+    assert lauf.teil.gespeichert == []
+
+
 def test_schliessfehler_verdeckt_den_baufehler_nicht(lauf):
     lauf.schreibe(MASS)
 
@@ -395,6 +427,16 @@ def test_bau_ohne_freigabe(lauf):
     assert e.value.daten["code"] == "FREIGABE_FEHLT" and lauf.geoeffnet == []
 
 
+def test_bau_prueft_die_freigabe_der_teil_quelle(lauf):
+    schreibe_teil(lauf.spec_pfad.parent)
+    lauf.schreibe(MASS, TEIL_PUNKT, freigeben=False)
+    freigabe_der_teil_quelle(lauf.spec_pfad)
+    schreibe_teil(lauf.spec_pfad.parent, hoehe=20)  # Anforderung der Teil-Spec nach der Freigabe geändert
+    with pytest.raises(FreigabeFehler) as e:
+        bau.bauen(lauf.spec_pfad)
+    assert e.value.daten["code"] == "FREIGABE_VERALTET" and "Deckel2.yaml" in str(e.value) and lauf.geoeffnet == []
+
+
 def test_bau_kopie_veraendert(lauf):
     lauf.schreibe(MASS)
     os.chmod(lauf.kopie, stat.S_IWRITE)
@@ -491,7 +533,7 @@ def test_speichern_nur_im_arbeitsordner(lauf, tmp_path):
     fremd = tmp_path / "kunde" / "lauf-1" / "Teil.SLDPRT"
     teil = Teil(fremd)
     with pytest.raises(BauFehler) as e:
-        sw_bestand.speichere_an_ort(teil, fremd)
+        sw_bestand.speichere_an_ort(teil, fremd, fremd.parent)
     assert e.value.code == SPEICHERN_FEHLGESCHLAGEN and teil.gespeichert == []
 
 
@@ -499,7 +541,7 @@ def test_speichern_nur_im_lauf_ordner(lauf):
     """Die Bestandskopie liegt auch im Arbeitsordner, wird aber nie gespeichert."""
     teil = Teil(lauf.kopie)
     with pytest.raises(BauFehler):
-        sw_bestand.speichere_an_ort(teil, lauf.kopie)
+        sw_bestand.speichere_an_ort(teil, lauf.kopie, lauf.kopie.parent)
     assert teil.gespeichert == []
 
 
@@ -508,7 +550,7 @@ def test_speichern_nur_das_offene_dokument(lauf):
     ziel.parent.mkdir(parents=True)
     teil = Teil(ziel.with_name("Anderes.SLDPRT"))
     with pytest.raises(BauFehler):
-        sw_bestand.speichere_an_ort(teil, ziel)
+        sw_bestand.speichere_an_ort(teil, ziel, ziel.parent)
     assert teil.gespeichert == []
 
 
@@ -518,7 +560,7 @@ def test_speichern_fehler_von_solidworks(lauf):
     teil = Teil(ziel)
     teil.Save3 = lambda o, e, w: False
     with pytest.raises(BauFehler) as e:
-        sw_bestand.speichere_an_ort(teil, ziel)
+        sw_bestand.speichere_an_ort(teil, ziel, ziel.parent)
     assert e.value.code == SPEICHERN_FEHLGESCHLAGEN
 
 

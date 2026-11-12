@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 from swki.auftrag import auftrag_name
-from swki.bestand.ablage import aufnahmen, lade_aufnahme
+from swki.bestand.ablage import aufnahmen, lade_aufnahme, lade_datei_aufnahme
 from swki.bestand.fehler import (BEREICH_FEHLT, BESTAND_ALTWERT, BESTAND_EINHEIT, BESTAND_REFERENZ, BESTAND_UNBEKANNT,
                                  BESTAND_VERALTET, FOLGEN_ABWEICHEND, KINDER_FEHLEN, MASS_GESTEUERT, BestandFehler)
 from swki.bestand.folgen import folgen_von, gleicher_ausdruck, kinder_von, rechte_seite, vergleichsname
@@ -22,13 +22,17 @@ from swki.compiler.skriptpruefung import pruefe_skript
 from swki.konfig import lade_rechner
 from swki.spec.ausdruck import AusdruckFehler, auswerten, ist_ausdruck
 from swki.spec.freigabe import freigeben as spec_freigeben
-from swki.spec.freigabe import kopie_pfad, pruefsumme
+from swki.spec.freigabe import kopie_pfad, pruefe_freigabe, pruefsumme
 from swki.spec.hinweise import hinweise as teil_hinweise
-from swki.spec.laden import (SpecFehler, _pfad, _referenzen, _werte, lade_yaml, plausibel_befunde, schema_befunde)
+from swki.spec.laden import (SpecFehler, _pfad, _referenzen, _werte, lade_spec, lade_yaml, plausibel_befunde, schema_befunde)
 
-PRUEF_FELDER = ("art", "name", "bestand", "parameter", "bereiche", "pruefung")
+PRUEF_FELDER = ("art", "name", "bestand", "parameter", "bereiche", "pruefung", "kollision_erlaubt")
 # Bauweg in den Punkten: Anker und Bezug neuer Features, Einfügestelle, Skriptdatei (Reihenfolge: nach id sortiert)
 BAUWEG_SCHLUESSEL = frozenset({"nach", "bezug", "flaeche", "kanten"})
+# Punkte an der Baugruppe selbst (Etappe 2, Spec §4.1); die Anker `a`/`b`/`anlage_a`/`anlage_b` einer neuen Verknüpfung sind Bauweg wie in Spec 3b
+BAUGRUPPEN_TYPEN = frozenset({"komponente_neu", "komponente_entfernen", "komponente_ersetzen", "verknuepfung_neu",
+                              "verknuepfung_wert", "verknuepfung_loeschen"})
+ANKER_SCHLUESSEL = frozenset({"a", "b", "anlage_a", "anlage_b"})
 # Punkte, die Geometrie ändern können: jeder steht in mindestens einem Bereich (Spec §4.4 Punkt 5)
 GEOMETRIE_TYPEN = frozenset({"mass", "gleichung", "unterdruecken", "aufheben", "loeschen", "feature", "skript"})
 _TOL_ALT = 1e-6  # mm bzw. Grad: Rauschen beim Lesen aus SolidWorks
@@ -60,12 +64,15 @@ def _ohne_bauweg(obj):
 
 
 def bauweg_frei(spec: dict) -> dict:
-    """Die Anforderungen einer Änderungs-Spec (Grundlage der Prüfsumme): ohne Anker, `bezug`, `nach`, Skriptdateien und
-    ohne die Reihenfolge der Punkte. Die Spec selbst bleibt unverändert."""
+    """Die Anforderungen einer Änderungs-Spec (Grundlage der Prüfsumme): ohne Anker, `bezug`, `nach`, Skriptdateien, ohne die
+    Anker `a`/`b`/`anlage_a`/`anlage_b` neuer Verknüpfungen und ohne die Reihenfolge der Punkte. Die Spec selbst bleibt unverändert. Die Teil-Specs
+    der Teil-Quellen gehen über das Argument `teile=` von `pruefsumme` ein (`teil_summen_aenderung`)."""
     kern = {feld: copy.deepcopy(spec[feld]) for feld in PRUEF_FELDER if feld in spec}
     punkte = []
     for punkt in sorted(spec.get("punkte", []), key=lambda p: str(p.get("id", ""))):
-        rest = {k: v for k, v in punkt.items() if not (punkt.get("typ") == "skript" and k == "datei")}
+        typ = punkt.get("typ")
+        rest = {k: v for k, v in punkt.items()
+                if not (typ == "skript" and k == "datei") and not (typ == "verknuepfung_neu" and k in ANKER_SCHLUESSEL)}
         punkte.append(_ohne_bauweg(rest))
     kern["punkte"] = punkte
     return kern
@@ -80,7 +87,9 @@ def _plausibel_befunde(spec: dict) -> list[dict]:
             befunde.append({"pfad": f"punkte[{i}].id", "meldung": f"ID {pid!r} ist doppelt"})
 
     zu_pruefen = [(["punkte", i, "neu"], p["neu"]) for i, p in enumerate(spec["punkte"])
-                  if (p["typ"] == "mass" or "variable" in p) and ist_ausdruck(p.get("neu"))]
+                  if (p["typ"] in ("mass", "verknuepfung_wert") or "variable" in p) and ist_ausdruck(p.get("neu"))]
+    zu_pruefen += [(["punkte", i, feld], p[feld]) for i, p in enumerate(spec["punkte"]) if p["typ"] == "verknuepfung_neu"
+                   for feld in ("wert", "min", "max") if ist_ausdruck(p.get(feld))]
     zu_pruefen += [(pfad, roh) for pfad, _, roh in _werte(spec.get("pruefung", {}), ["pruefung"])]
     for pfad, roh in zu_pruefen:
         try:
@@ -428,11 +437,53 @@ def pruefe_lauf_bestand(spec: dict, protokoll: dict, lauf: int) -> None:
                         "swki bauen", lauf=lauf, protokoll=ist, spec=soll)
 
 
+def _datei_aufnahmen(spec: dict, pfad: Path):
+    """`datei_aufnahme(rel)` für die Prüfung einer Baugruppen-Spec: die Aufnahme einer weiteren Datei der Baugruppen-Aufnahme."""
+    r, auftrag, nummer = lade_rechner(), auftrag_name(pfad), spec["bestand"]["aufnahme"]
+    return lambda rel: lade_datei_aufnahme(r, auftrag, nummer, rel)
+
+
+def ist_baugruppen_aufnahme(aufnahme: dict) -> bool:
+    """Weiche nach `aufnahme["art"]`: Aufnahmen von Teilen (Etappe 1) tragen kein `art`, die einer Baugruppe `baugruppe`."""
+    return aufnahme.get("art") == "baugruppe"
+
+
+def baugruppen_inhalt_befunde(spec: dict) -> list[dict]:
+    """Eine Spec an einer Teil-Aufnahme kennt keine Baugruppe: `in_datei` (an Punkt, Bereich, Messung), `lage_folgen`,
+    `kollision_erlaubt` und die Baugruppen-Punkte gehören an eine Baugruppen-Aufnahme. Ohne den Befund träfe ein Punkt mit `in_datei`
+    still die aufgenommene Datei, und ein Baugruppen-Punkt scheiterte erst im Bau."""
+    def befund(pfad: str, was: str) -> dict:
+        return _befund(pfad, f"{was} gibt es nur an einer Baugruppe: Die Aufnahme ist ein Teil ({spec['bestand']['datei']})",
+                       BESTAND_REFERENZ)
+
+    befunde = []
+    for i, p in enumerate(spec["punkte"]):
+        if p["typ"] in BAUGRUPPEN_TYPEN:
+            befunde.append(befund(f"punkte[{i}]", f"Ein Punkt typ: {p['typ']}"))
+        for feld in ("in_datei", "lage_folgen"):
+            if feld in p:
+                befunde.append(befund(f"punkte[{i}].{feld}", feld))
+    befunde += [befund(f"bereiche[{j}].in_datei", "in_datei") for j, b in enumerate(spec["bereiche"]) if "in_datei" in b]
+    befunde += [befund(f"pruefung.masse_pruefen[{m}].in_datei", "in_datei")
+                for m, x in enumerate(spec.get("pruefung", {}).get("masse_pruefen", [])) if "in_datei" in x]
+    if "kollision_erlaubt" in spec:
+        befunde.append(befund("kollision_erlaubt", "kollision_erlaubt"))
+    return befunde
+
+
 def _geprueft(pfad: Path) -> tuple[dict, dict, list[dict]]:
-    """(Spec, Aufnahme, Hinweise) nach der vollen Prüfung; alle Befunde auf einmal (`SpecFehler`)."""
+    """(Spec, Aufnahme, Hinweise) nach der vollen Prüfung; alle Befunde auf einmal (`SpecFehler`). Eine Baugruppen-Aufnahme geht über
+    ihre Scheiben (`pruefe_baugruppe`), Teile laufen wie in Etappe 1."""
     spec = lade_aenderung(pfad)
     aufnahme = aufnahme_zu(spec, pfad)
-    befunde = befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
+    if ist_baugruppen_aufnahme(aufnahme):
+        from swki.bestand.spec_baugruppe import pruefe_baugruppe  # spät importiert (Kreisimport, nutzt die Funktionen dieses Moduls)
+
+        befunde, hinweise = pruefe_baugruppe(spec, aufnahme, _datei_aufnahmen(spec, pfad), pfad.parent)
+        if befunde:
+            raise SpecFehler(befunde)
+        return spec, aufnahme, hinweise
+    befunde = baugruppen_inhalt_befunde(spec) + befunde_gegen_aufnahme(spec, aufnahme, pfad.parent)
     feature_b, hinweise = feature_befunde(spec, aufnahme, pfad.parent)
     if befunde or feature_b:
         raise SpecFehler(befunde + feature_b)
@@ -443,19 +494,62 @@ def validieren(pfad: Path) -> dict:
     """`swki validieren` für art: aenderung: Schema und Plausibilität, dann die Prüfung gegen die Aufnahme (§4.4). `folgen`: die
     aus der Aufnahme berechneten Folgemaße je `mass`-/`gleichung`-Punkt, zum Eintragen in die Spec und für die Freigabe-Vorlage."""
     spec, aufnahme, hinweise = _geprueft(pfad)
-    aelter = bool(aufnahme["datei"].get("version_aelter"))
-    if aelter:
-        hinweise.append({"art": "version_aelter", "pfad": "bestand",
-                         "meldung": "Die Datei stammt aus einer älteren SolidWorks-Version: swki bauen speichert sie nur mit "
-                                    "--hochstufen, danach lässt sie sich nur noch mit SolidWorks "
-                                    f"{aufnahme.get('sw_jahr', '')} oder neuer lesen"})
+    if ist_baugruppen_aufnahme(aufnahme):
+        # je Datei, die gespeichert wird: Hinweise `version_aelter` stehen schon in `hinweise`; Folgen aus der Aufnahme des Teils
+        from swki.bestand.spec_baugruppe import ergebnis_baugruppe
+
+        zusatz = ergebnis_baugruppe(spec, aufnahme, _datei_aufnahmen(spec, pfad), hinweise)
+        aelter, folgen = zusatz.pop("version_aelter"), zusatz.pop("folgen")
+    else:
+        aelter = bool(aufnahme["datei"].get("version_aelter"))
+        if aelter:
+            hinweise.append({"art": "version_aelter", "pfad": "bestand",
+                             "meldung": "Die Datei stammt aus einer älteren SolidWorks-Version: swki bauen speichert sie nur mit "
+                                        "--hochstufen, danach lässt sie sich nur noch mit SolidWorks "
+                                        f"{aufnahme.get('sw_jahr', '')} oder neuer lesen"})
+        zusatz, folgen = {}, {p["id"]: folgen_von(p, aufnahme) for p in spec["punkte"] if p["typ"] in ("mass", "gleichung")}
     return {"gueltig": True, "spec": str(pfad), "art": "aenderung", "name": spec["name"], "punkte": len(spec["punkte"]),
-            "pruefsumme": pruefsumme(spec), "hinweise": hinweise, "version_aelter": aelter,
-            "folgen": {p["id"]: folgen_von(p, aufnahme) for p in spec["punkte"] if p["typ"] in ("mass", "gleichung")}}
+            "pruefsumme": pruefsumme(spec, teil_summen_aenderung(spec, pfad)), "hinweise": hinweise, "version_aelter": aelter,
+            "folgen": folgen, **zusatz}
+
+
+def _teil_specs(spec: dict, pfad: Path) -> dict[str, dict]:
+    """Die Teil-Specs der Teil-Quellen (`quelle.teil` in `komponente_neu`/`komponente_ersetzen`), Dateiname → Spec, je Datei
+    einmal. Sie liegen im Auftragsordner neben der Änderungs-Spec; ein Befund nennt die Teil-Spec im Pfad."""
+    teile = {}
+    for datei in sorted({p["quelle"]["teil"] for p in spec["punkte"] if "teil" in p.get("quelle", {})}):
+        try:
+            teile[datei] = lade_spec(pfad.parent / datei)
+        except SpecFehler as e:
+            raise SpecFehler([{**b, "pfad": f"{datei}: {b['pfad']}"} for b in e.daten["befunde"]]) from None
+    return teile
+
+
+def _summen(teile: dict[str, dict]) -> dict[str, str] | None:
+    return {datei: pruefsumme(teil) for datei, teil in teile.items()} or None
+
+
+def teil_summen_aenderung(spec: dict, pfad: Path) -> dict[str, str] | None:
+    """Prüfsummen der Teil-Specs, die die Punkte als Quelle nennen (Dateiname → Summe), für das Argument `teile=` von
+    `pruefsumme` und `pruefe_freigabe`. Ohne Teil-Quelle `None`: ein leeres Dict änderte die Prüfsumme von Etappe 1."""
+    return _summen(_teil_specs(spec, pfad))
+
+
+def pruefe_freigabe_aenderung(spec_pfad: Path, spec: dict) -> dict:
+    """Erst jede Teil-Spec der Teil-Quellen (die Meldung nennt die Datei), dann die Änderungs-Spec mit den Prüfsummen der Teile;
+    wirft FreigabeFehler. Alle Stellen, die eine Änderungs-Spec auf Freigabe prüfen (bauen, prüfen, Ausgabe), gehen hier durch."""
+    teile = _teil_specs(spec, spec_pfad)
+    for datei, teil in teile.items():
+        pruefe_freigabe(spec_pfad.parent / datei, teil)
+    return pruefe_freigabe(spec_pfad, spec, _summen(teile))
 
 
 def freigeben(pfad: Path) -> dict:
     """Freigabe der Anforderungen – nur nach ausdrücklichem OK des Nutzers. Prüft voll wie `validieren`: Der Weg `swki freigeben`,
-    `swki bauen --hochstufen` führt an `swki validieren` vorbei, und `bauen` prüft die Punkte nicht gegen die Aufnahme."""
+    `swki bauen --hochstufen` führt an `swki validieren` vorbei, und `bauen` prüft die Punkte nicht gegen die Aufnahme.
+    Teil-Quellen bekommen wie bei Baugruppen eine eigene Freigabe samt Kopie; ihre Prüfsummen gehen in die der Änderung ein."""
     spec = _geprueft(pfad)[0]
-    return {"spec": str(pfad), "art": "aenderung", "kopie": str(kopie_pfad(pfad)), **spec_freigeben(pfad, spec)}
+    teile = _teil_specs(spec, pfad)
+    eintraege = {datei: spec_freigeben(pfad.parent / datei, teil) for datei, teil in teile.items()}
+    return {"spec": str(pfad), "art": "aenderung", "kopie": str(kopie_pfad(pfad)), **spec_freigeben(pfad, spec, teile=_summen(teile)),
+            **({"teile": eintraege} if eintraege else {})}

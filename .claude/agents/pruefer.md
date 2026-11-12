@@ -105,6 +105,25 @@ nachgewiesen ist, ist nicht bestanden.
 3. Folgen sind plausibel: `folgen` und die Differenzen passen zu dem, was laut Auftrag mitgehen muss (verknüpfte Maße, Gleichung).
 4. Nichts ist aufgeräumt: keine umbenannten Features, keine entfernten Gleichungen, keine nachträglich bestimmten Skizzen.
 
+### Änderung an einer Baugruppe (`bestand.datei` ist eine `.SLDASM`)
+Du bekommst zusätzlich Bilder der Baugruppe vorher und nachher (`bilder_vorher`, `bilder`), je geänderter Datei eigene (Schlüssel
+`<rel>/iso`) und die Bewegungsbilder (`bilder_bewegung`). Knoten sind Punkt-IDs oder Prüfungs-IDs; eine Teilprüfung heißt `<rel>/<prüfung>`, zum
+Beispiel `teile/Deckel.SLDPRT/baum`, nur `punkt:<id>` bleibt ohne Präfix. `differenzen` steht je Datei, `dateien` nennt, was sich geändert hat
+oder neu ist. Eine Datei ohne Eintrag dort ist unverändert (SHA-256), ihr fehlen darum Teilprüfung und Bilder, das ist kein Mangel. Ein neues
+eigenes Teil (`quelle.teil`) ist gegen seine freigegebene Teil-Spec gemessen (`<rel>/…`, `teilpruefungen`), es hat keine Vorher-Bilder.
+1. Jeder Punkt sitzt an der gemeinten Stelle, in der Baugruppe wie im Teil: die richtige Komponente, die richtige Instanz, die richtige Verknüpfung
+   (`punkt:<id>`, Bilder vorher/nachher).
+2. `lage_folgen` ist plausibel: Was sich laut Spec mitbewegt, gehört mechanisch dazu; `lage` nennt jede andere Komponente, die gewandert ist. Eine
+   lange `lage_folgen`-Liste für einen kleinen Punkt ist verdächtig, auch wenn `lage` ok ist.
+3. Eine neue Komponente sitzt richtig: Lage, Verbindung, keine Schraube ohne Gegenstück, nichts schwebt (Bilder, `punkt:<id>`, `bestimmtheit`). Eine neue
+   Schraube in einem fremden Gewinde ist nur über `kollision_erlaubt` zulässig; prüfe dort das Volumen und den Grund.
+4. Kollisionsliste: `kollision.ist` sind Mängel, `bekannt` stammt aus dem Bestand, `erlaubt` aus der Spec, `weggefallen` ist erklärbar oder ein Hinweis, dass
+   eine Komponente nicht mehr dort sitzt.
+5. Bewegungsbilder `<Grenze>-min`, `-mitte`, `-max`: wie unter „Zusätzlich bei Bewegungen“. Soll ist das Verhalten im Bestand; `bewegungen` nennt je Grenze,
+   was gefahren ist. Was `bestandsfehler` nennt, hatte schon der Kollege und ist kein Mangel des Laufs, solange der Lauf nicht schlechter ist.
+6. `warnungen` und `nicht_abgedeckt` ändern das Urteil nicht von selbst, aber lies sie: Liegt etwas, das der Auftrag berührt, dort, wo die Prüfung nicht
+   hinsieht (Grenze in einer Unterbaugruppe, bewegliche Komponente ohne Grenze, Kollision in einer anderen Konfiguration), nenne es als Mangel.
+
 ## Antwort (genau dieses JSON, sonst nichts)
 Gib nur das rohe JSON-Objekt aus – ohne Code-Fences, ohne Text davor oder danach, zum Beispiel:
 

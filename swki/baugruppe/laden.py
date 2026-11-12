@@ -21,16 +21,22 @@ def teile_normteil(text: str) -> tuple[str, str]:
     return norm.strip(), groesse
 
 
-def _normteil(kid: str, quelle: dict) -> tuple[Quelle | None, list[dict]]:
+def normteil_quelle(quelle: dict, pfad_befund: str) -> tuple[Quelle | None, list[dict]]:
+    """Normteil aus der Tabelle (Spec 3a): Größe, Länge und Variante gültig. Die Befunde tragen `pfad_befund`; auch die Änderungs-Spec
+    für Bestandsdateien (`swki/bestand/spec_baugruppe.py`) prüft ihre neuen Komponenten hiermit."""
     norm, groesse = teile_normteil(quelle["normteil"])
     try:
         pruefe_tabelle(lade_normtabelle(norm))
         t, a = loese_auf(norm, groesse, quelle.get("variante"))
     except NormteilFehler as e:
-        return None, [{"pfad": f"komponenten.{kid}.quelle", "meldung": f"{e.daten['code']}: {e}"}]
+        return None, [{"pfad": pfad_befund, "meldung": f"{e.daten['code']}: {e}"}]
     spec = erzeuge_spec(t, a, vorlage_text(t))
     return Quelle("normteil", spec, norm=t["norm"], groesse=a.groesse, laenge=a.laenge, variante=a.variante,
                   schluessel=a.schluessel, masse=dict(t["groessen"][a.groesse]["masse"])), []
+
+
+def _normteil(kid: str, quelle: dict) -> tuple[Quelle | None, list[dict]]:
+    return normteil_quelle(quelle, f"komponenten.{kid}.quelle")
 
 
 def kaufteil_spec(eintrag: dict) -> dict:
@@ -40,9 +46,9 @@ def kaufteil_spec(eintrag: dict) -> dict:
             "features": [{"id": n, "typ": "referenz"} for n in eintrag["einbau"]], "gewinde": eintrag.get("gewinde", {})}
 
 
-def _kaufteil(kid: str, quelle: dict) -> tuple[Quelle | None, list[dict]]:
-    """Kaufteil aus dem Katalog (Spec 3c §8.2): Eintrag vorhanden und gültig; freigegeben und geprüft sind Befunde."""
-    pfad_befund = f"komponenten.{kid}.quelle"
+def kaufteil_quelle(quelle: dict, pfad_befund: str) -> tuple[Quelle | None, list[dict]]:
+    """Kaufteil aus dem Katalog (Spec 3c §8.2): Eintrag vorhanden und gültig; freigegeben und geprüft sind Befunde. Die Befunde
+    tragen `pfad_befund`; auch die Änderungs-Spec für Bestandsdateien prüft ihre neuen Komponenten hiermit."""
     try:
         pfad = finde(quelle["kaufteil"])
         eintrag = lade_eintrag(pfad)
@@ -63,6 +69,10 @@ def _kaufteil(kid: str, quelle: dict) -> tuple[Quelle | None, list[dict]]:
                                                                                      eintrag["bestellnummer"]),
                eintrag=eintrag, eintrag_pfad=pfad)
     return q, befunde
+
+
+def _kaufteil(kid: str, quelle: dict) -> tuple[Quelle | None, list[dict]]:
+    return kaufteil_quelle(quelle, f"komponenten.{kid}.quelle")
 
 
 def _teil(kid: str, datei: str, ordner: Path, cache: dict) -> tuple[Quelle | None, list[dict]]:

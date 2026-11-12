@@ -1,0 +1,342 @@
+{
+ "zeile": "e2",
+ "start_mb": 435,
+ "spitze_mb": 5205,
+ "halt": [],
+ "fragen": {
+  "T9.19": {
+   "frage": "Partner in einer Konfiguration unterdrückt: Gilt die neue Verknüpfung dort als unterdrückt?",
+   "antworten": [
+    {
+     "fall": "Handler, ohne Widerspruch",
+     "wert": {
+      "handler": [
+       "m3"
+      ]
+     }
+    },
+    {
+     "fall": "Stand danach",
+     "wert": {
+      "lesen": {
+       "typ": 0,
+       "ausrichtung": 0,
+       "wert": null,
+       "min": null,
+       "max": null,
+       "werte": {
+        "Standard": {
+         "wert": null,
+         "min": null,
+         "max": null
+        },
+        "Ohne Antrieb": {
+         "wert": null,
+         "min": null,
+         "max": null
+        }
+       },
+       "grenze": false,
+       "gesteuert": false,
+       "partner": [
+        "Muster-1/Lagerdeckel-1",
+        "Zusatz-1"
+       ],
+       "fehler": {
+        "Standard": 0,
+        "Ohne Antrieb": 0
+       },
+       "unterdrueckt": {
+        "Standard": false,
+        "Ohne Antrieb": false
+       }
+      },
+      "je": {
+       "Standard": {
+        "zustand": 2,
+        "referenziert": "Standard",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\partner\\Zusatz.SLDPRT"
+       },
+       "Ohne Antrieb": {
+        "zustand": 2,
+        "referenziert": "Standard",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\partner\\Zusatz.SLDPRT"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "T10.1": {
+   "frage": "Save3 an der Baugruppe: schreibt es geänderte Komponenten mit? Baugruppe ohne echte Änderung neu?",
+   "antworten": [
+    {
+     "fall": "ohne Änderung",
+     "wert": {
+      "dirty": false,
+      "speichern": {
+       "ok": true,
+       "fehler": 0,
+       "warnungen": []
+      },
+      "geaendert": [
+       "Hubeinheit.SLDASM"
+      ]
+     }
+    },
+    {
+     "fall": "Komponente im Speicher geändert",
+     "wert": {
+      "dirty": [
+       true,
+       true
+      ],
+      "speichern": {
+       "ok": true,
+       "fehler": 0,
+       "warnungen": []
+      },
+      "geaendert": [
+       "Hubeinheit.SLDASM"
+      ]
+     }
+    }
+   ]
+  },
+  "T10.2": {
+   "frage": "Teil in einer Unterbaugruppe geändert: bleibt Unter.SLDASM ungespeichert, zeigt die Hauptbaugruppe den neuen Stand?",
+   "antworten": [
+    {
+     "wert": {
+      "geaendert": [
+       "Lagerdeckel.SLDPRT"
+      ],
+      "volumen": 112048.85,
+      "dirty": true
+     }
+    }
+   ]
+  },
+  "T10.4": {
+   "frage": "GetWhatsWrong an Verknüpfungen: nennt es sie, Feature-Name, Code gleich GetErrorCode2?",
+   "antworten": [
+    {
+     "wert": {
+      "whats_wrong": [
+       {
+        "feature": "Verknüpfungen",
+        "code": 1,
+        "warnung": true
+       },
+       {
+        "feature": "Schlitten Seite",
+        "code": 1,
+        "warnung": true
+       },
+       {
+        "feature": "Konflikt",
+        "code": 47,
+        "warnung": false
+       }
+      ],
+      "codes": {
+       "Schlitten Auflage": 0,
+       "Schlitten Seite": 1,
+       "Hub": 0,
+       "Anschlag1 Auflage": 0,
+       "Anschlag1 Mitte": 0,
+       "Anschlag1 Lage": 0,
+       "Anschlag2 Auflage": 0,
+       "Anschlag2 Mitte": 0,
+       "Anschlag2 Lage": 0,
+       "Antrieb vorne": 0,
+       "Antrieb rechts": 0,
+       "Antrieb Abstand": 0,
+       "Konflikt": 47
+      }
+     }
+    }
+   ]
+  },
+  "T10.5": {
+   "frage": "Rückgabe von ForceRebuild3 bei alten Fehlern?",
+   "antworten": [
+    {
+     "wert": {
+      "force": true,
+      "edit": true,
+      "fehler": 3
+     }
+    }
+   ]
+  },
+  "T10.9": {
+   "frage": "CloseDoc einer neu aufgebauten, ungespeicherten Baugruppe: still, Frage nach Komponenten?",
+   "antworten": [
+    {
+     "wert": {
+      "dirty": true,
+      "zu": null,
+      "offen": [],
+      "dateien_gleich": true
+     }
+    }
+   ]
+  },
+  "T10.6": {
+   "frage": "EditRebuild3 nach einem Punkt: reicht das an der Baugruppe oder braucht es ForceRebuild3?",
+   "antworten": [
+    {
+     "wert": {
+      "vor": [
+       -70.0,
+       0.0,
+       15.0
+      ],
+      "edit": true,
+      "nach_edit": [
+       -70.0,
+       0.0,
+       18.0
+      ],
+      "force": true,
+      "nach_force": [
+       -70.0,
+       0.0,
+       18.0
+      ]
+     }
+    }
+   ]
+  },
+  "T10.12": {
+   "frage": "Öffnet die Lauf-Kopie in aufnahme[aktiv]?",
+   "antworten": [
+    {
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.9
+      },
+      "aktiv": "Ohne Antrieb",
+      "soll": "Ohne Antrieb"
+     }
+    }
+   ]
+  },
+  "T10.13": {
+   "frage": "Teil gespeichert in seiner aktiven Konfiguration: bleibt ReferencedConfiguration unverändert?",
+   "antworten": [
+    {
+     "wert": {
+      "referenziert": "Standard",
+      "dokument": "Variante B"
+     }
+    }
+   ]
+  },
+  "T10.3": {
+   "frage": "Teil-Scheibe unsichtbar: laufen die Handler von Etappe 1 ohne Fenster? Speicher?",
+   "antworten": [
+    {
+     "fall": "unsichtbar",
+     "wert": {
+      "fehler": "BauFehler: normbohrung neu1: Fläche an Position 1 nicht getroffen",
+      "stelle": "Traceback (most recent call last):\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\spikes\\s19_baugruppe.py\", line 1840, in e_unsichtbar\n    normbohrung(ctx, f)\n    ~~~~~~~~~~~^^^^^^^^\n  File \"C:\\Users\\User\\Documents\\Projekte\\SolidWorks-KI\\.claude\\worktrees\\bestandsdateien-etappe-2-3e51d9\\swki\\compiler\\handler\\normbohrung.py\", line 143, in normbohrung\n    raise BauFehler(REFERENZ_NICHT_GEFUNDEN, f\"normbohrung {f['id']}: Fläche an Position 1 nicht getroffen\",\n                    schritt=\"auswahl\")\nswki.compiler.fehler.BauFehler: normbohrung neu1: Fläche an Position 1 nicht getroffen\n"
+     }
+    },
+    {
+     "fall": "Fenster",
+     "wert": {
+      "volumen": [
+       240000.0,
+       239793.82
+      ],
+      "baum": "neu1",
+      "speichern": {
+       "ok": true,
+       "fehler": 0,
+       "warnungen": []
+      },
+      "speicher": {
+       "vorher": 2534.8,
+       "spitze": 4809.9,
+       "nachher": 4004.5
+      }
+     }
+    }
+   ]
+  },
+  "T10.14": {
+   "frage": "skript an der Hauptbaugruppe: fuehre_aus mit ctx.model als Baugruppe?",
+   "antworten": [
+    {
+     "wert": {
+      "handler": [],
+      "eigenschaft": "ja"
+     }
+    }
+   ]
+  },
+  "T10.15": {
+   "frage": "Laufzeit: Neuaufbau je Konfiguration und je Handler",
+   "antworten": [
+    {
+     "wert": {
+      "lesen_je_handler_s": 5.51,
+      "hinweis": "Hubeinheit: 7 Komponenten, Zahlen für lauf-30 in Task 16"
+     }
+    }
+   ]
+  },
+  "T11.K4": {
+   "frage": "Trägt GetPathName in neue_dateien den Namen der Teil-Spec, auch bei Sonderzeichen?",
+   "antworten": [
+    {
+     "wert": {
+      "handler": [
+       "Zusatz_ä-1-1"
+      ],
+      "pfad": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\e\\baum\\Zusatz_ä-1.SLDPRT"
+      ]
+     }
+    }
+   ]
+  },
+  "T10.16": {
+   "frage": "Stimmt baum_ohne_glieder, ändern neue Komponente und Verknüpfung die Reihenfolge der übrigen Features?",
+   "antworten": [
+    {
+     "wert": {
+      "mate": [
+       "m1"
+      ],
+      "vorher": [
+       "Ebene vorne",
+       "Ebene oben",
+       "Ebene rechts",
+       "Ursprung"
+      ],
+      "nachher": [
+       "Ebene vorne",
+       "Ebene oben",
+       "Ebene rechts",
+       "Ursprung"
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "sekunden": 101.8,
+ "ende_mb": 3013,
+ "konflikt": {
+  "status": 5,
+  "neu": [
+   "Konflikt"
+  ]
+ },
+ "unbeantwortet": []
+}

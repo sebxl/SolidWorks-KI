@@ -19,9 +19,11 @@ from swki.bestand.ablage import schreibe_aufnahme
 from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, BESTAND_UNBEKANNT, BESTAND_VERALTET,
                                  LAUF_NICHT_BESTANDEN, BestandFehler)
 from swki.cli import SwkiFehler
+from swki.spec.freigabe import FreigabeFehler
 from swki.pruefung import befehle
 from swki.pruefung.schleife import empfehlung
 from tests.bestand.test_bau import INHALT, MASS, Lauf
+from tests.bestand.test_spec_baugruppe import TEIL_PUNKT, freigabe_der_teil_quelle, schreibe_teil
 
 DIFFERENZEN = {"Standard": [{"art": "hinzu", "box": [-40.0, 10.0, 10.0, -30.0, 20.0, 20.0], "volumen": 500.0, "flaeche": 120.0,
                              "dicke": 5.0, "bereich": 0, "unter_toleranz": False, "duenn": False}],
@@ -103,6 +105,28 @@ def test_ausgabe_kopiert_nur_geaenderte_unter_originalnamen(u):
     assert erg["unveraendert"] == [] and erg["warnungen"] == [] and erg["lauf"] == 1 and erg["auftrag"] == "A"
     assert ziel.read_bytes() == datei.read_bytes() != INHALT
     assert u.original.read_bytes() == INHALT and u.nur_aussen() == [u.original]  # das Original wird nie angefasst
+
+
+def test_ausgabe_prueft_die_freigabe_der_teil_quelle(u):
+    u.voll()
+    u.gebaut()
+    schreibe_teil(u.spec_pfad.parent)
+    spec = u.schreibe(MASS, TEIL_PUNKT, freigeben=False)  # neu freigegeben (ohne Prüfung gegen die Aufnahme), der Lauf 1 bleibt
+    freigabe_der_teil_quelle(spec)
+    schreibe_teil(u.spec_pfad.parent, hoehe=20)  # Anforderung der Teil-Spec nach der Freigabe geändert
+    with pytest.raises(FreigabeFehler) as e:
+        modul.ausgabe(spec)
+    assert e.value.daten["code"] == "FREIGABE_VERALTET" and "Deckel2.yaml" in str(e.value)
+    assert not u.ausgabe_ordner().exists() and u.nur_aussen() == [u.original]
+
+
+def test_alte_ausgabe_wandert_beiseite_auch_beim_teil(u):
+    u.voll()
+    spec = u.gebaut()
+    assert modul.ausgabe(spec)["alt"] is None
+    erg = modul.ausgabe(spec)
+    alt = u.ausgabe_ordner().with_name("ausgabe_alt_1")
+    assert erg["alt"] == str(alt) and (alt / "Lagerdeckel.SLDPRT").is_file() and (u.ausgabe_ordner() / "Lagerdeckel.SLDPRT").is_file()
 
 
 def test_ausgabe_nennt_unveraenderte_und_kopiert_sie_nicht(u):

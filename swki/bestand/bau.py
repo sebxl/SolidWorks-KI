@@ -4,7 +4,8 @@ jedem Punkt Neuaufbau, vor dem Speichern alle Konfigurationen prüfen, Speichern
 Anders als beim Teil wird nach einem Fehler **nie** gespeichert: Eine fehlgeschlagene Änderung kann eine Konfiguration still
 und dauerhaft beschädigen, `Save3` meldet trotzdem Erfolg (S18c3). Der Lauf-Ordner behält dann die unveränderte Kopie, der
 nächste Lauf beginnt ohnehin wieder ab der Bestandskopie. Die Datei behält ihren Namen (kein `<auftrag>_<name>`), geöffnet wird
-nur die Lauf-Kopie, nie Bestandskopie oder Original."""
+nur die Lauf-Kopie, nie Bestandskopie oder Original. Eine Baugruppe nimmt die Weiche in `bauen` nach `swki.bestand.bau_baugruppe`,
+ihre Teile laufen als Scheiben durch `_aendere_und_speichere`."""
 
 import time
 from pathlib import Path
@@ -14,9 +15,10 @@ from swki.auftrag import auftrag_name, lauf_belegt, lauf_datei, lauf_ordner, nae
 from swki.bestand import punkte
 from swki.bestand.ablage import bestand_ordner, lauf_kopie, pruefe_kopie
 from swki.bestand.fehler import BESTAND_VERSION_AELTER, BestandFehler
-from swki.bestand.spec import GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, lade_aenderung
-from swki.bestand.sw_bestand import _geometrie, _schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
-from swki.bestand.vergleich import neue_fehler
+from swki.bestand.spec import (GEOMETRIE_TYPEN, aufnahme_zu, bestand_kennung, ist_baugruppen_aufnahme, lade_aenderung,
+                               pruefe_freigabe_aenderung)
+from swki.bestand.sw_bestand import _geometrie, schalte, baum_features, lizenz, speichere_an_ort, whats_wrong
+from swki.bestand.vergleich import bekannte_fehler_in, neue_fehler
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.compiler.ablauf import durchlaufe
@@ -25,15 +27,9 @@ from swki.compiler.fehler import REBUILD_FEHLER, BauFehler, fehler_dict
 from swki.compiler.protokoll import Knoten, Protokoll
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
-from swki.spec.freigabe import pruefe_freigabe
 from swki.verbindung import verbinde
 
 _TOL_VOLUMEN_MM3, _TOL_VOLUMEN_ANTEIL = 0.01, 1e-6  # Rauschen der Massenberechnung; feine Abweichungen zeigt die Differenz
-
-
-def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
-    """Features, deren Fehler die Datei in dieser Konfiguration schon hatte. Warnungen zählen nicht."""
-    return {e["feature"] for e in aufnahme["neuaufbau"] if e["konfiguration"] == konfiguration and not e["warnung"]}
 
 
 def _pruefe_baum(k: str, ist: list[str], aufnahme: dict, geloescht: set[str]) -> None:
@@ -67,7 +63,7 @@ def pruefe_stand(model, aufnahme: dict, liste: list[dict], geloescht: set[str]) 
     betroffen = {k for p in liste if p["typ"] in GEOMETRIE_TYPEN for k in punkte._konfigurationen(p, aufnahme)}
     namen = None
     for k in [*(x for x in aufnahme["konfigurationen"] if x != aktiv), aktiv]:
-        _schalte(model, k)
+        schalte(model, k)
         ok = model.EditRebuild3
         fehler = whats_wrong(model)
         neu = neue_fehler(fehler, aufnahme, k)
@@ -103,11 +99,17 @@ def _wende_punkte_an(app, model, spec: dict, spec_pfad: Path, tol_mm: float, auf
         if (ergebnis := ctx.ergebnisse.get(p["id"])) is not None:
             knoten.punkte = [list(q) for q in ergebnis.punkte] or None
 
-    return durchlaufe(ctx, protokoll, spec["punkte"], rufe, lambda c: _pruefe_neuaufbau(c, aufnahme))
+    fehler = durchlaufe(ctx, protokoll, spec["punkte"], rufe, lambda c: _pruefe_neuaufbau(c, aufnahme))
+    if fehler is None:
+        try:
+            punkte.pruefe_ausstehend(ctx)
+        except BauFehler as e:
+            fehler = e
+    return fehler
 
 
 def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: float, aufnahme: dict, protokoll: Protokoll,
-                           pfad: Path) -> Exception | None:
+                           pfad: Path, ordner: Path) -> Exception | None:
     """Der erste Fehler oder None; gespeichert ist die Datei nur bei None."""
     geloescht: set[str] = set()
     try:
@@ -116,7 +118,7 @@ def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: floa
                 return fehler
             pruefe_stand(model, aufnahme, spec["punkte"], geloescht)
         with protokoll.phase("speichern"):
-            speichere_an_ort(model, pfad)
+            speichere_an_ort(model, pfad, ordner)
     except Exception as e:  # jeder Fehler (auch COM) heißt: nicht speichern
         return e
     return None
@@ -125,20 +127,50 @@ def _aendere_und_speichere(app, model, spec: dict, spec_pfad: Path, tol_mm: floa
 def _fehler_mit_punkt(fehler: Exception, protokoll: Protokoll) -> dict:
     """Spec §6: Abbruch mit Punkt-ID, Schritt, Code und Meldung. Scheitert die Prüfung davor oder danach, gibt es keinen Punkt."""
     d = fehler_dict(fehler)
+    # `oeffne_in` konnte nach einem Pfadbefund nicht schließen: Das Dokument ist noch offen, `fehler_dict` kennt das Feld nicht
+    if (offen := (getattr(fehler, "daten", None) or {}).get("schliessen_fehlgeschlagen")) is not None:
+        d["schliessen_fehlgeschlagen"] = offen
     pid = next((k.id for k in protokoll.knoten if k.status == "fehler"), None)
     return d if pid is None else {**d, "punkt": pid, "meldung": f"Punkt {pid}: {d['meldung']}"}
+
+
+def schliesse_lauf(protokoll: Protokoll, fehler: Exception | None, ordner: Path, spec_pfad: Path, beginn: float) -> dict:
+    """Status und Fehler ins Protokoll, Protokoll in den Lauf-Ordner und in den Auftrag, das Ergebnis des Baus; nach einem Fehler
+    `BauAbbruch`. Auch ein Abbruch schreibt sein Protokoll."""
+    protokoll.status = "fehler" if fehler else "ok"
+    protokoll.fehler = _fehler_mit_punkt(fehler, protokoll) if fehler else None
+    protokoll.dauer_s = round(time.perf_counter() - beginn, 3)
+    protokoll.schreibe(ordner / "protokoll.json")
+    protokoll.schreibe(lauf_datei(spec_pfad, protokoll.lauf, "protokoll"))
+    ergebnis = {
+        "status": protokoll.status,
+        "auftrag": protokoll.auftrag,
+        "lauf": protokoll.lauf,
+        "ordner": str(ordner),
+        "dateien": protokoll.dateien,
+        "knoten": [{"id": k.id, "status": k.status, "sw_name": k.sw_name} for k in protokoll.knoten],
+        "fehler": protokoll.fehler,
+        "dauer_s": protokoll.dauer_s,
+    }
+    if fehler:
+        raise BauAbbruch(ergebnis)
+    return ergebnis
 
 
 def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, uebernommen: bool = False,
           hochstufen: bool = False) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_aenderung(spec_pfad)
-    pruefe_freigabe(spec_pfad, spec)
+    pruefe_freigabe_aenderung(spec_pfad, spec)  # Teil-Quellen eingeschlossen
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
     if lauf is not None and lauf_belegt(r, auftrag, spec_pfad, lauf):
         raise SwkiFehler(f"Lauf {lauf} von {auftrag} existiert schon – ohne --lauf baut swki den nächsten freien Lauf")
     aufnahme = aufnahme_zu(spec, spec_pfad)  # BESTAND_UNBEKANNT, BESTAND_VERALTET
+    if ist_baugruppen_aufnahme(aufnahme):
+        from swki.bestand import bau_baugruppe  # spät importiert (Kreisimport, nutzt den Kern dieses Moduls)
+
+        return bau_baugruppe.bauen_baugruppe(spec_pfad, spec, aufnahme, lauf, verwerfen, uebernommen, hochstufen)
     kopie = bestand_ordner(r, auftrag, spec["bestand"]["aufnahme"]) / aufnahme["datei"]["name"]
     pruefe_kopie(aufnahme, kopie)  # BESTAND_ABWEICHEND
     aelter = bool(aufnahme["datei"].get("version_aelter"))
@@ -162,7 +194,8 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
         model = oeffne(app, pfad)
     fehler = None
     try:
-        fehler = _aendere_und_speichere(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], aufnahme, protokoll, pfad)
+        fehler = _aendere_und_speichere(app, model, spec, spec_pfad, standard["toleranzen"]["anker_mm"], aufnahme, protokoll,
+                                        pfad, ordner)
         protokoll.lizenz = lizenz(app, model)
     finally:
         try:
@@ -172,21 +205,4 @@ def bauen(spec_pfad: Path, lauf: int | None = None, verwerfen: bool = False, ueb
     if fehler is None:
         protokoll.dateien = {"teil": str(pfad)}
         protokoll.sha256 = pruefsummen(ordner, [pfad])
-    protokoll.status = "fehler" if fehler else "ok"
-    protokoll.fehler = _fehler_mit_punkt(fehler, protokoll) if fehler else None
-    protokoll.dauer_s = round(time.perf_counter() - beginn, 3)
-    protokoll.schreibe(ordner / "protokoll.json")
-    protokoll.schreibe(lauf_datei(spec_pfad, lauf, "protokoll"))
-    ergebnis = {
-        "status": protokoll.status,
-        "auftrag": auftrag,
-        "lauf": lauf,
-        "ordner": str(ordner),
-        "dateien": protokoll.dateien,
-        "knoten": [{"id": k.id, "status": k.status, "sw_name": k.sw_name} for k in protokoll.knoten],
-        "fehler": protokoll.fehler,
-        "dauer_s": protokoll.dauer_s,
-    }
-    if fehler:
-        raise BauAbbruch(ergebnis)
-    return ergebnis
+    return schliesse_lauf(protokoll, fehler, ordner, spec_pfad, beginn)

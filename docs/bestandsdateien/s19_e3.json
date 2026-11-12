@@ -1,0 +1,197 @@
+{
+ "zeile": "e3",
+ "start_mb": 440,
+ "faelle": {
+  "roh": {
+   "vorher": {
+    "aktiv": "Standard",
+    "Standard": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 25.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    },
+    "Ohne Antrieb": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 25.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    }
+   },
+   "tun": {
+    "aktiv": "Standard",
+    "rueckgabe": true,
+    "ohne_neuaufbau": {
+     "unterdrueckt": false
+    }
+   },
+   "nachher": {
+    "aktiv": "Standard",
+    "Standard": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 30.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    },
+    "Ohne Antrieb": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 30.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    }
+   },
+   "s": 12.4,
+   "mb": 945
+  },
+  "roh_andere": {
+   "vorher": {
+    "aktiv": "Standard",
+    "Standard": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 25.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    },
+    "Ohne Antrieb": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 25.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    }
+   },
+   "tun": {
+    "aktiv": "Ohne Antrieb",
+    "rueckgabe": true,
+    "ohne_neuaufbau": {
+     "unterdrueckt": false
+    }
+   },
+   "nachher": {
+    "aktiv": "Ohne Antrieb",
+    "Standard": {
+     "unterdrueckt": true,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 30.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    },
+    "Ohne Antrieb": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 30.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    }
+   },
+   "s": 8.0,
+   "mb": 1007
+  },
+  "handler": {
+   "vorher": {
+    "aktiv": "Standard",
+    "Standard": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 25.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    },
+    "Ohne Antrieb": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 25.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    }
+   },
+   "tun": [
+    "Hub"
+   ],
+   "nachher": {
+    "aktiv": "Standard",
+    "Standard": {
+     "unterdrueckt": true,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 30.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    },
+    "Ohne Antrieb": {
+     "unterdrueckt": false,
+     "fehler": "<bound method GetErrorCode2 of <COMObject <unknown>>>",
+     "d1": 0.0,
+     "min": 0.0,
+     "max": 30.0,
+     "schlitten": [
+      -70.0,
+      0.0,
+      15.0
+     ]
+    }
+   },
+   "s": 24.8,
+   "mb": 1123
+  }
+ }
+}

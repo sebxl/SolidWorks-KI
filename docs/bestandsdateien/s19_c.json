@@ -1,0 +1,2108 @@
+{
+ "zeile": "c",
+ "start_mb": 436,
+ "spitze_mb": 4432,
+ "halt": [
+  "Pfadschutz sperrt eine Baugruppe mit unterdrückter Komponente: SolidWorks würde bei Hubeinheit.SLDASM 1 Dateien außerhalb des Ordners laden (nach dem Öffnen): C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original_b\\Muster.SLDASM (Task 8, Bedenken 1: §8.1a)"
+ ],
+ "fragen": {
+  "P.c1": {
+   "frage": "Struktur teile/ bei vorhandenem Original: aus der Kopie geladen?",
+   "antworten": [
+    {
+     "fall": "teile/, Original vorhanden",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.98
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 272000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    },
+    {
+     "fall": "teile/, Original nicht da",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.93
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\ohne_original\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    }
+   ]
+  },
+  "P.c3": {
+   "frage": "Löst GetDocumentDependencies2(…, True, True, False) genauso auf wie das Öffnen?",
+   "antworten": [
+    {
+     "fall": "teile/",
+     "wert": {
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": []
+     }
+    },
+    {
+     "fall": "Datei fehlt, Original da",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.94
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\fehlt\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT"
+      ]
+     }
+    }
+   ]
+  },
+  "T10.7": {
+   "frage": "Öffnen nach geänderten Teilen: Warnung 32, Dialog, Neuaufbau beim Öffnen?",
+   "antworten": [
+    {
+     "fall": "Grundplatte geändert neben alter Baugruppe",
+     "wert": {
+      "fehler": 0,
+      "warnungen": [
+       "neuaufbau_noetig"
+      ],
+      "s": 0.98
+     }
+    }
+   ]
+  },
+  "T10.11": {
+   "frage": "Sperre 1 am Lauf: löst GetDocumentDependencies2 auf den Lauf-Ordner auf, auch teile/ und flach?",
+   "antworten": [
+    {
+     "wert": {
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\gm42-10.SLDPRT"
+      ],
+      "ausserhalb": []
+     }
+    }
+   ]
+  },
+  "P.c2": {
+   "frage": "Datei flach daneben?",
+   "antworten": [
+    {
+     "fall": "flach statt teile/",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.96
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\flach\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    },
+    {
+     "fall": "flach und teile/ zugleich",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.94
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\beide\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    }
+   ]
+  },
+  "P.c6": {
+   "frage": "Schließt SolidWorks nach einem Pfad-Fund nachgeladene fremde Dokumente mit (Task 2)?",
+   "antworten": [
+    {
+     "fall": "oeffne_in",
+     "wert": {
+      "code": "BESTAND_PFAD_FREMD",
+      "meldung": "SolidWorks würde bei Hubeinheit.SLDASM 1 Dateien außerhalb des Ordners laden (vor dem Öffnen): C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+      "wo": "vor dem Öffnen"
+     }
+    },
+    {
+     "fall": "danach",
+     "wert": {
+      "offen_danach": [],
+      "anzahl": 0
+     }
+    }
+   ]
+  },
+  "P.c4": {
+   "frage": "Auch bei einem Original im Arbeitsordner, im Speicher?",
+   "antworten": [
+    {
+     "fall": "Auflösung",
+     "wert": {
+      "original_offen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.04
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\gm42-10.SLDPRT"
+      ]
+     }
+    },
+    {
+     "fall": "Schlitten des Originals im Speicher",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.92
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\speicher\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT"
+      ]
+     }
+    }
+   ]
+  },
+  "T8.9": {
+   "frage": "GetPathName unterdrückter und leicht geladener Komponenten: gespeichert oder aufgelöst? Blockiert der Pfadschutz?",
+   "antworten": [
+    {
+     "fall": "ohne voll",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.84
+      },
+      "aktiv": "Ohne Antrieb",
+      "vor": [
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original_b\\Muster.SLDASM",
+        "zustand": 0,
+        "dokument": false,
+        "virtuell": false,
+        "status": 5,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Hubeinheit.SLDASM"
+      ]
+     }
+    },
+    {
+     "fall": "ohne voll, nach dem Umschalten",
+     "wert": {
+      "nach_umschalten": [
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Lagerdeckel.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\gm42-10.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Muster.SLDASM"
+      ]
+     }
+    },
+    {
+     "fall": "voll",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [],
+       "s": 0.88
+      },
+      "aktiv": "Ohne Antrieb",
+      "vor": [
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original_b\\Muster.SLDASM",
+        "zustand": 0,
+        "dokument": false,
+        "virtuell": false,
+        "status": 5,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Hubeinheit.SLDASM"
+      ]
+     }
+    },
+    {
+     "fall": "voll, nach dem Umschalten",
+     "wert": {
+      "nach_umschalten": [
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\gm42-10.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Lagerdeckel.SLDPRT",
+        "zustand": 1,
+        "dokument": false,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         30.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "offen": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\Muster.SLDASM"
+      ]
+     }
+    },
+    {
+     "fall": "oeffne_in mit Unterdrücktem",
+     "wert": {
+      "code": "BESTAND_PFAD_FREMD",
+      "meldung": "SolidWorks würde bei Hubeinheit.SLDASM 1 Dateien außerhalb des Ordners laden (nach dem Öffnen): C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original_b\\Muster.SLDASM",
+      "wo": "nach dem Öffnen"
+     }
+    }
+   ]
+  },
+  "T8.10": {
+   "frage": "Bleibt ein als-gespeichert-Pfad auch nach voll (Option 64)?",
+   "antworten": [
+    {
+     "fall": "ohne voll",
+     "wert": {
+      "pfade": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original_b\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT"
+      ]
+     }
+    },
+    {
+     "fall": "voll",
+     "wert": {
+      "pfade": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original_b\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\kopie_b\\teile\\Anschlag.SLDPRT"
+      ]
+     }
+    }
+   ]
+  },
+  "P.c5": {
+   "frage": "Zurückkopierte Baugruppe mit Lauf-Pfaden lädt was?",
+   "antworten": [
+    {
+     "fall": "Lauf-Ordner noch da",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.88
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         32.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    },
+    {
+     "fall": "Lauf-Ordner weg",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.87
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         32.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    }
+   ]
+  },
+  "P.c7": {
+   "frage": "Geänderte Hauptbaugruppe plus flaches Fremdteil nach dem Zurückkopieren (Task 11)?",
+   "antworten": [
+    {
+     "fall": "Lauf-Ordner noch da",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.87
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         32.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    },
+    {
+     "fall": "Lauf-Ordner weg",
+     "wert": {
+      "oeffnen": {
+       "fehler": 0,
+       "warnungen": [
+        "neuaufbau_noetig"
+       ],
+       "s": 0.97
+      },
+      "vorher": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT"
+      ],
+      "vorher_roh": [
+       "Grundplatte",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+       "Schlitten",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+       "Anschlag",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+       "Muster",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM",
+       "Lagerdeckel",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+       "gm42-10",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT"
+      ],
+      "komponenten": [
+       {
+        "name": "Muster-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/Lagerdeckel-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         150.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Muster-1/gm42-10-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         200.0,
+         121.5,
+         0.0
+        ]
+       },
+       {
+        "name": "Anschlag-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         32.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Anschlag-2",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         70.0,
+         0.0,
+         15.0
+        ]
+       },
+       {
+        "name": "Grundplatte-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "name": "Schlitten-1",
+        "pfad": "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+        "zustand": 2,
+        "dokument": true,
+        "virtuell": false,
+        "status": 3,
+        "lage": [
+         -70.0,
+         0.0,
+         15.0
+        ]
+       }
+      ],
+      "dokumente": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\zurueck_flach\\Muster.SLDASM"
+      ],
+      "grundplatte_volumen": 240000.0,
+      "gleich": true,
+      "nur_vorher": [],
+      "nur_geladen": [],
+      "ausserhalb": []
+     }
+    }
+   ]
+  },
+  "T8.11": {
+   "frage": "Enthält GetDocumentDependencies2 andere Dateitypen (Tabelle, .step eines Imports, .sldlfp)?",
+   "antworten": [
+    {
+     "wert": {
+      "hubeinheit": [
+       ".sldasm",
+       ".sldprt"
+      ],
+      "motor": [],
+      "version": [
+       [
+        "18000[2025/268]"
+       ],
+       [
+        "18000[2025/268]"
+       ],
+       [
+        "18000[2025/268]"
+       ],
+       [
+        "18000[2025/268]"
+       ],
+       [
+        "18000[2025/268]"
+       ],
+       [
+        "18000[2025/268]"
+       ]
+      ],
+      "tabelle": []
+     }
+    }
+   ]
+  },
+  "T8.23": {
+   "frage": "Bleiben nach CloseDoc verdeckt Dokumente offen, trifft das einzelne Lesen gleichnamige?",
+   "antworten": [
+    {
+     "wert": {
+      "offen_mit_baugruppe": [
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Schlitten.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Anschlag.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Lagerdeckel.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\gm42-10.SLDPRT",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Hubeinheit.SLDASM",
+       "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\Muster.SLDASM"
+      ],
+      "anzahl": 7,
+      "offen_danach": [],
+      "anzahl_danach": 0,
+      "offene_dokumente": [],
+      "teil_danach": {
+       "offen": [
+        "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\lauf-1\\teile\\Grundplatte.SLDPRT"
+       ],
+       "titel": "Grundplatte"
+      },
+      "zuletzt": []
+     }
+    }
+   ]
+  },
+  "T11.8": {
+   "frage": "pruefe_vor_dem_oeffnen an vorher_<rel>: leer, auch bei abgeleiteter Konfiguration oder Tabelle?",
+   "antworten": [
+    {
+     "wert": {
+      "vorher": [],
+      "zwei_konfigurationen": []
+     }
+    }
+   ]
+  }
+ },
+ "original": {
+  "muster": {
+   "oeffnen": {
+    "fehler": 0,
+    "warnungen": [],
+    "s": 5.31
+   },
+   "speichern": {
+    "ok": true,
+    "fehler": 0,
+    "warnungen": []
+   }
+  },
+  "haupt": {
+   "oeffnen": {
+    "fehler": 0,
+    "warnungen": [],
+    "s": 1.01
+   },
+   "speichern": {
+    "ok": true,
+    "fehler": 0,
+    "warnungen": []
+   }
+  }
+ },
+ "sekunden": 38.0,
+ "ende_mb": 2774,
+ "gespeicherte_pfade_original": [
+  "Grundplatte",
+  "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Grundplatte.SLDPRT",
+  "Schlitten",
+  "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Schlitten.SLDPRT",
+  "Anschlag",
+  "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\teile\\Anschlag.SLDPRT",
+  "Muster",
+  "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\Muster.SLDASM",
+  "Lagerdeckel",
+  "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\Lagerdeckel.SLDPRT",
+  "gm42-10",
+  "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\original\\gm42-10.SLDPRT"
+ ],
+ "kennzeichen": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": [],
+   "s": 3.14
+  },
+  "status": 0,
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": []
+  },
+  "volumen": 272000.0
+ },
+ "original_b": {
+  "muster": {
+   "oeffnen": {
+    "fehler": 0,
+    "warnungen": [],
+    "s": 0.84
+   },
+   "speichern": {
+    "ok": true,
+    "fehler": 0,
+    "warnungen": []
+   }
+  },
+  "haupt": {
+   "oeffnen": {
+    "fehler": 0,
+    "warnungen": [],
+    "s": 0.96
+   },
+   "speichern": {
+    "ok": true,
+    "fehler": 0,
+    "warnungen": []
+   }
+  }
+ },
+ "rueck_lauf": {
+  "oeffnen": {
+   "fehler": 0,
+   "warnungen": [],
+   "s": 0.97
+  },
+  "speichern": {
+   "ok": true,
+   "fehler": 0,
+   "warnungen": []
+  },
+  "pfade": [
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\teile\\Anschlag.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\Muster.SLDASM",
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\gm42-10.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\Lagerdeckel.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\teile\\Grundplatte.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\teile\\Anschlag.SLDPRT",
+   "C:\\Users\\User\\.swki\\arbeit\\S19\\c\\rueck_lauf\\teile\\Schlitten.SLDPRT"
+  ]
+ },
+ "unbeantwortet": []
+}

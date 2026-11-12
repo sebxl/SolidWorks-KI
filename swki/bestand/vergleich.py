@@ -36,6 +36,16 @@ TOL = 1e-6  # mm bzw. Grad; die Aufnahme rundet auf 6 Stellen, die Reserve fäng
 # die durch die Änderung widersprüchlich wird, ist schlechter, auch wenn sie vorher unterbestimmt war.
 SKIZZE_RANG = {6: 0, 5: 0, 4: 1, 1: 2, 7: 2, 2: 3, 3: 4}
 
+SW_ENDE_BLIND = 0  # swEndConditions_e.swEndCondBlind
+# Das Tiefenmaß in der Skizze eines Bohrungsassistenten (deutsche Oberfläche, live Rev1 Lauf 11: Bohrungstiefe@Skizze4). Endet die
+# Bohrung nicht blind (durch alles, bis Fläche …), folgt es dem Körper; die übrigen Maße der Skizze (Durchmesser, Senkung) nicht.
+BOHRUNGSTIEFE = "Bohrungstiefe@"
+
+
+def bekannte_fehler_in(aufnahme: dict, konfiguration: str) -> set[str]:
+    """Features, deren Fehler die Datei in dieser Konfiguration schon hatte. Warnungen zählen nicht."""
+    return {e["feature"] for e in aufnahme.get("neuaufbau") or () if e["konfiguration"] == konfiguration and not e["warnung"]}
+
 
 def neue_fehler(fehler: list[dict], aufnahme: dict, konfiguration: str) -> list[str]:
     """Was die Aufnahme nicht kennt, als Tripel (Konfiguration, Feature, Code): Auch ein anderer Code am selben Feature ist neu.
@@ -83,6 +93,7 @@ class _Vergleich:
     skript_gelaufen: frozenset[str] = frozenset()   # Punkt-IDs der Skripte, die laut Protokoll durchliefen
     skript_features: frozenset[str] = frozenset()   # was ihr `bauen(ctx)` zurückgab
     feature_messung: dict = field(default_factory=dict)  # Punkt-ID → Ergebnis von `feature_messung.bewerte`
+    punkt_features: frozenset[str] = frozenset()    # was `feature`-Punkte laut Protokoll anlegten (Hilfsebenen, Rev1 Lauf 11)
     konfigurationen: list[str] = field(init=False)  # die beiden Aufnahmen gemeinsam haben, in der Reihenfolge des Bestands
     geloescht: set[str] = field(init=False)         # was `loeschen`-Punkte nehmen dürfen
     masse_vorher: dict[str, dict] = field(init=False)
@@ -113,9 +124,12 @@ def _eigene_skizzen(namen: set[str], vorher: dict) -> set[str]:
 
 
 def _geloeschte(punkte: list[dict], vorher: dict) -> set[str]:
-    """Features, die verschwinden dürfen: die der `loeschen`-Punkte samt `kinder` und die Skizzen, die dann kein anderes Kind
-    mehr haben (`DeleteSelection2(3)` nimmt die aufgenommene Skizze mit, S18c)."""
+    """Features, die verschwinden dürfen: die der `loeschen`-Punkte samt `kinder`, ihre Unterfeatures laut Aufnahme (aufgenommene
+    Skizzen, beim Bohrungsassistenten die kosmetischen Gewinde, AP68-Pruefstation-Rev1 Lauf 11; wie `punkte.loeschen`) und die
+    Skizzen, die dann kein anderes Kind mehr haben (`DeleteSelection2(3)` nimmt die aufgenommene Skizze mit, S18c)."""
     weg = {n for p in punkte if p["typ"] == "loeschen" for n in (p["feature"], *p.get("kinder", ()))}
+    features = {f["name"]: f for f in vorher["features"]}
+    weg |= {u for n in weg for u in features.get(n, {}).get("unter", ())}
     return weg | _eigene_skizzen(weg, vorher)
 
 
@@ -273,6 +287,8 @@ def _erklaerte(c: _Vergleich) -> set[str]:
     Skript laut Protokoll zurückgab."""
     punkte = c.punkte_vom_typ("feature")
     namen = {p["name"] for p in punkte} | c.skript_features
+    # Hilfsebenen (`{versatz: …}`) behalten ihren SolidWorks-Namen; erklärt nur als Ebene, die der Knoten des Punkts anlegte
+    namen |= {n for n in c.punkt_features if c.features_nachher.get(n, {}).get("typ") == "RefPlane"}
     gebaut = {n for reihe in c.nachher["reihenfolge"].values() for n in reihe}
     namen |= {n for n in gebaut if any(_abgeleitet(n, p["name"]) for p in punkte)}
     return namen | {u for f in c.nachher["features"] if f["name"] in namen for u in f.get("unter", ())}
@@ -342,6 +358,13 @@ def _erlaubte_masse(c: _Vergleich) -> dict[str, set[str] | None]:
     return aus
 
 
+def _folgt_dem_koerper(name: str, nachher: dict, c: _Vergleich) -> bool:
+    """Tiefe eines Bohrungsassistenten, der nicht blind endet: Sie ist keine Vorgabe, sondern folgt dem Körper. Die
+    Endbedingung kommt aus der Aufnahme des Laufs; kennt sie sie nicht (ältere Aufnahme, nicht lesbar), bleibt es ein Maß."""
+    ende = c.features_nachher.get(nachher["feature"], {}).get("bohrung_ende")
+    return name.startswith(BOHRUNGSTIEFE) and ende is not None and ende != SW_ENDE_BLIND
+
+
 def _masse(c: _Vergleich) -> dict:
     """Alle nicht getriebenen Maße außer den erlaubten. `None` auf einer Seite heißt: Lesen gescheitert, also nicht
     nachgewiesen (`ok: None`), und zwar ausnahmslos, auch bei unterdrückten Features und Punkt-Zielen. Zustand und Gruppe
@@ -352,13 +375,17 @@ def _masse(c: _Vergleich) -> dict:
     for name, m in c.masse_vorher.items():
         n = c.masse_nachher.get(name)
         if n is None:
-            if m["feature"] not in c.geloescht:
+            # Maße eines gelöschten (Unter-)Features, oder eines Features, das ein Skript laut Protokoll zurückgab (der Notausgang
+            # nennt, was er ändert; Positionen löschen nimmt ihre Maße mit, Rev1 Lauf 11)
+            if not ({m["feature"], name.rsplit("@", 1)[-1]} & c.geloescht or m["feature"] in c.skript_features):
                 fehlt.append(name)
             continue
         for feld in ("zustand", "gruppe"):
             if m.get(feld) != n.get(feld):
                 umgestuft.append({"name": name, "feld": feld, "vorher": m.get(feld), "nachher": n.get(feld)})
         ist_getrieben = m.get("zustand") == "getrieben"
+        if _folgt_dem_koerper(name, n, c):
+            continue
         frei = erlaubt.get(name, set())
         verschieden = {}
         for k in c.konfigurationen:
@@ -526,12 +553,15 @@ def _externe_referenzen(c: _Vergleich) -> dict:
 
 
 def vergleiche(spec: dict, vorher: dict, nachher: dict, parameter: dict, skript_features: frozenset[str] = frozenset(),
-               skript_gelaufen: frozenset[str] = frozenset(), feature_messung: dict | None = None) -> list[dict]:
+               skript_gelaufen: frozenset[str] = frozenset(), feature_messung: dict | None = None,
+               punkt_features: frozenset[str] = frozenset()) -> list[dict]:
     """§7.1: Einträge `punkt:<id>` je Punkt, dann `baum`, `masse`, `gleichungen`, `konfigurationen`, `eigenschaften`,
     `material`, `neuaufbau`, `skizzen`, `externe_referenzen`. `parameter`: die Parameter der Spec für Ausdrücke wie `=A_neu`.
     Aus dem Protokoll: `skript_features`, was `bauen(ctx)` zurückgab, `skript_gelaufen`, die Punkt-IDs der durchgelaufenen Skripte.
-    `feature_messung`: `swki.bestand.feature_messung.bewerte`, ein messbares Feature ohne Messung ist ein Mangel."""
-    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features, feature_messung or {})
+    `feature_messung`: `swki.bestand.feature_messung.bewerte`, ein messbares Feature ohne Messung ist ein Mangel. `punkt_features`:
+    was die `feature`-Punkte laut Protokoll anlegten."""
+    c = _Vergleich(spec.get("punkte", []), vorher, nachher, parameter, skript_gelaufen, skript_features, feature_messung or {},
+                   punkt_features)
     return [_punkt(p, c) for p in c.punkte] + [
         _baum(c), _masse(c), _gleichungen(c), _konfigurationen(c), _eigenschaften(c), _material(c), _neuaufbau(c), _skizzen(c),
         _externe_referenzen(c)]

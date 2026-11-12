@@ -29,7 +29,7 @@ from functools import reduce
 from itertools import combinations, pairwise, product
 
 from swki.bestand.spec import GEOMETRIE_TYPEN
-from swki.bestand.sw_bestand import _schalte
+from swki.bestand.sw_bestand import schalte
 from swki.cli import SwkiFehler
 from swki.compiler.topologie import koerper
 from swki.kaufteile.sw_kaufteil import flaechenkoerper
@@ -39,6 +39,7 @@ from swki.verbindung import in_mm, in_mm3
 SW_BODY_CUT = 15902        # swBodyOperationType_e.SWBODYCUT
 TOL_VOLUMEN = 0.01         # mm³: Rauschen der Massenberechnung, wie im Bau
 _TOL_VOLUMEN_ANTEIL = 1e-6
+_TOL_AENDERUNG_ANTEIL = 1e-4  # der Änderung bzw. der Differenzkörper: Trichter (Ausformung) 1 mm³ bei 18792 mm³ (Rev1, Lauf 11), ein fehlender Körper ist größer
 
 
 class DifferenzFehler(SwkiFehler):
@@ -237,12 +238,12 @@ def _aktive_zurueck(modelle: list) -> Iterator[None]:
         yield
     finally:
         for m, k in aktiv:
-            _schalte(m, k)
+            schalte(m, k)
 
 
 def _zeige(model, konfiguration: str) -> None:
     """Wie `lies_bestand`: umschalten, zurücklesen, neu aufbauen. Körper und Features danach neu holen (S18c)."""
-    _schalte(model, konfiguration)
+    schalte(model, konfiguration)
     model.EditRebuild3
 
 
@@ -289,7 +290,10 @@ def _pruefe_bilanz(vorher: list, nachher: list, aus: list[Abweichung]) -> None:
     """Rückgaben nicht glauben (S18c): Eine leere Differenz wäre das falsche `ok` schlechthin, die Volumen sagen es unabhängig davon."""
     alt, neu = _volumen(vorher), _volumen(nachher)
     summe = sum(a.volumen if a.art == "hinzu" else -a.volumen for a in aus)
-    if abs(neu - alt - summe) > max(TOL_VOLUMEN, _TOL_VOLUMEN_ANTEIL * max(alt, neu)):
+    # Das Rauschen kommt aus den Differenzkörpern: Heben sich Hinzu und Weg fast auf, ist die Netto-Änderung klein, das Rauschen
+    # nicht (Rev1 Lauf 16, Fallschacht 0,19 mm³ bei 2 × 5000 mm³ in Körpern)
+    umfang = max(abs(neu - alt), sum(abs(a.volumen) for a in aus))
+    if abs(neu - alt - summe) > max(TOL_VOLUMEN, _TOL_VOLUMEN_ANTEIL * max(alt, neu), _TOL_AENDERUNG_ANTEIL * umfang):
         raise DifferenzFehler(f"Differenzkörper ergeben {summe:g} mm³, das Volumen änderte sich um {neu - alt:g} mm³")
 
 

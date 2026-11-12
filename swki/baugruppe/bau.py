@@ -141,6 +141,18 @@ def teile_bilanz(protokoll: Protokoll) -> dict:
     return {"teile_gebaut": [d for d in protokoll.teile if d not in wieder], "teile_wiederverwendet": wieder}
 
 
+def normteil_protokoll(r, schluessel: str, ergebnis: dict) -> dict:
+    """Eintrag in `protokoll.normteile` zum Ergebnis von `swki normteil hole`; auch für Bestandsdateien."""
+    eintrag = lies_eintrag(bibliotheksordner(r), schluessel) or {}
+    return {"bibliothek": ergebnis["pfad"], "gebaut": ergebnis["gebaut"], "pruefsumme": eintrag.get("pruefsumme")}
+
+
+def kaufteil_protokoll(q: Quelle, ergebnis: dict) -> dict:
+    """Eintrag in `protokoll.kaufteile` zum Ergebnis von `swki kaufteil hole`; auch für Bestandsdateien."""
+    return {"kaufteil": q.kaufteil, "cache": ergebnis["pfad"], "gebaut": ergebnis["gebaut"], "pruefsumme": ergebnis["pruefsumme"],
+            "gewinde_modell": ergebnis["gewinde_modell"], **angaben_fuer_bericht(q.eintrag)}
+
+
 def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
     erledigt = set()
     for kid, q in b.bg.quellen.items():
@@ -154,9 +166,7 @@ def _hole_normteile(b: Baulauf, r, tol_mm: float) -> Exception | None:
         ziel = b.ordner / dokument_name(q, b.auftrag, b.standard)
         ziel.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ergebnis["pfad"], ziel)
-        eintrag = lies_eintrag(bibliotheksordner(r), q.schluessel) or {}
-        b.protokoll.normteile[q.schluessel] = {"bibliothek": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
-                                               "pruefsumme": eintrag.get("pruefsumme")}
+        b.protokoll.normteile[q.schluessel] = normteil_protokoll(r, q.schluessel, ergebnis)
         b.dateien[f"normteil:{q.schluessel}"] = ziel
         model = oeffne(b.app, ziel, sichtbar=False)  # ohne Fenster: ~1,7 GB weniger je Normteil (BTP Umbau 1)
         b.offen.append(model)
@@ -175,9 +185,7 @@ def _hole_kaufteile(b: Baulauf, tol_mm: float) -> Exception | None:
         ziel = b.ordner / dokument_name(q, b.auftrag, b.standard)
         ziel.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ergebnis["pfad"], ziel)
-        b.protokoll.kaufteile[q.schluessel] = {"kaufteil": q.kaufteil, "cache": ergebnis["pfad"], "gebaut": ergebnis["gebaut"],
-                                               "pruefsumme": ergebnis["pruefsumme"],
-                                               "gewinde_modell": ergebnis["gewinde_modell"], **angaben_fuer_bericht(q.eintrag)}
+        b.protokoll.kaufteile[q.schluessel] = kaufteil_protokoll(q, ergebnis)
         b.dateien[f"kaufteil:{q.schluessel}"] = ziel
         model = oeffne(b.app, ziel, sichtbar=False)
         b.offen.append(model)

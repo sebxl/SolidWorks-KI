@@ -1,13 +1,15 @@
 ---
 name: aendern
-description: Ändert eine fremde SolidWorks-Datei (Bestandsdatei, Datei eines Kollegen, bestehendes Teil, nicht von swki gebaut) gezielt an einer Arbeitskopie – Bestand aufnehmen, Revisionspunkte zuordnen, Änderungs-Spec, Freigabe durch den Nutzer, bauen, vorher/nachher prüfen, Prüfer, Ausgabe unter dem Originalnamen. Verwenden bei einer Revision oder wenn ein Maß, Feature, Material oder eine Eigenschaft in einer vorhandenen Datei geändert werden soll. Etappe 1 nur Teile, fremde Baugruppen noch nicht. Teile aus eigenen swki-Specs ändert der Skill konstruieren.
+description: Ändert eine fremde SolidWorks-Datei gezielt an einer Arbeitskopie: eine Bestandsdatei, die Datei eines Kollegen oder ein bestehendes Teil bzw. eine bestehende Baugruppe, die swki nicht gebaut hat oder die von Hand weiterbearbeitet wurde. Ablauf: Bestand aufnehmen, Revisionspunkte zuordnen, Änderungs-Spec, Freigabe durch den Nutzer, bauen, vorher/nachher prüfen (bei Baugruppen samt Komponenten, Verknüpfungen, Kollision und Bewegungen), Prüfer, Ausgabe unter dem Originalnamen. Verwenden bei einer Revision oder wenn ein Maß, Feature, Material, eine Eigenschaft, eine Komponente oder eine Verknüpfung in einer vorhandenen Datei geändert werden soll. Teile und Baugruppen aus eigenen swki-Specs ohne Handänderung ändern die Skills konstruieren bzw. baugruppe.
 ---
 
-# Ändern (Bestandsdateien, Etappe 1)
+# Ändern (Bestandsdateien, Etappe 1 und 2)
 
-Alle Befehle: `.venv\Scripts\python.exe -m swki …` (JSON, Exit 0 = ok). Längen in mm, Winkel in Grad. Vorlage: `tests/referenz/bestand/`
-(`eingabe/aufgabe.md`, `lagerdeckel_rev.yaml`). Spec `docs/superpowers/specs/2026-10-25-bestandsdateien-design.md`, Messwerte und Fallen
-der API `docs/bestandsdateien/ergebnisse.md`, Teil-Syntax neuer Features Skill `konstruieren`.
+Alle Befehle: `.venv\Scripts\python.exe -m swki …` (JSON, Exit 0 = ok). Längen in mm, Winkel in Grad. Vorlagen: `tests/referenz/bestand/`
+(`eingabe/aufgabe.md`, `lagerdeckel_rev.yaml`; Baugruppe: `hubeinheit_rev.yaml`, `anschlag_neu.yaml`). Spec `docs/superpowers/specs/2026-10-25-bestandsdateien-design.md`
+(Baugruppen §8), Messwerte und Fallen der API `docs/bestandsdateien/ergebnisse.md` (Abnahme an `lauf-30`: §3). Die Teil-Syntax neuer
+Features steht im Skill `konstruieren`, Verknüpfungen im Skill `baugruppe`. §1–§7 gelten für Teile und für Teile in Baugruppen; was für
+Baugruppen dazukommt, steht in §8.
 
 Zurück geht **dieselbe Datei**: Baum, Namen, Gleichungen, Konfigurationen und die Absicht des Kollegen bleiben, neu sind nur die
 genannten Punkte. Der **Präzisionsschutz** weist das nach. Fünf Regeln gelten in jedem Schritt:
@@ -21,10 +23,21 @@ genannten Punkte. Der **Präzisionsschutz** weist das nach. Fünf Regeln gelten 
 
 ## 1. Abgrenzung
 
-- **Eigene swki-Konstruktionen:** Die Spec ist die Quelle, Skill `konstruieren` bzw. `baugruppe`.
-- **Fremde Baugruppen** kommen in Etappe 2 (`BESTAND_FORMAT`): dem Nutzer diese Grenze nennen; Skill `baugruppe` baut sie nicht nach. **Dateien ohne
-  Baum** (STEP, IGES) gibt es hier nicht; Kaufteile bleiben nur lesen.
-- **Teile mit externen Referenzen** (abgeleitet, gespiegelt, im Kontext) lehnt `aufnehmen` ab (`BESTAND_REFERENZ_EXTERN` mit Liste): dem Nutzer nennen.
+- **Eigene swki-Konstruktionen:** Es gibt drei Wege, sie schließen sich aus (Spec §8.5):
+
+  | Lage | Weg |
+  |---|---|
+  | swki-Datei, keine Handänderung | Spec ändern, neu bauen (Skills `konstruieren`, `baugruppe`) |
+  | Handänderung, der Nutzer will sie in die Spec holen | `MANUELL_GEAENDERT`, `swki aenderungen`, übernehmen |
+  | Handänderung, die Datei ist der Stand | dieser Skill: `aufnehmen` in einen **neuen** Auftrag (sonst `BESTAND_AUFTRAG_BELEGT`) |
+
+  Den Weg wählt der Nutzer. Beim dritten Weg ist der Lauf-Ordner (`lauf-<n>`) das Original: nur lesen, nie in SolidWorks öffnen. Die alte
+  Spec bleibt eingefroren, und `MANUELL_GEAENDERT` an ihr ist richtig. Was von Hand geändert wurde, zeigt §8.6.
+- **Fremde Baugruppen** (`.sldasm`) gehen hier, siehe §8. Skill `baugruppe` baut sie nicht nach. **Dateien ohne Baum** (STEP, IGES) gibt
+  es hier nicht; Kaufteile bleiben nur lesen.
+- **Teile mit externen Referenzen** (abgeleitet, gespiegelt, im Kontext): Als Einzelteil lehnt `aufnehmen` sie ab
+  (`BESTAND_REFERENZ_EXTERN` mit Liste), dem Nutzer nennen. In einer Baugruppe werden sie mit aufgenommen, wenn die Ziele in der Kopie
+  liegen. Punkte auf so ein Teil und auf ein Teil, von dem ein anderes abhängt, weist `validieren` ab.
 - **Mit einer Datei verknüpfte Gleichungen** gehören dazu: Ein `gleichung`-Punkt schriebe womöglich die Datei des Kollegen zurück. Die Liste nennt die Gleichungsdatei.
 - **Einheiten:** Maße rechnet swki in jeder Datei in mm und Grad. Gleichungen und Variablen rechnen in der Einheit der Datei (`einheitensystem` der Ausgabe). Ist das nicht
   MMGS, weist `validieren` jeden `gleichung`-Punkt ab (`BESTAND_EINHEIT`): dem Nutzer die Einheit nennen; nur auf seine Anweisung geht es über `skript`.
@@ -37,7 +50,7 @@ genannten Punkte. Der **Präzisionsschutz** weist das nach. Fünf Regeln gelten 
 
 ## 2. Aufnehmen
 
-1. Ordner `auftraege/<auftrag>/`, die Punkte des Nutzers wörtlich nach `eingabe/aufgabe.md` (der Prüfer liest sie). Ein Teil je Auftrag.
+1. Ordner `auftraege/<auftrag>/`, die Punkte des Nutzers wörtlich nach `eingabe/aufgabe.md` (der Prüfer liest sie). Eine Datei je Auftrag: ein Teil oder eine Hauptbaugruppe samt allem, was sie lädt.
 2. `swki bestand aufnehmen <pfad> --auftrag <auftrag>`; `<auftrag>` ist genau der Ordnername.
 
 Die Ausgabe nennt `sha256`, `aufnahme`, Konfigurationen, Variablen, `tabelle`, `einheitensystem`, Features und je Maß Name, Wert, `zustand` (`treibend`,
@@ -159,7 +172,7 @@ Anforderung: Nutzer fragen, neue Freigabe. Wiederholt sich eine Lücke, Skill `c
 ## 7. Ausgabe, Bericht
 
 Nach `bestanden`: `swki bestand ausgabe <spec> [--lauf n]` kopiert die geänderten Dateien unter Originalnamen nach `<arbeitsordner>/<auftrag>/ausgabe/` und listet sie mit Originalpfad. Dann
-`swki bericht <spec>`. Dem Nutzer nennen: Ausgabepfad, Originalpfad, Punkte, Prüfer-Urteil, Warnungen, „Wirkung auf Baugruppen nicht geprüft“.
+`swki bericht <spec>`. Dem Nutzer nennen: Ausgabepfad, Originalpfad, Punkte, Prüfer-Urteil, Warnungen, bei einem Einzelteil „Wirkung auf Baugruppen nicht geprüft“.
 
 - `BESTAND_LIZENZ`: Der Lauf lief nicht mit einer Vollversion, das kommt nur auf Rechner A vor (Student, nur zum Testen). Die Firmenrechner haben Vollversionen. Ob eine so gespeicherte Datei
   beim Kollegen anders erscheint, ist nicht gemessen; eine solche Ausgabe nicht ohne Rückfrage an einen Kollegen geben.
@@ -168,3 +181,80 @@ Nach `bestanden`: `swki bestand ausgabe <spec> [--lauf n]` kopiert die geändert
 - `LAUF_NICHT_BESTANDEN`: Ausgegeben wird nur ein Lauf mit bestandenen Code-Prüfungen und Prüfer-Urteil.
 - `BESTAND_VERALTET`: Es gibt eine neuere Aufnahme, oder der Lauf ist aus einem anderen Stand gebaut, als die Spec nennt (Spec umgezogen, älterer Lauf ohne Vermerk). Dem Lauf fehlt womöglich die
   Arbeit des Kollegen, `ausgabe` und `pruefen` verweigern ihn. Neu bauen und prüfen. `swki bericht` läuft trotzdem und nennt den Grund unter „Ausgabe“.
+
+## 8. Baugruppen (Etappe 2)
+
+**Aufnehmen.** `swki bestand aufnehmen <pfad>.SLDASM --auftrag <auftrag>` verlangt ein SolidWorks ohne offene Dokumente
+(`BESTAND_SITZUNG_BELEGT`: Dokumente schließen oder `-m werkzeuge.sw_neustart`). swki kopiert, was das Öffnen lädt. Jede Datei steht mit
+SHA-256 in `dateien.json`, jede Teil-Aufnahme in `aufnahme/<rel>.json`. Jede Grenzverknüpfung der Hauptbaugruppe ist eine Bewegung:
+`aufnehmen` fährt sie am Bestand und schreibt das Verhalten nach `bestand.json`. `--ohne-bewegung` lässt das weg, dann ist `bewegung:*`
+nicht nachgewiesen. Danach am Original die SHA-256 vorher und nachher vergleichen: Es muss byteweise gleich sein.
+
+**Punkte.** Teil-Punkte (§4) tragen `in_datei: <relativer Pfad in der Bestandskopie>`, ohne gilt die Hauptdatei. Baugruppen-Punkte:
+
+```yaml
+- {id: k1, typ: komponente_neu, quelle: {teil: halter.yaml}}                # oder {normteil: "ISO 4762 M5x16"}, {kaufteil: …}
+- {id: k2, typ: komponente_neu, wie: "M5x20-3"}                              # Kopie einer Komponente des Kollegen
+- {id: k3, typ: komponente_entfernen, komponente: "M5x20-9", verknuepfungen: ["v112.2", "v113.2"]}
+- {id: k4, typ: komponente_ersetzen, komponente: "Halter-1", quelle: {teil: halter_neu.yaml}, alle_instanzen?: true}
+- {id: v1, typ: verknuepfung_neu, art: konzentrisch, a: {komponente: k2, nahe: [x, y, z]}, b: {komponente: "Platte-1", feature: "M5-Gewinde1", instanz: 2, achse: true}}
+- {id: v2, typ: verknuepfung_neu, art: deckungsgleich, ausrichtung: entgegengesetzt, a: {komponente: k2, nahe: […]}, b: {komponente: "Platte-1", nahe: […]}, drehung_sperren: true}
+- {id: v3, typ: verknuepfung_wert, verknuepfung: "Abstand4", alt: 10, neu: 12}   # Grenze: grenze: min|max, nur konfigurationen: alle
+- {id: v4, typ: verknuepfung_loeschen, verknuepfung: "v96"}
+```
+
+- **Anker in fremden Komponenten** wie im Skill `baugruppe`, mit Komponente als SW-Name oder Punkt-ID: `feature`, `referenz`,
+  `feature`+`flaeche`, `ebene`, `gewinde`+`achse` oder `nahe` in Koordinaten **der Komponente**. Fremde Features tragen oft keine
+  benennbare Fläche: `nahe` nehmen. Ein `nahe`-Punkt darf nicht auf einer Kante liegen (`REFERENZ_MEHRDEUTIG`), also 1–2 mm ins
+  Flächeninnere setzen.
+- **`lage_folgen`** nennt die Komponenten, die durch einen Punkt wandern dürfen. Alles andere muss liegen bleiben (`lage`).
+- **Bestimmtheit:** `drehung_sperren` setzt swki nur bei Norm- und Kaufteilen von selbst. Schrauben, die mit `wie` aus Bestandsschrauben
+  kopiert sind, und neu verknüpfte Bestandsschrauben brauchen `drehung_sperren: true` an der Anlage, sonst sind sie unterbestimmt.
+- **`kollision_erlaubt`** (oberste Ebene): `[{paar: [a, b], grund}]` für gewollte Kollisionen, etwa eine neue Schraube im fremden Gewinde.
+  Gewindepaarungen gibt es an fremden Bohrungen nicht.
+- **Neue Teile:** Teil-Specs (`quelle: {teil: <datei>.yaml}`) liegen im Auftragsordner neben der Änderungs-Spec. Die eine Freigabe der
+  Änderung gibt sie mit frei, und ihre Prüfsummen stehen in der der Änderung. Neue Dateien liegen flach neben der Hauptbaugruppe; ein
+  gleicher Name im Bestand ist `NAME_BELEGT`.
+- **Bereiche** tragen bei Teil-Punkten `in_datei`. Baugruppen-Punkte brauchen keinen Bereich. Wandert ein Teil als Ganzes (neue Lage, neue
+  Halter), reicht eine Box je Teil um alle seine Punkte: Differenzkörper, die über mehrere kleine Boxen reichen oder verschmelzen, passen
+  sonst in keine.
+
+**Validieren, Freigabe.** Zusätzliche Befunde: `VERKNUEPFUNGEN_FEHLEN` (eine entfernte Komponente nennt nicht alle ihre Verknüpfungen),
+`NAME_BELEGT`, `BESTAND_REFERENZ_EXTERN`. Vor der Freigabe-Vorlage läuft das **Konstruktionsreview** (Agent `konstruktionsreview`) über die
+neuen Teile und ihren Einbau: Montierbarkeit und Schlüsselzugang je Schraube, Montagereihenfolge, Druck- bzw. Fertigungsrichtung, frei zu
+haltende Felder (Kamerabild, Fahrwege). Die Prüfung findet nur, was die Spec verlangt. In der Abnahme an `lauf-30` sah erst der Nutzer an
+der Ausgabe, dass Schrauben nicht montierbar und Teile nicht druckbar waren und ein Auge im Kamerabild lag. Die Vorlage zeigt die neuen
+Teile im Bild.
+
+**Bauen, prüfen.** `swki durchlauf <spec> --freigeben --neustart` (nur nach OK), danach `swki durchlauf <spec> --neustart`: Mit Bewegungen
+SolidWorks vor Bau und Prüfung frisch starten, Spitzen wie Stufe 4a. Zusätzlich zu §6 prüft swki:
+
+| Prüfung | Soll |
+|---|---|
+| `komponenten`, `verknuepfungen`, `lage` | wie im Bestand außer Punkten und `lage_folgen`, auf allen Ebenen |
+| `bestimmtheit` | Freiheitsgrade wie im Bestand, außer den Punkten |
+| `kollision` | keine neue statische Kollision; bekannte aus dem Bestand stehen im Bericht |
+| `dateien` | SHA-256 wie in der Bestandskopie außer Dateien mit Punkten und neuen Dateien |
+| `pfade` | alle geladenen Dateien liegen im Lauf-Ordner |
+| `bewegung:*`, `grenze:*`, `sollweg:*` | was im Bestand fuhr, fährt wieder; schlechter als der Bestand ist ein Mangel |
+
+Teile mit Punkten gehen zusätzlich durch die Teilprüfungen (§6). Die Warnung `BEWEGUNG_ABDECKUNG` trennt den Lauf von
+„Nur im Bestand (vorher): …“. Das Zweite beschreibt nur den Bestand (etwa eine entfernte Komponente) und ist kein Befund des Laufs.
+
+| Code | Vorgehen |
+|---|---|
+| `BESTAND_PFAD_FREMD` | SolidWorks würde eine Datei außerhalb des Kopie-Ordners laden oder hat es getan: Nutzer informieren, nicht umgehen |
+| `BESTAND_SITZUNG_BELEGT` | Dokumente schließen oder SolidWorks neu starten, dann erneut aufnehmen |
+| `BESTAND_AUFTRAG_BELEGT` | neuen Auftrag für die Aufnahme anlegen (§1) |
+| `BESTAND_OFFEN` | Warnung: Jemand hat die Datei offen, kopiert ist der gespeicherte Stand; Nutzer fragen, ob das der Stand ist |
+| `SPEICHER_KNAPP` | wie Skill `baugruppe` (frisch starten, erneut prüfen; mit `frisch: true` den Nutzer fragen) |
+
+**Ausgabe.** `swki bestand ausgabe` kopiert nur Dateien mit geänderter SHA-256, also neue Teile, geänderte Teile und die Hauptbaugruppe,
+wenn ein Baugruppen-Punkt sie ändert. Eine frühere Ausgabe wandert nach `ausgabe_alt_<n>`. Dem Nutzer zusätzlich nennen: Die geänderte
+Hauptbaugruppe lädt zurückkopiert die Dateien daneben; neue Dateien kommen in denselben Ordner.
+
+**§8.6 Abgleich eigener Läufe.** `swki bestand abgleich <auftrag> --spec <alte Spec> [--lagen <json>] [--referenzbau]` vergleicht die
+Aufnahme mit dem Spec-Stand, ohne den Lauf-Ordner zu öffnen: Dateien, Features, Maße, Komponenten, Verknüpfungen, Lagen. `--referenzbau`
+baut die geänderten Eigenteile aus der Spec nach `<auftrag>/referenz-<n>/` und vergleicht exakt. Das ist eine Messlatte, die in keinen
+Lauf eingeht. Die Liste schriftlich festhalten und dem Nutzer vorlegen, bevor er seine eigene nennt. `swki aenderungen` öffnet einen Lauf
+mit Aufnahme nicht mehr.

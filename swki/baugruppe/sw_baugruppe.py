@@ -4,6 +4,7 @@ Nullargumentige Member ohne "()"; nullargumentige Aktionen (FixComponent, EditDe
 Methode markiert – so ist es egal, ob pywin32 sie beim Attributzugriff schon ausführen würde (S9a) oder nicht (S5)."""
 
 import math
+from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
 
@@ -34,6 +35,7 @@ MATE_KOPPLUNG = {"zahnrad": 10, "zahnstange": 13}  # swMateType_e swMateGEAR / s
 REVERSE = {"zahnrad": False, "zahnstange": False}  # IGear-/IRackPinionMateFeatureData.Reverse (Spike S14b Zeile 6)
 MARKE_ZAHNSTANGE, MARKE_RITZEL = 64, 128  # Vorauswahl der Zahnstangenverknüpfung (API-Hilfe EntitiesToMate)
 SW_RITZEL_TEILKREIS = 0  # swRackPinionMateDistanceOptions_e.swPinionPitchDiameter
+SW_KONFIGURATION_VORHANDEN = 0  # swAddComponentConfigOptions_e.swAddComponentConfigOptions_CurrentSelectedConfig
 _TOL_LAGE = 1e-9
 
 
@@ -65,11 +67,12 @@ def neue_baugruppe(app, vorlage: Path):
     return asm
 
 
-def fuege_ein(app, asm, pfad: Path, box_mm: list[float]):
+def fuege_ein(app, asm, pfad: Path, box_mm: list[float], konfiguration: str = ""):
     """Komponente mit Ursprung im Baugruppenursprung, ohne Drehung. AddComponent5 setzt das Zentrum der Bounding-Box
-    (Spike S6) – deshalb das Boxzentrum übergeben; liegt der Ursprung trotzdem nicht im Nullpunkt, Identität setzen."""
+    (Spike S6) – deshalb das Boxzentrum übergeben; liegt der Ursprung trotzdem nicht im Nullpunkt, Identität setzen.
+    `konfiguration`: benannte Konfiguration der Komponente, leer die aktive ihres Dokuments (API-Hilfe AddComponent5)."""
     mitte = [mm((box_mm[i] + box_mm[i + 3]) / 2) for i in range(3)]
-    komp = asm.AddComponent5(str(pfad), 0, "", False, "", *mitte)
+    komp = asm.AddComponent5(str(pfad), SW_KONFIGURATION_VORHANDEN, "", bool(konfiguration), konfiguration, *mitte)
     if komp is None:
         raise BauFehler(KOMPONENTE_FEHLER, f"AddComponent5 {pfad.name} fehlgeschlagen", schritt="einfuegen")
     t = komp.Transform2.ArrayData
@@ -109,15 +112,23 @@ def waehle(asm, entitaet: tuple[object, bool], anhaengen: bool, marke: int = MAR
         raise BauFehler(VERKNUEPFUNG_FEHLER, "Auswahl für die Verknüpfung fehlgeschlagen", schritt="auswahl")
 
 
+def _sammle_verknuepfungen(unter, ergebnis: list) -> None:
+    while unter is not None:
+        if unter.GetTypeName2.endswith("Folder"):  # swki legt keine an, ein Kollege schon (Bestandsdateien, S19f)
+            _sammle_verknuepfungen(unter.GetFirstSubFeature, ergebnis)
+        else:
+            ergebnis.append(unter)
+        unter = unter.GetNextSubFeature
+
+
 def verknuepfungen(asm) -> list:
-    """Verknüpfungs-Features (Unterfeatures des Ordners vom Typ MateGroup) in Baumreihenfolge."""
+    """Verknüpfungs-Features (Unterfeatures des Ordners vom Typ MateGroup, auch in Ordnern darunter) in Baumreihenfolge."""
     f = asm.FirstFeature
     while f is not None and f.GetTypeName2 != "MateGroup":
         f = f.GetNextFeature
-    ergebnis, unter = [], (f.GetFirstSubFeature if f is not None else None)
-    while unter is not None:
-        ergebnis.append(unter)
-        unter = unter.GetNextSubFeature
+    ergebnis: list = []
+    if f is not None:
+        _sammle_verknuepfungen(f.GetFirstSubFeature, ergebnis)
     return ergebnis
 
 
@@ -391,17 +402,26 @@ def treibe(asm, v, a: tuple[object, bool], b: tuple[object, bool], wert: float, 
     return verknuepfe(asm, antrieb, a, b, {}, None, handles=handles)
 
 
-def stelle(asm, antrieb, art: str, wert: float, mates: list | None = None) -> str | None:
+def fehler_block(bekannt):
+    """Kontext, in dem `sw.rebuild` die Fehler von `bekannt` übergeht. `sw.bekannte_fehler` ersetzt den äußeren Stand, darum
+    ohne bekannte Fehler gar kein Block."""
+    return sw.bekannte_fehler(bekannt) if bekannt else nullcontext()
+
+
+def stelle(asm, antrieb, art: str, wert: float, mates: list | None = None, bekannt=frozenset()) -> str | None:
     """Treibende Verknüpfung auf wert stellen und neu aufbauen; None = gelöst, sonst die Meldung (Rebuild-Fehler oder
     Fehlercode einer Verknüpfung). Ob die Komponente dort steht, prüft der Aufrufer über die Lage (Präzisierung 4).
-    `mates`: alle Verknüpfungen des Dokuments als Handles (ohne Baumdurchlauf, BTP Umbau 1)."""
+    `mates`: alle Verknüpfungen des Dokuments als Handles (ohne Baumdurchlauf, BTP Umbau 1). `bekannt`: Verknüpfungen, deren
+    Fehler schon im Bestand standen (Namen): Sie zählen nicht, neue stoppen die Fahrt (Spec Bestandsdateien §8.4)."""
     antrieb.Parameter(MASS_NAME).SetSystemValue3(mm(wert) if art == "abstand" else grad(wert),
                                                  SW_WERT_DIESE_KONFIGURATION, None)
     try:
-        sw.rebuild(asm)
+        with fehler_block(bekannt):
+            sw.rebuild(asm)
     except BauFehler as e:
         return str(e)
-    fehlerhaft = [f.Name for f in (mates if mates is not None else verknuepfungen(asm)) if fehlercode(f)]
+    alle = mates if mates is not None else verknuepfungen(asm)
+    fehlerhaft = [f.Name for f in alle if f.Name not in bekannt and fehlercode(f)]
     return f"Verknüpfungsfehler: {', '.join(fehlerhaft)}" if fehlerhaft else None
 
 

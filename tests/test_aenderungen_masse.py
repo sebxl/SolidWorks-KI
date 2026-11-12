@@ -17,6 +17,12 @@ from tests.spec.beispiel import GUELTIG
 from tests.test_aenderungen import _lauf, umgebung  # noqa: F401  (Fixture)
 
 
+@pytest.fixture(autouse=True)
+def _ohne_baum(monkeypatch):
+    """Diese Tests prüfen Maße und Parameter; den Baum und das Öffnen (unsichtbar, nur lesend) deckt test_aenderungen_baum.py ab."""
+    monkeypatch.setattr(aenderungen, "soll_teile", lambda *a: {})
+
+
 def _m(name, roh, wert, art="groesse", pfad="features[0].profil.laenge", bezug=None, vorzeichen=1):
     return {"name": name, "pfad": pfad, "art": art, "bezug": bezug, "roh": roh, "vorzeichen": vorzeichen, "wert": wert}
 
@@ -212,14 +218,15 @@ def test_alter_lauf_ohne_masse_liest_globale_variablen(umgebung, monkeypatch):
     modell = object()
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: modell)
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: modell)
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "lies_globale_variablen", lambda m: {"L": 120.0})
     monkeypatch.setattr(aenderungen, "lies_masse", lambda *a: pytest.fail("alter Lauf ohne Maßprotokoll"))
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100}})
     ergebnis = aenderungen.aenderungen(spec_pfad)
-    assert ergebnis["geaendert"] == [{"datei": datei.name, "parameter": [{"name": "L", "soll": 100, "ist": 120.0}],
-                                      "masse": [], "vorschlaege": []}]
+    [eintrag] = ergebnis["geaendert"]
+    assert eintrag.pop("baum")["nicht_erklaert"] is True    # ohne Soll im Protokoll: Baum nicht verglichen, nie „unverändert“
+    assert eintrag == {"datei": datei.name, "parameter": [{"name": "L", "soll": 100, "ist": 120.0}], "masse": [], "vorschlaege": []}
 
 
 def test_aenderungen_ausgabe_mit_masse_und_vorschlaegen(umgebung, monkeypatch):
@@ -236,7 +243,7 @@ def test_aenderungen_ausgabe_mit_masse_und_vorschlaegen(umgebung, monkeypatch):
     geschlossen = []
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: geschlossen.append(model))
     monkeypatch.setattr(aenderungen, "lies_globale_variablen", lambda m: pytest.fail("Maßweg liest keine Variablen"))
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100, "XG": -10, "B": 60}})
@@ -259,7 +266,7 @@ def test_aenderungen_hinweis_wenn_weder_parameter_noch_masse_abweichen(umgebung,
     masse = [_m("D1@f1_skizze", "=L", 100.0)]
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100}})
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {datei.name: masse})
@@ -285,7 +292,7 @@ def test_baugruppendokument_im_massweg_vergleicht_nur_verknuepfungen(umgebung, m
     asm.write_bytes(b"asm von Hand")
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "lies_globale_variablen", lambda m: pytest.fail("Maßweg liest keine Variablen"))
     monkeypatch.setattr(sw_baugruppe, "verknuepfungswerte", lambda model: {"v1": 7.0})
@@ -311,7 +318,7 @@ def test_baugruppendokument_im_massweg_hinweis_nennt_verknuepfungen(umgebung, mo
     asm.write_bytes(b"asm von Hand")
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(sw_baugruppe, "verknuepfungswerte", lambda model: {"v1": 5.0})
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {asm.name: {"ABST": 35, "verknuepfung:v1": 5.0}})
@@ -328,7 +335,7 @@ def test_nur_fehlende_masse_geben_einen_hinweis(umgebung, monkeypatch):
     masse = [_m("D1@f1_skizze", "=L", 100.0), _m("D2@f1_skizze", "=B", 60.0)]
     monkeypatch.setattr(aenderungen, "lade_rechner", lambda: r)
     monkeypatch.setattr(aenderungen, "verbinde", lambda jahr: "app")
-    monkeypatch.setattr(aenderungen, "oeffne", lambda app, pfad: "modell")
+    monkeypatch.setattr(aenderungen, "oeffne_lauf", lambda app, pfad, ordner, **k: "modell")
     monkeypatch.setattr(aenderungen.sw, "schliesse", lambda app, model: None)
     monkeypatch.setattr(aenderungen, "soll_parameter", lambda *a: {datei.name: {"L": 100, "B": 60}})
     monkeypatch.setattr(aenderungen, "soll_masse", lambda *a: {datei.name: masse})

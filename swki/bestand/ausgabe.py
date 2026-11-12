@@ -7,22 +7,26 @@ Kollegen. Jede Datei muss noch die geprüfte sein (SHA-256 aus dem Bauprotokoll)
 SHA-256 als die Bestandskopie. Das Original wird nur gelesen (SHA-256), nie geöffnet oder beschrieben.
 
 Auf Warnungen wird trotzdem kopiert (`warnungen: [{code, meldung}]`): Das Original kann inzwischen neuer sein, gesperrt oder weg, und
-die Sitzung kann keine Vollversion gewesen sein. Beides zugleich ist möglich, darum eine Liste."""
+die Sitzung kann keine Vollversion gewesen sein. Beides zugleich ist möglich, darum eine Liste.
+
+Eine Baugruppe (§8.3) geht nicht von `protokoll.dateien` aus, sondern von `protokoll.sha256`: Neue Dateien bringt der Bau mit, sie
+liegen flach neben der Hauptbaugruppe und tragen `neu: true`. Zusätzlich `herkunft`, wenn das Original in einem eigenen Lauf lag
+(§8.5); auch dann wird nur unter `<auftrag>/ausgabe/` geschrieben, nie in diesen Lauf."""
 
 import json
 import shutil
+from itertools import count
 from pathlib import Path
 
 from swki.aenderungen import AenderungFehler, sha256_datei
 from swki.auftrag import auftrag_name, lauf_datei, lauf_ordner
-from swki.bestand.ablage import bestand_ordner
+from swki.bestand.ablage import bestand_ordner, lade_dateien, lade_herkunft
 from swki.bestand.fehler import (BESTAND_LIZENZ, BESTAND_NICHT_LESBAR, BESTAND_ORIGINAL_GEAENDERT, LAUF_NICHT_BESTANDEN,
                                  BestandFehler)
-from swki.bestand.spec import aufnahme_zu, lade_aenderung, pruefe_lauf_bestand
+from swki.bestand.spec import aufnahme_zu, ist_baugruppen_aufnahme, lade_aenderung, pruefe_freigabe_aenderung, pruefe_lauf_bestand
 from swki.cli import SwkiFehler
 from swki.konfig import Rechner, lade_rechner
 from swki.pruefung.schleife import lies_laeufe
-from swki.spec.freigabe import pruefe_freigabe
 
 AUSGABE_ORDNER = "ausgabe"
 # swLicenseType_e: Full, Full_Office, Full_Professional, Full_Premium, Full_Ultimate; alles andere (Educational, Student,
@@ -50,7 +54,8 @@ def lizenz_warnung(lizenz: dict | None) -> dict | None:
                                     "vor dem Zurückkopieren klären.")
 
 
-def _original_warnung(original: Path, soll: str) -> dict | None:
+def _original_warnung(original: Path, soll: str,
+                      folge: str = "Das Zurückkopieren würde die Arbeit des Kollegen überschreiben.") -> dict | None:
     """Gegenprobe am Original (§9 Punkt 3): nur lesen. Gesperrt oder weg ist eine Warnung, kein Abbruch."""
     try:
         ist = sha256_datei(original)
@@ -59,8 +64,7 @@ def _original_warnung(original: Path, soll: str) -> dict | None:
                                               "der Aufnahme geändert hat, ist unbekannt. Vor dem Zurückkopieren prüfen.")
     if ist == soll:
         return None
-    return _warnung(BESTAND_ORIGINAL_GEAENDERT, f"Das Original {original} hat sich seit der Aufnahme geändert: Das Zurückkopieren "
-                                                "würde die Arbeit des Kollegen überschreiben.")
+    return _warnung(BESTAND_ORIGINAL_GEAENDERT, f"Das Original {original} hat sich seit der Aufnahme geändert: {folge}")
 
 
 def _ziel(r: Rechner, auftrag: str, rel: Path) -> Path:
@@ -117,17 +121,63 @@ def _lauf_datei_pruefen(ordner: Path, lauf: int, name: str, pfad: str, summen: d
     return rel, ist
 
 
+def _datei_warnungen(ausgegeben: list[dict], unveraendert: list[str], dateien: dict) -> list[dict]:
+    """Gegenprobe je Datei, jede Warnung nennt `datei`. Eine neue Datei hat kein Original, sie darf am Ziel nichts überschreiben. Auch
+    ein unverändertes Original zählt: Der Lauf ist gegen seinen alten Stand geprüft. Ohne Ausgabe gibt es nichts zurückzukopieren."""
+    if not ausgegeben:
+        return []
+    warnungen = []
+    for d in ausgegeben:
+        if d["neu"]:
+            if Path(d["original"]).exists():
+                warnungen.append({**_warnung(BESTAND_ORIGINAL_GEAENDERT, f"Neben der Hauptbaugruppe liegt schon {d['original']}: "
+                                             "Das Zurückkopieren würde sie überschreiben."), "datei": d["datei"]})
+        elif w := _original_warnung(Path(d["original"]), dateien[d["datei"]]["sha256"]):
+            warnungen.append({**w, "datei": d["datei"]})
+    folge = "Der Lauf ist gegen den alten Stand geprüft und bringt diese Änderung nicht mit."
+    for rel in unveraendert:
+        if w := _original_warnung(Path(dateien[rel]["original"]), dateien[rel]["sha256"], folge):
+            warnungen.append({**w, "datei": rel})
+    return warnungen
+
+
+def _plane_baugruppe(r: Rechner, auftrag: str, lauf: int, ordner: Path, protokoll: dict, aufnahme: dict) -> dict:
+    """Plan einer Baugruppe (§8.3, §9): Maßstab sind alle Dateien aus `protokoll.sha256`, jede muss noch die gebaute sein, auch eine,
+    die nicht ausgegeben wird. Ausgegeben wird nur, was neu ist oder sich gegen `dateien.json` geändert hat; `neu` trägt jede Datei.
+    `original` kommt aus `dateien.json`, bei einer neuen ist es der Platz neben der Hauptbaugruppe, dort liegt sie auch im Lauf."""
+    dateien = lade_dateien(r, auftrag, aufnahme["nummer"])
+    neben = Path(aufnahme["datei"]["original"]).parent
+    neue, summen = set(protokoll.get("neue_dateien") or ()), protokoll.get("sha256") or {}
+    ausgegeben, unveraendert = [], []
+    for name in summen:
+        rel, sha = _lauf_datei_pruefen(ordner, lauf, name, str(ordner / name), summen)
+        d = dateien.get(name)
+        if d is None and name not in neue:
+            raise SwkiFehler(f"{name} steht im Protokoll, ist aber weder aufgenommen noch eine neue Datei des Baus – daraus gibt swki "
+                             "nichts aus")
+        if d is not None and sha == d["sha256"]:
+            unveraendert.append(name)
+            continue
+        ausgegeben.append({"datei": name, "neu": d is None, "original": str(neben / rel) if d is None else d["original"],
+                           "ausgabe": str(_ziel(r, auftrag, rel)), "sha256": sha})
+    warnungen = [w for w in (lizenz_warnung(protokoll.get("lizenz")),) if w] + _datei_warnungen(ausgegeben, unveraendert, dateien)
+    return {"auftrag": auftrag, "lauf": lauf, "ordner": str(r.arbeitsordner / auftrag / AUSGABE_ORDNER), "dateien": ausgegeben,
+            "unveraendert": unveraendert, "warnungen": warnungen, "herkunft": lade_herkunft(r, auftrag, aufnahme["nummer"])}
+
+
 def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
     """(Plan, Lauf-Ordner): alle Prüfungen, nichts wird geschrieben."""
     spec_pfad = spec_pfad.resolve()
     spec = lade_aenderung(spec_pfad)
-    pruefe_freigabe(spec_pfad, spec)
+    pruefe_freigabe_aenderung(spec_pfad, spec)  # Teil-Quellen eingeschlossen
     r, auftrag = lade_rechner(), auftrag_name(spec_pfad)
     lauf = _bestandener_lauf(spec_pfad, auftrag, lauf)
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
     pruefe_lauf_bestand(spec, protokoll, lauf)  # BESTAND_VERALTET
     ordner = lauf_ordner(r, auftrag, lauf)
     aufnahme = {**aufnahme_zu(spec, spec_pfad), "nummer": spec["bestand"]["aufnahme"]}  # BESTAND_UNBEKANNT, BESTAND_VERALTET
+    if ist_baugruppen_aufnahme(aufnahme):
+        return _plane_baugruppe(r, auftrag, lauf, ordner, protokoll, aufnahme), ordner
     original = Path(aufnahme["datei"]["original"])
 
     dateien, unveraendert = [], []
@@ -145,6 +195,21 @@ def _plane(spec_pfad: Path, lauf: int | None) -> tuple[dict, Path]:
              "unveraendert": unveraendert, "warnungen": warnungen}, ordner)
 
 
+def _alte_ausgabe_beiseite(ordner: Path) -> str | None:
+    """`ausgabe/` nennt nur den Stand dieses Aufrufs: Wer den Ordner zurückkopiert, brächte sonst eine verworfene Änderung aus einem
+    früheren Lauf in die Datei des Kollegen. Ein vorhandener Inhalt wandert darum nach `ausgabe_alt_<n>/` (nächste freie Nummer), gelöscht
+    wird nichts. Rückgabe: der neue Ordner oder None. Lässt er sich nicht verschieben, wird nichts kopiert."""
+    if not ordner.is_dir() or not any(ordner.iterdir()):
+        return None
+    ziel = next(z for n in count(1) if not (z := ordner.with_name(f"{AUSGABE_ORDNER}_alt_{n}")).exists())
+    try:
+        ordner.rename(ziel)
+    except OSError as e:
+        raise SwkiFehler(f"{ordner} lässt sich nicht nach {ziel.name} verschieben ({e.strerror or e}): Liegt eine Datei daraus noch offen? "
+                         "Es wurde nichts kopiert") from e
+    return str(ziel)
+
+
 def ausgabe_liste(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Was `ausgabe` täte, ohne etwas zu schreiben (für den Bericht). Fehler wie bei `ausgabe`: `LAUF_NICHT_BESTANDEN`,
     `BESTAND_VERALTET` (neuere Aufnahme, oder der Lauf ist aus einem anderen Stand gebaut, als die Spec nennt), Lauf-Datei verändert,
@@ -156,8 +221,10 @@ def ausgabe(spec_pfad: Path, lauf: int | None = None) -> dict:
     """Spec §9: geänderte Dateien des bestandenen Laufs nach `ausgabe/` kopieren. Erst wird alles geplant und geprüft, dann kopiert.
 
     `{"auftrag", "lauf", "ordner", "dateien": [{datei, original, ausgabe, sha256}], "unveraendert": [...], "warnungen": [{code,
-    meldung}]}`"""
+    meldung}], "alt"}`; `alt`: wohin eine frühere Ausgabe gewandert ist, sonst None. Bei einer Baugruppe je Datei zusätzlich `neu`, je
+    Datei-Warnung `datei`, dazu `herkunft`."""
     plan, quelle = _plane(spec_pfad, lauf)
+    plan = {**plan, "alt": _alte_ausgabe_beiseite(Path(plan["ordner"]))}
     for d in plan["dateien"]:
         ziel = Path(d["ausgabe"])
         ziel.parent.mkdir(parents=True, exist_ok=True)

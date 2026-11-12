@@ -16,13 +16,15 @@ API (swki api methode, Parameterzahl laut Index; Enums laut swki api enum):
     swDisplayFeatureDimensions 32), .CreateMassProperty2(0), .CustomPropertyManager(1)
   ICustomPropertyManager.GetAll3(5)
   IFeature.GetFirstDisplayDimension(0), .GetNextDisplayDimension(1), .GetFirstSubFeature(0), .GetNextSubFeature(0),
-    .GetParents(0), .GetChildren(0), .IsSuppressed2(2: swSpecifyConfiguration 3), .GetSpecificFeature2(0), .Select2(2)
+    .GetParents(0), .GetChildren(0), .IsSuppressed2(2: swSpecifyConfiguration 3), .GetSpecificFeature2(0), .Select2(2),
+    .GetDefinition(0); IWizardHoleFeatureData2.EndCondition (swEndConditions_e: swEndCondBlind 0)
   IDisplayDimension.GetDimension2(1), .IsLinked, .GetLinkedText(0), .GetAnnotation(0); IAnnotation.Color
   IDimension.FullName, .GetType(0: swDimensionParamType_e Linear 0, Angular 1, Integer 2), .DrivenState (swDimensionDriven
     1), .IsDesignTableDimension(0), .GetSystemValue3(2: swSetValue_InThisConfiguration 1), .ReferencePoints
-  IEquationMgr.GetCount(0), .Equation(Index), .GlobalVariable(Index), .Value(Index), .LinkToFile, .FilePath
+  IEquationMgr.GetCount(0), .Equation(Index, auch Property-Put), .GlobalVariable(Index), .Value(Index), .LinkToFile, .FilePath
   ISketch.ModelToSketchTransform; IMathVector.MultiplyTransform(1); IModelView.Scale2
   IModelDoc2.Save3(3: swSaveAsOptions_Silent 1); ISldWorks.GetCurrentLicenseType(0); IModelDocExtension.GetLicenseType(0)
+  IComponent2.Name2, .Select4(3); IAssemblyDoc.GetComponents(1); ISelectionMgr.CreateSelectData(0)
 """
 
 import math
@@ -65,6 +67,14 @@ def bstr_array(namen):
     import win32com.client
 
     return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_BSTR, list(namen))
+
+
+def setze_gleichung(gleichungen, i: int, text: str) -> None:
+    """`IEquationMgr.Equation(i) = text`: Property-Put mit Index, über IDispatch nur per `Invoke` (Spike S18c c4)."""
+    import pythoncom
+
+    ole = gleichungen._oleobj_
+    ole.Invoke(ole.GetIDsOfNames("Equation"), 0, pythoncom.DISPATCH_PROPERTYPUT, False, i, text)
 
 
 def massname(voll: str) -> str:
@@ -144,16 +154,18 @@ def whats_wrong(model) -> list[dict]:
             for f, c, w in zip(features.value or (), codes.value or (), warnungen.value or ())]
 
 
-def _ist_ordner(typ: str) -> bool:
+def ist_ordner(typ: str) -> bool:
     return typ.endswith("Folder") or typ == "DetailCabinet"
 
 
-def baum_features(model) -> list:
+def baum_features(model, ohne=None) -> list:
     """Features in der Reihenfolge der aktiven Konfiguration, ohne Ordner. Unterfeatures, die nicht in der Kette stehen
-    (Unterskizzen und Gewinde eines `HoleWzd`, S18b), folgen ihrem Feature. Nach jedem Umschalten neu holen (S18c)."""
+    (Unterskizzen und Gewinde eines `HoleWzd`, S18b), folgen ihrem Feature. Nach jedem Umschalten neu holen (S18c).
+    `ohne(typ)`: Typnamen, die mitsamt ihren Unterfeatures wegfallen (Komponenten und Verknüpfungen einer Baugruppe)."""
     kette, f = [], model.FirstFeature
     while f is not None:
-        if not _ist_ordner(f.GetTypeName2):
+        typ = f.GetTypeName2
+        if not ist_ordner(typ) and not (ohne and ohne(typ)):
             kette.append(f)
         f = f.GetNextFeature
     bekannt, aus = {f.Name for f in kette}, []
@@ -168,7 +180,7 @@ def baum_features(model) -> list:
     return aus
 
 
-def _schalte(model, konfiguration: str) -> None:
+def schalte(model, konfiguration: str) -> None:
     """Aktiviert eine Konfiguration; ob es geklappt hat, zeigt nur das Zurücklesen (S18c: Rückgaben nicht glauben)."""
     model.ShowConfiguration2(konfiguration)
     ist = model.ConfigurationManager.ActiveConfiguration.Name
@@ -199,7 +211,7 @@ def _punkte(dim) -> list[list[float]]:
         return []
 
 
-def _lies_masse(features: list, konfiguration: str, konfigurationen: list[str], roh: dict[str, dict]) -> None:
+def lies_masse(features: list, konfiguration: str, konfigurationen: list[str], roh: dict[str, dict]) -> None:
     """Maße der aktiven Konfiguration in `roh` eintragen. Skizzenmaße stehen unter Skizze und Feature: Dubletten nach Namen
     zusammenlegen, sie tragen die Skizze (steht im Baum zuerst)."""
     for f in features:
@@ -233,15 +245,29 @@ def unter_namen(feature) -> list[str]:
     return aus
 
 
-def _feature_eintrag(f, konfigurationen: list[str], tabelle: bool) -> dict:
+def bohrung_ende(feature) -> int | None:
+    """Endbedingung eines Bohrungsassistenten (IWizardHoleFeatureData2.EndCondition, swEndConditions_e); nicht lesbar → None.
+    Die Tiefe einer Bohrung, die nicht blind endet, folgt dem Körper (live Rev1 Lauf 11: durch alles, Körper länger, das Maß
+    Bohrungstiefe 10 → 22,5, HoleDepth liest dabei 0)."""
+    try:
+        return int(feature.GetDefinition.EndCondition)
+    except Exception:
+        return None
+
+
+def feature_eintrag(f, konfigurationen: list[str], tabelle: bool) -> dict:
     """`tabelle`: Tabellengesteuerte Unterdrückung lässt sich ohne Excel nicht lesen (S18b, Offen), jedes Feature einer
     Datei mit Tabelle gilt deshalb als möglicherweise gesteuert."""
-    return {"name": f.Name, "typ": f.GetTypeName2, "eltern": [p.Name for p in f.GetParents or ()],
-            "kinder": [c.Name for c in f.GetChildren or ()], "unter": unter_namen(f),
-            "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen}, "tabelle": tabelle}
+    typ = f.GetTypeName2
+    d = {"name": f.Name, "typ": typ, "eltern": [p.Name for p in f.GetParents or ()],
+         "kinder": [c.Name for c in f.GetChildren or ()], "unter": unter_namen(f),
+         "unterdrueckt": {k: unterdrueckt(f, k) for k in konfigurationen}, "tabelle": tabelle}
+    if typ == "HoleWzd":
+        d["bohrung_ende"] = bohrung_ende(f)
+    return d
 
 
-def _gleichungen(model) -> tuple[list[dict], dict[str, float]]:
+def gleichungen_von(model) -> tuple[list[dict], dict[str, float]]:
     gl = model.GetEquationMgr
     eintraege, variablen = [], {}
     for i in range(int(gl.GetCount)):
@@ -252,7 +278,7 @@ def _gleichungen(model) -> tuple[list[dict], dict[str, float]]:
     return eintraege, variablen
 
 
-def _eigenschaften(model, konfiguration: str) -> dict[str, str]:
+def eigenschaften_von(model, konfiguration: str) -> dict[str, str]:
     """Eigenschaften (Rohtext, nicht aufgelöst) einer Konfiguration, "" = Datei."""
     namen, typen, werte, aufgeloest, verknuepft = (byref_variant() for _ in range(5))
     model.Extension.CustomPropertyManager(konfiguration).GetAll3(namen, typen, werte, aufgeloest, verknuepft)
@@ -264,14 +290,14 @@ def material_von(model, konfiguration: str) -> str:
     return model.GetMaterialPropertyName2(konfiguration, byref_str()) or ""
 
 
-def _datei_referenzen(model) -> list[str]:
+def datei_referenzen(model) -> list[str]:
     """Was das offene Dokument selbst als externe Referenz nennt."""
     ausgaben = [byref_variant() for _ in range(7)]
     model.Extension.ListExternalFileReferences(*ausgaben, byref_long(), byref_str())
     return list(ausgaben[0].value or ())
 
 
-def _gleichungsdatei(model) -> list[str]:
+def gleichungsdatei(model) -> list[str]:
     """Spec §3: Mit einer Datei verknüpfte Gleichungen sind eine externe Referenz, ein `gleichung`-Punkt schriebe sonst womöglich die
     Datei des Kollegen zurück. Auch ohne lesbaren Pfad bleibt die Liste nicht leer, sonst fiele die Ablehnung still weg."""
     gleichungen = model.GetEquationMgr
@@ -296,29 +322,30 @@ def lies_bestand(app, model) -> dict:
     aktiv = model.ConfigurationManager.ActiveConfiguration.Name
     konfigurationen = [aktiv] + [k for k in model.GetConfigurationNames if k != aktiv]
     tabelle = bool(model.Extension.HasDesignTable)
-    gleichungen, variablen = _gleichungen(model)
+    gleichungen, variablen = gleichungen_von(model)
     d: dict = {"version": 1, "konfigurationen": konfigurationen, "aktiv": aktiv,
                "einheitensystem": model.Extension.GetUserPreferenceInteger(SW_EINHEITENSYSTEM, 0),
                "material": material_von(model, aktiv),
                "materialien": {k: material_von(model, k) for k in konfigurationen},
-               "eigenschaften": {"datei": _eigenschaften(model, ""),
-                                 "konfiguration": {k: _eigenschaften(model, k) for k in konfigurationen}},
-               "externe_referenzen": _datei_referenzen(model) + _gleichungsdatei(model), "gleichungen": gleichungen, "variablen": variablen,
+               "eigenschaften": {"datei": eigenschaften_von(model, ""),
+                                 "konfiguration": {k: eigenschaften_von(model, k) for k in konfigurationen}},
+               "externe_referenzen": datei_referenzen(model) + gleichungsdatei(model), "gleichungen": gleichungen,
+               "variablen": variablen,
                "skizzen": skizzenstatus(model), "tabelle": tabelle}
     neuaufbau, reihenfolge, geometrie, roh = [], {}, {}, {}
     try:
         for k in konfigurationen:
-            _schalte(model, k)
+            schalte(model, k)
             model.EditRebuild3
             neuaufbau += [{"konfiguration": k, **f} for f in whats_wrong(model)]
             features = baum_features(model)
             if k == aktiv:
-                d["features"] = [_feature_eintrag(f, konfigurationen, tabelle) for f in features]
+                d["features"] = [feature_eintrag(f, konfigurationen, tabelle) for f in features]
             reihenfolge[k] = [f.Name for f in features]
             geometrie[k] = _geometrie(model)
-            _lies_masse(features, k, konfigurationen, roh)
+            lies_masse(features, k, konfigurationen, roh)
     finally:
-        _schalte(model, aktiv)
+        schalte(model, aktiv)
     return d | {"reihenfolge": reihenfolge, "masse": leite_masse(list(roh.values()), gleichungen), "neuaufbau": neuaufbau,
                 "geometrie": geometrie}
 
@@ -344,12 +371,15 @@ def _anzeige(feature, name: str):
     return None
 
 
-def speichere_an_ort(model, pfad: Path) -> None:
-    """`Save3` an Ort und Stelle (S18a), nie `SaveAs3`. Gespeichert wird nur das offene Dokument selbst und nur in einem
-    Ordner `lauf-<n>` unter dem Arbeitsordner, so bleiben Original und Bestandskopie unerreichbar (Spec §6)."""
-    arbeit, ziel = lade_rechner().arbeitsordner.resolve(), pfad.resolve()
-    if not ziel.is_relative_to(arbeit) or not _LAUF_ORDNER.fullmatch(ziel.parent.name):
-        raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"{pfad} liegt nicht in einem Lauf-Ordner unter {arbeit}", schritt="speichern")
+def speichere_an_ort(model, pfad: Path, lauf: Path) -> None:
+    """`Save3` an Ort und Stelle (S18a), nie `SaveAs3`. Gespeichert wird nur das offene Dokument selbst und nur unter genau
+    diesem Ordner `<arbeitsordner>/<auftrag>/lauf-<n>`, auch in Unterordnern (Baugruppe, Plan Etappe 2): Der Name allein reichte
+    nicht, ein fremder Auftrag hat dieselben Nummern. So bleiben Original, Bestandskopie und fremde Läufe unerreichbar (Spec
+    §6)."""
+    arbeit, ziel, ordner = lade_rechner().arbeitsordner.resolve(), pfad.resolve(), lauf.resolve()
+    if ordner.parent.parent != arbeit or not _LAUF_ORDNER.fullmatch(ordner.name) or not ziel.is_relative_to(ordner):
+        raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"{pfad} liegt nicht im Lauf-Ordner {ordner} unter {arbeit}",
+                        schritt="speichern")
     if Path(model.GetPathName).resolve() != ziel:
         raise BauFehler(SPEICHERN_FEHLGESCHLAGEN, f"Offen ist {model.GetPathName}, nicht {pfad}", schritt="speichern")
     fehler, warnungen = byref_long(), byref_long()
@@ -403,3 +433,16 @@ def zeige_feature(app, model, name: str, pfad: Path) -> None:
         model.FeatureByName(name).Select2(False, 0)
         sw.speichere(model, pfad, kopie=True)
     sw.auswahl_leeren(model)
+
+
+def zeige_komponente(app, asm, name: str, pfad: Path) -> None:
+    """Bild mit ausgewählter Komponente (auch in einer Unterbaugruppe, `Name2` mit `/`), wie `zeige_feature`. Dass die Auswahl
+    im Bild sichtbar ist, ist nicht gemessen (S19)."""
+    komp = next((k for k in asm.GetComponents(False) or () if k.Name2 == name), None)
+    if komp is None:
+        raise BestandFehler(BESTAND_REFERENZ, f"Komponente {name!r} gibt es in dieser Konfiguration nicht", komponente=name)
+    with _aufnahme(app, asm):
+        _einpassen(asm, "iso")
+        komp.Select4(False, asm.SelectionManager.CreateSelectData, False)
+        sw.speichere(asm, pfad, kopie=True)
+    sw.auswahl_leeren(asm)

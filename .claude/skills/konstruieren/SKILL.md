@@ -253,7 +253,7 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   kompakt: `schritt` (wo er endete), `lauf`, `pruefung.fehlgeschlagen`, `pruefung.steckbrief`, `empfehlung`.
   Einzelbefehle (`swki bauen`, `swki pruefen <spec> --lauf n`) bleiben für Sonderfälle.
 - Endet der Durchlauf mit `schritt: bauen` (Bauabbruch): Fehlercode und Knoten lesen, Bauweg nachbessern (Schritt 6).
-- Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert: `swki aenderungen <spec>` liest die Maße des Bauprotokolls und liefert je Datei `masse` (Differenzen soll/ist/delta) und `vorschlaege`; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
+- Meldet `swki bauen` **`MANUELL_GEAENDERT`**, hat jemand die Dateien des letzten Laufs geändert (dritter Weg, wenn die geänderte Datei selbst der Stand ist: `swki bestand aufnehmen` in einen neuen Auftrag, Skill `aendern`): `swki aenderungen <spec>` liest die Maße des Bauprotokolls und liefert je Datei `masse` (Differenzen soll/ist/delta) und `vorschlaege`; dem Nutzer zeigen und fragen (übernehmen → Spec ändern, validieren, Nutzer-OK, `swki freigeben`, dann `swki bauen --uebernommen`; verwerfen → nur auf ausdrückliche Anweisung `swki bauen --verwerfen`). Nie still neu bauen.
   - `vorschlaege` sind `{parameter, neu}` (Betrag des Maßes, Vorzeichen des freigegebenen Parameters; `konflikt: […]` bei
     verschiedenen Werten: Nutzer fragen) und für Lagemaße `{pfad, bezug, delta, vorzeichen, koordinate_delta}`. `delta`
     ist die Änderung des Maßes (ein Betrag, ohne Richtung), `koordinate_delta` die Änderung der Spec-Koordinate am `pfad`:
