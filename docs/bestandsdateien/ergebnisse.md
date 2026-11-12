@@ -527,8 +527,42 @@ Konstruktionsreview vor der ersten Freigabe. SolidWorks startet seit `53873f2` m
 Stand: Branch mit `main` (Paket Konstruktionsstil) gemergt, `9664b3f`. `pytest -q`: 3645 bestanden. `swki api pruefe-code`: keine
 Befunde. `-m werkzeuge.live_frisch tests/referenz --zeit 1500` (SolidWorks im Hintergrund): **14 von 14 OK**, Lagerdeckel 26 s / 2969 MB,
 Hubeinheit 116 s / 3262 MB, größte Spitze Zahnstangentrieb 3679 MB. Beim Neustart vor der Hubeinheit warf der Speicher-Thread einmal
-`WinError 87` (bekannt aus Task 13: der alte Prozess ist weg), ohne Folgen für das Ergebnis. Task 14 (`bestand_gross`, Größenmessung)
-ist nicht gelaufen; gemessen ist die Größe nur an `lauf-30` (§3).
+`WinError 87` (bekannt aus Task 13: der alte Prozess ist weg), ohne Folgen für das Ergebnis. Task 14 (Größenmessung) folgt in §5.
+
+## 5. Größe (Task 14, live, 2026-11-12)
+
+`-m werkzeuge.bestand_gross erzeugen`, dann `messen --modus unsichtbar` und `--modus sichtbar`, je auf frischem SolidWorks (im
+Hintergrund). Erzeugt (344 s): 40 Dateien, 200 Komponenten, 3 Verknüpfungen (eine Grenze `Hub` 0–25 mm am Schieber),
+`Bohrbild.SLDPRT` mit 2000 Bohrungen Ø4 und **2006 Flächen** (nachgelesen; das Werkzeug nannte statt der Zahl den Methoden-Stub von
+`IBody2.GetFaceCount`, behoben mit Test). Teil-Punkt: Dicke des Bohrbilds 10 → 12 mm. Rohdaten `gross_unsichtbar.json`,
+`gross_sichtbar.json`.
+
+| Schritt | Phase | unsichtbar s | MB | sichtbar s | MB |
+|---|---|---|---|---|---|
+| aufnahme | oeffnen | 2,8 | 514 | 9,9 | 2533 |
+| aufnahme | lesen | 8,0 | 551 | 15,1 | 2514 |
+| aufnahme | dateien (40 Teil-Aufnahmen) | 10,5 | 506 | 131,4 | 1248 |
+| aufnahme | fenster, kollision, bilder | 11,5 | 2770 | 8,4 | 3122 |
+| aufnahme | fahrt (Grenze `Hub`) | 86,5 | 3012 | 88,4 | 3334 |
+| **aufnahme** | **gesamt** | **120,2** | **3274** | **254,2** | **3513** |
+| bauen | Teil Bohrbild | 10,9 | 1541 | 8,5 | 1876 |
+| bauen | vorbereiten, bauen | 13,5 | 3125 | 14,3 | 3448 |
+| **bauen** | **gesamt** | **25,0** | **3365** | **23,4** | **3652** |
+| pruefen | Teil Bohrbild (Differenz bei 2006 Flächen) | 8,9 | 1724 | 13,3 | 2119 |
+| pruefen | oeffnen, lesen, fenster, neuaufbau | 21,9 | 3371 | 34,9 | 3830 |
+| pruefen | kollision, bilder | 3,4 | 3636 | 3,4 | 4084 |
+| pruefen | fahrt | 89,4 | 3844 | 90,9 | 4308 |
+| **pruefen** | **gesamt** | **124,6** | **4088** | **147,3** | **4542** |
+
+Beide Läufe bestanden, ohne Mängel, eine Differenz (Bohrbild, Konfiguration Standard, ein Körper). **Bewertung (Step 3): kein
+Befund.** Keine Phase über `speicher_grenze_mb` (16000), die Aufnahme braucht 2 bzw. 4 Minuten (Grenze zehn). Was auffällt:
+
+- **Unsichtbar lesen lohnt sich:** Die 40 Teil-Aufnahmen brauchen mit Fenster 131 s statt 10,5 s (×12,5). Der Regelfall bleibt unsichtbar.
+- **Die Fahrt kostet am meisten:** 87–91 s je Stand für eine Grenze, also gut 70 % der Aufnahme und der Prüfung. Mit Fenster, sonst ist
+  keine Kollision lesbar (S19d).
+- **Die Teil-Differenz** bei 2006 Flächen braucht 9–13 s und bleibt unter 2,2 GB.
+- Spitze 4,5 GB bei 200 Komponenten, gegenüber 14,3 GB an der Prüfstation mit zwei Bewegungen (Stufe 4a): Den Speicher treiben die
+  Bewegungen und Kollisionen der echten Geometrie, nicht die Zahl der Komponenten.
 
 ## Offene Kleinigkeiten aus den Reviews
 

@@ -128,3 +128,24 @@ def test_erzeugnis_liegt_unter_dem_jahr(tmp_path):
     ordner.mkdir(parents=True)
     (ordner / gross.HAUPT).write_bytes(b"x")
     assert gross.haupt_pfad(r) == ordner / gross.HAUPT
+
+
+def test_bohrbild_nennt_die_flaechenzahl_als_zahl(monkeypatch):
+    """Live (Task 14, 12.11.2026): `IBody2.GetFaceCount` ist late-bound eine Methode, das Ergebnis nannte den Methoden-Stub."""
+    class Koerper:
+        def GetFaceCount(self):
+            return 2006
+
+    class Skizze:
+        sm = SimpleNamespace(CreateCircleByRadius=lambda *a: None)
+
+        def uv(self, x, y, z):
+            return x, y, z
+
+        def ende(self):
+            return None
+
+    monkeypatch.setattr(gross, "skizze_auf_flaeche", lambda *a: Skizze())
+    monkeypatch.setattr(gross, "schnitt", lambda *a: None)
+    model = SimpleNamespace(GetBodies2=lambda art, sichtbar: [Koerper()])
+    assert gross.bohrungen(None, gross.bohrbild(4))(model, None) == {"flaechen": 2006}

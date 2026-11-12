@@ -43,7 +43,7 @@ from swki.bestand.pruefen import pruefen
 from swki.bestand.spec import freigeben, validieren
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
 from swki.speicher import Spitzenmessung
-from swki.verbindung import byref_long, mm, verbinde
+from swki.verbindung import byref_long, mm, verbinde, wert
 from werkzeuge.bestand_muster import (SW_DOC_PART, SW_INPUT_DIM_VAL_ON_CREATE, SW_OPEN_SILENT, SW_SAVEAS_SILENT, abstand_mit_lage,
                                       baue_block,
                                       ebene_von, ebenen, lege, mates, schnitt, skizze_auf_flaeche, speichere)
@@ -105,7 +105,7 @@ def bohrungen(app, punkte: list):
         for x, y in punkte:
             s.sm.CreateCircleByRadius(*s.uv(x, y, DICKE), 0.0, mm(BOHRUNG_D / 2))
         schnitt(model, s.ende(), 1)
-        return {"flaechen": model.GetBodies2(0, False)[0].GetFaceCount}
+        return {"flaechen": wert(model.GetBodies2(0, False)[0].GetFaceCount)}  # late-bound eine Methode (Lauf 12.11.2026)
 
     return ergaenze
 

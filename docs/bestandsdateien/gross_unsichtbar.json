@@ -1,0 +1,122 @@
+{
+ "modus": "unsichtbar",
+ "aufnahme": {
+  "s": 120.2,
+  "spitze_mb": 3274.5,
+  "phasen": {
+   "kopieren": {
+    "s": 0.263,
+    "mb": 443.8
+   },
+   "oeffnen": {
+    "s": 2.833,
+    "mb": 514.4
+   },
+   "lesen": {
+    "s": 7.972,
+    "mb": 551.3
+   },
+   "dateien": {
+    "s": 10.505,
+    "mb": 505.6
+   },
+   "fenster": {
+    "s": 8.675,
+    "mb": 2559.0
+   },
+   "kollision": {
+    "s": 0.987,
+    "mb": 2629.3
+   },
+   "bilder": {
+    "s": 1.774,
+    "mb": 2770.4
+   },
+   "fahrt": {
+    "s": 86.48,
+    "mb": 3012.2
+   }
+  }
+ },
+ "bauen": {
+  "s": 25.0,
+  "spitze_mb": 3364.7,
+  "phasen": {
+   "kopieren": {
+    "s": 0.04,
+    "mb": 1424.4
+   },
+   "teile:teile/Bohrbild.SLDPRT": {
+    "s": 10.935,
+    "mb": 1540.8
+   },
+   "teile": {
+    "s": 10.936,
+    "mb": 1540.8
+   },
+   "dateien": {
+    "s": 0.0,
+    "mb": 1540.8
+   },
+   "vorbereiten": {
+    "s": 6.35,
+    "mb": 3125.1
+   },
+   "bauen": {
+    "s": 7.195,
+    "mb": 3117.8
+   }
+  }
+ },
+ "pruefen": {
+  "s": 124.6,
+  "spitze_mb": 4088.4,
+  "phasen": {
+   "teile:teile/Bohrbild.SLDPRT": {
+    "s": 8.913,
+    "mb": 1723.5
+   },
+   "oeffnen": {
+    "s": 1.435,
+    "mb": 1717.7
+   },
+   "lesen": {
+    "s": 7.779,
+    "mb": 1532.7
+   },
+   "fenster": {
+    "s": 6.459,
+    "mb": 3371.1
+   },
+   "neuaufbau": {
+    "s": 6.192,
+    "mb": 3347.3
+   },
+   "kollision": {
+    "s": 1.618,
+    "mb": 3501.0
+   },
+   "bilder": {
+    "s": 1.781,
+    "mb": 3636.1
+   },
+   "fahrt": {
+    "s": 89.395,
+    "mb": 3844.4
+   }
+  }
+ },
+ "zaehler": {
+  "komponenten": 200,
+  "dateien": 41,
+  "verknuepfungen": 3
+ },
+ "bestanden": true,
+ "maengel": [],
+ "differenzen": {
+  "teile/Bohrbild.SLDPRT": {
+   "Standard": 1
+  }
+ },
+ "bewertung": []
+}
