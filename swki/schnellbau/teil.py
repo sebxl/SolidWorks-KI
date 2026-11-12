@@ -3,8 +3,9 @@
 Skizzen: (u, v) → Modellpunkt über swki.compiler.skizze.modellpunkt; Elemente rechteck (radius), kreis, polygon (radien),
 kontur (Bögen gegen den Uhrzeigersinn in (u, v)), langloch, mittellinie; mehrere Konturen nach gerade/ungerade.
 Features: extrusion/schnitt (alle Endbedingungen, umkehren, formschraege), rotation, bohrung, normbohrung
-(swki/wissen/bohrungsnormen.yaml), verrundung, fase (45°), muster_linear, muster_kreis, spiegeln, referenz, verzahnung
-(Profil aus swki.verzahnung). skript und alles Übrige → SchnellbauFehler NICHT_UNTERSTUETZT.
+(swki/wissen/bohrungsnormen.yaml; Feld `fase` = Fasenkegel am Eintritt, Maße aus swki.spec.bohrungsfase), verrundung,
+fase (45°), austragung (Kreis/Rechteck entlang Linien und Bögen), muster_linear, muster_kreis, spiegeln, referenz,
+verzahnung (Profil aus swki.verzahnung). skript und alles Übrige → SchnellbauFehler NICHT_UNTERSTUETZT.
 
 Jedes Feature hinterlässt ein FeatureInfo: Werkzeugkörper und Operation (plus/minus, für Flächenanker, Muster, Spiegeln),
 Richtung, Bohrungs- bzw. Radachspunkte, Bezugsebene. Längen in mm, Teilkoordinaten wie in SolidWorks.
@@ -24,6 +25,9 @@ from swki.formschraege import schraege
 from swki.konfig import lade_standard
 from swki.schnellbau.fehler import ANKER, GEOMETRIE, NICHT_UNTERSTUETZT, SchnellbauFehler
 from swki.spec.ausdruck import auswerten
+from swki.spec.austragung import modell, segmente_uv
+from swki.spec.bohrungsfase import eintritt_radius, fase_abstand
+from swki.spec.instanzen import BEZUGSACHSE, MUSTER, kopien_kreis, kopien_linear, kopien_spiegeln
 from swki.spec.normen import bohrspitze_grad, normmasse, norm_von
 from swki.verzahnung import Bogen, Linie, Stirnrad, aus_feature
 
@@ -49,6 +53,10 @@ class FeatureInfo:
     richtung: tuple | None = None
     punkte: list | None = None             # Achspunkte (Bohrung je Instanz, Stirnrad)
     ebene: Ebene | None = None             # referenz-Ebene
+    teile: list | None = None              # [(Körper, "plus"|"minus")] in Anwendungsreihenfolge (Verrundung/Fase,
+                                           # Muster mit Verrundungsquelle)
+    richtungen: list | None = None         # Bohrrichtung je Instanz, parallel zu punkte
+    kopien: dict = field(default_factory=dict)   # Muster/Spiegeln: Bohrungs-ID → (Punkte, Richtungen) dieser Kopien
 
 
 @dataclass
@@ -60,7 +68,7 @@ class Teil:
     uebersprungen: list = field(default_factory=list)
     sekunden: float = 0.0
     bau: "Schnellbau | None" = None
-    meldungen: list = field(default_factory=list)   # was nicht gebaut wurde, ohne Abbruch (Paket Konstruktionsstil)   # für Anker-Abfragen (Flächenebenen) der Baugruppe
+    meldungen: list = field(default_factory=list)   # nicht Gebautes ohne Abbruch (heute leer)
 
 
 def _v(p) -> Vector:
@@ -365,12 +373,15 @@ class Schnellbau:
                              + self._loch(p, d, [(m["durchgang"], 0.0)], durch, tiefe, True) for p in punkte]
             else:
                 raise self.fehler(NICHT_UNTERSTUETZT, f"Normbohrung {f['art']}")
+        c = fase_abstand(f, self.p)
+        if c is not None:    # Fase c × 45° am Eintritt: Kegel vom Radius r + c auf r, wie das Feature <id>_fase im Compiler
+            r = eintritt_radius(f, self.p)
+            werkzeuge = [w + Solid.make_cone(r + c, r, c, Plane(origin=p, z_dir=d)) for w, p in zip(werkzeuge, punkte)]
         werkzeug = werkzeuge[0]
         for x in werkzeuge[1:]:
             werkzeug = werkzeug + x
-        self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, "minus", _t(d), [_t(p) for p in punkte])
-        if "fase" in f:
-            self.meldungen.append(f"{f['id']}: fase am Bohrungseintritt nicht gebaut (Stufe C3a)")
+        self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, "minus", _t(d), [_t(p) for p in punkte],
+                                             richtungen=[_t(d)] * len(punkte))
         if not self.mit_bohrungen:
             self.uebersprungen.append(f["id"])
             return
@@ -449,27 +460,65 @@ class Schnellbau:
                                 break
         return list(gewaehlt.values())
 
+    def _ist_musterquelle(self, fid: str) -> bool:
+        """Steht fid in den features eines späteren muster_linear/muster_kreis/spiegeln der Spec?"""
+        return any(m["typ"] in MUSTER and fid in m["features"] for m in self.spec["features"])
+
+    def _differenz(self, a, b) -> list:
+        """Teile von a − b mit Volumen (build123d liefert None, leeren Körper oder Compound)."""
+        try:
+            d = a - b
+        except Exception as e:     # nie still weglassen: sonst fehlt die Verrundung/Fase auf den Kopien
+            raise self.fehler(GEOMETRIE, f"Differenz für das Muster fehlgeschlagen: {type(e).__name__}: {e}") from e
+        if d is None:
+            return []
+        return [s for s in d.solids() if s.volume > _VOLUMEN_EPS]
+
+    def _kanten_mit_teilen(self, f: dict, vorher, typ: str) -> None:
+        """Merkt, was Verrundung/Fase abgetragen und aufgefüllt hat, wenn ein Muster das Feature mustert."""
+        info = FeatureInfo(typ)
+        if self._ist_musterquelle(f["id"]):
+            info.teile = ([(s, "minus") for s in self._differenz(vorher, self.body)]
+                          + [(s, "plus") for s in self._differenz(self.body, vorher)])
+        self.features[f["id"]] = info
+
     def verrundung(self, f: dict) -> None:
+        vorher = self.body
         self.body = self.body.fillet(self.w(f["radius"]), self._kanten(f["kanten"]))
-        self.features[f["id"]] = FeatureInfo("verrundung")
+        self._kanten_mit_teilen(f, vorher, "verrundung")
 
     def fase(self, f: dict) -> None:
         if abs(self.w(f.get("winkel", 45)) - 45) > 1e-9:
             raise self.fehler(NICHT_UNTERSTUETZT, "fase mit winkel ≠ 45°")
+        vorher = self.body
         self.body = self.body.chamfer(self.w(f["abstand"]), None, self._kanten(f["kanten"]))
-        self.features[f["id"]] = FeatureInfo("fase")
+        self._kanten_mit_teilen(f, vorher, "fase")
 
     # Muster ------------------------------------------------------------------------------------------------------
     def _werkzeuge(self, ids: list) -> list[tuple[Solid, str]]:
         out = []
         for fid in ids:
             info = self.features.get(fid)
+            if info is not None and info.teile is not None:
+                out.extend(info.teile)
+                continue
             if info is None or info.werkzeug is None or info.op is None:
                 raise self.fehler(NICHT_UNTERSTUETZT, f"{fid!r} lässt sich nicht mustern/spiegeln")
             out.append((info.werkzeug, info.op))
         return out
 
     def _muster_anwenden(self, f: dict, kopien: list[tuple[Solid, str]]) -> None:
+        if any(self.features[i].teile is not None for i in f["features"]):
+            gruppen = []          # Quellreihenfolge: aufeinanderfolgende gleiche Operationen vereinigt
+            for w, op in kopien:
+                if gruppen and gruppen[-1][1] == op:
+                    gruppen[-1][0] = gruppen[-1][0] + w
+                else:
+                    gruppen.append([w, op])
+            for w, op in gruppen:
+                self.anwenden(w, op)
+            self._muster_info(f, kopien, teile=True)
+            return
         plus = [w for w, op in kopien if op == "plus"]
         minus = [w for w, op in kopien if op == "minus"]
         for gruppe, op in ((plus, "plus"), (minus, "minus")):
@@ -484,11 +533,48 @@ class Schnellbau:
                 self.features[f["id"]] = FeatureInfo(f["typ"], w, op)
                 return
             self.anwenden(w, op)
+        self._muster_info(f, kopien)
+
+    def _muster_info(self, f: dict, kopien: list[tuple[Solid, str]], teile: bool = False) -> None:
+        """FeatureInfo des Musters: alle Kopien vereinigt, Operation nur wenn einheitlich. Mit teile tragen die Kopien in
+        Anwendungsreihenfolge, damit das Muster selbst wieder gemustert/gespiegelt werden kann (gemischte Operationen)."""
         ops = {op for _, op in kopien}
         alle = None
         for w, _ in kopien:
             alle = w if alle is None else alle + w
-        self.features[f["id"]] = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
+        info = FeatureInfo(f["typ"], alle, ops.pop() if len(ops) == 1 else None)
+        if teile:
+            info.teile = list(kopien)
+        self.features[f["id"]] = info
+
+    def _instanzen_der_quellen(self, quellen: list) -> dict:
+        """Bohrungs-ID → (Punkte, Richtungen), die die Quellen tragen: eigene Positionen einer Bohrung, Kopien eines
+        Musters (wie swki.compiler.handler.muster._instanzen_der_quellen)."""
+        nach_id = {x["id"]: x for x in self.spec["features"]}
+        aus: dict = {}
+        for q in quellen:
+            info = self.features[q]
+            if nach_id[q]["typ"] in BOHRUNGEN:
+                n = len(nach_id[q]["positionen"])
+                pu, ri = aus.setdefault(q, ([], []))
+                pu.extend(info.punkte[:n])
+                ri.extend(info.richtungen[:n])
+            for bid, (pu2, ri2) in info.kopien.items():
+                pu, ri = aus.setdefault(bid, ([], []))
+                pu.extend(pu2)
+                ri.extend(ri2)
+        return aus
+
+    def _kopien_eintragen(self, kopien: dict) -> None:
+        """Kopien als Instanzen n+1 … an die Bohrung hängen – unabhängig davon, ob die Bohrungen gebohrt werden."""
+        for bid, (pu, ri) in kopien.items():
+            self.features[bid].punkte.extend(pu)
+            self.features[bid].richtungen.extend(ri)
+
+    def _muster_mit_instanzen(self, f: dict, kopien: dict, werkzeuge: list) -> None:
+        self._kopien_eintragen(kopien)
+        self._muster_anwenden(f, werkzeuge)
+        self.features[f["id"]].kopien = kopien
 
     def muster_linear(self, f: dict) -> None:
         richtungen = []
@@ -500,20 +586,31 @@ class Schnellbau:
         versaetze = richtungen[0] if len(richtungen) == 1 else [a + b for a in richtungen[0] for b in richtungen[1]]
         kopien = [(w.moved(Location(v)), op) for w, op in self._werkzeuge(f["features"])
                   for v in versaetze if v.length > 1e-12]
-        self._muster_anwenden(f, kopien)
+        r2 = f.get("richtung2")
+        n_kopien = f["richtung1"]["anzahl"] * (r2["anzahl"] if r2 else 1) - 1
+        p = self.p
+        inst = {b: (kopien_linear(pu, f["richtung1"], r2, p), ri * n_kopien)     # Richtung bleibt je Kopie, Reihenfolge wie die Punkte
+                for b, (pu, ri) in self._instanzen_der_quellen(f["features"]).items()}
+        self._muster_mit_instanzen(f, inst, kopien)
 
     def muster_kreis(self, f: dict) -> None:
         n, gesamt = f["anzahl"], self.w(f.get("winkel", 360))
         schritt = gesamt / n if abs(gesamt - 360) < 1e-9 else gesamt / (n - 1)
-        achse = Axis((0, 0, 0), ACHSEN[f["achse"]])
+        richtung = BEZUGSACHSE[f["achse"]]      # wie die Referenzachse achse_<x|y|z> im Compiler (achse_y zeigt nach −y)
+        achse = Axis((0, 0, 0), richtung)
         kopien = [(w.rotate(achse, schritt * i), op) for w, op in self._werkzeuge(f["features"]) for i in range(1, n)]
-        self._muster_anwenden(f, kopien)
+        inst = {b: (kopien_kreis(pu, richtung, n, gesamt), kopien_kreis(ri, richtung, n, gesamt))
+                for b, (pu, ri) in self._instanzen_der_quellen(f["features"]).items()}
+        self._muster_mit_instanzen(f, inst, kopien)
 
     def spiegeln(self, f: dict) -> None:
         se = self.ebene(f["ebene"])
         ebene = Plane(origin=_v(modellpunkt(se.orientierung, 0, 0, se.lage)), z_dir=_v(NORMALE[se.orientierung]))
         kopien = [(w.mirror(ebene), op) for w, op in self._werkzeuge(f["features"])]
-        self._muster_anwenden(f, kopien)
+        i = ACHSE_DER[se.orientierung]
+        inst = {b: (kopien_spiegeln(pu, i, se.lage), kopien_spiegeln(ri, i, 0.0))
+                for b, (pu, ri) in self._instanzen_der_quellen(f["features"]).items()}
+        self._muster_mit_instanzen(f, inst, kopien)
 
     def referenz(self, f: dict) -> None:
         if "achse" in f:
@@ -547,10 +644,32 @@ class Schnellbau:
         self.features[f["id"]] = FeatureInfo("verzahnung", werkzeug, "plus", richt, punkte)
         self.anwenden(werkzeug, "plus")
 
+    def austragung(self, f: dict) -> None:
+        """Profil (kreis/rechteck) entlang eines offenen Pfads aus Linien und Bögen; Pfad und Profil wie im Compiler."""
+        sp, sw = self.ebene(f["profil"]["ebene"]), self.ebene(f["pfad"]["ebene"])
+        profil = Face(self.drahtzuege(sp, f["profil"]["elemente"])[0])
+        akt = (self.w(f["pfad"]["start"][0]), self.w(f["pfad"]["start"][1]))
+        kanten = []
+        for s in f["pfad"]["segmente"]:
+            if "linie" in s:
+                ziel = (self.w(s["linie"][0]), self.w(s["linie"][1]))
+                kanten.append(self._linie(sw, akt, ziel))
+            else:
+                ziel = (self.w(s["bogen"][0]), self.w(s["bogen"][1]))
+                mitte = (self.w(s["mitte"][0]), self.w(s["mitte"][1]))
+                kanten.append(self._bogen(sw, akt, ziel, mitte, not s.get("uhrzeigersinn")))
+            akt = ziel
+        werkzeug = Solid.sweep(profil, Wire(kanten), is_frenet=False)
+        t_a = segmente_uv(f["pfad"], self.p)[0]["t_a"]
+        richt = tuple(modell(sw.orientierung, t_a[0], t_a[1], 0.0))
+        op = "minus" if f.get("schnitt") else "plus"
+        self.features[f["id"]] = FeatureInfo(f["typ"], werkzeug, op, richt)
+        self.anwenden(werkzeug, op)
+
     HANDLER = {"extrusion": "extrusion", "schnitt": "extrusion", "rotation": "rotation", "bohrung": "bohrung",
                "normbohrung": "bohrung", "verrundung": "verrundung", "fase": "fase", "muster_linear": "muster_linear",
                "muster_kreis": "muster_kreis", "spiegeln": "spiegeln", "referenz": "referenz",
-               "verzahnung": "verzahnung"}
+               "verzahnung": "verzahnung", "austragung": "austragung"}
 
     def baue(self) -> Teil:
         t0 = time.perf_counter()

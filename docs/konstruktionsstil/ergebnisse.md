@@ -103,6 +103,8 @@ Instanzpunkte eines Kreismusters entstehen durch Drehung um die Achsrichtung aus
 
 ## Für Stufe C3a (Schnellbau)
 
+Erledigt in Stufe C3a (07.11.2026), siehe `docs/schnellbau-c3a/ergebnisse.md`. Der Text unten beschreibt den Stand davor.
+
 - **Was der Schnellbau heute nicht kann:**
   - `fase` an Bohrungen: nur `meldungen`, der Körper hat keine Fase; Teilmeldungen gehen in die Baugruppenmeldungen.
   - `austragung`: `SCHNELLBAU_NICHT_UNTERSTUETZT`.
@@ -136,9 +138,7 @@ Instanzpunkte eines Kreismusters entstehen durch Drehung um die Achsrichtung aus
 - **Musterquellen:** `_senkung`/`_fase` werden herausgefiltert. Ein Muster, das die Fase-Quelle verliert, fällt nur im
   Live-Test auf, nicht in `swki pruefen`.
 - **Validierung:** `instanz` in `pruefung.masse_pruefen` einer Teil-Spec wird nicht gegen `anzahl_instanzen` geprüft.
-- **Schnellbau (C3a):**
-  - IndexError bei `instanz` auf Musterkopien (Baugruppe) statt einer Meldung.
-  - Das Kreismuster dreht um +Achse, SolidWorks um die Bezugsachse (`achse_y` = −y).
+- **Schnellbau (C3a):** erledigt (IndexError → Ankerfehler, Kreismuster um die Bezugsachse), `docs/schnellbau-c3a/ergebnisse.md`.
 - **`bohrbild`:**
   - Der Schlüssel enthält `fase` nicht.
   - Der Eintrag nennt keine Knoten-ID.
@@ -149,4 +149,4 @@ Instanzpunkte eines Kreismusters entstehen durch Drehung um die Achsrichtung aus
   - `versatz_von_flaeche` im Fräserhinweis
   - `swki aenderungen` mit `_fase`
   - Spiegeln an einer Fläche mit Lage ≠ 0 live
-- **`tests/schnellbau/sw_referenz.json`:** `stehlager/grundplatte` neu erzeugen (`-m werkzeuge.schnellbau_abgleich`).
+- **`tests/schnellbau/sw_referenz.json`:** erledigt in C3a (Stehlager lauf-4, Spannplatte neu).

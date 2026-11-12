@@ -12,6 +12,11 @@ from swki.spec.ausdruck import auswerten
 
 MUSTER = ("muster_linear", "muster_kreis", "spiegeln")
 
+# Richtung der Referenzachsen achse_x/y/z, um die ein Kreismuster dreht (rechtsdrehend um diese Richtung).
+# x live belegt 07.11.2026 (tests/live/test_live_musterinstanzen.py::test_bezugsachsen_wie_konstante); y, z Spike S20 d
+# (achse_y zeigt nach −y).
+BEZUGSACHSE: dict[str, tuple[float, float, float]] = {"x": (1.0, 0.0, 0.0), "y": (0.0, -1.0, 0.0), "z": (0.0, 0.0, 1.0)}
+
 
 def faktor(f: dict) -> int:
     """Instanzen je Quellinstanz (die Quelle mitgezählt)."""

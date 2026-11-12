@@ -203,8 +203,7 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
    `muster_linear`; alle anderen Bilder aus 2–4 Löchern (Paar, Eckbild) und Lochkreise bleiben `positionen` eines
    Knotens mit `bezug: mitte`. Abstand und Winkel als Parameter, wenn sie Anforderung sind.
 4. Eckradien als Knoten `verrundung` (`{feature, auswahl: senkrechte_kanten}`) statt Skizzen-`radius`. Den Skizzen-Radius
-   nur, wo die Kontur den Bogen trägt (Langloch, Kontur mit Bögen, Formschräge, gedruckte Teile) und in Specs mit
-   `optimierung` oder Simulation (der Schnellbau kann Verrundungen in Musterquellen noch nicht, Stufe C3a).
+   nur, wo die Kontur den Bogen trägt (Langloch, Kontur mit Bögen, Formschräge, gedruckte Teile).
 5. Tiefen, die sich auf eine andere Fläche beziehen (Restwandstärke, bis zum Boden), mit `versatz_von_flaeche` /
    `bis_flaeche`, nicht als gerechnete Zahl.
 6. Eckradien gleichen Maßes in einem Knoten direkt hinter dem letzten Element, das ihn trägt. Gehört die Verrundung zu
