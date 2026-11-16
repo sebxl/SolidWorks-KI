@@ -58,7 +58,9 @@ die normale Freigabe; Änderungen sperren den Bau wie bisher (Schutz nach Wirkun
 | Sammelangaben | Rauheit Ra 3,2 (Fräsen/Drehen), Kanten ISO 13715 „−0,1 … −0,3“; Oberflächennorm nach Vorlage (ISO 21920 ab SW 2025 SP1) | selbst entschieden, in `config/standard.yaml` |
 | Freigabe der Zeichnung | Zeichnung ist Bauweg; Feld „Freigegeben“ im Schriftfeld bleibt leer, bis der Nutzer abnimmt | selbst entschieden |
 | Service Pack | jede SP-abhängige Methode mit Ersatzweg bis SW 2025 FCS | selbst entschieden (R-Kap. 10) |
-| Rechner | Vorschlag, Rückfrage offen (Abschnitt 13): Entwicklung, Spike und Regression auf Rechner A (SW 2025, Student); Teile und Zeichnungen für die Fertigung auf der Vollversion (Firmenrechner SW 2026). Die Firmenvorlage ist vermutlich in SW 2026 gespeichert, Z1.5 hängt dann am Firmenrechner (`docs/bestandsdateien/inbetriebnahme-firmenrechner.md`) | offen |
+| Rechner | Entwicklung, Spike und Regression auf Rechner A (SW 2025, Student); Teile und Zeichnungen für die Fertigung nur auf der Vollversion (Firmenrechner SW 2026). Bis zu dessen Inbetriebnahme liefert Z1 keine Fertigungszeichnung. Die Firmenvorlage ist vermutlich in SW 2026 gespeichert, Z1.5 hängt dann am Firmenrechner (`docs/bestandsdateien/inbetriebnahme-firmenrechner.md`) | Nutzer: Empfehlung A |
+| Behandlung, Halbzeug | neue Anforderungsfelder `behandlung` (Härte, Einsatzhärtetiefe, Beschichtung) und `halbzeug` (Abschnitt 4.1); rohe Halbzeugflächen „wie Halbzeug“ statt Sammelangabe Ra 3,2 | Nutzer: Empfehlung A |
+| Modellmaß | Modell im Nennmaß (wie heute); Vermerk „Maßgebend ist die Zeichnung“ auf jeder Zeichnung | Nutzer: Empfehlung A |
 | Abnahme | `swki zeichnung abnehmen <spec>` nach ausdrücklichem OK des Nutzers im Chat: trägt „Freigegeben“ (Name, Datum) ein, aktualisiert die SHA-256, legt das PDF unveränderlich ab. Revisionsindex erst mit der Firmenvorlage (Schema ist Firmensache) | selbst entschieden (Builder-Check) |
 | Maßtoleranzen ohne Feature | Top-Level `toleranzen` je Parametername (Achsabstand, Gesamtlänge); das Maß, das der Parameter treibt, trägt sie | selbst entschieden (Builder-Check) |
 | Teile aus Baugruppen | gehören zu Z1; Quelle ist der letzte bestandene Lauf des Auftrags; Freigabe ist die der Baugruppe | selbst entschieden (Builder-Check) |
@@ -113,6 +115,16 @@ features:
   nennt. Vorschlag aus `validieren`: Anlageflächen, die in Baugruppen-Verknüpfungen `deckungsgleich` sind (R-Kap. 8, B).
 - Bohrbilder: Positionstoleranz mit theoretisch genauen Maßen nur, wenn `funktion` es verlangt (z. B. `stiftbild`);
   sonst ±-Allgemeintoleranz (selbst entschieden; R-Kap. 4/7, Frage 13).
+- `behandlung` (Top-Level, Liste) für Wärme- und Oberflächenbehandlung, z. B.
+  `[{art: einsatzhaerten, haerte: "58+4 HRC", tiefe: {Eht: 0.8, toleranz: 0.2}}, {art: bruenieren}]`. Auf der Zeichnung
+  als Notiz nahe dem Schriftfeld. Die Schreibweise der Härteangabe nach ISO 15787 ist nicht recherchiert: In Z1.1 zuerst
+  nachrecherchieren (Quellen und Belegstärke wie in der Recherche), dann Schema und Notiztext festlegen. Gilt eine
+  Behandlung nur für einzelne Flächen, trägt das Feature `behandlung: <art>` (selbst entschieden).
+- `halbzeug` (Top-Level), z. B. `{art: flach, norm: "EN 10058", masse: "50 x 10"}`. Flächen des Teils, die kein Feature
+  bearbeitet, bleiben Halbzeugoberfläche; die Zeichnung kennzeichnet sie „wie Halbzeug“ (Sammelangabe in Klammern bzw.
+  Notiz, genaue Darstellung im Spike/mit der Vorlage). Ohne `halbzeug` gilt die Sammelangabe Ra 3,2 für alle Flächen.
+  Welche Flächen roh bleiben, ermittelt swki aus dem Hüllquader (Fläche liegt in der Halbzeug-Außenkontur und ist
+  keinem Feature zugeordnet); der Weg ist dem Bauer überlassen.
 - `toleranzen` (Top-Level) für Maße, die nicht an einem einzelnen Feature hängen, je Parametername:
   `toleranzen: {A_achse: {oben: 0.02, unten: -0.02}, L: {passung: h11}}`. Über das Maßprotokoll (`roh: "=A_achse"`)
   ist bekannt, welches Maß der Parameter treibt; dieses Maß trägt die Toleranz in der Zeichnung. Treibt ein Parameter
@@ -124,7 +136,7 @@ Die Prüfsumme deckt heute nur Top-Level-Felder ab (`swki/spec/freigabe.py`, `PR
 werden beim Nachbessern umbenannt, zusammengefasst oder zwischen `positionen` und Muster gewechselt. Deshalb
 (selbst entschieden, Builder-Check; Vorbild: Normbohrungs-Größen und Bohrbilder werden heute schon „nach Wirkung“ gegen
 die freigegebene Kopie geprüft, nicht über die Prüfsumme):
-- `verfahren` und `toleranzen` kommen in `PRUEF_FELDER`, aber nur in die Summe, wenn vorhanden (wie `bewegungen` bei
+- `verfahren`, `toleranzen`, `behandlung` und `halbzeug` kommen in `PRUEF_FELDER`, aber nur in die Summe, wenn vorhanden (wie `bewegungen` bei
   Baugruppen), damit bestehende Freigaben gültig bleiben. `swki bauen` verweigert bei Änderung mit `FREIGABE_VERALTET`.
 - Die Feldgruppe am Feature (`funktion`, `passung`, `toleranz`, `rauheit`, `form_lage`, `huelle`, `bearbeitung`) und
   `bezuege` sind **nicht** in der Prüfsumme, weil sie an Feature-IDs hängen. Sie werden nach Wirkung geschützt:
@@ -196,7 +208,8 @@ Ablauf (nach `swki bauen` und bestandener Teilprüfung; in `swki durchlauf` als 
 3. Ansichten wählen (Abschnitt 6.1), Blattformat und Maßstab aus der Vorzugsreihe bestimmen.
 4. Maße einfügen (Abschnitt 6.2), Toleranzen, Passungen, Ⓔ, Rauheit, Form/Lage, Bezugsdreiecke aus der aufgelösten
    Spec anbringen.
-5. Sammelangaben (Allgemeintoleranz, ISO 8015, Rauheit, Kanten ISO 13715) als Notiz bzw. Vorlagenfeld.
+5. Sammelangaben (Allgemeintoleranz, ISO 8015, Rauheit, Kanten ISO 13715, „Maßgebend ist die Zeichnung“, Behandlung,
+   Halbzeug) als Notiz bzw. Vorlagenfeld.
 6. Anordnen (`AlignDimensions`), neu aufbauen, speichern als `<teil>.SLDDRW` im Laufordner, PDF und STEP exportieren.
 
 Der Block `zeichnung:` in der Spec ist Bauweg (nicht in der Prüfsumme) und überschreibt nur, wenn nötig:
@@ -263,7 +276,7 @@ angehängten Entitäten; Annotationen; Blatt- und Dokumenteigenschaften) und sch
 | `vollstaendig` | jedes Merkmal des Maßplans ist genau einmal bemaßt; jedes Spec-Maß der freigegebenen Kopie findet sich mit gleichem Wert | R-Kap. 4/8 A |
 | `ueberbestimmt` | je Richtung kein geschlossener Maßzyklus (Maßgraph), Ausnahme Hilfsmaß in Klammern | R-Kap. 4/8 A |
 | `toleranzen` | Passung, Abmaße, Ⓔ, Rauheit, Form/Lage und Bezüge wie in der aufgelösten Spec; Ⓔ nur an Passmaßen | Nutzer (ISO 8015), R-Kap. 7 |
-| `sammelangaben` | Allgemeintoleranz mit Jahr und Klasse m, ISO 8015, Rauheit, Kanten vorhanden; kein „ISO 2768-…K“, kein „DIN 7167“ | Nutzer, R-Kap. 7 A |
+| `sammelangaben` | Allgemeintoleranz mit Jahr und Klasse m, ISO 8015, Rauheit, Kanten, „Maßgebend ist die Zeichnung“, Behandlung und Halbzeug wie in der Spec vorhanden; kein „ISO 2768-…K“, kein „DIN 7167“ | Nutzer, R-Kap. 7 A |
 | `schriftfeld` | acht Pflichtfelder gefüllt (außer „Freigegeben“), Maßstab aus der Vorzugsreihe | R-Kap. 2 A |
 | `ansichten` | keine Maße an verdeckten Kanten; Schnittbezeichnung vorhanden; Einzelheit mit Maßstab | R-Kap. 3/4 A/B |
 | `lesbarkeit` | keine überlappenden Maße/Annotationen (Hüllrechtecke), Maße außerhalb der Kontur wo möglich | R-Kap. 4 B (Hinweis) |
@@ -295,7 +308,7 @@ Regel-ID. Ablage wie beim Teil: `protokolle/<spec>.lauf-<n>.zeichnungspruefer.js
 | Etappe | Inhalt | Ergebnis |
 |---|---|---|
 | Z1.0 Spike | live, frisches SolidWorks, nur nach OK des Nutzers: Zeichnung aus Vorlage, Ansichten (Erst-, Schnitt-, Detailansicht), `MarkedForDrawing` + `InsertModelAnnotations3/4` (inkl. Bohrungsangabe ohne Dialog?), Maß über Kantenauswahl setzen, Passung/Ⓔ/Oberflächensymbol setzen, alles zurücklesen; SP-Stand von Rechner A feststellen | `spikes/z…` + Befundnotiz; entscheidet, ob Abschnitt 6.2 so baubar ist |
-| Z1.1 Spec | Schema (`verfahren`, `bezuege`, Feldgruppe Funktion), Prüfsumme, `funktionen.yaml`, `validieren`-Hinweise | Unit-Tests ohne SolidWorks |
+| Z1.1 Spec | Nachrecherche ISO 15787 (Härteangabe); Schema (`verfahren`, `bezuege`, `toleranzen`, `behandlung`, `halbzeug`, Feldgruppe Funktion), Prüfsumme und Sperre nach Wirkung, `funktionen.yaml`, `validieren`-Hinweise | Unit-Tests ohne SolidWorks |
 | Z1.2 Drehteil-Features | `freistich`, `zentrierbohrung` über `compiler-erweitern`, Tabelle DIN 509 mit Quellen | Referenzteil Drehteil |
 | Z1.3 Zeichnen | `swki zeichnen`, Maßplan, Schriftfeld über Eigenschaften | Zeichnungen der Referenzteile |
 | Z1.4 Prüfen | `swki zeichnung pruefen`, `zeichnungsregeln.yaml`, Agent `zeichnungspruefer`, `durchlauf --zeichnung` | Regression mit Negativfällen |
@@ -328,14 +341,8 @@ Z1.1 und Z1.2 brauchen kein SolidWorks bzw. nur Live-Tests der Handler; Z1.3/Z1.
 - Bestätigung der Werte in `funktionen.yaml` (vor der ersten Freigabe eines Teils mit `funktion`).
 - OK für den Spike auf frischem SolidWorks (Nutzer arbeitet ggf. parallel).
 
-## 13. Rückfragen aus dem Builder-Check (offen, ändern Z1.1)
+## 13. Rückfragen aus dem Builder-Check (vom Nutzer beantwortet 16.11.: „Alle wie empfohlen“)
 
-- Rechner und Lizenz: Dürfen Teile und Zeichnungen aus der Studentenversion (Rechner A) in die Fertigung, oder nur von
-  der Vollversion? Trägt schon die Teildatei einen Lizenzvermerk, müssen Bau und Zeichnung für die Fertigung beide auf
-  dem Firmenrechner laufen. Bis dahin liefert Z1 keine verwendbare Fertigungszeichnung.
-- Wärme- und Oberflächenbehandlung (Härte, Einsatzhärtetiefe, Beschichtung, Eloxal, Brünieren) gehören zu Schleif- und
-  Erodierteilen; weder Spec noch Recherche haben dafür einen Platz. Ebenso Halbzeug und rohe Flächen: Beim Hausstil
-  „Halbzeug, nur gesägt und gebohrt“ widerspricht eine Sammelangabe Ra 3,2 für alle Flächen; rohe Halbzeugflächen
-  bräuchten eine eigene Angabe (Halbzeugbezeichnung, „Oberfläche wie Halbzeug“).
-- Modell im Nennmaß (wie heute, `swki pruefen` misst gegen Nennwerte) mit Vermerk „Maßgebend ist die Zeichnung“, oder
-  in Toleranzmitte? Das STEP geht mit, Lohnfertiger programmieren oft daraus.
+- Rechner und Lizenz → Fertigungsteile und -zeichnungen nur auf der Vollversion (Abschnitt 2).
+- Behandlung, Halbzeug, rohe Flächen → eigene Anforderungsfelder (Abschnitt 4.1).
+- Modell im Nennmaß mit Vermerk „Maßgebend ist die Zeichnung“ (Abschnitt 2, 5).
