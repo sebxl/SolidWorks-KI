@@ -58,6 +58,10 @@ die normale Freigabe.
 | Sammelangaben | Rauheit Ra 3,2 (Fräsen/Drehen), Kanten ISO 13715 „−0,1 … −0,3“; Oberflächennorm nach Vorlage (ISO 21920 ab SW 2025 SP1) | selbst entschieden, in `config/standard.yaml` |
 | Freigabe der Zeichnung | Zeichnung ist Bauweg; Feld „Freigegeben“ im Schriftfeld bleibt leer, bis der Nutzer abnimmt | selbst entschieden |
 | Service Pack | jede SP-abhängige Methode mit Ersatzweg bis SW 2025 FCS | selbst entschieden (R-Kap. 10) |
+| Rechner | Entwicklung, Spike und Regression auf Rechner A (SW 2025); Zeichnungen, die an die Fertigung gehen, nur auf einer Vollversion (Firmenrechner SW 2026). Die Firmenvorlage ist vermutlich in SW 2026 gespeichert, Z1.5 hängt dann am Firmenrechner (`docs/bestandsdateien/inbetriebnahme-firmenrechner.md`) | selbst entschieden (Builder-Check) |
+| Abnahme | `swki zeichnung abnehmen <spec>` nach ausdrücklichem OK des Nutzers im Chat: trägt „Freigegeben“ (Name, Datum) ein, aktualisiert die SHA-256, legt das PDF unveränderlich ab. Revisionsindex erst mit der Firmenvorlage (Schema ist Firmensache) | selbst entschieden (Builder-Check) |
+| Maßtoleranzen ohne Feature | Top-Level `toleranzen` je Parametername (Achsabstand, Gesamtlänge); das Maß, das der Parameter treibt, trägt sie | selbst entschieden (Builder-Check) |
+| Teile aus Baugruppen | gehören zu Z1; Quelle ist der letzte bestandene Lauf des Auftrags; Freigabe ist die der Baugruppe | selbst entschieden (Builder-Check) |
 
 **Prüfpunkte an der Firmenvorlage, sobald sie da ist** (Nutzer bzw. Organisator 16.11.):
 - Steht dort „DIN 7167“ (Hüllprinzip ohne Eintrag) statt „ISO 8015“ → Widerspruch zum Nutzerentscheid melden.
@@ -109,18 +113,28 @@ features:
   nennt. Vorschlag aus `validieren`: Anlageflächen, die in Baugruppen-Verknüpfungen `deckungsgleich` sind (R-Kap. 8, B).
 - Bohrbilder: Positionstoleranz mit theoretisch genauen Maßen nur, wenn `funktion` es verlangt (z. B. `stiftbild`);
   sonst ±-Allgemeintoleranz (selbst entschieden; R-Kap. 4/7, Frage 13).
+- `toleranzen` (Top-Level) für Maße, die nicht an einem einzelnen Feature hängen, je Parametername:
+  `toleranzen: {A_achse: {oben: 0.02, unten: -0.02}, L: {passung: h11}}`. Über das Maßprotokoll (`roh: "=A_achse"`)
+  ist bekannt, welches Maß der Parameter treibt; dieses Maß trägt die Toleranz in der Zeichnung. Treibt ein Parameter
+  mehrere Maße, gilt die Toleranz für alle (Hinweis in `validieren`).
 
 ### 4.2 Freigabe
 
-Die Prüfsumme deckt heute nur Top-Level-Felder ab (`swki/spec/freigabe.py`, `PRUEF_FELDER`); Features sind Bauweg. Neu:
-- `verfahren` und `bezuege` kommen in `PRUEF_FELDER`, aber nur in die Summe, wenn vorhanden (wie `bewegungen` bei
-  Baugruppen), damit bestehende Freigaben gültig bleiben.
-- Aus den Features wird eine Liste `{feature_id: {funktion, passung, toleranz, rauheit, form_lage, huelle, bearbeitung}}`
-  gezogen (nur Features mit mindestens einem dieser Felder) und in die Summe genommen, wenn sie nicht leer ist.
+Die Prüfsumme deckt heute nur Top-Level-Felder ab (`swki/spec/freigabe.py`, `PRUEF_FELDER`); Features sind Bauweg und
+werden beim Nachbessern umbenannt, zusammengefasst oder zwischen `positionen` und Muster gewechselt. Deshalb
+(selbst entschieden, Builder-Check; Vorbild: Normbohrungs-Größen und Bohrbilder werden heute schon „nach Wirkung“ gegen
+die freigegebene Kopie geprüft, nicht über die Prüfsumme):
+- `verfahren` und `toleranzen` kommen in `PRUEF_FELDER`, aber nur in die Summe, wenn vorhanden (wie `bewegungen` bei
+  Baugruppen), damit bestehende Freigaben gültig bleiben. `swki bauen` verweigert bei Änderung mit `FREIGABE_VERALTET`.
+- Die Feldgruppe am Feature (`funktion`, `passung`, `toleranz`, `rauheit`, `form_lage`, `huelle`, `bearbeitung`) und
+  `bezuege` sind **nicht** in der Prüfsumme, weil sie an Feature-IDs hängen. Sie werden nach Wirkung geschützt:
+  `swki pruefen` und `swki zeichnung pruefen` lösen beide Specs (Arbeitsdatei und freigegebene Kopie) zu einer Liste
+  von Merkmalen auf (Geometrie: Art, Ø/Breite, Lage im Teil, Fläche; Anforderung: aufgelöste Passung, Abmaße, Ra,
+  Form/Lage, Ⓔ, Bearbeitung, Bezugsbuchstabe) und vergleichen sie ohne Rücksicht auf Feature-IDs. Fehlt eine
+  Anforderung oder ist sie anders, meldet die Prüfung `ANFORDERUNG_GEAENDERT` (Mangel, kein Nachbessern im Bauweg).
 - Die Regeltabelle `funktionen.yaml` gilt wie eine Norm-Tabelle: Ihr Inhalt zum Zeitpunkt der Freigabe wird mit
-  aufgelöst; `swki zeichnung pruefen` vergleicht gegen die aufgelösten Werte der freigegebenen Kopie. Wie die Auflösung
+  aufgelöst und abgelegt; geprüft wird gegen die aufgelösten Werte der freigegebenen Kopie. Wie die Auflösung
   gespeichert wird (in `freigabe.json` oder als eigene Datei), ist dem Bauer überlassen.
-- `swki bauen` verweigert wie heute mit `FREIGABE_VERALTET`, wenn sich diese Anforderungen ändern.
 
 ### 4.3 Regeltabelle `swki/wissen/funktionen.yaml`
 
@@ -163,6 +177,12 @@ bestätigt. Ergänzungen nur mit Quelle (≥ 2 für A) wie bei anderen Wissensta
 - Neue Hinweise unter der vorhandenen `art: fertigung`.
 
 ## 5. Zeichnung erzeugen (`swki zeichnen`)
+
+Quelle ist das Teil aus dem letzten bestandenen Lauf des Auftrags, auch in Baugruppen-Aufträgen (dann gilt die
+Baugruppen-Freigabe). Weil `MarkedForDrawing` beim Bau gesetzt wird (Abschnitt 6.2), werden Teile, die vor Z1 gebaut
+wurden, einmal neu gebaut; nachträgliches Setzen würde die Teildatei ändern (SHA-256, `MANUELL_GEAENDERT`, keine
+Wiederverwendung). Der Spike prüft, ob es ohne Teiländerung geht (alle Modellmaße einfügen, nicht benötigte in der
+Zeichnung ausblenden); dann entfällt der Neubau.
 
 Ablauf (nach `swki bauen` und bestandener Teilprüfung; in `swki durchlauf` als Schritt `--zeichnung`):
 
@@ -262,6 +282,9 @@ Regel-ID. Ablage wie beim Teil: `protokolle/<spec>.lauf-<n>.zeichnungspruefer.js
 - Nachbessern nur im Bauweg (`zeichnung:`-Block, Ansichten, Maßquelle); Anforderungen nur über neue Freigabe.
 - `swki zeichnen` speichert SHA-256 der SLDDRW im Laufprotokoll; eine von Hand geänderte Zeichnung meldet
   `swki aenderungen` als `MANUELL_GEAENDERT` (Zeichnung), Ablauf wie bei Teilen (übernehmen/verwerfen auf Anweisung).
+- Abnahme: nach Prüfer „bestanden“ und Bericht an den Nutzer trägt `swki zeichnung abnehmen` nach seinem OK im Chat
+  „Freigegeben“ ein und aktualisiert die SHA-256 (die Abnahme ist damit keine Handänderung). Eine spätere neue
+  Zeichnung desselben Teils lässt das abgenommene PDF unverändert liegen.
 
 ## 9. Etappen
 
@@ -300,3 +323,10 @@ Z1.1 und Z1.2 brauchen kein SolidWorks bzw. nur Live-Tests der Handler; Z1.3/Z1.
 - Firmenvorlage (.drwdot/.slddrt/.sldstd) und Feldnamen des Schriftfelds.
 - Bestätigung der Werte in `funktionen.yaml` (vor der ersten Freigabe eines Teils mit `funktion`).
 - OK für den Spike auf frischem SolidWorks (Nutzer arbeitet ggf. parallel).
+
+## 13. Rückfragen aus dem Builder-Check (offen, ändern Z1.1)
+
+- Wärme- und Oberflächenbehandlung (Härte, Einsatzhärtetiefe, Beschichtung, Eloxal, Brünieren) gehören zu Schleif- und
+  Erodierteilen; weder Spec noch Recherche haben dafür einen Platz.
+- Modell im Nennmaß (wie heute, `swki pruefen` misst gegen Nennwerte) mit Vermerk „Maßgebend ist die Zeichnung“, oder
+  in Toleranzmitte? Das STEP geht mit, Lohnfertiger programmieren oft daraus.
