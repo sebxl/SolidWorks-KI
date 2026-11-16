@@ -13,7 +13,7 @@ ohne Rechnen fertigen und prüfen kann; das Modell (STEP) wird zusätzlich mitge
 
 Toleranzen, Passungen und Rauheiten sind keine Zeichnungsfrage, sondern folgen aus der Funktion („Haben wir eine
 Lauffläche für ein Lager? Wollen wir etwas verstiften?“, Nutzer). Sie gehören deshalb in die Teil-Spec und laufen durch
-die normale Freigabe.
+die normale Freigabe; Änderungen sperren den Bau wie bisher (Schutz nach Wirkung statt über Feature-IDs, Abschnitt 4.2).
 
 **Ziele**
 - `swki zeichnen <spec>` erzeugt aus einem gebauten, freigegebenen Teil eine SolidWorks-Zeichnung (SLDDRW) und ein PDF
@@ -58,7 +58,7 @@ die normale Freigabe.
 | Sammelangaben | Rauheit Ra 3,2 (Fräsen/Drehen), Kanten ISO 13715 „−0,1 … −0,3“; Oberflächennorm nach Vorlage (ISO 21920 ab SW 2025 SP1) | selbst entschieden, in `config/standard.yaml` |
 | Freigabe der Zeichnung | Zeichnung ist Bauweg; Feld „Freigegeben“ im Schriftfeld bleibt leer, bis der Nutzer abnimmt | selbst entschieden |
 | Service Pack | jede SP-abhängige Methode mit Ersatzweg bis SW 2025 FCS | selbst entschieden (R-Kap. 10) |
-| Rechner | Entwicklung, Spike und Regression auf Rechner A (SW 2025); Zeichnungen, die an die Fertigung gehen, nur auf einer Vollversion (Firmenrechner SW 2026). Die Firmenvorlage ist vermutlich in SW 2026 gespeichert, Z1.5 hängt dann am Firmenrechner (`docs/bestandsdateien/inbetriebnahme-firmenrechner.md`) | selbst entschieden (Builder-Check) |
+| Rechner | Vorschlag, Rückfrage offen (Abschnitt 13): Entwicklung, Spike und Regression auf Rechner A (SW 2025, Student); Teile und Zeichnungen für die Fertigung auf der Vollversion (Firmenrechner SW 2026). Die Firmenvorlage ist vermutlich in SW 2026 gespeichert, Z1.5 hängt dann am Firmenrechner (`docs/bestandsdateien/inbetriebnahme-firmenrechner.md`) | offen |
 | Abnahme | `swki zeichnung abnehmen <spec>` nach ausdrücklichem OK des Nutzers im Chat: trägt „Freigegeben“ (Name, Datum) ein, aktualisiert die SHA-256, legt das PDF unveränderlich ab. Revisionsindex erst mit der Firmenvorlage (Schema ist Firmensache) | selbst entschieden (Builder-Check) |
 | Maßtoleranzen ohne Feature | Top-Level `toleranzen` je Parametername (Achsabstand, Gesamtlänge); das Maß, das der Parameter treibt, trägt sie | selbst entschieden (Builder-Check) |
 | Teile aus Baugruppen | gehören zu Z1; Quelle ist der letzte bestandene Lauf des Auftrags; Freigabe ist die der Baugruppe | selbst entschieden (Builder-Check) |
@@ -132,6 +132,10 @@ die freigegebene Kopie geprüft, nicht über die Prüfsumme):
   von Merkmalen auf (Geometrie: Art, Ø/Breite, Lage im Teil, Fläche; Anforderung: aufgelöste Passung, Abmaße, Ra,
   Form/Lage, Ⓔ, Bearbeitung, Bezugsbuchstabe) und vergleichen sie ohne Rücksicht auf Feature-IDs. Fehlt eine
   Anforderung oder ist sie anders, meldet die Prüfung `ANFORDERUNG_GEAENDERT` (Mangel, kein Nachbessern im Bauweg).
+- Sperre vor dem Bau: `swki validieren` und `swki bauen` vergleichen schon ohne Modell die Mehrfachmenge der Tupel
+  (Feature-Art, Nenngröße wie Ø oder Gewindegröße, aufgelöste Anforderungen, Bezugsbuchstabe) beider Specs; weicht sie
+  ab, verweigert `swki bauen` mit `FREIGABE_VERALTET` wie bei Top-Level-Anforderungen. Die Lage im Teil prüft erst
+  `swki pruefen` am Modell (Lage ist auch heute Bauweg plus Messung).
 - Die Regeltabelle `funktionen.yaml` gilt wie eine Norm-Tabelle: Ihr Inhalt zum Zeitpunkt der Freigabe wird mit
   aufgelöst und abgelegt; geprüft wird gegen die aufgelösten Werte der freigegebenen Kopie. Wie die Auflösung
   gespeichert wird (in `freigabe.json` oder als eigene Datei), ist dem Bauer überlassen.
@@ -144,10 +148,10 @@ der Recherche (R-Kap. 7), vom Nutzer vor der ersten Freigabe eines Teils mit Fun
 | Funktion | Passung | Ra (µm) | Form/Lage | Beleg |
 |---|---|---|---|---|
 | `stiftbohrung` (Zylinderstift m6) | H7, Ⓔ | 0,8 | – | H7 C; Ra C |
-| `lagersitz_welle` / `lagersitz_gehaeuse` | k6 bzw. H7 (Umfangslast Außenring J7), Ⓔ | 0,8 / 1,6 | Rundheit IT3–IT4 / IT4–IT5 | IT6/IT7 und Rundheit B; k6 und Ra C |
-| `gleitpassung` | H7/g6, Ⓔ | 0,8 | – | A |
-| `festsitz` | H7/p6 (H7/r6 ohne Verdrehsicherung) | 0,8 | – | A/B |
-| `uebergang` | H7/k6 bzw. H7/m6 | 1,6 | – | A/B |
+| `lagersitz_welle` / `lagersitz_gehaeuse` | k6 bzw. H7 (Umfangslast Außenring J7), Ⓔ | 0,8 / 1,6 | Rundheit IT3–IT4 / IT4–IT5 | IT6/IT7, Rundheit, Ra B; k6 C |
+| `gleitpassung` | H7/g6, Ⓔ | 0,8 | – | Passung A; Ra C |
+| `festsitz` | H7/p6 (H7/r6 ohne Verdrehsicherung) | 0,8 | – | Passung A/B; Ra C |
+| `uebergang` | H7/k6 bzw. H7/m6 | 1,6 | – | Passung A/B; Ra C |
 | `dichtflaeche_rwdr` | h11 (C) | 0,2–0,8 drallfrei | – | B |
 | `anlage` | – | 1,6 | Ebenheit (Wert C) | C |
 
@@ -326,7 +330,12 @@ Z1.1 und Z1.2 brauchen kein SolidWorks bzw. nur Live-Tests der Handler; Z1.3/Z1.
 
 ## 13. Rückfragen aus dem Builder-Check (offen, ändern Z1.1)
 
+- Rechner und Lizenz: Dürfen Teile und Zeichnungen aus der Studentenversion (Rechner A) in die Fertigung, oder nur von
+  der Vollversion? Trägt schon die Teildatei einen Lizenzvermerk, müssen Bau und Zeichnung für die Fertigung beide auf
+  dem Firmenrechner laufen. Bis dahin liefert Z1 keine verwendbare Fertigungszeichnung.
 - Wärme- und Oberflächenbehandlung (Härte, Einsatzhärtetiefe, Beschichtung, Eloxal, Brünieren) gehören zu Schleif- und
-  Erodierteilen; weder Spec noch Recherche haben dafür einen Platz.
+  Erodierteilen; weder Spec noch Recherche haben dafür einen Platz. Ebenso Halbzeug und rohe Flächen: Beim Hausstil
+  „Halbzeug, nur gesägt und gebohrt“ widerspricht eine Sammelangabe Ra 3,2 für alle Flächen; rohe Halbzeugflächen
+  bräuchten eine eigene Angabe (Halbzeugbezeichnung, „Oberfläche wie Halbzeug“).
 - Modell im Nennmaß (wie heute, `swki pruefen` misst gegen Nennwerte) mit Vermerk „Maßgebend ist die Zeichnung“, oder
   in Toleranzmitte? Das STEP geht mit, Lohnfertiger programmieren oft daraus.
