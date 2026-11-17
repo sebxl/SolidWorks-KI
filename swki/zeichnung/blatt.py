@@ -34,16 +34,20 @@ def _skaliert(bedarf_mm: tuple[float, float], massstab: tuple[int, int]) -> tupl
     return (bedarf_mm[0] * f, bedarf_mm[1] * f)
 
 
-def waehle(bedarf_mm: tuple[float, float]) -> tuple[str, tuple[int, int]]:
-    """Format und Maßstab für einen Platzbedarf bei 1:1 (Ansichten samt Maßrand).
-
-    Vergrößern (5:1, 2:1) nur auf A4, den größten passenden Maßstab. Sonst je Maßstab ab 1:1 abwärts das kleinste
-    passende Format – lieber A3 in 1:2 als A4 in 1:5 (Review Focus 1)."""
-    vergroessert = [m for m in MASSSTAEBE if m[0] > m[1] and passt(_skaliert(bedarf_mm, m), "A4")]
-    if vergroessert:
-        return "A4", vergroessert[0]
+def kandidaten():
+    """(Format, Maßstab) in Vorrang-Reihenfolge: erst Vergrößerungen auf A4 (größte zuerst), dann je Maßstab ab 1:1
+    abwärts das kleinste Format – lieber A3 in 1:2 als A4 in 1:5 (Review Focus 1)."""
+    for m in MASSSTAEBE:
+        if m[0] > m[1]:
+            yield "A4", m
     for m in (m for m in MASSSTAEBE if m[0] <= m[1]):
         for format_ in FORMATE:
-            if passt(_skaliert(bedarf_mm, m), format_):
-                return format_, m
+            yield format_, m
+
+
+def waehle(bedarf_mm: tuple[float, float]) -> tuple[str, tuple[int, int]]:
+    """Format und Maßstab für einen Platzbedarf bei 1:1 (Ansichten samt Maßrand): der erste passende Kandidat."""
+    for format_, m in kandidaten():
+        if passt(_skaliert(bedarf_mm, m), format_):
+            return format_, m
     return "A3quer", MASSSTAEBE[-1]
