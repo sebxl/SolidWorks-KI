@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from swki.spec.anforderungen import aufgeloeste_anforderungen
 from swki.spec.freigabe import FreigabeFehler, freigeben, kopie_pfad, pruefsumme
 from swki.spec.hinweise import hinweise
 from swki.spec.laden import art_der_datei, lade_spec
@@ -80,6 +81,8 @@ def _freigeben(args) -> dict:
         from swki.optimierung.raum import raum_eintrag  # spät importiert (Kreisimport)
 
         zusatz = {"raum": raum_eintrag(spec, pfad)}
+    if anforderungen := aufgeloeste_anforderungen(spec):  # Tabellenstand der Freigabe (Zeichnungsableitung §4.2)
+        zusatz = {**(zusatz or {}), "anforderungen": anforderungen}
     return {"spec": str(pfad), "kopie": str(kopie_pfad(pfad)), **freigeben(pfad, spec, zusatz=zusatz)}
 
 

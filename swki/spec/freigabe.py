@@ -18,10 +18,12 @@ from pathlib import Path
 import yaml
 
 from swki.cli import SwkiFehler
+from swki.spec.anforderungen import anforderungs_tupel
 
 PRUEF_FELDER = ("art", "name", "parameter", "material", "eigenschaften", "pruefung")
 PRUEF_FELDER_BAUGRUPPE = ("art", "name", "parameter", "eigenschaften", "komponenten", "freiheitsgrade", "pruefung")
 OPTIONAL_BAUGRUPPE = ("bewegungen",)  # nur in der Prüfsumme, wenn vorhanden: Freigaben ohne Bewegungen bleiben gültig
+OPTIONAL_TEIL = ("verfahren", "toleranzen", "behandlung", "halbzeug")  # ebenso (Zeichnungsableitung §4.2)
 
 
 class FreigabeFehler(SwkiFehler):
@@ -38,6 +40,10 @@ def pruefsumme(spec: dict, teile: dict[str, str] | None = None) -> str:
     """Prüfsumme der Anforderungen; bei Baugruppen zusätzlich über die Prüfsummen der Teil-Specs (Dateiname → Summe)."""
     felder = PRUEF_FELDER_BAUGRUPPE if spec.get("art") == "baugruppe" else PRUEF_FELDER
     kern = dict(spec) if spec.get("art") == "kaufteil" else {feld: spec.get(feld) for feld in felder}
+    if spec.get("art") == "teil":  # Zeichnungsableitung §4.2: nur wenn vorhanden, alte Freigaben bleiben gültig
+        kern |= {feld: spec[feld] for feld in OPTIONAL_TEIL if feld in spec}
+        if tupel := anforderungs_tupel(spec):
+            kern["anforderungen"] = tupel
     if spec.get("art") == "aenderung":  # Anforderung ohne Bauweg (Spec Bestandsdateien §4.5)
         from swki.bestand.spec import bauweg_frei  # spät importiert (Kreisimport)
 
