@@ -8,7 +8,7 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 
 | Etappe | Stand |
 |---|---|
-| Z1.0 Spike (API live) | offen, wartet auf OK des Nutzers für SolidWorks |
+| Z1.0 Spike (API live) | erledigt 17.11. (`spike-z1.md`): alles ohne Dialog außer Bohrungsangaben; Modellmaße nur gefiltert brauchbar |
 | Z1.1 Spec-Erweiterung | umgesetzt (Branch `claude/zeichnungsableitung-recherche`) |
 | Z1.2 Freistich, Zentrierbohrung | offen (Skill `compiler-erweitern`) |
 | Z1.3 Zeichnen, Z1.4 Prüfen | offen, Plan nach dem Spike |
