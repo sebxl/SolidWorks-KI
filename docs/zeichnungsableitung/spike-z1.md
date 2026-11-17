@@ -92,3 +92,12 @@ Ja, für den Weg „markierte Modellmaße“ (Folge 1). Eine Ausnahme gilt, wenn
   `MASSSTAB:$PRP:"SW-Sheet Scale"`). Das SW-Format ist ein Muster, kein Schriftfeld nach ISO 7200.
 - Skript: `spikes/z1_blattformat_lesen.py`. Folge: Entwicklung bis Z1.4 mit dem SW-2025-Format, die Formate des Nutzers
   in Z1.5 auf dem Firmenrechner (SW 2026); dort dieselbe Leseroutine für die Feldnamen.
+
+## Korrektur (17.11.2026, Z1.3 Stufe 1)
+
+Frage 3 ist falsch beantwortet: Skizzen in einer aktiven Zeichenansicht liegen **nicht** in Blattkoordinaten, sondern
+relativ zum Ansichtsursprung (`IView.Position`) und im Modellmaßstab (÷ `IView.ScaleDecimal`). Der Spike hat nur geprüft,
+dass eine Schnittansicht zurückkam; die Linie lag neben dem Teil, der Schnitt hatte keine Schraffur, die Einzelheit war
+leer. In gedrehten Ansichten (`IView.Angle`) landen Skizzen zusätzlich gedreht; ein Ausbruch (`CreateBreakOutSection`)
+dort meldete Erfolg ohne sichtbare Wirkung. `swki zeichnen` rechnet deshalb um (`_in_ansicht`) und erzeugt den
+Längsschnitt eines Drehteils aus der ungedrehten Stirnansicht.

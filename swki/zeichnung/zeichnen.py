@@ -6,8 +6,8 @@ Member liefert der dynamische Dispatch beim Zugriff (`_ruf`).
 
 API (swki api methode, SW 2025): ISldWorks.NewDocument (4), GetUserPreferenceStringValue (1);
 IDrawingDoc.SetupSheet5 (11, 2009), CreateDrawViewFromModelView3 (5, 2005), CreateUnfoldedViewAt3 (4, 2005),
-ActivateView (1), CreateBreakOutSection (1, 2001), GetCurrentSheet; IView.Angle/Position (put), GetOutline, GetName2;
-ISketchManager.CreateCornerRectangle; IModelDocExtension.SetUserPreferenceToggle (3, 2009), SelectByID2 (9),
+ActivateView (1), CreateSectionViewAt5 (7, 2010), GetCurrentSheet; IView.Angle/Position (put), GetOutline, GetName2;
+ISketchManager.CreateLine (6); IModelDocExtension.SetUserPreferenceToggle (3, 2009), SelectByID2 (9),
 SaveAs (6), CustomPropertyManager (1) → ICustomPropertyManager.Add3 (4, 2014); IModelDoc2.EditRebuild3, ClearSelection2.
 """
 
@@ -23,11 +23,10 @@ from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
-from swki.spec.ausdruck import AusdruckFehler, auswerten
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
-from swki.zeichnung.ansichten import Ansicht, ist_drehteil, waehle_ansichten
+from swki.zeichnung.ansichten import Ansicht, waehle_ansichten
 from swki.zeichnung.blatt import FORMATE
 from swki.zeichnung.layout import anordnen
 
@@ -62,6 +61,13 @@ def _umriss_mm(view) -> tuple[float, float, float, float]:
     return tuple(v * 1000 for v in list(_ruf(view, "GetOutline")))
 
 
+def _groesse_1zu1(view) -> tuple[float, float]:
+    """Umriss in mm bei 1:1: SolidWorks skaliert neue Ansichten automatisch (IView.ScaleDecimal ≠ Blattmaßstab)."""
+    x0, y0, x1, y1 = _umriss_mm(view)
+    s = _ruf(view, "ScaleDecimal")
+    return ((x1 - x0) / s, (y1 - y0) / s)
+
+
 def _setze_lage(view, mitte_mm: tuple[float, float]) -> None:
     """IView.Position als double-Array (pywin32-fallstricke: rohe Tupel wirken nicht); danach zurücklesen."""
     view.Position = r8_array([mitte_mm[0] / 1000, mitte_mm[1] / 1000])
@@ -84,33 +90,23 @@ def _waehle_ansicht(drw, view) -> None:
     drw.ActivateView(name)
 
 
-def _max_radius_mm(spec: dict) -> float | None:
-    parameter = spec.get("parameter", {})
-    werte = []
-    for f in spec["features"]:
-        if f.get("typ") != "rotation" or f.get("schnitt"):
-            continue
-        for e in f.get("skizze", {}).get("elemente", []):
-            for p in e.get("polygon", {}).get("punkte", []):
-                try:
-                    werte.append(abs(auswerten(p[0], parameter)))
-                except AusdruckFehler:
-                    pass
-    return max(werte) if werte else None
+def _laengsschnitt(drw, stirn):
+    """Schnittlinie senkrecht durch die Mitte der ungedrehten Stirnansicht, Schnitt A-A links daneben (Spike Z1.0)."""
+    x0, y0, x1, y1 = (v / 1000 for v in _umriss_mm(stirn))
+    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+    _waehle_ansicht(drw, stirn)
+    oben, unten = _in_ansicht(stirn, xm, y1 + 0.005), _in_ansicht(stirn, xm, y0 - 0.005)
+    _ruf(drw, "SketchManager").CreateLine(oben[0], oben[1], 0, unten[0], unten[1], 0)
+    return drw.CreateSectionViewAt5(x0 - ABSTAND_PROBE_M, ym, 0, "A", 0, None, 0)
 
 
-def _halbschnitt(drw, view, tiefe_mm: float) -> bool:
-    """Drehteil mit liegender Achse: Ausbruch über die obere Hälfte bis zur Achse (Halbschnitt, R-Kap. 3)."""
-    x0, y0, x1, y1 = (v / 1000 for v in _umriss_mm(view))
-    ym = (y0 + y1) / 2
-    _waehle_ansicht(drw, view)  # Ansicht aktiv: die Skizze gehört zur Ansicht (Spike Z1.0, Schnittlinie)
-    segmente = list(_ruf(drw, "SketchManager").CreateCornerRectangle(x0 - 0.003, ym, 0, x1 + 0.003, y1 + 0.003, 0) or ())
-    drw.ClearSelection2(True)
-    for s in segmente:  # Hilfe-Beispiel Create_BreakOut_Section: geschlossene Kontur vorher auswählen
-        s.Select4(True, callout_leer())
-    ok = bool(drw.CreateBreakOutSection(tiefe_mm / 1000))
-    drw.ClearSelection2(True)
-    return ok and _ruf(view, "GetBreakOutSectionCount") > 0
+def _in_ansicht(view, x_m: float, y_m: float) -> tuple[float, float]:
+    """Blattpunkt (m) → Skizzenkoordinaten der aktiven, ungedrehten Ansicht: relativ zum Ansichtsursprung
+    (`IView.Position`) und im Modellmaßstab (÷ `IView.ScaleDecimal`). Live Z1.3: Blattkoordinaten direkt landen um
+    Lage und Maßstab versetzt (Spike Z1.0 hatte das nicht bemerkt)."""
+    px, py = list(_ruf(view, "Position"))[:2]
+    s = _ruf(view, "ScaleDecimal")
+    return ((x_m - px) / s, (y_m - py) / s)
 
 
 def _projektion(drw, haupt, rolle: str):
@@ -162,18 +158,18 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             ext.SetUserPreferenceToggle(toggle, 0, True)
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         views = _erzeuge(drw, teil, ansichten)
-        groessen = {rolle: ((u[2] - u[0]), (u[3] - u[1])) for rolle, v in views.items() for u in [_umriss_mm(v)]}
+        groessen = {rolle: _groesse_1zu1(v) for rolle, v in views.items()}
         format_, massstab, plaetze = anordnen(groessen)
         blattformat = r.zeichnung.get(format_)
         if blattformat is None:
             raise ZeichnungFehler("ZEICHNUNG_VORLAGE_FEHLT", f"config/rechner.yaml: zeichnung.{format_} fehlt")
         _blatt(drw, format_, massstab, blattformat)
-        for p in plaetze:
+        for v in views.values():  # Ansichten folgen sonst ihrem automatischen Maßstab (Live Z1.3: Platte zu groß)
+            v.ScaleDecimal = massstab[0] / massstab[1]
+        basis = next(a.rolle for a in ansichten if a.modellansicht)
+        for p in sorted(plaetze, key=lambda p: p.rolle != basis):  # Elternansicht zuerst, Kinder sind ausgerichtet
             _setze_lage(views[p.rolle], p.mitte_mm)
-        haupt = next(a for a in ansichten if a.rolle == "haupt")
-        schnitt = None
-        if haupt.schnitt and ist_drehteil(spec) and (tiefe := _max_radius_mm(spec)):
-            schnitt = _halbschnitt(drw, views["haupt"], tiefe)
+        schnitt = next((_ruf(views[a.rolle], "GetName2") for a in ansichten if a.schnitt), None)
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{teil.stem}.slddrw", ausgabe / f"{teil.stem}.pdf"
@@ -190,24 +186,30 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     if _sha(teil) != sha_teil:
         raise ZeichnungFehler("ZEICHNUNG_TEIL_GEAENDERT", f"{teil.name} wurde beim Zeichnen verändert")
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
-            "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "halbschnitt": schnitt,
+            "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "dauer_s": round(time.time() - t0, 1)}
 
 
 def _erzeuge(drw, teil: Path, ansichten: list[Ansicht]) -> dict:
-    haupt_ansicht = next(a for a in ansichten if a.rolle == "haupt")
-    haupt = drw.CreateDrawViewFromModelView3(str(teil), haupt_ansicht.modellansicht, 0.15, 0.2, 0)
-    if haupt is None:
-        raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Modellansicht {haupt_ansicht.modellansicht} nicht erzeugt")
-    if haupt_ansicht.winkel_grad:
-        haupt.Angle = math.radians(haupt_ansicht.winkel_grad)
-    views = {"haupt": haupt}
+    """Basis = die Ansicht mit Modellansicht. Ein Schnitt ohne Modellansicht entsteht aus ihr (Längsschnitt eines
+    Drehteils), die übrigen werden aus der Hauptansicht projiziert."""
+    basis = next(a for a in ansichten if a.modellansicht)
+    view = drw.CreateDrawViewFromModelView3(str(teil), basis.modellansicht, 0.25, 0.2, 0)
+    if view is None:
+        raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Modellansicht {basis.modellansicht} nicht erzeugt")
+    if basis.winkel_grad:
+        view.Angle = math.radians(basis.winkel_grad)
+    views = {basis.rolle: view}
     for a in ansichten:
-        if a.rolle != "haupt":
-            v = _projektion(drw, haupt, a.rolle)
-            if v is None:
-                raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Projektion {a.rolle} nicht erzeugt")
-            views[a.rolle] = v
+        if a is basis:
+            continue
+        if a.modellansicht is None and a.schnitt and a.rolle == "haupt":
+            v = _laengsschnitt(drw, view)
+        else:
+            v = _projektion(drw, views["haupt"], a.rolle)
+        if v is None:
+            raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Ansicht {a.rolle} nicht erzeugt")
+        views[a.rolle] = v
     return views
 
 

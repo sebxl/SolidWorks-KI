@@ -36,20 +36,21 @@ def test_drehteil_erkannt():
     assert ist_drehteil({**_platte(), "verfahren": "drehen"})
 
 
-def test_buchse_hohl_mit_bundbohrungen():
+def test_buchse_hohl_vollschnitt_aus_stirnansicht():
+    """Hohles Drehteil: Stirnansicht (Blick entlang der Achse) als Modellansicht, Hauptansicht = Längsschnitt A-A
+    daraus (Live Z1.3: Skizzen in gedrehten Ansichten landen nicht in Blattkoordinaten)."""
     a = waehle_ansichten(_lade("buchse/buchse.yaml"))
-    haupt = next(x for x in a if x.rolle == "haupt")
-    assert haupt == Ansicht("haupt", "*Vorderseite", schnitt=True, winkel_grad=90)
-    assert [x.rolle for x in a] == ["haupt", "seite"]
-    assert a[1].modellansicht is None  # projiziert aus der Hauptansicht
+    assert a == [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)]
+
+
+def test_hohle_welle_ohne_bohrungen_auch_aus_stirnansicht():
+    assert waehle_ansichten(_welle(innen=4)) == [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)]
 
 
 def test_volle_welle_nur_hauptansicht_ohne_schnitt():
     assert waehle_ansichten(_welle()) == [Ansicht("haupt", "*Vorderseite", schnitt=False, winkel_grad=90)]
 
 
-def test_hohle_welle_im_schnitt():
-    assert waehle_ansichten(_welle(innen=4))[0].schnitt is True
 
 
 def test_spannplatte_hauptansicht_oben_mit_dickenansicht():

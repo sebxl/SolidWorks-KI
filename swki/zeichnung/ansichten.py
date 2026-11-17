@@ -12,6 +12,9 @@ from swki.spec.ausdruck import AusdruckFehler, auswerten
 MODELLANSICHT = {"+y": "*Oben", "-y": "*Unten", "+z": "*Vorderseite", "-z": "*Rückseite", "+x": "*Rechts",
                  "-x": "*Links"}
 EBENE_ANSICHT = {"vorne": "*Vorderseite", "oben": "*Oben", "rechts": "*Rechts"}
+# Blick entlang der Drehachse je Skizzenebene und Achsrichtung in der Skizze (u/v): vorne X/Y, oben X/Z, rechts Z/Y
+ACHSANSICHT = {("vorne", "v"): "*Oben", ("vorne", "u"): "*Rechts", ("oben", "u"): "*Rechts",
+               ("oben", "v"): "*Vorderseite", ("rechts", "v"): "*Oben", ("rechts", "u"): "*Vorderseite"}
 _BOHRUNGEN = ("bohrung", "normbohrung")
 _NULL = 1e-6
 
@@ -54,18 +57,24 @@ def _drehteil(spec: dict) -> list[Ansicht]:
     erste = rotationen[0] if rotationen else spec["features"][0]
     ebene = erste.get("skizze", {}).get("ebene")
     modellansicht = EBENE_ANSICHT.get(ebene, "*Vorderseite") if isinstance(ebene, str) else "*Vorderseite"
-    winkel = 0
+    achse = "v"
     for e in erste.get("skizze", {}).get("elemente", []):
         if "mittellinie" in e:
             von, bis = e["mittellinie"]["von"], e["mittellinie"]["bis"]
             du = abs((_wert(bis[0], parameter) or 0) - (_wert(von[0], parameter) or 0))
             dv = abs((_wert(bis[1], parameter) or 0) - (_wert(von[1], parameter) or 0))
-            winkel = 90 if dv > du else 0  # Achse liegend darstellen (R-Kap. 3: Fertigungslage)
+            achse = "v" if dv > du else "u"
+    winkel = 90 if achse == "v" else 0  # Achse liegend darstellen (R-Kap. 3: Fertigungslage)
     u_erstes = _profil_u(erste, parameter)
     hohl = bool(u_erstes) and min(u_erstes) > _NULL
     bohrt_achse = any(f.get("typ") == "rotation" and f.get("schnitt") and _profil_u(f, parameter)
                       and min(_profil_u(f, parameter)) <= _NULL for f in rotationen[1:])
-    ansichten = [Ansicht("haupt", modellansicht, schnitt=hohl or bohrt_achse, winkel_grad=winkel)]
+    if hohl or bohrt_achse:
+        # Längsschnitt A-A aus der Stirnansicht: Skizzen in gedrehten Ansichten landen nicht in Blattkoordinaten
+        # (Live Z1.3 Stufe 1), die ungedrehte Stirnansicht trägt die Schnittlinie wie im Spike Z1.0.
+        stirn = ACHSANSICHT.get((ebene, achse), "*Oben") if isinstance(ebene, str) else "*Oben"
+        return [Ansicht("seite", stirn), Ansicht("haupt", None, schnitt=True)]
+    ansichten = [Ansicht("haupt", modellansicht, winkel_grad=winkel)]
     if any(f.get("typ") in _BOHRUNGEN for f in spec["features"]):
         ansichten.append(Ansicht("seite", None))
     return ansichten
@@ -93,7 +102,7 @@ def _fraesteil(spec: dict) -> list[Ansicht]:
 
 
 def waehle_ansichten(spec: dict) -> list[Ansicht]:
-    """Hauptansicht und benötigte Projektionen. Drehteil: Achse liegend, Schnitt bei Innenkontur, Stirnansicht bei
-    Bohrungen. Frästeil: Hauptansicht von der Seite mit den meisten Features, Draufsicht für die Dicke, Seitenansicht
+    """Hauptansicht und benötigte Projektionen. Drehteil: Achse liegend, Stirnansicht bei Bohrungen; bei Innenkontur
+    Stirnansicht als Modellansicht und Längsschnitt A-A daraus als Hauptansicht (Vollschnitt). Frästeil: Hauptansicht von der Seite mit den meisten Features, Draufsicht für die Dicke, Seitenansicht
     bei Features quer dazu; Schnitt, wenn ein Feature quer blind endet."""
     return _drehteil(spec) if ist_drehteil(spec) else _fraesteil(spec)

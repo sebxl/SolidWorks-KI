@@ -50,9 +50,9 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         assert z["format"] in ("A4", "A3quer")
         assert tuple(int(x) for x in z["massstab"].split(":")) in MASSSTAEBE
         rollen = [a["rolle"] for a in z["ansichten"]]
-        assert rollen[0] == "haupt"
+        assert "haupt" in rollen
         if drehteil:
-            assert z["halbschnitt"] is True and "seite" in rollen
+            assert z["schnitt"] and z["schnitt"].startswith("Schnitt") and "seite" in rollen
         x0, y0, x1, y1 = zeichenfeld(z["format"])
         schrift = (x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])
         umrisse = [a["umriss_mm"] for a in z["ansichten"]]
