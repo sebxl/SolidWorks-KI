@@ -79,3 +79,16 @@ Ja, für den Weg „markierte Modellmaße“ (Folge 1). Eine Ausnahme gilt, wenn
 - `AlignDimensions`, Schriftfeld über Eigenschaften (wartet auf die Vorlage).
 - Speicherverbrauch über viele Zeichnungen.
 - Laufzeit auf dem Firmenrechner (SW 2026).
+
+## Nachtrag: Blattformate des Nutzers (17.11.2026)
+
+- Die drei Formate „A3 Quer / A4 / A4 Quer DIN EN ISO 7200.slddrt“ sind mit **SolidWorks 2026** gespeichert
+  (`ISldWorks.VersionHistory` → `19000[2026/225]`; Teile von Rechner A: `18000[2025/268]`). SW 2025 lädt sie nicht und
+  meldet nichts: `SetupSheet5(…, swDwgTemplateCustom=12, Pfad, …)` gibt `True`, das Blatt bleibt leer,
+  `GetSheetFormatName` ist leer. Kopien liegen im Arbeitsordner unter `vorlagen/zeichnung/`, das Original bleibt unberührt.
+- Mit den mitgelieferten SW-2025-Formaten (`a3 - iso.slddrt`, `a4 - iso.slddrt`, Kopien unter `vorlagen/zeichnung_sw2025/`)
+  lädt `SetupSheet5` das Format; die Notizen des Blattformats sind über die erste Ansicht (`IDrawingDoc.GetFirstView`
+  → `GetNotes`) lesbar, samt Verknüpfung (`INote.PropertyLinkedText`, z. B. `$PRP:"DrawnBy"`, `$PRPSHEET:"Material"`,
+  `MASSSTAB:$PRP:"SW-Sheet Scale"`). Das SW-Format ist ein Muster, kein Schriftfeld nach ISO 7200.
+- Skript: `spikes/z1_blattformat_lesen.py`. Folge: Entwicklung bis Z1.4 mit dem SW-2025-Format, die Formate des Nutzers
+  in Z1.5 auf dem Firmenrechner (SW 2026); dort dieselbe Leseroutine für die Feldnamen.

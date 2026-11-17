@@ -43,14 +43,14 @@ die normale Freigabe; Änderungen sperren den Bau wie bisher (Schutz nach Wirkun
 | Thema | Entscheidung | Herkunft |
 |---|---|---|
 | Teilearten Z1 | Fräs-, Dreh-, Schleif-, Erodierteile | Nutzer |
-| Vorlage | Firmenvorlage (.drwdot, .slddrt, ggf. .sldstd), Pfade in `config/rechner.yaml`; Schriftfeld über Eigenschaften | Nutzer (Vorlage kommt) / Pfade selbst entschieden |
+| Vorlage | Blattformate des Nutzers „A3 Quer / A4 / A4 Quer DIN EN ISO 7200“ (.slddrt, 17.11.2026); sie sind mit SW 2026 gespeichert und laden auf Rechner A (SW 2025) nicht. Entwicklung bis Z1.4 mit den mitgelieferten SW-2025-Formaten „a3/a4 - iso“ (Kopien im Arbeitsordner), Umstieg in Z1.5 auf dem Firmenrechner. Pfade in `config/rechner.yaml`; Schriftfeld über Eigenschaften | Nutzer (Formate) / Weg selbst entschieden |
 | Allgemeintoleranz | Klasse m, nach ISO 2768-1 mit Ausgabejahr; kein „K“ | Nutzer (m) / Nutzer: Empfehlung A |
 | Tolerierungsgrundsatz | ISO 8015; Hülle Ⓔ nur an Passmaßen aus der Funktion | Nutzer („Wie vorgeschlagen“) |
 | Form und Lage | an Funktionsflächen ausdrücklich, aus der Regeltabelle bzw. Spec | Nutzer: Empfehlung A (Frage 4) |
 | Funktion → Toleranz | Feld `funktion` am Feature + Regeltabelle `swki/wissen/funktionen.yaml`; Einzelwerte überschreibbar | Nutzer: Empfehlung A (Frage 1) |
 | Fertigungsverfahren | `verfahren: fraesen \| drehen` je Teil, `bearbeitung: schleifen \| erodieren` je Feature | Nutzer: Empfehlung A (Frage 2) |
 | Drehteil-Features | `freistich` (DIN 509), `zentrierbohrung` (ISO 6411) in diesem Paket | Nutzer: Empfehlung A (Frage 3) |
-| Maße aus Modell oder neu | beides, je Maß nach Regel (Abschnitt 6); Block `zeichnung:` kann überschreiben | Nutzer („je nach Fall“) / Regel selbst entschieden |
+| Maße aus Modell oder neu | Maßplan aus der Spec ist der Hauptweg: je Merkmal genau ein Maß mit Bezug, Ansicht und Toleranz; gesetzt über Kantenauswahl, Modellmaße nur, wo sie genau dem Maßplan entsprechen (Abschnitt 6.2, nach Spike Z1.0) | Nutzer („je nach Fall“, 17.11.: Vorgehen ohne Widerspruch) / Regel selbst entschieden |
 | Vollständigkeit | vollständig bemaßt, STEP wird mitgeliefert | selbst entschieden (R-Kap. 8: deutsche Praxis vs. Fictiv) |
 | Prüfung | maschinell (Rücklesen) + Agent `zeichnungspruefer` mit Regelkatalog; A/B-Regeln hart, C-Regeln Hinweis | Nutzer (Prüfer mit klaren Vorgaben) / Härte selbst entschieden |
 | Ausgabe | SLDDRW + PDF + STEP im Laufordner | selbst entschieden |
@@ -233,30 +233,36 @@ Der Block `zeichnung:` in der Spec ist Bauweg (nicht in der Prüfsumme) und übe
 - Einzelheit für Freistich und Merkmale unter einer Mindestgröße (Schwelle dem Bauer überlassen) mit Vorzugsmaßstab.
 - Abbruch bei Länge/Durchmesser über einer Schwelle (dem Bauer überlassen).
 
-### 6.2 Maße: aus dem Modell oder neu
+### 6.2 Maße: Maßplan aus der Spec
 
-Regel je Maß (selbst entschieden, Nutzer: „je nach Fall“):
-- **Aus dem Modell übernehmen** (Maßprotokoll `Knoten.masse`, art `lage`, `paarabstand`, `groesse`, `radius`,
-  `tiefe`, `winkel`): wenn das Maß in der Spec einen Bezug trägt (`bezug` ≠ None) oder eine Größe ist (Ø, Breite,
-  Tiefe, Radius). Der Bezug ist die Konstruktionsabsicht und meist die Funktions- bzw. Spannfläche (Bemaßungsbezug).
-  Technik: beim Bau `IDisplayDimension.MarkedForDrawing` setzen bzw. löschen (nur protokollierte Maße markiert),
-  in der Zeichnung `InsertModelAnnotations3/4` mit „für Zeichnung markiert“, „toleriert“, „Bohrungsangabe“.
-- **Neu setzen** über Kantenauswahl in der Ansicht (`AddDimension2` mit `GetVisibleEntities2`/`ModelToViewTransform`):
-  - Längen von Drehteilen von einer Bezugsplanfläche je Richtung (keine Kette über Skizzenpunkte; R-Kap. 8 B/C).
-  - Gesamtmaße (Länge, Breite, Höhe, größter Ø); als Hilfsmaß in Klammern, wenn sie sich aus anderen ergeben.
-  - Maße, deren Modellmaß an einem Skizzenpunkt hängt, der kein Formelement der Zeichnung ist (Konstruktionsmaße,
-    art `konstruktion`, `versatz`, `abstand` ohne Bezug).
-  - Lagemaße von Funktionsflächen zu `bezuege` A/B/C, wenn das Modellmaß einen anderen Bezug hat.
-- **Nicht bemaßen**: Normbohrungs-Details (kommen über die Bohrungsangabe), Freistich (Bezeichnung), Zentrierbohrung
-  (Bezeichnung), Maße, die die Allgemeintoleranz und die Sammelangabe abdecken, wie Fasen 0,5 × 45° an Bohrungen
-  (in der Bohrungsangabe bzw. Notiz; R-Kap. 4).
-- Bohrbilder: Reihen mit Muster als „n× Teilung (= Gesamt)“, Lochkreise „n× Ø … auf TK Ø …“; Koordinatentabelle
-  (`InsertHoleTable`) ab einer Lochzahl, die dem Bauer überlassen ist (Frage 13 der Recherche, C).
-- Ergebnis jedes Schritts ist ein Maßplan (Liste: Merkmal, Richtung, Bezug, Wert, Quelle modell/neu, Ansicht), der im
-  Laufordner als JSON liegt und gegen den die Prüfung läuft.
+Spike Z1.0 (`docs/zeichnungsableitung/spike-z1.md`) hat gezeigt: Die Modellmaße roh sind unbrauchbar. Sie spiegeln den
+Skizzenaufbau (Mittellinien, Fasenwinkel, Hilfsmaße), landen in jeder Ansicht doppelt und überlappen. Deshalb rechnet
+swki die Maße der Zeichnung aus der Spec (selbst entschieden 17.11., Nutzer: „je nach Fall“):
 
-`AddHoleCallout2` braucht einen Dialog und ist nicht zu verwenden; Bohrungsangaben über `InsertModelAnnotations` mit
-Bohrungsangabe (im Spike prüfen, R-Kap. 10).
+- **Maßplan** (`swki/zeichnung/massplan.py`, ohne SolidWorks testbar): Liste von Maßen
+  `{merkmal, art (laenge|durchmesser|radius|winkel|tiefe|lage), richtung, bezug, wert, toleranz, ansicht, quelle}`.
+  - Je Merkmal genau ein Maß; je Richtung ein Bezug (Bezugsbemaßung, keine geschlossenen Ketten; R-Kap. 4/8 A).
+  - Lage aus `bezug`/`bezuege` der Spec, Größe aus dem Feature (Ø, Breite, Tiefe, Radius), Toleranz aus der
+    aufgelösten Funktion bzw. `toleranzen`.
+  - Drehteile: Ø statt Radius, Längen von einer Bezugsplanfläche je Richtung.
+  - Hilfsmaß in Klammern, wenn ein Gesamtmaß sich aus anderen ergibt.
+  - Nicht bemaßen: Normbohrungs-Details (Bohrungsangabe), Freistich/Zentrierbohrung (Bezeichnung), Fasen 0,5 × 45° an
+    Bohrungen (Bohrungsangabe bzw. Sammelangabe).
+  - Bohrbilder: Reihen mit Muster „n× Teilung (= Gesamt)“, Lochkreise „n× Ø … auf TK Ø …“; Koordinatentabelle ab einer
+    Lochzahl, die dem Bauer überlassen ist.
+- **Ansicht je Maß:** die Ansicht, in der das Merkmal in wahrer Größe und sichtbar (nicht verdeckt) erscheint; bei
+  mehreren die Hauptansicht, dann die mit den meisten Maßen derselben Richtung (Maße gruppieren).
+- **Setzen:** über Kantenauswahl (`GetVisibleEntities2` + Geometrie in Modellkoordinaten + `AddDimension2`, im Spike
+  erprobt). Modellmaße (`InsertModelAnnotations4` mit `HiddenFeatureDims=True`) nur, wo ein protokolliertes Maß
+  (`Kontext.mass`) genau einem Maßplan-Eintrag entspricht und in dessen Ansicht liegt; alle anderen eingefügten
+  Modellmaße werden in der Zeichnung gelöscht (Teildatei bleibt unverändert, Spike Frage 5). Ein Neubau alter Teile ist
+  damit nicht nötig.
+- **Anordnen:** eigener Schritt (`swki/zeichnung/anordnung.py`): Maßlinien mit Abstand zur Kontur und untereinander
+  (Werte aus der Normdatei bzw. Hausregel, R-Kap. 4: 10 mm / 7 mm, Widerspruch 5 mm), parallele Maße gestaffelt,
+  kleinere innen; keine Überlappung (Hüllrechtecke); `AlignDimensions` nur als Ergänzung.
+- **Bohrungsangaben:** `InsertModelAnnotations` liefert keine (Spike), `AddHoleCallout2` braucht einen Dialog. Folge-
+  Spike in Z1.3 Stufe 3: Bohrungstabelle, Notiz mit Text aus der Spec samt Hinweislinie, oder Bohrungsassistent-Maße.
+- Der Maßplan liegt im Laufordner als JSON; die Prüfung (Abschnitt 8) läuft gegen ihn und gegen die Spec.
 
 ## 7. Schriftfeld und Eigenschaften
 
@@ -312,12 +318,12 @@ Regel-ID. Ablage wie beim Teil: `protokolle/<spec>.lauf-<n>.zeichnungspruefer.js
 
 | Etappe | Inhalt | Ergebnis |
 |---|---|---|
-| Z1.0 Spike | live, frisches SolidWorks, nur nach OK des Nutzers: Zeichnung aus Vorlage, Ansichten (Erst-, Schnitt-, Detailansicht), `MarkedForDrawing` + `InsertModelAnnotations3/4` (inkl. Bohrungsangabe ohne Dialog?), Maß über Kantenauswahl setzen, Passung/Ⓔ/Oberflächensymbol setzen, alles zurücklesen; SP-Stand von Rechner A feststellen | `spikes/z…` + Befundnotiz; entscheidet, ob Abschnitt 6.2 so baubar ist |
+| Z1.0 Spike | live, frisches SolidWorks, nur nach OK des Nutzers: Zeichnung aus Vorlage, Ansichten (Erst-, Schnitt-, Detailansicht), `MarkedForDrawing` + `InsertModelAnnotations3/4` (inkl. Bohrungsangabe ohne Dialog?), Maß über Kantenauswahl setzen, Passung/Ⓔ/Oberflächensymbol setzen, alles zurücklesen; SP-Stand von Rechner A feststellen | erledigt 17.11.: `docs/zeichnungsableitung/spike-z1.md`; Folge: Abschnitt 6.2 Maßplan |
 | Z1.1 Spec | Nachrecherche ISO 15787 (Härteangabe); Schema (`verfahren`, `bezuege`, `toleranzen`, `behandlung`, `halbzeug`, Feldgruppe Funktion), Prüfsumme und Sperre nach Wirkung, `funktionen.yaml`, `validieren`-Hinweise | Unit-Tests ohne SolidWorks |
 | Z1.2 Drehteil-Features | `freistich`, `zentrierbohrung` über `compiler-erweitern`, Tabelle DIN 509 mit Quellen | Referenzteil Drehteil |
-| Z1.3 Zeichnen | `swki zeichnen`, Maßplan, Schriftfeld über Eigenschaften | Zeichnungen der Referenzteile |
+| Z1.3 Zeichnen | fünf Stufen an Buchse und Spannplatte, jede endet mit einem PDF zur Durchsicht durch den Nutzer: **1** Blatt und Ansichten (Format, Maßstab, Lage ohne Überlappung, Mittellinien, Schnitt/Einzelheit an sinnvoller Stelle, Schriftfeld über Eigenschaften), **2** Maßplan und Anordnung, **3** Bohrungsangaben, Gewinde (Folge-Spike), **4** Toleranzen, Passungen, Ⓔ, Rauheit, Sammelangaben, **5** Übergabe an Z1.4 | Zeichnungen der Referenzteile, je Stufe ein PDF |
 | Z1.4 Prüfen | `swki zeichnung pruefen`, `zeichnungsregeln.yaml`, Agent `zeichnungspruefer`, `durchlauf --zeichnung` | Regression mit Negativfällen |
-| Z1.5 Firmenvorlage | Vorlage einbinden, Prüfpunkte aus Abschnitt 2 abarbeiten, Schriftfeld-Zuordnung | wartet auf die Vorlage des Nutzers |
+| Z1.5 Firmenvorlage | Blattformate des Nutzers (SW 2026) auf dem Firmenrechner einbinden, Prüfpunkte aus Abschnitt 2, Schriftfeld-Zuordnung ($PRP-Namen der Formate) | wartet auf den Firmenrechner (Formate liegen vor) |
 
 Z1.1 und Z1.2 brauchen kein SolidWorks bzw. nur Live-Tests der Handler; Z1.3/Z1.4 laufen zunächst auf der ISO-Vorlage.
 
@@ -342,7 +348,7 @@ Z1.1 und Z1.2 brauchen kein SolidWorks bzw. nur Live-Tests der Handler; Z1.3/Z1.
 
 ## 12. Offen beim Nutzer (blockiert nur Z1.5)
 
-- Firmenvorlage (.drwdot/.slddrt/.sldstd) und Feldnamen des Schriftfelds.
+- Blattformate liegen vor (17.11., SW 2026); offen: Normdatei (.sldstd) bzw. Maßstil und die Feldnamen des Schriftfelds, auslesbar erst auf dem Firmenrechner.
 - Bestätigung der Werte in `funktionen.yaml` (vor der ersten Freigabe eines Teils mit `funktion`).
 - OK für den Spike auf frischem SolidWorks (Nutzer arbeitet ggf. parallel).
 
