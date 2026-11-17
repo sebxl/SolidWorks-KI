@@ -41,6 +41,30 @@ def _wert(x, parameter: dict) -> float | None:
         return None
 
 
+def drehachse(f: dict, parameter: dict) -> str:
+    """Lage der Drehachse in der Skizze eines Rotationsprofils: "v" (Mittellinie senkrecht) oder "u"."""
+    achse = "v"
+    for e in f.get("skizze", {}).get("elemente", []):
+        if "mittellinie" in e:
+            von, bis = e["mittellinie"]["von"], e["mittellinie"]["bis"]
+            du = abs((_wert(bis[0], parameter) or 0) - (_wert(von[0], parameter) or 0))
+            dv = abs((_wert(bis[1], parameter) or 0) - (_wert(von[1], parameter) or 0))
+            achse = "v" if dv > du else "u"
+    return achse
+
+
+def profilpunkte(f: dict, parameter: dict, achse: str) -> list[tuple[float, float]]:
+    """(Radius, Lage auf der Achse) je Polygonpunkt; Achse durch 0 (Mittellinie)."""
+    ir, ia = (0, 1) if achse == "v" else (1, 0)
+    punkte = []
+    for e in f.get("skizze", {}).get("elemente", []):
+        for p in e.get("polygon", {}).get("punkte", []):
+            r, a = _wert(p[ir], parameter), _wert(p[ia], parameter)
+            if r is not None and a is not None:
+                punkte.append((abs(r), a))
+    return punkte
+
+
 def _radien(f: dict, parameter: dict, achse: str) -> list[float]:
     """Abstände der Profilpunkte zur Drehachse: Achse entlang v → |u|, entlang u → |v| (Review I2; Achse durch 0)."""
     i = 0 if achse == "v" else 1
@@ -59,13 +83,7 @@ def _drehteil(spec: dict) -> list[Ansicht]:
     erste = rotationen[0] if rotationen else spec["features"][0]
     ebene = erste.get("skizze", {}).get("ebene")
     modellansicht = EBENE_ANSICHT.get(ebene, "*Vorderseite") if isinstance(ebene, str) else "*Vorderseite"
-    achse = "v"
-    for e in erste.get("skizze", {}).get("elemente", []):
-        if "mittellinie" in e:
-            von, bis = e["mittellinie"]["von"], e["mittellinie"]["bis"]
-            du = abs((_wert(bis[0], parameter) or 0) - (_wert(von[0], parameter) or 0))
-            dv = abs((_wert(bis[1], parameter) or 0) - (_wert(von[1], parameter) or 0))
-            achse = "v" if dv > du else "u"
+    achse = drehachse(erste, parameter)
     winkel = 90 if achse == "v" else 0  # Achse liegend darstellen (R-Kap. 3: Fertigungslage)
     r_erstes = _radien(erste, parameter, achse)
     hohl = bool(r_erstes) and min(r_erstes) > _NULL

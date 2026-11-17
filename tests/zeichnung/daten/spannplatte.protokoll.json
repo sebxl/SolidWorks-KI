@@ -1,0 +1,333 @@
+{
+ "knoten": [
+  {
+   "id": "f1",
+   "masse": [
+    {
+     "name": "D1@f1_skizze",
+     "pfad": "features[0].skizze.elemente[0].rechteck.breite",
+     "art": "groesse",
+     "bezug": null,
+     "roh": "=L",
+     "vorzeichen": 1,
+     "wert": 200.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@f1_skizze",
+     "pfad": "features[0].skizze.elemente[0].rechteck.hoehe",
+     "art": "groesse",
+     "bezug": null,
+     "roh": "=B",
+     "vorzeichen": 1,
+     "wert": 120.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D1@f1",
+     "pfad": "features[0].ende.tiefe",
+     "art": "tiefe",
+     "bezug": null,
+     "roh": "=H",
+     "vorzeichen": 1,
+     "wert": 20.0,
+     "einheit": "mm"
+    }
+   ]
+  },
+  {
+   "id": "t1",
+   "masse": [
+    {
+     "name": "D1@t1_skizze",
+     "pfad": "features[1].skizze.elemente[0].rechteck.breite",
+     "art": "groesse",
+     "bezug": null,
+     "roh": "=TL",
+     "vorzeichen": 1,
+     "wert": 50.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@t1_skizze",
+     "pfad": "features[1].skizze.elemente[0].rechteck.hoehe",
+     "art": "groesse",
+     "bezug": null,
+     "roh": "=TB",
+     "vorzeichen": 1,
+     "wert": 30.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D3@t1_skizze",
+     "pfad": "features[1].skizze.elemente[0].rechteck.mitte[0]",
+     "art": "lage",
+     "bezug": "-rand",
+     "roh": "=(-TX) - (TL) / 2",
+     "vorzeichen": 1,
+     "wert": 20.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D1@t1",
+     "pfad": "features[1].ende.tiefe",
+     "art": "tiefe",
+     "bezug": null,
+     "roh": "=TT",
+     "vorzeichen": 1,
+     "wert": 12.0,
+     "einheit": "mm"
+    }
+   ]
+  },
+  {
+   "id": "r1",
+   "masse": [
+    {
+     "name": "D1@r1",
+     "pfad": "features[2].radius",
+     "art": "radius",
+     "bezug": null,
+     "roh": "=RT",
+     "vorzeichen": 1,
+     "wert": 4.0,
+     "einheit": "mm"
+    }
+   ]
+  },
+  {
+   "id": "s1",
+   "masse": []
+  },
+  {
+   "id": "g1",
+   "masse": [
+    {
+     "name": "D1@g1_positionen",
+     "pfad": "features[4].positionen[0][0]",
+     "art": "lage",
+     "bezug": "-rand",
+     "roh": "=-2*TG",
+     "vorzeichen": 1,
+     "wert": 40.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@g1_positionen",
+     "pfad": "features[4].positionen[0][1]",
+     "art": "lage",
+     "bezug": "+rand",
+     "roh": "=B/2-GR",
+     "vorzeichen": -1,
+     "wert": 20.0,
+     "einheit": "mm"
+    }
+   ]
+  },
+  {
+   "id": "m1",
+   "masse": [
+    {
+     "name": "D3@m1",
+     "pfad": "features[5].richtung1.abstand",
+     "art": "abstand",
+     "bezug": null,
+     "roh": "=TG",
+     "vorzeichen": 1,
+     "wert": 30.0,
+     "einheit": "mm"
+    }
+   ]
+  },
+  {
+   "id": "st",
+   "masse": [
+    {
+     "name": "D1@st_positionen",
+     "pfad": "features[6].positionen[0][0]",
+     "art": "paarabstand",
+     "bezug": "mitte",
+     "roh": "=2 * (-A/2)",
+     "vorzeichen": -1,
+     "wert": 150.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@st_positionen",
+     "pfad": "features[6].positionen[0][1]",
+     "art": "lage",
+     "bezug": "-rand",
+     "roh": "=-B/2+SR",
+     "vorzeichen": 1,
+     "wert": 20.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D1@st_fase",
+     "pfad": "features[6].fase",
+     "art": "abstand",
+     "bezug": null,
+     "roh": 0.5,
+     "vorzeichen": 1,
+     "wert": 0.5,
+     "einheit": "mm"
+    }
+   ]
+  },
+  {
+   "id": "k1",
+   "masse": [
+    {
+     "name": "D1@Ebene1",
+     "pfad": "features[7].profil.ebene.versatz.abstand",
+     "art": "versatz",
+     "bezug": null,
+     "roh": "=-L/2",
+     "vorzeichen": -1,
+     "wert": 100.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D1@k1_skizze",
+     "pfad": "features[7].profil.elemente[0].rechteck.breite",
+     "art": "groesse",
+     "bezug": null,
+     "roh": "=NB",
+     "vorzeichen": 1,
+     "wert": 6.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@k1_skizze",
+     "pfad": "features[7].profil.elemente[0].rechteck.hoehe",
+     "art": "groesse",
+     "bezug": null,
+     "roh": "=NT",
+     "vorzeichen": 1,
+     "wert": 4.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D3@k1_skizze",
+     "pfad": "features[7].profil.elemente[0].rechteck.mitte[0]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=(-ZN) + (NB) / 2",
+     "vorzeichen": -1,
+     "wert": 24.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D4@k1_skizze",
+     "pfad": "features[7].profil.elemente[0].rechteck.mitte[1]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=(H-NT/2) - (NT) / 2",
+     "vorzeichen": 1,
+     "wert": 16.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D1@Ebene2",
+     "pfad": "features[7].pfad.ebene.versatz.abstand",
+     "art": "versatz",
+     "bezug": null,
+     "roh": "=H-NT/2",
+     "vorzeichen": 1,
+     "wert": 18.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D1@k1_pfad",
+     "pfad": "features[7].pfad.start[0]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-L/2",
+     "vorzeichen": -1,
+     "wert": 100.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D2@k1_pfad",
+     "pfad": "features[7].pfad.start[1]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-ZN",
+     "vorzeichen": -1,
+     "wert": 27.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D3@k1_pfad",
+     "pfad": "features[7].pfad.segmente[0].linie[0]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-XN",
+     "vorzeichen": -1,
+     "wert": 10.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D4@k1_pfad",
+     "pfad": "features[7].pfad.segmente[0].linie[1]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-ZN",
+     "vorzeichen": -1,
+     "wert": 27.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D5@k1_pfad",
+     "pfad": "features[7].pfad.segmente[1].mitte[0]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-XN",
+     "vorzeichen": -1,
+     "wert": 10.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D6@k1_pfad",
+     "pfad": "features[7].pfad.segmente[1].mitte[1]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-ZN-RN",
+     "vorzeichen": -1,
+     "wert": 47.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D7@k1_pfad",
+     "pfad": "features[7].pfad.segmente[1].bogen[1]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-ZN-RN",
+     "vorzeichen": -1,
+     "wert": 47.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D8@k1_pfad",
+     "pfad": "features[7].pfad.segmente[2].linie[0]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=XN",
+     "vorzeichen": 1,
+     "wert": 10.0,
+     "einheit": "mm"
+    },
+    {
+     "name": "D9@k1_pfad",
+     "pfad": "features[7].pfad.segmente[2].linie[1]",
+     "art": "lage",
+     "bezug": "ursprung",
+     "roh": "=-B/2",
+     "vorzeichen": -1,
+     "wert": 60.0,
+     "einheit": "mm"
+    }
+   ]
+  }
+ ]
+}
