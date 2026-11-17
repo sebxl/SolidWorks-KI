@@ -11,7 +11,7 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 | Z1.0 Spike (API live) | erledigt 17.11. (`spike-z1.md`): alles ohne Dialog außer Bohrungsangaben; Modellmaße nur gefiltert brauchbar |
 | Z1.1 Spec-Erweiterung | umgesetzt (Branch `claude/zeichnungsableitung-recherche`) |
 | Z1.2 Freistich, Zentrierbohrung | offen (Skill `compiler-erweitern`) |
-| Z1.3 Zeichnen | Stufe 1 (Blatt und Ansichten) umgesetzt 17.11., wartet auf Durchsicht der PDFs; Stufen 2–5 offen |
+| Z1.3 Zeichnen | Stufe 1 (Blatt, Ansichten) und Stufe 2 (Maße) umgesetzt 17.11.; Stufe 2 wartet auf Durchsicht der PDFs; Stufen 3–5 offen |
 | Z1.4 Prüfen | offen |
 | Z1.5 Firmenvorlage | wartet auf die Vorlage des Nutzers; Fertigungszeichnungen nur auf dem Firmenrechner |
 
@@ -53,6 +53,26 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 - **Live ungeprüft:** Drehteil ohne Innenkontur (gedrehte Hauptansicht über `IView.Angle`, Projektion daraus) – nur
   in den reinen Funktionen getestet. Ebenfalls offen: axiale Bohrung als Innenkontur eines Drehteils, Schnitt im
   Frästeil, Hauptseite bei `nahe`-Ankern; kleinere Review-Punkte siehe Ledger („minor (deferred)“).
+
+## Z1.3 Stufe 2 – Maßplan, Ansichten nach Maßbedarf (17.11.2026)
+
+- Maßplan (`massplan.py`): Frästeil = protokollierte Anforderungsmaße des Baus (ohne Hilfsebenen, Konstruktionsmaße,
+  Mittellinien, Bohrungsfasen); Drehteil = Ø je Absatz und Längen ab der Stirnfläche mit dem größten Ø (Bezug), dazu die
+  Modellmaße der übrigen Features (Fasen, Bohrungen).
+- Ansichten nach Maßbedarf (Nutzer 17.11.): Frästeil startet mit drei Ansichten; Zuordnung (`zuordnung.py`) mit
+  Obergrenze `zeichnung.max_masse_je_ansicht: 12` (`config/standard.yaml`) und Vorzugsansicht (Grundkörper und Merkmale
+  der Hauptseite, Muster erben die Richtung ihrer Quelle); volle Ansicht oder Maß ohne Ansicht → weitere Projektion
+  (links/oben, höchstens zwei Runden), Ansicht ohne Maß entfällt (außer Haupt- und Basisansicht).
+- Umsetzung (`bemassen.py`): `InsertModelAnnotations4` mit `swInsertDimensionsMarkedForDrawing |
+  swInsertHoleWizardLocationDimensions`, `HiddenFeatureDims=True`; Kandidaten aus den tatsächlich eingefügten Maßen;
+  Duplikate und Nicht-Plan-Maße löschen über `IAnnotation.Select2(False, 0)` + `DeleteSelection2(0)` (Select3 mit leerem
+  Dispatch wählt nichts aus, `spikes/z1_diag_loeschen.py`); Drehteil-Ø und -Längen über Kanten (`LineParams` in
+  Modellkoordinaten) und `AddDimension2`, Ø-Präfix per `SetText`; danach `AlignDimensions(AutoArrange)` je Ansicht.
+- Zeichnung und PDF heißen wie die Zeichnungsnummer (Schriftfeld des ISO-Musters zeigt den Dateinamen groß).
+- Live (frisches SolidWorks): Buchse 12/12, Spannplatte 26/26 Plan-Maße, höchstens 10 je Ansicht, 8–30 s je Zeichnung.
+- Offen für Stufe 3/4: Fasen ohne „× 45°“, Lochkreis als Radius statt TK Ø, Bohrungs-/Gewindeangaben, Pfadmaße von
+  Austragungen (Kabelnut) unruhig, Dezimalstellen aus der Normdatei; Bezug `bezuege.A` beim Drehteil noch nicht
+  ausgewertet; Achslage für Drehteile auf der Ebene „rechts“ ungeprüft.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
