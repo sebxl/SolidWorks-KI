@@ -6,13 +6,16 @@ art "bezug": Lagekoordinaten ≠ 0 ohne Bemaßungsbezug auf dieser Achse (Positi
 rechteck/kreis/langloch in Skizzen auf Flächen) – ohne Bezug wird zum Ursprung bemaßt.
 art "zusammenfassen": Knoten, die sich nach den Modellierregeln (Skill konstruieren) für einen kompakteren
 Feature-Baum zusammenfassen lassen, auch Kandidaten für Muster und Spiegeln (Regel 3).
-art "fertigung": Innenecken unter der Fräserregel R ≥ T/5 (Regel 8) und Bohrungseintritte ohne Fase (Regel 6).
+art "fertigung": Innenecken unter der Fräserregel R ≥ T/5 (Regel 8, nicht bei bearbeitung: erodieren), Bohrungseintritte
+ohne Fase (Regel 6), Rauheit feiner als Ra 0,8 ohne Schleifen, geschliffenes Drehteil ohne Freistich.
+art "funktion": Werte aus einem unbestätigten Eintrag von swki/wissen/funktionen.yaml (Zeichnungsableitung §4.3).
 """
 
 import json
 
 from swki.bemassung import ebene_ist_flaeche
 from swki.spec.ausdruck import AusdruckFehler, auswerten
+from swki.spec.funktionen import FunktionFehler, aufloesen
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import lade_tabelle
 
@@ -256,6 +259,27 @@ def zusammenfassen(spec: dict) -> list[dict]:
 
 
 FRAESER_TIEFE = 5.0  # R ≥ T/5: Schaftfräser Ø D bis 2,5·D Tiefe (Nutzer 01.11.2026, Ø 2 bis 5 mm)
+RA_SCHLEIFEN = 0.8  # µm; feiner meist nur geschliffen (Zeichnungsableitung §4.5, Grenze Beleg C)
+
+
+def _bearbeitung_hinweise(spec: dict) -> list[dict]:
+    """Zeichnungsableitung §4.5: Rauheit feiner als RA_SCHLEIFEN ohne bearbeitung: schleifen; geschliffenes Drehteil
+    ohne Freistich (DIN 509)."""
+    ergebnis = []
+    geschliffen = []
+    for i, f in enumerate(spec.get("features", [])):
+        if f.get("bearbeitung") == "schleifen":
+            geschliffen.append(i)
+        ra = f.get("rauheit", {}).get("Ra")
+        if ra is not None and ra < RA_SCHLEIFEN and f.get("bearbeitung") != "schleifen":
+            ergebnis.append({"art": "fertigung", "pfad": f"features[{i}].rauheit",
+                             "meldung": f"Ra {_zahl(ra)} ist feiner als Ra {_zahl(RA_SCHLEIFEN)}: meist nur "
+                                        "geschliffen – bearbeitung: schleifen setzen oder Rauheit prüfen"})
+    if (spec.get("verfahren") == "drehen" and geschliffen
+            and not any(f.get("typ") == "freistich" for f in spec.get("features", []))):
+        ergebnis.append({"art": "fertigung", "pfad": f"features[{geschliffen[0]}].bearbeitung",
+                         "meldung": "Schleifen am Drehteil ohne Freistich (DIN 509) – Schleifscheibe braucht Auslauf"})
+    return ergebnis
 _EINTRITT = {"gewinde": "fase: nenn", "stift": "fase: 0,5", "zylinderschraube": "fase: 0,5"}  # bohrung: fase: 0,5
 
 
@@ -332,8 +356,10 @@ def fertigung_hinweise(spec: dict) -> list[dict]:
     from swki.pruefung.huellquader import schnitte_ausserhalb  # spät importiert: swki.pruefung nutzt swki.spec
 
     ueber_rand = set(schnitte_ausserhalb(spec))  # Absätze und Seitenschnitte: dort keine Innenecken
-    ergebnis = []
+    ergebnis = _bearbeitung_hinweise(spec)
     for i, f in enumerate(features):
+        if f.get("bearbeitung") == "erodieren":  # erodierte Innenecken dürfen scharf sein (Zeichnungsableitung §4.5)
+            continue
         if f.get("typ") in ("bohrung", "normbohrung") and "fase" not in f:
             vorschlag = "fase: 0,5" if f["typ"] == "bohrung" else _EINTRITT.get(f["art"])
             if vorschlag:
@@ -410,8 +436,27 @@ def pruefwert_hinweise(spec: dict) -> list[dict]:
                         "Prüfwert nachrechnen oder huellquader: auto"}]
 
 
+def funktion_hinweise(spec: dict) -> list[dict]:
+    """Zeichnungsableitung §4.3: Werte aus einem unbestätigten Eintrag von funktionen.yaml (Beleg C) als Hinweis art
+    "funktion" – vor der Freigabe dem Nutzer vorlegen. Unbekannte Funktionen meldet validieren als Befund."""
+    ergebnis = []
+    for i, f in enumerate(spec.get("features", [])):
+        if "funktion" not in f:
+            continue
+        try:
+            offen = aufloesen(f)["unbestaetigt"]
+        except FunktionFehler:
+            continue
+        if offen:
+            ergebnis.append({"art": "funktion", "pfad": f"features[{i}].funktion",
+                             "meldung": f"Wert aus funktionen.yaml unbestätigt (Beleg C) für {f['funktion']}: "
+                                        f"{', '.join(offen)} – Nutzer vor der Freigabe fragen"})
+    return ergebnis
+
+
 def hinweise(spec: dict) -> list[dict]:
-    """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Bemaßungsbezug, Zusammenfassbares und
-    Verzahnung. Hinweise blockieren nie (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
+    """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Bemaßungsbezug, Zusammenfassbares,
+    Fertigung (auch Bearbeitung und Rauheit), Verzahnung und unbestätigte Funktionswerte. Hinweise blockieren nie
+    (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
     return (pruefwert_hinweise(spec) + feste_masse(spec) + bezug_hinweise(spec) + zusammenfassen(spec)
-            + fertigung_hinweise(spec) + verzahnung_hinweise(spec))
+            + fertigung_hinweise(spec) + verzahnung_hinweise(spec) + funktion_hinweise(spec))
