@@ -21,7 +21,7 @@ _NULL = 1e-6
 
 @dataclass(frozen=True)
 class Ansicht:
-    rolle: str                      # haupt | seite | drauf
+    rolle: str                      # haupt | seite | drauf | seite_rechts | unter
     modellansicht: str | None       # nur die Hauptansicht; Seite/Drauf werden projiziert
     schnitt: bool = False
     winkel_grad: float = 0
@@ -112,14 +112,11 @@ def _fraesteil(spec: dict) -> list[Ansicht]:
     zaehl = {r: richtungen.count(r) for r in richtungen}
     haupt = max(zaehl, key=lambda r: (zaehl[r], r == "+y")) if zaehl else "+y"
     achse = haupt[1]
-    quer = [f for f in spec.get("features", [])[1:] if (r := _richtung(f)) and r[1] != achse]
     nicht_haupt = [f for f in spec.get("features", [])[1:] if (r := _richtung(f)) and r != haupt]
     blind = any(f.get("typ") in (*_BOHRUNGEN, "schnitt") and "durch" not in f
                 and f.get("ende", {}).get("typ") != "durch_alles" for f in nicht_haupt)  # Review I4b: auch Gegenseite
-    ansichten = [Ansicht("haupt", MODELLANSICHT[haupt]), Ansicht("drauf", None, schnitt=blind)]
-    if quer:
-        ansichten.append(Ansicht("seite", None))
-    return ansichten
+    # Grundsatz drei Ansichten (Nutzer 17.11.2026: meist 3–4); Ansichten ohne Maß entfallen in `zeichnen`
+    return [Ansicht("haupt", MODELLANSICHT[haupt]), Ansicht("drauf", None, schnitt=blind), Ansicht("seite", None)]
 
 
 def _hat_rotation(spec: dict) -> bool:
@@ -134,6 +131,12 @@ def hinweise(spec: dict) -> list[str]:
     if not ist_drehteil(spec) and not any(_richtung(f) for f in spec.get("features", [])[1:]):
         aus.append("ANSICHT_GERATEN: keine Flächenanker – Hauptansicht von oben angenommen")
     return aus
+
+
+def weitere_rollen(spec: dict) -> list[str]:
+    """Zusätzliche Projektionen, wenn Maße keinen Platz finden (Design §6.1): von rechts (links der Hauptansicht),
+    von unten (über ihr). Drehteile haben in Stufe 2 keine weiteren (Einzelheit folgt)."""
+    return [] if ist_drehteil(spec) and _hat_rotation(spec) else ["seite_rechts", "unter"]
 
 
 def waehle_ansichten(spec: dict) -> list[Ansicht]:

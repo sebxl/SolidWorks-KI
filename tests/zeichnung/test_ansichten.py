@@ -53,9 +53,17 @@ def test_volle_welle_nur_hauptansicht_ohne_schnitt():
 
 
 
-def test_spannplatte_hauptansicht_oben_mit_dickenansicht():
+def test_spannplatte_drei_ansichten():
+    """Nutzer 17.11.2026: meist 3–4 Ansichten; Frästeil-Grundsatz haupt + drauf + seite (Stufe 2, Task 4)."""
     a = waehle_ansichten(_lade("stil/spannplatte.yaml"))
-    assert a[0] == Ansicht("haupt", "*Oben") and [x.rolle for x in a] == ["haupt", "drauf"]
+    assert a[0] == Ansicht("haupt", "*Oben") and [x.rolle for x in a] == ["haupt", "drauf", "seite"]
+
+
+def test_weitere_rollen():
+    from swki.zeichnung.ansichten import weitere_rollen
+
+    assert weitere_rollen(_lade("stil/spannplatte.yaml")) == ["seite_rechts", "unter"]
+    assert weitere_rollen(_lade("buchse/buchse.yaml")) == []
 
 
 def test_platte_bohrungen_unten():

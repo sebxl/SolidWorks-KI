@@ -54,3 +54,14 @@ def test_kleines_teil_vergroessert():
     format_, massstab, plaetze = anordnen({"haupt": (20, 8), "drauf": (20, 8)})
     assert format_ == "A4" and massstab[0] > massstab[1]
     _pruefe(format_, plaetze)
+
+
+def test_zusatzansichten_links_und_oben():
+    format_, massstab, plaetze = anordnen({"haupt": (80, 50), "drauf": (80, 20), "seite": (20, 50),
+                                          "seite_rechts": (20, 50), "unter": (80, 20)})
+    p = {x.rolle: x for x in plaetze}
+    assert p["seite_rechts"].mitte_mm[0] < p["haupt"].mitte_mm[0]
+    assert abs(p["seite_rechts"].mitte_mm[1] - p["haupt"].mitte_mm[1]) < 1e-6
+    assert p["unter"].mitte_mm[1] > p["haupt"].mitte_mm[1]
+    assert abs(p["unter"].mitte_mm[0] - p["haupt"].mitte_mm[0]) < 1e-6
+    _pruefe(format_, plaetze)

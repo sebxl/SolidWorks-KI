@@ -113,9 +113,9 @@ def _in_ansicht(view, x_m: float, y_m: float) -> tuple[float, float]:
 def _projektion(drw, haupt, rolle: str):
     x0, y0, x1, y1 = (v / 1000 for v in _umriss_mm(haupt))
     _waehle_ansicht(drw, haupt)
-    if rolle == "seite":
-        return drw.CreateUnfoldedViewAt3(x1 + ABSTAND_PROBE_M, (y0 + y1) / 2, 0, False)
-    return drw.CreateUnfoldedViewAt3((x0 + x1) / 2, y0 - ABSTAND_PROBE_M, 0, False)
+    lage = {"seite": (x1 + ABSTAND_PROBE_M, (y0 + y1) / 2), "seite_rechts": (x0 - ABSTAND_PROBE_M, (y0 + y1) / 2),
+            "drauf": ((x0 + x1) / 2, y0 - ABSTAND_PROBE_M), "unter": ((x0 + x1) / 2, y1 + ABSTAND_PROBE_M)}[rolle]
+    return drw.CreateUnfoldedViewAt3(lage[0], lage[1], 0, False)
 
 
 def _eigenschaften(drw, spec: dict, format_: str, massstab: tuple[int, int]) -> dict:
@@ -172,7 +172,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             _setze_lage(views[p.rolle], p.mitte_mm)
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
-        zeichnung, pdf = ausgabe / f"{teil.stem}.slddrw", ausgabe / f"{teil.stem}.pdf"
+        zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         for ziel in (zeichnung, pdf):
             f, w = byref_long(), byref_long()
             if not ext.SaveAs(str(ziel), 0, SAVE_SILENT, callout_leer(), f, w):
@@ -188,6 +188,11 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "meldungen": meldungen, "dauer_s": round(time.time() - t0, 1)}
+
+
+def zeichnungsname(spec: dict) -> str:
+    """Dateiname der Zeichnung = Zeichnungsnummer (das ISO-Muster zeigt ihn groß im Schriftfeld; Nutzer 17.11.2026)."""
+    return (spec.get("eigenschaften") or {}).get("Zeichnungsnummer") or spec["name"]
 
 
 def waehle_lauf(spec_pfad: Path, lauf: int | None) -> tuple[int, list[str]]:

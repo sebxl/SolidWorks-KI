@@ -73,3 +73,9 @@ def test_drehteil_laengsschnitt_aus_stirn():
     views, schnitt, meldungen = z._erzeuge(drw, z.Path("t.sldprt"),
                                            [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
     assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == []
+
+
+def test_zeichnungsname_kurz():
+    """Schriftfeld: das ISO-Muster zeigt den Dateinamen groß (Nutzer 17.11.2026: Titel zu groß)."""
+    assert z.zeichnungsname({"name": "Buchse"}) == "Buchse"
+    assert z.zeichnungsname({"name": "Buchse", "eigenschaften": {"Zeichnungsnummer": "Z-1044-01"}}) == "Z-1044-01"
