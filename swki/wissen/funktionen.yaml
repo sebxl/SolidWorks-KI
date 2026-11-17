@@ -1,0 +1,97 @@
+# Regeltabelle Funktion → Passung, Hülle, Rauheit, Form/Lage (Zeichnungsableitung, Design 2026-11-16 §4.3).
+# Quelle der Werte: docs/zeichnungsableitung/recherche.md Kap. 7 (Passungen, Lagersitze) und Kap. 6 (Ra-Richtwerte).
+# beleg je Wert: A = ≥ 2 unabhängige Quellen, B = eine Quelle, C = unbelegt. bestaetigt: true nur, wenn kein Wert C ist
+# oder der Nutzer den Eintrag bestätigt hat; sonst meldet swki validieren den Eintrag (Hinweis art "funktion").
+# Ⓔ (huelle) an allen Passmaßen: Entscheidung des Nutzers vom 16.11.2026 (ISO 8015, Hülle nur an Passmaßen).
+# Rauheit in µm. form_lage mit it (ISO-286-Grundtoleranzgrad) statt wert; den Zahlenwert rechnet die Zeichnung.
+# Erweitern nur mit Quelle und Beleg (wie andere Wissenstabellen).
+
+stiftbohrung:
+  passung: H7
+  huelle: true
+  rauheit: {Ra: 0.8}
+  quelle: "Recherche Kap. 7 (Stiftbohrung H7 für m6-Stift: C, unbelegt)"
+  beleg: {passung: C, rauheit: C}
+  bestaetigt: false
+
+lagersitz_welle:
+  passung: k6
+  huelle: true
+  rauheit: {Ra: 0.8}
+  form_lage: [{art: rundheit, it: 4}]
+  quelle: "Recherche Kap. 7 Wälzlagersitze (Welle IT6, Rundheit IT3–IT4: B); Kap. 6 Ra Lagersitz Welle 0,8 (B)"
+  beleg: {passung: C, rauheit: B, form_lage: B}
+  bestaetigt: false
+
+lagersitz_gehaeuse:
+  passung: H7
+  huelle: true
+  rauheit: {Ra: 1.6}
+  form_lage: [{art: rundheit, it: 5}]
+  quelle: "Recherche Kap. 7 Wälzlagersitze (Gehäuse IT7, Umfangslast Außenring J7, Rundheit IT4–IT5: B); Kap. 6 Ra 1,6 (B)"
+  beleg: {passung: B, rauheit: B, form_lage: B}
+  bestaetigt: true
+
+gleitpassung_bohrung:
+  passung: H7
+  huelle: true
+  rauheit: {Ra: 0.8}
+  quelle: "Recherche Kap. 7 (H7/g6 Führung: A); Ra C"
+  beleg: {passung: A, rauheit: C}
+  bestaetigt: false
+
+gleitpassung_welle:
+  passung: g6
+  huelle: true
+  rauheit: {Ra: 0.8}
+  quelle: "Recherche Kap. 7 (H7/g6 Führung: A); Ra C"
+  beleg: {passung: A, rauheit: C}
+  bestaetigt: false
+
+festsitz_bohrung:
+  passung: H7
+  huelle: true
+  rauheit: {Ra: 0.8}
+  quelle: "Recherche Kap. 7 (H7/p6 Presspassung: A; H7/r6 ohne Verdrehsicherung: B); Ra C"
+  beleg: {passung: A, rauheit: C}
+  bestaetigt: false
+
+festsitz_welle:
+  passung: p6
+  huelle: true
+  rauheit: {Ra: 0.8}
+  quelle: "Recherche Kap. 7 (H7/p6 Presspassung: A); Ra C"
+  beleg: {passung: A, rauheit: C}
+  bestaetigt: false
+
+uebergang_bohrung:
+  passung: H7
+  huelle: true
+  rauheit: {Ra: 1.6}
+  quelle: "Recherche Kap. 7 (H7/k6 Naben: A, H7/m6: B); Ra C"
+  beleg: {passung: A, rauheit: C}
+  bestaetigt: false
+
+uebergang_welle:
+  passung: k6
+  huelle: true
+  rauheit: {Ra: 1.6}
+  quelle: "Recherche Kap. 7 (H7/k6 Naben: A); Ra C"
+  beleg: {passung: A, rauheit: C}
+  bestaetigt: false
+
+dichtflaeche_rwdr:
+  passung: h11
+  huelle: false
+  rauheit: {Ra: 0.8}
+  hinweis: "drallfrei, Ra 0,2–0,8 µm"
+  quelle: "Recherche Kap. 6 (Lauffläche RWDR Ra 0,2–0,8 drallfrei: B); Passung h11 C"
+  beleg: {passung: C, rauheit: B}
+  bestaetigt: false
+
+anlage:
+  huelle: false
+  rauheit: {Ra: 1.6}
+  quelle: "Ra 1,6 C; Ebenheit nur als Einzelwert in der Spec (Wert unbelegt)"
+  beleg: {rauheit: C}
+  bestaetigt: false
