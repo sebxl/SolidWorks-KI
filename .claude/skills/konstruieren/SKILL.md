@@ -192,6 +192,27 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   der Teilfuge als Vollkreis, Tasche über die Kante), zöge `auto` ganz ab – `validieren` meldet `auto` dann als nicht
   berechenbar. Das Profil ins Material legen (Halbkreis als `kontur`) oder die Bohrung gleich in die Kontur des
   Aufsatzes nehmen.
+- Funktion, Toleranz, Rauheit (Zeichnungsableitung, Design `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`
+  §4): Toleranzen, Passungen und Rauheiten folgen aus der Funktion, nie „sicherheitshalber“ eng. Ein Feature mit
+  Funktion (Stiftbohrung, Lagersitz, Gleitpassung, Festsitz, Übergang, Dichtfläche RWDR, Anlage) trägt
+  `funktion: <schlüssel>` aus `swki/wissen/funktionen.yaml`; die Tabelle liefert Passung, Hülle Ⓔ, Ra und Form/Lage.
+  Nur wo sie nicht passt, einzelne Werte überschreiben (`passung` oder `toleranz: {oben, unten}`, `rauheit: {Ra}`,
+  `form_lage: [{art, wert, bezug, mmr}]`, `huelle`). Ⓔ nur an Passmaßen (ISO 8015, Nutzer 16.11.2026).
+  ```yaml
+  verfahren: fraesen                      # fraesen | drehen
+  bezuege: {A: {feature: f1, flaeche: "-y"}, B: {feature: f1, flaeche: "-x"}}   # Anlageflächen
+  toleranzen: {A_achse: {oben: 0.02, unten: -0.02}}   # Maße ohne eigenes Feature, je Parameter
+  halbzeug: {art: flach, norm: "EN 10058", masse: "100 x 20"}
+  behandlung: [{art: bruenieren}]         # Härte/Beschichtung: docs/zeichnungsableitung/haerteangabe.md
+  features:
+    - {id: f3, typ: normbohrung, art: stift, groesse: "8", flaeche: {feature: f1, flaeche: "+y"},
+       positionen: [[20, 0], [-20, 0]], tiefe: 12, fase: 0.5, funktion: stiftbohrung,
+       form_lage: [{art: position, wert: 0.02, bezug: [A, B]}]}
+  ```
+  `bearbeitung: schleifen | erodieren` an Features, die nicht im Grundverfahren entstehen (erodiert: Fräserregel 8 gilt
+  nicht). Diese Felder sind Anforderungen: Die Prüfsumme schützt sie nach Wirkung (ohne Feature-IDs), umbenennen,
+  zusammenfassen und Muster/`positionen` wechseln bleibt Bauweg. `validieren` meldet unbekannte Funktionen, Ⓔ ohne
+  Passung, Bezugsbuchstaben ohne `bezuege`, `toleranzen` ohne Parameter als Befund.
 
 ### Modellierregeln (Feature-Baum wie vom Konstrukteur)
 Änderbarkeit zuerst, dann der Baum, wie ihn ein Konstrukteur anlegt; Standard des Nutzers (01.11.2026) in Regel 3, 6, 8:
@@ -242,6 +263,9 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   „Selbst entschieden“ (eigene Entscheidungen und umgesetzte Review-Befunde, je eine Zeile mit Grund).
   Bezüge stehen in der Feature-Liste in Worten („2 × M6, 10 mm vom linken Rand, symmetrisch zur Mitte, Abstand 40“).
   Der Bezug ist Bauweg: die Prüfsumme schützt ihn nicht, die KI darf ihn beim Nachbessern ändern.
+- Funktionsangaben in Worten zeigen („2 × Stiftbohrung Ø 8 H7 Ⓔ, Ra 0,8“). Hinweise `art: funktion` (Wert aus
+  `funktionen.yaml` mit Beleg C, unbestätigt) dem Nutzer ausdrücklich vorlegen; bestätigt er, in der Tabelle
+  `bestaetigt: true` setzen (mit Datum in `quelle`).
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:
   `swki durchlauf <spec> --freigeben` (validieren → freigeben → bauen → prüfen → status in **einem** Aufruf; legt
   `<name>.freigegeben.yaml` ab, diese Kopie nie ändern). Einzeln geht weiter `swki freigeben <spec>`.

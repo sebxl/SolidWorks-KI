@@ -137,6 +137,15 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
   (`bohrbild`): eine Lochreihe darf beim Nachbessern zwischen `positionen` und Muster wechseln.
 - Regressions-Suite enthält die Spannplatte (`tests/referenz/stil/`); Ergebnisse: `docs/konstruktionsstil/ergebnisse.md`.
 
+## Zeichnungsableitung (Stufe Z1, in Arbeit)
+- Design `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`, Recherche (Normregeln mit Belegstärke)
+  `docs/zeichnungsableitung/recherche.md`, Stand `docs/zeichnungsableitung/ergebnisse.md`.
+- Toleranzen, Passungen, Rauheit, Form/Lage folgen aus der Funktion: `funktion` am Feature (Tabelle
+  `swki/wissen/funktionen.yaml`, nur mit Quelle und Beleg erweitern, C-Werte vom Nutzer bestätigen lassen), dazu
+  `verfahren`, `bezuege`, `toleranzen`, `behandlung`, `halbzeug`. Anforderungen: die Prüfsumme schützt sie nach Wirkung
+  (ohne Feature-IDs); ISO 8015, Hülle Ⓔ nur an Passmaßen, Allgemeintoleranz ISO 2768-1 m mit Jahr (Nutzer 16.11.2026).
+- Zeichnungen für die Fertigung nur auf der SolidWorks-Vollversion (Firmenrechner); Rechner A (Student) nur Entwicklung.
+
 ## Schnellbau und Simulation (Stufe C1)
 - Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,
   Spec `docs/superpowers/specs/2026-10-25-schnellbau-c1-design.md`): `swki schnellbau teil <spec> [--setze N=w] [--stl]`,
