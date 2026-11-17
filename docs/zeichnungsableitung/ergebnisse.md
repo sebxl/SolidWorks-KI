@@ -11,7 +11,8 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 | Z1.0 Spike (API live) | erledigt 17.11. (`spike-z1.md`): alles ohne Dialog außer Bohrungsangaben; Modellmaße nur gefiltert brauchbar |
 | Z1.1 Spec-Erweiterung | umgesetzt (Branch `claude/zeichnungsableitung-recherche`) |
 | Z1.2 Freistich, Zentrierbohrung | offen (Skill `compiler-erweitern`) |
-| Z1.3 Zeichnen, Z1.4 Prüfen | offen, Plan nach dem Spike |
+| Z1.3 Zeichnen | Stufe 1 (Blatt und Ansichten) umgesetzt 17.11., wartet auf Durchsicht der PDFs; Stufen 2–5 offen |
+| Z1.4 Prüfen | offen |
 | Z1.5 Firmenvorlage | wartet auf die Vorlage des Nutzers; Fertigungszeichnungen nur auf dem Firmenrechner |
 
 ## Z1.1 – was jetzt gilt
@@ -29,6 +30,23 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
   aufgelösten Werte in `freigabe.json` (`anforderungen`) ab.
 - Hinweise: Regel 8 entfällt bei `bearbeitung: erodieren`; Ra < 0,8 ohne Schleifen; geschliffenes Drehteil ohne
   Freistich.
+
+## Z1.3 Stufe 1 – Blatt und Ansichten (17.11.2026)
+
+- `swki zeichnen <spec> [--lauf N]` (`swki/zeichnung/`): Format A4 hoch oder A3 quer und Vorzugsmaßstab (`blatt.py`),
+  Ansichten aus der Spec (`ansichten.py`), Anordnung nach Projektionsmethode 1 mit 25 mm Maßrand (`layout.py`),
+  Umsetzung in SolidWorks (`zeichnen.py`); Ausgabe SLDDRW, PDF, PNG unter `<laufordner>/zeichnung/`, Teildatei unverändert.
+- Drehteil mit Innenkontur: Stirnansicht als Modellansicht, Hauptansicht = Vollschnitt A-A daraus. Ohne Innenkontur:
+  Hauptansicht mit liegender Achse, Stirnansicht projiziert bei Bohrungen. Frästeil: Hauptansicht von der Seite mit den
+  meisten Features, Dickenansicht projiziert darunter, Seitenansicht bei Features quer dazu.
+- Mittellinien und Mittelpunktmarken über die Dokumentoptionen (automatisch beim Erzeugen der Ansichten).
+- Schriftfeld über Eigenschaften der Zeichnung (Gezeichnet, Datum, Werkstoff); das SW-2025-Muster liest Benennung als
+  `$PRPSHEET:"Description"` aus dem Modell und die Zeichnungsnummer aus dem Dateinamen – Zuordnung erst mit den
+  Formaten des Nutzers (Z1.5).
+- Live-Befunde (korrigieren Spike Z1.0): Skizzen in Ansichten liegen in Ansichtskoordinaten ((Blatt − Position) ÷
+  Maßstab); in gedrehten Ansichten zusätzlich gedreht, ein Ausbruch dort wirkt nicht. Neue Ansichten sind automatisch
+  skaliert; der Maßstab wird je Ansicht gesetzt. `IView.Position` nur als double-Array.
+- Laufzeit 39–58 s je Zeichnung (Ursache offen). PDFs zur Durchsicht: `<arbeitsordner>/Z1-STUFE1/`.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

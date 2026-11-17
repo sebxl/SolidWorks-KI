@@ -214,6 +214,10 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   zusammenfassen und Muster/`positionen` wechseln bleibt Bauweg. `validieren` meldet unbekannte Funktionen, Ⓔ ohne
   Passung, Bezugsbuchstaben ohne `bezuege`, `toleranzen` ohne Parameter als Befund.
 
+- Zeichnung (Zeichnungsableitung Z1.3, Stufe 1): `swki zeichnen <spec>` nach bestandenem Bau erzeugt Blatt und Ansichten
+  ohne Maße (SLDDRW, PDF, PNG im Laufordner unter `zeichnung/`); Maße, Bohrungsangaben und Toleranzen folgen in den
+  Stufen 2–4. Fertigungszeichnungen nur auf der SolidWorks-Vollversion (Firmenrechner).
+
 ### Modellierregeln (Feature-Baum wie vom Konstrukteur)
 Änderbarkeit zuerst, dann der Baum, wie ihn ein Konstrukteur anlegt; Standard des Nutzers (01.11.2026) in Regel 3, 6, 8:
 1. Drehteile als eine Rotation eines Halbschnitts.
