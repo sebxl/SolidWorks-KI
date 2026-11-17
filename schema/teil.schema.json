@@ -63,25 +63,47 @@
       }
     }},
     "bearbeitung": {"enum": ["schleifen", "erodieren"]},
-    "behandlung_verweis": {"type": "string", "pattern": "^[a-z][a-z_]*$", "description": "art eines Eintrags im Top-Level behandlung"},
+    "behandlung_verweis": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "art oder id eines Eintrags im Top-Level behandlung"},
+    "haertewert": {
+      "type": "object", "required": ["wert", "verfahren"], "additionalProperties": false,
+      "description": "Härte nach DIN ISO 15787:2018, z. B. (60 ± 2) HRC; ohne plus/minus Mindestwert",
+      "properties": {
+        "wert": {"type": "number", "exclusiveMinimum": 0},
+        "plus": {"type": "number", "minimum": 0}, "minus": {"type": "number", "minimum": 0},
+        "verfahren": {"enum": ["HRC", "HV", "HB", "HV1", "HV10"]}
+      }
+    },
     "behandlung": {
       "type": "object", "required": ["art"], "additionalProperties": false,
+      "description": "Wärme- oder Oberflächenbehandlung (docs/zeichnungsableitung/haerteangabe.md)",
       "properties": {
-        "art": {"type": "string", "pattern": "^[a-z][a-z_]*$"},
-        "haerte": {"type": "string", "minLength": 1},
+        "art": {"enum": ["haerten", "haerten_anlassen", "vergueten", "einsatzhaerten", "randschichthaerten", "nitrieren",
+                         "nitrocarburieren", "gluehen", "eloxieren", "hartanodisieren", "verzinken", "bruenieren",
+                         "beschichten"]},
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "haerte": {"$ref": "#/$defs/haertewert"},
+        "kernhaerte": {"$ref": "#/$defs/haertewert"},
         "tiefe": {"type": "object", "required": ["art", "wert"], "additionalProperties": false,
-                  "properties": {"art": {"type": "string"}, "wert": {"type": "number", "exclusiveMinimum": 0},
-                                 "plus": {"type": "number", "exclusiveMinimum": 0}}},
-        "schicht": {"type": "string", "minLength": 1}
+                  "properties": {"art": {"enum": ["CHD", "SHD", "NHD", "CLT"]},
+                                 "wert": {"type": "number", "exclusiveMinimum": 0},
+                                 "plus": {"type": "number", "minimum": 0}, "minus": {"type": "number", "minimum": 0},
+                                 "grenzhaerte": {"type": "string", "minLength": 1}}},
+        "zustand": {"enum": ["fertigteil", "vor_schleifen"]},
+        "schicht": {"type": "object", "required": ["norm", "bezeichnung"], "additionalProperties": false,
+                    "properties": {"norm": {"type": "string", "minLength": 1},
+                                   "bezeichnung": {"type": "string", "minLength": 1},
+                                   "dicke_um": {"type": "number", "exclusiveMinimum": 0}}}
       }
     },
     "halbzeug": {
       "type": "object", "required": ["art", "norm", "masse"], "additionalProperties": false,
+      "description": "Halbzeug; Werkstoff aus material (docs/zeichnungsableitung/haerteangabe.md)",
       "properties": {
         "art": {"enum": ["flach", "rund", "vierkant", "sechskant", "platte", "rohr", "profil"]},
         "norm": {"type": "string", "minLength": 1},
         "masse": {"type": "string", "minLength": 1},
-        "werkstoff": {"type": "string", "minLength": 1}
+        "toleranz": {"type": "string", "minLength": 1},
+        "zustand": {"type": "string", "minLength": 1}
       }
     },
     "bohrungsfase": {"oneOf": [{"$ref": "#/$defs/wert"}, {"const": "nenn"}],

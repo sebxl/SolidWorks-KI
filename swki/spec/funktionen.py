@@ -66,7 +66,7 @@ def anforderung_befunde(spec: dict) -> list[dict]:
     befunde = []
     tabelle = lade_funktionen()
     bezuege = set(spec.get("bezuege", {}))
-    arten = {b["art"] for b in spec.get("behandlung", [])}
+    arten = {b.get(k) for b in spec.get("behandlung", []) for k in ("art", "id")} - {None}  # Verweis über art oder id
     for i, f in enumerate(spec.get("features", [])):
         pfad = f"features[{i}]"
         if "funktion" in f and f["funktion"] not in tabelle:
@@ -88,7 +88,8 @@ def anforderung_befunde(spec: dict) -> list[dict]:
                                 "meldung": f"Bezug {', '.join(fehlend)} fehlt in bezuege"})
         if "behandlung" in f and f["behandlung"] not in arten:
             befunde.append({"pfad": f"{pfad}.behandlung",
-                            "meldung": f"Behandlung {f['behandlung']!r} steht nicht im Top-Level behandlung"})
+                            "meldung": f"Behandlung {f['behandlung']!r} steht nicht im Top-Level behandlung "
+                                       "(art oder id)"})
     parameter = spec.get("parameter", {})
     for name in spec.get("toleranzen", {}):
         if name not in parameter:

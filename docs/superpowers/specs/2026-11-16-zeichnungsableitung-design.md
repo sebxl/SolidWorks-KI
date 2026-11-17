@@ -116,11 +116,14 @@ features:
 - Bohrbilder: Positionstoleranz mit theoretisch genauen Maßen nur, wenn `funktion` es verlangt (z. B. `stiftbild`);
   sonst ±-Allgemeintoleranz (selbst entschieden; R-Kap. 4/7, Frage 13).
 - `behandlung` (Top-Level, Liste) für Wärme- und Oberflächenbehandlung, z. B.
-  `[{art: einsatzhaerten, haerte: "58+4 HRC", tiefe: {Eht: 0.8, toleranz: 0.2}}, {art: bruenieren}]`. Auf der Zeichnung
-  als Notiz nahe dem Schriftfeld. Die Schreibweise der Härteangabe nach ISO 15787 ist nicht recherchiert: In Z1.1 zuerst
-  nachrecherchieren (Quellen und Belegstärke wie in der Recherche), dann Schema und Notiztext festlegen. Gilt eine
-  Behandlung nur für einzelne Flächen, trägt das Feature `behandlung: <art>` (selbst entschieden).
-- `halbzeug` (Top-Level), z. B. `{art: flach, norm: "EN 10058", masse: "50 x 10"}`. Flächen des Teils, die kein Feature
+  `[{art: einsatzhaerten, haerte: {wert: 60, plus: 2, minus: 2, verfahren: HRC}, tiefe: {art: CHD, wert: 0.8, plus: 0.4,
+  grenzhaerte: "550 HV1"}, zustand: fertigteil}, {art: bruenieren}]`. Auf der Zeichnung als Notiz nahe dem Schriftfeld,
+  z. B. „einsatzgehärtet und angelassen (60 ± 2) HRC, CHD = (0,8 +0,4/0) mm“. Schreibweise nach DIN ISO 15787:2018
+  (Nachrecherche `docs/zeichnungsableitung/haerteangabe.md`; „58+4 HRC“ ist der alte Stil nach DIN 6773). Gilt eine
+  Behandlung nur für einzelne Flächen, trägt das Feature `behandlung: <art oder id>` (selbst entschieden). Offen:
+  Härtestil (ISO 15787:2016 oder DIN 6773) als Hausregel, Angabe „darf nicht behandelt werden“.
+- `halbzeug` (Top-Level), z. B. `{art: flach, norm: "EN 10058", masse: "50 x 10"}`, optional `toleranz`, `zustand`;
+  der Werkstoff kommt aus `material`. Flächen des Teils, die kein Feature
   bearbeitet, bleiben Halbzeugoberfläche; die Zeichnung kennzeichnet sie „wie Halbzeug“ (Sammelangabe in Klammern bzw.
   Notiz, genaue Darstellung im Spike/mit der Vorlage). Ohne `halbzeug` gilt die Sammelangabe Ra 3,2 für alle Flächen.
   Welche Flächen roh bleiben, ermittelt swki aus dem Hüllquader (Fläche liegt in der Halbzeug-Außenkontur und ist

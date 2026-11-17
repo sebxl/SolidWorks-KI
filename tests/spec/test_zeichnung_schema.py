@@ -46,7 +46,37 @@ def test_top_level_felder():
 
 def test_feature_behandlung_verweis():
     assert schema_befunde(_mit({"behandlung": "einsatzhaerten"},
-                               behandlung=[{"art": "einsatzhaerten", "haerte": "58+4 HRC"}])) == []
+                               behandlung=[{"art": "einsatzhaerten", "haerte": {"wert": 60, "plus": 2, "minus": 2,
+                                                                                "verfahren": "HRC"}}])) == []
+
+
+def test_behandlung_nach_iso_15787():
+    eintrag = {"art": "einsatzhaerten", "id": "zahnflanken", "zustand": "fertigteil",
+               "haerte": {"wert": 60, "plus": 2, "minus": 2, "verfahren": "HRC"},
+               "tiefe": {"art": "CHD", "wert": 0.8, "plus": 0.4, "grenzhaerte": "550 HV1"},
+               "kernhaerte": {"wert": 30, "verfahren": "HRC"}}
+    schicht = {"art": "verzinken", "schicht": {"norm": "DIN EN ISO 19598", "bezeichnung": "Fe//Zn8//Cn//T0", "dicke_um": 8}}
+    assert schema_befunde(_mit({"behandlung": "zahnflanken"}, behandlung=[eintrag, schicht])) == []
+
+
+@pytest.mark.parametrize("eintrag", [
+    {"art": "einsatzhaerten", "haerte": "58+4 HRC"},                       # alte Schreibweise als Text
+    {"art": "haerten", "haerte": {"wert": 58, "verfahren": "Shore"}},
+    {"art": "einsatzhaerten", "tiefe": {"art": "Eht", "wert": 0.8}},
+    {"art": "zaubern"},
+    {"art": "haerten", "zustand": "gehaertet"},
+])
+def test_behandlung_ungueltig(eintrag):
+    assert schema_befunde(_mit(behandlung=[eintrag]))
+
+
+def test_halbzeug_werkstoff_aus_material():
+    assert schema_befunde(_mit(halbzeug={"art": "flach", "norm": "EN 10058", "masse": "50 x 10", "werkstoff": "S235JR"}))
+
+
+def test_halbzeug_toleranz_und_zustand():
+    assert schema_befunde(_mit(halbzeug={"art": "rund", "norm": "DIN EN ISO 683-7", "masse": "20", "toleranz": "h9",
+                                         "zustand": "+C"})) == []
 
 
 @pytest.mark.parametrize("zusatz", [

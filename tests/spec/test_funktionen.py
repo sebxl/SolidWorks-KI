@@ -80,3 +80,9 @@ def test_plausibel_befunde_enthalten_anforderungen(tmp_path):
         {"id": "f1", "typ": "extrusion", "funktion": "gibtsnicht", "skizze": {"ebene": "oben", "elemente": [
             {"rechteck": {"mitte": [0, 0], "breite": 10, "hoehe": 10}}]}, "ende": {"typ": "blind", "tiefe": 5}}]}
     assert "features[0].funktion" in [b["pfad"] for b in plausibel_befunde(spec, tmp_path)]
+
+
+def test_behandlung_verweis_ueber_id():
+    spec = {"behandlung": [{"art": "einsatzhaerten", "id": "flanken"}],
+            "features": [{"id": "f1", "typ": "rotation", "behandlung": "flanken"}]}
+    assert anforderung_befunde(spec) == []
