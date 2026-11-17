@@ -52,6 +52,13 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         rollen = [a["rolle"] for a in z["ansichten"]]
         assert "haupt" in rollen
         assert any(m.startswith("LAUF_NICHT_BESTANDEN") for m in z["meldungen"])
+        # Stufe 2: Maßplan vollständig gesetzt oder jede Lücke gemeldet; keine Ansicht über der Obergrenze
+        masse = z["masse"]
+        assert masse["gesetzt"] == masse["plan"] or any(m.startswith("MASS_") for m in z["meldungen"]), z["meldungen"]
+        assert max(masse["je_ansicht"].values()) <= 12, masse
+        assert not any(m.startswith(("MASS_NICHT_GELOESCHT", "MASS_NICHT_GESETZT")) for m in z["meldungen"]), z["meldungen"]
+        if not drehteil:
+            assert len(z["ansichten"]) == 3 or any("ANSICHT" in m for m in z["meldungen"])
         if drehteil:
             assert z["schnitt"] and z["schnitt"].startswith("Schnitt") and "seite" in rollen
         x0, y0, x1, y1 = zeichenfeld(z["format"])

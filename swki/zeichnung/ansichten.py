@@ -107,10 +107,30 @@ def _richtung(f: dict) -> str | None:
     return None
 
 
-def _fraesteil(spec: dict) -> list[Ansicht]:
+def hauptrichtung(spec: dict) -> str:
+    """Flächenrichtung mit den meisten Features (Frästeil-Hauptansicht schaut darauf); ohne Anker +y."""
     richtungen = [r for f in spec.get("features", [])[1:] if (r := _richtung(f))]
     zaehl = {r: richtungen.count(r) for r in richtungen}
-    haupt = max(zaehl, key=lambda r: (zaehl[r], r == "+y")) if zaehl else "+y"
+    return max(zaehl, key=lambda r: (zaehl[r], r == "+y")) if zaehl else "+y"
+
+
+def vorzugsansichten(spec: dict, plan: list) -> dict[str, str]:
+    """Maße, die in die Hauptansicht gehören, solange dort Platz ist: Grundkörper und Merkmale auf der Fläche, auf die
+    die Hauptansicht schaut (Live Z1.3 Stufe 2)."""
+    if ist_drehteil(spec) and _hat_rotation(spec):
+        return {}
+    haupt = hauptrichtung(spec)
+    features = spec.get("features", [])
+    basis = features[0]["id"] if features else None
+    richtung = {f["id"]: _richtung(f) for f in features}
+    for f in features:  # Muster und Spiegeln erben die Richtung ihrer Quellen
+        if f.get("typ") in ("muster_linear", "muster_kreis", "spiegeln") and richtung.get(f["id"]) is None:
+            richtung[f["id"]] = next((richtung.get(q) for q in f.get("features", []) if richtung.get(q)), None)
+    return {m.id: "haupt" for m in plan if m.merkmal == basis or richtung.get(m.merkmal) == haupt}
+
+
+def _fraesteil(spec: dict) -> list[Ansicht]:
+    haupt = hauptrichtung(spec)
     achse = haupt[1]
     nicht_haupt = [f for f in spec.get("features", [])[1:] if (r := _richtung(f)) and r != haupt]
     blind = any(f.get("typ") in (*_BOHRUNGEN, "schnitt") and "durch" not in f
@@ -131,6 +151,22 @@ def hinweise(spec: dict) -> list[str]:
     if not ist_drehteil(spec) and not any(_richtung(f) for f in spec.get("features", [])[1:]):
         aus.append("ANSICHT_GERATEN: keine Flächenanker – Hauptansicht von oben angenommen")
     return aus
+
+
+# Modellrichtung der Skizzenachsen u/v je Standardebene (vorne: X/Y; oben: X/−Z wie Spannplatte-Kommentar;
+# rechts: −Z/Y – ungeprüft, Ledger)
+_SKIZZENACHSEN = {"vorne": {"u": (1, 0, 0), "v": (0, 1, 0)}, "oben": {"u": (1, 0, 0), "v": (0, 0, -1)},
+                  "rechts": {"u": (0, 0, -1), "v": (0, 1, 0)}}
+
+
+def achsvektor(spec: dict) -> tuple:
+    """Richtung der Drehachse in Modellkoordinaten (Einheitsvektor); Frästeil: (0, 1, 0)."""
+    rotationen = [f for f in spec.get("features", []) if f.get("typ") == "rotation"]
+    if not rotationen:
+        return (0, 1, 0)
+    ebene = rotationen[0].get("skizze", {}).get("ebene")
+    achse = drehachse(rotationen[0], spec.get("parameter", {}))
+    return _SKIZZENACHSEN.get(ebene if isinstance(ebene, str) else "vorne", _SKIZZENACHSEN["vorne"])[achse]
 
 
 def weitere_rollen(spec: dict) -> list[str]:

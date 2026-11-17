@@ -12,13 +12,14 @@ SaveAs (6), CustomPropertyManager (1) → ICustomPropertyManager.Add3 (4, 2014);
 """
 
 import hashlib
+import json
 import math
 import time
 from pathlib import Path
 
 import win32com.client.dynamic
 
-from swki.auftrag import auftrag_name, dateiname, lauf_ordner
+from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.konfig import lade_rechner, lade_standard
@@ -27,9 +28,13 @@ from swki.pruefung.schleife import lies_laeufe
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
-from swki.zeichnung.ansichten import Ansicht, hinweise, waehle_ansichten
+from swki.zeichnung.ansichten import (Ansicht, achsvektor, hinweise, vorzugsansichten, waehle_ansichten,
+                                     weitere_rollen)
+from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE
 from swki.zeichnung.layout import anordnen
+from swki.zeichnung.massplan import massplan
+from swki.zeichnung.zuordnung import max_je_ansicht
 
 SW_DEFAULT_TEMPLATE_DRAWING = 10            # swUserPreferenceStringValue_e
 SW_DWG_TEMPLATE_CUSTOM = 12                 # swDwgTemplates_e
@@ -159,6 +164,14 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         views, schnitt, nicht_erzeugt = _erzeuge(drw, teil, ansichten)
         meldungen += nicht_erzeugt
+        plan = massplan(spec, json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8")))
+        basis = next(a.rolle for a in ansichten if a.modellansicht)
+        bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
+                      weitere_rollen(spec), lambda rolle: _projektion(drw, views["haupt"], rolle),
+                      vorzugsansichten(spec, plan))
+        meldungen += bem.meldungen
+        for rolle in [r for r in list(views) if r not in ("haupt", basis) and not bem.je_ansicht.get(r)]:
+            _loesche_ansicht(drw, views.pop(rolle))  # Ansicht ohne eigenes Maß entfällt (Design §6.1)
         groessen = {rolle: _groesse_1zu1(v) for rolle, v in views.items()}
         format_, massstab, plaetze = anordnen(groessen)
         blattformat = r.zeichnung.get(format_)
@@ -167,9 +180,11 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         _blatt(drw, format_, massstab, blattformat)
         for v in views.values():  # Ansichten folgen sonst ihrem automatischen Maßstab (Live Z1.3: Platte zu groß)
             v.ScaleDecimal = massstab[0] / massstab[1]
-        basis = next(a.rolle for a in ansichten if a.modellansicht)
         for p in sorted(plaetze, key=lambda p: p.rolle != basis):  # Elternansicht zuerst, Kinder sind ausgerichtet
             _setze_lage(views[p.rolle], p.mitte_mm)
+        neu_gesetzt = _neue_masse(drw, views, plan, bem.neu, achsvektor(spec), meldungen)
+        for v in views.values():
+            ordne_masse_an(drw, v)
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
@@ -187,7 +202,36 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         raise ZeichnungFehler("ZEICHNUNG_TEIL_GEAENDERT", f"{teil.name} wurde beim Zeichnen verändert")
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
-            "eigenschaften": eigenschaften, "meldungen": meldungen, "dauer_s": round(time.time() - t0, 1)}
+            "eigenschaften": eigenschaften, "meldungen": meldungen,
+            "masse": {"plan": len(plan), "gesetzt": bem.gesetzt + neu_gesetzt, "geloescht": bem.geloescht,
+                      "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + len(bem.neu.get(r, [])) for r in views}}, "dauer_s": round(time.time() - t0, 1)}
+
+
+def _loesche_ansicht(drw, view) -> None:
+    ext = _ruf(drw, "Extension")
+    drw.ClearSelection2(True)
+    ext.SelectByID2(_ruf(view, "GetName2"), "DRAWINGVIEW", 0, 0, 0, False, 0, callout_leer(), 0)
+    ext.DeleteSelection2(0)
+
+
+def _neue_masse(drw, views: dict, plan: list, neu: dict, achse: tuple, meldungen: list[str]) -> int:
+    """Neue Maße (Drehteil) über Kanten: Ø links neben der Ansicht, Längen darüber, gestaffelt."""
+    nach_id = {m.id: m for m in plan}
+    gesetzt = 0
+    for rolle, ids in neu.items():
+        x0, y0, x1, y1 = (c / 1000 for c in _umriss_mm(views[rolle]))
+        zaehler = {"durchmesser": 0, "laenge": 0}
+        for mid in ids:
+            m = nach_id[mid]
+            i = zaehler.setdefault(m.art, 0)
+            zaehler[m.art] = i + 1
+            platz = ((x0 - 0.012 - i * MASSABSTAND_M, (y0 + y1) / 2) if m.art == "durchmesser"
+                     else ((x0 + x1) / 2, y1 + 0.012 + i * MASSABSTAND_M))
+            if setze_neu(drw, views[rolle], m, achse, platz):
+                gesetzt += 1
+            else:
+                meldungen.append(f"MASS_NICHT_GESETZT: {mid} ({m.art} {m.wert:g}) – keine passenden Kanten in {rolle}")
+    return gesetzt
 
 
 def zeichnungsname(spec: dict) -> str:

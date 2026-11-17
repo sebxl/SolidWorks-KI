@@ -41,3 +41,17 @@ def test_einzelkandidaten_zuerst():
 
 def test_obergrenze_aus_standard():
     assert max_je_ansicht({"zeichnung": {"max_masse_je_ansicht": 9}}) == 9 and max_je_ansicht({}) == 12
+
+
+def test_vorzugsansicht_vor_geringster_belegung():
+    """Live Z1.3 Stufe 2: Lagemaße von Bohrungen landeten in der Dickenansicht (nur verdeckt sichtbar). Ein Maß geht
+    bevorzugt in die Ansicht, die auf die Fläche seines Merkmals schaut, solange dort Platz ist."""
+    kand = {"a": ["haupt", "drauf"], "b": ["haupt", "drauf"], "c": ["haupt", "drauf"]}
+    z = ordne_zu(kand, ANSICHTEN, 12, vorzug={"a": "haupt", "b": "haupt", "c": "haupt"})
+    assert z.je_ansicht["haupt"] == ["a", "b", "c"] and z.je_ansicht["drauf"] == []
+
+
+def test_vorzug_voll_dann_andere_kandidaten():
+    kand = {"a": ["haupt", "drauf"], "b": ["haupt", "drauf"]}
+    z = ordne_zu(kand, ANSICHTEN, 1, vorzug={"a": "haupt", "b": "haupt"})
+    assert z.je_ansicht["haupt"] == ["a"] and z.je_ansicht["drauf"] == ["b"] and not z.weitere_ansicht

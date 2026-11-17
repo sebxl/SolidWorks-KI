@@ -2,8 +2,8 @@
 
 Hauptansicht in der Mitte, Seitenansicht (von links gesehen) rechts daneben, von rechts gesehen links daneben, jeweils
 auf gleicher Höhe; Draufsicht darunter, Ansicht von unten darüber, jeweils auf gleicher Achse. Um jede Ansicht
-bleibt ein Rand für die Maße der Stufe 2 (`MASSRAND_MM`, auf dem Papier, unabhängig vom Maßstab). Format und Maßstab: der erste Kandidat aus `blatt.kandidaten`, bei dem der Block in eine Freifläche
-passt; die Ansichten liegen dann nie im Schriftfeld (Review Focus 5).
+bleibt ein Rand für die Maße der Stufe 2 (`MASSRAND_MM`, auf dem Papier, unabhängig vom Maßstab). Format und
+Maßstab: der erste Kandidat aus `blatt.kandidaten`, bei dem der Block in eine Freifläche passt; die Ansichten liegen dann nie im Schriftfeld (Review Focus 5).
 """
 
 from dataclasses import dataclass

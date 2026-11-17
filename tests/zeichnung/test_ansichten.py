@@ -108,3 +108,24 @@ def test_platte_sackbohrung_von_gegenseite_braucht_schnitt():
     a = waehle_ansichten(_platte(_bohrung("b1", "+y"), _bohrung("b2", "+y"), _bohrung("b3", "+y"),
                                  _bohrung("b4", "-y", durch=False)))
     assert a[0].modellansicht == "*Oben" and any(x.schnitt for x in a)
+
+
+def test_vorzug_hauptansicht_fuer_merkmale_der_hauptseite():
+    from swki.zeichnung.ansichten import vorzugsansichten
+    from swki.zeichnung.massplan import Mass
+
+    spec = _lade("stil/spannplatte.yaml")
+    plan = [Mass(n, "modell", "lage", 1.0, f, name=n) for n, f in
+            (("D1@g1_positionen", "g1"), ("D1@st_positionen", "st"), ("D3@t1_skizze", "t1"), ("D1@f1_skizze", "f1"),
+             ("D3@k1_skizze", "k1"))]
+    v = vorzugsansichten(spec, plan)
+    assert v == {"D1@g1_positionen": "haupt", "D1@st_positionen": "haupt", "D3@t1_skizze": "haupt",
+                 "D1@f1_skizze": "haupt"}
+
+
+def test_vorzug_muster_erbt_richtung_der_quelle():
+    from swki.zeichnung.ansichten import vorzugsansichten
+    from swki.zeichnung.massplan import Mass
+
+    v = vorzugsansichten(_lade("stil/spannplatte.yaml"), [Mass("D3@m1", "modell", "abstand", 30.0, "m1", name="D3@m1")])
+    assert v == {"D3@m1": "haupt"}

@@ -22,7 +22,11 @@ def max_je_ansicht(standard: dict) -> int:
     return int((standard.get("zeichnung") or {}).get("max_masse_je_ansicht", MAX_VORGABE))
 
 
-def ordne_zu(kandidaten: dict[str, list[str]], ansichten: list[str], max_je_ansicht: int) -> Zuordnung:
+def ordne_zu(kandidaten: dict[str, list[str]], ansichten: list[str], max_je_ansicht: int,
+             vorzug: dict[str, str] | None = None) -> Zuordnung:
+    """`vorzug`: je Maß die Ansicht, die auf die Fläche seines Merkmals schaut (Live Z1.3 Stufe 2: Lagemaße von
+    Bohrungen gehören nicht in die Dickenansicht); sie geht vor, solange dort Platz ist."""
+    vorzug = vorzug or {}
     z = Zuordnung({r: [] for r in ansichten})
     rang = {r: i for i, r in enumerate(ansichten)}
     for mass in sorted(kandidaten, key=lambda m: (len(kandidaten[m]), m)):
@@ -38,6 +42,6 @@ def ordne_zu(kandidaten: dict[str, list[str]], ansichten: list[str], max_je_ansi
             z.meldungen.append(f"ANSICHT_VOLL: {mass} passt nicht mehr in {', '.join(moeglich)} "
                                f"(Obergrenze {max_je_ansicht} Maße je Ansicht)")
             continue
-        ziel = min(frei, key=lambda r: (len(z.je_ansicht[r]), rang[r]))
+        ziel = vorzug[mass] if vorzug.get(mass) in frei else min(frei, key=lambda r: (len(z.je_ansicht[r]), rang[r]))
         z.je_ansicht[ziel].append(mass)
     return z
