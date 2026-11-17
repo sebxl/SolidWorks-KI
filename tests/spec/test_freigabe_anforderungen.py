@@ -25,9 +25,37 @@ def test_ohne_neue_felder_unveraendert():
 
 
 def test_umbenennen_und_zusammenfassen_unveraendert():
-    zwei = _mit({"id": "s1", **STIFT}, {"id": "s2", **STIFT})
-    eins = _mit({"id": "stifte", **STIFT})
+    zwei = _mit({"id": "s1", **STIFT, "positionen": [[0, 0]]}, {"id": "s2", **STIFT, "positionen": [[10, 0]]})
+    eins = _mit({"id": "stifte", **STIFT, "positionen": [[0, 0], [10, 0]]})
     assert pruefsumme(zwei) == pruefsumme(eins)
+
+
+def test_muster_statt_positionen_unveraendert():
+    reihe = _mit({"id": "s1", **STIFT, "positionen": [[0, 0], [10, 0], [20, 0]]})
+    muster = _mit({"id": "s1", **STIFT, "positionen": [[0, 0]]},
+                  {"id": "m1", "typ": "muster_linear", "features": ["s1"], "richtung1": {"achse": "x", "abstand": 10, "anzahl": 3}})
+    assert pruefsumme(reihe) == pruefsumme(muster)
+
+
+def test_funktion_an_einer_von_zwei_bohrungen_entfernt_aendert_summe():
+    ohne = {k: v for k, v in STIFT.items() if k != "funktion"}
+    beide = _mit({"id": "s1", **STIFT, "positionen": [[0, 0]]}, {"id": "s2", **STIFT, "positionen": [[10, 0]]})
+    eine = _mit({"id": "s1", **STIFT, "positionen": [[0, 0]]}, {"id": "s2", **ohne, "positionen": [[10, 0]]})
+    assert pruefsumme(beide) != pruefsumme(eine)
+
+
+def test_maskierter_parameter_ohne_absturz():
+    f = {"id": "b1", "typ": "bohrung", "durchmesser": "=D", "funktion": "gleitpassung_bohrung"}
+    spec = {**SPEC, "parameter": {"D": "<raum>"}, "features": [f]}  # wie swki.optimierung.raum.maskiert
+    assert anforderungs_tupel(spec)[0][1] == "=D"
+    pruefsumme(spec)
+
+
+def test_freigeben_legt_anforderungen_in_jedem_weg_ab(tmp_path):
+    from swki.spec.freigabe import freigeben
+
+    eintrag = freigeben(tmp_path / "t.yaml", _mit({"id": "s1", **STIFT}), zusatz={"raum": {"x": 1}})
+    assert eintrag["raum"] == {"x": 1} and eintrag["anforderungen"][0]["passung"] == "H7"
 
 
 def test_reihenfolge_unveraendert():

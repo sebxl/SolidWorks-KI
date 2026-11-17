@@ -18,7 +18,7 @@ from pathlib import Path
 import yaml
 
 from swki.cli import SwkiFehler
-from swki.spec.anforderungen import anforderungs_tupel
+from swki.spec.anforderungen import anforderungs_tupel, aufgeloeste_anforderungen
 
 PRUEF_FELDER = ("art", "name", "parameter", "material", "eigenschaften", "pruefung")
 PRUEF_FELDER_BAUGRUPPE = ("art", "name", "parameter", "eigenschaften", "komponenten", "freiheitsgrade", "pruefung")
@@ -86,6 +86,8 @@ def freigeben(spec_pfad: Path, spec: dict, zeitpunkt: str | None = None, teile: 
     """zusatz: weitere Angaben im Eintrag von freigabe.json (Baugruppe: Prüfsummen der Kaufteile, Spec 3c §8.3)."""
     pfad = freigabe_pfad(spec_pfad)
     daten = _lies(pfad)
+    if spec.get("art") == "teil" and (anforderungen := aufgeloeste_anforderungen(spec)):
+        zusatz = {**(zusatz or {}), "anforderungen": anforderungen}  # Tabellenstand der Freigabe (Zeichnungsabl. §4.2)
     kopie = _rohtext_oder_dump(spec_pfad, spec)
     kopie_pfad(spec_pfad).write_text(kopie, encoding="utf-8")
     eintrag = {

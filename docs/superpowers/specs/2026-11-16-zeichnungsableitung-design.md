@@ -148,9 +148,11 @@ die freigegebene Kopie geprüft, nicht über die Prüfsumme):
   Form/Lage, Ⓔ, Bearbeitung, Bezugsbuchstabe) und vergleichen sie ohne Rücksicht auf Feature-IDs. Fehlt eine
   Anforderung oder ist sie anders, meldet die Prüfung `ANFORDERUNG_GEAENDERT` (Mangel, kein Nachbessern im Bauweg).
 - Sperre vor dem Bau: `swki validieren` und `swki bauen` vergleichen schon ohne Modell die Mehrfachmenge der Tupel
-  (Feature-Art, Nenngröße wie Ø oder Gewindegröße, aufgelöste Anforderungen, Bezugsbuchstabe) beider Specs; weicht sie
-  ab, verweigert `swki bauen` mit `FREIGABE_VERALTET` wie bei Top-Level-Anforderungen. Die Lage im Teil prüft erst
-  `swki pruefen` am Modell (Lage ist auch heute Bauweg plus Messung).
+  (Feature-Art, Nenngröße wie Ø oder Gewindegröße, Anforderungsfelder wie in der Spec geschrieben, Anzahl der Instanzen
+  über Positionen, Muster und Spiegelungen) beider Specs; weicht sie ab, verweigert `swki bauen` mit `FREIGABE_VERALTET`
+  wie bei Top-Level-Anforderungen (umgesetzt über die Prüfsumme). Die Tupel enthalten die Felder roh, nicht aufgelöst: Die
+  Tabelle gilt wie eine Norm-Tabelle, ihr Stand liegt aufgelöst in `freigabe.json` (jeder Freigabeweg). Die Lage im Teil
+  prüft erst `swki pruefen` am Modell (Lage ist auch heute Bauweg plus Messung).
 - Die Regeltabelle `funktionen.yaml` gilt wie eine Norm-Tabelle: Ihr Inhalt zum Zeitpunkt der Freigabe wird mit
   aufgelöst und abgelegt; geprüft wird gegen die aufgelösten Werte der freigegebenen Kopie. Wie die Auflösung
   gespeichert wird (in `freigabe.json` oder als eigene Datei), ist dem Bauer überlassen.

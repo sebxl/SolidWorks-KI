@@ -86,3 +86,8 @@ def test_behandlung_verweis_ueber_id():
     spec = {"behandlung": [{"art": "einsatzhaerten", "id": "flanken"}],
             "features": [{"id": "f1", "typ": "rotation", "behandlung": "flanken"}]}
     assert anforderung_befunde(spec) == []
+
+
+def test_bezugsanker_auf_unbekanntes_feature():
+    spec = {"bezuege": {"A": {"feature": "gibtsnicht", "flaeche": "-y"}}, "features": [{"id": "f1", "typ": "extrusion"}]}
+    assert [b["pfad"] for b in anforderung_befunde(spec)] == ["bezuege.A.feature"]

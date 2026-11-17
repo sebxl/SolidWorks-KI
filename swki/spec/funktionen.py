@@ -90,6 +90,11 @@ def anforderung_befunde(spec: dict) -> list[dict]:
             befunde.append({"pfad": f"{pfad}.behandlung",
                             "meldung": f"Behandlung {f['behandlung']!r} steht nicht im Top-Level behandlung "
                                        "(art oder id)"})
+    ids = {f.get("id") for f in spec.get("features", [])}
+    for name, anker in spec.get("bezuege", {}).items():
+        if anker.get("feature") not in ids:
+            befunde.append({"pfad": f"bezuege.{name}.feature",
+                            "meldung": f"Bezug {name}: Feature {anker.get('feature')!r} gibt es nicht"})
     parameter = spec.get("parameter", {})
     for name in spec.get("toleranzen", {}):
         if name not in parameter:

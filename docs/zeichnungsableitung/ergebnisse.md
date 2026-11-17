@@ -24,9 +24,9 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 - `swki/spec/funktionen.py`: `aufloesen` (eigene Werte vor Tabelle, eigene Toleranz ersetzt Tabellenpassung),
   `anforderung_befunde` (blockierend in `validieren`).
 - Prüfsumme: `verfahren`, `toleranzen`, `behandlung`, `halbzeug` nur wenn vorhanden; Anforderungen an Features als
-  sortierte, doppelfreie Tupel [Art, Nenngröße, Felder] ohne Feature-IDs. Specs ohne neue Felder: Prüfsumme unverändert
-  (fester Hash im Test). `bezuege` sind Bauweg. Teil-Freigabe legt die aufgelösten Werte in `freigabe.json`
-  (`anforderungen`) ab.
+  sortierte Tupel [Art, Nenngröße, Felder, Anzahl Instanzen] ohne Feature-IDs. Specs ohne neue Felder: Prüfsumme unverändert
+  (fester Hash im Test). `bezuege` sind Bauweg (Anker auf ein unbekanntes Feature ist ein Befund). Jeder Freigabeweg legt die
+  aufgelösten Werte in `freigabe.json` (`anforderungen`) ab.
 - Hinweise: Regel 8 entfällt bei `bearbeitung: erodieren`; Ra < 0,8 ohne Schleifen; geschliffenes Drehteil ohne
   Freistich.
 
@@ -42,7 +42,9 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 
 ## Offen für Z1.3/Z1.4
 
-- Aufgelöste Werte für Teile, die über eine Baugruppen-Freigabe laufen (heute nur Teil-Freigaben).
 - Bezugsvorschlag aus `deckungsgleich`-Verknüpfungen der Baugruppe (Design §4.1).
 - Zahlenwert für `form_lage` mit `it` (Rundheit IT4/IT5) aus ISO 286 rechnen.
 - Prüfung der Lage und Anzahl der Funktionsmerkmale am Modell (`ANFORDERUNG_GEAENDERT`, Design §4.2).
+- Hinweis „Parameter in `toleranzen` treibt mehrere Maße“ (§4.1), Mindestradius beim Drahterodieren (§4.5).
+- Kleinere Review-Punkte (Ledger „minor (deferred)“): weitere Plausibilitätsprüfungen der Toleranzfelder, Beleg je
+  Feld im Hinweis, `lagersitz_gehaeuse` vom Nutzer bestätigen lassen, RWDR-Hinweis in der Auflösung.
