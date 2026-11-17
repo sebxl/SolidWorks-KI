@@ -26,7 +26,7 @@ from swki.pruefung.messen import oeffne
 from swki.spec.ausdruck import AusdruckFehler, auswerten
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
-from swki.verbindung import byref_long, callout_leer, verbinde
+from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
 from swki.zeichnung.ansichten import Ansicht, ist_drehteil, waehle_ansichten
 from swki.zeichnung.blatt import FORMATE
 from swki.zeichnung.layout import anordnen
@@ -62,6 +62,14 @@ def _umriss_mm(view) -> tuple[float, float, float, float]:
     return tuple(v * 1000 for v in list(_ruf(view, "GetOutline")))
 
 
+def _setze_lage(view, mitte_mm: tuple[float, float]) -> None:
+    """IView.Position als double-Array (pywin32-fallstricke: rohe Tupel wirken nicht); danach zurücklesen."""
+    view.Position = r8_array([mitte_mm[0] / 1000, mitte_mm[1] / 1000])
+    ist = [v * 1000 for v in list(_ruf(view, "Position"))[:2]]
+    if abs(ist[0] - mitte_mm[0]) > 0.5 or abs(ist[1] - mitte_mm[1]) > 0.5:
+        raise ZeichnungFehler("ZEICHNUNG_LAGE", f"{_ruf(view, 'GetName2')}: Lage {ist} statt {list(mitte_mm)}")
+
+
 def _blatt(drw, format_: str, massstab: tuple[int, int], blattformat: Path) -> None:
     b, h = FORMATE[format_]
     sheet = _ruf(drw, "GetCurrentSheet")
@@ -95,10 +103,14 @@ def _halbschnitt(drw, view, tiefe_mm: float) -> bool:
     """Drehteil mit liegender Achse: Ausbruch über die obere Hälfte bis zur Achse (Halbschnitt, R-Kap. 3)."""
     x0, y0, x1, y1 = (v / 1000 for v in _umriss_mm(view))
     ym = (y0 + y1) / 2
-    _waehle_ansicht(drw, view)
+    _waehle_ansicht(drw, view)  # Ansicht aktiv: die Skizze gehört zur Ansicht (Spike Z1.0, Schnittlinie)
+    segmente = list(_ruf(drw, "SketchManager").CreateCornerRectangle(x0 - 0.003, ym, 0, x1 + 0.003, y1 + 0.003, 0) or ())
     drw.ClearSelection2(True)
-    _ruf(drw, "SketchManager").CreateCornerRectangle(x0 - 0.003, ym, 0, x1 + 0.003, y1 + 0.003, 0)
-    return bool(drw.CreateBreakOutSection(tiefe_mm / 1000))
+    for s in segmente:  # Hilfe-Beispiel Create_BreakOut_Section: geschlossene Kontur vorher auswählen
+        s.Select4(True, callout_leer())
+    ok = bool(drw.CreateBreakOutSection(tiefe_mm / 1000))
+    drw.ClearSelection2(True)
+    return ok and _ruf(view, "GetBreakOutSectionCount") > 0
 
 
 def _projektion(drw, haupt, rolle: str):
@@ -157,7 +169,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             raise ZeichnungFehler("ZEICHNUNG_VORLAGE_FEHLT", f"config/rechner.yaml: zeichnung.{format_} fehlt")
         _blatt(drw, format_, massstab, blattformat)
         for p in plaetze:
-            views[p.rolle].Position = (p.mitte_mm[0] / 1000, p.mitte_mm[1] / 1000)
+            _setze_lage(views[p.rolle], p.mitte_mm)
         haupt = next(a for a in ansichten if a.rolle == "haupt")
         schnitt = None
         if haupt.schnitt and ist_drehteil(spec) and (tiefe := _max_radius_mm(spec)):
