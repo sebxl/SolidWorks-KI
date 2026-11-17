@@ -227,7 +227,10 @@ Der Block `zeichnung:` in der Spec ist Bauweg (nicht in der Prüfsumme) und übe
 
 - Projektionsmethode 1; Hauptansicht nach Fertigungslage: Drehteile mit liegender Achse, Frästeile mit der
   Hauptbearbeitungsseite (die meisten Features) vorn (selbst entschieden, R-Kap. 3 B).
-- So wenige Ansichten wie nötig: Jede Ansicht muss mindestens ein Maß tragen, das in keiner anderen darstellbar ist.
+- Ansichten nach Maßbedarf (Nutzer 17.11.2026: „meist 3 oder 4, je nach Bauteil“): Jedes Maß des Maßplans braucht eine
+  Ansicht, in der es in wahrer Größe darstellbar ist; keine Ansicht trägt mehr als `max_masse_je_ansicht` Maße
+  (`config/standard.yaml`, Vorgabe 12, selbst entschieden). Ein Maß ohne passende Ansicht oder eine volle Ansicht führt
+  zu einer weiteren Ansicht; eine Ansicht ohne eigenes Maß entfällt (außer der Hauptansicht).
 - Schnitt, wenn Innenkonturen sonst nur verdeckt sichtbar wären (Bohrungsgrund, Freistich, Innennut); Drehteile
   mit Halbschnitt oder Vollschnitt; keine verdeckten Kanten in Maßansichten.
 - Einzelheit für Freistich und Merkmale unter einer Mindestgröße (Schwelle dem Bauer überlassen) mit Vorzugsmaßstab.
