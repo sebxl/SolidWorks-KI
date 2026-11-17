@@ -39,7 +39,7 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         assert code == 0, bau
         teil = next(Path(bau["ordner"]).glob("*.SLDPRT"))
         sha = hashlib.sha256(teil.read_bytes()).hexdigest()
-        code, z = _lauf(capsys, "zeichnen", str(spec_pfad))
+        code, z = _lauf(capsys, "zeichnen", str(spec_pfad), "--lauf", str(bau["lauf"]))  # ungeprüft: nur zur Ansicht
         assert code == 0, z
         ablage = lade_rechner().arbeitsordner / "Z1-STUFE1"  # bleibt für die Durchsicht durch den Nutzer
         ablage.mkdir(exist_ok=True)
@@ -51,6 +51,7 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         assert tuple(int(x) for x in z["massstab"].split(":")) in MASSSTAEBE
         rollen = [a["rolle"] for a in z["ansichten"]]
         assert "haupt" in rollen
+        assert any(m.startswith("LAUF_NICHT_BESTANDEN") for m in z["meldungen"])
         if drehteil:
             assert z["schnitt"] and z["schnitt"].startswith("Schnitt") and "seite" in rollen
         x0, y0, x1, y1 = zeichenfeld(z["format"])

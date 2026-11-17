@@ -18,15 +18,16 @@ from pathlib import Path
 
 import win32com.client.dynamic
 
-from swki.auftrag import auftrag_name, dateiname, lauf_ordner, laeufe
+from swki.auftrag import auftrag_name, dateiname, lauf_ordner
 from swki.cli import SwkiFehler
 from swki.compiler import sw
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
+from swki.pruefung.schleife import lies_laeufe
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
-from swki.zeichnung.ansichten import Ansicht, waehle_ansichten
+from swki.zeichnung.ansichten import Ansicht, hinweise, waehle_ansichten
 from swki.zeichnung.blatt import FORMATE
 from swki.zeichnung.layout import anordnen
 
@@ -137,9 +138,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     if not r.zeichnung:
         raise ZeichnungFehler("ZEICHNUNG_VORLAGE_FEHLT", "config/rechner.yaml: zeichnung: {A4: …, A3quer: …} fehlt")
     auftrag = auftrag_name(spec_pfad)
-    lauf = lauf or (laeufe(r, auftrag) or [None])[-1]
-    if lauf is None:
-        raise SwkiFehler(f"Auftrag {auftrag} hat noch keinen Lauf. Zuerst: swki bauen")
+    lauf, meldungen = waehle_lauf(spec_pfad, lauf)
+    meldungen += hinweise(spec)
     ordner = lauf_ordner(r, auftrag, lauf)
     teil = ordner / f"{dateiname(spec, auftrag, standard)}.sldprt"
     if not teil.exists():
@@ -157,7 +157,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         for toggle in AUTO_MITTELLINIEN:
             ext.SetUserPreferenceToggle(toggle, 0, True)
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
-        views = _erzeuge(drw, teil, ansichten)
+        views, schnitt, nicht_erzeugt = _erzeuge(drw, teil, ansichten)
+        meldungen += nicht_erzeugt
         groessen = {rolle: _groesse_1zu1(v) for rolle, v in views.items()}
         format_, massstab, plaetze = anordnen(groessen)
         blattformat = r.zeichnung.get(format_)
@@ -169,7 +170,6 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         for p in sorted(plaetze, key=lambda p: p.rolle != basis):  # Elternansicht zuerst, Kinder sind ausgerichtet
             _setze_lage(views[p.rolle], p.mitte_mm)
-        schnitt = next((_ruf(views[a.rolle], "GetName2") for a in ansichten if a.schnitt), None)
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{teil.stem}.slddrw", ausgabe / f"{teil.stem}.pdf"
@@ -187,30 +187,51 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         raise ZeichnungFehler("ZEICHNUNG_TEIL_GEAENDERT", f"{teil.name} wurde beim Zeichnen verändert")
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
-            "eigenschaften": eigenschaften, "dauer_s": round(time.time() - t0, 1)}
+            "eigenschaften": eigenschaften, "meldungen": meldungen, "dauer_s": round(time.time() - t0, 1)}
 
 
-def _erzeuge(drw, teil: Path, ansichten: list[Ansicht]) -> dict:
+def waehle_lauf(spec_pfad: Path, lauf: int | None) -> tuple[int, list[str]]:
+    """Design §5: gezeichnet wird der letzte bestandene Lauf (Bau ok, keine Code-Mängel, Prüfer bestanden). Ein
+    ausdrücklich genannter Lauf darf ungeprüft sein; dann trägt das Ergebnis eine Meldung (nur zur Ansicht)."""
+    alle = lies_laeufe(spec_pfad)
+    if lauf is None:
+        bestanden = [e["lauf"] for e in alle if e["bestanden"]]
+        if not bestanden:
+            raise ZeichnungFehler("ZEICHNUNG_LAUF_NICHT_BESTANDEN", "kein bestandener Lauf (Bau, swki pruefen, Prüfer); "
+                                  "zur Ansicht eines ungeprüften Laufs: swki zeichnen <spec> --lauf N")
+        return bestanden[-1], []
+    eintrag = next((e for e in alle if e["lauf"] == lauf), None)
+    if eintrag is None or not eintrag["bestanden"]:
+        return lauf, [f"LAUF_NICHT_BESTANDEN: Lauf {lauf} ist nicht bestanden – Zeichnung nur zur Ansicht"]
+    return lauf, []
+
+
+def _erzeuge(drw, teil: Path, ansichten: list[Ansicht]) -> tuple[dict, str | None, list[str]]:
     """Basis = die Ansicht mit Modellansicht. Ein Schnitt ohne Modellansicht entsteht aus ihr (Längsschnitt eines
-    Drehteils), die übrigen werden aus der Hauptansicht projiziert."""
+    Drehteils), die übrigen werden aus der Hauptansicht projiziert. Liefert Ansichten, Name des wirklich erzeugten
+    Schnitts und Meldungen für verlangte, aber nicht erzeugte Schnitte (Review I1)."""
     basis = next(a for a in ansichten if a.modellansicht)
     view = drw.CreateDrawViewFromModelView3(str(teil), basis.modellansicht, 0.25, 0.2, 0)
     if view is None:
         raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Modellansicht {basis.modellansicht} nicht erzeugt")
     if basis.winkel_grad:
         view.Angle = math.radians(basis.winkel_grad)
-    views = {basis.rolle: view}
+    views, schnitt, meldungen = {basis.rolle: view}, None, []
     for a in ansichten:
         if a is basis:
             continue
         if a.modellansicht is None and a.schnitt and a.rolle == "haupt":
             v = _laengsschnitt(drw, view)
+            schnitt = _ruf(v, "GetName2") if v is not None else None
         else:
             v = _projektion(drw, views["haupt"], a.rolle)
+            if a.schnitt:
+                meldungen.append(f"SCHNITT_NICHT_UNTERSTUETZT: Ansicht {a.rolle} bräuchte einen Schnitt (Frästeil, "
+                                 "Stufe 1 zeichnet sie ungeschnitten)")
         if v is None:
             raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Ansicht {a.rolle} nicht erzeugt")
         views[a.rolle] = v
-    return views
+    return views, schnitt, meldungen
 
 
 def _png(pdf: Path) -> str | None:

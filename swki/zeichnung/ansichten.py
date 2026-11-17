@@ -41,13 +41,15 @@ def _wert(x, parameter: dict) -> float | None:
         return None
 
 
-def _profil_u(f: dict, parameter: dict) -> list[float]:
+def _radien(f: dict, parameter: dict, achse: str) -> list[float]:
+    """Abstände der Profilpunkte zur Drehachse: Achse entlang v → |u|, entlang u → |v| (Review I2; Achse durch 0)."""
+    i = 0 if achse == "v" else 1
     werte = []
     for e in f.get("skizze", {}).get("elemente", []):
         for p in e.get("polygon", {}).get("punkte", []):
-            u = _wert(p[0], parameter)
-            if u is not None:
-                werte.append(abs(u))
+            r = _wert(p[i], parameter)
+            if r is not None:
+                werte.append(abs(r))
     return werte
 
 
@@ -65,10 +67,10 @@ def _drehteil(spec: dict) -> list[Ansicht]:
             dv = abs((_wert(bis[1], parameter) or 0) - (_wert(von[1], parameter) or 0))
             achse = "v" if dv > du else "u"
     winkel = 90 if achse == "v" else 0  # Achse liegend darstellen (R-Kap. 3: Fertigungslage)
-    u_erstes = _profil_u(erste, parameter)
-    hohl = bool(u_erstes) and min(u_erstes) > _NULL
-    bohrt_achse = any(f.get("typ") == "rotation" and f.get("schnitt") and _profil_u(f, parameter)
-                      and min(_profil_u(f, parameter)) <= _NULL for f in rotationen[1:])
+    r_erstes = _radien(erste, parameter, achse)
+    hohl = bool(r_erstes) and min(r_erstes) > _NULL
+    bohrt_achse = any(f.get("typ") == "rotation" and f.get("schnitt") and _radien(f, parameter, achse)
+                      and min(_radien(f, parameter, achse)) <= _NULL for f in rotationen[1:])
     if hohl or bohrt_achse:
         # Längsschnitt A-A aus der Stirnansicht: Skizzen in gedrehten Ansichten landen nicht in Blattkoordinaten
         # (Live Z1.3 Stufe 1), die ungedrehte Stirnansicht trägt die Schnittlinie wie im Spike Z1.0.
@@ -88,21 +90,36 @@ def _richtung(f: dict) -> str | None:
 
 
 def _fraesteil(spec: dict) -> list[Ansicht]:
-    richtungen = [r for f in spec["features"][1:] if (r := _richtung(f))]
+    richtungen = [r for f in spec.get("features", [])[1:] if (r := _richtung(f))]
     zaehl = {r: richtungen.count(r) for r in richtungen}
     haupt = max(zaehl, key=lambda r: (zaehl[r], r == "+y")) if zaehl else "+y"
     achse = haupt[1]
-    quer = [f for f in spec["features"][1:] if (r := _richtung(f)) and r[1] != achse]
-    blind_quer = any(f.get("typ") in (*_BOHRUNGEN, "schnitt") and "durch" not in f
-                     and f.get("ende", {}).get("typ") != "durch_alles" for f in quer)
-    ansichten = [Ansicht("haupt", MODELLANSICHT[haupt]), Ansicht("drauf", None, schnitt=blind_quer)]
+    quer = [f for f in spec.get("features", [])[1:] if (r := _richtung(f)) and r[1] != achse]
+    nicht_haupt = [f for f in spec.get("features", [])[1:] if (r := _richtung(f)) and r != haupt]
+    blind = any(f.get("typ") in (*_BOHRUNGEN, "schnitt") and "durch" not in f
+                and f.get("ende", {}).get("typ") != "durch_alles" for f in nicht_haupt)  # Review I4b: auch Gegenseite
+    ansichten = [Ansicht("haupt", MODELLANSICHT[haupt]), Ansicht("drauf", None, schnitt=blind)]
     if quer:
         ansichten.append(Ansicht("seite", None))
     return ansichten
+
+
+def _hat_rotation(spec: dict) -> bool:
+    return any(f.get("typ") == "rotation" for f in spec.get("features", []))
+
+
+def hinweise(spec: dict) -> list[str]:
+    """Wo die Ansichtswahl rät (Repo-Regel: nie still weglassen)."""
+    aus = []
+    if ist_drehteil(spec) and not _hat_rotation(spec):
+        aus.append("ANSICHT_GERATEN: Drehteil ohne Rotation-Feature – Ansichten wie ein Frästeil gewählt (Review I3)")
+    if not ist_drehteil(spec) and not any(_richtung(f) for f in spec.get("features", [])[1:]):
+        aus.append("ANSICHT_GERATEN: keine Flächenanker – Hauptansicht von oben angenommen")
+    return aus
 
 
 def waehle_ansichten(spec: dict) -> list[Ansicht]:
     """Hauptansicht und benötigte Projektionen. Drehteil: Achse liegend, Stirnansicht bei Bohrungen; bei Innenkontur
     Stirnansicht als Modellansicht und Längsschnitt A-A daraus als Hauptansicht (Vollschnitt). Frästeil: Hauptansicht von der Seite mit den meisten Features, Draufsicht für die Dicke, Seitenansicht
     bei Features quer dazu; Schnitt, wenn ein Feature quer blind endet."""
-    return _drehteil(spec) if ist_drehteil(spec) else _fraesteil(spec)
+    return _drehteil(spec) if ist_drehteil(spec) and _hat_rotation(spec) else _fraesteil(spec)

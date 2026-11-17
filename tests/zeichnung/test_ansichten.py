@@ -69,3 +69,34 @@ def test_platte_ohne_innenkontur_kein_schnitt():
 def test_platte_sackbohrung_von_der_seite_braucht_schnitt():
     a = waehle_ansichten(_platte(_bohrung("b1", "+y"), _bohrung("b2", "+y"), _bohrung("b3", "+x", durch=False)))
     assert a[0].modellansicht == "*Oben" and any(x.schnitt for x in a)
+
+
+def _welle_quer(innen: float = 0) -> dict:
+    """Welle mit Mittellinie entlang u (Achse X): Radius ist |v| (Review I2)."""
+    return {"parameter": {}, "features": [{"id": "f1", "typ": "rotation", "skizze": {"ebene": "vorne", "elemente": [
+        {"polygon": {"punkte": [[5, innen], [105, innen], [105, 10], [5, 10]]}},
+        {"mittellinie": {"von": [0, 0], "bis": [110, 0]}}]}}]}
+
+
+def test_welle_achse_u_voll_ohne_schnitt():
+    assert waehle_ansichten(_welle_quer()) == [Ansicht("haupt", "*Vorderseite", schnitt=False, winkel_grad=0)]
+
+
+def test_welle_achse_u_hohl_schnitt_aus_stirn():
+    assert waehle_ansichten(_welle_quer(innen=4)) == [Ansicht("seite", "*Rechts"), Ansicht("haupt", None, schnitt=True)]
+
+
+def test_drehen_ohne_rotation_wie_fraesteil_mit_hinweis():
+    from swki.zeichnung.ansichten import hinweise
+
+    spec = {"verfahren": "drehen", "parameter": {}, "features": [{"id": "f1", "typ": "extrusion", "skizze": {
+        "ebene": "oben", "elemente": [{"kreis": {"mitte": [0, 0], "durchmesser": 8}}]}, "ende": {"typ": "blind", "tiefe": 20}}]}
+    assert waehle_ansichten(spec)[0].rolle == "haupt"
+    assert any("Rotation" in h for h in hinweise(spec))
+    assert waehle_ansichten({"verfahren": "drehen", "features": []})  # kein IndexError
+
+
+def test_platte_sackbohrung_von_gegenseite_braucht_schnitt():
+    a = waehle_ansichten(_platte(_bohrung("b1", "+y"), _bohrung("b2", "+y"), _bohrung("b3", "+y"),
+                                 _bohrung("b4", "-y", durch=False)))
+    assert a[0].modellansicht == "*Oben" and any(x.schnitt for x in a)

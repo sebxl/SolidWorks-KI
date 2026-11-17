@@ -47,6 +47,12 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
   Maßstab); in gedrehten Ansichten zusätzlich gedreht, ein Ausbruch dort wirkt nicht. Neue Ansichten sind automatisch
   skaliert; der Maßstab wird je Ansicht gesetzt. `IView.Position` nur als double-Array.
 - Laufzeit 39–58 s je Zeichnung (Ursache offen). PDFs zur Durchsicht: `<arbeitsordner>/Z1-STUFE1/`.
+- Gezeichnet wird der letzte bestandene Lauf; `--lauf N` erlaubt einen ungeprüften Lauf mit Meldung
+  `LAUF_NICHT_BESTANDEN` (nur zur Ansicht). Das Ergebnis führt `meldungen`, wo die Ansichtswahl rät oder ein Schnitt
+  nicht erzeugt wird (`SCHNITT_NICHT_UNTERSTUETZT`: Schnitt im Frästeil folgt später).
+- **Live ungeprüft:** Drehteil ohne Innenkontur (gedrehte Hauptansicht über `IView.Angle`, Projektion daraus) – nur
+  in den reinen Funktionen getestet. Ebenfalls offen: axiale Bohrung als Innenkontur eines Drehteils, Schnitt im
+  Frästeil, Hauptseite bei `nahe`-Ankern; kleinere Review-Punkte siehe Ledger („minor (deferred)“).
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
