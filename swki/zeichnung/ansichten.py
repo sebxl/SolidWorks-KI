@@ -8,6 +8,7 @@ oben → +Y, rechts → +X. Modellansichten heißen in der deutschen Oberfläche
 from dataclasses import dataclass
 
 from swki.spec.ausdruck import AusdruckFehler, auswerten
+from swki.spec.konturen import kontur_punkte
 
 MODELLANSICHT = {"+y": "*Oben", "-y": "*Unten", "+z": "*Vorderseite", "-z": "*Rückseite", "+x": "*Rechts",
                  "-x": "*Links"}
@@ -53,28 +54,37 @@ def drehachse(f: dict, parameter: dict) -> str:
     return achse
 
 
+def elementpunkte(e: dict, parameter: dict) -> list[tuple[float, float]] | None:
+    """Eckpunkte (u, v) eines Profilelements: polygon, rechteck, kontur (Review Stufe 2 C1); None = nicht unterstützt
+    (Mittellinie liefert []). Ausdrucksfehler → None."""
+    try:
+        if "polygon" in e:
+            return [(auswerten(p[0], parameter), auswerten(p[1], parameter)) for p in e["polygon"]["punkte"]]
+        if "rechteck" in e:
+            r = e["rechteck"]
+            mu, mv = (auswerten(x, parameter) for x in r["mitte"])
+            b, h = auswerten(r["breite"], parameter) / 2, auswerten(r["hoehe"], parameter) / 2
+            return [(mu - b, mv - h), (mu + b, mv - h), (mu + b, mv + h), (mu - b, mv + h)]
+        if "kontur" in e:
+            return kontur_punkte(e["kontur"], parameter)
+    except AusdruckFehler:
+        return None
+    return [] if "mittellinie" in e else None
+
+
 def profilpunkte(f: dict, parameter: dict, achse: str) -> list[tuple[float, float]]:
-    """(Radius, Lage auf der Achse) je Polygonpunkt; Achse durch 0 (Mittellinie)."""
+    """(Radius, Lage auf der Achse) je Eckpunkt des Profils; Achse durch 0 (Mittellinie)."""
     ir, ia = (0, 1) if achse == "v" else (1, 0)
     punkte = []
     for e in f.get("skizze", {}).get("elemente", []):
-        for p in e.get("polygon", {}).get("punkte", []):
-            r, a = _wert(p[ir], parameter), _wert(p[ia], parameter)
-            if r is not None and a is not None:
-                punkte.append((abs(r), a))
+        for p in elementpunkte(e, parameter) or []:
+            punkte.append((abs(p[ir]), p[ia]))
     return punkte
 
 
 def _radien(f: dict, parameter: dict, achse: str) -> list[float]:
     """Abstände der Profilpunkte zur Drehachse: Achse entlang v → |u|, entlang u → |v| (Review I2; Achse durch 0)."""
-    i = 0 if achse == "v" else 1
-    werte = []
-    for e in f.get("skizze", {}).get("elemente", []):
-        for p in e.get("polygon", {}).get("punkte", []):
-            r = _wert(p[i], parameter)
-            if r is not None:
-                werte.append(abs(r))
-    return werte
+    return [r for r, _ in profilpunkte(f, parameter, achse)]
 
 
 def _drehteil(spec: dict) -> list[Ansicht]:
@@ -123,9 +133,12 @@ def vorzugsansichten(spec: dict, plan: list) -> dict[str, str]:
     features = spec.get("features", [])
     basis = features[0]["id"] if features else None
     richtung = {f["id"]: _richtung(f) for f in features}
-    for f in features:  # Muster und Spiegeln erben die Richtung ihrer Quellen
-        if f.get("typ") in ("muster_linear", "muster_kreis", "spiegeln") and richtung.get(f["id"]) is None:
-            richtung[f["id"]] = next((richtung.get(q) for q in f.get("features", []) if richtung.get(q)), None)
+    for f in features:  # Muster/Spiegeln erben von ihren Quellen, Verrundung/Fase vom Kanten-Feature (Review I4)
+        if richtung.get(f["id"]) is not None:
+            continue
+        quellen = f.get("features", []) if f.get("typ") in ("muster_linear", "muster_kreis", "spiegeln") else \
+            [k.get("feature") for k in f.get("kanten", []) if isinstance(k, dict)]
+        richtung[f["id"]] = next((richtung.get(q) for q in quellen if richtung.get(q)), None)
     return {m.id: "haupt" for m in plan if m.merkmal == basis or richtung.get(m.merkmal) == haupt}
 
 

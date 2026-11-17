@@ -82,3 +82,64 @@ def test_drehteil_ohne_skizzenmasse():
 def test_mass_ist_wertobjekt():
     m = Mass("x", "neu", "laenge", 5.0, "f1")
     assert m.name is None and m.geometrie is None
+
+
+# --- Review Stufe 2: C1 (Profilarten, Nutgrund, Bohrung auf der Achse), I1 (Doppel nach Lage) -------------------------
+
+def _rot(fid, elemente, schnitt=False):
+    f = {"id": fid, "typ": "rotation", "skizze": {"ebene": "vorne", "elemente": [
+        *elemente, {"mittellinie": {"von": [0, -5], "bis": [0, 105]}}]}}
+    return {**f, "schnitt": True} if schnitt else f
+
+
+def _poly(*p):
+    return {"polygon": {"punkte": [list(x) for x in p]}}
+
+
+def _welle(*features):
+    return {"parameter": {}, "features": list(features)}
+
+
+def _d(plan):
+    return sorted(m.wert for m in plan if m.art == "durchmesser")
+
+
+def test_kontur_profil_ohne_absturz():
+    kontur = {"kontur": {"start": [0, 0], "segmente": [{"linie": [10, 0]}, {"linie": [10, 50]}, {"linie": [0, 50]},
+                                                      {"linie": [0, 0]}]}}
+    plan = massplan_drehteil(_welle(_rot("f1", [kontur])))
+    assert _d(plan) == [20] and [m.wert for m in plan if m.art == "laenge"] == [50]
+
+
+def test_bohrung_auf_der_achse():
+    plan = massplan_drehteil(_welle(_rot("f1", [_poly((0, 0), (15, 0), (15, 60), (0, 60))]),
+                                    _rot("f2", [_poly((0, 0), (6, 0), (6, 20), (0, 20))], schnitt=True)))
+    assert 12 in _d(plan)
+
+
+def test_innennut_grund_ist_groesster_radius():
+    plan = massplan_drehteil(_welle(_rot("f1", [_poly((10, 0), (20, 0), (20, 60), (10, 60))]),
+                                    _rot("f2", [_poly((10, 30), (12, 30), (12, 35), (10, 35))], schnitt=True)))
+    assert 24 in _d(plan)
+
+
+def test_rechteck_einstich():
+    plan = massplan_drehteil(_welle(_rot("f1", [_poly((0, 0), (16, 0), (16, 60), (0, 60))]),
+                                    _rot("f2", [{"rechteck": {"mitte": [16, 41.5], "breite": 2, "hoehe": 3}}],
+                                         schnitt=True)))
+    assert 30 in _d(plan)
+
+
+def test_unbekanntes_element_gemeldet():
+    from swki.zeichnung.massplan import massplan_meldungen
+
+    spec = _welle(_rot("f1", [_poly((0, 0), (15, 0), (15, 60), (0, 60))]),
+                  _rot("f2", [{"kreis": {"mitte": [15, 30], "durchmesser": 4}}], schnitt=True))
+    assert any(m.startswith("MASS_NICHT_GEPLANT") and "f2" in m for m in massplan_meldungen(spec))
+
+
+def test_doppel_nach_lage_nicht_nach_wert():
+    plan = massplan_drehteil(_welle(_rot("f1", [_poly((0, 0), (15, 0), (15, 20), (16, 20), (16, 60), (0, 60))]),
+                                    _rot("f2", [_poly((15, 40), (17, 40), (17, 43), (15, 43))], schnitt=True)))
+    assert {m.geometrie["bis"] for m in plan if m.art == "laenge"} == {0, 40, 43, 60}
+    assert _d(plan).count(30) == 2  # Absatz und Einstichgrund

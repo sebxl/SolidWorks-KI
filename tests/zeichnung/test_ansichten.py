@@ -129,3 +129,12 @@ def test_vorzug_muster_erbt_richtung_der_quelle():
 
     v = vorzugsansichten(_lade("stil/spannplatte.yaml"), [Mass("D3@m1", "modell", "abstand", 30.0, "m1", name="D3@m1")])
     assert v == {"D3@m1": "haupt"}
+
+
+def test_vorzug_verrundung_erbt_richtung_des_kantenfeatures():
+    """Review I4: r1 (Eckradien der Tasche t1) gehört wie t1 in die Hauptansicht."""
+    from swki.zeichnung.ansichten import vorzugsansichten
+    from swki.zeichnung.massplan import Mass
+
+    v = vorzugsansichten(_lade("stil/spannplatte.yaml"), [Mass("D1@r1", "modell", "radius", 4.0, "r1", name="D1@r1")])
+    assert v == {"D1@r1": "haupt"}

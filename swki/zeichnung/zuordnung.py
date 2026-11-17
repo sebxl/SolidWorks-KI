@@ -23,25 +23,32 @@ def max_je_ansicht(standard: dict) -> int:
 
 
 def ordne_zu(kandidaten: dict[str, list[str]], ansichten: list[str], max_je_ansicht: int,
-             vorzug: dict[str, str] | None = None) -> Zuordnung:
+             vorzug: dict[str, str] | None = None, zusatz: set[str] | None = None,
+             belegt: dict[str, int] | None = None) -> Zuordnung:
     """`vorzug`: je Maß die Ansicht, die auf die Fläche seines Merkmals schaut (Live Z1.3 Stufe 2: Lagemaße von
-    Bohrungen gehören nicht in die Dickenansicht); sie geht vor, solange dort Platz ist."""
-    vorzug = vorzug or {}
+    Bohrungen gehören nicht in die Dickenansicht); sie geht vor, solange dort Platz ist. `zusatz`: nachträglich erzeugte
+    Ansichten – erst belegen, wenn die Grundansichten voll sind (Review I3). `belegt`: schon belegte Plätze je Ansicht
+    (neue Drehteil-Maße, Review I2). Eine weitere Ansicht verlangt nur eine volle Ansicht, kein undarstellbares Maß."""
+    vorzug, zusatz, belegt = vorzug or {}, zusatz or set(), belegt or {}
     z = Zuordnung({r: [] for r in ansichten})
+
+    def last(r: str) -> int:
+        return len(z.je_ansicht[r]) + belegt.get(r, 0)
+
     rang = {r: i for i, r in enumerate(ansichten)}
     for mass in sorted(kandidaten, key=lambda m: (len(kandidaten[m]), m)):
         moeglich = [r for r in kandidaten[mass] if r in z.je_ansicht]
         if not moeglich:
             z.ohne_ansicht.append(mass)
-            z.weitere_ansicht = True
             z.meldungen.append(f"MASS_OHNE_ANSICHT: {mass} ist in keiner Ansicht darstellbar")
             continue
-        frei = [r for r in moeglich if len(z.je_ansicht[r]) < max_je_ansicht]
+        frei = [r for r in moeglich if last(r) < max_je_ansicht]
         if not frei:
             z.weitere_ansicht = True
             z.meldungen.append(f"ANSICHT_VOLL: {mass} passt nicht mehr in {', '.join(moeglich)} "
                                f"(Obergrenze {max_je_ansicht} Maße je Ansicht)")
             continue
-        ziel = vorzug[mass] if vorzug.get(mass) in frei else min(frei, key=lambda r: (len(z.je_ansicht[r]), rang[r]))
+        grund = [r for r in frei if r not in zusatz] or frei
+        ziel = vorzug[mass] if vorzug.get(mass) in grund else min(grund, key=lambda r: (last(r), rang[r]))
         z.je_ansicht[ziel].append(mass)
     return z

@@ -114,3 +114,11 @@ def test_neue_masse_gehen_in_die_hauptansicht():
     plan = [Mass("f1:d50", "neu", "durchmesser", 50.0, "f1", geometrie={"radius": 25})]
     erg = b.bemasse(_Drw(views, {}), views, plan, ["haupt", "seite"], max_je=12, weitere=[], neue_ansicht=None)
     assert erg.neu == {"haupt": ["f1:d50"]}
+
+
+def test_neue_masse_ueber_obergrenze_gemeldet():
+    """Review I2: neue Drehteil-Maße belegen die Hauptansicht vor; mehr als die Obergrenze wird gemeldet."""
+    views = {"haupt": _View("V1"), "seite": _View("V2")}
+    plan = [Mass(f"f1:a{i}", "neu", "laenge", float(i), "f1", geometrie={"von": 0, "bis": i}) for i in range(1, 4)]
+    erg = b.bemasse(_Drw(views, {}), views, plan, ["haupt", "seite"], max_je=2, weitere=[], neue_ansicht=None)
+    assert any(m.startswith("ANSICHT_VOLL") for m in erg.meldungen)

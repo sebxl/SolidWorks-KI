@@ -25,7 +25,7 @@ def test_verteilung_auf_zwei_ansichten():
 
 def test_mass_ohne_kandidat_gemeldet():
     z = ordne_zu({"x": []}, ANSICHTEN, 12)
-    assert z.ohne_ansicht == ["x"] and any("x" in m for m in z.meldungen) and z.weitere_ansicht
+    assert z.ohne_ansicht == ["x"] and any("x" in m for m in z.meldungen)
 
 
 def test_leere_ansichten_bleiben_sichtbar():
@@ -55,3 +55,22 @@ def test_vorzug_voll_dann_andere_kandidaten():
     kand = {"a": ["haupt", "drauf"], "b": ["haupt", "drauf"]}
     z = ordne_zu(kand, ANSICHTEN, 1, vorzug={"a": "haupt", "b": "haupt"})
     assert z.je_ansicht["haupt"] == ["a"] and z.je_ansicht["drauf"] == ["b"] and not z.weitere_ansicht
+
+
+def test_ohne_ansicht_verlangt_keine_weitere_ansicht():
+    """Review I3: ein nicht darstellbares Maß erzeugt keine Zusatzansichten."""
+    z = ordne_zu({"x": [], "a": ["haupt"]}, ANSICHTEN, 12)
+    assert z.ohne_ansicht == ["x"] and not z.weitere_ansicht
+
+
+def test_zusatzansicht_erst_wenn_grundansichten_voll():
+    kand = {f"m{i}": ["haupt", "unter"] for i in range(3)}
+    z = ordne_zu(kand, ["haupt", "unter"], 12, zusatz={"unter"})
+    assert len(z.je_ansicht["haupt"]) == 3 and z.je_ansicht["unter"] == []
+
+
+def test_vorbelegung_zaehlt_gegen_obergrenze():
+    """Review I2: neue Drehteil-Maße belegen die Hauptansicht vor."""
+    z = ordne_zu({"a": ["haupt", "seite"], "b": ["haupt", "seite"]}, ["haupt", "seite"], 12, belegt={"haupt": 11},
+                 vorzug={"a": "haupt", "b": "haupt"})
+    assert len(z.je_ansicht["haupt"]) == 1 and len(z.je_ansicht["seite"]) == 1

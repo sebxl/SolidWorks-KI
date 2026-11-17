@@ -10,7 +10,8 @@ from pathlib import Path
 import pytest
 
 from swki.cli import main
-from swki.konfig import lade_rechner
+from swki.konfig import lade_rechner, lade_standard
+from swki.zeichnung.zuordnung import max_je_ansicht
 from swki.zeichnung.blatt import MASSSTAEBE, SCHRIFTFELD_MM, zeichenfeld
 
 pytestmark = pytest.mark.sw
@@ -55,10 +56,10 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         # Stufe 2: Maßplan vollständig gesetzt oder jede Lücke gemeldet; keine Ansicht über der Obergrenze
         masse = z["masse"]
         assert masse["gesetzt"] == masse["plan"] or any(m.startswith("MASS_") for m in z["meldungen"]), z["meldungen"]
-        assert max(masse["je_ansicht"].values()) <= 12, masse
+        assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()), masse
         assert not any(m.startswith(("MASS_NICHT_GELOESCHT", "MASS_NICHT_GESETZT")) for m in z["meldungen"]), z["meldungen"]
         if not drehteil:
-            assert len(z["ansichten"]) == 3 or any("ANSICHT" in m for m in z["meldungen"])
+            assert len(z["ansichten"]) == 3 or any(m.startswith(("ANSICHT_VOLL", "ANSICHT_NICHT")) for m in z["meldungen"])
         if drehteil:
             assert z["schnitt"] and z["schnitt"].startswith("Schnitt") and "seite" in rollen
         x0, y0, x1, y1 = zeichenfeld(z["format"])

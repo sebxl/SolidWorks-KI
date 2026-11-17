@@ -24,6 +24,7 @@ from swki.zeichnung.zuordnung import ordne_zu
 
 MARKIERTE_MASSE = 32768 | 131072  # swInsertDimensionsMarkedForDrawing | swInsertHoleWizardLocationDimensions
 KANTE = 1                # swViewEntityType_e.swViewEntityType_Edge
+SILHOUETTE = 4           # swViewEntityType_e.swViewEntityType_SilhouetteEdge
 PRAEFIX = 1              # swDimensionTextParts_e.swDimensionTextPrefix
 AUTO_ANORDNEN = 0        # swAlignDimensionType_e.swAlignDimensionType_AutoArrange
 DURCHMESSER = "<MOD-DIAM>"
@@ -57,10 +58,14 @@ def _anzeige(view) -> list:
 
 
 def _einfuegen(drw, view, alle: bool) -> None:
+    """Bei `alle=False` fügt SolidWorks laut Hilfe nur in die *ausgewählte* Ansicht ein – Auswahl dann stehen lassen
+    (Review I5; im Live-Lauf mit erzwungener Zusatzansicht noch ungeprüft)."""
     name = _ruf(view, "GetName2")
+    drw.ClearSelection2(True)
     _ruf(drw, "Extension").SelectByID2(name, "DRAWINGVIEW", 0, 0, 0, False, 0, callout_leer(), 0)
     drw.ActivateView(name)
-    drw.ClearSelection2(True)
+    if alle:
+        drw.ClearSelection2(True)
     drw.InsertModelAnnotations4(0, MARKIERTE_MASSE, alle, False, True, False, False, False)
 
 
@@ -88,16 +93,18 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
     """`rollen`: Vorrang der vorhandenen Ansichten (Hauptansicht zuerst); `weitere`: Rollen, die bei Bedarf als
     Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Liefert Zuordnung, neue Maße je Ansicht und Meldungen."""
     modell = [m for m in plan if m.quelle == "modell"]
-    rollen, weitere = list(rollen), list(weitere)
+    neu = [m.id for m in plan if m.quelle == "neu"]
+    rollen, weitere, zusatz = list(rollen), list(weitere), set()
     if modell:
         _einfuegen(drw, views[rollen[0]], True)
     for _runde in range(3):
-        z = ordne_zu(kandidaten(views, modell), rollen, max_je, vorzug)
+        z = ordne_zu(kandidaten(views, modell), rollen, max_je, vorzug, zusatz, {rollen[0]: len(neu)})
         if not (z.weitere_ansicht and weitere and neue_ansicht):
             break
         rolle = weitere.pop(0)
         views[rolle] = neue_ansicht(rolle)
         rollen.append(rolle)
+        zusatz.add(rolle)
         _einfuegen(drw, views[rolle], False)
     erg = Ergebnis(z.je_ansicht, meldungen=list(z.meldungen))
     vorher = sum(len(_anzeige(v)) for v in views.values())
@@ -114,9 +121,11 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
     erg.geloescht = vorher - sum(len(_anzeige(v)) for v in views.values())  # Wirkung zählen, nicht Versuche
     if vorher - erg.gesetzt != erg.geloescht:
         erg.meldungen.append(f"MASS_NICHT_GELOESCHT: {vorher - erg.gesetzt - erg.geloescht} Modellmaße blieben stehen")
-    neu = [m.id for m in plan if m.quelle == "neu"]
     if neu:
         erg.neu = {rollen[0]: neu}
+        if len(neu) > max_je:
+            erg.meldungen.append(f"ANSICHT_VOLL: {len(neu)} neue Maße in {rollen[0]} (Obergrenze {max_je} Maße je "
+                                 "Ansicht; Drehteile haben in Stufe 2 keine weitere Ansicht)")
     return erg
 
 
@@ -125,13 +134,16 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
 def _linien(view) -> list[tuple[object, tuple, tuple]]:
     """Sichtbare gerade Kanten der Ansicht: (Kante, Punkt mm, Richtung) in Modellkoordinaten."""
     aus = []
-    for k in list(view.GetVisibleEntities2(callout_leer(), KANTE) or ()):
-        c = _ruf(k, "GetCurve")
-        try:
-            px, py, pz, dx, dy, dz = list(_ruf(c, "LineParams"))[:6]
-        except (TypeError, ValueError):
-            continue
-        aus.append((k, (px * 1000, py * 1000, pz * 1000), (dx, dy, dz)))
+    for typ in (KANTE, SILHOUETTE):  # ungeschnittene Zylinder zeigen ihre Mantellinien als Silhouetten (Review I6)
+        for k in list(view.GetVisibleEntities2(callout_leer(), typ) or ()):
+            try:
+                c = _ruf(k, "GetCurve")
+                if not _ruf(c, "IsLine"):
+                    continue
+                px, py, pz, dx, dy, dz = list(_ruf(c, "LineParams"))[:6]
+            except Exception:  # noqa: BLE001 – COM: Kante ohne Kurve oder ohne LineParams überspringen
+                continue
+            aus.append((k, (px * 1000, py * 1000, pz * 1000), (dx, dy, dz)))
     return aus
 
 

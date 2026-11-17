@@ -33,7 +33,7 @@ from swki.zeichnung.ansichten import (Ansicht, achsvektor, hinweise, vorzugsansi
 from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE
 from swki.zeichnung.layout import anordnen
-from swki.zeichnung.massplan import massplan
+from swki.zeichnung.massplan import massplan, massplan_meldungen
 from swki.zeichnung.zuordnung import max_je_ansicht
 
 SW_DEFAULT_TEMPLATE_DRAWING = 10            # swUserPreferenceStringValue_e
@@ -170,8 +170,10 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                       weitere_rollen(spec), lambda rolle: _projektion(drw, views["haupt"], rolle),
                       vorzugsansichten(spec, plan))
         meldungen += bem.meldungen
+        meldungen += massplan_meldungen(spec)
         for rolle in [r for r in list(views) if r not in ("haupt", basis) and not bem.je_ansicht.get(r)]:
-            _loesche_ansicht(drw, views.pop(rolle))  # Ansicht ohne eigenes Maß entfällt (Design §6.1)
+            if not _loesche_ansicht(drw, views.pop(rolle)):  # Ansicht ohne eigenes Maß entfällt (Design §6.1)
+                meldungen.append(f"ANSICHT_NICHT_GELOESCHT: {rolle} ohne Maß blieb auf dem Blatt")
         groessen = {rolle: _groesse_1zu1(v) for rolle, v in views.items()}
         format_, massstab, plaetze = anordnen(groessen)
         blattformat = r.zeichnung.get(format_)
@@ -183,8 +185,10 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         for p in sorted(plaetze, key=lambda p: p.rolle != basis):  # Elternansicht zuerst, Kinder sind ausgerichtet
             _setze_lage(views[p.rolle], p.mitte_mm)
         neu_gesetzt = _neue_masse(drw, views, plan, bem.neu, achsvektor(spec), meldungen)
-        for v in views.values():
-            ordne_masse_an(drw, v)
+        for rolle, v in views.items():
+            if not ordne_masse_an(drw, v):
+                meldungen.append(f"MASSE_NICHT_ANGEORDNET: {rolle}")
+        meldungen.append("MASSE_UEBERLAPPUNG_UNGEPRUEFT: Überlappung der Maße prüft erst der Zeichnungsprüfer (Z1.4)")
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
@@ -203,21 +207,24 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "meldungen": meldungen,
-            "masse": {"plan": len(plan), "gesetzt": bem.gesetzt + neu_gesetzt, "geloescht": bem.geloescht,
-                      "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + len(bem.neu.get(r, [])) for r in views}}, "dauer_s": round(time.time() - t0, 1)}
+            "masse": {"plan": len(plan), "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
+                      "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}}, "dauer_s": round(time.time() - t0, 1)}
 
 
-def _loesche_ansicht(drw, view) -> None:
-    ext = _ruf(drw, "Extension")
+def _loesche_ansicht(drw, view) -> bool:
+    """Ansicht löschen und Wirkung prüfen: steht sie danach nicht mehr in den Blattansichten (Review I5)."""
+    ext, name = _ruf(drw, "Extension"), _ruf(view, "GetName2")
     drw.ClearSelection2(True)
-    ext.SelectByID2(_ruf(view, "GetName2"), "DRAWINGVIEW", 0, 0, 0, False, 0, callout_leer(), 0)
+    ext.SelectByID2(name, "DRAWINGVIEW", 0, 0, 0, False, 0, callout_leer(), 0)
     ext.DeleteSelection2(0)
+    return name not in [_ruf(v, "GetName2") for v in list(_ruf(_ruf(drw, "GetCurrentSheet"), "GetViews") or ())]
 
 
-def _neue_masse(drw, views: dict, plan: list, neu: dict, achse: tuple, meldungen: list[str]) -> int:
-    """Neue Maße (Drehteil) über Kanten: Ø links neben der Ansicht, Längen darüber, gestaffelt."""
+def _neue_masse(drw, views: dict, plan: list, neu: dict, achse: tuple, meldungen: list[str]) -> dict[str, int]:
+    """Neue Maße (Drehteil) über Kanten: Ø links neben der Ansicht, Längen darüber, gestaffelt. Liefert die Zahl der
+    wirklich gesetzten Maße je Ansicht (Review I2)."""
     nach_id = {m.id: m for m in plan}
-    gesetzt = 0
+    gesetzt: dict[str, int] = {}
     for rolle, ids in neu.items():
         x0, y0, x1, y1 = (c / 1000 for c in _umriss_mm(views[rolle]))
         zaehler = {"durchmesser": 0, "laenge": 0}
@@ -228,7 +235,7 @@ def _neue_masse(drw, views: dict, plan: list, neu: dict, achse: tuple, meldungen
             platz = ((x0 - 0.012 - i * MASSABSTAND_M, (y0 + y1) / 2) if m.art == "durchmesser"
                      else ((x0 + x1) / 2, y1 + 0.012 + i * MASSABSTAND_M))
             if setze_neu(drw, views[rolle], m, achse, platz):
-                gesetzt += 1
+                gesetzt[rolle] = gesetzt.get(rolle, 0) + 1
             else:
                 meldungen.append(f"MASS_NICHT_GESETZT: {mid} ({m.art} {m.wert:g}) – keine passenden Kanten in {rolle}")
     return gesetzt
