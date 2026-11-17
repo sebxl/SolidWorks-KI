@@ -85,3 +85,16 @@ def test_dateien_optional_und_rundreise(tmp_path):
     assert rechner_als_dict(r)["dateien"] == {"szene": str(Path("C:/x/szene.blend"))}
     schreibe_rechner(r, pfad)
     assert lade_rechner(pfad) == r
+
+
+def test_zeichnung_blattformate(tmp_path):
+    """Zeichnungsableitung Z1.3 Stufe 1: Blattformate je Format (Plan 2026-11-17 Task 1)."""
+    pfad = tmp_path / "rechner.yaml"
+    grund = "sw_jahr: 2025\ninstallationsordner: C:/SW\nvorlage_teil: C:/t.prtdot\narbeitsordner: C:/arbeit\n"
+    pfad.write_text(grund, encoding="utf-8")
+    assert lade_rechner(pfad).zeichnung == {}
+    pfad.write_text(grund + "zeichnung:\n  A4: C:/x/a4.slddrt\n", encoding="utf-8")
+    r = lade_rechner(pfad)
+    assert r.zeichnung == {"A4": Path("C:/x/a4.slddrt")}
+    schreibe_rechner(r, pfad)
+    assert lade_rechner(pfad) == r
