@@ -67,3 +67,13 @@ def test_schraeger_text_an_hinweislinie_ist_kein_befund(tmp_path):
                       morph=(pymupdf.Point(100 * MM, (A3[1] - 100) * MM), pymupdf.Matrix(45)))
         _linie(s, (95, 95), (115, 115))
     assert pruefe_pdf(_pdf(tmp_path, zeichne)) == []
+
+
+def test_zahl_ausserhalb_des_zeichenfelds_oder_im_schriftfeld():
+    """Review 18.11.: pruefe_pdf lässt Rand und Schriftfeld aus – eine dorthin gerückte Maßzahl braucht eigenen Befund."""
+    from swki.zeichnung.lesbarkeit import ausserhalb
+
+    feld, schrift = (20, 10, 410, 287), [(230, 10, 410, 65)]
+    zahlen = [("innen", 100, 100, 12, "h"), ("rand", 25, 100, 12, "h"), ("oben", 100, 286, 12, "v"),
+              ("schriftfeld", 300, 40, 12, "h")]
+    assert [b.text for b in ausserhalb(zahlen, feld, schrift)] == ["rand", "oben", "schriftfeld"]

@@ -62,6 +62,10 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         assert not any(m.startswith(("MASS_NICHT_GELOESCHT", "MASS_NICHT_GESETZT")) for m in z["meldungen"]), z["meldungen"]
         # Nutzer 18.11.2026: lesbar – kein Text auf Text, keine Linie durch eine Maßzahl (Prüfung am PDF)
         assert not any(m.startswith("LESBARKEIT") for m in z["meldungen"]), z["meldungen"]
+        # Schriftfeld zeigt den Dateinamen = Zeichnungsnummer (18.11.: PDF vor der Zeichnung gespeichert → „Zeichn1“)
+        import pymupdf
+        with pymupdf.open(z["pdf"]) as doc:
+            assert Path(z["zeichnung"]).stem in doc[0].get_text(), "Zeichnungsnummer fehlt im Schriftfeld"
         if not drehteil:
             assert len(z["ansichten"]) == 3 or any(m.startswith(("ANSICHT_VOLL", "ANSICHT_NICHT")) for m in z["meldungen"])
         if drehteil:

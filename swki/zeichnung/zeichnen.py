@@ -32,7 +32,7 @@ from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise
                                      waehle_ansichten, weitere_rollen)
 from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
-from swki.zeichnung.lesbarkeit import pruefe_pdf
+from swki.zeichnung.lesbarkeit import ausserhalb, pruefe_pdf
 from swki.zeichnung.reihen import ABSTAND_MM, LinMass, reihen, seite
 from swki.zeichnung.layout import anordnen
 from swki.zeichnung.massplan import massplan, massplan_meldungen
@@ -195,6 +195,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
+        _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
         meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "umriss_mm": [round(x, 1) for x in _umriss_mm(v)]}
@@ -267,7 +268,7 @@ def _reihen_anlegen(views: dict, vorlauf: dict) -> list[tuple[tuple, tuple[float
             entlang, quer = lage[m.schluessel]
             x, y = (entlang, quer + versatz) if m.richtung == "h" else (quer + versatz, entlang)
             ann.SetPosition2(x / 1000, y / 1000, 0)
-            platz.append(((rolle, m.richtung, seite(m, umriss)), (x, y)))
+            platz.append(((rolle, m.richtung, seite(m, umriss)), (x, y), m.text))
     return platz
 
 
@@ -289,11 +290,14 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, runden: int 
         _speichern(ext, pdf)
         if not pruefen:
             return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
-        befunde = pruefe_pdf(pdf, _ausschluss(format_))
+        x0, y0, x1, _ = zeichenfeld(format_)
+        befunde = pruefe_pdf(pdf, _ausschluss(format_)) + ausserhalb(
+            [(f"{s[0]}/{s[1]}{s[2]}", x, y, laenge, s[1]) for s, (x, y), laenge in platz], zeichenfeld(format_),
+            [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])])
         if not befunde or runde == runden:
             break
         seiten = set()
-        for b in befunde:
+        for b in (b for b in befunde if b.art != "ausserhalb"):  # Rücken nach außen hilft da nicht
             mx, my = (b.rechteck_mm[0] + b.rechteck_mm[2]) / 2, (b.rechteck_mm[1] + b.rechteck_mm[3]) / 2
             nah = min(platz, key=lambda p: math.dist(p[1], (mx, my)), default=None)
             if nah and math.dist(nah[1], (mx, my)) <= NAEHE_MM:

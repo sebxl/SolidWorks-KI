@@ -101,3 +101,17 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
         if achsparallel and any(_schneidet(a, b, kerne[i]) for a, b in linien):
             befunde.append(Befund("linie_durch_text", wort, r))
     return befunde
+
+
+def ausserhalb(zahlen: list[tuple[str, float, float, float, str]], feld: tuple, sperren: list[tuple],
+               hoehe: float = 3.5) -> list[Befund]:
+    """Maßzahlen, die das Zeichenfeld verlassen oder in einem Sperrbereich (Schriftfeld) liegen. `pruefe_pdf` lässt Rand
+    und Schriftfeld bewusst aus; eine dorthin gerückte Zahl fiele sonst durch. `zahlen`: (Name, Mitte x, Mitte y,
+    Länge entlang der Maßlinie, Richtung h|v) in Blatt-mm."""
+    aus = []
+    for name, x, y, laenge, richtung in zahlen:
+        dx, dy = (laenge / 2, hoehe / 2) if richtung == "h" else (hoehe / 2, laenge / 2)
+        r = (x - dx, y - dy, x + dx, y + dy)
+        if r[0] < feld[0] or r[1] < feld[1] or r[2] > feld[2] or r[3] > feld[3] or _im(r, sperren):
+            aus.append(Befund("ausserhalb", name, r))
+    return aus
