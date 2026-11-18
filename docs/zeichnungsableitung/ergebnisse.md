@@ -105,7 +105,7 @@ erkannt, weil er nur Zahlen und Obergrenzen prüfte.
 
 - Bleibt eine Ansicht über der Obergrenze, lagert `bemasse` das Merkmal mit den meisten Maßen dort (mindestens 3, nie
   der Grundkörper) in eine Einzelheit aus; seine Maße bekommen die Einzelheit als Vorzug (`EINZELHEIT: k1 …`).
-- Bereich: Rechteck um die Anfänge der Hilfslinien dieser Maße (+ 4 mm), als Profil in der Elternansicht skizziert
+- Bereich als Rechteck-Profil in der Elternansicht skizziert (zuerst um die Hilfslinien-Anfänge, jetzt um die Kanten)
   (`CreateCornerRectangle`, bleibt ausgewählt) → `CreateDetailViewAt4` mit `swDetCirclePROFILE`
   (`spikes/z1_diag_einzelheit.py`). SolidWorks fügt dort die Maße der Merkmale im Bereich ein.
 - Nutzer 18.11.2026 (Durchsicht): „Details werden in der Regel vergrößert, sonst braucht man kein Detail.“ Deshalb
