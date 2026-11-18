@@ -53,7 +53,7 @@ def massplan_drehteil(spec: dict) -> list[Mass]:
     """Ø je Absatz (äußeres Profil, Bohrung, Einstichgrund) und Längen ab der Bezugsplanfläche, je Lage genau einmal.
 
     Bezug: die Stirnfläche (Profilsegment quer zur Achse) mit dem größten Ø, bei Gleichstand die mit der kleinsten Lage
-    auf der Achse (Plan Task 2). Grund eines Rotationsschnitts (Review C1): Schnitt ab der Achse = Bohrung (Ø = 2·max r),
+    auf der Achse (Plan Task 2; Nutzer 18.11.2026: Außenstirn bleibt Bezug). Grund eines Rotationsschnitts (Review C1): Schnitt ab der Achse = Bohrung (Ø = 2·max r),
     Schnitt ab der Bohrung des Grundkörpers = Innennut (Grund = max r), sonst Außeneinstich (Grund = min r)."""
     parameter = spec.get("parameter", {})
     rotationen = [f for f in spec.get("features", []) if f.get("typ") == "rotation"]

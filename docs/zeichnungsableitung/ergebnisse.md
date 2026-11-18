@@ -57,7 +57,8 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 ## Z1.3 Stufe 2 – Maßplan, Ansichten nach Maßbedarf (17.11.2026)
 
 - Maßplan (`massplan.py`): Frästeil = protokollierte Anforderungsmaße des Baus (ohne Hilfsebenen, Konstruktionsmaße,
-  Mittellinien, Bohrungsfasen); Drehteil = Ø je Absatz und Längen ab der Stirnfläche mit dem größten Ø (Bezug), dazu die
+  Mittellinien, Bohrungsfasen); Drehteil = Ø je Absatz und Längen ab der Stirnfläche mit dem größten Ø, bei Gleichstand der äußeren (Bezug; Nutzer
+  18.11.2026: Außenstirn bleibt Bezug, bei der Buchse die Bund-Außenstirn), dazu die
   Modellmaße der übrigen Features (Fasen, Bohrungen).
 - Ansichten nach Maßbedarf (Nutzer 17.11.): Frästeil startet mit drei Ansichten; Zuordnung (`zuordnung.py`) mit
   Obergrenze `zeichnung.max_masse_je_ansicht: 12` (`config/standard.yaml`) und Vorzugsansicht (Grundkörper und Merkmale
