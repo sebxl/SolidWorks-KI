@@ -77,3 +77,15 @@ def test_zahl_ausserhalb_des_zeichenfelds_oder_im_schriftfeld():
     zahlen = [("innen", 100, 100, 12, "h"), ("rand", 25, 100, 12, "h"), ("oben", 100, 286, 12, "v"),
               ("schriftfeld", 300, 40, 12, "h")]
     assert [b.text for b in ausserhalb(zahlen, feld, schrift)] == ["rand", "oben", "schriftfeld"]
+
+
+def test_linie_quer_durch_schraegen_text(tmp_path):
+    """Nutzer 18.11.2026: „R4,00“ schräg an der Hinweislinie lag auf Kanten der Kabelnut – die Prüfung ließ schräge Texte
+    aus. Jetzt: gedrehtes Kernrechteck; nur Linien parallel zur Schrift (eigene Hinweislinie) sind erlaubt."""
+    def zeichne(s):
+        s.insert_text((100 * MM, (A3[1] - 100) * MM), "R4,00", fontsize=3.5 * MM * 1.4,
+                      morph=(pymupdf.Point(100 * MM, (A3[1] - 100) * MM), pymupdf.Matrix(45)))
+        _linie(s, (95, 95), (115, 115))      # eigene Hinweislinie entlang der Schrift
+        _linie(s, (98, 108), (112, 94))      # Kante quer durch die Schrift
+    befunde = pruefe_pdf(_pdf(tmp_path, zeichne))
+    assert [(b.art, b.text) for b in befunde] == [("linie_durch_text", "R4,00")]

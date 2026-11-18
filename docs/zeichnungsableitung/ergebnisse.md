@@ -108,17 +108,31 @@ erkannt, weil er nur Zahlen und Obergrenzen prüfte.
 - Bereich: Rechteck um die Anfänge der Hilfslinien dieser Maße (+ 4 mm), als Profil in der Elternansicht skizziert
   (`CreateCornerRectangle`, bleibt ausgewählt) → `CreateDetailViewAt4` mit `swDetCirclePROFILE`
   (`spikes/z1_diag_einzelheit.py`). SolidWorks fügt dort die Maße der Merkmale im Bereich ein.
-- Maßstab und Lage aus der Blattaufteilung: zuerst der kleinste Normmaßstab mit mindestens doppelter Vergrößerung,
-  sonst der des Blatts (`EINZELHEIT_NICHT_VERGROESSERT`); Lage in der Ecke unter der Seitenansicht oder rechts daneben.
+- Nutzer 18.11.2026 (Durchsicht): „Details werden in der Regel vergrößert, sonst braucht man kein Detail.“ Deshalb
+  nur mit dem kleinsten Normmaßstab, der mindestens doppelt vergrößert, und nur, wenn Format und Blattmaßstab dabei
+  bleiben (`layout.einzelheit_passt`, mit den Ansichten, die Maße bekommen); sonst `EINZELHEIT_ZU_GROSS`, die Ansicht
+  bleibt dicht. Lage in der Ecke unter der Seitenansicht oder rechts daneben.
+- Bereich aus den sichtbaren Kanten des Merkmals (`IFace2.GetFeature` je Kante, `IView.ModelToViewTransform` liefert
+  Blattkoordinaten samt Maßstab, `spikes/z1_diag_merkmalskanten.py`), 2 mm Rand – nicht aus den Bezugspunkten seiner
+  Maße (die Nut samt linker Kante und Plattenmitte war 132 × 72 mm und passte vergrößert nicht, ihre Kanten 113 × 36).
+  Maße, deren Bezüge außerhalb liegen (100, 10 der Nut), bleiben in der Elternansicht.
 - Live-Lehren (`spikes/z1_diag_einzelheit_lage.py`): `IView.Position` einer Einzelheit ist derselbe Modellpunkt wie in
   der Elternansicht (nicht die Rahmenmitte); `GetOutline` folgt einem neuen `ScaleDecimal` nicht, auch nicht nach
   `EditRebuild3`/`ForceRebuild3`/`GraphicsRedraw2`, und trägt rund 12 mm Rand → Größe und Lage selbst gerechnet.
-- Live Spannplatte: Hauptansicht 11, Einzelheit 5 Maße (Kabelnut), keine Ansicht über 12, kein Lesbarkeitsbefund.
-  Die Nut samt Bezugspunkten (linke Kante, Plattenmitte) ist 132 × 72 mm; vergrößert passt sie auf A3 1:2 nicht neben
-  die drei Ansichten → Einzelheit im Blattmaßstab 1:2.
-- Offen: Einzelheit nur im Blattmaßstab, wenn das Blatt voll ist (kleinerer Maßrand oder engerer Bereich würden
-  helfen); Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit); Bereich enthält Bezugspunkte, die selbst keine
-  Kante sind (Plattenmitte für 27).
+- Mittelpunktkreuze an Taschenecken (Nutzer 18.11.): Vorlagenwert `swDetailingAutoInsertCenterMarksForFillets` war an,
+  SolidWorks setzt die Marken beim Anlegen einer Einzelheit in allen Ansichten neu → für Verrundungen und Langlöcher
+  ausdrücklich aus; Bohrungen behalten Kreuz und Mittellinie (Buchse jetzt mit Achse und Lochkreis).
+- Radiusmaß (Nutzer 18.11.: Pfeil zeigte auf das Kreuz statt auf den Radius – die Zahl stand innen, die Maßlinie lief
+  über den Mittelpunkt auf die gedachte Verlängerung des Bogens): Zahl außen auf einem Strahl durch den Bogen
+  (`reihen.radius_zahl_frei`), frei von sichtbaren Kanten, den Linien der übrigen Maße und dem Rahmen der Einzelheit;
+  unter den freien Lagen die, deren Hinweislinie am wenigsten kreuzt. Bogen über seinen Mittelpunkt (Ende der letzten
+  Linie aus `IDisplayData`).
+- Lesbarkeitsprüfung: schräge Texte (R, Ø an Hinweislinien) jetzt mit gedrehtem Kernrechteck; nur Linien parallel zur
+  Schrift (die eigene Hinweislinie) zählen nicht. Vorher waren schräge Texte ganz ausgenommen.
+- Live Spannplatte: Blatt 1:2, Einzelheit A 1:1 (Kabelnut), Hauptansicht 12, Einzelheit 4 Maße, kein Befund.
+- Offen: Maße vom Ursprung (27, 47, 60 in der Einzelheit) zeigen auf die Plattenmitte, die dort keine Kante ist –
+  Mittellinie fehlt; Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit), weit unter dem Rahmen; ein Maß eines
+  anderen Merkmals (20 der Bohrung) kann als Überlauf in die Einzelheit rutschen.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

@@ -71,6 +71,10 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
             assert sorted(rollen) == ["drauf", "einzelheit", "haupt", "seite"], rollen
             assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()), masse
             assert any(m.startswith("EINZELHEIT: k1") for m in z["meldungen"]), z["meldungen"]
+            # „Details werden in der Regel vergrößert, sonst braucht man kein Detail.“ (Nutzer 18.11.2026)
+            f = {a["rolle"]: a["massstab"] for a in z["ansichten"]}
+            blatt = int(z["massstab"].split(":")[0]) / int(z["massstab"].split(":")[1])
+            assert f["einzelheit"] >= 2 * blatt - 1e-9 and f["haupt"] == blatt, (f, z["massstab"])
         if drehteil:
             assert z["schnitt"] and z["schnitt"].startswith("Schnitt") and "seite" in rollen
         x0, y0, x1, y1 = zeichenfeld(z["format"])

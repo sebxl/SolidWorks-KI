@@ -12,6 +12,7 @@ verschob die Konflikte nur (Live-Diagnose 18.11.). Deshalb deterministisch je An
 Alle Werte in Blatt-mm. Ergebnis je Maß: (Lage der Zahlmitte entlang der Maßlinie, Lage der Maßlinie quer dazu).
 """
 
+import math
 from dataclasses import dataclass
 
 ERSTE_MM = 5.0
@@ -144,3 +145,83 @@ def reihen(masse: list[LinMass], umriss: tuple[float, float, float, float],
         for m in ordnung:
             aus[m.schluessel] = (wahl[m.schluessel], kante + vorzeichen * (ERSTE_MM + reihe[m.schluessel] * ABSTAND_MM))
     return aus
+
+
+def radius_zahl(mitte: tuple[float, float], anfang: tuple[float, float], ende: tuple[float, float],
+                abstand: float) -> tuple[float, float] | None:
+    """Lage der Zahl eines Radiusmaßes (Nutzer 18.11.2026: Pfeil zeigte auf das Mittelpunktkreuz): außen auf der
+    Winkelhalbierenden des Bogens (Bögen unter 180°, z. B. Verrundungen), `abstand` hinter dem Bogen. So läuft die
+    Maßlinie von der Zahl zum Bogen, der Pfeil endet am Bogen. Vollkreis oder entarteter Bogen: None."""
+    mx, my = (anfang[0] + ende[0]) / 2 - mitte[0], (anfang[1] + ende[1]) / 2 - mitte[1]
+    laenge = (mx ** 2 + my ** 2) ** 0.5
+    r = ((anfang[0] - mitte[0]) ** 2 + (anfang[1] - mitte[1]) ** 2) ** 0.5
+    sehne = ((ende[0] - anfang[0]) ** 2 + (ende[1] - anfang[1]) ** 2) ** 0.5
+    if laenge < 1e-6 or r < 1e-6 or sehne < 1e-6:
+        return None
+    return mitte[0] + mx / laenge * (r + abstand), mitte[1] + my / laenge * (r + abstand)
+
+
+def radius_zahl_frei(mitte: tuple[float, float], anfang: tuple[float, float], ende: tuple[float, float],
+                     abstand: float, hindernisse: list[tuple[tuple[float, float], tuple[float, float]]],
+                     laenge: float, breite: float = 4.0) -> tuple[float, float] | None:
+    """Wie `radius_zahl`, aber Kanten ausweichen (Live 18.11.: „R4,00“ lag auf der Kabelnut): Strahlen vom Mittelpunkt
+    durch Punkte des Bogens (Mitte zuerst, dann nach außen) und wachsende Abstände; die Zahl steht entlang des Strahls
+    (Länge `laenge`, Breite `breite` quer). Unter den Lagen, deren Zahl keine Strecke aus `hindernisse` kreuzt, die mit
+    den wenigsten Kreuzungen der Hinweislinie, dann die nächste; sonst die Grundlage."""
+    grund = radius_zahl(mitte, anfang, ende, abstand)
+    if grund is None or not hindernisse:
+        return grund
+    r = math.dist(anfang, mitte)
+    w0 = math.atan2(anfang[1] - mitte[1], anfang[0] - mitte[0])
+    w1 = math.atan2(ende[1] - mitte[1], ende[0] - mitte[0])
+    spanne = (w1 - w0 + math.pi) % (2 * math.pi) - math.pi  # kürzerer Bogen (Verrundungen < 180°)
+    beste = None
+    for i, zusatz in enumerate((0.0, 4.0, 8.0, 12.0, 18.0, 25.0)):
+        for j, anteil in enumerate((0.5, 0.3, 0.7, 0.15, 0.85)):
+            w = w0 + anteil * spanne
+            d = (math.cos(w), math.sin(w))
+            c = r + abstand + zusatz
+            lage = (mitte[0] + d[0] * c, mitte[1] + d[1] * c)
+            o = (lage[0] - d[0] * laenge / 2, lage[1] - d[1] * laenge / 2)
+
+            def lokal(p, o=o, d=d):
+                px, py = p[0] - o[0], p[1] - o[1]
+                return (px * d[0] + py * d[1], -px * d[1] + py * d[0])
+
+            if any(_kreuzt(lokal(a), lokal(b), (0.0, -breite / 2, laenge, breite / 2)) for a, b in hindernisse):
+                continue
+            # Hinweislinie vom Bogen bis zur Zahl: je weniger Kanten sie kreuzt, desto besser (Live 18.11.: quer über die Nut)
+            bogenpunkt = (mitte[0] + d[0] * r, mitte[1] + d[1] * r)
+            wert = (sum(_schnitt(bogenpunkt, o, a, b) for a, b in hindernisse), i, j)
+            if beste is None or wert < beste[0]:
+                beste = (wert, lage)
+    return beste[1] if beste else grund
+
+
+def _schnitt(p, q, a, b) -> bool:
+    """Schneiden sich die Strecken p–q und a–b (echt, nicht nur berührend)?"""
+    def kreuz(o, u, v):
+        return (u[0] - o[0]) * (v[1] - o[1]) - (u[1] - o[1]) * (v[0] - o[0])
+
+    d1, d2, d3, d4 = kreuz(a, b, p), kreuz(a, b, q), kreuz(p, q, a), kreuz(p, q, b)
+    return d1 * d2 < 0 and d3 * d4 < 0
+
+
+def _kreuzt(a, b, r) -> bool:
+    """Strecke a–b gegen Rechteck r = (x0, y0, x1, y1) (Liang-Barsky)."""
+    x0, y0, x1, y1 = r
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, a[0] - x0), (dx, x1 - a[0]), (-dy, a[1] - y0), (dy, y1 - a[1])):
+        if abs(p) < 1e-12:
+            if q < 0:
+                return False
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return False
+    return True

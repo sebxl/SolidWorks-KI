@@ -144,13 +144,13 @@ def test_dichte_ansicht_lagert_merkmal_in_einzelheit_aus():
     drw = _Drw(views, {"haupt": [m.name for m in plan], "einzelheit": ["k0", "k1", "k2", "k3", "t0"]})
     aufrufe = []
 
-    def einzelheit(rolle, namen):
-        aufrufe.append((rolle, sorted(namen)))
+    def einzelheit(rolle, merkmal, namen, genutzt):
+        aufrufe.append((rolle, merkmal, sorted(namen), genutzt))
         return _View("V9")
 
     erg = b.bemasse(drw, views, plan, ["haupt"], max_je=5, weitere=[], neue_ansicht=None, einzelheit=einzelheit,
                     ausser={"f1"})
-    assert aufrufe == [("haupt", ["k0", "k1", "k2", "k3"])]
+    assert aufrufe == [("haupt", "k1", ["k0", "k1", "k2", "k3"], ["haupt"])]
     assert sorted(erg.je_ansicht["einzelheit"]) == ["k0", "k1", "k2", "k3"]
     assert sorted(erg.je_ansicht["haupt"]) == ["f0", "f1", "f2", "t0"]
     assert not any(m.startswith("ANSICHT_DICHT") for m in erg.meldungen)
@@ -161,5 +161,5 @@ def test_ohne_dichte_ansicht_keine_einzelheit():
     views = {"haupt": _View("V1")}
     plan = [Mass(f"k{i}", "modell", "laenge", 1.0, "k1", name=f"k{i}") for i in range(4)]
     erg = b.bemasse(_Drw(views, {"haupt": [m.name for m in plan]}), views, plan, ["haupt"], max_je=12, weitere=[],
-                    neue_ansicht=None, einzelheit=lambda r, n: (_ for _ in ()).throw(AssertionError("nicht nötig")))
+                    neue_ansicht=None, einzelheit=lambda r, m, n, g: (_ for _ in ()).throw(AssertionError("nicht nötig")))
     assert "einzelheit" not in views and len(erg.je_ansicht["haupt"]) == 4

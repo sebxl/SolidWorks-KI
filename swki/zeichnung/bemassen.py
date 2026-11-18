@@ -106,10 +106,11 @@ def _loesche(drw, dd) -> None:
 def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, weitere: list[str],
             neue_ansicht: Callable[[str], object] | None, vorzug: dict[str, str] | None = None,
             blickachsen: dict[str, int] | None = None,
-            einzelheit: Callable[[str, list[str]], object] | None = None, ausser: set[str] | None = None) -> Ergebnis:
+            einzelheit: Callable[[str, str, list[str], list[str]], object] | None = None,
+            ausser: set[str] | None = None) -> Ergebnis:
     """`rollen`: Vorrang der vorhandenen Ansichten (Hauptansicht zuerst); `weitere`: Rollen, die bei Bedarf als
     Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Bleibt eine Ansicht über der Obergrenze, lagert
-    `einzelheit(rolle, maßnamen)` das Merkmal mit den meisten Maßen dort in eine Einzelheit aus (Nutzer 18.11.2026;
+    `einzelheit(rolle, merkmal, maßnamen, genutzte_rollen)` das Merkmal mit den meisten Maßen dort in eine Einzelheit aus (Nutzer 18.11.2026;
     `ausser`: Merkmale, die nie ausgelagert werden, z. B. der Grundkörper). Liefert Zuordnung, neue Maße je Ansicht und
     Meldungen."""
     modell = [m for m in plan if m.quelle == "modell"]
@@ -133,7 +134,8 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
         zahl = Counter(m.merkmal for m in modell if m.id in z.je_ansicht[dicht] and m.merkmal not in (ausser or set()))
         if zahl and zahl.most_common(1)[0][1] >= EINZELHEIT_MIN:
             merkmal = zahl.most_common(1)[0][0]
-            det = einzelheit(dicht, [m.name for m in modell if m.merkmal == merkmal])
+            genutzt = [r for r in rollen if r == rollen[0] or z.je_ansicht.get(r)]
+            det = einzelheit(dicht, merkmal, [m.name for m in modell if m.merkmal == merkmal], genutzt)
             if det is None:
                 z.meldungen.append(f"EINZELHEIT_NICHT_ERZEUGT: {merkmal} in {dicht}")
             else:

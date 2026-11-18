@@ -109,3 +109,59 @@ def test_vorlauf_rueckt_die_seite_nach_aussen():
     ohne = reihen(m, UMRISS)["x"][1]
     mit = reihen(m, UMRISS, {("h", "-"): 8.0})["x"][1]
     assert mit == ohne - 8.0 and reihen(m, UMRISS, {("h", "+"): 8.0})["x"][1] == ohne
+
+
+def test_radiuszahl_aussen_in_richtung_des_bogens():
+    """Nutzer 18.11.2026: Pfeil von R4 zeigte auf das Mittelpunktkreuz statt auf den Radius. Die Zahl gehört außen in
+    die Richtung der Bogenmitte, dann endet der Pfeil am Bogen. Live: Ecke rechts unten einer Tasche, Maßstab 1:2."""
+    from swki.zeichnung.reihen import radius_zahl
+
+    x, y = radius_zahl((140.5, 214.5), (140.5, 212.5), (142.5, 214.5), abstand=8.0)
+    assert x > 140.5 + 2 and y < 214.5 - 2  # rechts unten, außerhalb des Bogens
+    assert abs((x - 140.5) + (y - 214.5)) < 1e-6  # auf der Winkelhalbierenden (45°)
+    assert abs(((x - 140.5) ** 2 + (y - 214.5) ** 2) ** 0.5 - 10.0) < 1e-6  # Radius 2 + Abstand 8
+
+
+def test_radiuszahl_ohne_bogen_keine_lage():
+    from swki.zeichnung.reihen import radius_zahl
+
+    assert radius_zahl((0.0, 0.0), (1.0, 0.0), (1.0, 0.0), abstand=8.0) is None  # Vollkreis
+
+
+def test_radiuszahl_weicht_kanten_aus():
+    """Live 18.11.: „R4,00“ rechts unter der Taschenecke lag auf den Kanten der Kabelnut. Andere Stelle des Bogens oder
+    weiter weg, solange der Strahl vom Mittelpunkt den Bogen trifft."""
+    from swki.zeichnung.reihen import radius_zahl, radius_zahl_frei
+
+    mitte, a, e = (140.5, 214.5), (140.5, 212.5), (142.5, 214.5)
+    nut = [((100.0, 205.0), (160.0, 205.0)), ((100.0, 207.0), (160.0, 207.0))]  # waagrecht unter der Ecke
+    x, y = radius_zahl_frei(mitte, a, e, 8.0, nut, laenge=12.0)
+    assert (x, y) != radius_zahl(mitte, a, e, 8.0)
+    import math
+    w = math.degrees(math.atan2(y - mitte[1], x - mitte[0])) % 360
+    assert 270 - 1e-6 <= w <= 360 + 1e-6  # Strahl trifft den Bogen (rechts unten)
+    # Zahl (12 mm entlang des Strahls, ab Abstand hinter dem Bogen) kreuzt keine Nutkante
+    d = ((x - mitte[0]) / math.dist((x, y), mitte), (y - mitte[1]) / math.dist((x, y), mitte))
+    for t in (i / 10 for i in range(-6, 7)):
+        px, py = x + d[0] * 6 * t, y + d[1] * 6 * t
+        assert not (204 <= py <= 208 and 100 <= px <= 160), (px, py)
+
+
+def test_radiuszahl_frei_ohne_hindernis_wie_bisher():
+    from swki.zeichnung.reihen import radius_zahl, radius_zahl_frei
+
+    mitte, a, e = (140.5, 214.5), (140.5, 212.5), (142.5, 214.5)
+    assert radius_zahl_frei(mitte, a, e, 8.0, [], laenge=12.0) == radius_zahl(mitte, a, e, 8.0)
+
+
+def test_radiuszahl_hinweislinie_kreuzt_moeglichst_wenig():
+    """Live 18.11.: Hinweislinie von R4 lief quer über die Nut. Gibt es eine freie Lage, deren Hinweislinie weniger
+    Kanten kreuzt, gewinnt sie – auch wenn sie weiter weg liegt."""
+    from swki.zeichnung.reihen import radius_zahl_frei
+
+    mitte, a, e = (0.0, 0.0), (0.0, -2.0), (2.0, 0.0)  # Bogen rechts unten
+    sperre = [((3.0, -3.0), (3.0, -40.0))]             # senkrechte Kante rechts unter dem Bogen
+    x, y = radius_zahl_frei(mitte, a, e, 8.0, sperre, laenge=12.0)
+    import math
+    assert not any(__import__("swki.zeichnung.reihen", fromlist=["_schnitt"])._schnitt(
+        (2 * x / math.hypot(x, y), 2 * y / math.hypot(x, y)), (x, y), p, q) for p, q in sperre), (x, y)

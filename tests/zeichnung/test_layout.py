@@ -99,11 +99,10 @@ def test_einzelheit_rechts_neben_der_seitenansicht_wenn_die_ecke_zu_klein_ist():
     _pruefe(format_, plaetze)
 
 
-def test_einzelheit_ohne_platz_zum_vergroessern_im_blattmassstab():
-    """Live 18.11.: Nut der Spannplatte 132 × 72 mm – vergrößert passt sie auf A3 1:2 nirgends hin; dann im
-    Blattmaßstab statt das ganze Blatt zu verkleinern."""
-    format_, massstab, plaetze = anordnen({"haupt": (224, 144), "seite": (44, 144), "drauf": (224, 44),
-                                          "einzelheit": (132, 72)})
-    p = {x.rolle: x for x in plaetze}
-    assert (format_, massstab) == ("A3quer", (1, 2)) and p["einzelheit"].massstab == (1, 2)
-    _pruefe(format_, plaetze)
+def test_einzelheit_passt_nur_vergroessert_und_ohne_kleineren_blattmassstab():
+    """Nutzer 18.11.2026: „Details werden in der Regel vergrößert, sonst braucht man kein Detail.“"""
+    from swki.zeichnung.layout import einzelheit_passt
+
+    ansichten = {"haupt": (224, 144), "seite": (44, 144), "drauf": (224, 44)}
+    assert einzelheit_passt(ansichten, (113, 36))      # Kanten der Kabelnut
+    assert not einzelheit_passt(ansichten, (132, 72))  # samt entfernter Bezugspunkte: nur im Blattmaßstab

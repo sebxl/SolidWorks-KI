@@ -28,17 +28,29 @@ def _zelle(groesse: tuple[float, float] | None, f: float) -> tuple[float, float]
 
 
 def _einzelheit_massstaebe(massstab: tuple[int, int]) -> list[tuple[int, int]]:
-    """Normmaßstäbe für die Einzelheit: zuerst der kleinste mit mindestens doppelter Vergrößerung, dann der des Blatts."""
+    """Normmaßstab der Einzelheit: der kleinste mit mindestens doppelter Vergrößerung (Nutzer 18.11.2026: „Details
+    werden in der Regel vergrößert, sonst braucht man kein Detail.“)."""
     f = massstab[0] / massstab[1]
     groesser = [m for m in MASSSTAEBE if m[0] / m[1] >= 2 * f - 1e-9]
-    return ([min(groesser, key=lambda m: m[0] / m[1])] if groesser else []) + [massstab]
+    return [min(groesser, key=lambda m: m[0] / m[1])] if groesser else []
+
+
+def einzelheit_passt(groessen_1zu1: dict[str, tuple[float, float]], einzelheit: tuple[float, float]) -> bool:
+    """Lohnt die Einzelheit? Nur wenn sie vergrößert aufs Blatt passt, ohne Format oder Blattmaßstab zu ändern."""
+    ohne = anordnen(groessen_1zu1)[:2]
+    try:
+        format_, massstab, plaetze = anordnen({**groessen_1zu1, "einzelheit": einzelheit})
+    except ValueError:
+        return False
+    detail = next((p for p in plaetze if p.rolle == "einzelheit"), None)
+    return (format_, massstab) == ohne and detail is not None and detail.massstab != massstab
 
 
 def anordnen(groessen_1zu1: dict[str, tuple[float, float]]) -> tuple[str, tuple[int, int], list[Platz]]:
     """groessen_1zu1: Umriss je Rolle (haupt, seite, drauf, seite_rechts, unter, einzelheit) in mm bei 1:1. Liefert
-    Format, Maßstab und Plätze. Die Einzelheit (Nutzer 18.11.2026) bekommt einen eigenen Maßstab (vergrößert vor
-    unvergrößert) und liegt in der Ecke unter der Seitenansicht oder rechts neben ihr; sie verbreitert dort Spalte und
-    Reihe, ohne die Projektionen aus der Flucht zu bringen."""
+    Format, Maßstab und Plätze. Die Einzelheit (Nutzer 18.11.2026) bekommt einen eigenen, vergrößerten Maßstab und
+    liegt in der Ecke unter der Seitenansicht oder rechts neben ihr; sie verbreitert dort Spalte und Reihe, ohne die
+    Projektionen aus der Flucht zu bringen. Ob sie das Blatt verkleinern würde, prüft `einzelheit_passt` vorher."""
     detail = groessen_1zu1.get("einzelheit")
     for format_, massstab in kandidaten():
         f = massstab[0] / massstab[1]

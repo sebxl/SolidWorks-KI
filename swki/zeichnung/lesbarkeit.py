@@ -44,6 +44,21 @@ def _schneidet(a, b, r) -> bool:
     return True
 
 
+def _quer_durch(a, b, o, d, u, v) -> bool:
+    """Kreuzt die Strecke a–b das gedrehte Rechteck [u0, u1] × [v0, v1] (u entlang d ab o, v senkrecht nach links) und
+    ist sie nicht parallel zu d (mehr als 10°)?"""
+    sx, sy = b[0] - a[0], b[1] - a[1]
+    laenge = (sx * sx + sy * sy) ** 0.5
+    if laenge < 1e-9 or abs(sx * d[1] - sy * d[0]) / laenge < 0.17:
+        return False
+
+    def lokal(p):
+        px, py = p[0] - o[0], p[1] - o[1]
+        return (px * d[0] + py * d[1], -px * d[1] + py * d[0])
+
+    return _schneidet(lokal(a), lokal(b), (u[0], v[0], u[1], v[1]))
+
+
 def _ueberlappt(a, b) -> bool:
     return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
@@ -70,18 +85,28 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
         def mm(x, y):
             return (x * PT_MM, hoehe_mm - y * PT_MM)
 
-        texte = []  # (Text, Rechteck mm, achsparallel)
-        for block in page.get_text("dict")["blocks"]:
+        texte = []  # (Text, Rechteck mm, achsparallel, gedrehter Kern oder None)
+        for block in page.get_text("rawdict")["blocks"]:
             for zeile in block.get("lines", []):
-                wort = "".join(s["text"] for s in zeile["spans"]).strip()
+                zeichen = [c for s in zeile["spans"] for c in s["chars"]]
+                wort = "".join(c["c"] for c in zeichen).strip()
                 if not wort:
                     continue
                 x0, y0, x1, y1 = zeile["bbox"]
                 (ax, ay), (bx, by) = mm(x0, y1), mm(x1, y0)
                 r = (ax, ay, bx, by)
                 cos, sin = zeile["dir"]
+                achsparallel = abs(cos) > 0.99 or abs(sin) > 0.99
+                kern = None
+                if not achsparallel:  # Kern in Schriftrichtung: Grundlinie bis Versalhöhe, eigene Hinweislinie darunter
+                    groesse = zeile["spans"][0]["size"] * PT_MM
+                    o = mm(*zeichen[0]["origin"])
+                    d = (cos, -sin)  # PDF-y zeigt nach unten
+                    laenge = max((mm(*c["origin"])[0] - o[0]) * d[0] + (mm(*c["origin"])[1] - o[1]) * d[1]
+                                 for c in zeichen) + 0.55 * groesse
+                    kern = (o, d, (0.1 * groesse, laenge - 0.1 * groesse), (0.15 * groesse, 0.6 * groesse))
                 if not _im(r, ausschluss_mm):
-                    texte.append((wort, r, abs(cos) > 0.99 or abs(sin) > 0.99))
+                    texte.append((wort, r, achsparallel, kern))
         linien = []
         for zeichnung in page.get_drawings():
             for element in zeichnung["items"]:
@@ -92,13 +117,16 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
                     ecken = [mm(q.x0, q.y0), mm(q.x1, q.y0), mm(q.x1, q.y1), mm(q.x0, q.y1)]
                     linien += list(zip(ecken, ecken[1:] + ecken[:1]))
     befunde = []
-    kerne = [_kern(r) for _, r, _ in texte]
-    for i, (wort, r, achsparallel) in enumerate(texte):
+    kerne = [_kern(r) for _, r, _, _ in texte]
+    for i, (wort, r, achsparallel, gedreht) in enumerate(texte):
         for j in range(i + 1, len(texte)):
             if _ueberlappt(kerne[i], kerne[j]):  # Kern gegen Kern: Zeilenabstand des Textrahmens zählt nicht
                 befunde.append(Befund("text_ueber_text", wort, r, texte[j][0]))
-        # schräge Schrift an ihrer Hinweislinie (R4, Ø6): achsparalleles Rechteck schließt die Linie ein → nur Text gegen Text
         if achsparallel and any(_schneidet(a, b, kerne[i]) for a, b in linien):
+            befunde.append(Befund("linie_durch_text", wort, r))
+        # schräge Schrift an ihrer Hinweislinie (R4, Ø6; Nutzer 18.11.2026: lag auf Kanten): gedrehter Kern, Linien
+        # parallel zur Schrift (die eigene Hinweislinie) zählen nicht
+        elif gedreht and any(_quer_durch(a, b, *gedreht) for a, b in linien):
             befunde.append(Befund("linie_durch_text", wort, r))
     return befunde
 
