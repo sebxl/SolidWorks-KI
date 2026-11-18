@@ -67,7 +67,10 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         with pymupdf.open(z["pdf"]) as doc:
             assert Path(z["zeichnung"]).stem in doc[0].get_text(), "Zeichnungsnummer fehlt im Schriftfeld"
         if not drehteil:
-            assert len(z["ansichten"]) == 3 or any(m.startswith(("ANSICHT_VOLL", "ANSICHT_NICHT")) for m in z["meldungen"])
+            # Nutzer 18.11.2026: dichte Hauptansicht → Einzelheit der Kabelnut; keine Ansicht über der Obergrenze
+            assert sorted(rollen) == ["drauf", "einzelheit", "haupt", "seite"], rollen
+            assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()), masse
+            assert any(m.startswith("EINZELHEIT: k1") for m in z["meldungen"]), z["meldungen"]
         if drehteil:
             assert z["schnitt"] and z["schnitt"].startswith("Schnitt") and "seite" in rollen
         x0, y0, x1, y1 = zeichenfeld(z["format"])

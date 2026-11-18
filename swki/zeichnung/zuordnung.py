@@ -54,6 +54,7 @@ def ordne_zu(kandidaten: dict[str, list[str]], ansichten: list[str], max_je_ansi
                                "keine Ansicht mit Platz zeigt das Merkmal")
             continue
         grund = [r for r in frei if r not in zusatz] or frei
-        ziel = vorzug[mass] if vorzug.get(mass) in grund else min(grund, key=lambda r: (last(r), rang[r]))
+        # Vorzug gilt auch für Zusatzansichten (Einzelheit eines Merkmals, Nutzer 18.11.2026)
+        ziel = vorzug[mass] if vorzug.get(mass) in frei else min(grund, key=lambda r: (last(r), rang[r]))
         z.je_ansicht[ziel].append(mass)
     return z

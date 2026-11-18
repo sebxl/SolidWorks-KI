@@ -13,6 +13,7 @@ IDrawingDoc.InsertModelAnnotations4 (8, 2024; swInsertDimensionsMarkedForDrawing
 """
 
 import math
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -30,6 +31,8 @@ AUTO_ANORDNEN = 0        # swAlignDimensionType_e.swAlignDimensionType_AutoArran
 DURCHMESSER = "<MOD-DIAM>"
 MASSABSTAND_M = 0.008    # Abstand neuer Maße untereinander (R-Kap. 4: 7 mm, Widerspruch 5 mm; Hausregel bis Z1.5)
 _TOL = 1e-6
+
+EINZELHEIT_MIN = 3  # so viele Maße braucht ein Merkmal, damit sich eine Einzelheit lohnt
 
 
 @dataclass
@@ -102,16 +105,21 @@ def _loesche(drw, dd) -> None:
 
 def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, weitere: list[str],
             neue_ansicht: Callable[[str], object] | None, vorzug: dict[str, str] | None = None,
-            blickachsen: dict[str, int] | None = None) -> Ergebnis:
+            blickachsen: dict[str, int] | None = None,
+            einzelheit: Callable[[str, list[str]], object] | None = None, ausser: set[str] | None = None) -> Ergebnis:
     """`rollen`: Vorrang der vorhandenen Ansichten (Hauptansicht zuerst); `weitere`: Rollen, die bei Bedarf als
-    Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Liefert Zuordnung, neue Maße je Ansicht und Meldungen."""
+    Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Bleibt eine Ansicht über der Obergrenze, lagert
+    `einzelheit(rolle, maßnamen)` das Merkmal mit den meisten Maßen dort in eine Einzelheit aus (Nutzer 18.11.2026;
+    `ausser`: Merkmale, die nie ausgelagert werden, z. B. der Grundkörper). Liefert Zuordnung, neue Maße je Ansicht und
+    Meldungen."""
     modell = [m for m in plan if m.quelle == "modell"]
     neu = [m.id for m in plan if m.quelle == "neu"]
     rollen, weitere, zusatz = list(rollen), list(weitere), set()
+    achsen, vorzug = dict(blickachsen or {}), dict(vorzug or {})
     if modell:
         _einfuegen(drw, views[rollen[0]], True)
     for _runde in range(3):
-        z = ordne_zu(_nach_blickachse(kandidaten(views, modell), modell, blickachsen or {}), rollen, max_je, vorzug,
+        z = ordne_zu(_nach_blickachse(kandidaten(views, modell), modell, achsen), rollen, max_je, vorzug,
                      zusatz, {rollen[0]: len(neu)})
         if not (z.weitere_ansicht and weitere and neue_ansicht):
             break
@@ -120,6 +128,24 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
         rollen.append(rolle)
         zusatz.add(rolle)
         _einfuegen(drw, views[rolle], False)
+    if einzelheit and any(len(ms) > max_je for ms in z.je_ansicht.values()):
+        dicht = max(z.je_ansicht, key=lambda r: len(z.je_ansicht[r]))
+        zahl = Counter(m.merkmal for m in modell if m.id in z.je_ansicht[dicht] and m.merkmal not in (ausser or set()))
+        if zahl and zahl.most_common(1)[0][1] >= EINZELHEIT_MIN:
+            merkmal = zahl.most_common(1)[0][0]
+            det = einzelheit(dicht, [m.name for m in modell if m.merkmal == merkmal])
+            if det is None:
+                z.meldungen.append(f"EINZELHEIT_NICHT_ERZEUGT: {merkmal} in {dicht}")
+            else:
+                views["einzelheit"], achsen["einzelheit"] = det, achsen.get(dicht)
+                rollen.append("einzelheit")
+                zusatz.add("einzelheit")
+                _einfuegen(drw, det, False)
+                vorzug.update({m.id: "einzelheit" for m in modell if m.merkmal == merkmal})
+                z = ordne_zu(_nach_blickachse(kandidaten(views, modell), modell, achsen), rollen, max_je, vorzug,
+                             zusatz, {rollen[0]: len(neu)})
+                z.meldungen.append(f"EINZELHEIT: {merkmal} aus {dicht} ausgelagert "
+                                   f"({len(z.je_ansicht['einzelheit'])} Maße)")
     erg = Ergebnis(z.je_ansicht, meldungen=list(z.meldungen))
     vorher = sum(len(_anzeige(v)) for v in views.values())
     ids = {m.name: m.id for m in modell}

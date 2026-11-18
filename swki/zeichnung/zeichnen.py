@@ -7,11 +7,13 @@ Member liefert der dynamische Dispatch beim Zugriff (`_ruf`).
 API (swki api methode, SW 2025): ISldWorks.NewDocument (4), GetUserPreferenceStringValue (1);
 IDrawingDoc.SetupSheet5 (11, 2009), CreateDrawViewFromModelView3 (5, 2005), CreateUnfoldedViewAt3 (4, 2005),
 ActivateView (1), CreateSectionViewAt5 (7, 2010), GetCurrentSheet; IView.Angle/Position (put), GetOutline, GetName2;
-ISketchManager.CreateLine (6); IModelDocExtension.SetUserPreferenceToggle (3, 2009), SelectByID2 (9),
+ISketchManager.CreateLine (6), CreateCornerRectangle (6, 2008); IDrawingDoc.CreateDetailViewAt4 (12, 2017;
+swDetViewSTANDARD = 0, swDetCirclePROFILE = 0); ISelectionMgr.GetSelectedObjectCount2 (1); IModelDocExtension.SetUserPreferenceToggle (3, 2009), SelectByID2 (9),
 SaveAs (6), CustomPropertyManager (1) → ICustomPropertyManager.Add3 (4, 2014); IModelDoc2.EditRebuild3, ClearSelection2.
 """
 
 import hashlib
+from fractions import Fraction
 import json
 import math
 import time
@@ -30,7 +32,7 @@ from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
 from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
                                      waehle_ansichten, weitere_rollen)
-from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, ordne_masse_an, setze_neu
+from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.lesbarkeit import ausserhalb, pruefe_pdf
 from swki.zeichnung.reihen import ABSTAND_MM, LinMass, reihen, seite
@@ -48,6 +50,8 @@ SAVE_SILENT = 1                             # swSaveAsOptions_Silent
 EIGENSCHAFT_TEXT = 30                       # swCustomInfoType_e.swCustomInfoText
 EIGENSCHAFT_ERSETZEN = 2                    # swCustomPropertyAddOption_e.swCustomPropertyReplaceValue
 ABSTAND_PROBE_M = 0.12                      # Probeplatzierung vor der Anordnung
+DETAIL_STANDARD, DETAIL_PROFIL = 0, 0        # swDetViewStyle_e.swDetViewSTANDARD, swDetCircleShowType_e.swDetCirclePROFILE
+EINZELHEIT_RAND_MM = 4.0                     # Rand des Einzelheit-Rechtecks um die Bezugspunkte (Blatt-mm)
 
 
 class ZeichnungFehler(SwkiFehler):
@@ -119,6 +123,39 @@ def _in_ansicht(view, x_m: float, y_m: float) -> tuple[float, float]:
     return ((x_m - px) / s, (y_m - py) / s)
 
 
+def _einzelheit(drw, eltern, namen: list[str], buchstabe: str, bereich: dict):
+    """Einzelheit (Nutzer 18.11.2026: dichte Hauptansicht): Rechteck um die Bezugspunkte der Maße des Merkmals – die
+    Anfänge ihrer Hilfslinien (`IDisplayData`, spikes/z1_diag_masslinien.py) – als Profil in der Elternansicht
+    skizzieren (bleibt ausgewählt, spikes/z1_diag_einzelheit.py) und die Einzelheit doppelt so groß anlegen; Maßstab und
+    Lage setzt danach die Blattaufteilung. `bereich` bekommt Größe des Rechtecks und Versatz seiner Mitte von
+    `IView.Position` in Modell-mm: Die Position einer Einzelheit ist derselbe Modellpunkt wie in der Elternansicht
+    (spikes/z1_diag_einzelheit_lage.py), die Rahmenmitte liegt also bei Position + Versatz × Maßstab."""
+    punkte = []
+    for dd in list(_ruf(eltern, "GetDisplayDimensions") or ()):
+        if kurzname(dd) not in namen or _ruf(dd, "Type2") not in LINEAR:
+            continue
+        daten = _ruf(dd, "GetDisplayData")
+        for k in (0, 1):
+            linie = list(daten.GetLineAtIndex3(k))
+            punkte.append((linie[4] * 1000, linie[5] * 1000))
+    if not punkte:
+        return None
+    ux0, uy0, ux1, uy1 = _umriss_mm(eltern)
+    x0, y0 = max(min(p[0] for p in punkte) - EINZELHEIT_RAND_MM, ux0), max(min(p[1] for p in punkte) - EINZELHEIT_RAND_MM, uy0)
+    x1, y1 = min(max(p[0] for p in punkte) + EINZELHEIT_RAND_MM, ux1), min(max(p[1] for p in punkte) + EINZELHEIT_RAND_MM, uy1)
+    _waehle_ansicht(drw, eltern)
+    a, b = _in_ansicht(eltern, x0 / 1000, y0 / 1000), _in_ansicht(eltern, x1 / 1000, y1 / 1000)
+    kanten = list(_ruf(drw, "SketchManager").CreateCornerRectangle(a[0], a[1], 0, b[0], b[1], 0) or ())
+    if len(kanten) != 4 or _ruf(drw, "SelectionManager").GetSelectedObjectCount2(-1) < 4:
+        return None
+    s, pos = _ruf(eltern, "ScaleDecimal"), [v * 1000 for v in list(_ruf(eltern, "Position"))[:2]]
+    bereich.update(groesse=((x1 - x0) / s, (y1 - y0) / s),
+                   versatz=(((x0 + x1) / 2 - pos[0]) / s, ((y0 + y1) / 2 - pos[1]) / s))
+    z = Fraction(2 * s).limit_denominator(100)
+    return drw.CreateDetailViewAt4(ux1 / 1000 + ABSTAND_PROBE_M, uy0 / 1000, 0, DETAIL_STANDARD, z.numerator,
+                                   z.denominator, buchstabe, DETAIL_PROFIL, True, False, False, 5)
+
+
 def _projektion(drw, haupt, rolle: str):
     x0, y0, x1, y1 = (v / 1000 for v in _umriss_mm(haupt))
     _waehle_ansicht(drw, haupt)
@@ -170,24 +207,42 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         meldungen += nicht_erzeugt
         plan = massplan(spec, json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8")))
         basis = next(a.rolle for a in ansichten if a.modellansicht)
+        buchstabe, bereich = ("B" if schnitt else "A"), {}
         bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
                       weitere_rollen(spec), lambda rolle: _projektion(drw, views["haupt"], rolle),
-                      vorzugsansichten(spec, plan), blickachsen(ansichten, weitere_rollen(spec)))
+                      vorzugsansichten(spec, plan), blickachsen(ansichten, weitere_rollen(spec)),
+                      lambda rolle, namen: _einzelheit(drw, views[rolle], namen, buchstabe, bereich),
+                      {spec["features"][0]["id"]} if spec.get("features") else set())
         meldungen += bem.meldungen
         meldungen += massplan_meldungen(spec)
         for rolle in [r for r in list(views) if r not in ("haupt", basis) and not bem.je_ansicht.get(r)]:
             if not _loesche_ansicht(drw, views.pop(rolle)):  # Ansicht ohne eigenes Maß entfällt (Design §6.1)
                 meldungen.append(f"ANSICHT_NICHT_GELOESCHT: {rolle} ohne Maß blieb auf dem Blatt")
         groessen = {rolle: _groesse_1zu1(v) for rolle, v in views.items()}
+        if "einzelheit" in views:
+            groessen["einzelheit"] = bereich["groesse"]  # GetOutline einer Einzelheit: Rand ~12 mm, später veraltet
         format_, massstab, plaetze = anordnen(groessen)
         blattformat = r.zeichnung.get(format_)
         if blattformat is None:
             raise ZeichnungFehler("ZEICHNUNG_VORLAGE_FEHLT", f"config/rechner.yaml: zeichnung.{format_} fehlt")
         _blatt(drw, format_, massstab, blattformat)
-        for v in views.values():  # Ansichten folgen sonst ihrem automatischen Maßstab (Live Z1.3: Platte zu groß)
-            v.ScaleDecimal = massstab[0] / massstab[1]
+        eigen = {p.rolle: p.massstab for p in plaetze if p.massstab}
+        for rolle, v in views.items():  # Ansichten folgen sonst ihrem automatischen Maßstab (Live Z1.3: Platte zu groß)
+            m = eigen.get(rolle, massstab)
+            v.ScaleDecimal = m[0] / m[1]
+        fest = {}  # Umriss der Einzelheit selbst gerechnet (GetOutline folgt dem Maßstab nicht, spikes/z1_diag_einzelheit_lage.py)
         for p in sorted(plaetze, key=lambda p: p.rolle != basis):  # Elternansicht zuerst, Kinder sind ausgerichtet
-            _setze_lage(views[p.rolle], p.mitte_mm)
+            if p.rolle == "einzelheit":
+                f = p.massstab[0] / p.massstab[1]
+                _setze_lage(views[p.rolle], (p.mitte_mm[0] - bereich["versatz"][0] * f,
+                                             p.mitte_mm[1] - bereich["versatz"][1] * f))
+                (cx, cy), (b, h) = p.mitte_mm, p.groesse_mm
+                fest["einzelheit"] = (cx - b / 2, cy - h / 2, cx + b / 2, cy + h / 2)
+                if p.massstab == massstab:
+                    meldungen.append(f"EINZELHEIT_NICHT_VERGROESSERT: vergrößert passt sie nicht aufs Blatt, "
+                                     f"Maßstab {p.massstab[0]}:{p.massstab[1]} wie das Blatt")
+            else:
+                _setze_lage(views[p.rolle], p.mitte_mm)
         neu_gesetzt = _neue_masse(drw, views, plan, bem.neu, achsvektor(spec), meldungen)
         for rolle, v in views.items():
             if not ordne_masse_an(drw, v):
@@ -196,10 +251,10 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
-        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_)
+        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest)
         _speichern(ext, zeichnung)
-        info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "umriss_mm": [round(x, 1) for x in _umriss_mm(v)]}
-                for rolle, v in views.items()]
+        info = [{"rolle": rolle, "name": _ruf(v, "GetName2"),
+                 "umriss_mm": [round(x, 1) for x in fest.get(rolle) or _umriss_mm(v)]} for rolle, v in views.items()]
     finally:
         if drw is not None:
             sw.schliesse(app, drw)
@@ -255,13 +310,13 @@ def _lineare_masse(view) -> list[tuple[object, LinMass, float]]:
     return aus
 
 
-def _reihen_anlegen(views: dict, vorlauf: dict) -> list[tuple[tuple, tuple[float, float]]]:
+def _reihen_anlegen(views: dict, vorlauf: dict, fest: dict | None = None) -> list[tuple[tuple, tuple[float, float]]]:
     """Nutzer 18.11.2026: Maße übereinander, Zahlen von Linien gekreuzt → lineare Maße je Ansichtsseite in Reihen
     (`swki.zeichnung.reihen`), Lage über `IAnnotation.SetPosition2` (Maßlinie folgt der Zahl). Liefert je Maß die
     Ansichtsseite (Rolle, Richtung, Seite) und die Lage der Zahl in Blatt-mm."""
     platz = []
     for rolle, v in views.items():
-        masse, umriss = _lineare_masse(v), _umriss_mm(v)
+        masse, umriss = _lineare_masse(v), _rand(fest, rolle) or _umriss_mm(v)
         eigen = {(r, s): mm for (ro, r, s), mm in vorlauf.items() if ro == rolle}
         lage = reihen([m for _, m, _ in masse], umriss, eigen)
         for ann, m, versatz in masse:
@@ -272,7 +327,14 @@ def _reihen_anlegen(views: dict, vorlauf: dict) -> list[tuple[tuple, tuple[float
     return platz
 
 
-def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, runden: int = 3) -> list[str]:
+def _rand(fest: dict | None, rolle: str):
+    """Selbst gerechneter Rahmen (Einzelheit) samt dem Rand, den SolidWorks um Ansichten legt (~6 mm)."""
+    r = (fest or {}).get(rolle)
+    return (r[0] - 6, r[1] - 6, r[2] + 6, r[3] + 6) if r else None
+
+
+def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict | None = None,
+                    runden: int = 3) -> list[str]:
     """Reihen anlegen, PDF speichern, am PDF prüfen (was der Leser sieht). Ein Befund an einer Maßzahl rückt alle
     Reihen ihrer Ansichtsseite um einen Reihenabstand nach außen (Beschriftungen von SolidWorks, die die Reihenanlage
     nicht kennt), dann neu; höchstens `runden` Mal. Was bleibt, wird gemeldet."""
@@ -285,7 +347,7 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, runden: int 
     vorlauf: dict[tuple, float] = {}
     befunde = []
     for runde in range(runden + 1):
-        platz = _reihen_anlegen(views, vorlauf)
+        platz = _reihen_anlegen(views, vorlauf, fest)
         _ruf(drw, "EditRebuild3")
         _speichern(ext, pdf)
         if not pruefen:

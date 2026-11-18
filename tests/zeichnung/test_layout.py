@@ -65,3 +65,45 @@ def test_zusatzansichten_links_und_oben():
     assert p["unter"].mitte_mm[1] > p["haupt"].mitte_mm[1]
     assert abs(p["unter"].mitte_mm[0] - p["haupt"].mitte_mm[0]) < 1e-6
     _pruefe(format_, plaetze)
+
+
+def test_einzelheit_in_der_freien_ecke_vergroessert():
+    """Nutzer 18.11.2026: dichte Hauptansicht → Einzelheit. Sie liegt in der freien Ecke rechts unter der Seitenansicht
+    und bekommt einen eigenen, größeren Normmaßstab (möglichst doppelt so groß wie das Blatt)."""
+    format_, massstab, plaetze = anordnen({"haupt": (200, 120), "seite": (20, 120), "drauf": (200, 20),
+                                          "einzelheit": (60, 35)})
+    p = {x.rolle: x for x in plaetze}
+    f = massstab[0] / massstab[1]
+    e = p["einzelheit"]
+    assert e.massstab is not None and e.massstab[0] / e.massstab[1] >= 2 * f - 1e-9
+    assert e.groesse_mm == (60 * e.massstab[0] / e.massstab[1], 35 * e.massstab[0] / e.massstab[1])
+    assert e.mitte_mm[0] > p["haupt"].mitte_mm[0] and e.mitte_mm[1] < p["haupt"].mitte_mm[1]
+    assert abs(p["seite"].mitte_mm[1] - p["haupt"].mitte_mm[1]) < 1e-6  # Projektion bleibt ausgerichtet
+    _pruefe(format_, plaetze)
+
+
+def test_einzelheit_aendert_den_blattmassstab_nicht_ohne_not():
+    ohne = anordnen({"haupt": (200, 120), "seite": (20, 120), "drauf": (200, 20)})[:2]
+    mit = anordnen({"haupt": (200, 120), "seite": (20, 120), "drauf": (200, 20), "einzelheit": (60, 35)})[:2]
+    assert mit == ohne
+
+
+def test_einzelheit_rechts_neben_der_seitenansicht_wenn_die_ecke_zu_klein_ist():
+    """Vergrößern geht vor der Ecke: passt die vergrößerte Einzelheit nicht unter die Seitenansicht, dann rechts daneben."""
+    format_, massstab, plaetze = anordnen({"haupt": (224, 144), "seite": (44, 144), "drauf": (224, 44),
+                                          "einzelheit": (100, 60)})
+    p = {x.rolle: x for x in plaetze}
+    assert (format_, massstab) == ("A3quer", (1, 2)) and p["einzelheit"].massstab == (1, 1)
+    assert p["einzelheit"].mitte_mm[0] > p["seite"].mitte_mm[0]
+    assert abs(p["einzelheit"].mitte_mm[1] - p["haupt"].mitte_mm[1]) < 1e-6
+    _pruefe(format_, plaetze)
+
+
+def test_einzelheit_ohne_platz_zum_vergroessern_im_blattmassstab():
+    """Live 18.11.: Nut der Spannplatte 132 × 72 mm – vergrößert passt sie auf A3 1:2 nirgends hin; dann im
+    Blattmaßstab statt das ganze Blatt zu verkleinern."""
+    format_, massstab, plaetze = anordnen({"haupt": (224, 144), "seite": (44, 144), "drauf": (224, 44),
+                                          "einzelheit": (132, 72)})
+    p = {x.rolle: x for x in plaetze}
+    assert (format_, massstab) == ("A3quer", (1, 2)) and p["einzelheit"].massstab == (1, 2)
+    _pruefe(format_, plaetze)

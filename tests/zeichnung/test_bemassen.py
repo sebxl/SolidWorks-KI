@@ -132,3 +132,34 @@ def test_kandidaten_nach_blickachse_gefiltert():
     erg = b.bemasse(_Drw(views, {"haupt": ["S", "T"], "drauf": ["S", "T"]}), views, plan, ["haupt", "drauf"], max_je=12,
                     weitere=[], neue_ansicht=None, blickachsen={"haupt": 1, "drauf": 2})
     assert erg.je_ansicht == {"haupt": ["S"], "drauf": ["T"]}
+
+
+def test_dichte_ansicht_lagert_merkmal_in_einzelheit_aus():
+    """Nutzer 18.11.2026: Hauptansicht über der Obergrenze → Merkmal mit den meisten Maßen dort (nicht der Grundkörper)
+    in eine Einzelheit; dessen Maße gehen dorthin, die Hauptansicht bleibt unter der Obergrenze."""
+    plan = ([Mass(f"k{i}", "modell", "laenge", 1.0, "k1", name=f"k{i}") for i in range(4)]
+            + [Mass(f"f{i}", "modell", "laenge", 1.0, "f1", name=f"f{i}") for i in range(3)]
+            + [Mass("t0", "modell", "laenge", 1.0, "t1", name="t0")])
+    views = {"haupt": _View("V1")}
+    drw = _Drw(views, {"haupt": [m.name for m in plan], "einzelheit": ["k0", "k1", "k2", "k3", "t0"]})
+    aufrufe = []
+
+    def einzelheit(rolle, namen):
+        aufrufe.append((rolle, sorted(namen)))
+        return _View("V9")
+
+    erg = b.bemasse(drw, views, plan, ["haupt"], max_je=5, weitere=[], neue_ansicht=None, einzelheit=einzelheit,
+                    ausser={"f1"})
+    assert aufrufe == [("haupt", ["k0", "k1", "k2", "k3"])]
+    assert sorted(erg.je_ansicht["einzelheit"]) == ["k0", "k1", "k2", "k3"]
+    assert sorted(erg.je_ansicht["haupt"]) == ["f0", "f1", "f2", "t0"]
+    assert not any(m.startswith("ANSICHT_DICHT") for m in erg.meldungen)
+    assert sorted(dd.name for dd in views["einzelheit"].masse) == ["k0", "k1", "k2", "k3"]
+
+
+def test_ohne_dichte_ansicht_keine_einzelheit():
+    views = {"haupt": _View("V1")}
+    plan = [Mass(f"k{i}", "modell", "laenge", 1.0, "k1", name=f"k{i}") for i in range(4)]
+    erg = b.bemasse(_Drw(views, {"haupt": [m.name for m in plan]}), views, plan, ["haupt"], max_je=12, weitere=[],
+                    neue_ansicht=None, einzelheit=lambda r, n: (_ for _ in ()).throw(AssertionError("nicht nötig")))
+    assert "einzelheit" not in views and len(erg.je_ansicht["haupt"]) == 4

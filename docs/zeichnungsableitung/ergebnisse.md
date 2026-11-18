@@ -99,7 +99,26 @@ erkannt, weil er nur Zahlen und Obergrenzen prüfte.
 - Offen: Tiefenmaß der Tasche (12) in der Dickenansicht zeigt auf eine dort unsichtbare Kante (braucht Schnitt, Stufe 3);
   Maße vom Ursprung (24, 27 der Kabelnut) ohne gezeichnete Mittellinie; Hinweislinie von R4 läuft quer durch die
   Hauptansicht; außen stehende Zahlen können weit von ihrer Spanne liegen („27,00“ der Spannplatte); Reihen rücken nicht
-  gegen Nachbaransichten ab (Maßrand fest 25 mm); Obergrenze 12 gegen Detailansicht abwägen.
+  gegen Nachbaransichten ab (Maßrand fest 25 mm).
+
+### Nachtrag Einzelheit (Nutzer 18.11.2026: „Detailansicht“ statt dichter Hauptansicht)
+
+- Bleibt eine Ansicht über der Obergrenze, lagert `bemasse` das Merkmal mit den meisten Maßen dort (mindestens 3, nie
+  der Grundkörper) in eine Einzelheit aus; seine Maße bekommen die Einzelheit als Vorzug (`EINZELHEIT: k1 …`).
+- Bereich: Rechteck um die Anfänge der Hilfslinien dieser Maße (+ 4 mm), als Profil in der Elternansicht skizziert
+  (`CreateCornerRectangle`, bleibt ausgewählt) → `CreateDetailViewAt4` mit `swDetCirclePROFILE`
+  (`spikes/z1_diag_einzelheit.py`). SolidWorks fügt dort die Maße der Merkmale im Bereich ein.
+- Maßstab und Lage aus der Blattaufteilung: zuerst der kleinste Normmaßstab mit mindestens doppelter Vergrößerung,
+  sonst der des Blatts (`EINZELHEIT_NICHT_VERGROESSERT`); Lage in der Ecke unter der Seitenansicht oder rechts daneben.
+- Live-Lehren (`spikes/z1_diag_einzelheit_lage.py`): `IView.Position` einer Einzelheit ist derselbe Modellpunkt wie in
+  der Elternansicht (nicht die Rahmenmitte); `GetOutline` folgt einem neuen `ScaleDecimal` nicht, auch nicht nach
+  `EditRebuild3`/`ForceRebuild3`/`GraphicsRedraw2`, und trägt rund 12 mm Rand → Größe und Lage selbst gerechnet.
+- Live Spannplatte: Hauptansicht 11, Einzelheit 5 Maße (Kabelnut), keine Ansicht über 12, kein Lesbarkeitsbefund.
+  Die Nut samt Bezugspunkten (linke Kante, Plattenmitte) ist 132 × 72 mm; vergrößert passt sie auf A3 1:2 nicht neben
+  die drei Ansichten → Einzelheit im Blattmaßstab 1:2.
+- Offen: Einzelheit nur im Blattmaßstab, wenn das Blatt voll ist (kleinerer Maßrand oder engerer Bereich würden
+  helfen); Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit); Bereich enthält Bezugspunkte, die selbst keine
+  Kante sind (Plattenmitte für 27).
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

@@ -75,3 +75,12 @@ def test_vorbelegung_zaehlt_gegen_obergrenze():
     z = ordne_zu({"a": ["haupt", "seite"], "b": ["haupt", "seite"]}, ["haupt", "seite"], 12, belegt={"haupt": 11},
                  vorzug={"a": "haupt", "b": "haupt"})
     assert len(z.je_ansicht["haupt"]) == 1 and len(z.je_ansicht["seite"]) == 1
+
+
+def test_vorzug_geht_auch_in_eine_zusatzansicht():
+    """Nutzer 18.11.2026 (Einzelheit): die Maße des ausgelagerten Merkmals gehören in die Einzelheit, auch wenn die
+    Hauptansicht noch Platz hätte."""
+    kand = {"k1a": ["haupt", "einzelheit"], "k1b": ["haupt", "einzelheit"], "t1": ["haupt", "einzelheit"]}
+    z = ordne_zu(kand, ["haupt", "einzelheit"], 12, vorzug={"k1a": "einzelheit", "k1b": "einzelheit"},
+                 zusatz={"einzelheit"})
+    assert sorted(z.je_ansicht["einzelheit"]) == ["k1a", "k1b"] and z.je_ansicht["haupt"] == ["t1"]
