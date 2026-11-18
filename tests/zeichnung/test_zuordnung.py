@@ -13,9 +13,10 @@ def test_jedes_mass_genau_einer_kandidatenansicht():
 
 
 def test_ueberlauf_nur_hauptansicht():
+    """Live 18.11.2026: kein Pflichtmaß verwerfen – über der Obergrenze trotzdem setzen, melden, weitere Ansicht verlangen."""
     z = ordne_zu({f"m{i:02d}": ["haupt"] for i in range(15)}, ANSICHTEN, 12)
-    assert len(z.je_ansicht["haupt"]) == 12 and z.weitere_ansicht
-    assert len(z.meldungen) == 3 and all("haupt" in m or "Obergrenze" in m for m in z.meldungen)
+    assert len(z.je_ansicht["haupt"]) == 15 and z.weitere_ansicht
+    assert len(z.meldungen) == 3 and all(m.startswith("ANSICHT_DICHT") and "haupt" in m for m in z.meldungen)
 
 
 def test_verteilung_auf_zwei_ansichten():

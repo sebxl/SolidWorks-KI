@@ -2,7 +2,10 @@
 
 Jedes Maß kommt in genau eine Ansicht, in der es darstellbar ist (Kandidaten). Maße mit wenig Kandidaten zuerst, dann
 in die Ansicht mit den wenigsten Maßen, bei Gleichstand nach Vorrang (Hauptansicht zuerst). Keine Ansicht über der
-Obergrenze; was nicht passt, verlangt eine weitere Ansicht und steht in `meldungen` (nie still weglassen).
+Obergrenze, solange eine darstellende Ansicht Platz hat; was nicht passt, verlangt eine weitere Ansicht. Hat keine
+Ansicht mehr Platz, kommt das Maß trotzdem in die am wenigsten belegte darstellende Ansicht (`ANSICHT_DICHT`): ein
+fehlendes Pflichtmaß wiegt schwerer als eine dichte Ansicht (Live 18.11.2026, Spannplatte: nur die Hauptansicht blickt
+auf die Skizzenebene). Nie still weglassen.
 """
 
 from dataclasses import dataclass, field
@@ -45,8 +48,10 @@ def ordne_zu(kandidaten: dict[str, list[str]], ansichten: list[str], max_je_ansi
         frei = [r for r in moeglich if last(r) < max_je_ansicht]
         if not frei:
             z.weitere_ansicht = True
-            z.meldungen.append(f"ANSICHT_VOLL: {mass} passt nicht mehr in {', '.join(moeglich)} "
-                               f"(Obergrenze {max_je_ansicht} Maße je Ansicht)")
+            ziel = min(moeglich, key=lambda r: (last(r), rang[r]))
+            z.je_ansicht[ziel].append(mass)
+            z.meldungen.append(f"ANSICHT_DICHT: {mass} über der Obergrenze ({max_je_ansicht} Maße je Ansicht) in {ziel} – "
+                               "keine Ansicht mit Platz zeigt das Merkmal")
             continue
         grund = [r for r in frei if r not in zusatz] or frei
         ziel = vorzug[mass] if vorzug.get(mass) in grund else min(grund, key=lambda r: (last(r), rang[r]))

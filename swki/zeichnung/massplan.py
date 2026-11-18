@@ -25,16 +25,64 @@ class Mass:
     merkmal: str                # Feature-ID der Spec
     name: str | None = None     # SolidWorks-Maßname ohne Dokument, z. B. "D3@t1_skizze" (nur modell)
     geometrie: dict | None = None  # nur neu: Lage in Modellkoordinaten entlang der Drehachse (mm)
+    achse: int | None = None    # Normale der Skizzenebene bzw. Tiefenrichtung (0 = x, 1 = y, 2 = z)
+    modus: str | None = None    # flach: Ansicht blickt entlang achse; quer: Ansicht blickt quer dazu
 
 
 def _rund(x: float) -> float:
     return round(x, 6)
 
 
+_EBENEN = {"vorne": 2, "oben": 1, "rechts": 0}
+
+
+def _ebene_achse(ebene) -> int | None:
+    """Normale einer Skizzenebene der Spec: Standardebene, Flächenanker {feature, flaeche: "+y"}, Versatzebene."""
+    if isinstance(ebene, str):
+        return _EBENEN.get(ebene)
+    if isinstance(ebene, dict):
+        if isinstance(ebene.get("flaeche"), str):
+            return "xyz".index(ebene["flaeche"][1])
+        if isinstance(ebene.get("versatz"), dict):
+            return _ebene_achse(ebene["versatz"].get("ebene"))
+    return None
+
+
+def _achse_modus(features: dict, fid: str, pfad: str, tiefe: int = 0) -> tuple[int | None, str | None]:
+    """Nutzer 18.11.2026: Skizzenmaße in die Ansicht senkrecht zur Skizzenebene, Tiefenmaße in eine Ansicht quer dazu."""
+    f = features.get(fid) or {}
+    if ".ende." in pfad:
+        return _ebene_achse(f.get("skizze", {}).get("ebene")), "quer"
+    for wort, schluessel in ((".profil.", "profil"), (".pfad.", "pfad"), (".skizze.", "skizze")):
+        if wort in pfad:
+            return _ebene_achse((f.get(schluessel) or {}).get("ebene")), "flach"
+    typ = f.get("typ")
+    if typ in ("bohrung", "normbohrung"):
+        return _ebene_achse(f.get("flaeche")), "flach"
+    quellen = (f.get("features", []) if typ in ("muster_linear", "muster_kreis", "spiegeln")
+               else [k.get("feature") for k in f.get("kanten", []) if isinstance(k, dict)] if typ in ("verrundung", "fase")
+               else [])
+    for q in quellen:
+        if tiefe < 3 and q in features:
+            achse, _ = _achse_modus(features, q, ".skizze." if "skizze" in features[q] else "", tiefe + 1)
+            if achse is not None:
+                return achse, "flach"
+    return None, None
+
+
+def _skizze(pfad: str) -> str:
+    """Teil des Spec-Pfads bis zur Skizze (features[7].pfad, features[7].profil, features[1].skizze …)."""
+    for wort in (".pfad.", ".profil.", ".skizze."):
+        if wort in pfad:
+            return pfad.split(wort)[0] + wort
+    return pfad.split(".")[0]
+
+
 def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = frozenset()) -> list[Mass]:
     """Modellmaße aus dem Maßprotokoll; `ohne`: Feature-IDs, deren Maße ein anderer Plan liefert (Drehprofil)."""
     typ = {f["id"]: f.get("typ") for f in spec.get("features", [])}
-    plan, gesehen = [], set()
+    features = {f["id"]: f for f in spec.get("features", [])}
+    plan, gesehen, punktmasse = [], set(), set()
     for knoten in protokoll.get("knoten", []):
         fid = knoten.get("id")
         if fid in ohne:
@@ -45,7 +93,14 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
                 continue
             gesehen.add(m["name"])
             art = "fase" if typ.get(fid) == "fase" else _ARTEN.get(m["art"], m["art"])
-            plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"]))
+            if art == "lage":  # Punkte gleicher Lage (waagrechter Nutpfad) ergäben dasselbe Maß doppelt (Nutzer 18.11.2026)
+                schluessel = (fid, _skizze(pfad), pfad[-3:], m.get("bezug") if not isinstance(m.get("bezug"), dict)
+                              else str(m["bezug"]), _rund(m["wert"]))
+                if schluessel in punktmasse:
+                    continue
+                punktmasse.add(schluessel)
+            achse, modus = _achse_modus(features, fid, pfad)
+            plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"], achse=achse, modus=modus))
     return plan
 
 

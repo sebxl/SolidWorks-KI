@@ -138,3 +138,19 @@ def test_vorzug_verrundung_erbt_richtung_des_kantenfeatures():
 
     v = vorzugsansichten(_lade("stil/spannplatte.yaml"), [Mass("D1@r1", "modell", "radius", 4.0, "r1", name="D1@r1")])
     assert v == {"D1@r1": "haupt"}
+
+
+def test_blickachsen_der_ansichten():
+    from swki.zeichnung.ansichten import blickachsen
+
+    platte = waehle_ansichten(_lade("stil/spannplatte.yaml"))
+    assert blickachsen(platte, ["seite_rechts", "unter"]) == {"haupt": 1, "drauf": 2, "seite": 0, "seite_rechts": 0,
+                                                              "unter": 2}
+    buchse = waehle_ansichten(_lade("buchse/buchse.yaml"))
+    assert blickachsen(buchse, []) == {"seite": 1, "haupt": 0}
+    welle = waehle_ansichten({"parameter": {}, "features": [{"id": "f1", "typ": "rotation", "skizze": {"ebene": "vorne",
+        "elemente": [{"polygon": {"punkte": [[0, 0], [10, 0], [10, 100], [0, 100]]}},
+                     {"mittellinie": {"von": [0, -5], "bis": [0, 105]}}]}},
+        {"id": "b1", "typ": "bohrung", "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[3, 0]],
+         "durchmesser": 2, "durch": True}]})
+    assert blickachsen(welle, []) == {"haupt": 2, "seite": 1}  # *Vorderseite um 90° gedreht: Seite schaut entlang y

@@ -55,9 +55,13 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         assert any(m.startswith("LAUF_NICHT_BESTANDEN") for m in z["meldungen"])
         # Stufe 2: Maßplan vollständig gesetzt oder jede Lücke gemeldet; keine Ansicht über der Obergrenze
         masse = z["masse"]
-        assert masse["gesetzt"] == masse["plan"] or any(m.startswith("MASS_") for m in z["meldungen"]), z["meldungen"]
-        assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()), masse
+        # Live 18.11.2026: kein Pflichtmaß verwerfen – über der Obergrenze nur mit ANSICHT_DICHT
+        assert masse["gesetzt"] == masse["plan"], z["meldungen"]
+        assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()) or any(
+            m.startswith("ANSICHT_DICHT") for m in z["meldungen"]), masse
         assert not any(m.startswith(("MASS_NICHT_GELOESCHT", "MASS_NICHT_GESETZT")) for m in z["meldungen"]), z["meldungen"]
+        # Nutzer 18.11.2026: lesbar – kein Text auf Text, keine Linie durch eine Maßzahl (Prüfung am PDF)
+        assert not any(m.startswith("LESBARKEIT") for m in z["meldungen"]), z["meldungen"]
         if not drehteil:
             assert len(z["ansichten"]) == 3 or any(m.startswith(("ANSICHT_VOLL", "ANSICHT_NICHT")) for m in z["meldungen"])
         if drehteil:

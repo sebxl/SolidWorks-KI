@@ -143,3 +143,22 @@ def test_doppel_nach_lage_nicht_nach_wert():
                                     _rot("f2", [_poly((15, 40), (17, 40), (17, 43), (15, 43))], schnitt=True)))
     assert {m.geometrie["bis"] for m in plan if m.art == "laenge"} == {0, 40, 43, 60}
     assert _d(plan).count(30) == 2  # Absatz und Einstichgrund
+
+
+def test_gleiche_punktmasse_eines_merkmals_nur_einmal():
+    """Nutzer 18.11.2026: 47 und 27 (und 10) doppelt – Punkte des Nutpfads auf gleicher Höhe ergeben gleiche Lagemaße."""
+    plan = _nach_name(massplan_fraesteil(*_spannplatte()))
+    k1 = sorted((n, m.wert) for n, m in plan.items() if m.merkmal == "k1" and "_pfad" in n)
+    werte = [w for _, w in k1]
+    assert werte.count(27) == 1 and werte.count(47) == 1 and werte.count(10) == 1, k1
+
+
+def test_achse_und_modus_je_mass():
+    """Nutzer 18.11.2026: Maße an Merkmalen, die in der Ansicht nicht vorhanden sind. Skizzenmaße gehören in die Ansicht
+    senkrecht zur Skizzenebene (flach), Tiefenmaße in eine Ansicht quer dazu. Achse 0 = x, 1 = y, 2 = z."""
+    plan = _nach_name(massplan_fraesteil(*_spannplatte()))
+    erwartet = {"D3@t1_skizze": (1, "flach"), "D1@t1": (1, "quer"), "D1@k1_pfad": (1, "flach"),
+                "D1@k1_skizze": (0, "flach"), "D1@g1_positionen": (1, "flach"), "D1@r1": (1, "flach"),
+                "D3@m1": (1, "flach"), "D1@f1_skizze": (1, "flach"), "D1@f1": (1, "quer")}
+    for name, (achse, modus) in erwartet.items():
+        assert (plan[name].achse, plan[name].modus) == (achse, modus), name

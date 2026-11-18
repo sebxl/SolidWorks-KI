@@ -122,3 +122,13 @@ def test_neue_masse_ueber_obergrenze_gemeldet():
     plan = [Mass(f"f1:a{i}", "neu", "laenge", float(i), "f1", geometrie={"von": 0, "bis": i}) for i in range(1, 4)]
     erg = b.bemasse(_Drw(views, {}), views, plan, ["haupt", "seite"], max_je=2, weitere=[], neue_ansicht=None)
     assert any(m.startswith("ANSICHT_VOLL") for m in erg.meldungen)
+
+
+def test_kandidaten_nach_blickachse_gefiltert():
+    """Ein Skizzenmaß (flach, Achse 1) nur in Ansichten mit Blickachse 1; ein Tiefenmaß (quer) nur in anderen."""
+    views = {"haupt": _View("V1"), "drauf": _View("V2")}
+    plan = [Mass("S", "modell", "lage", 1.0, "f1", name="S", achse=1, modus="flach"),
+            Mass("T", "modell", "tiefe", 1.0, "f1", name="T", achse=1, modus="quer")]
+    erg = b.bemasse(_Drw(views, {"haupt": ["S", "T"], "drauf": ["S", "T"]}), views, plan, ["haupt", "drauf"], max_je=12,
+                    weitere=[], neue_ansicht=None, blickachsen={"haupt": 1, "drauf": 2})
+    assert erg.je_ansicht == {"haupt": ["S"], "drauf": ["T"]}

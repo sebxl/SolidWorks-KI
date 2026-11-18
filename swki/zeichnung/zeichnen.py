@@ -28,13 +28,17 @@ from swki.pruefung.schleife import lies_laeufe
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
-from swki.zeichnung.ansichten import (Ansicht, achsvektor, hinweise, vorzugsansichten, waehle_ansichten,
-                                     weitere_rollen)
+from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
+                                     waehle_ansichten, weitere_rollen)
 from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, ordne_masse_an, setze_neu
-from swki.zeichnung.blatt import FORMATE
+from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
+from swki.zeichnung.lesbarkeit import pruefe_pdf
+from swki.zeichnung.reihen import ABSTAND_MM, LinMass, reihen, seite
 from swki.zeichnung.layout import anordnen
 from swki.zeichnung.massplan import massplan, massplan_meldungen
 from swki.zeichnung.zuordnung import max_je_ansicht
+
+NAEHE_MM = 25.0  # Befund gehört zur nächsten Maßzahl in diesem Umkreis (Live 18.11.: Kennbuchstabe „A“ auf der Maßlinie, Zahl 18 mm weg)
 
 SW_DEFAULT_TEMPLATE_DRAWING = 10            # swUserPreferenceStringValue_e
 SW_DWG_TEMPLATE_CUSTOM = 12                 # swDwgTemplates_e
@@ -168,7 +172,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
                       weitere_rollen(spec), lambda rolle: _projektion(drw, views["haupt"], rolle),
-                      vorzugsansichten(spec, plan))
+                      vorzugsansichten(spec, plan), blickachsen(ansichten, weitere_rollen(spec)))
         meldungen += bem.meldungen
         meldungen += massplan_meldungen(spec)
         for rolle in [r for r in list(views) if r not in ("haupt", basis) and not bem.je_ansicht.get(r)]:
@@ -188,14 +192,11 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         for rolle, v in views.items():
             if not ordne_masse_an(drw, v):
                 meldungen.append(f"MASSE_NICHT_ANGEORDNET: {rolle}")
-        meldungen.append("MASSE_UEBERLAPPUNG_UNGEPRUEFT: Überlappung der Maße prüft erst der Zeichnungsprüfer (Z1.4)")
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
-        for ziel in (zeichnung, pdf):
-            f, w = byref_long(), byref_long()
-            if not ext.SaveAs(str(ziel), 0, SAVE_SILENT, callout_leer(), f, w):
-                raise ZeichnungFehler("ZEICHNUNG_SPEICHERN", f"SaveAs {ziel.name}: Fehler {f.value}")
+        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_)
+        _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "umriss_mm": [round(x, 1) for x in _umriss_mm(v)]}
                 for rolle, v in views.items()]
     finally:
@@ -209,6 +210,100 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             "eigenschaften": eigenschaften, "meldungen": meldungen,
             "masse": {"plan": len(plan), "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
                       "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}}, "dauer_s": round(time.time() - t0, 1)}
+
+
+def _speichern(ext, ziel: Path) -> None:
+    f, w = byref_long(), byref_long()
+    if not ext.SaveAs(str(ziel), 0, SAVE_SILENT, callout_leer(), f, w):
+        raise ZeichnungFehler("ZEICHNUNG_SPEICHERN", f"SaveAs {ziel.name}: Fehler {f.value}")
+
+
+def _ausschluss(format_: str) -> list[tuple]:
+    """Rand, Rahmen und Schriftfeld gehören nicht zur Lesbarkeitsprüfung der Ansichten."""
+    b, h = FORMATE[format_]
+    x0, y0, x1, y1 = zeichenfeld(format_)
+    return [(0, 0, b, y0), (0, y1, b, h), (0, 0, x0, h), (x1, 0, b, h),
+            (x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])]
+
+
+LINEAR = (2, 11, 12)  # swDimensionType_e: swLinearDimension, swHorLinearDimension, swVertLinearDimension
+
+
+def _lineare_masse(view) -> list[tuple[object, LinMass, float]]:
+    """Je lineares Maß der Ansicht: Annotation, Spanne/Lage/Textlänge in Blatt-mm (spikes/z1_diag_masslinien.py:
+    `IDisplayData` liefert zuerst die beiden Hilfslinien, die Textlage beginnt am Anfang der Zahl; die Annotation sitzt
+    in der Zahlmitte) und der Querversatz Annotation – Maßlinie."""
+    aus = []
+    for i, dd in enumerate(list(_ruf(view, "GetDisplayDimensions") or ())):
+        if _ruf(dd, "Type2") not in LINEAR:
+            continue
+        daten = _ruf(dd, "GetDisplayData")
+        if _ruf(daten, "GetLineCount") < 2 or _ruf(daten, "GetTextCount") < 1:
+            continue
+        h1, h2 = (list(daten.GetLineAtIndex3(k)) for k in (0, 1))
+        ann = _ruf(dd, "GetAnnotation")
+        ax, ay = (v * 1000 for v in list(_ruf(ann, "GetPosition"))[:2])
+        tx, ty = (v * 1000 for v in list(daten.GetTextPositionAtIndex(0))[:2])
+        waagrecht = abs(h1[7] - h1[4]) < abs(h1[8] - h1[5])  # Hilfslinie senkrecht → Maßlinie waagrecht
+        if waagrecht:
+            m = LinMass(i, "h", h1[4] * 1000, h2[4] * 1000, ty, 2 * abs(ax - tx))
+            aus.append((ann, m, ay - ty))
+        else:
+            m = LinMass(i, "v", h1[5] * 1000, h2[5] * 1000, tx, 2 * abs(ay - ty))
+            aus.append((ann, m, ax - tx))
+    return aus
+
+
+def _reihen_anlegen(views: dict, vorlauf: dict) -> list[tuple[tuple, tuple[float, float]]]:
+    """Nutzer 18.11.2026: Maße übereinander, Zahlen von Linien gekreuzt → lineare Maße je Ansichtsseite in Reihen
+    (`swki.zeichnung.reihen`), Lage über `IAnnotation.SetPosition2` (Maßlinie folgt der Zahl). Liefert je Maß die
+    Ansichtsseite (Rolle, Richtung, Seite) und die Lage der Zahl in Blatt-mm."""
+    platz = []
+    for rolle, v in views.items():
+        masse, umriss = _lineare_masse(v), _umriss_mm(v)
+        eigen = {(r, s): mm for (ro, r, s), mm in vorlauf.items() if ro == rolle}
+        lage = reihen([m for _, m, _ in masse], umriss, eigen)
+        for ann, m, versatz in masse:
+            entlang, quer = lage[m.schluessel]
+            x, y = (entlang, quer + versatz) if m.richtung == "h" else (quer + versatz, entlang)
+            ann.SetPosition2(x / 1000, y / 1000, 0)
+            platz.append(((rolle, m.richtung, seite(m, umriss)), (x, y)))
+    return platz
+
+
+def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, runden: int = 3) -> list[str]:
+    """Reihen anlegen, PDF speichern, am PDF prüfen (was der Leser sieht). Ein Befund an einer Maßzahl rückt alle
+    Reihen ihrer Ansichtsseite um einen Reihenabstand nach außen (Beschriftungen von SolidWorks, die die Reihenanlage
+    nicht kennt), dann neu; höchstens `runden` Mal. Was bleibt, wird gemeldet."""
+    try:
+        import pymupdf  # noqa: F401
+    except ImportError:
+        pruefen = False
+    else:
+        pruefen = True
+    vorlauf: dict[tuple, float] = {}
+    befunde = []
+    for runde in range(runden + 1):
+        platz = _reihen_anlegen(views, vorlauf)
+        _ruf(drw, "EditRebuild3")
+        _speichern(ext, pdf)
+        if not pruefen:
+            return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
+        befunde = pruefe_pdf(pdf, _ausschluss(format_))
+        if not befunde or runde == runden:
+            break
+        seiten = set()
+        for b in befunde:
+            mx, my = (b.rechteck_mm[0] + b.rechteck_mm[2]) / 2, (b.rechteck_mm[1] + b.rechteck_mm[3]) / 2
+            nah = min(platz, key=lambda p: math.dist(p[1], (mx, my)), default=None)
+            if nah and math.dist(nah[1], (mx, my)) <= NAEHE_MM:
+                seiten.add(nah[0])
+        if not seiten:
+            break
+        for s in seiten:
+            vorlauf[s] = vorlauf.get(s, 0.0) + ABSTAND_MM
+    return [f"LESBARKEIT: {b.art} „{b.text}“{' / „' + b.anderes + '“' if b.anderes else ''} bei "
+            f"({b.rechteck_mm[0]:.0f}, {b.rechteck_mm[1]:.0f}) mm" for b in befunde]
 
 
 def _loesche_ansicht(drw, view) -> bool:

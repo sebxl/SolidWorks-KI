@@ -75,6 +75,32 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
   Austragungen (Kabelnut) unruhig, Dezimalstellen aus der Normdatei; Bezug `bezuege.A` beim Drehteil noch nicht
   ausgewertet; Achslage für Drehteile auf der Ebene „rechts“ ungeprüft.
 
+### Nachtrag Lesbarkeit (Nutzer 18.11.2026)
+
+Befund des Nutzers an den Stufe-2-PDFs: Maß auf der Schnittkennzeichnung „A“, 47 und 27 doppelt (Spannplatte), Maßzahlen
+von Linien gekreuzt, Maße in der Dickenansicht an Merkmalen, die dort nicht sichtbar sind. Der Live-Test hatte das nicht
+erkannt, weil er nur Zahlen und Obergrenzen prüfte.
+
+- Prüfung am PDF (`lesbarkeit.py`, pymupdf): Text auf Text (Kern gegen Kern) und Linie durch eine achsparallele
+  Maßzahl; Rand, Rahmen und Schriftfeld ausgenommen. Der Live-Test schlägt bei jedem `LESBARKEIT`-Befund fehl.
+- Doppelte Punktmaße: gleiche Lagemaße eines Merkmals (Punkte des Nutpfads auf gleicher Höhe) nur einmal.
+- Blickachse: Skizzenmaße nur in der Ansicht senkrecht zur Skizzenebene, Tiefenmaße nur quer dazu (`Mass.achse`,
+  `Mass.modus`, `ansichten.blickachsen`).
+- Pflichtmaße werden nie verworfen: Zeigt keine Ansicht mit Platz das Merkmal, kommt das Maß über der Obergrenze in die
+  passende Ansicht (`ANSICHT_DICHT`). Spannplatte: Hauptansicht 16 Maße, weil nur sie auf die Skizzenebene blickt.
+- Reihenanlage (`reihen.py`) statt Nachschieben (Live-Diagnose: Schieben um 6 mm landete im nächsten Konflikt, 30 und
+  120 sogar auf derselben Stelle): je Ansichtsseite kurze Spannen innen, lange außen, Spanne samt Zahl nie überlappend;
+  Zahl mittig oder außen daneben, möglichst in der Ansichtsbreite; keine Hilfslinie eines äußeren Maßes durch die Zahl;
+  klemmt eine Zahl, rückt ihr Maß nach außen, wenn danach weniger klemmen. Spannen und Textlage aus `IDisplayData`
+  (`spikes/z1_diag_masslinien.py`), Lage per `IAnnotation.SetPosition2` (Maßlinie folgt der Zahl).
+- Beschriftungen von SolidWorks („SCHNITT A-A“, Kennbuchstabe der Schnittlinie) kennt die Reihenanlage nicht: Befund am
+  PDF → alle Reihen dieser Ansichtsseite einen Reihenabstand (8 mm) nach außen, neu prüfen, höchstens drei Runden.
+- Live (frisches SolidWorks): Buchse 12/12, Spannplatte 22/22 Plan-Maße, beide ohne Lesbarkeitsbefund.
+- Offen: Tiefenmaß der Tasche (12) in der Dickenansicht zeigt auf eine dort unsichtbare Kante (braucht Schnitt, Stufe 3);
+  Maße vom Ursprung (24, 27 der Kabelnut) ohne gezeichnete Mittellinie; Hinweislinie von R4 läuft quer durch die
+  Hauptansicht; außen stehende Zahlen können weit von ihrer Spanne liegen („27,00“ der Spannplatte); Reihen rücken nicht
+  gegen Nachbaransichten ab (Maßrand fest 25 mm); Obergrenze 12 gegen Detailansicht abwägen.
+
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
 - Härteangabe nach DIN ISO 15787:2018-08 (= ISO 15787:2016): Wert mit Grenzabmaßen in Klammern, „(60 ± 2) HRC“;

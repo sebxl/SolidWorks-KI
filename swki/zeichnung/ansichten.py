@@ -182,6 +182,32 @@ def achsvektor(spec: dict) -> tuple:
     return _SKIZZENACHSEN.get(ebene if isinstance(ebene, str) else "vorne", _SKIZZENACHSEN["vorne"])[achse]
 
 
+# Blickachse, Rechts- und Hochachse des Bildes je Modellansicht (0 = x, 1 = y, 2 = z; Vorzeichen spielen keine Rolle)
+_BILDACHSEN = {"*Oben": (1, 0, 2), "*Unten": (1, 0, 2), "*Vorderseite": (2, 0, 1), "*Rückseite": (2, 0, 1),
+               "*Rechts": (0, 2, 1), "*Links": (0, 2, 1)}
+
+
+def blickachsen(ansichten: list[Ansicht], weitere: list[str]) -> dict[str, int]:
+    """Blickachse je Rolle (Nutzer 18.11.2026: Maße nur in Ansichten, in denen ihr Merkmal in wahrer Größe liegt).
+    Projektionen nach Methode 1: Seitenansichten blicken entlang der Rechtsachse der Hauptansicht, Drauf-/Unteransicht
+    entlang ihrer Hochachse; ein um 90° gedrehtes Bild tauscht beide. Der Längsschnitt aus der Stirnansicht blickt
+    entlang deren Rechtsachse (Schnittlinie senkrecht)."""
+    basis = next(a for a in ansichten if a.modellansicht)
+    n, r, u = _BILDACHSEN.get(basis.modellansicht, (2, 0, 1))
+    if round(basis.winkel_grad) % 180 == 90:
+        r, u = u, r
+    aus = {basis.rolle: n}
+    if basis.rolle != "haupt":
+        aus["haupt"] = r
+        n, r = r, n
+    for rolle in [a.rolle for a in ansichten] + list(weitere):
+        if rolle in ("seite", "seite_rechts"):
+            aus.setdefault(rolle, r)
+        elif rolle in ("drauf", "unter"):
+            aus.setdefault(rolle, u)
+    return aus
+
+
 def weitere_rollen(spec: dict) -> list[str]:
     """Zusätzliche Projektionen, wenn Maße keinen Platz finden (Design §6.1): von rechts (links der Hauptansicht),
     von unten (über ihr). Drehteile haben in Stufe 2 keine weiteren (Einzelheit folgt)."""

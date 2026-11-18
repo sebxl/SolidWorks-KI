@@ -80,6 +80,18 @@ def kandidaten(views: dict, plan: list[Mass]) -> dict[str, list[str]]:
     return kand
 
 
+def _nach_blickachse(kand: dict[str, list[str]], plan: list[Mass], achsen: dict[str, int]) -> dict[str, list[str]]:
+    """Nutzer 18.11.2026: SolidWorks fügt Skizzenmaße in jede parallele Ansicht ein, auch wo das Merkmal nicht sichtbar
+    ist. Ein Maß mit bekannter Achse bleibt nur in Ansichten, deren Blickachse passt (flach: gleich, quer: verschieden)."""
+    aus = {}
+    for m in plan:
+        if m.achse is None or m.modus is None:
+            aus[m.id] = kand[m.id]
+            continue
+        aus[m.id] = [r for r in kand[m.id] if r not in achsen or (achsen[r] == m.achse) == (m.modus == "flach")]
+    return aus
+
+
 def _loesche(drw, dd) -> None:
     """Live Z1.3 Stufe 2 (spikes/z1_diag_loeschen.py): `Select3(…, callout_leer())` wählt nichts aus, `EditDelete` wirkt
     dann nicht; `Select2(False, 0)` + `DeleteSelection2(0)` entfernt das Maß aus der Ansicht."""
@@ -89,7 +101,8 @@ def _loesche(drw, dd) -> None:
 
 
 def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, weitere: list[str],
-            neue_ansicht: Callable[[str], object] | None, vorzug: dict[str, str] | None = None) -> Ergebnis:
+            neue_ansicht: Callable[[str], object] | None, vorzug: dict[str, str] | None = None,
+            blickachsen: dict[str, int] | None = None) -> Ergebnis:
     """`rollen`: Vorrang der vorhandenen Ansichten (Hauptansicht zuerst); `weitere`: Rollen, die bei Bedarf als
     Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Liefert Zuordnung, neue Maße je Ansicht und Meldungen."""
     modell = [m for m in plan if m.quelle == "modell"]
@@ -98,7 +111,8 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
     if modell:
         _einfuegen(drw, views[rollen[0]], True)
     for _runde in range(3):
-        z = ordne_zu(kandidaten(views, modell), rollen, max_je, vorzug, zusatz, {rollen[0]: len(neu)})
+        z = ordne_zu(_nach_blickachse(kandidaten(views, modell), modell, blickachsen or {}), rollen, max_je, vorzug,
+                     zusatz, {rollen[0]: len(neu)})
         if not (z.weitere_ansicht and weitere and neue_ansicht):
             break
         rolle = weitere.pop(0)
