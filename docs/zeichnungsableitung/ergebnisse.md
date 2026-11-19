@@ -151,7 +151,21 @@ erkannt, weil er nur Zahlen und Obergrenzen prüfte.
   Lesbarkeitsbefund; Hauptansicht 13 Maße (`ANSICHT_DICHT` für „60,00“ der Nut).
 - Offen beim Nutzer: „60,00“ (Nut läuft an der Unterkante aus) ist ab Mittellinie die halbe Plattenhöhe und damit eine
   Wiederholung von 120/2. Bleibt die dichte Hauptansicht, oder bekommt die Nut in der Spec einen Kantenbezug?
-- Offen: Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit); Taschentiefe 12 braucht einen Schnitt (Stufe 3).
+- Offen: Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit).
+
+### Nachtrag Schnitt durch Taschen (Nutzer 19.11.2026: „Ggf. solltest du die untere Seitenansicht zu einer
+Schnittansicht anpassen“)
+
+- Befund: „12,00“ in der unteren Ansicht war die Taschentiefe auf den dort verdeckten Boden; eine lesbare
+  Tiefenangabe fehlte.
+- Blinde Taschen (`typ: schnitt` mit Tiefe) in der Hauptfläche machen die untere Ansicht zum Schnitt A-A
+  (`Ansicht.durch`); blinde Bohrungen nicht (Tiefe steht in der Bohrungsangabe, Stufe 3). Schnittlinie waagrecht durch
+  die Mitte der ersten Tasche (ihre sichtbaren Kanten), `CreateSectionViewAt5` ohne `ChangeDirection`: Pfeile nach
+  unten, Taschenöffnung unten wie in der Projektion nach Methode 1 (`spikes/z1_diag_frässchnitt.py`; mit
+  `ChangeDirection` stand die Öffnung oben, spiegelverkehrt). Einzelheit heißt dann B.
+- Kreisbezug: SolidWorks beginnt Hilfslinien an Bohrungen außen am Kreis; ein Kreismittelpunkt auf der Achse der
+  Hilfslinie, höchstens Radius + Lücke entfernt, gilt als Bezug (sonst falsche `BEZUG_OHNE_KANTE`).
+- Live: Spannplatte mit Schnitt A-A, Taschentiefe 12 am sichtbaren Boden, kein `BEZUG_OHNE_KANTE`; Buchse unverändert.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

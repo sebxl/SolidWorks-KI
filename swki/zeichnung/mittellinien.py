@@ -52,14 +52,24 @@ def _legt_fest(p, a, b, richtung: str | None, toleranz: float) -> bool:
     return not parallel or min(math.dist(p, a), math.dist(p, b)) <= toleranz
 
 
-def ohne_kante(p: tuple[float, float], strecken: list[tuple], kreismitten: list[tuple[float, float]],
+def _kreisbezug(p, mitte, r: float, richtung: str | None, toleranz: float) -> bool:
+    """Bezug auf einen Kreismittelpunkt: SolidWorks beginnt die Hilfslinie außen am Kreis (Live 19.11.), der Punkt
+    liegt also auf der Achse durch die Mitte (gemessene Koordinate gleich), höchstens Radius + Lücke + Toleranz weg."""
+    if math.dist(p, mitte) <= toleranz:
+        return True
+    gemessen, quer = (0, 1) if richtung == "h" else (1, 0)
+    return (richtung in ("h", "v") and abs(p[gemessen] - mitte[gemessen]) <= toleranz
+            and abs(p[quer] - mitte[quer]) <= r + 1.0 + toleranz)
+
+
+def ohne_kante(p: tuple[float, float], strecken: list[tuple], kreise: list[tuple[tuple[float, float], float]],
                gebogen: list[tuple] = (), richtung: str | None = None, toleranz: float = TOLERANZ_MM) -> bool:
     """Liegt der Bezugspunkt frei – keine gerade Kante (oder ihre gedachte scharfe Ecke, Live 19.11.: 50/30 der
     gerundeten Tasche) legt die gemessene Koordinate fest (`richtung` h/v des Maßes), kein Bogen (`gebogen`: Stücke,
-    ohne Verlängerung) und kein Kreismittelpunkt trägt ihn?"""
+    ohne Verlängerung) und kein Kreismittelpunkt (`kreise`: Mitte, Radius in Blatt-mm) trägt ihn?"""
     return (not any(_legt_fest(p, a, b, richtung, toleranz) for a, b in strecken)
             and not any(_abstand(p, a, b) <= toleranz for a, b in gebogen)
-            and not any(math.dist(p, m) <= toleranz for m in kreismitten))
+            and not any(_kreisbezug(p, m, r, richtung, toleranz) for m, r in kreise))
 
 
 def linien(bezuege: list[tuple[str, tuple[float, float]]], box: tuple[float, float, float, float],

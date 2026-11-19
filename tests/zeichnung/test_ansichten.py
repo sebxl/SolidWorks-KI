@@ -59,6 +59,17 @@ def test_spannplatte_drei_ansichten():
     assert a[0] == Ansicht("haupt", "*Oben") and [x.rolle for x in a] == ["haupt", "drauf", "seite"]
 
 
+def test_tasche_in_der_hauptflaeche_untere_ansicht_als_schnitt():
+    """Nutzer 19.11.2026: Taschentiefe 12 in der unteren Ansicht ohne sichtbaren Bezug – „Ggf. solltest du die untere
+    Seitenansicht zu einer Schnittansicht anpassen“. Blinde Tasche (typ schnitt) in der Hauptfläche → drauf als Schnitt
+    durch sie; blinde Bohrungen nicht (Tiefe steht in der Bohrungsangabe)."""
+    a = {x.rolle: x for x in waehle_ansichten(_lade("stil/spannplatte.yaml"))}
+    assert a["drauf"].schnitt and a["drauf"].durch == ("t1",)
+    assert not a["seite"].schnitt and a["haupt"].durch == ()
+    b = {x.rolle: x for x in waehle_ansichten(_platte(_bohrung("b1", "+y", durch=False), _bohrung("b2", "+y")))}
+    assert not b["drauf"].schnitt
+
+
 def test_weitere_rollen():
     from swki.zeichnung.ansichten import weitere_rollen
 

@@ -62,7 +62,7 @@ class _Drw:
 
 def test_fraesteil_schnitt_nicht_unterstuetzt_wird_gemeldet():
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, z.Path("t.sldprt"),
+    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
                                            [Ansicht("haupt", "*Oben"), Ansicht("drauf", None, schnitt=True)])
     assert set(views) == {"haupt", "drauf"} and schnitt is None and drw.schnitte == 0
     assert any("SCHNITT_NICHT_UNTERSTUETZT" in m for m in meldungen)
@@ -70,7 +70,7 @@ def test_fraesteil_schnitt_nicht_unterstuetzt_wird_gemeldet():
 
 def test_drehteil_laengsschnitt_aus_stirn():
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, z.Path("t.sldprt"),
+    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
                                            [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
     assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == []
 

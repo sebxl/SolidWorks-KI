@@ -6,7 +6,7 @@ from swki.zeichnung.mittellinien import bezugspunkt, linien, ohne_kante
 
 KANTEN = [((79.5, 193.0), (179.5, 193.0)), ((179.5, 193.0), (179.5, 253.0)), ((179.5, 253.0), (79.5, 253.0)),
           ((79.5, 253.0), (79.5, 193.0))]  # Plattenumriss 200 × 120 bei 1:2
-BOHRUNGEN = [(92.0, 203.0), (167.0, 203.0)]
+BOHRUNGEN = [((92.0, 203.0), 2.0), ((167.0, 203.0), 2.0)]
 
 
 def test_bezugspunkt_liegt_eine_luecke_vor_der_hilfslinie():
@@ -42,3 +42,13 @@ def test_kante_parallel_zur_messrichtung_legt_nichts_fest():
     assert ohne_kante((275.0, 220.0), seite, [], richtung="v")          # Mitte der senkrechten Kante
     assert not ohne_kante((275.0, 220.0), seite, [], richtung="h")      # waagrechtes Maß: senkrechte Kante legt x fest
     assert not ohne_kante((275.0, 250.0), seite, [], richtung="v")      # Eckpunkt
+
+
+
+def test_hilfslinie_beginnt_am_kreis_bezug_ist_die_mitte():
+    """Live 19.11.: Bei Bohrungen beginnt die Hilfslinie außen am Kreis (Mitte 240,0, Anfang 243,5 → Bezugspunkt 242,5).
+    Ein Kreismittelpunkt auf der Achse der Hilfslinie, höchstens Radius + Lücke entfernt, ist der Bezug."""
+    bohrung = [((131.0, 240.0), 1.5)]
+    assert not ohne_kante((131.0, 242.5), [], bohrung, richtung="h")
+    assert ohne_kante((133.0, 242.5), [], bohrung, richtung="h")    # neben der Achse
+    assert ohne_kante((131.0, 246.0), [], bohrung, richtung="h")    # zu weit weg

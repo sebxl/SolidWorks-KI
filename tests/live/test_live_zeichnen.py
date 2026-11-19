@@ -71,6 +71,9 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
             # Nutmaße hängen an der Plattenmitte) → Tasche samt Eckradius. Höchstens ein Maß über der Obergrenze, gemeldet
             # („60,00“ der Nut, offen beim Nutzer)
             assert sorted(rollen) == ["drauf", "einzelheit", "haupt", "seite"], rollen
+            # Nutzer 19.11.2026: untere Ansicht als Schnitt durch die Taschen, Taschentiefe mit sichtbarem Bezug
+            assert z["schnitt"] and z["schnitt"].startswith("Schnitt"), z["schnitt"]
+            assert not any(m.startswith(("BEZUG_OHNE_KANTE", "SCHNITT_")) for m in z["meldungen"]), z["meldungen"]
             assert any(m.startswith("EINZELHEIT: t1") for m in z["meldungen"]), z["meldungen"]
             assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()) + 1, masse
             assert (max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard())

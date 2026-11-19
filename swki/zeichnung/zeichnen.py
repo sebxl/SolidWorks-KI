@@ -127,6 +127,23 @@ def _laengsschnitt(drw, stirn):
     return drw.CreateSectionViewAt5(x0 - ABSTAND_PROBE_M, ym, 0, "A", 0, None, 0)
 
 
+def _fraesschnitt(drw, mu, haupt, durch: tuple[str, ...]):
+    """Nutzer 19.11.2026: Taschentiefe in der unteren Ansicht ohne sichtbaren Bezug → untere Ansicht als Schnitt A-A.
+    Schnittlinie waagrecht durch die Mitte des ersten Merkmals aus `durch` (seine sichtbaren Kanten in der Hauptansicht),
+    über den Umriss hinaus; Schnitt darunter, Blick von oben wie die Projektion nach Methode 1
+    (spikes/z1_diag_frässchnitt.py: ohne `ChangeDirection` liegt die Taschenöffnung unten wie in der Projektion)."""
+    kanten = _kanten(mu, haupt)
+    punkte = next(([p for a, e, _ in kanten[m] for p in (a, e)] for m in durch if kanten.get(m)), None)
+    if not punkte:
+        return None
+    ym = (min(p[1] for p in punkte) + max(p[1] for p in punkte)) / 2
+    x0, y0, x1, _ = _umriss_mm(haupt)
+    _waehle_ansicht(drw, haupt)
+    a, b = _in_ansicht(haupt, (x0 - 5) / 1000, ym / 1000), _in_ansicht(haupt, (x1 + 5) / 1000, ym / 1000)
+    _ruf(drw, "SketchManager").CreateLine(a[0], a[1], 0, b[0], b[1], 0)
+    return drw.CreateSectionViewAt5((x0 + x1) / 2000, y0 / 1000 - ABSTAND_PROBE_M, 0, "A", 0, None, 0)
+
+
 def _in_ansicht(view, x_m: float, y_m: float) -> tuple[float, float]:
     """Blattpunkt (m) → Skizzenkoordinaten der aktiven, ungedrehten Ansicht: relativ zum Ansichtsursprung
     (`IView.Position`) und im Modellmaßstab (÷ `IView.ScaleDecimal`). Live Z1.3: Blattkoordinaten direkt landen um
@@ -323,7 +340,7 @@ def _mittellinien(drw, mu, views: dict, plan: list) -> tuple[dict[str, list[tupl
         strecken = _strecken(kanten, _ruf(v, "ScaleDecimal"))
         if not strecken:
             continue
-        kreise = [b[0] for liste in kanten.values() for _, _, b in liste if b]
+        kreise = [(b[0], b[1] * _ruf(v, "ScaleDecimal")) for liste in kanten.values() for _, _, b in liste if b]
         gerade = [(a, e) for liste in kanten.values() for a, e, b in liste if not b]
         gebogen = _strecken({k: [x for x in liste if x[2]] for k, liste in kanten.items()}, _ruf(v, "ScaleDecimal"))
         xs = [p[0] for s in strecken for p in s]
@@ -435,11 +452,12 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         for toggle in KEINE_MARKEN:
             ext.SetUserPreferenceToggle(toggle, 0, False)
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
-        views, schnitt, nicht_erzeugt = _erzeuge(drw, teil, ansichten)
+        mu = mathutil(app)
+        views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten)
         meldungen += nicht_erzeugt
         plan = massplan(spec, json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8")))
         basis = next(a.rolle for a in ansichten if a.modellansicht)
-        buchstabe, bereich, mu = ("B" if schnitt else "A"), {}, mathutil(app)
+        buchstabe, bereich = ("B" if schnitt else "A"), {}
         gruppe = _gruppen(spec)
         mitten = {m.name for m in plan if m.quelle == "modell" and m.bezug in MITTENBEZUG}
         bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
@@ -678,7 +696,7 @@ def waehle_lauf(spec_pfad: Path, lauf: int | None) -> tuple[int, list[str]]:
     return lauf, []
 
 
-def _erzeuge(drw, teil: Path, ansichten: list[Ansicht]) -> tuple[dict, str | None, list[str]]:
+def _erzeuge(drw, mu, teil: Path, ansichten: list[Ansicht]) -> tuple[dict, str | None, list[str]]:
     """Basis = die Ansicht mit Modellansicht. Ein Schnitt ohne Modellansicht entsteht aus ihr (Längsschnitt eines
     Drehteils), die übrigen werden aus der Hauptansicht projiziert. Liefert Ansichten, Name des wirklich erzeugten
     Schnitts und Meldungen für verlangte, aber nicht erzeugte Schnitte (Review I1)."""
@@ -695,6 +713,13 @@ def _erzeuge(drw, teil: Path, ansichten: list[Ansicht]) -> tuple[dict, str | Non
         if a.modellansicht is None and a.schnitt and a.rolle == "haupt":
             v = _laengsschnitt(drw, view)
             schnitt = _ruf(v, "GetName2") if v is not None else None
+        elif a.schnitt and a.durch and a.rolle == "drauf":
+            v = _fraesschnitt(drw, mu, views["haupt"], a.durch)
+            if v is None:
+                meldungen.append(f"SCHNITT_NICHT_ERZEUGT: durch {', '.join(a.durch)} – Projektion statt Schnitt")
+                v = _projektion(drw, views["haupt"], a.rolle)
+            else:
+                schnitt = _ruf(v, "GetName2")
         else:
             v = _projektion(drw, views["haupt"], a.rolle)
             if a.schnitt:

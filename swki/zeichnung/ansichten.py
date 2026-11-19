@@ -26,6 +26,7 @@ class Ansicht:
     modellansicht: str | None       # nur die Hauptansicht; Seite/Drauf werden projiziert
     schnitt: bool = False
     winkel_grad: float = 0
+    durch: tuple[str, ...] = ()     # Frästeil-Schnitt: Merkmale, durch deren Mitte die Schnittlinie läuft
 
 
 def ist_drehteil(spec: dict) -> bool:
@@ -148,8 +149,18 @@ def _fraesteil(spec: dict) -> list[Ansicht]:
     nicht_haupt = [f for f in spec.get("features", [])[1:] if (r := _richtung(f)) and r != haupt]
     blind = any(f.get("typ") in (*_BOHRUNGEN, "schnitt") and "durch" not in f
                 and f.get("ende", {}).get("typ") != "durch_alles" for f in nicht_haupt)  # Review I4b: auch Gegenseite
+    # Nutzer 19.11.2026: Tiefe einer Tasche in der Hauptfläche ist in keiner Projektion sichtbar → untere Ansicht als
+    # Schnitt durch die Taschen (blinde Bohrungen nicht: ihre Tiefe steht in der Bohrungsangabe)
+    taschen = tuple(f["id"] for f in spec.get("features", [])[1:]
+                    if f.get("typ") == "schnitt" and _richtung(f) == haupt and _blind(f))
     # Grundsatz drei Ansichten (Nutzer 17.11.2026: meist 3–4); Ansichten ohne Maß entfallen in `zeichnen`
-    return [Ansicht("haupt", MODELLANSICHT[haupt]), Ansicht("drauf", None, schnitt=blind), Ansicht("seite", None)]
+    return [Ansicht("haupt", MODELLANSICHT[haupt]), Ansicht("drauf", None, schnitt=blind or bool(taschen), durch=taschen),
+            Ansicht("seite", None)]
+
+
+def _blind(f: dict) -> bool:
+    ende = f.get("ende") or {}
+    return ende.get("typ") == "blind" or ("tiefe" in ende and ende.get("typ") not in ("durch", "durch_alles"))
 
 
 def _hat_rotation(spec: dict) -> bool:
