@@ -167,6 +167,29 @@ Schnittansicht anpassen“)
   Hilfslinie, höchstens Radius + Lücke entfernt, gilt als Bezug (sonst falsche `BEZUG_OHNE_KANTE`).
 - Live: Spannplatte mit Schnitt A-A, Taschentiefe 12 am sichtbaren Boden, kein `BEZUG_OHNE_KANTE`; Buchse unverändert.
 
+## Z1.3 Stufe 3 – Bohrungsangaben, Textzusätze, Beschriftung (19.11.2026)
+
+- Was gilt: Bohrungen und Bohrbilder bekommen statt Ø- und Lagemaßen eine Angabe als Hinweis mit Hinweislinie am
+  Kreis (`ANGABE_*`-Meldungen bei Lücken): „5 × M6 – 10 tief / Senkung Ø6 × 90°“, „2 × Ø8 – 15 tief / Fase 0,5 × 45°“
+  (Spannplatte), „4 × Ø6 – durch / TK Ø40“ (Buchse; Lochkreis als TK Ø statt Radius). `masse` zählt nur noch Maße
+  (Buchse 10 statt 12), neu `angaben = {plan, gesetzt}` (Spannplatte 2/2, Buchse 1/1).
+- Textzusätze an Maßen: Reihenmaß „4 × 30,00 (= 120)“, Fasen „× 45°“ (Buchse 1,00 × 45° und 0,50 × 45°); Beschriftung
+  „EINZELHEIT B“ statt „DETAIL B“, über der Ansicht.
+- Live-Lehren (Spike `spike-z1.md` „Stufe 3“): `SelectEntity` auf die Kante lässt den Pfeil auf der Gegenseite des
+  Kreises enden, die Hinweislinie läuft quer durch die Bohrung; `SelectByID2` mit einem Blattpunkt auf dem Kreis zum Text
+  hin setzt den Pfeil dorthin (Soll 45°/135°, Ist 49°/137°). Ø, ×, –, ° als Unicode schreiben (`<MOD-DIAM>` zerlegt den
+  PDF-Text); `\n` wird in SolidWorks `\r\n`. Größe des Hinweises am PDF vermessen, nicht über `GetExtent`.
+  Beschriftung unter der Einzelheit lag auf der Maßreihe; über der Ansicht kein Befund
+  (`swDetailingDetailViewLabels_AboveView` vor dem Anlegen setzen).
+- Live (frisches SolidWorks, SW 2025): beide Läufe OK (`tests/live/test_live_zeichnen.py`), im PDF jede Zeile der Angaben,
+  „4 × 30,00 (= 120)“, „EINZELHEIT“ und zweimal „× 45°“ gefunden, keine `ANGABE_*`-Meldung, `LESBARKEIT` leer.
+  Durchsicht der Blätter: Hinweislinien enden am Kreis, keine Überlagerungen.
+- Offen: Hinweislinien, die Bauteilkanten kreuzen, werden nicht geprüft (Spannplatte: die Hinweislinie des Ø8 läuft über die Plattenecke unten rechts;
+  sie liest sich, ist aber nicht geprüft); Beschriftung „EINZELHEIT“ über der Ansicht braucht das
+  OK des Nutzers; Hinweislinie ist beim Verschieben der Hinweise kein Hindernis-Kriterium (Befund zwischen zwei Zeilen
+  desselben Hinweises rückt die Reihen); Gewindeangabe nur mit dem Nenndurchmesser aus der Normtabelle, bei unlesbarer
+  Größe ohne Meldung.
+
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
 - Härteangabe nach DIN ISO 15787:2018-08 (= ISO 15787:2016): Wert mit Grenzabmaßen in Klammern, „(60 ± 2) HRC“;

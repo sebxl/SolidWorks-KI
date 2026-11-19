@@ -66,6 +66,19 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         import pymupdf
         with pymupdf.open(z["pdf"]) as doc:
             assert Path(z["zeichnung"]).stem in doc[0].get_text(), "Zeichnungsnummer fehlt im Schriftfeld"
+        # Stufe 3: Bohrungsangaben als Hinweise mit Hinweislinie, Textzusätze an Maßen; im PDF Zeile für Zeile
+        angaben = z["angaben"]
+        assert angaben["plan"] >= 1 and angaben["gesetzt"] == angaben["plan"], (angaben, z["meldungen"])
+        assert not any(m.startswith("ANGABE_") for m in z["meldungen"]), z["meldungen"]
+        with pymupdf.open(z["pdf"]) as doc:
+            text = doc[0].get_text()
+        erwartet = (["5 × M6 – 10 tief", "Senkung Ø6 × 90°", "2 × Ø8 – 15 tief", "Fase 0,5 × 45°",
+                     "4 × 30,00 (= 120)", "EINZELHEIT"] if not drehteil
+                    else ["4 × Ø6 – durch", "TK Ø40"])
+        for zeile in erwartet:
+            assert zeile in text, (zeile, text)
+        if drehteil:
+            assert text.count("× 45°") >= 2, text
         if not drehteil:
             # Nutzer 18.11.2026: dichte Hauptansicht → Einzelheit; nur Maße mit beiden Bezügen im Rahmen (19.11.: die
             # Nutmaße hängen an der Plattenmitte) → Tasche samt Eckradius. Höchstens ein Maß über der Obergrenze, gemeldet
