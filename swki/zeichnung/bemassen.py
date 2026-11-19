@@ -106,22 +106,30 @@ def _loesche(drw, dd) -> None:
 def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, weitere: list[str],
             neue_ansicht: Callable[[str], object] | None, vorzug: dict[str, str] | None = None,
             blickachsen: dict[str, int] | None = None,
-            einzelheit: Callable[[str, str, list[str], list[str]], object] | None = None,
-            ausser: set[str] | None = None) -> Ergebnis:
+            einzelheit: Callable[[str, list[tuple[str, list[str]]], list[str]], tuple | None] | None = None,
+            ausser: set[str] | None = None, gruppe: dict[str, str] | None = None) -> Ergebnis:
     """`rollen`: Vorrang der vorhandenen Ansichten (Hauptansicht zuerst); `weitere`: Rollen, die bei Bedarf als
-    Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Bleibt eine Ansicht über der Obergrenze, lagert
-    `einzelheit(rolle, merkmal, maßnamen, genutzte_rollen)` das Merkmal mit den meisten Maßen dort in eine Einzelheit aus (Nutzer 18.11.2026;
-    `ausser`: Merkmale, die nie ausgelagert werden, z. B. der Grundkörper). Liefert Zuordnung, neue Maße je Ansicht und
-    Meldungen."""
+    Projektion entstehen (`neue_ansicht(rolle)` erzeugt sie). Bleibt eine Ansicht über der Obergrenze, bietet
+    `einzelheit(rolle, [(merkmal, maßnamen), …], genutzte_rollen)` die Merkmale dort (meiste Maße zuerst) für eine
+    Einzelheit an (Nutzer 18.11.2026); sie liefert (Ansicht, Merkmal, Maßnamen, die wirklich hinein dürfen – beide
+    Bezüge im Rahmen) oder None. Nur diese Maße gehen in die Einzelheit. `ausser`: Merkmale, die nie ausgelagert werden
+    (Grundkörper); `gruppe`: Merkmal → Merkmal, zu dem es zählt (Verrundung zur Tasche). Liefert Zuordnung, neue Maße
+    je Ansicht und Meldungen."""
     modell = [m for m in plan if m.quelle == "modell"]
     neu = [m.id for m in plan if m.quelle == "neu"]
     rollen, weitere, zusatz = list(rollen), list(weitere), set()
-    achsen, vorzug = dict(blickachsen or {}), dict(vorzug or {})
+    achsen, vorzug, gruppe, erlaubt = dict(blickachsen or {}), dict(vorzug or {}), gruppe or {}, None
+
+    def kand():
+        k = _nach_blickachse(kandidaten(views, modell), modell, achsen)
+        if erlaubt is None:
+            return k
+        return {mid: [r for r in rs if r != "einzelheit" or mid in erlaubt] for mid, rs in k.items()}
+
     if modell:
         _einfuegen(drw, views[rollen[0]], True)
     for _runde in range(3):
-        z = ordne_zu(_nach_blickachse(kandidaten(views, modell), modell, achsen), rollen, max_je, vorzug,
-                     zusatz, {rollen[0]: len(neu)})
+        z = ordne_zu(kand(), rollen, max_je, vorzug, zusatz, {rollen[0]: len(neu)})
         if not (z.weitere_ansicht and weitere and neue_ansicht):
             break
         rolle = weitere.pop(0)
@@ -131,21 +139,25 @@ def bemasse(drw, views: dict, plan: list[Mass], rollen: list[str], max_je: int, 
         _einfuegen(drw, views[rolle], False)
     if einzelheit and any(len(ms) > max_je for ms in z.je_ansicht.values()):
         dicht = max(z.je_ansicht, key=lambda r: len(z.je_ansicht[r]))
-        zahl = Counter(m.merkmal for m in modell if m.id in z.je_ansicht[dicht] and m.merkmal not in (ausser or set()))
-        if zahl and zahl.most_common(1)[0][1] >= EINZELHEIT_MIN:
-            merkmal = zahl.most_common(1)[0][0]
+        dort = [m for m in modell if m.id in z.je_ansicht[dicht]]
+        zahl = Counter(gruppe.get(m.merkmal, m.merkmal) for m in dort)
+        angebot = [(g, [m.name for m in dort if gruppe.get(m.merkmal, m.merkmal) == g]) for g, n in zahl.most_common()
+                   if n >= EINZELHEIT_MIN and g not in (ausser or set())]
+        if angebot:
             genutzt = [r for r in rollen if r == rollen[0] or z.je_ansicht.get(r)]
-            det = einzelheit(dicht, merkmal, [m.name for m in modell if m.merkmal == merkmal], genutzt)
-            if det is None:
-                z.meldungen.append(f"EINZELHEIT_NICHT_ERZEUGT: {merkmal} in {dicht}")
+            antwort = einzelheit(dicht, angebot, genutzt)
+            if antwort is None:
+                z.meldungen.append(f"EINZELHEIT_NICHT_ERZEUGT: kein Merkmal in {dicht} mit {EINZELHEIT_MIN} Maßen, "
+                                   "deren Bezüge in einer vergrößerten Einzelheit liegen")
             else:
+                det, merkmal, namen = antwort
                 views["einzelheit"], achsen["einzelheit"] = det, achsen.get(dicht)
                 rollen.append("einzelheit")
                 zusatz.add("einzelheit")
                 _einfuegen(drw, det, False)
-                vorzug.update({m.id: "einzelheit" for m in modell if m.merkmal == merkmal})
-                z = ordne_zu(_nach_blickachse(kandidaten(views, modell), modell, achsen), rollen, max_je, vorzug,
-                             zusatz, {rollen[0]: len(neu)})
+                erlaubt = {m.id for m in modell if m.name in namen}
+                vorzug.update({mid: "einzelheit" for mid in erlaubt})
+                z = ordne_zu(kand(), rollen, max_je, vorzug, zusatz, {rollen[0]: len(neu)})
                 z.meldungen.append(f"EINZELHEIT: {merkmal} aus {dicht} ausgelagert "
                                    f"({len(z.je_ansicht['einzelheit'])} Maße)")
     erg = Ergebnis(z.je_ansicht, meldungen=list(z.meldungen))

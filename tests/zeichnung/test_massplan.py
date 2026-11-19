@@ -162,3 +162,10 @@ def test_achse_und_modus_je_mass():
                 "D3@m1": (1, "flach"), "D1@f1_skizze": (1, "flach"), "D1@f1": (1, "quer")}
     for name, (achse, modus) in erwartet.items():
         assert (plan[name].achse, plan[name].modus) == (achse, modus), name
+
+
+def test_bezug_je_mass():
+    """Nutzer 18.11.2026: Mittellinien nur für Maße mit Mittenbezug – der Bezug kommt aus dem Maßprotokoll."""
+    plan = _nach_name(massplan_fraesteil(*_spannplatte()))
+    assert plan["D2@k1_pfad"].bezug == "ursprung" and plan["D3@t1_skizze"].bezug == "-rand"
+    assert plan["D1@f1_skizze"].bezug is None

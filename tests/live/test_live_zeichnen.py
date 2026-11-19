@@ -67,10 +67,21 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         with pymupdf.open(z["pdf"]) as doc:
             assert Path(z["zeichnung"]).stem in doc[0].get_text(), "Zeichnungsnummer fehlt im Schriftfeld"
         if not drehteil:
-            # Nutzer 18.11.2026: dichte Hauptansicht → Einzelheit der Kabelnut; keine Ansicht über der Obergrenze
+            # Nutzer 18.11.2026: dichte Hauptansicht → Einzelheit; nur Maße mit beiden Bezügen im Rahmen (19.11.: die
+            # Nutmaße hängen an der Plattenmitte) → Tasche samt Eckradius. Höchstens ein Maß über der Obergrenze, gemeldet
+            # („60,00“ der Nut, offen beim Nutzer)
             assert sorted(rollen) == ["drauf", "einzelheit", "haupt", "seite"], rollen
-            assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()), masse
-            assert any(m.startswith("EINZELHEIT: k1") for m in z["meldungen"]), z["meldungen"]
+            assert any(m.startswith("EINZELHEIT: t1") for m in z["meldungen"]), z["meldungen"]
+            assert max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard()) + 1, masse
+            assert (max(masse["je_ansicht"].values()) <= max_je_ansicht(lade_standard())
+                    or any(m.startswith("ANSICHT_DICHT") for m in z["meldungen"])), z["meldungen"]
+            # Nutzer 18.11.2026: Mittellinien für Maße ab Teilmitte – Haupt- und Seitenansicht, als Strichpunktlinie
+            assert not any(m.startswith(("MITTELLINIE_", "HILFSLINIE_NICHT")) for m in z["meldungen"]), z["meldungen"]
+            import pymupdf
+            with pymupdf.open(z["pdf"]) as doc:
+                strichpunkt = [it for d in doc[0].get_drawings() if "43.2" in str(d.get("dashes"))
+                               for it in d["items"] if it[0] == "l" and abs(it[1] - it[2]) * 25.4 / 72 > 30]
+            assert len(strichpunkt) >= 3, len(strichpunkt)  # waagrecht + senkrecht (haupt), waagrecht (seite)
             # „Details werden in der Regel vergrößert, sonst braucht man kein Detail.“ (Nutzer 18.11.2026)
             f = {a["rolle"]: a["massstab"] for a in z["ansichten"]}
             blatt = int(z["massstab"].split(":")[0]) / int(z["massstab"].split(":")[1])

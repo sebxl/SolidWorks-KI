@@ -27,6 +27,7 @@ class Mass:
     geometrie: dict | None = None  # nur neu: Lage in Modellkoordinaten entlang der Drehachse (mm)
     achse: int | None = None    # Normale der Skizzenebene bzw. Tiefenrichtung (0 = x, 1 = y, 2 = z)
     modus: str | None = None    # flach: Ansicht blickt entlang achse; quer: Ansicht blickt quer dazu
+    bezug: str | None = None    # aus dem Maßprotokoll: ursprung | mitte | -rand | +rand | … (Mittellinien, Nutzer 18.11.)
 
 
 def _rund(x: float) -> float:
@@ -100,7 +101,8 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
                     continue
                 punktmasse.add(schluessel)
             achse, modus = _achse_modus(features, fid, pfad)
-            plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"], achse=achse, modus=modus))
+            plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"], achse=achse, modus=modus,
+                             bezug=m.get("bezug")))
     return plan
 
 

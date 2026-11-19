@@ -135,31 +135,42 @@ def test_kandidaten_nach_blickachse_gefiltert():
 
 
 def test_dichte_ansicht_lagert_merkmal_in_einzelheit_aus():
-    """Nutzer 18.11.2026: Hauptansicht über der Obergrenze → Merkmal mit den meisten Maßen dort (nicht der Grundkörper)
-    in eine Einzelheit; dessen Maße gehen dorthin, die Hauptansicht bleibt unter der Obergrenze."""
-    plan = ([Mass(f"k{i}", "modell", "laenge", 1.0, "k1", name=f"k{i}") for i in range(4)]
+    """Nutzer 18.11.2026: Hauptansicht über der Obergrenze → Merkmale dort (meiste Maße zuerst, nie der Grundkörper)
+    werden für eine Einzelheit angeboten; nur die Maße, deren Bezüge im Rahmen liegen, gehen hinein. Die Verrundung
+    zählt zur Tasche."""
+    plan = ([Mass(f"t{i}", "modell", "laenge", 1.0, "t1", name=f"t{i}") for i in range(3)]
+            + [Mass("r0", "modell", "radius", 4.0, "r1", name="r0")]
             + [Mass(f"f{i}", "modell", "laenge", 1.0, "f1", name=f"f{i}") for i in range(3)]
-            + [Mass("t0", "modell", "laenge", 1.0, "t1", name="t0")])
+            + [Mass("k0", "modell", "laenge", 1.0, "k1", name="k0")])
     views = {"haupt": _View("V1")}
-    drw = _Drw(views, {"haupt": [m.name for m in plan], "einzelheit": ["k0", "k1", "k2", "k3", "t0"]})
+    drw = _Drw(views, {"haupt": [m.name for m in plan], "einzelheit": ["t0", "t1", "t2", "r0", "k0"]})
     aufrufe = []
 
-    def einzelheit(rolle, merkmal, namen, genutzt):
-        aufrufe.append((rolle, merkmal, sorted(namen), genutzt))
-        return _View("V9")
+    def einzelheit(rolle, angebot, genutzt):
+        aufrufe.append((rolle, [(g, sorted(n)) for g, n in angebot], genutzt))
+        return _View("V9"), "t1", ["t1", "t2", "r0"]  # t0 bezieht sich auf eine Kante außerhalb des Rahmens
 
     erg = b.bemasse(drw, views, plan, ["haupt"], max_je=5, weitere=[], neue_ansicht=None, einzelheit=einzelheit,
-                    ausser={"f1"})
-    assert aufrufe == [("haupt", "k1", ["k0", "k1", "k2", "k3"], ["haupt"])]
-    assert sorted(erg.je_ansicht["einzelheit"]) == ["k0", "k1", "k2", "k3"]
-    assert sorted(erg.je_ansicht["haupt"]) == ["f0", "f1", "f2", "t0"]
+                    ausser={"f1"}, gruppe={"r1": "t1"})
+    assert aufrufe == [("haupt", [("t1", ["r0", "t0", "t1", "t2"])], ["haupt"])]
+    assert sorted(erg.je_ansicht["einzelheit"]) == ["r0", "t1", "t2"]
+    assert sorted(erg.je_ansicht["haupt"]) == ["f0", "f1", "f2", "k0", "t0"]
     assert not any(m.startswith("ANSICHT_DICHT") for m in erg.meldungen)
-    assert sorted(dd.name for dd in views["einzelheit"].masse) == ["k0", "k1", "k2", "k3"]
+    assert sorted(dd.name for dd in views["einzelheit"].masse) == ["r0", "t1", "t2"]
 
 
 def test_ohne_dichte_ansicht_keine_einzelheit():
     views = {"haupt": _View("V1")}
     plan = [Mass(f"k{i}", "modell", "laenge", 1.0, "k1", name=f"k{i}") for i in range(4)]
     erg = b.bemasse(_Drw(views, {"haupt": [m.name for m in plan]}), views, plan, ["haupt"], max_je=12, weitere=[],
-                    neue_ansicht=None, einzelheit=lambda r, m, n, g: (_ for _ in ()).throw(AssertionError("nicht nötig")))
+                    neue_ansicht=None, einzelheit=lambda r, a, g: (_ for _ in ()).throw(AssertionError("nicht nötig")))
     assert "einzelheit" not in views and len(erg.je_ansicht["haupt"]) == 4
+
+
+def test_kein_merkmal_passt_meldung():
+    views = {"haupt": _View("V1")}
+    plan = [Mass(f"k{i}", "modell", "laenge", 1.0, "k1", name=f"k{i}") for i in range(6)]
+    erg = b.bemasse(_Drw(views, {"haupt": [m.name for m in plan]}), views, plan, ["haupt"], max_je=4, weitere=[],
+                    neue_ansicht=None, einzelheit=lambda r, a, g: None)
+    assert any(m.startswith("EINZELHEIT_NICHT_ERZEUGT") for m in erg.meldungen)
+    assert any(m.startswith("ANSICHT_DICHT") for m in erg.meldungen)

@@ -65,6 +65,14 @@ def byref_long(start: int = 0):
     return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_I4, start)
 
 
+def byref_double(start: float = 0.0):
+    """ByRef-double-Ausgabeparameter (z. B. IDetailCircle.GetLabelPosition); Wert danach in .value."""
+    import pythoncom
+    import win32com.client
+
+    return win32com.client.VARIANT(pythoncom.VT_BYREF | pythoncom.VT_R8, start)
+
+
 def byref_bool():
     """ByRef-bool-Ausgabeparameter (z. B. IFeature.GetErrorCode2); Wert danach in .value."""
     import pythoncom

@@ -129,10 +129,29 @@ erkannt, weil er nur Zahlen und Obergrenzen prüfte.
   Linie aus `IDisplayData`).
 - Lesbarkeitsprüfung: schräge Texte (R, Ø an Hinweislinien) jetzt mit gedrehtem Kernrechteck; nur Linien parallel zur
   Schrift (die eigene Hinweislinie) zählen nicht. Vorher waren schräge Texte ganz ausgenommen.
-- Live Spannplatte: Blatt 1:2, Einzelheit A 1:1 (Kabelnut), Hauptansicht 12, Einzelheit 4 Maße, kein Befund.
-- Offen: Maße vom Ursprung (27, 47, 60 in der Einzelheit) zeigen auf die Plattenmitte, die dort keine Kante ist –
-  Mittellinie fehlt; Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit), weit unter dem Rahmen; ein Maß eines
-  anderen Merkmals (20 der Bohrung) kann als Überlauf in die Einzelheit rutschen.
+- Live Spannplatte (18.11.): Blatt 1:2, Einzelheit A 1:1 (Kabelnut), Hauptansicht 12, Einzelheit 4 Maße – die Nutmaße
+  27/47/60 zeigten dort aber auf die Plattenmitte außerhalb des Rahmens (überholt, siehe unten).
+
+### Nachtrag Mittellinien (Nutzer 19.11.2026: „Ja, Mittellinien“)
+
+- Mittellinie nur, wo das Maßprotokoll einen Mittenbezug führt (`bezug: ursprung`/`mitte`, jetzt `Mass.bezug`) und
+  die Hilfslinie an einem Punkt ohne Kante ansetzt (`mittellinien.ohne_kante`): Bezugspunkt = Anfang der Hilfslinie
+  minus 1 mm Lücke; eine gerade Kante legt ihn nur fest, wenn sie nicht parallel zur Messrichtung läuft oder er auf
+  ihrem Eckpunkt liegt (Live: „24,00“ in halber Höhe der senkrechten Plattenkante); gedachte scharfe Ecken gerundeter
+  Kanten zählen als Kante (50/30 der Tasche). Linie über den Körper + 3 mm, `ISketchManager.CreateCenterLine`
+  (im PDF Strichpunkt 0,18 mm, `spikes/z1_diag_mittellinie.py`); die Hilfslinie am Mittenbezug wird mit
+  `IDisplayDimension.SetExtensionLineAsCenterline` selbst Mittellinie (lag sonst als Volllinie auf ihr).
+- Andere Bezüge ohne Kante werden gemeldet, nicht verziert: `BEZUG_OHNE_KANTE` (Spannplatte: Taschentiefe 12 in der
+  Dickenansicht, verdeckter Boden).
+- Einzelheit: nur Maße, deren beide Bezüge im Rahmen liegen und die keinen Mittenbezug haben; das Merkmal wird nach der
+  Zahl solcher Maße gewählt, Verrundung/Fase zählen zu ihrem Merkmal. Spannplatte: Kabelnut 0 Maße → Tasche t1 mit
+  50, 30, R4 (Einzelheit A 1:1). Kennbuchstabe wandert um den Rahmen, bis die PDF-Prüfung ihn frei findet
+  (`IDetailCircle.SetLabelPosition`, Blatt-m, `spikes/z1_diag_detailbuchstabe.py`).
+- Live: Buchse unverändert, Spannplatte mit Mittellinien in Haupt- (waagrecht, senkrecht) und Seitenansicht, kein
+  Lesbarkeitsbefund; Hauptansicht 13 Maße (`ANSICHT_DICHT` für „60,00“ der Nut).
+- Offen beim Nutzer: „60,00“ (Nut läuft an der Unterkante aus) ist ab Mittellinie die halbe Plattenhöhe und damit eine
+  Wiederholung von 120/2. Bleibt die dichte Hauptansicht, oder bekommt die Nut in der Spec einen Kantenbezug?
+- Offen: Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit); Taschentiefe 12 braucht einen Schnitt (Stufe 3).
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

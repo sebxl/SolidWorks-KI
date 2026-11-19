@@ -34,12 +34,13 @@ from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
 from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
                                      waehle_ansichten, weitere_rollen)
-from swki.zeichnung.bemassen import MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
+from swki.zeichnung.bemassen import EINZELHEIT_MIN, MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.lesbarkeit import ausserhalb, pruefe_pdf
 from swki.zeichnung.reihen import ABSTAND_MM, LinMass, radius_zahl_frei, reihen, seite
 from swki.zeichnung.layout import anordnen, einzelheit_passt
 from swki.zeichnung.massplan import massplan, massplan_meldungen
+from swki.zeichnung.mittellinien import bezugspunkt, linien, ohne_kante
 from swki.zeichnung.zuordnung import max_je_ansicht
 
 NAEHE_MM = 25.0  # Befund gehört zur nächsten Maßzahl in diesem Umkreis (Live 18.11.: Kennbuchstabe „A“ auf der Maßlinie, Zahl 18 mm weg)
@@ -59,6 +60,9 @@ DETAIL_STANDARD, DETAIL_PROFIL = 0, 0        # swDetViewStyle_e.swDetViewSTANDAR
 EINZELHEIT_RAND_MM = 2.0                     # Rand des Einzelheit-Rechtecks um die Merkmalskanten (Blatt-mm)
 KANTE_SICHTBAR = 1                           # swViewEntityType_e.swViewEntityType_Edge
 RADIAL = 5                                   # swDimensionType_e.swRadialDimension
+HILFSLINIE_LUECKE_MM = 1.0                   # Lücke zwischen Bezug und Hilfslinie (Live: Ursprung 223,0, Hilfslinie ab 222,0)
+MITTELLINIE_UEBERSTAND_MM = 3.0              # Mittellinie so weit über den Körper hinaus
+MITTENBEZUG = ("ursprung", "mitte")          # Maßprotokoll: Bezüge, die eine Mittellinie brauchen
 RADIUS_ABSTAND_MM = 8.0                      # Zahl eines Radiusmaßes so weit hinter dem Bogen (Blatt-mm)
 ZEICHENBREITE_MM = 2.6                       # geschätzte Breite eines Zeichens der Maßzahl (Live: „200,00“ 16,8 mm)
 
@@ -184,7 +188,7 @@ def _rechteck_strecken(r: tuple) -> list[tuple]:
     return list(zip(ecken, ecken[1:] + ecken[:1]))
 
 
-def _radien_setzen(mu, views: dict, rahmen: dict | None = None) -> None:
+def _radien_setzen(mu, views: dict, rahmen: dict | None = None, mittel: dict | None = None) -> None:
     """Nutzer 18.11.2026: Pfeil von R4 zeigte auf das Mittelpunktkreuz. Zahl jedes Radiusmaßes außen auf einen Strahl
     durch seinen Bogen, frei von sichtbaren Kanten und vom Rahmen einer Einzelheit (`rahmen`: Rolle → Rechteck)
     (`reihen.radius_zahl_frei`); den Bogen findet sein Mittelpunkt – Ende der letzten Linie aus `IDisplayData`
@@ -205,6 +209,7 @@ def _radien_setzen(mu, views: dict, rahmen: dict | None = None) -> None:
                 hindernisse.append(((linie[4] * 1000, linie[5] * 1000), (linie[7] * 1000, linie[8] * 1000)))
         if (rahmen or {}).get(rolle):
             hindernisse += _rechteck_strecken(rahmen[rolle])
+        hindernisse += (mittel or {}).get(rolle, [])
         for dd in dds:
             daten = _ruf(dd, "GetDisplayData")
             n = _ruf(daten, "GetLineCount")
@@ -221,42 +226,164 @@ def _radien_setzen(mu, views: dict, rahmen: dict | None = None) -> None:
                         break
 
 
-def _einzelheit(drw, mu, views: dict, rolle: str, merkmal: str, genutzt: list[str], buchstabe: str, bereich: dict,
-                meldungen: list[str]):
-    """Einzelheit (Nutzer 18.11.2026: dichte Hauptansicht; „Details werden in der Regel vergrößert“): Rechteck um die
-    sichtbaren Kanten des Merkmals (`_kanten`, auch seiner Unter-Features `<id>_…`) als Profil in der Elternansicht
-    skizzieren (bleibt ausgewählt, spikes/z1_diag_einzelheit.py) und doppelt so groß anlegen – nur wenn sie vergrößert
-    aufs Blatt passt (`layout.einzelheit_passt`, nur mit den Ansichten `genutzt`, die Maße bekommen – Live 18.11.:
-    Probeansichten ohne Maß verkleinerten sonst das Blatt schon ohne Einzelheit). Maßstab und Lage setzt danach die Blattaufteilung. `bereich` bekommt
-    Größe des Rechtecks und Versatz seiner Mitte von `IView.Position` in Modell-mm: Die Position einer Einzelheit ist
-    derselbe Modellpunkt wie in der Elternansicht (spikes/z1_diag_einzelheit_lage.py)."""
+def _bezuege(dd) -> tuple[str, list[tuple[float, float]]] | None:
+    """Richtung (h: Maßlinie waagrecht) und Bezugspunkte eines linearen Maßes in Blatt-mm: Anfang der beiden Hilfslinien
+    aus `IDisplayData`, um die Lücke zum Bezug zurückgesetzt (`mittellinien.bezugspunkt`)."""
+    if _ruf(dd, "Type2") not in LINEAR:
+        return None
+    daten = _ruf(dd, "GetDisplayData")
+    if _ruf(daten, "GetLineCount") < 2:
+        return None
+    punkte, waagrecht = [], True
+    for k in (0, 1):
+        linie = list(daten.GetLineAtIndex3(k))
+        a, e = (linie[4] * 1000, linie[5] * 1000), (linie[7] * 1000, linie[8] * 1000)
+        waagrecht = abs(e[0] - a[0]) < abs(e[1] - a[1])  # Hilfslinie senkrecht → Maßlinie waagrecht
+        punkte.append(bezugspunkt(a, e, HILFSLINIE_LUECKE_MM))
+    return ("h" if waagrecht else "v"), punkte
+
+
+def _einzelheit(drw, mu, views: dict, rolle: str, angebot: list[tuple[str, list[str]]], genutzt: list[str],
+                gruppe: dict[str, str], mitten: set[str], buchstabe: str, bereich: dict, meldungen: list[str]):
+    """Einzelheit (Nutzer 18.11.2026: dichte Hauptansicht; „Details werden in der Regel vergrößert“). Je angebotenem
+    Merkmal (meiste Maße zuerst): Rechteck um seine sichtbaren Kanten (`_kanten`, auch Unter-Features `<id>_…` und
+    Merkmale, die zu ihm zählen, z. B. seine Verrundung); hinein dürfen nur Maße, deren beide Bezüge im Rechteck liegen
+    und die keinen Mittenbezug haben (`mitten`; Nutzer 18.11.: 27/47/60 zeigten in der Einzelheit auf die Plattenmitte
+    außerhalb). Das erste Merkmal mit `EINZELHEIT_MIN` solchen Maßen, das vergrößert aufs Blatt passt
+    (`layout.einzelheit_passt` mit den Ansichten `genutzt`), wird als Profil skizziert (bleibt ausgewählt,
+    spikes/z1_diag_einzelheit.py) und doppelt so groß angelegt. `bereich` bekommt Größe des Rechtecks und Versatz seiner
+    Mitte von `IView.Position` in Modell-mm (Position einer Einzelheit = Modellpunkt der Elternansicht,
+    spikes/z1_diag_einzelheit_lage.py). Liefert (Ansicht, Merkmal, Maßnamen) oder None."""
     eltern = views[rolle]
-    punkte = [p for n, kanten in _kanten(mu, eltern).items() if n == merkmal or n.startswith(merkmal + "_")
-              for a, e, _ in kanten for p in (a, e)]
-    if not punkte:
-        meldungen.append(f"EINZELHEIT_OHNE_KANTEN: {merkmal} hat in {rolle} keine sichtbaren Kanten")
-        return None
+    kanten = _kanten(mu, eltern)
     ux0, uy0, ux1, uy1 = _umriss_mm(eltern)
-    x0 = max(min(p[0] for p in punkte) - EINZELHEIT_RAND_MM, ux0)
-    y0 = max(min(p[1] for p in punkte) - EINZELHEIT_RAND_MM, uy0)
-    x1 = min(max(p[0] for p in punkte) + EINZELHEIT_RAND_MM, ux1)
-    y1 = min(max(p[1] for p in punkte) + EINZELHEIT_RAND_MM, uy1)
     s, pos = _ruf(eltern, "ScaleDecimal"), [v * 1000 for v in list(_ruf(eltern, "Position"))[:2]]
-    groesse = ((x1 - x0) / s, (y1 - y0) / s)
-    if not einzelheit_passt({r: _groesse_1zu1(views[r]) for r in genutzt}, groesse):
-        meldungen.append(f"EINZELHEIT_ZU_GROSS: {merkmal} ({groesse[0]:.0f} × {groesse[1]:.0f} mm) passt vergrößert "
-                         "nicht aufs Blatt – keine Einzelheit, Ansicht bleibt dicht")
+    dds = list(_ruf(eltern, "GetDisplayDimensions") or ())
+    for merkmal, namen in angebot:
+        zu = {merkmal} | {m for m, g in gruppe.items() if g == merkmal}
+        punkte = [p for n, liste in kanten.items() if n in zu or any(n.startswith(z + "_") for z in zu)
+                  for a, e, _ in liste for p in (a, e)]
+        if not punkte:
+            continue
+        x0 = max(min(p[0] for p in punkte) - EINZELHEIT_RAND_MM, ux0)
+        y0 = max(min(p[1] for p in punkte) - EINZELHEIT_RAND_MM, uy0)
+        x1 = min(max(p[0] for p in punkte) + EINZELHEIT_RAND_MM, ux1)
+        y1 = min(max(p[1] for p in punkte) + EINZELHEIT_RAND_MM, uy1)
+
+        def drin(p, x0=x0, y0=y0, x1=x1, y1=y1):
+            return x0 - 0.5 <= p[0] <= x1 + 0.5 and y0 - 0.5 <= p[1] <= y1 + 0.5
+
+        hinein = []
+        for dd in dds:
+            name = kurzname(dd)
+            if name not in namen or name in mitten:
+                continue
+            if _ruf(dd, "Type2") == RADIAL:  # Radius: Mittelpunkt (Ende der letzten Linie) im Rahmen
+                daten = _ruf(dd, "GetDisplayData")
+                linie = list(daten.GetLineAtIndex3(_ruf(daten, "GetLineCount") - 1))
+                if drin((linie[7] * 1000, linie[8] * 1000)):
+                    hinein.append(name)
+                continue
+            b = _bezuege(dd)
+            if b and all(drin(p) for p in b[1]):
+                hinein.append(name)
+        groesse = ((x1 - x0) / s, (y1 - y0) / s)
+        if len(hinein) < EINZELHEIT_MIN:
+            meldungen.append(f"EINZELHEIT_NICHT_FUER: {merkmal} – nur {len(hinein)} Maße mit beiden Bezügen im Rahmen")
+            continue
+        if not einzelheit_passt({r: _groesse_1zu1(views[r]) for r in genutzt}, groesse):
+            meldungen.append(f"EINZELHEIT_ZU_GROSS: {merkmal} ({groesse[0]:.0f} × {groesse[1]:.0f} mm) passt "
+                             "vergrößert nicht aufs Blatt")
+            continue
+        _waehle_ansicht(drw, eltern)
+        a, b = _in_ansicht(eltern, x0 / 1000, y0 / 1000), _in_ansicht(eltern, x1 / 1000, y1 / 1000)
+        rechteck = list(_ruf(drw, "SketchManager").CreateCornerRectangle(a[0], a[1], 0, b[0], b[1], 0) or ())
+        if len(rechteck) != 4 or _ruf(drw, "SelectionManager").GetSelectedObjectCount2(-1) < 4:
+            return None
+        bereich.update(groesse=groesse, versatz=(((x0 + x1) / 2 - pos[0]) / s, ((y0 + y1) / 2 - pos[1]) / s),
+                       eltern=rolle)
+        z = Fraction(2 * s).limit_denominator(100)
+        det = drw.CreateDetailViewAt4(ux1 / 1000 + ABSTAND_PROBE_M, uy0 / 1000, 0, DETAIL_STANDARD, z.numerator,
+                                      z.denominator, buchstabe, DETAIL_PROFIL, True, False, False, 5)
+        return (det, merkmal, hinein) if det is not None else None
+    return None
+
+
+def _mittellinien(drw, mu, views: dict, plan: list) -> tuple[dict[str, list[tuple]], list[str]]:
+    """Nutzer 18.11.2026: Maße ab Teilmitte brauchen eine gezeichnete Mittellinie. Je Ansicht: Bezugspunkte ohne Kante
+    (`mittellinien.ohne_kante`) von Maßen mit `bezug` ursprung/mitte → Mittellinie über den Körper
+    (`ISketchManager.CreateCenterLine`, spikes/z1_diag_mittellinie.py). Andere Maße mit Bezug ohne Kante (z. B. Tiefe
+    auf einen verdeckten Boden) werden gemeldet, nicht verziert. Liefert die Linien je Rolle (Hindernisse für
+    Radiuszahlen) und Meldungen."""
+    mitten = {m.name for m in plan if m.quelle == "modell" and m.bezug in MITTENBEZUG}
+    alle = {m.name for m in plan if m.quelle == "modell"}
+    je, meldungen = {}, []
+    for rolle, v in views.items():
+        kanten = _kanten(mu, v)
+        strecken = _strecken(kanten, _ruf(v, "ScaleDecimal"))
+        if not strecken:
+            continue
+        kreise = [b[0] for liste in kanten.values() for _, _, b in liste if b]
+        gerade = [(a, e) for liste in kanten.values() for a, e, b in liste if not b]
+        gebogen = _strecken({k: [x for x in liste if x[2]] for k, liste in kanten.items()}, _ruf(v, "ScaleDecimal"))
+        xs = [p[0] for s in strecken for p in s]
+        ys = [p[1] for s in strecken for p in s]
+        bezuege = []
+        for dd in list(_ruf(v, "GetDisplayDimensions") or ()):
+            name, b = kurzname(dd), _bezuege(dd)
+            if name not in alle or not b:
+                continue
+            frei = [(k, p) for k, p in enumerate(b[1]) if ohne_kante(p, gerade, kreise, gebogen, b[0])]
+            if name in mitten:
+                bezuege += [(b[0], p) for _, p in frei]
+                for k, _ in frei:  # Hilfslinie an der Mitte als Mittellinie (Live 19.11.: lag als Volllinie auf ihr)
+                    if not dd.SetExtensionLineAsCenterline(k, True):
+                        meldungen.append(f"HILFSLINIE_NICHT_MITTELLINIE: {name} in {rolle}")
+            elif frei:
+                meldungen.append(f"BEZUG_OHNE_KANTE: {name} in {rolle} setzt an einem Punkt ohne sichtbare Kante an")
+        linien_rolle = linien(bezuege, (min(xs), min(ys), max(xs), max(ys)), MITTELLINIE_UEBERSTAND_MM)
+        if not linien_rolle:
+            continue
+        _waehle_ansicht(drw, v)
+        sk = _ruf(drw, "SketchManager")
+        for (ax, ay), (bx, by) in linien_rolle:
+            a, b = _in_ansicht(v, ax / 1000, ay / 1000), _in_ansicht(v, bx / 1000, by / 1000)
+            if sk.CreateCenterLine(a[0], a[1], 0, b[0], b[1], 0) is None:
+                meldungen.append(f"MITTELLINIE_NICHT_GEZEICHNET: {rolle} ({ax:.0f}, {ay:.0f})–({bx:.0f}, {by:.0f})")
+        drw.ClearSelection2(True)
+        je[rolle] = linien_rolle
+    return je, meldungen
+
+
+def _kennbuchstabe(eltern, rahmen: tuple, buchstabe: str) -> tuple[str, Callable[[], bool]] | None:
+    """Kennbuchstabe der Einzelheit um den Rahmen in der Elternansicht weitersetzen: oben links, oben rechts, unten
+    links, unten rechts außen. `IDetailCircle.Get/SetLabelPosition` in Blatt-m; SolidWorks rückt den Buchstaben selbst
+    etwas vom Rahmen ab (spikes/z1_diag_detailbuchstabe.py)."""
+    kreise = list(_ruf(eltern, "GetDetailCircles") or ())
+    if not kreise:
         return None
-    _waehle_ansicht(drw, eltern)
-    a, b = _in_ansicht(eltern, x0 / 1000, y0 / 1000), _in_ansicht(eltern, x1 / 1000, y1 / 1000)
-    kanten = list(_ruf(drw, "SketchManager").CreateCornerRectangle(a[0], a[1], 0, b[0], b[1], 0) or ())
-    if len(kanten) != 4 or _ruf(drw, "SelectionManager").GetSelectedObjectCount2(-1) < 4:
-        return None
-    bereich.update(groesse=groesse, versatz=(((x0 + x1) / 2 - pos[0]) / s, ((y0 + y1) / 2 - pos[1]) / s),
-                   eltern=rolle)
-    z = Fraction(2 * s).limit_denominator(100)
-    return drw.CreateDetailViewAt4(ux1 / 1000 + ABSTAND_PROBE_M, uy0 / 1000, 0, DETAIL_STANDARD, z.numerator,
-                                   z.denominator, buchstabe, DETAIL_PROFIL, True, False, False, 5)
+    x0, y0, x1, y1 = rahmen
+    lagen = iter([(x0 - 4, y1 + 2), (x1 + 4, y1 + 2), (x0 - 4, y0 - 6), (x1 + 4, y0 - 6)])
+
+    def weiter() -> bool:
+        lage = next(lagen, None)
+        if lage is None:
+            return False
+        kreise[0].SetLabelPosition(lage[0] / 1000, lage[1] / 1000)
+        return True
+
+    return buchstabe, weiter
+
+
+def _gruppen(spec: dict) -> dict[str, str]:
+    """Verrundung und Fase zählen zum Merkmal, dessen Kanten sie bearbeiten (Einzelheit: Tasche samt Eckradius)."""
+    aus = {}
+    for f in spec.get("features", []):
+        if f.get("typ") in ("verrundung", "fase"):
+            ziele = [k.get("feature") for k in f.get("kanten", []) if isinstance(k, dict) and k.get("feature")]
+            if ziele:
+                aus[f["id"]] = ziele[0]
+    return aus
 
 
 def _projektion(drw, haupt, rolle: str):
@@ -313,12 +440,14 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         plan = massplan(spec, json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8")))
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         buchstabe, bereich, mu = ("B" if schnitt else "A"), {}, mathutil(app)
+        gruppe = _gruppen(spec)
+        mitten = {m.name for m in plan if m.quelle == "modell" and m.bezug in MITTENBEZUG}
         bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
                       weitere_rollen(spec), lambda rolle: _projektion(drw, views["haupt"], rolle),
                       vorzugsansichten(spec, plan), blickachsen(ansichten, weitere_rollen(spec)),
-                      lambda rolle, merkmal, namen, genutzt: _einzelheit(drw, mu, views, rolle, merkmal, genutzt,
-                                                                         buchstabe, bereich, meldungen),
-                      {spec["features"][0]["id"]} if spec.get("features") else set())
+                      lambda rolle, angebot, genutzt: _einzelheit(drw, mu, views, rolle, angebot, genutzt, gruppe,
+                                                                  mitten, buchstabe, bereich, meldungen),
+                      {spec["features"][0]["id"]} if spec.get("features") else set(), gruppe)
         meldungen += bem.meldungen
         meldungen += massplan_meldungen(spec)
         for rolle in [r for r in list(views) if r not in ("haupt", basis) and not bem.je_ansicht.get(r)]:
@@ -356,12 +485,17 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         for rolle, v in views.items():
             if not ordne_masse_an(drw, v):
                 meldungen.append(f"MASSE_NICHT_ANGEORDNET: {rolle}")
+        mittel, m_meld = _mittellinien(drw, mu, views, plan)
+        meldungen += m_meld
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
         rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
-        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, lambda: _radien_setzen(mu, views, rahmen))
+        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest,
+                                     lambda: _radien_setzen(mu, views, rahmen, mittel),
+                                     _kennbuchstabe(views[bereich["eltern"]], fest["rahmen"], buchstabe)
+                                     if "rahmen" in fest else None)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),
                  "umriss_mm": [round(x, 1) for x in fest.get(rolle) or _umriss_mm(v)]} for rolle, v in views.items()]
@@ -444,10 +578,13 @@ def _rand(fest: dict | None, rolle: str):
 
 
 def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict | None = None,
-                    nach_reihen: Callable[[], None] | None = None, runden: int = 3) -> list[str]:
+                    nach_reihen: Callable[[], None] | None = None,
+                    kennbuchstabe: tuple[str, Callable[[], bool]] | None = None, runden: int = 3) -> list[str]:
     """Reihen anlegen, PDF speichern, am PDF prüfen (was der Leser sieht). Ein Befund an einer Maßzahl rückt alle
     Reihen ihrer Ansichtsseite um einen Reihenabstand nach außen (Beschriftungen von SolidWorks, die die Reihenanlage
-    nicht kennt), dann neu; höchstens `runden` Mal. Was bleibt, wird gemeldet."""
+    nicht kennt), dann neu; höchstens `runden` Mal. Ein Befund am Kennbuchstaben der Einzelheit (`kennbuchstabe`:
+    Buchstabe, Umsetzen auf die nächste Rahmenecke → False, wenn keine mehr) setzt ihn um (Live 19.11.: „A“ lag auf der
+    Mittellinie). Was bleibt, wird gemeldet."""
     try:
         import pymupdf  # noqa: F401
     except ImportError:
@@ -456,7 +593,7 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
         pruefen = True
     vorlauf: dict[tuple, float] = {}
     befunde = []
-    for runde in range(runden + 1):
+    for runde in range(runden + 2):
         platz = _reihen_anlegen(views, vorlauf, fest)
         if nach_reihen:  # Radiuszahlen meiden die Linien der eben angelegten Maße
             nach_reihen()
@@ -468,15 +605,21 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
         befunde = pruefe_pdf(pdf, _ausschluss(format_)) + ausserhalb(
             [(f"{s[0]}/{s[1]}{s[2]}", x, y, laenge, s[1]) for s, (x, y), laenge in platz], zeichenfeld(format_),
             [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])])
-        if not befunde or runde == runden:
+        if not befunde or runde == runden + 1:
             break
+        umgesetzt = False
+        if kennbuchstabe and any(kennbuchstabe[0] in (b.text, b.anderes) for b in befunde):
+            umgesetzt = kennbuchstabe[1]()
         seiten = set()
-        for b in (b for b in befunde if b.art != "ausserhalb"):  # Rücken nach außen hilft da nicht
+        for b in (b for b in befunde if b.art != "ausserhalb"  # Rücken nach außen hilft da nicht
+                  and not (kennbuchstabe and kennbuchstabe[0] in (b.text, b.anderes))):
             mx, my = (b.rechteck_mm[0] + b.rechteck_mm[2]) / 2, (b.rechteck_mm[1] + b.rechteck_mm[3]) / 2
             nah = min(platz, key=lambda p: math.dist(p[1], (mx, my)), default=None)
             if nah and math.dist(nah[1], (mx, my)) <= NAEHE_MM:
                 seiten.add(nah[0])
-        if not seiten:
+        if runde >= runden:
+            seiten = set()
+        if not seiten and not umgesetzt:
             break
         for s in seiten:
             vorlauf[s] = vorlauf.get(s, 0.0) + ABSTAND_MM
