@@ -567,14 +567,13 @@ def _koerper(strecken: list[tuple]) -> tuple[float, float, float, float]:
 
 def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
                     enthalten: dict[str, set[str]] | None = None, hinweise: list | None = None) -> list[str]:
-    """Bohrungsangaben (Plan-Einträge `quelle: angabe`) als Hinweis mit Hinweislinie (Spike Stufe 3: Kreiskante mit
-    `IView.SelectEntity` wählen, dann `InsertNote` – die Hinweislinie hängt an der Auswahl). Je Angabe die erste
-    Ansicht, deren Blickachse gleich `Mass.achse` ist und die eine Kreiskante des Merkmals oder seines Musters/Spiegels
-    zeigt (`enthalten`); unter mehreren Bohrungen die mit der besten freien Lage (`hinweis_lagen_bewertet`). Die Größe
-    des Texts ist zuerst geschätzt und wird am ersten PDF vermessen (`_hinweise_vermessen`; Live 19.11.:
-    `INote.GetExtent` lieferte 53 × 13,5 mm samt Hinweislinie für 40 × 11 mm Text); die Lage setzt später
-    `_hinweise_legen`. Gesetzte Hinweise kommen nach
-    `hinweise`. Liefert Meldungen (`ANGABE_OHNE_ANSICHT`, `ANGABE_NICHT_GESETZT`, `ANGABE_OHNE_HINWEISLINIE`)."""
+    """Bohrungsangaben (Plan-Einträge `quelle: angabe`) als Hinweis mit Hinweislinie (Spike Stufe 3: Kreiskante wählen
+    – am Kreispunkt zum Text hin, sonst `IView.SelectEntity` –, dann `InsertNote`: die Hinweislinie hängt an der
+    Auswahl). Je Angabe die erste Ansicht, deren Blickachse gleich `Mass.achse` ist und die eine Kreiskante des Merkmals
+    oder seines Musters/Spiegels zeigt (`enthalten`); unter mehreren Bohrungen die mit der besten freien Lage
+    (`hinweis_lagen_bewertet`). Die Größe des Texts ist zuerst geschätzt und wird nach einem PDF-Befund am PDF vermessen
+    (`_hinweise_vermessen`; Live 19.11.: `INote.GetExtent` lieferte 53 × 13,5 mm samt Hinweislinie für 40 × 11 mm
+    Text); die Lage setzt später `_hinweise_legen`. Gesetzte Hinweise kommen nach `hinweise`. Liefert Meldungen (`ANGABE_OHNE_ANSICHT`, `ANGABE_NICHT_GESETZT`, `ANGABE_OHNE_HINWEISLINIE`)."""
     meldungen, masslinien = [], None
     for m in (m for m in plan if m.quelle == "angabe"):
         namen = (enthalten or {}).get(m.merkmal) or {m.merkmal}
@@ -618,7 +617,8 @@ def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
 def _kreis_am_punkt(drw, kreis: tuple, winkel: float) -> bool:
     """Kreiskante am Blattpunkt unter `winkel` wählen (spikes/z1_diag_hinweis_ansatz.py: `SelectByID2("", "EDGE", x,
     y, …)` wählt Ansicht und Kante; die Hinweislinie setzt dann an diesem Punkt an statt auf der Gegenseite). Wahr,
-    wenn eine Kreiskante dieses Radius gewählt ist."""
+    wenn dort eine Kreiskante gewählt ist (der Punkt liegt auf dem gesuchten Kreis; der Radius wird nicht verglichen,
+    ein anderer Kreis müsste ihn genau dort kreuzen)."""
     (mx, my), r = kreis
     x, y = mx + r * math.cos(math.radians(winkel)), my + r * math.sin(math.radians(winkel))
     drw.ClearSelection2(True)
