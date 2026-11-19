@@ -169,3 +169,52 @@ def test_bezug_je_mass():
     plan = _nach_name(massplan_fraesteil(*_spannplatte()))
     assert plan["D2@k1_pfad"].bezug == "ursprung" and plan["D3@t1_skizze"].bezug == "-rand"
     assert plan["D1@f1_skizze"].bezug is None
+
+
+# --- Stufe 3: Angaben und Textzusätze ---------------------------------------------------------------------------------
+
+def _buchse_protokoll():
+    return json.loads((DATEN / "buchse.protokoll.json").read_text(encoding="utf-8"))
+
+
+def test_angaben_spannplatte():
+    plan = massplan_fraesteil(*_spannplatte())
+    angaben = {m.merkmal: m for m in plan if m.quelle == "angabe"}
+    assert set(angaben) == {"g1", "st"} and angaben["g1"].text.startswith("5 × M6")
+    assert (angaben["g1"].achse, angaben["g1"].modus) == (1, "flach")
+    teilung = _nach_name(plan)["D3@m1"]
+    assert (teilung.praefix, teilung.suffix) == ("4 × ", " (= 120)")
+
+
+def test_buchse_lochkreis_ersetzt_lage_und_durchmesser():
+    plan = massplan(_buchse(), _buchse_protokoll())
+    assert [m.text for m in plan if m.quelle == "angabe"] == ["4 × Ø6 – durch\nTK Ø40"]
+    assert not [m for m in plan if m.merkmal == "f5" and m.quelle == "modell"]   # Ø6 und Radius 20 entfallen
+
+
+def test_fase_mit_45_grad():
+    plan = massplan(_buchse(), _buchse_protokoll())
+    assert {m.suffix for m in plan if m.art == "fase"} == {" × 45°"}
+
+
+def test_buchse_angabe_achse_aus_kreismuster():
+    """Ruling B: Fläche {nahe: …} hat keine Achse – dann die Achse des Kreismusters (y = 1), Ansicht flach."""
+    angabe = next(m for m in massplan(_buchse(), _buchse_protokoll()) if m.quelle == "angabe")
+    assert (angabe.achse, angabe.modus, angabe.merkmal, angabe.art) == (1, "flach", "f5", "angabe")
+
+
+def test_angabe_ohne_achse_gemeldet():
+    from swki.zeichnung.massplan import massplan_meldungen
+
+    spec = {"parameter": {}, "features": [{"id": "b1", "typ": "bohrung", "flaeche": {"nahe": [0, 0, 0]},
+                                           "positionen": [[1, 2]], "durchmesser": 5, "durch": True}]}
+    assert "ANGABE_OHNE_ACHSE: b1" in massplan_meldungen(spec)
+    assert next(m for m in massplan_fraesteil(spec, {"knoten": []}) if m.quelle == "angabe").achse is None
+
+
+def test_angabe_meldungen_aus_bohrungsangabe():
+    from swki.zeichnung.massplan import massplan_meldungen
+
+    spec = {"parameter": {}, "features": [{"id": "b1", "typ": "bohrung", "flaeche": "oben",
+                                           "positionen": [[1, 2]], "durchmesser": 5}]}
+    assert any(m.startswith("ANGABE_UNVOLLSTAENDIG: b1") for m in massplan_meldungen(spec))

@@ -1,0 +1,390 @@
+{
+  "auftrag": "Z1S3-buchse",
+  "spec": "buchse.yaml",
+  "lauf": 1,
+  "sw_jahr": 2025,
+  "status": "ok",
+  "gestartet": "2026-11-19T20:07:04",
+  "dauer_s": 8.176,
+  "phasen": {
+    "vorbereiten": 4.864,
+    "bauen": 2.753,
+    "speichern": 0.478
+  },
+  "knoten": [
+    {
+      "id": "f1",
+      "typ": "rotation",
+      "status": "ok",
+      "dauer_s": 1.03,
+      "sw_name": "f1",
+      "sw_namen": null,
+      "fehler": null,
+      "punkte": null,
+      "masse": [
+        {
+          "name": "D1@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[0][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=D_innen/2",
+          "vorzeichen": 1,
+          "wert": 10.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D2@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[1][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=D_bund/2",
+          "vorzeichen": 1,
+          "wert": 25.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D3@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[2][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=D_bund/2",
+          "vorzeichen": 1,
+          "wert": 25.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D4@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[2][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=L_bund",
+          "vorzeichen": 1,
+          "wert": 8.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D5@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[3][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=D_schaft/2",
+          "vorzeichen": 1,
+          "wert": 16.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D6@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[3][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=L_bund",
+          "vorzeichen": 1,
+          "wert": 8.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D7@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[4][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=D_schaft/2",
+          "vorzeichen": 1,
+          "wert": 16.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D8@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[4][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=L",
+          "vorzeichen": 1,
+          "wert": 60.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D9@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[5][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=D_innen/2",
+          "vorzeichen": 1,
+          "wert": 10.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D10@f1_skizze",
+          "pfad": "features[0].skizze.elemente[0].polygon.punkte[5][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=L",
+          "vorzeichen": 1,
+          "wert": 60.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D11@f1_skizze",
+          "pfad": "features[0].skizze.elemente[1].mittellinie.von[1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": -5,
+          "vorzeichen": -1,
+          "wert": 5.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D12@f1_skizze",
+          "pfad": "features[0].skizze.elemente[1].mittellinie.bis[1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=L+5",
+          "vorzeichen": 1,
+          "wert": 65.0,
+          "einheit": "mm"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "typ": "fase",
+      "status": "ok",
+      "dauer_s": 0.034,
+      "sw_name": "f2",
+      "sw_namen": null,
+      "fehler": null,
+      "punkte": null,
+      "masse": [
+        {
+          "name": "D1@f2",
+          "pfad": "features[1].abstand",
+          "art": "abstand",
+          "bezug": null,
+          "roh": 1,
+          "vorzeichen": 1,
+          "wert": 1.0,
+          "einheit": "mm"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "typ": "fase",
+      "status": "ok",
+      "dauer_s": 0.032,
+      "sw_name": "f3",
+      "sw_namen": null,
+      "fehler": null,
+      "punkte": null,
+      "masse": [
+        {
+          "name": "D1@f3",
+          "pfad": "features[2].abstand",
+          "art": "abstand",
+          "bezug": null,
+          "roh": 0.5,
+          "vorzeichen": 1,
+          "wert": 0.5,
+          "einheit": "mm"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "typ": "rotation",
+      "status": "ok",
+      "dauer_s": 0.9,
+      "sw_name": "f4",
+      "sw_namen": null,
+      "fehler": null,
+      "punkte": null,
+      "masse": [
+        {
+          "name": "D1@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[0][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 15,
+          "vorzeichen": 1,
+          "wert": 15.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D2@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[0][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 40,
+          "vorzeichen": 1,
+          "wert": 40.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D3@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[1][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 17,
+          "vorzeichen": 1,
+          "wert": 17.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D4@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[1][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 40,
+          "vorzeichen": 1,
+          "wert": 40.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D5@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[2][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 17,
+          "vorzeichen": 1,
+          "wert": 17.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D6@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[2][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 43,
+          "vorzeichen": 1,
+          "wert": 43.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D7@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[3][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 15,
+          "vorzeichen": 1,
+          "wert": 15.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D8@f4_skizze",
+          "pfad": "features[3].skizze.elemente[0].polygon.punkte[3][1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 43,
+          "vorzeichen": 1,
+          "wert": 43.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D9@f4_skizze",
+          "pfad": "features[3].skizze.elemente[1].mittellinie.von[1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": -5,
+          "vorzeichen": -1,
+          "wert": 5.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D10@f4_skizze",
+          "pfad": "features[3].skizze.elemente[1].mittellinie.bis[1]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": "=L+5",
+          "vorzeichen": 1,
+          "wert": 65.0,
+          "einheit": "mm"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "typ": "bohrung",
+      "status": "ok",
+      "dauer_s": 0.657,
+      "sw_name": "f5",
+      "sw_namen": null,
+      "fehler": null,
+      "punkte": [
+        [
+          20.0,
+          8.0,
+          -0.0
+        ],
+        [
+          1.2246467991473533e-15,
+          8.0,
+          20.0
+        ],
+        [
+          -20.0,
+          8.0,
+          2.4492935982947065e-15
+        ],
+        [
+          -3.673940397442059e-15,
+          8.0,
+          -20.0
+        ]
+      ],
+      "masse": [
+        {
+          "name": "D1@f5_skizze",
+          "pfad": "features[4].durchmesser",
+          "art": "groesse",
+          "bezug": null,
+          "roh": 6,
+          "vorzeichen": 1,
+          "wert": 6.0,
+          "einheit": "mm"
+        },
+        {
+          "name": "D2@f5_skizze",
+          "pfad": "features[4].positionen[0][0]",
+          "art": "lage",
+          "bezug": "ursprung",
+          "roh": 20,
+          "vorzeichen": 1,
+          "wert": 20.0,
+          "einheit": "mm"
+        }
+      ]
+    },
+    {
+      "id": "f6",
+      "typ": "muster_kreis",
+      "status": "ok",
+      "dauer_s": 0.056,
+      "sw_name": "f6",
+      "sw_namen": null,
+      "fehler": null,
+      "punkte": null,
+      "masse": null
+    }
+  ],
+  "dateien": {
+    "teil": "C:\\Users\\User\\.swki\\arbeit\\Z1S3-buchse\\lauf-1\\Z1S3-buchse_Buchse.sldprt",
+    "step": "C:\\Users\\User\\.swki\\arbeit\\Z1S3-buchse\\lauf-1\\Z1S3-buchse_Buchse.step"
+  },
+  "fehler": null,
+  "sha256": {
+    "Z1S3-buchse_Buchse.sldprt": "a61d2fb5e8c68e8a141742f9e2d74fcc1af6710326f803eb286d555e26252238",
+    "Z1S3-buchse_Buchse.step": "83e55ee5db24b28b7bd7e8826c00e2fb34010574e2b020cb05defeeff4d9bc39"
+  },
+  "verworfen": null,
+  "uebernommen": null,
+  "teile": {},
+  "komponenten": [],
+  "normteile": {},
+  "kaufteile": {},
+  "lizenz": null,
+  "hochgestuft": false,
+  "bestand": null,
+  "neue": {},
+  "ersetzt": {},
+  "neue_dateien": [],
+  "messung": {}
+}

@@ -10,7 +10,8 @@ Je Merkmal genau ein Maß, je Richtung ein Bezug, keine geschlossene Kette.
 
 from dataclasses import dataclass
 
-from swki.zeichnung.ansichten import drehachse, elementpunkte, ist_drehteil, profilpunkte
+from swki.zeichnung.angaben import FASE_SUFFIX, _enthalten, bohrbilder, bohrungsangabe, reihenzusatz
+from swki.zeichnung.ansichten import achsvektor, drehachse, elementpunkte, ist_drehteil, profilpunkte
 
 WEG_ARTEN = {"versatz", "konstruktion", "skript"}
 _ARTEN = {"groesse": "laenge"}
@@ -28,6 +29,9 @@ class Mass:
     achse: int | None = None    # Normale der Skizzenebene bzw. Tiefenrichtung (0 = x, 1 = y, 2 = z)
     modus: str | None = None    # flach: Ansicht blickt entlang achse; quer: Ansicht blickt quer dazu
     bezug: str | None = None    # aus dem Maßprotokoll: ursprung | mitte | -rand | +rand | … (Mittellinien, Nutzer 18.11.)
+    text: str | None = None     # nur angabe: Angabetext mit Zeilenumbrüchen (Stufe 3)
+    praefix: str = ""           # Textzusatz vor dem Maßwert, z. B. "4 × "
+    suffix: str = ""            # Textzusatz nach dem Maßwert, z. B. " (= 120)" oder " × 45°"
 
 
 def _rund(x: float) -> float:
@@ -79,10 +83,45 @@ def _skizze(pfad: str) -> str:
     return pfad.split(".")[0]
 
 
+def _angabe_achse(spec: dict, f: dict) -> int | None:
+    """Achse der Bohrungsangabe: Fläche der Bohrung, sonst Achse des umgebenden Kreismusters, sonst Drehachse."""
+    achse = _ebene_achse(f.get("flaeche"))
+    if achse is not None:
+        return achse
+    for m in _enthalten(spec, f["id"]):
+        if m["typ"] == "muster_kreis" and m.get("achse") in ("x", "y", "z"):
+            return "xyz".index(m["achse"])
+    if ist_drehteil(spec) and any(g.get("typ") == "rotation" for g in spec.get("features", [])):
+        return next(i for i, c in enumerate(achsvektor(spec)) if c)
+    return None
+
+
+def _angaben(spec: dict) -> tuple[list[Mass], list[str]]:
+    """Je Bohrung/Normbohrung ein Angabe-Eintrag (Quelle angabe) und die Meldungen der Angabetexte."""
+    bilder = bohrbilder(spec)
+    plan, meldungen = [], []
+    for f in spec.get("features", []):
+        if f.get("typ") not in ("bohrung", "normbohrung"):
+            continue
+        text, meld = bohrungsangabe(f, spec, bilder[f["id"]])
+        achse = _angabe_achse(spec, f)
+        if achse is None:
+            meld.append(f"ANGABE_OHNE_ACHSE: {f['id']}")
+        meldungen += meld
+        plan.append(Mass(f"{f['id']}:angabe", "angabe", "angabe", 0.0, f["id"], text=text, achse=achse, modus="flach"))
+    return plan, meldungen
+
+
 def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = frozenset()) -> list[Mass]:
-    """Modellmaße aus dem Maßprotokoll; `ohne`: Feature-IDs, deren Maße ein anderer Plan liefert (Drehprofil)."""
+    """Modellmaße aus dem Maßprotokoll; `ohne`: Feature-IDs, deren Maße ein anderer Plan liefert (Drehprofil).
+
+    Dazu je Bohrung eine Angabe (Stufe 3): Ø und Größe der Bohrung stehen dann im Angabetext, ebenso der Teilkreis
+    (Lage einer Bohrung im Kreismuster ab Mitte/Ursprung entfällt); Teilungsmaß der Reihe und Fasen bekommen Textzusätze."""
     typ = {f["id"]: f.get("typ") for f in spec.get("features", [])}
     features = {f["id"]: f for f in spec.get("features", [])}
+    bilder = bohrbilder(spec)
+    im_kreismuster = {fid for fid in bilder if any(m["typ"] == "muster_kreis" for m in _enthalten(spec, fid))}
+    reihen = {b.reihe: b for b in bilder.values() if b.reihe}
     plan, gesehen, punktmasse = [], set(), set()
     for knoten in protokoll.get("knoten", []):
         fid = knoten.get("id")
@@ -92,8 +131,17 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
             pfad = m.get("pfad", "")
             if m["art"] in WEG_ARTEN or "mittellinie" in pfad or pfad.endswith(".fase") or m["name"] in gesehen:
                 continue
+            if typ.get(fid) == "bohrung" and m["art"] in ("durchmesser", "groesse"):
+                continue                                              # steht in der Bohrungsangabe
+            if fid in im_kreismuster and m["art"] == "lage" and m.get("bezug") in ("mitte", "ursprung"):
+                continue                                              # Teilkreis steht in der Bohrungsangabe
             gesehen.add(m["name"])
             art = "fase" if typ.get(fid) == "fase" else _ARTEN.get(m["art"], m["art"])
+            praefix, suffix = "", ""
+            if art == "fase":
+                suffix = FASE_SUFFIX
+            elif fid in reihen and m["art"] == "abstand":
+                praefix, suffix = reihenzusatz(reihen[fid])
             if art == "lage":  # Punkte gleicher Lage (waagrechter Nutpfad) ergäben dasselbe Maß doppelt (Nutzer 18.11.2026)
                 schluessel = (fid, _skizze(pfad), pfad[-3:], m.get("bezug") if not isinstance(m.get("bezug"), dict)
                               else str(m["bezug"]), _rund(m["wert"]))
@@ -102,8 +150,8 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
                 punktmasse.add(schluessel)
             achse, modus = _achse_modus(features, fid, pfad)
             plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"], achse=achse, modus=modus,
-                             bezug=m.get("bezug")))
-    return plan
+                             bezug=m.get("bezug"), praefix=praefix, suffix=suffix))
+    return plan + _angaben(spec)[0]
 
 
 def massplan_drehteil(spec: dict) -> list[Mass]:
@@ -177,7 +225,7 @@ def massplan_meldungen(spec: dict) -> list[str]:
         for e in f.get("skizze", {}).get("elemente", []):
             if elementpunkte(e, parameter) is None:
                 aus.append(f"MASS_NICHT_GEPLANT: {f['id']} – Profilelement {next(iter(e))} wird nicht bemaßt")
-    return aus
+    return aus + _angaben(spec)[1]
 
 
 def massplan(spec: dict, protokoll: dict) -> list[Mass]:
