@@ -149,8 +149,8 @@ erkannt, weil er nur Zahlen und Obergrenzen prüfte.
   (`IDetailCircle.SetLabelPosition`, Blatt-m, `spikes/z1_diag_detailbuchstabe.py`).
 - Live: Buchse unverändert, Spannplatte mit Mittellinien in Haupt- (waagrecht, senkrecht) und Seitenansicht, kein
   Lesbarkeitsbefund; Hauptansicht 13 Maße (`ANSICHT_DICHT` für „60,00“ der Nut).
-- Offen beim Nutzer: „60,00“ (Nut läuft an der Unterkante aus) ist ab Mittellinie die halbe Plattenhöhe und damit eine
-  Wiederholung von 120/2. Bleibt die dichte Hauptansicht, oder bekommt die Nut in der Spec einen Kantenbezug?
+- Entschieden (Nutzer 19.11.2026: „13 Maße hinnehmen“): „60,00“ der Nut (ab Mittellinie die halbe Plattenhöhe, Wiederholung
+  von 120/2) bleibt, die Hauptansicht der Spannplatte hat 13 Maße; `ANSICHT_DICHT` bleibt als Hinweis, Spec unverändert.
 - Offen: Beschriftung „DETAIL A“ aus der Vorlage (Norm: Einzelheit).
 
 ### Nachtrag Schnitt durch Taschen (Nutzer 19.11.2026: „Ggf. solltest du die untere Seitenansicht zu einer

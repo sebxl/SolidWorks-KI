@@ -69,7 +69,7 @@ def test_zeichnen(capsys, tmp_path, ordner, spec, drehteil):
         if not drehteil:
             # Nutzer 18.11.2026: dichte Hauptansicht → Einzelheit; nur Maße mit beiden Bezügen im Rahmen (19.11.: die
             # Nutmaße hängen an der Plattenmitte) → Tasche samt Eckradius. Höchstens ein Maß über der Obergrenze, gemeldet
-            # („60,00“ der Nut, offen beim Nutzer)
+            # („60,00“ der Nut; Nutzer 19.11.2026: „13 Maße hinnehmen“)
             assert sorted(rollen) == ["drauf", "einzelheit", "haupt", "seite"], rollen
             # Nutzer 19.11.2026: untere Ansicht als Schnitt durch die Taschen, Taschentiefe mit sichtbarem Bezug
             assert z["schnitt"] and z["schnitt"].startswith("Schnitt"), z["schnitt"]
