@@ -9,6 +9,7 @@ from pathlib import Path
 import yaml
 
 from swki.spec.ausdruck import auswerten
+from swki.zeichnung.lesbarkeit import _schneidet, _ueberlappt
 
 FASE_SUFFIX = " × 45°"
 _NORMEN = Path(__file__).parents[1] / "wissen" / "bohrungsnormen.yaml"
@@ -136,3 +137,47 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
     elif any(m["typ"] == "muster_kreis" for m in _enthalten(spec, fid)):
         meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Teilkreis nicht bestimmbar (Position fehlt oder unlesbar)")
     return "\n".join([kopfzeile, *zeilen]), meld
+
+
+# --- Lage des Hinweistexts in der Zeichnung (Task 4) -----------------------------------------------------------------
+
+HINWEIS_RICHTUNGEN_GRAD = (45, 135, 315, 225)
+HINWEIS_ABSTAENDE_MM = (12.0, 18.0, 25.0, 35.0)
+
+
+def hinweis_lagen(kreis: tuple[tuple[float, float], float], umriss: tuple[float, float, float, float],
+                  hindernisse: list[tuple], groesse: tuple[float, float]) -> list[tuple[float, float]]:
+    """Alle Lagen des Hinweistexts, beste zuerst (`hinweis_lagen_bewertet` ohne Bewertung)."""
+    return [lage for _, lage in hinweis_lagen_bewertet(kreis, umriss, hindernisse, groesse)]
+
+
+def hinweis_lagen_bewertet(kreis: tuple[tuple[float, float], float], umriss: tuple[float, float, float, float],
+                           hindernisse: list[tuple], groesse: tuple[float, float]) -> list[tuple[tuple, tuple]]:
+    """Alle Lagen des Hinweistexts einer Bohrungsangabe (Blatt-mm, Mitte des Texts), beste zuerst.
+
+    Die Hinweislinie endet in Richtung 45°/135°/315°/225° im Abstand 12/18/25/35 mm von der Kreismitte; dort beginnt
+    der Text (rechts davon bei 45°/315°, links bei 135°/225°), mittig in der Höhe. „Von der Ansichtsmitte weg zuerst“
+    gilt in der Höhe: liegt die Bohrung über der Mitte des Umrisses, kommen 45°/135° vor 315°/225°, sonst umgekehrt;
+    innerhalb eines Paars rechts vor links (Lesefluss; Plan Task 4 Step 1: Bohrung links oben → Text rechts oben).
+    Reihenfolge: Abstand vor Richtung; zuerst Lagen, deren Textrechteck keine Strecke aus `hindernisse` kreuzt und
+    außerhalb des Umrisses liegt, dann die ohne Kreuzung im Umriss, zuletzt die übrigen. Bewertung je Lage:
+    (kreuzt, im Umriss, Rang) – kleiner ist besser (Wahl unter mehreren Bohrungen eines Bohrbilds)."""
+    (mx, my), _ = kreis
+    breite, hoehe = groesse
+    oben = my >= (umriss[1] + umriss[3]) / 2
+    paare = [(45, 135), (315, 225)] if oben else [(315, 225), (45, 135)]
+    richtungen = [w for paar in paare for w in paar]
+    lagen = []
+    for i, (d, w) in enumerate((d, w) for d in HINWEIS_ABSTAENDE_MM for w in richtungen):
+        ex, ey = mx + d * math.cos(math.radians(w)), my + d * math.sin(math.radians(w))
+        cx = ex + breite / 2 if math.cos(math.radians(w)) > 0 else ex - breite / 2
+        r = (cx - breite / 2, ey - hoehe / 2, cx + breite / 2, ey + hoehe / 2)
+        kreuzt = any(_schneidet(a, b, r) for a, b in hindernisse)
+        lagen.append(((kreuzt, _ueberlappt(r, umriss), i), (round(cx, 3), round(ey, 3))))
+    return sorted(lagen)
+
+
+def hinweis_lage(kreis: tuple[tuple[float, float], float], umriss: tuple[float, float, float, float],
+                 hindernisse: list[tuple], groesse: tuple[float, float]) -> tuple[float, float]:
+    """Beste Lage aus `hinweis_lagen`."""
+    return hinweis_lagen(kreis, umriss, hindernisse, groesse)[0]

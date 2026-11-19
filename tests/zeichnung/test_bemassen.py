@@ -174,3 +174,13 @@ def test_kein_merkmal_passt_meldung():
                     neue_ansicht=None, einzelheit=lambda r, a, g: None)
     assert any(m.startswith("EINZELHEIT_NICHT_ERZEUGT") for m in erg.meldungen)
     assert any(m.startswith("ANSICHT_DICHT") for m in erg.meldungen)
+
+
+def test_angaben_weder_zugeordnet_noch_gezaehlt():
+    """Stufe 3: Einträge `quelle: angabe` (Bohrungsangaben) setzt `zeichnen` als Hinweise; `bemasse` ordnet sie keiner
+    Ansicht zu, zählt sie nicht und meldet sie nicht als Maß ohne Ansicht."""
+    views = {"haupt": _View("V1")}
+    plan = _plan("A") + [Mass("g1:angabe", "angabe", "angabe", 0.0, "g1", text="5 × M6 – 10 tief", achse=1,
+                              modus="flach")]
+    erg = b.bemasse(_Drw(views, {"haupt": ["A"]}), views, plan, ["haupt"], max_je=1, weitere=[], neue_ansicht=None)
+    assert erg.je_ansicht == {"haupt": ["A"]} and erg.gesetzt == 1 and erg.meldungen == [] and erg.neu == {}

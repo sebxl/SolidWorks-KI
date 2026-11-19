@@ -10,9 +10,14 @@ ActivateView (1), CreateSectionViewAt5 (7, 2010), GetCurrentSheet; IView.Angle/P
 ISketchManager.CreateLine (6), CreateCornerRectangle (6, 2008); IDrawingDoc.CreateDetailViewAt4 (12, 2017;
 swDetViewSTANDARD = 0, swDetCirclePROFILE = 0); ISelectionMgr.GetSelectedObjectCount2 (1); IModelDocExtension.SetUserPreferenceToggle (3, 2009), SelectByID2 (9),
 SaveAs (6), CustomPropertyManager (1) → ICustomPropertyManager.Add3 (4, 2014); IModelDoc2.EditRebuild3, ClearSelection2.
+Stufe 3 (spikes/z1_diag_bohrungsangabe.py, z1_diag_hinweis_ansatz.py): IView.SelectEntity (2), ISelectionMgr.
+GetSelectedObjectType3 (2), GetSelectedObject6 (2, 2006), IModelDoc2.InsertNote (1), INote.GetAnnotation,
+IAnnotation.GetLeaderCount, GetPosition, SetPosition2 (3, 2014); IDisplayDimension.SetText (2;
+swDimensionTextPrefix = 1, swDimensionTextSuffix = 2); IModelDocExtension.SetUserPreferenceInteger/String (3, 2009).
 """
 
 import hashlib
+from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Callable
 import json
@@ -32,11 +37,13 @@ from swki.pruefung.schleife import lies_laeufe
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
+from swki.zeichnung.angaben import (HINWEIS_ABSTAENDE_MM, HINWEIS_RICHTUNGEN_GRAD, _enthalten, hinweis_lagen,
+                                    hinweis_lagen_bewertet)
 from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
                                      waehle_ansichten, weitere_rollen)
 from swki.zeichnung.bemassen import EINZELHEIT_MIN, MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
-from swki.zeichnung.lesbarkeit import ausserhalb, pruefe_pdf
+from swki.zeichnung.lesbarkeit import Befund, _ueberlappt, ausserhalb, pruefe_pdf, texte
 from swki.zeichnung.reihen import ABSTAND_MM, LinMass, radius_zahl_frei, reihen, seite
 from swki.zeichnung.layout import anordnen, einzelheit_passt
 from swki.zeichnung.massplan import massplan, massplan_meldungen
@@ -65,6 +72,16 @@ MITTELLINIE_UEBERSTAND_MM = 3.0              # Mittellinie so weit über den Kö
 MITTENBEZUG = ("ursprung", "mitte")          # Maßprotokoll: Bezüge, die eine Mittellinie brauchen
 RADIUS_ABSTAND_MM = 8.0                      # Zahl eines Radiusmaßes so weit hinter dem Bogen (Blatt-mm)
 ZEICHENBREITE_MM = 2.6                       # geschätzte Breite eines Zeichens der Maßzahl (Live: „200,00“ 16,8 mm)
+# Hinweis (Bohrungsangabe) vor dem Vermessen am PDF; Live 19.11. (Spannplatte): „Senkung Ø6 × 90°“ 39,8 mm breit,
+# zwei Zeilen 10,9 mm hoch, Oberkante 1,4 mm über `IAnnotation.GetPosition`
+HINWEIS_ZEICHEN_MM, HINWEIS_ZEILE_MM, HINWEIS_OBERKANTE_MM = 2.5, 5.5, 1.4
+HINWEIS_ANSATZ_GRAD = 30.0                   # weicht der Ansatz am Kreis mehr ab, wird der Hinweis neu angehängt
+PRAEFIX_TEXT, SUFFIX_TEXT = 1, 2             # swDimensionTextParts_e.swDimensionTextPrefix, …Suffix
+# Beschriftung der Einzelheit „EINZELHEIT B“ statt „DETAIL B“ (Spike Stufe 3): swDetailingDetailViewLabels_PerStandard
+# (Toggle) aus, …_Name (Integer) = swDetailingViewLabelsName_custom, …_CustomName (String)
+EINZELHEIT_NORM, EINZELHEIT_NAME, NAME_EIGEN, EINZELHEIT_TEXT = 240, 241, 3, 81
+EINZELHEIT_OBEN = 337                        # swDetailingDetailViewLabels_AboveView (Live 19.11.: unter der Ansicht lag
+#                                              die Beschriftung auf der Maßreihe darunter)
 
 
 class ZeichnungFehler(SwkiFehler):
@@ -205,11 +222,12 @@ def _rechteck_strecken(r: tuple) -> list[tuple]:
     return list(zip(ecken, ecken[1:] + ecken[:1]))
 
 
-def _radien_setzen(mu, views: dict, rahmen: dict | None = None, mittel: dict | None = None) -> None:
+def _radien_setzen(mu, views: dict, rahmen: dict | None = None, mittel: dict | None = None,
+                   extra: list[tuple] | None = None) -> None:
     """Nutzer 18.11.2026: Pfeil von R4 zeigte auf das Mittelpunktkreuz. Zahl jedes Radiusmaßes außen auf einen Strahl
     durch seinen Bogen, frei von sichtbaren Kanten und vom Rahmen einer Einzelheit (`rahmen`: Rolle → Rechteck)
     (`reihen.radius_zahl_frei`); den Bogen findet sein Mittelpunkt – Ende der letzten Linie aus `IDisplayData`
-    (spikes/z1_diag_merkmalskanten.py)."""
+    (spikes/z1_diag_merkmalskanten.py). `extra`: Strecken auf dem ganzen Blatt (Hinweistexte und ihre Hinweislinien)."""
     for rolle, v in views.items():
         dds = [dd for dd in list(_ruf(v, "GetDisplayDimensions") or ()) if _ruf(dd, "Type2") == RADIAL]
         if not dds:
@@ -227,6 +245,7 @@ def _radien_setzen(mu, views: dict, rahmen: dict | None = None, mittel: dict | N
         if (rahmen or {}).get(rolle):
             hindernisse += _rechteck_strecken(rahmen[rolle])
         hindernisse += (mittel or {}).get(rolle, [])
+        hindernisse += extra or []
         for dd in dds:
             daten = _ruf(dd, "GetDisplayData")
             n = _ruf(daten, "GetLineCount")
@@ -392,6 +411,330 @@ def _kennbuchstabe(eltern, rahmen: tuple, buchstabe: str) -> tuple[str, Callable
     return buchstabe, weiter
 
 
+def _planzahlen(plan: list) -> tuple[int, int]:
+    """Ruling A (Stufe 3): Maße (Quelle modell/neu) und Angaben getrennt zählen."""
+    return (sum(1 for m in plan if m.quelle in ("modell", "neu")), sum(1 for m in plan if m.quelle == "angabe"))
+
+
+def _zusaetze_setzen(views: dict, plan: list) -> None:
+    """Textzusätze aus dem Maßplan an die Anzeigemaße gleichen Namens: Präfix/Suffix nur, wenn gesetzt (ein leeres
+    Präfix löschte z. B. das Ø eines neuen Drehteilmaßes)."""
+    zusatz = {m.name: m for m in plan if m.name and (m.praefix or m.suffix)}
+    if not zusatz:
+        return
+    for v in views.values():
+        for dd in list(_ruf(v, "GetDisplayDimensions") or ()):
+            m = zusatz.get(kurzname(dd))
+            if m is None:
+                continue
+            if m.praefix:
+                dd.SetText(PRAEFIX_TEXT, m.praefix)
+            if m.suffix:
+                dd.SetText(SUFFIX_TEXT, m.suffix)
+
+
+@dataclass
+class _Hinweis:
+    """Gesetzte Bohrungsangabe: Hinweis mit Hinweislinie an der Kreiskante `kreise[instanz]` (Kante, (Mitte, Radius)
+    in Blatt-mm) in Ansicht `rolle`; `kreise` sind alle Bohrungen des Bohrbilds in dieser Ansicht."""
+    merkmal: str
+    zeilen: tuple[str, ...]
+    ann: object
+    rolle: str
+    kreise: list
+    instanz: int
+    umriss: tuple                  # Körper in der Ansicht (Blatt-mm)
+    groesse: tuple[float, float]   # Textrechteck (Blatt-mm; geschätzt, dann am PDF vermessen)
+    versatz: tuple[float, float]   # Mitte des Textrechtecks − Lage der Annotation (Blatt-mm)
+    lage: tuple[float, float] | None = None
+    verworfen: list = field(default_factory=list)
+    vermessen: bool = False
+    text: str = ""
+    view: object = None
+    winkel: float | None = None    # Ansatz der Hinweislinie am Kreis (Grad); None: wo SelectEntity ihn hinlegt
+    punktwahl: bool = True         # False: Wahl am Kreispunkt gelang nicht – nicht jede Runde neu versuchen
+
+    @property
+    def kreis(self) -> tuple:
+        return self.kreise[self.instanz][1]
+
+    def rechteck(self) -> tuple | None:
+        if self.lage is None:
+            return None
+        (x, y), (b, h) = self.lage, self.groesse
+        return (x - b / 2, y - h / 2, x + b / 2, y + h / 2)
+
+    def hinweislinie(self) -> tuple | None:
+        return None if self.lage is None else _hinweislinie(self.kreis, self.lage, self.groesse, len(self.zeilen))
+
+    def verwerfen(self) -> bool:
+        """PDF-Befund: heutige Lage verwerfen; False, wenn alle Lagen verworfen sind."""
+        if self.lage is not None and self.lage not in self.verworfen:
+            self.verworfen.append(self.lage)
+        return len(self.verworfen) < len(HINWEIS_RICHTUNGEN_GRAD) * len(HINWEIS_ABSTAENDE_MM) * len(self.kreise)
+
+
+def _hinweislinie(kreis: tuple, lage: tuple, groesse: tuple, zeilen: int) -> tuple:
+    """Hinweislinie vom Kreis (radial) zur nahen Seite der ersten Zeile – dort setzt SolidWorks an (Live 19.11.)."""
+    (mx, my), r = kreis
+    ziel = (lage[0] - groesse[0] / 2 if lage[0] > mx else lage[0] + groesse[0] / 2,
+            lage[1] + groesse[1] / 2 - groesse[1] / zeilen / 2)
+    d = math.dist(ziel, (mx, my)) or 1.0
+    return ((mx + (ziel[0] - mx) * r / d, my + (ziel[1] - my) * r / d), ziel)
+
+
+def _ansatz(kreis: tuple, lage: tuple, groesse: tuple, zeilen: int) -> float:
+    """Winkel (Grad) des Kreispunkts, an dem die Hinweislinie zum Text hin ansetzt."""
+    (a, _) = _hinweislinie(kreis, lage, groesse, zeilen)
+    return math.degrees(math.atan2(a[1] - kreis[0][1], a[0] - kreis[0][0]))
+
+
+def _hinweis_zu(b, hinweise: list) -> "_Hinweis | None":
+    """Hinweis, zu dem ein PDF-Befund gehört (Text oder anderer Text eine seiner Zeilen; bei mehreren der nächste)."""
+    treffer = [h for h in hinweise if h.lage is not None and (b.text in h.zeilen or b.anderes in h.zeilen)]
+    if not treffer:
+        return None
+    if b.anderes and all(b.text in h.zeilen and b.anderes in h.zeilen for h in treffer):
+        return None  # zwei Zeilen desselben Hinweises: Zeilenabstand, kein Befund für die Lage
+    mx, my = (b.rechteck_mm[0] + b.rechteck_mm[2]) / 2, (b.rechteck_mm[1] + b.rechteck_mm[3]) / 2
+    return min(treffer, key=lambda h: math.dist(h.lage, (mx, my)))
+
+
+def _hinweise_vermessen(hinweise: list, pdf_texte: list[tuple[str, tuple]]) -> list:
+    """Größe und Versatz noch ungemessener Hinweise aus ihren Zeilen im PDF (je Zeile die nächste gleichlautende;
+    Vereinigung der Rechtecke) und der Lage der Annotation. Liefert die eben vermessenen Hinweise: ihre Lage galt mit
+    der geschätzten Größe – verworfene Lagen zählen nicht mehr, `_hinweise_legen` wählt neu."""
+    neu = []
+    for h in hinweise:
+        if h.vermessen or h.lage is None:
+            continue
+        rechtecke = []
+        for zeile in h.zeilen:
+            kandidaten = [r for t, r in pdf_texte if t == zeile]
+            if kandidaten:
+                rechtecke.append(min(kandidaten, key=lambda r: math.dist(h.lage, ((r[0] + r[2]) / 2,
+                                                                                    (r[1] + r[3]) / 2))))
+        h.vermessen = True
+        if len(rechtecke) != len(h.zeilen):
+            continue  # Zeile im PDF nicht gefunden (anders umbrochen): Schätzung bleibt
+        x0, y0 = min(r[0] for r in rechtecke), min(r[1] for r in rechtecke)
+        x1, y1 = max(r[2] for r in rechtecke), max(r[3] for r in rechtecke)
+        px, py = (c * 1000 for c in list(_ruf(h.ann, "GetPosition"))[:2])
+        h.groesse, h.versatz = (x1 - x0, y1 - y0), ((x0 + x1) / 2 - px, (y0 + y1) / 2 - py)
+        h.verworfen.clear()
+        neu.append(h)
+    return neu
+
+
+def _enthaltene(spec: dict, plan: list) -> dict[str, set[str]]:
+    """Je Angabe die Features, deren Flächen die Kreiskanten tragen dürfen: die Bohrung, ihre Muster und Spiegel
+    (Spike Stufe 3: Kanten von Musterinstanzen gehören zum Muster-Feature)."""
+    return {m.merkmal: {m.merkmal} | {f["id"] for f in _enthalten(spec, m.merkmal)}
+            for m in plan if m.quelle == "angabe"}
+
+
+def _kreiskanten(mu, view, namen: set[str]) -> list[tuple]:
+    """Sichtbare Kreiskanten der Ansicht, deren Nachbarfläche zu einem Feature aus `namen` gehört (auch Unter-Features
+    `<name>_…`): je Kreismitte die äußerste als (Kante, Mitte Blatt-mm, Radius Blatt-mm)."""
+    t = _ruf(view, "ModelToViewTransform")
+    s = _ruf(view, "ScaleDecimal")
+    je: dict[tuple, tuple] = {}
+    for k in list(view.GetVisibleEntities2(callout_leer(), KANTE_SICHTBAR) or ()):
+        try:
+            c = _ruf(k, "GetCurve")
+            if not _ruf(c, "IsCircle"):
+                continue
+            feats = {_ruf(_ruf(fl, "GetFeature"), "Name") for fl in list(_ruf(k, "GetTwoAdjacentFaces2") or ())
+                     if fl is not None}
+            if not any(n in namen or any(n.startswith(z + "_") for z in namen) for n in feats):
+                continue
+            cx, cy, cz, *_, r = list(_ruf(c, "CircleParams"))
+            q = mu.CreatePoint(r8_array([cx, cy, cz])).MultiplyTransform(t).ArrayData
+        except Exception:  # noqa: BLE001 – COM: Kante ohne Kurve/Flächen überspringen
+            continue
+        mitte, radius = (q[0] * 1000, q[1] * 1000), r * 1000 * s
+        schluessel = (round(mitte[0], 1), round(mitte[1], 1))
+        if schluessel not in je or radius > je[schluessel][2]:
+            je[schluessel] = (k, mitte, radius)
+    return list(je.values())
+
+
+def _koerper(strecken: list[tuple]) -> tuple[float, float, float, float]:
+    xs = [p[0] for s in strecken for p in s]
+    ys = [p[1] for s in strecken for p in s]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
+                    enthalten: dict[str, set[str]] | None = None, hinweise: list | None = None) -> list[str]:
+    """Bohrungsangaben (Plan-Einträge `quelle: angabe`) als Hinweis mit Hinweislinie (Spike Stufe 3: Kreiskante mit
+    `IView.SelectEntity` wählen, dann `InsertNote` – die Hinweislinie hängt an der Auswahl). Je Angabe die erste
+    Ansicht, deren Blickachse gleich `Mass.achse` ist und die eine Kreiskante des Merkmals oder seines Musters/Spiegels
+    zeigt (`enthalten`); unter mehreren Bohrungen die mit der besten freien Lage (`hinweis_lagen_bewertet`). Die Größe
+    des Texts ist zuerst geschätzt und wird am ersten PDF vermessen (`_hinweise_vermessen`; Live 19.11.:
+    `INote.GetExtent` lieferte 53 × 13,5 mm samt Hinweislinie für 40 × 11 mm Text); die Lage setzt später
+    `_hinweise_legen`. Gesetzte Hinweise kommen nach
+    `hinweise`. Liefert Meldungen (`ANGABE_OHNE_ANSICHT`, `ANGABE_NICHT_GESETZT`, `ANGABE_OHNE_HINWEISLINIE`)."""
+    meldungen, masslinien = [], None
+    for m in (m for m in plan if m.quelle == "angabe"):
+        namen = (enthalten or {}).get(m.merkmal) or {m.merkmal}
+        zeilen = tuple(z.strip() for z in (m.text or "").split("\n"))
+        schaetzung = (max(len(z) for z in zeilen) * HINWEIS_ZEICHEN_MM, len(zeilen) * HINWEIS_ZEILE_MM)
+        wahl = None
+        for rolle, v in views.items():
+            if m.achse is None or achsen.get(rolle) != m.achse:
+                continue
+            kreise = _kreiskanten(mu, v, namen)
+            if not kreise:
+                continue
+            strecken = _strecken(_kanten(mu, v), _ruf(v, "ScaleDecimal"))
+            umriss = _koerper(strecken)
+            if masslinien is None:  # Seiten der Maße stehen schon, die Reihen rücken später nur nach außen
+                masslinien = _masslinien(views)
+            kreise = [(kante, (mitte, r)) for kante, mitte, r in kreise]
+            wahl = min(((*hinweis_lagen_bewertet(kreis, umriss, strecken + masslinien, schaetzung)[0], i, rolle, v,
+                         kreise, umriss) for i, (_, kreis) in enumerate(kreise)), key=lambda w: (w[0], w[2]))
+            break
+        if wahl is None:
+            meldungen.append(f"ANGABE_OHNE_ANSICHT: {m.merkmal}")
+            continue
+        _, lage, i, rolle, v, kreise, umriss = wahl
+        gesetzt = _hinweis_einfuegen(drw, v, kreise[i][0], m.text, kreise[i][1],
+                                     _ansatz(kreise[i][1], lage, schaetzung, len(zeilen)))
+        if gesetzt is None:
+            meldungen.append(f"ANGABE_NICHT_GESETZT: {m.merkmal} – Kreiskante in {rolle} nicht auswählbar oder "
+                             "InsertNote abgelehnt")
+            continue
+        ann, winkel = gesetzt
+        if _ruf(ann, "GetLeaderCount") != 1:
+            meldungen.append(f"ANGABE_OHNE_HINWEISLINIE: {m.merkmal} in {rolle}")
+        if hinweise is not None:  # Lage = linke obere Ecke (Live 19.11.: Textoberkante im PDF knapp darüber)
+            hinweise.append(_Hinweis(m.merkmal, zeilen, ann, rolle, kreise, i, umriss, schaetzung,
+                                     (schaetzung[0] / 2, HINWEIS_OBERKANTE_MM - schaetzung[1] / 2), text=m.text,
+                                     view=v, winkel=winkel))
+    return meldungen
+
+
+def _kreis_am_punkt(drw, kreis: tuple, winkel: float) -> bool:
+    """Kreiskante am Blattpunkt unter `winkel` wählen (spikes/z1_diag_hinweis_ansatz.py: `SelectByID2("", "EDGE", x,
+    y, …)` wählt Ansicht und Kante; die Hinweislinie setzt dann an diesem Punkt an statt auf der Gegenseite). Wahr,
+    wenn eine Kreiskante dieses Radius gewählt ist."""
+    (mx, my), r = kreis
+    x, y = mx + r * math.cos(math.radians(winkel)), my + r * math.sin(math.radians(winkel))
+    drw.ClearSelection2(True)
+    if not _ruf(drw, "Extension").SelectByID2("", "EDGE", x / 1000, y / 1000, 0, False, 0, callout_leer(), 0):
+        return False
+    sm = _ruf(drw, "SelectionManager")
+    for i in range(1, sm.GetSelectedObjectCount2(-1) + 1):
+        if sm.GetSelectedObjectType3(i, -1) != KANTE_SICHTBAR:  # swSelEDGES = 1
+            continue
+        try:
+            c = _ruf(sm.GetSelectedObject6(i, -1), "GetCurve")
+            return bool(_ruf(c, "IsCircle"))
+        except Exception:  # noqa: BLE001 – COM: gewähltes Objekt ohne Kurve
+            return False
+    return False
+
+
+def _hinweis_einfuegen(drw, view, kante, text: str, kreis: tuple | None = None, winkel: float | None = None):
+    """Kreiskante wählen – am Punkt unter `winkel`, sonst über `IView.SelectEntity` –, Hinweis einfügen (die
+    Hinweislinie hängt an der Auswahl, Spike Stufe 3). Liefert (Annotation, Winkel des Ansatzes oder None) oder None."""
+    drw.ActivateView(_ruf(view, "GetName2"))
+    if winkel is not None and kreis is not None and _kreis_am_punkt(drw, kreis, winkel):
+        gewaehlt = winkel
+    else:
+        drw.ClearSelection2(True)
+        if not view.SelectEntity(kante, False):
+            return None
+        gewaehlt = None
+    note = drw.InsertNote(text)
+    drw.ClearSelection2(True)
+    return None if note is None else (_ruf(note, "GetAnnotation"), gewaehlt)
+
+
+def _hindernisse_fest(mu, views: dict, fest: dict, mittel: dict, format_: str) -> list[tuple]:
+    """Was sich in der Lesbarkeitsschleife nicht bewegt (Blatt-mm): Kanten aller Ansichten (die Einzelheit als ihr
+    Rahmen), Mittellinien, Rahmen der Einzelheit in der Elternansicht, Zeichenfeld und Schriftfeld."""
+    aus = []
+    for rolle, v in views.items():
+        if rolle == "einzelheit" and fest.get("einzelheit"):
+            aus += _rechteck_strecken(fest["einzelheit"])
+        else:
+            aus += _strecken(_kanten(mu, v), _ruf(v, "ScaleDecimal"))
+    for linien_rolle in mittel.values():
+        aus += linien_rolle
+    if fest.get("rahmen"):
+        aus += _rechteck_strecken(fest["rahmen"])
+    x0, y0, x1, y1 = zeichenfeld(format_)
+    aus += _rechteck_strecken((x0, y0, x1, y1))
+    aus += _rechteck_strecken((x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1]))
+    return aus
+
+
+def _masslinien(views: dict) -> list[tuple]:
+    """Maß- und Hilfslinien aller Anzeigemaße und die Rechtecke der linearen Maßzahlen (Blatt-mm), wie sie gerade
+    liegen (nach der Reihenanlage)."""
+    aus = []
+    for v in views.values():
+        for dd in list(_ruf(v, "GetDisplayDimensions") or ()):
+            daten = _ruf(dd, "GetDisplayData")
+            for i in range(_ruf(daten, "GetLineCount")):
+                linie = list(daten.GetLineAtIndex3(i))
+                aus.append(((linie[4] * 1000, linie[5] * 1000), (linie[7] * 1000, linie[8] * 1000)))
+        for ann, m, _ in _lineare_masse(v):
+            ax, ay = (c * 1000 for c in list(_ruf(ann, "GetPosition"))[:2])
+            dx, dy = (m.text / 2, 2.0) if m.richtung == "h" else (2.0, m.text / 2)
+            aus += _rechteck_strecken((ax - dx, ay - dy, ax + dx, ay + dy))
+    return aus
+
+
+def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple]) -> list[tuple]:
+    """Lage jedes Hinweises neu wählen (nach der Reihenanlage, vor den Radiuszahlen): über alle Bohrungen des Bohrbilds
+    die beste Lage aus `hinweis_lagen_bewertet`, die kein PDF-Befund verworfen hat (bei Gleichstand die heutige
+    Bohrung). Hindernisse sind `statisch`, die Maße, wie sie jetzt liegen, und die schon gelegten Hinweise (Live 19.11.,
+    Spannplatte: an der zuerst gewählten Bohrung war nach der Reihenanlage keine der 16 Lagen frei, an der letzten der
+    Reihe schon). Wechselt die Bohrung oder dreht der Ansatz der Hinweislinie am Kreis um mehr als
+    `HINWEIS_ANSATZ_GRAD` (Live 19.11.: Hinweislinie quer durch die Bohrung), wird der Hinweis neu eingefügt
+    (`_hinweis_einfuegen` am Kreispunkt zum Text hin) und der alte gelöscht.
+    `IAnnotation.SetPosition2` setzt den Bezugspunkt der Notiz (Mitte − `versatz`); die Hinweislinie zieht mit
+    (Spike Stufe 3). Liefert Rechtecke und Hinweislinien aller Hinweise als Strecken."""
+    if not hinweise:
+        return []
+    hindernisse = statisch + _masslinien(views)
+    gelegt: list[tuple] = []
+    for h in hinweise:
+        beste = None
+        for j, (_, kreis) in enumerate(h.kreise):
+            for wert, lage in hinweis_lagen_bewertet(kreis, h.umriss, hindernisse + gelegt, h.groesse):
+                if any(math.dist(lage, w) <= 0.5 for w in h.verworfen):
+                    continue
+                schluessel = (*wert, j != h.instanz, j)
+                if beste is None or schluessel < beste[0]:
+                    beste = (schluessel, j, lage)
+                break  # Lagen kommen sortiert: die erste nicht verworfene ist die beste dieser Bohrung
+        if beste is None:  # alle verworfen: heutige Bohrung, erste Lage
+            beste = (None, h.instanz, hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0])
+        _, j, lage = beste
+        winkel = _ansatz(h.kreise[j][1], lage, h.groesse, len(h.zeilen))
+        gedreht = (h.punktwahl if h.winkel is None
+                   else abs((winkel - h.winkel + 180) % 360 - 180) > HINWEIS_ANSATZ_GRAD)
+        if j != h.instanz or gedreht:
+            neu = _hinweis_einfuegen(drw, h.view, h.kreise[j][0], h.text, h.kreise[j][1], winkel)
+            if neu is not None:
+                drw.ClearSelection2(True)
+                h.ann.Select2(False, 0)
+                _ruf(drw, "Extension").DeleteSelection2(0)
+                drw.ClearSelection2(True)
+                (h.ann, h.winkel), h.instanz = neu, j
+                h.punktwahl = h.winkel is not None
+            elif j != h.instanz:
+                lage = hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0]
+        h.lage = lage
+        h.ann.SetPosition2((h.lage[0] - h.versatz[0]) / 1000, (h.lage[1] - h.versatz[1]) / 1000, 0)
+        gelegt += _rechteck_strecken(h.rechteck()) + [h.hinweislinie()]
+    return gelegt
+
+
 def _gruppen(spec: dict) -> dict[str, str]:
     """Verrundung und Fase zählen zum Merkmal, dessen Kanten sie bearbeiten (Einzelheit: Tasche samt Eckradius)."""
     aus = {}
@@ -451,6 +794,10 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             ext.SetUserPreferenceToggle(toggle, 0, True)
         for toggle in KEINE_MARKEN:
             ext.SetUserPreferenceToggle(toggle, 0, False)
+        ext.SetUserPreferenceToggle(EINZELHEIT_NORM, 0, False)  # vor dem Anlegen der Einzelheit, in jeder Zeichnung
+        ext.SetUserPreferenceInteger(EINZELHEIT_NAME, 0, NAME_EIGEN)
+        ext.SetUserPreferenceString(EINZELHEIT_TEXT, 0, "EINZELHEIT")
+        ext.SetUserPreferenceToggle(EINZELHEIT_OBEN, 0, True)
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         mu = mathutil(app)
         views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten)
@@ -500,20 +847,30 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             b, h = bereich["groesse"][0] * f, bereich["groesse"][1] * f
             fest["rahmen"] = (cx - b / 2, cy - h / 2, cx + b / 2, cy + h / 2)
         neu_gesetzt = _neue_masse(drw, views, plan, bem.neu, achsvektor(spec), meldungen)
+        _zusaetze_setzen(views, plan)  # vor der Anordnung: die Reihen brauchen die volle Textlänge
         for rolle, v in views.items():
             if not ordne_masse_an(drw, v):
                 meldungen.append(f"MASSE_NICHT_ANGEORDNET: {rolle}")
         mittel, m_meld = _mittellinien(drw, mu, views, plan)
         meldungen += m_meld
+        notizen: list[_Hinweis] = []  # Bohrungsangaben (Name `hinweise` ist die Ansichtswahl-Funktion)
+        meldungen += _angaben_setzen(drw, mu, views, plan, blickachsen(ansichten, weitere_rollen(spec)),
+                                     enthalten=_enthaltene(spec, plan), hinweise=notizen)
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
         rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
-        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest,
-                                     lambda: _radien_setzen(mu, views, rahmen, mittel),
+        statisch = _hindernisse_fest(mu, views, fest, mittel, format_)
+
+        def nach_reihen():  # Hinweise zuerst (meiden Maße und Kanten), dann die Radiuszahlen (meiden auch Hinweise)
+            if notizen:  # IDisplayData zeigt die eben gesetzten Reihen erst nach dem Neuaufbau (Live 19.11.)
+                _ruf(drw, "EditRebuild3")
+            _radien_setzen(mu, views, rahmen, mittel, _hinweise_legen(drw, notizen, views, statisch))
+
+        meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, nach_reihen,
                                      _kennbuchstabe(views[bereich["eltern"]], fest["rahmen"], buchstabe)
-                                     if "rahmen" in fest else None)
+                                     if "rahmen" in fest else None, hinweise=notizen)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),
                  "umriss_mm": [round(x, 1) for x in fest.get(rolle) or _umriss_mm(v)]} for rolle, v in views.items()]
@@ -526,8 +883,9 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "meldungen": meldungen,
-            "masse": {"plan": len(plan), "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
-                      "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}}, "dauer_s": round(time.time() - t0, 1)}
+            "masse": {"plan": _planzahlen(plan)[0], "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
+                      "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}},
+            "angaben": {"plan": _planzahlen(plan)[1], "gesetzt": len(notizen)}, "dauer_s": round(time.time() - t0, 1)}
 
 
 def _speichern(ext, ziel: Path) -> None:
@@ -597,12 +955,14 @@ def _rand(fest: dict | None, rolle: str):
 
 def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict | None = None,
                     nach_reihen: Callable[[], None] | None = None,
-                    kennbuchstabe: tuple[str, Callable[[], bool]] | None = None, runden: int = 3) -> list[str]:
+                    kennbuchstabe: tuple[str, Callable[[], bool]] | None = None, runden: int = 3,
+                    hinweise: list | None = None) -> list[str]:
     """Reihen anlegen, PDF speichern, am PDF prüfen (was der Leser sieht). Ein Befund an einer Maßzahl rückt alle
     Reihen ihrer Ansichtsseite um einen Reihenabstand nach außen (Beschriftungen von SolidWorks, die die Reihenanlage
     nicht kennt), dann neu; höchstens `runden` Mal. Ein Befund am Kennbuchstaben der Einzelheit (`kennbuchstabe`:
     Buchstabe, Umsetzen auf die nächste Rahmenecke → False, wenn keine mehr) setzt ihn um (Live 19.11.: „A“ lag auf der
-    Mittellinie). Was bleibt, wird gemeldet."""
+    Mittellinie). Ein Befund an einem Hinweis (Bohrungsangabe; Text eine seiner Zeilen) verwirft dessen Lage, `nach_reihen`
+    legt ihn auf die nächste (Plan Stufe 3 Task 4); Hinweise rücken keine Reihen. Was bleibt, wird gemeldet."""
     try:
         import pymupdf  # noqa: F401
     except ImportError:
@@ -620,16 +980,28 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
         if not pruefen:
             return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
         x0, y0, x1, _ = zeichenfeld(format_)
+        sperren = [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])]
         befunde = pruefe_pdf(pdf, _ausschluss(format_)) + ausserhalb(
             [(f"{s[0]}/{s[1]}{s[2]}", x, y, laenge, s[1]) for s, (x, y), laenge in platz], zeichenfeld(format_),
-            [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])])
+            sperren)
+        for h in hinweise or []:  # pruefe_pdf übergeht Rand und Schriftfeld
+            r = h.rechteck()
+            if r and (r[0] < x0 or r[1] < y0 or r[2] > x1 or r[3] > zeichenfeld(format_)[3] or
+                      any(_ueberlappt(r, s) for s in sperren)):
+                befunde.append(Befund("ausserhalb", h.zeilen[0], r))
         if not befunde or runde == runden + 1:
             break
         umgesetzt = False
         if kennbuchstabe and any(kennbuchstabe[0] in (b.text, b.anderes) for b in befunde):
             umgesetzt = kennbuchstabe[1]()
+        an_hinweis = {id(b): h for b in befunde if (h := _hinweis_zu(b, hinweise or []))}
+        vermessen = _hinweise_vermessen(hinweise or [], texte(pdf))  # Lage galt mit geschätzter Größe: neu wählen
+        umgesetzt = umgesetzt or bool(vermessen)
+        for h in {id(h): h for h in an_hinweis.values() if all(h is not v for v in vermessen)}.values():
+            umgesetzt = h.verwerfen() or umgesetzt
         seiten = set()
         for b in (b for b in befunde if b.art != "ausserhalb"  # Rücken nach außen hilft da nicht
+                  and id(b) not in an_hinweis
                   and not (kennbuchstabe and kennbuchstabe[0] in (b.text, b.anderes))):
             mx, my = (b.rechteck_mm[0] + b.rechteck_mm[2]) / 2, (b.rechteck_mm[1] + b.rechteck_mm[3]) / 2
             nah = min(platz, key=lambda p: math.dist(p[1], (mx, my)), default=None)

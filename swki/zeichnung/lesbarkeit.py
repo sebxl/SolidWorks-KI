@@ -74,6 +74,23 @@ def _im(r, bereiche) -> bool:
     return any(_ueberlappt(r, b) for b in bereiche)
 
 
+def texte(pdf: Path, seite: int = 0) -> list[tuple[str, tuple[float, float, float, float]]]:
+    """Alle Textzeilen der Seite mit ihrem Rechteck in Blatt-mm (wie `pruefe_pdf` sie liest; Hinweise vermessen)."""
+    import pymupdf
+
+    with pymupdf.open(pdf) as doc:
+        page = doc[seite]
+        hoehe_mm = page.rect.height * PT_MM
+        aus = []
+        for block in page.get_text("rawdict")["blocks"]:
+            for zeile in block.get("lines", []):
+                wort = "".join(c["c"] for s in zeile["spans"] for c in s["chars"]).strip()
+                if wort:
+                    x0, y0, x1, y1 = zeile["bbox"]
+                    aus.append((wort, (x0 * PT_MM, hoehe_mm - y1 * PT_MM, x1 * PT_MM, hoehe_mm - y0 * PT_MM)))
+    return aus
+
+
 def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int = 0) -> list[Befund]:
     import pymupdf
 

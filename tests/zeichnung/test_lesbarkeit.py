@@ -6,7 +6,7 @@ import pytest
 
 pymupdf = pytest.importorskip("pymupdf")
 
-from swki.zeichnung.lesbarkeit import pruefe_pdf  # noqa: E402
+from swki.zeichnung.lesbarkeit import pruefe_pdf, texte  # noqa: E402
 
 MM = 72 / 25.4  # Punkte je mm
 A3 = (420, 297)
@@ -89,3 +89,11 @@ def test_linie_quer_durch_schraegen_text(tmp_path):
         _linie(s, (98, 108), (112, 94))      # Kante quer durch die Schrift
     befunde = pruefe_pdf(_pdf(tmp_path, zeichne))
     assert [(b.art, b.text) for b in befunde] == [("linie_durch_text", "R4,00")]
+
+
+def test_texte_mit_rechteck_in_blatt_mm(tmp_path):
+    """Stufe 3: Hinweise werden am PDF vermessen – Zeile und Rechteck (Ursprung links unten)."""
+    pdf = _pdf(tmp_path, lambda s: _text(s, 100, 200, "Senkung Ø6 × 90°"))  # Grundschrift ohne „–“
+    (t, r), = [x for x in texte(pdf) if "Senkung" in x[0]]
+    assert t == "Senkung Ø6 × 90°"
+    assert r[0] == pytest.approx(100, abs=0.5) and r[1] < 200 < r[3] and r[2] > r[0] + 20

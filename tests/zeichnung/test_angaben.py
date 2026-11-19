@@ -4,7 +4,8 @@ from pathlib import Path
 
 import yaml
 
-from swki.zeichnung.angaben import Bohrbild, bohrbilder, bohrungsangabe, reihenzusatz, zahl
+from swki.zeichnung.angaben import (Bohrbild, bohrbilder, bohrungsangabe, hinweis_lage, hinweis_lagen, reihenzusatz,
+                                    zahl)
 
 REF = Path(__file__).parents[1] / "referenz"
 
@@ -98,3 +99,46 @@ def test_teilkreis_nicht_bestimmbar_gemeldet():
     assert b.anzahl == 3 and b.teilkreis is None
     _, meld = bohrungsangabe(spec["features"][0], spec, b)
     assert any(m.startswith("ANGABE_UNVOLLSTAENDIG: b1") and "Teilkreis" in m for m in meld)
+
+
+# --- Lage des Hinweistexts (Task 4) ----------------------------------------------------------------------------------
+
+def _kreuzt_rechteck(a, b, r) -> bool:
+    from swki.zeichnung.lesbarkeit import _schneidet
+    return _schneidet(a, b, r)
+
+
+def test_hinweis_lage_weicht_kante_aus():
+    """Plan Task 4 Step 1: Kreis (130, 240) r 1,5 im Umriss (105, 184, 217, 256), Kante waagrecht bei y 245."""
+    groesse = (40.0, 9.0)
+    kante = ((100.0, 245.0), (220.0, 245.0))
+    x, y = hinweis_lage(((130.0, 240.0), 1.5), (105.0, 184.0, 217.0, 256.0), [kante], groesse)
+    r = (x - groesse[0] / 2, y - groesse[1] / 2, x + groesse[0] / 2, y + groesse[1] / 2)
+    assert not _kreuzt_rechteck(*kante, r)
+    assert x > 130 and y > 240
+
+
+def test_hinweis_lage_ausserhalb_des_umrisses_zuerst():
+    """Ohne Hindernis liegt der Text außerhalb des Umrisses, wenn eine Lage das erlaubt (hier über dem Teil)."""
+    groesse = (30.0, 9.0)
+    x, y = hinweis_lage(((130.0, 240.0), 1.5), (105.0, 184.0, 217.0, 256.0), [], groesse)
+    assert y - groesse[1] / 2 >= 256.0
+
+
+def test_hinweis_lage_unten_bei_bohrung_unter_der_mitte():
+    groesse = (30.0, 9.0)
+    _, y = hinweis_lage(((130.0, 190.0), 1.5), (105.0, 184.0, 217.0, 256.0), [], groesse)
+    assert y < 190
+
+
+def test_hinweis_lagen_in_fester_reihenfolge_ohne_doppelte():
+    lagen = hinweis_lagen(((130.0, 240.0), 1.5), (105.0, 184.0, 217.0, 256.0), [], (30.0, 9.0))
+    assert len(lagen) == 16 and len(set(lagen)) == 16
+    assert lagen[0] == hinweis_lage(((130.0, 240.0), 1.5), (105.0, 184.0, 217.0, 256.0), [], (30.0, 9.0))
+
+
+def test_hinweis_text_liegt_neben_der_bohrung():
+    """Der Text beginnt am Ende der Hinweislinie und überdeckt die Bohrung nicht."""
+    groesse = (40.0, 9.0)
+    for x, y in hinweis_lagen(((130.0, 240.0), 1.5), (105.0, 184.0, 217.0, 256.0), [], groesse):
+        assert not (x - groesse[0] / 2 <= 130 <= x + groesse[0] / 2 and y - groesse[1] / 2 <= 240 <= y + groesse[1] / 2)
