@@ -10,7 +10,8 @@ Je Merkmal genau ein Maß, je Richtung ein Bezug, keine geschlossene Kette.
 
 from dataclasses import dataclass
 
-from swki.zeichnung.angaben import FASE_SUFFIX, _enthalten, bohrbilder, bohrungsangabe, reihenzusatz
+from swki.spec.ausdruck import auswerten
+from swki.zeichnung.angaben import _enthalten, bohrbilder, bohrungsangabe, reihenzusatz, zahl
 from swki.zeichnung.ansichten import achsvektor, drehachse, elementpunkte, ist_drehteil, profilpunkte
 
 WEG_ARTEN = {"versatz", "konstruktion", "skript"}
@@ -20,8 +21,8 @@ _ARTEN = {"groesse": "laenge"}
 @dataclass(frozen=True)
 class Mass:
     id: str
-    quelle: str                 # modell | neu
-    art: str                    # laenge | durchmesser | radius | tiefe | lage | paarabstand | abstand | winkel | fase
+    quelle: str                 # modell | neu | angabe
+    art: str                    # laenge | durchmesser | radius | tiefe | lage | paarabstand | abstand | winkel | fase | angabe
     wert: float
     merkmal: str                # Feature-ID der Spec
     name: str | None = None     # SolidWorks-Maßname ohne Dokument, z. B. "D3@t1_skizze" (nur modell)
@@ -131,15 +132,21 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
             pfad = m.get("pfad", "")
             if m["art"] in WEG_ARTEN or "mittellinie" in pfad or pfad.endswith(".fase") or m["name"] in gesehen:
                 continue
-            if typ.get(fid) == "bohrung" and m["art"] in ("durchmesser", "groesse"):
-                continue                                              # steht in der Bohrungsangabe
+            if typ.get(fid) == "bohrung" and (m["art"] in ("durchmesser", "groesse", "tiefe") or ".senkung." in pfad):
+                continue                                              # Ø, Tiefe und Senkung stehen in der Bohrungsangabe
+            if typ.get(fid) == "fase" and m["art"] == "winkel":
+                continue                                              # steht im Suffix des Fasenmaßes
             if fid in im_kreismuster and m["art"] == "lage" and m.get("bezug") in ("mitte", "ursprung"):
                 continue                                              # Teilkreis steht in der Bohrungsangabe
             gesehen.add(m["name"])
             art = "fase" if typ.get(fid) == "fase" else _ARTEN.get(m["art"], m["art"])
             praefix, suffix = "", ""
             if art == "fase":
-                suffix = FASE_SUFFIX
+                try:
+                    winkel = auswerten(features[fid].get("winkel", 45), spec.get("parameter", {}))
+                except (ValueError, TypeError, KeyError):
+                    winkel = 45
+                suffix = f" × {zahl(winkel)}°"
             elif fid in reihen and m["art"] == "abstand":
                 praefix, suffix = reihenzusatz(reihen[fid])
             if art == "lage":  # Punkte gleicher Lage (waagrechter Nutpfad) ergäben dasselbe Maß doppelt (Nutzer 18.11.2026)

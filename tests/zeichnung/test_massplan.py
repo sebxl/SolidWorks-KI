@@ -218,3 +218,30 @@ def test_angabe_meldungen_aus_bohrungsangabe():
     spec = {"parameter": {}, "features": [{"id": "b1", "typ": "bohrung", "flaeche": "oben",
                                            "positionen": [[1, 2]], "durchmesser": 5}]}
     assert any(m.startswith("ANGABE_UNVOLLSTAENDIG: b1") for m in massplan_meldungen(spec))
+
+
+def test_bohrung_tiefe_und_senkung_nur_in_der_angabe():
+    spec = {"parameter": {}, "features": [
+        {"id": "b1", "typ": "bohrung", "durchmesser": 6, "tiefe": 8, "flaeche": {"feature": "f1", "flaeche": "+y"},
+         "positionen": [[0, 0]], "senkung": {"durchmesser": 11, "tiefe": 3}}]}
+    protokoll = {"knoten": [{"id": "b1", "masse": [
+        {"name": "D1@b1_skizze", "art": "durchmesser", "pfad": "features[0].durchmesser", "wert": 6, "bezug": None},
+        {"name": "D1@b1", "art": "tiefe", "pfad": "features[0].tiefe", "wert": 8, "bezug": None},
+        {"name": "D1@b1_senkung_skizze", "art": "durchmesser", "pfad": "features[0].senkung.durchmesser", "wert": 11,
+         "bezug": None},
+        {"name": "D1@b1_senkung", "art": "tiefe", "pfad": "features[0].senkung.tiefe", "wert": 3, "bezug": None}]}]}
+    plan = massplan_fraesteil(spec, protokoll)
+    assert [m.quelle for m in plan] == ["angabe"]
+    assert "Senkung Ø11 × 3 tief" in plan[0].text and plan[0].text.startswith("Ø6 – 8 tief")
+
+
+def test_fase_mit_winkel_suffix_nur_am_abstand():
+    spec = {"parameter": {}, "features": [{"id": "fa", "typ": "fase", "abstand": 1, "winkel": 30}]}
+    protokoll = {"knoten": [{"id": "fa", "masse": [
+        {"name": "D1@fa", "art": "abstand", "pfad": "features[0].abstand", "wert": 1, "bezug": None},
+        {"name": "D2@fa", "art": "winkel", "pfad": "features[0].winkel", "wert": 30, "bezug": None}]}]}
+    plan = massplan_fraesteil(spec, protokoll)
+    assert [(m.name, m.suffix) for m in plan] == [("D1@fa", " × 30°")]
+    spec["features"][0].pop("winkel")
+    assert massplan_fraesteil(spec, {"knoten": [{"id": "fa", "masse": protokoll["knoten"][0]["masse"][:1]}]})[0].suffix \
+        == " × 45°"

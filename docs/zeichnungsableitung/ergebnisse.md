@@ -186,9 +186,13 @@ Schnittansicht anpassen“)
   Durchsicht der Blätter: Hinweislinien enden am Kreis, keine Überlagerungen.
 - Offen: Hinweislinien, die Bauteilkanten kreuzen, werden nicht geprüft (Spannplatte: die Hinweislinie des Ø8 läuft über die Plattenecke unten rechts;
   sie liest sich, ist aber nicht geprüft); Beschriftung „EINZELHEIT“ über der Ansicht braucht das
-  OK des Nutzers; Hinweislinie ist beim Verschieben der Hinweise kein Hindernis-Kriterium (Befund zwischen zwei Zeilen
-  desselben Hinweises rückt die Reihen); Gewindeangabe nur mit dem Nenndurchmesser aus der Normtabelle, bei unlesbarer
-  Größe ohne Meldung.
+  OK des Nutzers.
+- Offen: Die Hinweislinie ist beim Verschieben der Hinweise kein Hindernis-Kriterium.
+- Offen: Ein Befund zwischen zwei Zeilen desselben Hinweises rückt die Reihen.
+- Offen: Gewindeangabe nur mit dem Nenndurchmesser aus der Normtabelle; eine unbekannte Größe meldet `ANGABE_UNBEKANNT`.
+- Bohrungsangabe (Review): „1 ×“ entfällt bei einer Bohrung, Steigung als „M12 × 1,5“, Senkung einer `bohrung` als Zeile,
+  Tiefe, Senkung und Fasenwinkel stehen nur im Angabetext bzw. Suffix (kein zweites Maß); eine Lochkreisposition mit zwei
+  Komponenten ungleich 0 meldet `ANGABE_UNVOLLSTAENDIG` (Winkellage).
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

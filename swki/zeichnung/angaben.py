@@ -84,7 +84,13 @@ def bohrbilder(spec: dict) -> dict[str, Bohrbild]:
 def reihenzusatz(bild: Bohrbild) -> tuple[str, str]:
     """Präfix und Suffix für das Teilungsmaß einer Reihe, z. B. ("4 × ", " (= 120)")."""
     n = (bild.reihe_anzahl or bild.anzahl) - 1
-    return f"{n} × ", f" (= {zahl(n * (bild.teilung or 0))})"
+    return f"{n} × ", f" (= {zahl(abs(n * (bild.teilung or 0)))})"
+
+
+def _gewindekopf(groesse: str) -> str:
+    """Gewindegröße nach ISO: „M12x1.5“ wird „M12 × 1,5“ (Dezimalkomma), „M6“ bleibt."""
+    m = re.fullmatch(r"M(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)", groesse)
+    return f"M{zahl(float(m.group(1)))} × {zahl(float(m.group(2)))}" if m else groesse
 
 
 def _nenn(groesse: str) -> str:
@@ -103,7 +109,7 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
         if tab is None:
             meld.append(f"ANGABE_UNBEKANNT: {fid} {art} {groesse} nicht in bohrungsnormen.yaml")
         if art == "gewinde":
-            kopf = groesse
+            kopf = _gewindekopf(groesse)
             tiefe = feature.get("gewindetiefe", feature.get("tiefe"))
         elif art == "stift":
             kopf = f"Ø{zahl(float(groesse))}" if re.fullmatch(r"[\d.]+", groesse) else groesse
@@ -117,6 +123,9 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
                 zeilen.append(f"Senkung Ø{zahl(tab['senkung_d'])} × {zahl(tab.get('senkwinkel', 90))}°")
     else:
         kopf, tiefe = f"Ø{zahl(auswerten(feature['durchmesser'], param))}", feature.get("tiefe")
+        if senkung := feature.get("senkung"):
+            zeilen.append(f"Senkung Ø{zahl(auswerten(senkung['durchmesser'], param))} × "
+                          f"{zahl(auswerten(senkung['tiefe'], param))} tief")
     if feature.get("durch"):
         tief = "durch"
     elif tiefe is not None:
@@ -124,7 +133,7 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
     else:
         tief = ""
         meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Tiefe fehlt (weder durch noch tiefe/gewindetiefe)")
-    kopfzeile = f"{bild.anzahl} × {kopf}" + (f" – {tief}" if tief else "")
+    kopfzeile = (f"{bild.anzahl} × " if bild.anzahl > 1 else "") + kopf + (f" – {tief}" if tief else "")
     fase = feature.get("fase")
     if fase == "nenn" and art == "gewinde":
         zeilen.append(f"Senkung Ø{_nenn(groesse)} × 90°")
@@ -134,6 +143,13 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
         zeilen.append(f"Fase {zahl(auswerten(fase, param))}{FASE_SUFFIX}")
     if bild.teilkreis is not None:
         zeilen.append(f"TK Ø{zahl(bild.teilkreis)}")
+        try:
+            u, v = (auswerten(c, param) for c in (feature.get("positionen") or [[0, 0]])[0][:2])
+            if abs(u) > 1e-9 and abs(v) > 1e-9:
+                meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Winkellage der Bohrung im Lochkreis nicht angegeben "
+                            f"(Position mit zwei Komponenten ungleich 0)")
+        except (ValueError, TypeError, KeyError):
+            pass
     elif any(m["typ"] == "muster_kreis" for m in _enthalten(spec, fid)):
         meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Teilkreis nicht bestimmbar (Position fehlt oder unlesbar)")
     return "\n".join([kopfzeile, *zeilen]), meld

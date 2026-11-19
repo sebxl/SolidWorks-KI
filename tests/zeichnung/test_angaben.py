@@ -142,3 +142,58 @@ def test_hinweis_text_liegt_neben_der_bohrung():
     groesse = (40.0, 9.0)
     for x, y in hinweis_lagen(((130.0, 240.0), 1.5), (105.0, 184.0, 217.0, 256.0), [], groesse):
         assert not (x - groesse[0] / 2 <= 130 <= x + groesse[0] / 2 and y - groesse[1] / 2 <= 240 <= y + groesse[1] / 2)
+
+
+# --- Review-Befunde der Gesamtdurchsicht ------------------------------------------------------------------------------
+
+def _angabe(f: dict, anzahl: int = 1, spec: dict | None = None):
+    return bohrungsangabe(f, spec or {"parameter": {}, "features": [f]}, Bohrbild(f["id"], anzahl, None, None, None))
+
+
+def test_einzelbohrung_ohne_eins_mal():
+    f = {"id": "b1", "typ": "bohrung", "durchmesser": 5, "durch": True, "positionen": [[0, 0]]}
+    assert _angabe(f)[0] == "Ø5 – durch"
+    assert _angabe(f, 2)[0] == "2 × Ø5 – durch"
+
+
+def test_gewinde_mit_steigung_iso():
+    f = {"id": "g1", "typ": "normbohrung", "art": "gewinde", "groesse": "M12x1.5", "positionen": [[0, 0]], "tiefe": 10}
+    assert _angabe(f)[0].startswith("M12 × 1,5 – 10 tief")
+
+
+def test_bohrung_senkung_als_zeile():
+    f = {"id": "b2", "typ": "bohrung", "durchmesser": 6.6, "durch": True, "positionen": [[0, 0]],
+         "senkung": {"durchmesser": "=d_s", "tiefe": 6.5}}
+    text, meld = _angabe(f, 4, {"parameter": {"d_s": 11}, "features": [f]})
+    assert text == "4 × Ø6,6 – durch\nSenkung Ø11 × 6,5 tief" and meld == []
+
+
+def test_negativer_abstand_ohne_minus():
+    assert reihenzusatz(Bohrbild("b", 5, None, -30.0, "m", 5)) == ("4 × ", " (= 120)")
+
+
+def test_lochkreis_querversatz_gemeldet():
+    spec = {"parameter": {}, "features": [
+        {"id": "b1", "typ": "bohrung", "durchmesser": 5, "durch": True, "positionen": [[20, 5]]},
+        {"id": "k1", "typ": "muster_kreis", "features": ["b1"], "achse": "y", "anzahl": 3}]}
+    _, meld = bohrungsangabe(spec["features"][0], spec, bohrbilder(spec)["b1"])
+    assert any(m.startswith("ANGABE_UNVOLLSTAENDIG: b1") and "Winkellage" in m for m in meld)
+
+
+def test_referenzen_bohrungsangaben_ohne_fehler():
+    """Alle Referenz-Teile: keine Ausnahme, kein „1 ×“, jede Senkung einer Bohrung steht im Text."""
+    gesehen = 0
+    for pfad in sorted(REF.rglob("*.yaml")):
+        spec = yaml.safe_load(pfad.read_text(encoding="utf-8"))
+        if not isinstance(spec, dict) or spec.get("art") != "teil":
+            continue
+        bilder = bohrbilder(spec)
+        for f in spec.get("features", []):
+            if f.get("typ") not in ("bohrung", "normbohrung"):
+                continue
+            text, _ = bohrungsangabe(f, spec, bilder[f["id"]])
+            gesehen += 1
+            assert not text.startswith("1 ×"), (pfad.name, f["id"], text)
+            if f.get("senkung"):
+                assert "Senkung" in text, (pfad.name, f["id"], text)
+    assert gesehen > 5
