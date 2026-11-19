@@ -688,14 +688,33 @@ def _masslinien(views: dict) -> list[tuple]:
     return aus
 
 
-def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple]) -> list[tuple]:
+def _melde(meldungen: list | None, text: str) -> None:
+    """Meldung einmal aufnehmen (die Lesbarkeitsschleife legt die Hinweise in jeder Runde neu)."""
+    if meldungen is not None and text not in meldungen:
+        meldungen.append(text)
+
+
+def _alten_hinweis_loeschen(drw, h) -> bool:
+    """Alten Hinweis löschen und die Wirkung prüfen wie `_loesche_ansicht` (Review I5): danach eine Notiz weniger in
+    seiner Ansicht (`IView.GetNoteCount`; Auswahl über `IAnnotation.Select2` + `DeleteSelection2` wie
+    `bemassen._loesche`)."""
+    vorher = _ruf(h.view, "GetNoteCount")
+    drw.ClearSelection2(True)
+    ok = h.ann.Select2(False, 0) and _ruf(drw, "Extension").DeleteSelection2(0)
+    drw.ClearSelection2(True)
+    return bool(ok) and _ruf(h.view, "GetNoteCount") == vorher - 1
+
+
+def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
+                    meldungen: list | None = None) -> list[tuple]:
     """Lage jedes Hinweises neu wählen (nach der Reihenanlage, vor den Radiuszahlen): über alle Bohrungen des Bohrbilds
     die beste Lage aus `hinweis_lagen_bewertet`, die kein PDF-Befund verworfen hat (bei Gleichstand die heutige
     Bohrung). Hindernisse sind `statisch`, die Maße, wie sie jetzt liegen, und die schon gelegten Hinweise (Live 19.11.,
     Spannplatte: an der zuerst gewählten Bohrung war nach der Reihenanlage keine der 16 Lagen frei, an der letzten der
     Reihe schon). Wechselt die Bohrung oder dreht der Ansatz der Hinweislinie am Kreis um mehr als
     `HINWEIS_ANSATZ_GRAD` (Live 19.11.: Hinweislinie quer durch die Bohrung), wird der Hinweis neu eingefügt
-    (`_hinweis_einfuegen` am Kreispunkt zum Text hin) und der alte gelöscht.
+    (`_hinweis_einfuegen` am Kreispunkt zum Text hin) und der alte gelöscht; bleibt der alte stehen, meldet
+    `meldungen` `ANGABE_DOPPELT`, fehlt dem neuen die Hinweislinie, `ANGABE_OHNE_HINWEISLINIE`.
     `IAnnotation.SetPosition2` setzt den Bezugspunkt der Notiz (Mitte − `versatz`); die Hinweislinie zieht mit
     (Spike Stufe 3). Liefert Rechtecke und Hinweislinien aller Hinweise als Strecken."""
     if not hinweise:
@@ -721,12 +740,12 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple]) -> 
         if j != h.instanz or gedreht:
             neu = _hinweis_einfuegen(drw, h.view, h.kreise[j][0], h.text, h.kreise[j][1], winkel)
             if neu is not None:
-                drw.ClearSelection2(True)
-                h.ann.Select2(False, 0)
-                _ruf(drw, "Extension").DeleteSelection2(0)
-                drw.ClearSelection2(True)
+                if not _alten_hinweis_loeschen(drw, h):
+                    _melde(meldungen, f"ANGABE_DOPPELT: {h.merkmal} in {h.rolle} – alter Hinweis nicht gelöscht")
                 (h.ann, h.winkel), h.instanz = neu, j
                 h.punktwahl = h.winkel is not None
+                if _ruf(h.ann, "GetLeaderCount") != 1:
+                    _melde(meldungen, f"ANGABE_OHNE_HINWEISLINIE: {h.merkmal} in {h.rolle}")
             elif j != h.instanz:
                 lage = hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0]
         h.lage = lage
@@ -861,16 +880,17 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
         rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
-        statisch = _hindernisse_fest(mu, views, fest, mittel, format_)
+        statisch, angaben_meld = _hindernisse_fest(mu, views, fest, mittel, format_), []
 
         def nach_reihen():  # Hinweise zuerst (meiden Maße und Kanten), dann die Radiuszahlen (meiden auch Hinweise)
             if notizen:  # IDisplayData zeigt die eben gesetzten Reihen erst nach dem Neuaufbau (Live 19.11.)
                 _ruf(drw, "EditRebuild3")
-            _radien_setzen(mu, views, rahmen, mittel, _hinweise_legen(drw, notizen, views, statisch))
+            _radien_setzen(mu, views, rahmen, mittel, _hinweise_legen(drw, notizen, views, statisch, angaben_meld))
 
         meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, nach_reihen,
                                      _kennbuchstabe(views[bereich["eltern"]], fest["rahmen"], buchstabe)
                                      if "rahmen" in fest else None, hinweise=notizen)
+        meldungen += angaben_meld
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),
                  "umriss_mm": [round(x, 1) for x in fest.get(rolle) or _umriss_mm(v)]} for rolle, v in views.items()]

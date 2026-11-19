@@ -193,8 +193,8 @@ def test_befund_gehoert_zum_hinweis():
 
 
 class _NotizAnn:
-    def __init__(self, drw):
-        self.drw, self.lage = drw, None
+    def __init__(self, drw, hinweislinien=1):
+        self.drw, self.lage, self.GetLeaderCount = drw, None, hinweislinien
 
     def SetPosition2(self, x, y, z):
         self.lage = (x * 1000, y * 1000)
@@ -206,19 +206,28 @@ class _NotizAnn:
 
 
 class _NotizDrw:
-    """Zeichnung mit Kreispunkt-Wahl (SelectByID2 → Ansicht und Kreiskante), InsertNote und Löschen."""
+    """Zeichnung mit Kreispunkt-Wahl (SelectByID2 → Ansicht und Kreiskante), InsertNote und Löschen. `loescht`: False →
+    DeleteSelection2 meldet Erfolg, die Notiz bleibt aber stehen; `hinweislinien` der neu eingefügten Notizen."""
 
-    def __init__(self):
-        self.notizen, self.gewaehlt, self.punkte = [], None, []
+    def __init__(self, loescht=True, hinweislinien=1):
+        self.notizen, self.gewaehlt, self.punkte, self.hinweislinien = [], None, [], hinweislinien
         drw = self
         kreis = type("K", (), {"IsCircle": True})()
         kante = type("Ka", (), {"GetCurve": kreis})()
         self.SelectionManager = type("SM", (), {"GetSelectedObjectCount2": lambda s, m: 2,
                                                 "GetSelectedObjectType3": lambda s, i, m: (12, 1)[i - 1],
                                                 "GetSelectedObject6": lambda s, i, m: kante})()
+
+        def loeschen(s, o):
+            if loescht:
+                drw.notizen.remove(drw.gewaehlt)
+            return True
+
         self.Extension = type("E", (), {
             "SelectByID2": lambda s, n, typ, x, y, *a: drw.punkte.append((x * 1000, y * 1000)) or True,
-            "DeleteSelection2": lambda s, o: drw.notizen.remove(drw.gewaehlt) or True})()
+            "DeleteSelection2": loeschen})()
+        self.view = type("V", (), {"GetName2": "Zeichenansicht1",
+                                   "GetNoteCount": property(lambda s: len(drw.notizen))})()
 
     def ActivateView(self, name):
         return True
@@ -227,26 +236,54 @@ class _NotizDrw:
         self.gewaehlt = None
 
     def InsertNote(self, text):
-        ann = _NotizAnn(self)
+        ann = _NotizAnn(self, self.hinweislinien)
         self.notizen.append(ann)
         return type("N", (), {"GetAnnotation": ann})()
+
+
+def _wechselnder_hinweis(drw):
+    alt = _NotizAnn(drw)
+    drw.notizen.append(alt)
+    kreise = [("k0", ((146.0, 240.0), 1.5)), ("k1", ((191.0, 240.0), 1.5))]
+    h = z._Hinweis("g1", ("5 × M6 – 10 tief", "Senkung Ø6 × 90°"), alt, "haupt", kreise, 0,
+                   (111.0, 190.0, 211.0, 250.0), (40.0, 11.0), (20.0, -4.1), text="5 × M6 – 10 tief\nSenkung Ø6 × 90°",
+                   view=drw.view, winkel=225.0)
+    sperre = z._rechteck_strecken((100.0, 180.0, 175.0, 300.0))  # alles um die erste Bohrung belegt
+    return alt, h, sperre
 
 
 def test_hinweis_wechselt_auf_freie_bohrung_und_setzt_am_kreis_zum_text_an():
     """Live 19.11. (Spannplatte): an der zuerst gewählten Bohrung keine freie Lage, an einer anderen der Reihe schon;
     Hinweislinie setzt am Kreis zum Text hin an (nicht quer durch die Bohrung)."""
     drw = _NotizDrw()
-    alt = _NotizAnn(drw)
-    drw.notizen.append(alt)
-    view = type("V", (), {"GetName2": "Zeichenansicht1"})()
-    kreise = [("k0", ((146.0, 240.0), 1.5)), ("k1", ((191.0, 240.0), 1.5))]
-    h = z._Hinweis("g1", ("5 × M6 – 10 tief", "Senkung Ø6 × 90°"), alt, "haupt", kreise, 0,
-                   (111.0, 190.0, 211.0, 250.0), (40.0, 11.0), (20.0, -4.1), text="5 × M6 – 10 tief\nSenkung Ø6 × 90°",
-                   view=view, winkel=225.0)
-    sperre = z._rechteck_strecken((100.0, 180.0, 175.0, 300.0))  # alles um die erste Bohrung belegt
-    gelegt = z._hinweise_legen(drw, [h], {}, sperre)
-    assert h.instanz == 1 and drw.notizen == [h.ann] and h.ann is not alt
+    alt, h, sperre = _wechselnder_hinweis(drw)
+    meldungen = []
+    gelegt = z._hinweise_legen(drw, [h], {}, sperre, meldungen)
+    assert h.instanz == 1 and drw.notizen == [h.ann] and h.ann is not alt and meldungen == []
     assert h.lage[0] > 191 and h.lage[1] > 240 and gelegt
     (px, py), = drw.punkte
     assert math.dist((px, py), (191.0, 240.0)) == pytest.approx(1.5) and px > 191 and py > 240
     assert h.ann.lage == pytest.approx((h.lage[0] - 20.0, h.lage[1] + 4.1))
+
+
+def test_alter_hinweis_nicht_geloescht_gemeldet():
+    """Review b7c4446: bleibt der alte Hinweis beim Wechsel stehen (Wirkung geprüft, nicht der Rückgabewert), steht
+    die Angabe doppelt auf dem Blatt → ANGABE_DOPPELT, einmal auch über mehrere Runden."""
+    drw = _NotizDrw(loescht=False)
+    alt, h, sperre = _wechselnder_hinweis(drw)
+    meldungen = []
+    z._hinweise_legen(drw, [h], {}, sperre, meldungen)
+    assert alt in drw.notizen and h.ann in drw.notizen and h.instanz == 1
+    assert meldungen == ["ANGABE_DOPPELT: g1 in haupt – alter Hinweis nicht gelöscht"]
+    h.winkel = 225.0  # nächste Runde: Ansatz wieder gedreht → erneuter Wechsel, Meldung nicht doppelt
+    h.instanz = 0
+    z._hinweise_legen(drw, [h], {}, sperre, meldungen)
+    assert meldungen == ["ANGABE_DOPPELT: g1 in haupt – alter Hinweis nicht gelöscht"]
+
+
+def test_neuer_hinweis_ohne_hinweislinie_gemeldet():
+    drw = _NotizDrw(hinweislinien=0)
+    _, h, sperre = _wechselnder_hinweis(drw)
+    meldungen = []
+    z._hinweise_legen(drw, [h], {}, sperre, meldungen)
+    assert meldungen == ["ANGABE_OHNE_HINWEISLINIE: g1 in haupt"]
