@@ -101,3 +101,15 @@ dass eine Schnittansicht zurückkam; die Linie lag neben dem Teil, der Schnitt h
 leer. In gedrehten Ansichten (`IView.Angle`) landen Skizzen zusätzlich gedreht; ein Ausbruch (`CreateBreakOutSection`)
 dort meldete Erfolg ohne sichtbare Wirkung. `swki zeichnen` rechnet deshalb um (`_in_ansicht`) und erzeugt den
 Längsschnitt eines Drehteils aus der ungedrehten Stirnansicht.
+
+## Nachtrag: Stufe 3 – Bohrungsangabe als Hinweis (19.11.2026)
+
+Spike `spikes/z1_diag_bohrungsangabe.py` auf der Spannplatten-Zeichnung (SW 2025, frisch gestartet); gemessen im PDF mit pymupdf.
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Kreiskante wählen | Sichtbare Kante aus `GetVisibleEntities2(…, 1)` mit `GetCurve.IsCircle` und Nachbarfläche aus `g1`/`m1` (hier `f1`, `m1`); Auswahl gelingt, Auswahlzahl 1 | `IView.SelectEntity(kante, False)` | Die Kante selbst (nicht ihre Geometrie) auswählen, vorher `ClearSelection2(True)` |
+| Hängt `InsertNote` die Hinweislinie an die Auswahl? | Ja: 1 Hinweislinie, 1 angehängte Entität, Linienende im PDF 0,03 mm vom Kreis; kein Fallback nötig | `IModelDoc2.InsertNote(text)` → `INote.GetAnnotation` → `GetLeaderCount`, `GetAttachedEntities3` | Auswahl vor `InsertNote`, danach `ClearSelection2(True)` |
+| Ø im Text | Unicode „Ø“ erscheint im PDF als „Ø6“; `<MOD-DIAM>` zerlegt den PDF-Text („Senkung “ / „6 × 90°“), also Unicode nehmen. Zeilenumbruch `\n` wird zu `\r\n` | `INote.GetText` | Ø, ×, –, ° direkt als Unicode schreiben |
+| Lage | `SetPosition2` setzt die Notiz in Blattkoordinaten (m) exakt (Soll 166/260 mm, Ist 166,00/260,00); die Hinweislinie bleibt an der Kante (1 Linie). Vor dem Setzen lag die Notiz bei (158,7/252,2); `GetPosition` liefert ein z von 5 mm, `SetPosition2(x, y, 0)` stört das nicht | `IAnnotation.SetPosition2(x, y, 0)`, `GetPosition` | Position = linke obere Ecke der Notiz in Blatt-m; Hinweislinie zieht mit |
+| Beschriftung der Einzelheit | „EINZELHEIT B“ statt „DETAIL B“ in der bestehenden Ansicht nach `EditRebuild3` | `SetUserPreferenceToggle(240, 0, False)`, `SetUserPreferenceInteger(241, 0, 3)`, `SetUserPreferenceString(81, 0, "EINZELHEIT")` | Reihenfolge: PerStandard aus, Name = custom, CustomName; wirkt auch auf schon vorhandene Einzelheiten |
