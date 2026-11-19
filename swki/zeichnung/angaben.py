@@ -21,6 +21,7 @@ class Bohrbild:
     teilkreis: float | None
     teilung: float | None
     reihe: str | None
+    reihe_anzahl: int | None = None
 
 
 def zahl(x: float) -> str:
@@ -57,27 +58,31 @@ def bohrbilder(spec: dict) -> dict[str, Bohrbild]:
         if f.get("typ") not in ("bohrung", "normbohrung"):
             continue
         positionen = f.get("positionen") or [[0, 0]]
-        anzahl, teilkreis, teilung, reihe = len(positionen), None, None, None
+        anzahl, teilkreis, teilung, reihe, reihe_n = len(positionen), None, None, None, None
         for m in _enthalten(spec, f["id"]):
             if m["typ"] == "spiegeln":
                 anzahl *= 2
             elif m["typ"] == "muster_kreis":
                 anzahl *= int(auswerten(m["anzahl"], param))
-                if teilkreis is None:
-                    u, v = (auswerten(c, param) for c in positionen[0][:2])
-                    teilkreis = round(2 * math.hypot(u, v), 6)
+                if teilkreis is None and f.get("positionen"):
+                    try:
+                        u, v = (auswerten(c, param) for c in positionen[0][:2])
+                        teilkreis = round(2 * math.hypot(u, v), 6)
+                    except (ValueError, TypeError, KeyError):
+                        teilkreis = None
             else:
                 r1, r2 = m["richtung1"], m.get("richtung2")
                 anzahl *= int(auswerten(r1["anzahl"], param)) * (int(auswerten(r2["anzahl"], param)) if r2 else 1)
                 if r2 is None and teilung is None and len(positionen) == 1:
                     teilung, reihe = float(auswerten(r1["abstand"], param)), m["id"]
-        bilder[f["id"]] = Bohrbild(f["id"], anzahl, teilkreis, teilung, reihe)
+                    reihe_n = int(auswerten(r1["anzahl"], param))
+        bilder[f["id"]] = Bohrbild(f["id"], anzahl, teilkreis, teilung, reihe, reihe_n)
     return bilder
 
 
 def reihenzusatz(bild: Bohrbild) -> tuple[str, str]:
     """Präfix und Suffix für das Teilungsmaß einer Reihe, z. B. ("4 × ", " (= 120)")."""
-    n = bild.anzahl - 1
+    n = (bild.reihe_anzahl or bild.anzahl) - 1
     return f"{n} × ", f" (= {zahl(n * (bild.teilung or 0))})"
 
 
@@ -117,12 +122,17 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
         tief = f"{zahl(auswerten(tiefe, param))} tief"
     else:
         tief = ""
+        meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Tiefe fehlt (weder durch noch tiefe/gewindetiefe)")
     kopfzeile = f"{bild.anzahl} × {kopf}" + (f" – {tief}" if tief else "")
     fase = feature.get("fase")
     if fase == "nenn" and art == "gewinde":
         zeilen.append(f"Senkung Ø{_nenn(groesse)} × 90°")
-    elif fase is not None and fase != "nenn":
+    elif fase == "nenn":
+        meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} fase nenn bei Art {art} nicht ausgegeben")
+    elif fase is not None:
         zeilen.append(f"Fase {zahl(auswerten(fase, param))}{FASE_SUFFIX}")
     if bild.teilkreis is not None:
         zeilen.append(f"TK Ø{zahl(bild.teilkreis)}")
+    elif any(m["typ"] == "muster_kreis" for m in _enthalten(spec, fid)):
+        meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Teilkreis nicht bestimmbar (Position fehlt oder unlesbar)")
     return "\n".join([kopfzeile, *zeilen]), meld
