@@ -17,3 +17,5 @@ api:
 bewegung_schritte: 8
 speicher_grenze_mb: 16000  # Sebastian 10.10.2026 (Frage 4 A): Prüfstation Etappe 4, zwei Bewegungen, 13,2 GB vor dem 2. Lauf; Rechner 31 GB
 solidworks_hintergrund: true  # Nutzer 07.11.2026: Neustart minimiert und ohne Fokus (werkzeuge/sw_neustart.py)
+zeichnung:
+  max_masse_je_ansicht: 12  # Zeichnungsableitung Design §6.1 (Nutzer 17.11.2026: meist 3–4 Ansichten, keine überladen)

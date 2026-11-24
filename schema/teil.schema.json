@@ -19,10 +19,93 @@
     "features": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/feature"}},
     "pruefung": {"$ref": "#/$defs/pruefung"},
     "max_nachbesserungen": {"type": "integer", "minimum": 1},
-    "optimierung": {"type": "object", "description": "Optimierungsauftrag (Stufe C2), geprüft nach schema/optimierung.schema.json"}
+    "optimierung": {"type": "object", "description": "Optimierungsauftrag (Stufe C2), geprüft nach schema/optimierung.schema.json"},
+    "verfahren": {"enum": ["fraesen", "drehen"], "description": "Grundverfahren des Teils (Zeichnungsableitung §4.1)"},
+    "bezuege": {
+      "type": "object", "description": "Bezugsflächen A, B, C … als Flächenanker (Zeichnungsableitung §4.1)",
+      "propertyNames": {"pattern": "^[A-Z]$"}, "additionalProperties": {"$ref": "#/$defs/flaechenanker"}
+    },
+    "toleranzen": {
+      "type": "object", "description": "Toleranzen je Parametername für Maße ohne eigenes Feature (§4.1)",
+      "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+      "additionalProperties": {"oneOf": [
+        {"$ref": "#/$defs/toleranz"},
+        {"type": "object", "required": ["passung"], "additionalProperties": false,
+         "properties": {"passung": {"$ref": "#/$defs/passung"}}}
+      ]}
+    },
+    "behandlung": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/behandlung"},
+                   "description": "Wärme- und Oberflächenbehandlung (§4.1, Notiz docs/zeichnungsableitung/haerteangabe.md)"},
+    "halbzeug": {"$ref": "#/$defs/halbzeug"}
   },
   "$defs": {
     "wert": {"oneOf": [{"type": "number"}, {"type": "string", "pattern": "^=.+"}]},
+    "funktion": {"type": "string", "pattern": "^[a-z][a-z_]*$", "description": "Schlüssel aus swki/wissen/funktionen.yaml"},
+    "passung": {"type": "string", "pattern": "^[A-Za-z]{1,2}[0-9]{1,2}$", "description": "ISO-286-Toleranzklasse, z. B. H7, g6"},
+    "toleranz": {
+      "type": "object", "required": ["oben", "unten"], "additionalProperties": false,
+      "properties": {"oben": {"$ref": "#/$defs/wert"}, "unten": {"$ref": "#/$defs/wert"}}
+    },
+    "rauheit": {
+      "type": "object", "minProperties": 1, "maxProperties": 1, "additionalProperties": false,
+      "properties": {"Ra": {"type": "number", "exclusiveMinimum": 0}, "Rz": {"type": "number", "exclusiveMinimum": 0}},
+      "description": "Rauheit in µm"
+    },
+    "form_lage": {"type": "array", "minItems": 1, "items": {
+      "type": "object", "required": ["art", "wert"], "additionalProperties": false,
+      "properties": {
+        "art": {"enum": ["geradheit", "ebenheit", "rundheit", "zylindrizitaet", "parallelitaet", "rechtwinkligkeit",
+                         "neigung", "position", "koaxialitaet", "symmetrie", "rundlauf", "gesamtlauf", "linienprofil",
+                         "flaechenprofil"]},
+        "wert": {"type": "number", "exclusiveMinimum": 0},
+        "bezug": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"type": "string", "pattern": "^[A-Z]$"}},
+        "mmr": {"type": "boolean"}
+      }
+    }},
+    "bearbeitung": {"enum": ["schleifen", "erodieren"]},
+    "behandlung_verweis": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "art oder id eines Eintrags im Top-Level behandlung"},
+    "haertewert": {
+      "type": "object", "required": ["wert", "verfahren"], "additionalProperties": false,
+      "description": "Härte nach DIN ISO 15787:2018, z. B. (60 ± 2) HRC; ohne plus/minus Mindestwert",
+      "properties": {
+        "wert": {"type": "number", "exclusiveMinimum": 0},
+        "plus": {"type": "number", "minimum": 0}, "minus": {"type": "number", "minimum": 0},
+        "verfahren": {"enum": ["HRC", "HV", "HB", "HV1", "HV10"]}
+      }
+    },
+    "behandlung": {
+      "type": "object", "required": ["art"], "additionalProperties": false,
+      "description": "Wärme- oder Oberflächenbehandlung (docs/zeichnungsableitung/haerteangabe.md)",
+      "properties": {
+        "art": {"enum": ["haerten", "haerten_anlassen", "vergueten", "einsatzhaerten", "randschichthaerten", "nitrieren",
+                         "nitrocarburieren", "gluehen", "eloxieren", "hartanodisieren", "verzinken", "bruenieren",
+                         "beschichten"]},
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "haerte": {"$ref": "#/$defs/haertewert"},
+        "kernhaerte": {"$ref": "#/$defs/haertewert"},
+        "tiefe": {"type": "object", "required": ["art", "wert"], "additionalProperties": false,
+                  "properties": {"art": {"enum": ["CHD", "SHD", "NHD", "CLT"]},
+                                 "wert": {"type": "number", "exclusiveMinimum": 0},
+                                 "plus": {"type": "number", "minimum": 0}, "minus": {"type": "number", "minimum": 0},
+                                 "grenzhaerte": {"type": "string", "minLength": 1}}},
+        "zustand": {"enum": ["fertigteil", "vor_schleifen"]},
+        "schicht": {"type": "object", "required": ["norm", "bezeichnung"], "additionalProperties": false,
+                    "properties": {"norm": {"type": "string", "minLength": 1},
+                                   "bezeichnung": {"type": "string", "minLength": 1},
+                                   "dicke_um": {"type": "number", "exclusiveMinimum": 0}}}
+      }
+    },
+    "halbzeug": {
+      "type": "object", "required": ["art", "norm", "masse"], "additionalProperties": false,
+      "description": "Halbzeug; Werkstoff aus material (docs/zeichnungsableitung/haerteangabe.md)",
+      "properties": {
+        "art": {"enum": ["flach", "rund", "vierkant", "sechskant", "platte", "rohr", "profil"]},
+        "norm": {"type": "string", "minLength": 1},
+        "masse": {"type": "string", "minLength": 1},
+        "toleranz": {"type": "string", "minLength": 1},
+        "zustand": {"type": "string", "minLength": 1}
+      }
+    },
     "bohrungsfase": {"oneOf": [{"$ref": "#/$defs/wert"}, {"const": "nenn"}],
                      "description": "Fase c × 45° am Bohrungseintritt (Feature <id>_fase); nenn = Ansenkung auf Gewinde-Nenn-Ø"},
     "punkt2": {"type": "array", "items": {"$ref": "#/$defs/wert"}, "minItems": 2, "maxItems": 2},
@@ -213,19 +296,19 @@
     "featureliste": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}},
     "f_extrusion": {
       "required": ["skizze", "ende"], "additionalProperties": false,
-      "properties": {"id": true, "typ": true, "skizze": {"$ref": "#/$defs/skizze"}, "ende": {"$ref": "#/$defs/ende"}}
+      "properties": {"id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"}, "skizze": {"$ref": "#/$defs/skizze"}, "ende": {"$ref": "#/$defs/ende"}}
     },
     "f_rotation": {
       "required": ["skizze"], "additionalProperties": false,
       "properties": {
-        "id": true, "typ": true, "skizze": {"$ref": "#/$defs/skizze"},
+        "id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"}, "skizze": {"$ref": "#/$defs/skizze"},
         "winkel": {"$ref": "#/$defs/wert"}, "schnitt": {"type": "boolean"}
       }
     },
     "f_austragung": {
       "required": ["profil", "pfad"], "additionalProperties": false,
       "properties": {
-        "id": true, "typ": true,
+        "id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"},
         "profil": {
           "type": "object", "required": ["ebene", "elemente"], "additionalProperties": false,
           "properties": {
@@ -255,7 +338,7 @@
     "f_bohrung": {
       "required": ["flaeche", "positionen", "durchmesser"], "additionalProperties": false,
       "properties": {
-        "id": true, "typ": true,
+        "id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"},
         "flaeche": {"$ref": "#/$defs/flaechenanker"},
         "positionen": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/punkt2"}},
         "bezug": {"$ref": "#/$defs/bezug"},
@@ -273,7 +356,7 @@
     "f_normbohrung": {
       "required": ["art", "groesse", "flaeche", "positionen"], "additionalProperties": false,
       "properties": {
-        "id": true, "typ": true,
+        "id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"},
         "art": {"enum": ["gewinde", "zylinderschraube", "senkschraube", "stift"]},
         "groesse": {"oneOf": [
           {"type": "string", "pattern": "^(M[0-9]+(x[0-9]+(\\.[0-9]+)?)?|[0-9]+(\\.[0-9]+)?)$"},
@@ -293,7 +376,7 @@
     "f_verrundung": {
       "required": ["kanten", "radius"], "additionalProperties": false,
       "properties": {
-        "id": true, "typ": true,
+        "id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"},
         "kanten": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/kantenanker"}},
         "radius": {"$ref": "#/$defs/wert"}
       }
@@ -301,7 +384,7 @@
     "f_fase": {
       "required": ["kanten", "abstand"], "additionalProperties": false,
       "properties": {
-        "id": true, "typ": true,
+        "id": true, "typ": true, "funktion": {"$ref": "#/$defs/funktion"}, "passung": {"$ref": "#/$defs/passung"}, "toleranz": {"$ref": "#/$defs/toleranz"}, "rauheit": {"$ref": "#/$defs/rauheit"}, "form_lage": {"$ref": "#/$defs/form_lage"}, "huelle": {"type": "boolean"}, "bearbeitung": {"$ref": "#/$defs/bearbeitung"}, "behandlung": {"$ref": "#/$defs/behandlung_verweis"},
         "kanten": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/kantenanker"}},
         "abstand": {"$ref": "#/$defs/wert"},
         "winkel": {"$ref": "#/$defs/wert"}

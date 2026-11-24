@@ -27,6 +27,7 @@ class Rechner:
     kaufteilbibliothek: Path | None = None
     blender: Path | None = None  # blender.exe für Blender-Skripte in Aufträgen (optional)
     dateien: dict[str, Path] = field(default_factory=dict)  # benannte Eingabedateien für Auftragsskripte (optional)
+    zeichnung: dict[str, Path] = field(default_factory=dict)  # Blattformate (.slddrt) je Format: A4, A4quer, A3quer
 
 
 _PFADFELDER = ("installationsordner", "vorlage_teil", "vorlage_baugruppe", "materialdatenbank", "arbeitsordner",
@@ -52,6 +53,7 @@ def rechner_als_dict(r: Rechner) -> dict:
     for feld in _PFADFELDER:
         d[feld] = str(d[feld]) if d[feld] is not None else None
     d["dateien"] = {k: str(v) for k, v in d["dateien"].items()}
+    d["zeichnung"] = {k: str(v) for k, v in d["zeichnung"].items()}
     return d
 
 
@@ -61,8 +63,9 @@ def schreibe_rechner(r: Rechner, pfad: Path | None = None) -> None:
     with open(pfad, "w", encoding="utf-8") as f:
         f.write("# Rechnerspezifisch – nicht ins Git. Erzeugt von: swki rechner init\n")
         d = rechner_als_dict(r)
-        if not d["dateien"]:
-            del d["dateien"]
+        for leer in ("dateien", "zeichnung"):
+            if not d[leer]:
+                del d[leer]
         yaml.safe_dump(d, f, allow_unicode=True, sort_keys=False)
 
 
@@ -75,4 +78,5 @@ def lade_rechner(pfad: Path | None = None) -> Rechner:
     for feld in _PFADFELDER:
         d[feld] = Path(d[feld]) if d.get(feld) else None
     d["dateien"] = {k: Path(v) for k, v in (d.get("dateien") or {}).items()}
+    d["zeichnung"] = {k: Path(v) for k, v in (d.get("zeichnung") or {}).items()}
     return Rechner(**d)

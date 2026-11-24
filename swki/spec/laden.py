@@ -19,6 +19,7 @@ from swki.pruefung.geometrie import UEBER_MATERIAL, volumen_auto
 from swki.pruefung.huellquader import huellquader_auto, seitenpunkt
 from swki.spec.austragung import befunde as austragung_befunde
 from swki.spec.ausdruck import PI, AusdruckFehler, auswerten, ist_ausdruck
+from swki.spec.funktionen import anforderung_befunde
 from swki.spec.konturen import eckradien, kontur_punkte
 from swki.spec.normen import groesse_text, norm_von, normmasse, verfuegbare_groessen
 from swki.verzahnung import Z_MIN, VerzahnungFehler, aus_feature, ist_genormt
@@ -471,6 +472,7 @@ def plausibel_befunde(spec: dict, auftrag_ordner: Path, fremde: frozenset[str] =
                             "meldung": "umkehren wirkt nur zusammen mit abstand (ohne Abstand ist die Ebene "
                                        "deckungsgleich zur Basisebene)"})
     befunde += _schraege_anker_befunde(spec)
+    befunde += anforderung_befunde(spec)  # Zeichnungsableitung §4.1: Funktion, Toleranz, Bezüge, Behandlung
     if spec.get("pruefung", {}).get("huellquader") == "auto" and not befunde:
         hq, grund = huellquader_auto(spec)
         if hq is None:

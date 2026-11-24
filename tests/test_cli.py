@@ -40,3 +40,9 @@ def test_unerwartete_exception_wird_als_json_fehler_gemeldet(capsys, monkeypatch
     daten = json.loads(capsys.readouterr().out)
     assert "RuntimeError" in daten["fehler"]
     assert "kaputt" in daten["fehler"]
+
+
+def test_zeichnen_registriert(capsys):
+    """Zeichnungsableitung Z1.3 Stufe 1: swki zeichnen ist ein Befehl (Plan 2026-11-17 Task 5)."""
+    assert main(["zeichnen", "--help"]) == 0
+    assert "zeichnen" in capsys.readouterr().out

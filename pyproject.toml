@@ -19,7 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 messstand = ["numpy>=2.3", "scipy>=1.16", "trimesh>=4.8"]
-pdf = ["pymupdf>=1.26"]  # werkzeuge.pdf_seiten (Datenblätter lesen); swki braucht es nicht
+pdf = ["pymupdf>=1.26"]  # werkzeuge.pdf_seiten (Datenblätter lesen), swki zeichnen (Lesbarkeitsprüfung am PDF)
 # swki schnellbau (Stufe C1): Spec ohne SolidWorks bauen (OpenCascade) und als MuJoCo-Modell; Versionen fest (build123d
 # bricht zwischen Versionen, MuJoCo ist nur je Version deterministisch). Nutzer-OK 25.10.2026; shapely für die
 # Prüfaufgaben der AP-6.8-Studien (Messerkontur, Stufe C2), Nutzer-OK 25.10.2026.

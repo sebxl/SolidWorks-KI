@@ -63,9 +63,10 @@ def _befehlsgruppen() -> list:
     from swki.pruefung import befehle as pruefung_befehle
     from swki.schnellbau import befehle as schnellbau_befehle
     from swki.spec import befehle as spec_befehle
+    from swki.zeichnung import befehle as zeichnung_befehle
 
     return [rechner, bauen, spec_befehle, compiler_bauen, pruefung_befehle, normteil_befehle, kaufteil_befehle,
-            aenderungen, durchlauf, schnellbau_befehle, optimierung_befehle, bestand_befehle]
+            aenderungen, durchlauf, schnellbau_befehle, optimierung_befehle, bestand_befehle, zeichnung_befehle]
 
 
 def main(argv: list[str] | None = None) -> int:
