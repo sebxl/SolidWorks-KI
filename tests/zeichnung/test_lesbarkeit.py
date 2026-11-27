@@ -97,3 +97,16 @@ def test_texte_mit_rechteck_in_blatt_mm(tmp_path):
     (t, r), = [x for x in texte(pdf) if "Senkung" in x[0]]
     assert t == "Senkung Ø6 × 90°"
     assert r[0] == pytest.approx(100, abs=0.5) and r[1] < 200 < r[3] and r[2] > r[0] + 20
+
+
+def test_zellteiler_im_toleranzrahmen_ist_kein_befund(tmp_path):
+    """Stufe 4 (Live 27.11.): Das PDF liest „0,05 A“ als eine Zeile; der Strich zwischen Wert- und Bezugszelle kreuzt
+    sie. Für Rahmentexte zählt er nicht, eine waagrechte Linie durch denselben Text schon."""
+    def rahmen(s):
+        _text(s, 100, 100, "0,05 A")
+        _linie(s, (109, 98), (109, 105))          # Zelltrennlinie, so hoch wie der Rahmen
+    pdf = _pdf(tmp_path, rahmen)
+    assert [b.text for b in pruefe_pdf(pdf)] == ["0,05 A"]
+    assert pruefe_pdf(pdf, rahmen_texte=("0,05 A",)) == []
+    durch = _pdf(tmp_path, lambda s: (rahmen(s), _linie(s, (95, 101.2), (125, 101.2))))
+    assert [b.text for b in pruefe_pdf(durch, rahmen_texte=("0,05 A",))] == ["0,05 A"]

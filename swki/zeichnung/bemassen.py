@@ -211,9 +211,10 @@ def _quer(p, achse) -> tuple:
     return tuple(x - s * a for x, a in zip(p, achse))
 
 
-def setze_neu(drw, view, mass: Mass, achse: tuple, platz_m: tuple[float, float]) -> bool:
+def setze_neu(drw, view, mass: Mass, achse: tuple, platz_m: tuple[float, float]):
     """Ø: zwei Kanten parallel zur Achse im Abstand r auf entgegengesetzten Seiten; Länge: zwei Kanten quer zur Achse
-    an den Lagen `von`/`bis`. Danach `AddDimension2` an `platz_m` (Blattkoordinaten, m)."""
+    an den Lagen `von`/`bis`. Danach `AddDimension2` an `platz_m` (Blattkoordinaten, m). Liefert das neue
+    Anzeigemaß (Stufe 4: Toleranz daran) oder None."""
     linien = _linien(view)
     g = mass.geometrie or {}
     if mass.art == "durchmesser":
@@ -228,16 +229,16 @@ def setze_neu(drw, view, mass: Mass, achse: tuple, platz_m: tuple[float, float])
         kanten = [an(g["von"]), an(g["bis"])]
         kanten = kanten if all(kanten) else None
     if not kanten:
-        return False
+        return None
     drw.ClearSelection2(True)
     view.SelectEntity(kanten[0], False)
     view.SelectEntity(kanten[1], True)
     dd = drw.AddDimension2(platz_m[0], platz_m[1], 0)
     if dd is None:
-        return False
+        return None
     if mass.art == "durchmesser":
         dd.SetText(PRAEFIX, DURCHMESSER)
-    return True
+    return dd
 
 
 def ordne_masse_an(drw, view) -> bool:

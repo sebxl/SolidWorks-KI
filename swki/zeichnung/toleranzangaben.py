@@ -12,11 +12,13 @@ _TOLERIERUNG = "Tolerierung ISO 8015:2011"
 _KANTEN = "Kanten ISO 13715 −0,1 … −0,3"
 _MASSGEBEND = "Maßgebend ist die Zeichnung"
 
+# Codes aus der Symboldatei `lang/german/gtol97.sym`, Abschnitt #GTOL (Task 5, 27.11.: „<IGTOL-PARALLEL>“ erschien
+# im Rahmen nicht; die Datei kennt PARA, POSI, SYMMETRY, SRUN „Lauf“, TRUN „Gesamtlauf“)
 GTOL_SYMBOL = {
-    "ebenheit": "<IGTOL-FLAT>", "rechtwinkligkeit": "<IGTOL-PERP>", "parallelitaet": "<IGTOL-PARALLEL>",
-    "rundheit": "<IGTOL-CIRC>", "zylindrizitaet": "<IGTOL-CYL>", "position": "<IGTOL-POSITION>",
-    "koaxialitaet": "<IGTOL-CONC>", "symmetrie": "<IGTOL-SYM>", "rundlauf": "<IGTOL-CIRCRUNOUT>",
-    "gesamtlauf": "<IGTOL-TOTALRUNOUT>", "neigung": "<IGTOL-ANGULAR>", "geradheit": "<IGTOL-STRAIGHT>",
+    "ebenheit": "<IGTOL-FLAT>", "rechtwinkligkeit": "<IGTOL-PERP>", "parallelitaet": "<IGTOL-PARA>",
+    "rundheit": "<IGTOL-CIRC>", "zylindrizitaet": "<IGTOL-CYL>", "position": "<IGTOL-POSI>",
+    "koaxialitaet": "<IGTOL-CONC>", "symmetrie": "<IGTOL-SYMMETRY>", "rundlauf": "<IGTOL-SRUN>",
+    "gesamtlauf": "<IGTOL-TRUN>", "neigung": "<IGTOL-ANGULAR>", "geradheit": "<IGTOL-STRAIGHT>",
     "linienprofil": "<IGTOL-LPROF>", "flaechenprofil": "<IGTOL-SPROF>",
 }
 

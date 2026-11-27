@@ -91,7 +91,18 @@ def texte(pdf: Path, seite: int = 0) -> list[tuple[str, tuple[float, float, floa
     return aus
 
 
-def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int = 0) -> list[Befund]:
+def _zellteiler(a, b, r) -> bool:
+    """Senkrechte Trennlinie einer Rahmenzelle durch den Text eines Toleranzrahmens (Z1.3 Stufe 4, Live 27.11.: das PDF
+    liest „0,05 A“ als eine Zeile, der Strich zwischen Wert- und Bezugszelle kreuzt sie): senkrecht, innerhalb der
+    Textbreite, über die ganze Schrifthöhe, nicht länger als die Rahmenhöhe (Texthöhe + 6 mm)."""
+    h = r[3] - r[1]
+    return (abs(a[0] - b[0]) < 0.05 and r[0] < a[0] < r[2] and abs(a[1] - b[1]) <= h + 6.0
+            and min(a[1], b[1]) <= r[1] + 0.3 * h and max(a[1], b[1]) >= r[3] - 0.3 * h)
+
+
+def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int = 0,
+               rahmen_texte: tuple[str, ...] = ()) -> list[Befund]:
+    """`rahmen_texte`: Texte von Toleranzrahmen; deren eigene Zelltrennlinien zählen nicht (`_zellteiler`)."""
     import pymupdf
 
     ausschluss_mm = ausschluss_mm or []
@@ -139,7 +150,8 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
         for j in range(i + 1, len(texte)):
             if _ueberlappt(kerne[i], kerne[j]):  # Kern gegen Kern: Zeilenabstand des Textrahmens zählt nicht
                 befunde.append(Befund("text_ueber_text", wort, r, texte[j][0]))
-        if achsparallel and any(_schneidet(a, b, kerne[i]) for a, b in linien):
+        if achsparallel and any(_schneidet(a, b, kerne[i]) for a, b in linien
+                                if not (wort in rahmen_texte and _zellteiler(a, b, r))):
             befunde.append(Befund("linie_durch_text", wort, r))
         # schräge Schrift an ihrer Hinweislinie (R4, Ø6; Nutzer 18.11.2026: lag auf Kanten): gedrehter Kern, Linien
         # parallel zur Schrift (die eigene Hinweislinie) zählen nicht

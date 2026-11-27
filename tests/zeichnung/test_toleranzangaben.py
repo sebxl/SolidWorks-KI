@@ -29,7 +29,7 @@ def test_toleranz_aus():
 def test_rauheit_und_formlage():
     assert rauheitstext({"Ra": 0.8}) == "Ra 0,8" and rauheitstext({"Rz": 6.3}) == "Rz 6,3"
     fl, meld = form_lage_angaben("t1", [{"art": "parallelitaet", "wert": 0.05, "bezug": ["A"]}])
-    assert fl == [FormLage("t1", "parallelitaet", "<IGTOL-PARALLEL>", "0,05", ("A",), False)] and meld == []
+    assert fl == [FormLage("t1", "parallelitaet", "<IGTOL-PARA>", "0,05", ("A",), False)] and meld == []
 
 
 def test_formlage_it_ohne_tabelle():

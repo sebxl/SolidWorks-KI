@@ -37,6 +37,7 @@ from swki.pruefung.schleife import lies_laeufe
 from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
+from swki.zeichnung import anforderungen_setzen as anf
 from swki.zeichnung.angaben import (HINWEIS_ABSTAENDE_MM, HINWEIS_RICHTUNGEN_GRAD, _enthalten, hinweis_lagen,
                                     hinweis_lagen_bewertet)
 from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
@@ -77,12 +78,14 @@ ZEICHENBREITE_MM = 2.6                       # geschätzte Breite eines Zeichens
 # zwei Zeilen 10,9 mm hoch, Oberkante 1,4 mm über `IAnnotation.GetPosition`
 HINWEIS_ZEICHEN_MM, HINWEIS_ZEILE_MM, HINWEIS_OBERKANTE_MM = 2.5, 5.5, 1.4
 HINWEIS_ANSATZ_GRAD = 30.0                   # weicht der Ansatz am Kreis mehr ab, wird der Hinweis neu angehängt
-PRAEFIX_TEXT, SUFFIX_TEXT = 1, 2             # swDimensionTextParts_e.swDimensionTextPrefix, …Suffix
 # Beschriftung der Einzelheit „EINZELHEIT B“ statt „DETAIL B“ (Spike Stufe 3): swDetailingDetailViewLabels_PerStandard
 # (Toggle) aus, …_Name (Integer) = swDetailingViewLabelsName_custom, …_CustomName (String)
 EINZELHEIT_NORM, EINZELHEIT_NAME, NAME_EIGEN, EINZELHEIT_TEXT = 240, 241, 3, 81
 EINZELHEIT_OBEN = 337                        # swDetailingDetailViewLabels_AboveView (Live 19.11.: unter der Ansicht lag
 #                                              die Beschriftung auf der Maßreihe darunter)
+# Stufe 4: Rauheitstext so hoch wie Hinweise (swUserPreferenceTextFormat_e: Note = 0, SurfaceFinish = 5; Live 27.11.:
+# die Vorlage hat 6,35 mm, „Ra 0,8“ wurde so breit wie eine Maßreihe)
+TEXT_HINWEIS, TEXT_RAUHEIT = 0, 5
 
 
 class ZeichnungFehler(SwkiFehler):
@@ -417,23 +420,6 @@ def _planzahlen(plan: list) -> tuple[int, int]:
     return (sum(1 for m in plan if m.quelle in ("modell", "neu")), sum(1 for m in plan if m.quelle == "angabe"))
 
 
-def _zusaetze_setzen(views: dict, plan: list) -> None:
-    """Textzusätze aus dem Maßplan an die Anzeigemaße gleichen Namens: Präfix/Suffix nur, wenn gesetzt (ein leeres
-    Präfix löschte z. B. das Ø eines neuen Drehteilmaßes)."""
-    zusatz = {m.name: m for m in plan if m.name and (m.praefix or m.suffix)}
-    if not zusatz:
-        return
-    for v in views.values():
-        for dd in list(_ruf(v, "GetDisplayDimensions") or ()):
-            m = zusatz.get(kurzname(dd))
-            if m is None:
-                continue
-            if m.praefix:
-                dd.SetText(PRAEFIX_TEXT, m.praefix)
-            if m.suffix:
-                dd.SetText(SUFFIX_TEXT, m.suffix)
-
-
 @dataclass
 class _Hinweis:
     """Gesetzte Bohrungsangabe: Hinweis mit Hinweislinie an der Kreiskante `kreise[instanz]` (Kante, (Mitte, Radius)
@@ -492,7 +478,8 @@ def _ansatz(kreis: tuple, lage: tuple, groesse: tuple, zeilen: int) -> float:
 
 def _hinweis_zu(b, hinweise: list) -> "_Hinweis | None":
     """Hinweis, zu dem ein PDF-Befund gehört (Text oder anderer Text eine seiner Zeilen; bei mehreren der nächste)."""
-    treffer = [h for h in hinweise if h.lage is not None and (b.text in h.zeilen or b.anderes in h.zeilen)]
+    treffer = [h for h in hinweise if h.lage is not None and (b.text in h.zeilen or b.anderes in h.zeilen)
+               and (not hasattr(h, "nahe") or h.nahe(b.rechteck_mm))]  # Anmerkung: Text allein ist mehrdeutig
     if not treffer:
         return None
     if b.anderes and all(b.text in h.zeilen and b.anderes in h.zeilen for h in treffer):
@@ -578,7 +565,7 @@ def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
     meldungen, masslinien = [], None
     for m in (m for m in plan if m.quelle == "angabe"):
         namen = (enthalten or {}).get(m.merkmal) or {m.merkmal}
-        zeilen = tuple(z.strip() for z in (m.text or "").split("\n"))
+        notiz, zeilen = _notiztext(m.text or "")
         schaetzung = (max(len(z) for z in zeilen) * HINWEIS_ZEICHEN_MM, len(zeilen) * HINWEIS_ZEILE_MM)
         wahl = None
         for rolle, v in views.items():
@@ -599,7 +586,7 @@ def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
             meldungen.append(f"ANGABE_OHNE_ANSICHT: {m.merkmal}")
             continue
         _, lage, i, rolle, v, kreise, umriss = wahl
-        gesetzt = _hinweis_einfuegen(drw, v, kreise[i][0], m.text, kreise[i][1],
+        gesetzt = _hinweis_einfuegen(drw, v, kreise[i][0], notiz, kreise[i][1],
                                      _ansatz(kreise[i][1], lage, schaetzung, len(zeilen)))
         if gesetzt is None:
             meldungen.append(f"ANGABE_NICHT_GESETZT: {m.merkmal} – Kreiskante in {rolle} nicht auswählbar oder "
@@ -610,9 +597,16 @@ def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
             meldungen.append(f"ANGABE_OHNE_HINWEISLINIE: {m.merkmal} in {rolle}")
         if hinweise is not None:  # Lage = linke obere Ecke (Live 19.11.: Textoberkante im PDF knapp darüber)
             hinweise.append(_Hinweis(m.merkmal, zeilen, ann, rolle, kreise, i, umriss, schaetzung,
-                                     (schaetzung[0] / 2, HINWEIS_OBERKANTE_MM - schaetzung[1] / 2), text=m.text,
+                                     (schaetzung[0] / 2, HINWEIS_OBERKANTE_MM - schaetzung[1] / 2), text=notiz,
                                      view=v, winkel=winkel))
     return meldungen
+
+
+def _notiztext(text: str) -> tuple[str, tuple[str, ...]]:
+    """Text für `InsertNote` und die Zeilen, wie das PDF sie zeigt. Live 27.11.: Das Unicode-Zeichen „Ⓔ“ lässt auch
+    einen Hinweis verschwinden; das Symbol `<MOD-EP>` erscheint als umkreistes E, pymupdf liest „E“."""
+    notiz = text.replace("Ⓔ", anf.HUELLE)
+    return notiz, tuple(z.strip() for z in text.replace("Ⓔ", "E").split("\n"))
 
 
 def _kreis_am_punkt(drw, kreis: tuple, winkel: float) -> bool:
@@ -653,9 +647,11 @@ def _hinweis_einfuegen(drw, view, kante, text: str, kreis: tuple | None = None, 
     return None if note is None else (_ruf(note, "GetAnnotation"), gewaehlt)
 
 
-def _hindernisse_fest(mu, views: dict, fest: dict, mittel: dict, format_: str) -> list[tuple]:
+def _hindernisse_fest(mu, views: dict, fest: dict, mittel: dict, format_: str,
+                      band: tuple | None = None) -> list[tuple]:
     """Was sich in der Lesbarkeitsschleife nicht bewegt (Blatt-mm): Kanten aller Ansichten (die Einzelheit als ihr
-    Rahmen), Mittellinien, Rahmen der Einzelheit in der Elternansicht, Zeichenfeld und Schriftfeld."""
+    Rahmen), Mittellinien, Rahmen der Einzelheit in der Elternansicht, Zeichenfeld, Schriftfeld und das Band der
+    Sammelangaben."""
     aus = []
     for rolle, v in views.items():
         if rolle == "einzelheit" and fest.get("einzelheit"):
@@ -669,6 +665,8 @@ def _hindernisse_fest(mu, views: dict, fest: dict, mittel: dict, format_: str) -
     x0, y0, x1, y1 = zeichenfeld(format_)
     aus += _rechteck_strecken((x0, y0, x1, y1))
     aus += _rechteck_strecken((x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1]))
+    if band:
+        aus += _rechteck_strecken(band)
     return aus
 
 
@@ -819,6 +817,9 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         ext.SetUserPreferenceInteger(EINZELHEIT_NAME, 0, NAME_EIGEN)
         ext.SetUserPreferenceString(EINZELHEIT_TEXT, 0, "EINZELHEIT")
         ext.SetUserPreferenceToggle(EINZELHEIT_OBEN, 0, True)
+        rauheit_text = ext.GetUserPreferenceTextFormat(TEXT_RAUHEIT, 0)
+        rauheit_text.CharHeight = _ruf(ext.GetUserPreferenceTextFormat(TEXT_HINWEIS, 0), "CharHeight")
+        ext.SetUserPreferenceTextFormat(TEXT_RAUHEIT, 0, rauheit_text)
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         mu = mathutil(app)
         views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten)
@@ -870,31 +871,47 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             b, h = bereich["groesse"][0] * f, bereich["groesse"][1] * f
             fest["rahmen"] = (cx - b / 2, cy - h / 2, cx + b / 2, cy + h / 2)
         neu_gesetzt = _neue_masse(drw, views, plan, bem.neu, achsvektor(spec), meldungen)
-        _zusaetze_setzen(views, plan)  # vor der Anordnung: die Reihen brauchen die volle Textlänge
         for rolle, v in views.items():
             if not ordne_masse_an(drw, v):
                 meldungen.append(f"MASSE_NICHT_ANGEORDNET: {rolle}")
         mittel, m_meld = _mittellinien(drw, mu, views, plan)
         meldungen += m_meld
         notizen: list[_Hinweis] = []  # Bohrungsangaben (Name `hinweise` ist die Ansichtswahl-Funktion)
-        meldungen += _angaben_setzen(drw, mu, views, plan, blickachsen(ansichten, weitere_rollen(spec)),
-                                     enthalten=_enthaltene(spec, plan), hinweise=notizen)
+        achsen = blickachsen(ansichten, weitere_rollen(spec))
+        meldungen += _angaben_setzen(drw, mu, views, plan, achsen, enthalten=_enthaltene(spec, plan), hinweise=notizen)
+        # Stufe 4: nach allen Schritten, die Maße über `kurzname` suchen, vor der Reihenanlage (Toleranz und Zusatz
+        # verbreitern die Zahl). Toleranz und Zusatz nur an Zeichnungsmaßen (Spike Stufe 4: am Modellmaß verloren).
+        namen, d_meld = anf.dauerhaft_machen(drw, mu, views, plan)
+        meldungen += d_meld + anf.zusaetze_setzen(views, plan, namen)
+        anmerkungen: list[anf.Anmerkung] = []
+        meldungen += anf.anmerkungen_setzen(drw, mu, views, plan, achsen,
+                                            {f["id"]: f.get("typ") for f in spec.get("features", [])},
+                                            _enthaltene(spec, plan), anmerkungen,
+                                            {h.merkmal: [h.kreis[0]] for h in notizen})
+        zeilen_sammel = sammelangaben(spec)
+        band = anf.sammelband(format_, sammel)
+        s_meld = anf.sammelangaben_setzen(drw, zeilen_sammel, format_, sammel)
+        meldungen += s_meld
         eigenschaften = _eigenschaften(drw, spec, format_, massstab)
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
         rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
-        statisch, angaben_meld = _hindernisse_fest(mu, views, fest, mittel, format_), []
+        statisch, angaben_meld = _hindernisse_fest(mu, views, fest, mittel, format_, band), []
 
-        def nach_reihen():  # Hinweise zuerst (meiden Maße und Kanten), dann die Radiuszahlen (meiden auch Hinweise)
-            if notizen:  # IDisplayData zeigt die eben gesetzten Reihen erst nach dem Neuaufbau (Live 19.11.)
+        def nach_reihen():  # Hinweise zuerst (meiden Maße und Kanten), dann Anmerkungen, dann die Radiuszahlen
+            if notizen or anmerkungen:  # IDisplayData zeigt die eben gesetzten Reihen erst nach dem Neuaufbau (19.11.)
                 _ruf(drw, "EditRebuild3")
-            _radien_setzen(mu, views, rahmen, mittel, _hinweise_legen(drw, notizen, views, statisch, angaben_meld))
+            gelegt = _hinweise_legen(drw, notizen, views, statisch, angaben_meld)
+            if anmerkungen:
+                gelegt += anf.anmerkungen_legen(anmerkungen, statisch + _masslinien(views) + gelegt,
+                                                [h.rechteck() for h in notizen if h.rechteck()])
+            _radien_setzen(mu, views, rahmen, mittel, gelegt)
 
         meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, nach_reihen,
                                      _kennbuchstabe(views[bereich["eltern"]], fest["rahmen"], buchstabe)
-                                     if "rahmen" in fest else None, hinweise=notizen)
-        meldungen += angaben_meld
+                                     if "rahmen" in fest else None, hinweise=notizen + anmerkungen, band=band)
+        meldungen += angaben_meld + anf.sammel_pruefen(texte(pdf), zeilen_sammel, band)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),
                  "umriss_mm": [round(x, 1) for x in fest.get(rolle) or _umriss_mm(v)]} for rolle, v in views.items()]
@@ -908,17 +925,22 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
              "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}}
     uebergabe_pfad = schreibe_uebergabe(  # Eingabe für Z1.4 (Design §8.1)
         ausgabe / "zeichnung.json",
-        uebergabe(plan, masse, _sha(zeichnung), meldungen, format_, massstab, lauf, {i["rolle"]: i["name"] for i in info}))
+        uebergabe(plan, masse, _sha(zeichnung), meldungen, format_, massstab, lauf, {i["rolle"]: i["name"] for i in info},
+                  namen))
+    anm_plan = sum(1 for m in plan if m.quelle in ("rauheit", "form_lage", "bezug"))
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "meldungen": meldungen,
             "masse": masse, "uebergabe": str(uebergabe_pfad),
-            "angaben": {"plan": _planzahlen(plan)[1], "gesetzt": len(notizen)}, "dauer_s": round(time.time() - t0, 1)}
+            "angaben": {"plan": _planzahlen(plan)[1], "gesetzt": len(notizen)},
+            "anmerkungen": {"plan": anm_plan, "gesetzt": len(anmerkungen)},
+            "zeichnungsmasse": namen, "dauer_s": round(time.time() - t0, 1)}
 
 
 def sammelhoehe_mm(spec: dict) -> float:
-    """Höhe der Sammelangaben über dem Schriftfeld: eine Zeile je Angabe."""
-    return len(sammelangaben(spec)) * SAMMEL_ZEILE_MM
+    """Höhe der Sammelangaben über dem Schriftfeld: eine Zeile je Zeile des Sammelhinweises (umgebrochen, mit der
+    allgemeinen Rauheit, `anforderungen_setzen.sammel_zeilenzahl`)."""
+    return anf.sammel_zeilenzahl(sammelangaben(spec)) * SAMMEL_ZEILE_MM
 
 
 def schreibe_uebergabe(pfad: Path, daten: dict) -> Path:
@@ -931,14 +953,17 @@ def schreibe_uebergabe(pfad: Path, daten: dict) -> Path:
 
 def uebergabe(plan: list[Mass], gesetzt: dict, sha_zeichnung: str, meldungen: list[str], format_: str | None = None,
               massstab: tuple[int, int] | None = None, lauf: int | None = None,
-              ansichten: dict[str, str] | None = None) -> dict:
+              ansichten: dict[str, str] | None = None, namen: dict[str, str] | None = None) -> dict:
     """Übergabe an die Zeichnungsprüfung Z1.4 (Design §8.1), reine Funktion: Maßplan (Toleranz und FormLage als dict),
-    was gesetzt wurde, SHA-256 der .slddrw und die Meldungen. Das JSON schreibt `zeichnen` als `zeichnung/zeichnung.json`."""
+    was gesetzt wurde, SHA-256 der .slddrw und die Meldungen. `namen` (Stufe 4): Modellmaß → Zeichnungsmaß, das es
+    ersetzt (`anforderungen_setzen.dauerhaft_machen`). Das JSON schreibt `zeichnen` als `zeichnung/zeichnung.json`."""
     daten = {"schema": 1, "format": format_, "massstab": f"{massstab[0]}:{massstab[1]}" if massstab else None,
              "lauf": lauf, "plan": [asdict(m) for m in plan], "gesetzt": gesetzt, "sha256_slddrw": sha_zeichnung,
              "meldungen": list(meldungen)}
     if ansichten is not None:
         daten["ansichten"] = dict(ansichten)
+    if namen is not None:
+        daten["zeichnungsmasse"] = dict(namen)
     return daten
 
 
@@ -1010,13 +1035,16 @@ def _rand(fest: dict | None, rolle: str):
 def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict | None = None,
                     nach_reihen: Callable[[], None] | None = None,
                     kennbuchstabe: tuple[str, Callable[[], bool]] | None = None, runden: int = 3,
-                    hinweise: list | None = None) -> list[str]:
+                    hinweise: list | None = None, band: tuple | None = None) -> list[str]:
     """Reihen anlegen, PDF speichern, am PDF prüfen (was der Leser sieht). Ein Befund an einer Maßzahl rückt alle
     Reihen ihrer Ansichtsseite um einen Reihenabstand nach außen (Beschriftungen von SolidWorks, die die Reihenanlage
     nicht kennt), dann neu; höchstens `runden` Mal. Ein Befund am Kennbuchstaben der Einzelheit (`kennbuchstabe`:
     Buchstabe, Umsetzen auf die nächste Rahmenecke → False, wenn keine mehr) setzt ihn um (Live 19.11.: „A“ lag auf der
     Mittellinie). Ein Befund an einem Hinweis (Bohrungsangabe; Text eine seiner Zeilen) verwirft dessen Lage, `nach_reihen`
-    legt ihn auf die nächste (Plan Stufe 3 Task 4); Hinweise rücken keine Reihen. Was bleibt, wird gemeldet."""
+    legt ihn auf die nächste (Plan Stufe 3 Task 4); Hinweise rücken keine Reihen. Anmerkungen (Stufe 4: Rauheit,
+    Rahmen, Bezug) stehen mit in `hinweise` und gelten nur bei Nähe als betroffen; Befunde an Hinweisen und Anmerkungen
+    zählen nicht für den Kennbuchstaben („A“, „B“ gibt es als Bezug und als Kennbuchstabe). `band`: Sammelangaben, für
+    Maßzahlen und Hinweise gesperrt wie das Schriftfeld. Was bleibt, wird gemeldet."""
     try:
         import pymupdf  # noqa: F401
     except ImportError:
@@ -1034,8 +1062,9 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
         if not pruefen:
             return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
         x0, y0, x1, _ = zeichenfeld(format_)
-        sperren = [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])]
-        befunde = pruefe_pdf(pdf, _ausschluss(format_)) + ausserhalb(
+        sperren = [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])] + ([band] if band else [])
+        rahmen_texte = tuple(h.zeilen[0] for h in hinweise or [] if getattr(h, "art", "") == "form_lage")
+        befunde = pruefe_pdf(pdf, _ausschluss(format_), rahmen_texte=rahmen_texte) + ausserhalb(
             [(f"{s[0]}/{s[1]}{s[2]}", x, y, laenge, s[1]) for s, (x, y), laenge in platz], zeichenfeld(format_),
             sperren)
         for h in hinweise or []:  # pruefe_pdf übergeht Rand und Schriftfeld
@@ -1046,9 +1075,9 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
         if not befunde or runde == runden + 1:
             break
         umgesetzt = False
-        if kennbuchstabe and any(kennbuchstabe[0] in (b.text, b.anderes) for b in befunde):
-            umgesetzt = kennbuchstabe[1]()
         an_hinweis = {id(b): h for b in befunde if (h := _hinweis_zu(b, hinweise or []))}
+        if kennbuchstabe and any(kennbuchstabe[0] in (b.text, b.anderes) for b in befunde if id(b) not in an_hinweis):
+            umgesetzt = kennbuchstabe[1]()
         vermessen = _hinweise_vermessen(hinweise or [], texte(pdf))  # Lage galt mit geschätzter Größe: neu wählen
         umgesetzt = umgesetzt or bool(vermessen)
         for h in {id(h): h for h in an_hinweis.values() if all(h is not v for v in vermessen)}.values():
@@ -1081,8 +1110,9 @@ def _loesche_ansicht(drw, view) -> bool:
 
 
 def _neue_masse(drw, views: dict, plan: list, neu: dict, achse: tuple, meldungen: list[str]) -> dict[str, int]:
-    """Neue Maße (Drehteil) über Kanten: Ø links neben der Ansicht, Längen darüber, gestaffelt. Liefert die Zahl der
-    wirklich gesetzten Maße je Ansicht (Review I2)."""
+    """Neue Maße (Drehteil) über Kanten: Ø links neben der Ansicht, Längen darüber, gestaffelt; Toleranz des Plans
+    direkt daran (sie sind schon Zeichnungsmaße, Spike Stufe 4). Liefert die Zahl der wirklich gesetzten Maße je
+    Ansicht (Review I2)."""
     nach_id = {m.id: m for m in plan}
     gesetzt: dict[str, int] = {}
     for rolle, ids in neu.items():
@@ -1094,8 +1124,11 @@ def _neue_masse(drw, views: dict, plan: list, neu: dict, achse: tuple, meldungen
             zaehler[m.art] = i + 1
             platz = ((x0 - 0.012 - i * MASSABSTAND_M, (y0 + y1) / 2) if m.art == "durchmesser"
                      else ((x0 + x1) / 2, y1 + 0.012 + i * MASSABSTAND_M))
-            if setze_neu(drw, views[rolle], m, achse, platz):
+            dd = setze_neu(drw, views[rolle], m, achse, platz)
+            if dd is not None:
                 gesetzt[rolle] = gesetzt.get(rolle, 0) + 1
+                if not anf.toleranz_setzen(dd, m.toleranz):
+                    meldungen.append(f"TOLERANZ_NICHT_GESETZT: {mid}")
             else:
                 meldungen.append(f"MASS_NICHT_GESETZT: {mid} ({m.art} {m.wert:g}) – keine passenden Kanten in {rolle}")
     return gesetzt

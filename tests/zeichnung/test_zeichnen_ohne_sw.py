@@ -5,6 +5,7 @@ import math
 
 import pytest
 
+from swki.zeichnung import anforderungen_setzen as anf
 from swki.zeichnung import zeichnen as z
 from swki.zeichnung.ansichten import Ansicht
 from swki.zeichnung.massplan import Mass
@@ -140,7 +141,7 @@ def test_zusaetze_an_passenden_anzeigemassen():
             Mass("D1@fa1", "modell", "fase", 1.0, "fa1", name="D1@fa1", suffix=" × 45°"),
             Mass("D1@t1_skizze", "modell", "laenge", 20.0, "t1", name="D1@t1_skizze"),
             _angabe(1)]
-    z._zusaetze_setzen({"haupt": view}, plan)
+    assert anf.zusaetze_setzen({"haupt": view}, plan) == []
     assert teilung.texte == {1: "4 × ", 2: " (= 120)"}
     assert fase.texte == {2: " × 45°"}            # kein leeres Präfix (würde z. B. <MOD-DIAM> löschen)
     assert andere.texte == {}
@@ -305,6 +306,7 @@ def test_uebergabe_json_mit_toleranz_und_form_lage():
 
 
 def test_sammelhoehe_aus_spec():
+    """Task 5: die allgemeine Rauheit steht rechts neben der zweiten Zeile, das Band bleibt so hoch wie die Zeilen."""
     from swki.zeichnung.toleranzangaben import sammelangaben
     spec = {}
     assert z.sammelhoehe_mm(spec) == len(sammelangaben(spec)) * z.SAMMEL_ZEILE_MM
@@ -347,4 +349,5 @@ def test_sammelhoehe_ohne_und_mit_behandlung_halbzeug():
     assert z.sammelhoehe_mm({}) >= 20.0
     spec = lade_spec(Path(__file__).resolve().parents[1] / "referenz" / "zeichnung" / "buchse_z.yaml")
     n = len(spec["behandlung"])
-    assert z.sammelhoehe_mm(spec) == (4 + n) * 5 + 5  # + Halbzeug-Zeile
+    # 4 feste Zeilen, Härteangabe (77 Zeichen) umgebrochen auf zwei (Task 5), Halbzeug
+    assert z.sammelhoehe_mm(spec) == (4 + 2 * n + 1) * 5

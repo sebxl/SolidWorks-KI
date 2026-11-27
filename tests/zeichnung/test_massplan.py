@@ -265,7 +265,7 @@ def test_spannplatte_z_anforderungen():
     assert stift.text.startswith("2 × Ø8 H7 Ⓔ – 15 tief")
     assert {(m.merkmal, m.text) for m in plan if m.quelle == "rauheit"} == {("st", "Ra 0,8"), ("t1", "Ra 1,6")}
     assert {(m.merkmal, m.form_lage.symbol, m.text) for m in plan if m.quelle == "form_lage"} == {
-        ("f1", "<IGTOL-FLAT>", "0,02"), ("t1", "<IGTOL-PARALLEL>", "0,05")}
+        ("f1", "<IGTOL-FLAT>", "0,02"), ("t1", "<IGTOL-PARA>", "0,05")}
     assert sorted(m.text for m in plan if m.quelle == "bezug") == ["A", "B"]
     assert {m.anker["flaeche"] for m in plan if m.quelle == "bezug"} == {"-y", "-x"}
     abstand = _nach_name(plan)["D1@st_positionen"]          # Paarabstand 150 aus "=2 * (-A/2)", Parameter A ±0,02
