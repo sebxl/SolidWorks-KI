@@ -176,7 +176,7 @@ def test_cli_option_neustart(monkeypatch):
     from swki import cli
 
     gesehen = {}
-    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False, alles_neu=False: gesehen.update(neustart=neustart) or {})
+    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False, alles_neu=False, zeichnung=False: gesehen.update(neustart=neustart) or {})
     assert cli.main(["durchlauf", "a.yaml", "--neustart"]) == 0 and gesehen == {"neustart": True}
     assert cli.main(["durchlauf", "a.yaml"]) == 0 and gesehen == {"neustart": False}
 
@@ -213,3 +213,83 @@ def test_baugruppe_meldet_gebaute_und_wiederverwendete_teile_und_reicht_alles_ne
 def test_einzelteil_ohne_teilebilanz(schritte, tmp_path):
     erg = d.durchlauf(tmp_path / "a.yaml")
     assert "teile_gebaut" not in erg and "teile_wiederverwendet" not in erg
+
+
+# --- Z1.4 Task 5: --zeichnung (zeichnen + Zeichnung prüfen, kein Bauen) ---
+
+@pytest.fixture
+def zeichnung_schritte(schritte, monkeypatch, tmp_path):
+    import swki.pruefung.schleife as ps
+    import swki.zeichnung.zeichnen as zz
+    import swki.zeichnung.zeichnung_pruefen as zp
+
+    laeufe = [{"lauf": 3, "bau": "ok", "bestanden": True}]
+    monkeypatch.setattr(ps, "lies_laeufe", lambda s: laeufe)
+    monkeypatch.setattr(zz, "zeichnen", lambda s, lauf=None: schritte.append(f"zeichnen {lauf}") or {
+        "zeichnung": "x.slddrw", "pdf": "C:/l/zeichnung/a.pdf", "png": "C:/l/zeichnung/a.png", "meldungen": ["M1"]})
+    monkeypatch.setattr(zp, "zeichnung_pruefen", lambda s, lauf=None, leser=None: schritte.append(f"zpruefen {lauf}") or {
+        "bestanden": False, "maengel": [{"pruefung": "toleranzen", "regel": "Z-TOL-1", "merkmal": "m1", "text": "t"}],
+        "meldungen": ["M2"], "lauf": 3, "pdf": "C:/l/zeichnung/a.pdf", "png": "C:/l/zeichnung/a.png",
+        "ist": {"sha256_slddrw": "abc123"}})
+    return schritte, laeufe
+
+
+def test_zeichnung_mit_bestandenem_lauf_baut_nicht(zeichnung_schritte, tmp_path):
+    schritte, _ = zeichnung_schritte
+    erg = d.durchlauf(tmp_path / "a.yaml", zeichnung=True)
+    assert "bauen" not in schritte and "pruefen 3" not in schritte
+    assert schritte[-2:] == ["zeichnen 3", "zpruefen 3"]
+    assert erg["schritt"] == "fertig" and erg["lauf"] == 3
+    z = erg["zeichnung"]
+    assert z["pdf"].endswith("a.pdf") and z["bestanden"] is False and z["maengel"][0]["regel"] == "Z-TOL-1"
+    assert z["meldungen"] == ["M1", "M2"]
+    auftrag = erg["zeichnungspruefer_auftrag"]
+    assert "zeichnung.pruefbericht.json" in auftrag and "a.pdf" in auftrag and "a.png" in auftrag
+    assert "zeichnungsregeln.yaml" in auftrag and auftrag.endswith("Antworte nur mit dem JSON-Urteil.")
+    assert "sha256_slddrw" in auftrag and "abc123" in auftrag
+    assert "Zeichnungsprüfer" in erg["naechstes"]
+
+
+def test_zeichnung_ohne_bestandenen_lauf_laeuft_normal_und_nennt_den_pruefer(zeichnung_schritte, tmp_path):
+    schritte, laeufe = zeichnung_schritte
+    laeufe[0]["bestanden"] = False
+    erg = d.durchlauf(tmp_path / "a.yaml", zeichnung=True)
+    assert "bauen" in schritte and not any(s.startswith("zeichnen") for s in schritte)
+    assert "Prüfer-Agent" in erg["naechstes"] and "--zeichnung" in erg["naechstes"] and "zeichnung" not in erg
+
+
+def test_zeichnung_fehler_endet_im_schritt(zeichnung_schritte, monkeypatch, tmp_path):
+    import swki.zeichnung.zeichnen as zz
+    from swki.zeichnung.zeichnen import ZeichnungFehler
+
+    def wirf(s, lauf=None):
+        raise ZeichnungFehler("ZEICHNUNG_LAUF_NICHT_BESTANDEN", "kein Lauf")
+    monkeypatch.setattr(zz, "zeichnen", wirf)
+    erg = d.durchlauf(tmp_path / "a.yaml", zeichnung=True)
+    assert erg["schritt"] == "zeichnen" and erg["code"] == "ZEICHNUNG_LAUF_NICHT_BESTANDEN"
+
+
+def test_zeichnung_mit_neustart_startet_vor_zeichnen_und_pruefen(zeichnung_schritte, monkeypatch, tmp_path):
+    import werkzeuge.sw_neustart as wn
+
+    schritte, _ = zeichnung_schritte
+    monkeypatch.setattr(wn, "neustart", lambda r=None: schritte.append("neustart") or dict(_NEUSTART))
+    d.durchlauf(tmp_path / "a.yaml", zeichnung=True, neustart=True)
+    assert schritte[-4:] == ["neustart", "zeichnen 3", "neustart", "zpruefen 3"]
+
+
+def test_cli_option_zeichnung(monkeypatch):
+    from swki import cli
+
+    gesehen = {}
+    monkeypatch.setattr(d, "durchlauf", lambda s, f, m, neustart=False, alles_neu=False, zeichnung=False:
+                        gesehen.update(zeichnung=zeichnung) or {})
+    assert cli.main(["durchlauf", "a.yaml", "--zeichnung"]) == 0 and gesehen == {"zeichnung": True}
+    assert cli.main(["durchlauf", "a.yaml"]) == 0 and gesehen == {"zeichnung": False}
+
+
+def test_agent_zeichnungspruefer_ist_gebunden():
+    agent = (Path(__file__).resolve().parent.parent / ".claude" / "agents" / "zeichnungspruefer.md").read_text(encoding="utf-8")
+    kopf = agent.split("---")[1]
+    assert "name: zeichnungspruefer" in kopf and "tools: Read, Glob" in kopf
+    assert "zeichnungsregeln.yaml" in agent and "bestanden" in agent and "protokoll.json" in agent

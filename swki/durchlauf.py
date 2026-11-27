@@ -72,8 +72,76 @@ def pruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
     return " ".join(teile)
 
 
+def zeichnungspruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
+    """Fertiger Prompt für den Agenten `zeichnungspruefer` (Eingabe, freigegebene Spec, Zeichnungs-Prüfbericht, PDF/PNG,
+    Regelkatalog – keine Bauprotokolle, kein Maßplan). Das Urteil trägt den SHA-256 der Zeichnung zurück."""
+    from swki.auftrag import lauf_datei
+    from swki.konfig import PROJEKT
+
+    ordner = spec_pfad.parent
+    kopien = ", ".join(str(p) for p in sorted(ordner.glob("*.freigegeben.yaml")))
+    eingabe = [p for p in sorted((ordner / "eingabe").rglob("*")) if p.is_file()] if (ordner / "eingabe").is_dir() else []
+    if (ordner / "aufgabe.md").exists():
+        eingabe.append(ordner / "aufgabe.md")
+    sha = (bericht.get("ist") or {}).get("sha256_slddrw")
+    teile = [f"Prüfe die Zeichnung von Lauf {lauf} von {spec_pfad.name}.",
+             f"Eingabe des Nutzers: {', '.join(map(str, eingabe)) or ordner / 'eingabe'}.",
+             f"Freigegebene Spezifikation(en): {kopien}.",
+             f"Zeichnungs-Prüfbericht: {lauf_datei(spec_pfad, lauf, 'zeichnung.pruefbericht')}."]
+    bilder = [str(b) for b in (bericht.get("pdf"), bericht.get("png")) if b]
+    if bilder:
+        teile.append(f"Zeichnung (PDF, PNG): {', '.join(bilder)}.")
+    teile.append(f"Regelkatalog: {PROJEKT / 'swki' / 'wissen' / 'zeichnungsregeln.yaml'}.")
+    if sha:
+        teile.append(f"Gib im Urteil das Feld sha256_slddrw mit genau diesem Wert zurück: {sha}.")
+    teile.append("Lies alle genannten Dateien in deiner ersten Antwort parallel. Antworte nur mit dem JSON-Urteil.")
+    return " ".join(teile)
+
+
+def _zeichnung_schritte(spec_pfad: Path, lauf: int, erg: dict, neustart: bool) -> dict:
+    """Zeichnen und Zeichnung prüfen für einen bestandenen Lauf (kein Bauen)."""
+    from swki.zeichnung.zeichnen import zeichnen
+    from swki.zeichnung.zeichnung_pruefen import zeichnung_pruefen
+
+    erg = {**erg, "lauf": lauf}
+    if neustart and (abbruch := _neustart(erg, "zeichnen")):
+        return abbruch
+    try:
+        z = zeichnen(spec_pfad, lauf)
+    except SwkiFehler as e:
+        d = getattr(e, "daten", {})
+        return {**erg, "schritt": "zeichnen", "fehler": str(e), **d}
+    if neustart and (abbruch := _neustart(erg, "zeichnung_pruefen")):
+        return abbruch
+    try:
+        p = zeichnung_pruefen(spec_pfad, lauf)
+    except SwkiFehler as e:
+        return {**erg, "schritt": "zeichnung_pruefen", "fehler": str(e), **getattr(e, "daten", {})}
+    erg["zeichnung"] = {"pdf": p.get("pdf") or z.get("pdf"), "bestanden": p.get("bestanden"),
+                        "maengel": p.get("maengel", []), "nicht_geprueft": p.get("nicht_geprueft", []),
+                        "kopf": p.get("kopf"), "meldungen": list(z.get("meldungen") or []) + list(p.get("meldungen") or [])}
+    erg["zeichnungspruefer_auftrag"] = zeichnungspruefer_auftrag(spec_pfad, lauf, p)
+    return {**erg, "schritt": "fertig",
+            "naechstes": f"Zeichnungsprüfer-Agent starten, Urteil nach protokolle/{spec_pfad.stem}.lauf-{lauf}."
+                         "zeichnungspruefer.json, dann swki bericht"}
+
+
 def durchlauf(spec_pfad: Path, freigeben: bool = False, maximal: int | None = None, neustart: bool = False,
-              alles_neu: bool = False) -> dict:
+              alles_neu: bool = False, zeichnung: bool = False) -> dict:
+    """`zeichnung`: Ist der letzte Lauf bestanden (inkl. Prüfer), wird er gezeichnet und die Zeichnung geprüft, ohne zu
+    bauen (swki zeichnen verlangt das Prüfer-Urteil, ein Aufruf kann nicht bauen, prüfen und zeichnen). Sonst läuft der
+    normale Durchlauf, und `naechstes` nennt Prüfer und danach `--zeichnung`."""
+    if zeichnung:
+        from swki.pruefung.schleife import lies_laeufe
+
+        spec_pfad = spec_pfad.resolve()
+        alle = lies_laeufe(spec_pfad)
+        if alle and alle[-1]["bestanden"]:
+            return _zeichnung_schritte(spec_pfad, alle[-1]["lauf"], {"spec": spec_pfad.name}, neustart)
+        erg = durchlauf(spec_pfad, freigeben, maximal, neustart, alles_neu)
+        if erg.get("pruefer_auftrag"):
+            erg["naechstes"] = f"Prüfer-Agent starten, danach swki durchlauf {spec_pfad.name} --zeichnung"
+        return erg
     from swki.compiler.bauen import BauAbbruch, _bauen
     from swki.pruefung.befehle import pruefen, status
     from swki.spec.befehle import _freigeben, _validieren
@@ -138,5 +206,7 @@ def einrichten(subparsers) -> None:
                    help="SolidWorks vor dem Bauen und vor dem Prüfen frisch starten (Baugruppen mit Bewegungen, auch fremde)")
     p.add_argument("--alles-neu", action="store_true",
                    help="Baugruppe: auch unveränderte Eigenteile neu bauen statt aus einem früheren Lauf übernehmen")
+    p.add_argument("--zeichnung", action="store_true",
+                   help="letzten bestandenen Lauf zeichnen und die Zeichnung prüfen (ohne Bauen); sonst normaler Durchlauf")
     p.set_defaults(func=lambda a: durchlauf(Path(a.spec), a.freigeben, a.max, neustart=a.neustart,
-                                            alles_neu=a.alles_neu))
+                                            alles_neu=a.alles_neu, zeichnung=a.zeichnung))

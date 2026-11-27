@@ -197,15 +197,54 @@ def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protok
     return zeilen
 
 
+def _zeichnung_urteil_hinweise(zeichnung: dict | None) -> list[str]:
+    """Meldungen, die das Urteil des Zeichnungsprüfers ungültig machen: fehlt (ZEICHNUNGSPRUEFER_FEHLT) oder gehört zu einer
+    anderen Zeichnung (ZEICHNUNGSPRUEFER_VERALTET, SHA-256 der SLDDRW)."""
+    if not zeichnung:
+        return []
+    urteil = zeichnung.get("urteil")
+    if urteil is None:
+        return ["ZEICHNUNGSPRUEFER_FEHLT: kein Urteil des Zeichnungsprüfers – Zeichnung ungeprüft"]
+    sha = ((zeichnung.get("pruefbericht") or {}).get("ist") or {}).get("sha256_slddrw")
+    if sha and urteil.get("sha256_slddrw") != sha:
+        return ["ZEICHNUNGSPRUEFER_VERALTET: das Urteil gehört nicht zur aktuellen Zeichnung (sha256_slddrw) – "
+                "Zeichnungsprüfer neu starten"]
+    return []
+
+
+def _zeichnung_abschnitt(zeichnung: dict, hinweise: list[str]) -> list[str]:
+    pb = zeichnung.get("pruefbericht") or {}
+    urteil = zeichnung.get("urteil")
+    zeilen = ["", "## Zeichnung (letzter Lauf)", "", f"- PDF: `{pb.get('pdf') or 'fehlt'}`",
+              f"- maschinell: {'bestanden' if pb.get('bestanden') else 'nicht bestanden'}"]
+    kopf = pb.get("kopf") or {}
+    zeilen += [f"- Kopfprüfung: {m}" for m in kopf.get("meldungen", [])]
+    if pb.get("nicht_geprueft"):
+        zeilen.append(f"- nicht geprüft (ok: null): {', '.join(pb['nicht_geprueft'])}")
+    zeilen += [f"- {m.get('merkmal') or 'Zeichnung'}: {m.get('text')} ({m.get('regel')}, {m.get('pruefung')})"
+               for m in pb.get("maengel", [])]
+    zeilen += [f"- Meldung: {m}" for m in pb.get("meldungen", [])]
+    zeilen += [f"- {h}" for h in hinweise]
+    if urteil is not None:
+        zeilen.append(f"- Zeichnungsprüfer: {'bestanden' if urteil.get('bestanden') else 'Mängel'}")
+        zeilen += [f"  - {', '.join(m['knoten']) or 'Zeichnung'}: {m['beschreibung']}"
+                   + (f" ({m['regel']})" if m.get("regel") else "") for m in urteil.get("maengel", [])]
+        zeilen += [f"  - Hinweis: {h}" for h in urteil.get("hinweise", [])]
+    return zeilen
+
+
 def bericht_markdown(
     spec: dict, auftrag: str, laeufe: list[dict], empfehlung: tuple[str, str],
     letzter_bericht: dict | None, letztes_urteil: dict | None, letztes_protokoll: dict | None,
-    compiler_aenderungen: list[str], ausgabe: dict | None = None,
+    compiler_aenderungen: list[str], ausgabe: dict | None = None, zeichnung: dict | None = None,
 ) -> str:
     """`ausgabe`: nur für `art: aenderung`, das Ergebnis von `ausgabe_liste` (`None` solange kein Lauf bestanden ist, bei einem
     Fehler `{"fehler": Text}`)."""
     code, text = empfehlung
     status = "bestanden" if code == "bestanden" else f"offen ({code})"
+    zeichnung_hinweise = _zeichnung_urteil_hinweise(zeichnung)
+    if zeichnung_hinweise:
+        status += " – Zeichnung ungeprüft"
     zeilen = [
         f"# Bericht {spec['name']} (Auftrag {auftrag})",
         "",
@@ -289,6 +328,8 @@ def bericht_markdown(
         if wege:
             zeilen += ["", "## Endlagen und Sollweg (letzter Lauf)", "", "| Prüfung | Ergebnis | Befund |", "|---|---|---|"]
             zeilen += [f"| {e['id']} | {_ERGEBNIS[e['ok']]} | {'–' if e['ok'] else beschreibung(e)} |" for e in wege]
+    if zeichnung:
+        zeilen += _zeichnung_abschnitt(zeichnung, zeichnung_hinweise)
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]

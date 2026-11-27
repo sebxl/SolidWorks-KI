@@ -218,6 +218,11 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   ungeprüften, mit Meldung) – Blatt, Ansichten nach Maßbedarf, Maße aus dem Maßplan (SLDDRW, PDF, PNG im Laufordner unter
   `zeichnung/`). Die Maße kommen aus der Spec: `bezug` an Lagen entscheidet, von wo bemaßt wird. `meldungen` lesen;
   Bohrungsangaben und Toleranzen folgen in den Stufen 3–4. Fertigungszeichnungen nur auf der SolidWorks-Vollversion (Firmenrechner).
+  Prüfen (Z1.4): `swki zeichnung pruefen <spec>` liest die Zeichnung zurück und prüft sie maschinell (`kopf`, `nicht_geprueft`
+  lesen); danach ist der Agent `zeichnungspruefer` Pflicht (Prompt: `zeichnungspruefer_auftrag` aus `swki durchlauf --zeichnung`),
+  Urteil unverändert nach `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json` (Feld `sha256_slddrw` muss zur Zeichnung passen).
+  `swki durchlauf <spec> --zeichnung` zeichnet und prüft den letzten bestandenen Lauf ohne Bauen; ist noch keiner bestanden,
+  läuft der normale Durchlauf und `naechstes` nennt zuerst den Prüfer. Ohne Urteil meldet `swki bericht` `ZEICHNUNGSPRUEFER_FEHLT`.
 
 ### Modellierregeln (Feature-Baum wie vom Konstrukteur)
 Änderbarkeit zuerst, dann der Baum, wie ihn ein Konstrukteur anlegt; Standard des Nutzers (01.11.2026) in Regel 3, 6, 8:

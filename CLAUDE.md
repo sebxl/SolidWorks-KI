@@ -145,6 +145,7 @@ docs/laufzeit-audit/ergebnisse.md; Bemaßungsbezug: docs/bemassungsbezug/ergebni
   `verfahren`, `bezuege`, `toleranzen`, `behandlung`, `halbzeug`. Anforderungen: die Prüfsumme schützt sie nach Wirkung
   (ohne Feature-IDs); ISO 8015, Hülle Ⓔ nur an Passmaßen, Allgemeintoleranz ISO 2768-1 m mit Jahr (Nutzer 16.11.2026).
 - Zeichnungen für die Fertigung nur auf der SolidWorks-Vollversion (Firmenrechner); Rechner A (Student) nur Entwicklung.
+- Nach der Zeichnung: `swki zeichnung pruefen` (oder `durchlauf --zeichnung`), dann Agent `zeichnungspruefer` (Pflicht, Urteil an `sha256_slddrw` gebunden), Skill `konstruieren`.
 
 ## Schnellbau und Simulation (Stufe C1)
 - Zweites Backend der Spec ohne SolidWorks (Entscheidung `docs/entscheidungen/2026-10-25-schnelle-konstruktionsschleife.md`,

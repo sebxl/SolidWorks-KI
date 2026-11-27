@@ -8,11 +8,11 @@ from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeuf
 from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
-from swki.pruefung.bericht import bericht_markdown
+from swki.pruefung.bericht import _zeichnung_urteil_hinweise, bericht_markdown
 from swki.pruefung.bewertung import baum_kennzahl, bewerte
 from swki.pruefung.bilder import screenshots
 from swki.pruefung.messen import kontext_aus_datei, messe, oeffne
-from swki.pruefung.schleife import empfehlung, lies_laeufe, max_laeufe
+from swki.pruefung.schleife import empfehlung, lies_laeufe, lies_urteil, max_laeufe
 from swki.spec.freigabe import freigegebene_spec, pruefe_freigabe
 from swki.spec.laden import art_der_datei, lade_spec
 from swki.verbindung import verbinde
@@ -174,6 +174,9 @@ def bericht(spec_pfad: Path) -> dict:
     letzter = alle[-1]["lauf"] if alle else None
     protokoll = _lies(lauf_datei(spec_pfad, letzter, "protokoll")) if letzter else None
     erstes = _lies(lauf_datei(spec_pfad, alle[0]["lauf"], "protokoll")) if alle else None
+    zeichnung = None
+    if letzter and (zb := _lies(lauf_datei(spec_pfad, letzter, "zeichnung.pruefbericht"))) is not None:
+        zeichnung = {"pruefbericht": zb, "urteil": lies_urteil(lauf_datei(spec_pfad, letzter, "zeichnungspruefer"))}
     text = bericht_markdown(
         spec, auftrag_name(spec_pfad), alle, (stand["empfehlung"], stand["text"]),
         _lies(lauf_datei(spec_pfad, letzter, "pruefbericht")) if letzter else None,
@@ -181,10 +184,14 @@ def bericht(spec_pfad: Path) -> dict:
         protokoll,
         _compiler_aenderungen(erstes["gestartet"]) if erstes else [],
         ausgabe=_ausgabe_fuer_bericht(spec_pfad, alle) if spec.get("art") == "aenderung" else None,
+        zeichnung=zeichnung,
     )
     ziel = spec_pfad.parent / "bericht.md"
     ziel.write_text(text, encoding="utf-8")
-    return {"bericht": str(ziel), "status": stand["empfehlung"]}
+    erg = {"bericht": str(ziel), "status": stand["empfehlung"]}
+    if zeichnung:
+        erg["zeichnung"] = "ungeprueft" if _zeichnung_urteil_hinweise(zeichnung) else "geprueft"
+    return erg
 
 
 def einrichten(subparsers) -> None:
