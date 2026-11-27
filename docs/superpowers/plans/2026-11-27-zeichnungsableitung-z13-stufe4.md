@@ -262,16 +262,33 @@ Hilfsfunktionen in `test_massplan.py` neu: `_lade_ref(pfad)` liest `tests/refere
   weiter (Final Review Stufe 3, M7)
 - Modify: `swki/zeichnung/zeichnen.py` (Aufrufe, Sammelangaben, Einstellungen), `tests/zeichnung/test_zeichnen_ohne_sw.py`
 
+**Befund aus Task 4 (Spike 27.11., `docs/zeichnungsableitung/spike-z1.md` Nachtrag Stufe 4), verbindlich:**
+- An Modellmaßen gesetzte Toleranz und Textzusätze gehen beim Wiederöffnen der SLDDRW verloren. Das betrifft auch die Stufe-3-Zusätze. Sie dürfen nur an **Zeichnungsmaßen** stehen.
+- Abmaße an Zeichnungsmaßen werden mit `IDimensionTolerance.SetValues(min, max)` gesetzt, `SetValues2` scheitert dort. Passung: `Type = 7`, `SetFitValues(bohrung, welle)`, `FitDisplayStyle` bleibt 3.
+- Ⓔ an Maßen immer als Symbol `<MOD-EP>`. Das Unicode-Zeichen lässt den ganzen Maßtext verschwinden. In Hinweisen (Bohrungsangabe) live prüfen und, wenn Unicode dort ebenfalls scheitert, auch dort `<MOD-EP>` verwenden.
+- Rauheit: Der Text kommt an den dritten Textparameter (ProdMethod) von `InsertSurfaceFinishSymbol3`.
+- Jede Anmerkung (Rauheit, Rahmen, Bezug, freie Hinweise) bekommt eine Lage über `IAnnotation.SetPosition2`.
+- Parameterlose Methoden immer über `_ruf`.
+
 **Interfaces:**
 - Consumes: Tasks 1–4.
-- Produces:
-  - `toleranzen_setzen(views, plan) -> list[str]`, `rauheit_setzen(drw, views, plan, ...) -> list[str]`, `bezuege_setzen(...)`,
-    `form_lage_setzen(...)`, `sammelangaben_setzen(drw, zeilen, format_) -> list[str]` – je Meldungen.
-  - Reihenfolge in `zeichnen`: nach den Bohrungsangaben, vor `_lesbar_anlegen`.
-  - Die Anmerkungen (Rauheit, Rahmen, Bezüge) stellen sich der PDF-Prüfung wie die Hinweise. Bei einem Befund an ihnen werden sie versetzt, nicht die Maßreihen.
+- Produces in `anforderungen_setzen.py`:
+  - `dauerhaft_machen(drw, mu, views, plan) -> tuple[dict[str, str], list[str]]`. Jedes Plan-Maß (quelle `modell`) mit `toleranz`, `praefix` oder `suffix` wird ein Zeichnungsmaß:
+    - Bezugspunkte des angezeigten Modellmaßes über `_bezuege(dd)` (Blatt-mm).
+    - Je Punkt die sichtbare gerade Kante quer zur Messrichtung durch den Punkt (Toleranz 0,1 mm) oder die Kreiskante mit Mitte im Punkt (`_kanten`).
+    - Beide wählen, `AddDimension2` an der Lage der Maßzahl. Ist der neue Wert innerhalb 0,005 mm gleich dem alten, wird das Modellmaß gelöscht (`_loesche`). Sonst wird das neue gelöscht, das Modellmaß bleibt, und es gibt die Meldung `MASS_NICHT_DAUERHAFT: <name> – <grund>`.
+    - Rückgabe: alter Name → neuer Name, damit Mittellinien, Reihen und die Übergabe den neuen Namen kennen.
+  - `toleranz_setzen(dd, toleranz: Toleranz) -> bool` (Passung bzw. `SetValues`, Ⓔ als Suffix `<MOD-EP>` vor einem vorhandenen Suffix). Für Drehteil-Maße (quelle `neu`) direkt, für Modellmaße nach `dauerhaft_machen`.
+  - `zusaetze_setzen` ersetzt `zeichnen._zusaetze_setzen` und arbeitet auf den Zeichnungsmaßen.
+  - `rauheit_setzen(drw, mu, views, plan, ...) -> list[str]`, `bezuege_setzen(...)`, `form_lage_setzen(...)`: Kante des Merkmals bzw. des Ankers in der Ansicht des Eintrags (`achse`/`modus` aus Task 2) wählen, einfügen, Lage setzen.
+  - `sammelangaben_setzen(drw, zeilen, format_) -> list[str]`: ein Hinweis mit fester Lage im reservierten Band über dem Schriftfeld (Task 3).
+  - Fehlt eine Kante oder ist ein Einfügen gescheitert, gibt es eine Meldung (`RAUHEIT_NICHT_GESETZT`, `FORM_LAGE_NICHT_GESETZT`, `BEZUG_NICHT_GESETZT`), nie stilles Weglassen.
+  - Reihenfolge in `zeichnen`: `dauerhaft_machen` nach Mittellinien, Einzelheit und Bohrungsangaben, also nach allen Schritten, die nach `kurzname` suchen (grep `kurzname(`), und vor `_lesbar_anlegen`, weil die Toleranz die Zahl verbreitert.
+  - Die Anmerkungen stellen sich der PDF-Prüfung wie die Hinweise. Hat eine Anmerkung einen Befund, wird sie versetzt, nicht die Maßreihen.
+  - `_ruf`-Werte von Zeichnungsmaßen: `GetSystemValue3` liefert None, dann `GetSystemValue2("")`.
 
-- [ ] **Step 1:** Fake-COM-Tests für die Meldungswege (kein passendes Maß, keine Kante für Rauheit/Bezug, Rahmen nicht erzeugt).
-- [ ] **Step 2:** Umsetzen; live an beiden `_z`-Referenzen (Scratch-Aufträge), PDFs als Ganzes rendern und ansehen.
+- [ ] **Step 1:** Fake-COM-Tests für die Meldungswege: Punkt ohne Kante, neuer Wert weicht ab, Rauheitskante fehlt, Rahmen nicht erzeugt. Dazu Test für `toleranz_setzen` (Passung → Typ 7, H7; Abmaße → `SetValues`; Hülle → Suffix `<MOD-EP>`).
+- [ ] **Step 2:** Umsetzen. Live an beiden `_z`-Referenzen (Scratch-Aufträge) **und** an der alten Spannplatte (Stufe-3-Zusätze). Danach die SLDDRW schließen und wieder öffnen; Toleranzen und Zusätze müssen noch da sein. Die PDFs als Ganzes rendern und ansehen.
 - [ ] **Step 3:** Tests grün, Commit.
 
 ### Task 6: Live-Test, PDFs, Ergebnisse
@@ -282,7 +299,8 @@ Hilfsfunktionen in `test_massplan.py` neu: `_lade_ref(pfad)` liest `tests/refere
   `docs/zeichnungsableitung/ergebnisse.md`
 
 - [ ] **Step 1:** Live-Test erweitern. Im PDF-Text:
-  - Spannplatte: „2 × Ø8 H7 Ⓔ – 15 tief“, „Ra 0,8“, „Ra 1,6“, „0,02“, „0,05“, „±0,02“.
+  - Spannplatte: „2 × Ø8 H7“, „– 15 tief“, „Ra 0,8“, „Ra 1,6“, „0,02“, „0,05“, „±0,02“, „4 × 30,00 (= 120)“.
+  - Nach dem Wiederöffnen der SLDDRW (eigener Schritt im Test): Toleranzen und Zusätze am Zeichnungsmaß unverändert (Stufe-3-Befund vom 27.11.).
   - Buchse: „H7“, „k6“, „Ⓔ“, „einsatzgehärtet und angelassen (60 ± 2) HRC“.
   - Beide: die vier immer geltenden Sammelzeilen.
   - Keine Meldung `LESBARKEIT`/`ANGABE_*`/`FORM_LAGE_NICHT_GESETZT`; Ausnahme `FUNKTION_UNBESTAETIGT`.
