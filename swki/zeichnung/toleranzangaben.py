@@ -3,7 +3,7 @@ Halbzeug, Sammelangaben), ohne SolidWorks."""
 
 from dataclasses import dataclass
 
-from swki.spec.ausdruck import auswerten
+from swki.spec.ausdruck import AusdruckFehler, auswerten, namen
 from swki.zeichnung.angaben import zahl
 
 SAMMEL_RAUHEIT = "Ra 3,2"
@@ -55,6 +55,30 @@ def toleranz_aus(passung: str | None, toleranz: dict | None, huelle: bool,
         return Toleranz(passung, None, None, bool(huelle))
     return Toleranz(None, auswerten(toleranz["oben"], parameter or {}), auswerten(toleranz["unten"], parameter or {}),
                      bool(huelle))
+
+
+def parameter_toleranzen(spec: dict) -> dict[str, Toleranz]:
+    """Toleranz je Parameter aus `toleranzen` der Spec (Reihenfolge wie in der Spec). Eine Passung ist ein Passmaß und
+    trägt Ⓔ (Nutzer 16.11.2026), reine Abmaße nicht."""
+    parameter = spec.get("parameter", {})
+    aus = {}
+    for name, t in (spec.get("toleranzen") or {}).items():
+        passung = t.get("passung")
+        toleranz = toleranz_aus(passung, None if passung else t, passung is not None, parameter)
+        if toleranz is not None:
+            aus[name] = toleranz
+    return aus
+
+
+def treibender_parameter(roh, toleranzen: dict[str, Toleranz]) -> str | None:
+    """Erster Parameter aus `toleranzen`, dessen Name im Ausdruck `roh` ("=A/2") vorkommt; sonst None."""
+    if not isinstance(roh, str) or not roh.startswith("="):
+        return None
+    try:
+        vorhanden = namen(roh)
+    except AusdruckFehler:
+        return None
+    return next((p for p in toleranzen if p in vorhanden), None)
 
 
 def _vorzeichen(x: float) -> str:

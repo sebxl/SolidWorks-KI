@@ -98,8 +98,27 @@ def _nenn(groesse: str) -> str:
     return zahl(float(m.group(1))) if m else groesse
 
 
+def bohrungstoleranz(feature: dict, spec: dict):
+    """Toleranz des Ø einer Bohrung/Normbohrung: eigene Anforderung des Features (Funktion, Passung, Abmaße), sonst die
+    Toleranz eines Parameters aus `toleranzen`, der im Ausdruck des Ø steht (nur `bohrung`); sonst None."""
+    from swki.spec.funktionen import aufloesen
+    from swki.zeichnung.toleranzangaben import parameter_toleranzen, toleranz_aus, treibender_parameter
+
+    param = spec.get("parameter", {})
+    a = aufloesen(feature)
+    eigene = toleranz_aus(a["passung"], a["toleranz"], a["huelle"], param)
+    if eigene is not None or feature.get("typ") != "bohrung":
+        return eigene
+    tol = parameter_toleranzen(spec)
+    p = treibender_parameter(feature.get("durchmesser"), tol)
+    return tol[p] if p else None
+
+
 def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list[str]]:
-    """(Text mit Zeilenumbrüchen, Meldungen) der Bohrungsangabe."""
+    """(Text mit Zeilenumbrüchen, Meldungen) der Bohrungsangabe; die Toleranz des Ø steht hinter dem Ø
+    („2 × Ø8 H7 Ⓔ – 15 tief“, Stufe 4)."""
+    from swki.zeichnung.toleranzangaben import toleranztext
+
     param = spec.get("parameter", {})
     meld: list[str] = []
     fid, art, groesse = feature["id"], feature.get("art"), str(feature.get("groesse", ""))
@@ -133,6 +152,9 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
     else:
         tief = ""
         meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Tiefe fehlt (weder durch noch tiefe/gewindetiefe)")
+    if not (feature["typ"] == "normbohrung" and art == "gewinde") and kopf.startswith("Ø"):
+        if (toleranz := bohrungstoleranz(feature, spec)) is not None:
+            kopf += " " + toleranztext(toleranz)
     kopfzeile = (f"{bild.anzahl} × " if bild.anzahl > 1 else "") + kopf + (f" – {tief}" if tief else "")
     fase = feature.get("fase")
     if fase == "nenn" and art == "gewinde":

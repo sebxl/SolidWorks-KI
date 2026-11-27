@@ -821,7 +821,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         mu = mathutil(app)
         views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten)
         meldungen += nicht_erzeugt
-        plan = massplan(spec, json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8")))
+        protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
+        plan = massplan(spec, protokoll)
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         buchstabe, bereich = ("B" if schnitt else "A"), {}
         gruppe = _gruppen(spec)
@@ -833,7 +834,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                                                                   mitten, buchstabe, bereich, meldungen),
                       {spec["features"][0]["id"]} if spec.get("features") else set(), gruppe)
         meldungen += bem.meldungen
-        meldungen += massplan_meldungen(spec)
+        meldungen += massplan_meldungen(spec, protokoll)
         for rolle in [r for r in list(views) if r not in ("haupt", basis) and not bem.je_ansicht.get(r)]:
             if not _loesche_ansicht(drw, views.pop(rolle)):  # Ansicht ohne eigenes Maß entfällt (Design §6.1)
                 meldungen.append(f"ANSICHT_NICHT_GELOESCHT: {rolle} ohne Maß blieb auf dem Blatt")
