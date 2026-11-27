@@ -84,6 +84,9 @@ def zeichnungspruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
     if (ordner / "aufgabe.md").exists():
         eingabe.append(ordner / "aufgabe.md")
     sha = (bericht.get("ist") or {}).get("sha256_slddrw")
+    if not sha:
+        raise SwkiFehler("Zeichnungs-Prüfbericht ohne ist.sha256_slddrw – das Urteil ließe sich nicht an die Zeichnung "
+                         "binden; swki zeichnung pruefen neu ausführen")
     teile = [f"Prüfe die Zeichnung von Lauf {lauf} von {spec_pfad.name}.",
              f"Eingabe des Nutzers: {', '.join(map(str, eingabe)) or ordner / 'eingabe'}.",
              f"Freigegebene Spezifikation(en): {kopien}.",
@@ -92,8 +95,7 @@ def zeichnungspruefer_auftrag(spec_pfad: Path, lauf: int, bericht: dict) -> str:
     if bilder:
         teile.append(f"Zeichnung (PDF, PNG): {', '.join(bilder)}.")
     teile.append(f"Regelkatalog: {PROJEKT / 'swki' / 'wissen' / 'zeichnungsregeln.yaml'}.")
-    if sha:
-        teile.append(f"Gib im Urteil das Feld sha256_slddrw mit genau diesem Wert zurück: {sha}.")
+    teile.append(f"Gib im Urteil das Feld sha256_slddrw mit genau diesem Wert zurück: {sha}.")
     teile.append("Lies alle genannten Dateien in deiner ersten Antwort parallel. Antworte nur mit dem JSON-Urteil.")
     return " ".join(teile)
 
@@ -120,7 +122,10 @@ def _zeichnung_schritte(spec_pfad: Path, lauf: int, erg: dict, neustart: bool) -
     erg["zeichnung"] = {"pdf": p.get("pdf") or z.get("pdf"), "bestanden": p.get("bestanden"),
                         "maengel": p.get("maengel", []), "nicht_geprueft": p.get("nicht_geprueft", []),
                         "kopf": p.get("kopf"), "meldungen": list(z.get("meldungen") or []) + list(p.get("meldungen") or [])}
-    erg["zeichnungspruefer_auftrag"] = zeichnungspruefer_auftrag(spec_pfad, lauf, p)
+    try:
+        erg["zeichnungspruefer_auftrag"] = zeichnungspruefer_auftrag(spec_pfad, lauf, p)
+    except SwkiFehler as e:
+        return {**erg, "schritt": "zeichnung_pruefen", "fehler": str(e)}
     return {**erg, "schritt": "fertig",
             "naechstes": f"Zeichnungsprüfer-Agent starten, Urteil nach protokolle/{spec_pfad.stem}.lauf-{lauf}."
                          "zeichnungspruefer.json, dann swki bericht"}

@@ -222,7 +222,8 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   lesen); danach ist der Agent `zeichnungspruefer` Pflicht (Prompt: `zeichnungspruefer_auftrag` aus `swki durchlauf --zeichnung`),
   Urteil unverändert nach `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json` (Feld `sha256_slddrw` muss zur Zeichnung passen).
   `swki durchlauf <spec> --zeichnung` zeichnet und prüft den letzten bestandenen Lauf ohne Bauen; ist noch keiner bestanden,
-  läuft der normale Durchlauf und `naechstes` nennt zuerst den Prüfer. Ohne Urteil meldet `swki bericht` `ZEICHNUNGSPRUEFER_FEHLT`.
+  läuft der normale Durchlauf und `naechstes` nennt zuerst den Prüfer. Ohne Urteil meldet `swki bericht` `ZEICHNUNGSPRUEFER_FEHLT`, bei einem Urteil zu einer anderen Zeichnung
+  `ZEICHNUNGSPRUEFER_VERALTET`, bei einem Prüfbericht zu einer anderen SLDDRW `ZEICHNUNG_PRUEFBERICHT_VERALTET` (jeweils "Zeichnung ungeprüft").
 
 ### Modellierregeln (Feature-Baum wie vom Konstrukteur)
 Änderbarkeit zuerst, dann der Baum, wie ihn ein Konstrukteur anlegt; Standard des Nutzers (01.11.2026) in Regel 3, 6, 8:

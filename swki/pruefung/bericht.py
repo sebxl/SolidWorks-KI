@@ -197,19 +197,32 @@ def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protok
     return zeilen
 
 
-def _zeichnung_urteil_hinweise(zeichnung: dict | None) -> list[str]:
+def zeichnung_urteil_hinweise(zeichnung: dict | None) -> list[str]:
     """Meldungen, die das Urteil des Zeichnungsprüfers ungültig machen: fehlt (ZEICHNUNGSPRUEFER_FEHLT) oder gehört zu einer
     anderen Zeichnung (ZEICHNUNGSPRUEFER_VERALTET, SHA-256 der SLDDRW)."""
     if not zeichnung:
         return []
+    if zeichnung.get("pruefbericht_veraltet"):
+        return ["ZEICHNUNG_PRUEFBERICHT_VERALTET: der Zeichnungs-Prüfbericht gehört nicht zur SLDDRW auf der Platte – "
+                "swki zeichnung pruefen neu ausführen"]
     urteil = zeichnung.get("urteil")
     if urteil is None:
         return ["ZEICHNUNGSPRUEFER_FEHLT: kein Urteil des Zeichnungsprüfers – Zeichnung ungeprüft"]
     sha = ((zeichnung.get("pruefbericht") or {}).get("ist") or {}).get("sha256_slddrw")
-    if sha and urteil.get("sha256_slddrw") != sha:
+    if not sha or urteil.get("sha256_slddrw") != sha:   # ohne SHA im Bericht ist keine Bindung möglich
         return ["ZEICHNUNGSPRUEFER_VERALTET: das Urteil gehört nicht zur aktuellen Zeichnung (sha256_slddrw) – "
                 "Zeichnungsprüfer neu starten"]
     return []
+
+
+def zeichnung_stufe(zeichnung: dict | None) -> str:
+    """geprueft | maengel | ungeprueft. Ungeprüft: Urteil fehlt oder ist veraltet, oder der Prüfbericht ist veraltet.
+    Mängel: Prüfbericht oder Urteil nicht bestanden (auch wenn der Prüfer „bestanden“ sagt, die Maschine aber nicht)."""
+    if zeichnung_urteil_hinweise(zeichnung):
+        return "ungeprueft"
+    if not (zeichnung["pruefbericht"] or {}).get("bestanden") or not zeichnung["urteil"].get("bestanden"):
+        return "maengel"
+    return "geprueft"
 
 
 def _zeichnung_abschnitt(zeichnung: dict, hinweise: list[str]) -> list[str]:
@@ -229,7 +242,11 @@ def _zeichnung_abschnitt(zeichnung: dict, hinweise: list[str]) -> list[str]:
         zeilen.append(f"- Zeichnungsprüfer: {'bestanden' if urteil.get('bestanden') else 'Mängel'}")
         zeilen += [f"  - {', '.join(m['knoten']) or 'Zeichnung'}: {m['beschreibung']}"
                    + (f" ({m['regel']})" if m.get("regel") else "") for m in urteil.get("maengel", [])]
-        zeilen += [f"  - Hinweis: {h}" for h in urteil.get("hinweise", [])]
+        hinweise_urteil = urteil.get("hinweise", [])
+        if isinstance(hinweise_urteil, list):
+            zeilen += [f"  - Hinweis: {h}" for h in hinweise_urteil]
+        else:
+            zeilen.append("  - Das Feld hinweise des Urteils ist keine Liste und wird ignoriert")
     return zeilen
 
 
@@ -242,9 +259,11 @@ def bericht_markdown(
     Fehler `{"fehler": Text}`)."""
     code, text = empfehlung
     status = "bestanden" if code == "bestanden" else f"offen ({code})"
-    zeichnung_hinweise = _zeichnung_urteil_hinweise(zeichnung)
-    if zeichnung_hinweise:
-        status += " – Zeichnung ungeprüft"
+    zeichnung_hinweise = zeichnung_urteil_hinweise(zeichnung)
+    if zeichnung:
+        stufe = zeichnung_stufe(zeichnung)
+        if stufe != "geprueft":
+            status += " – Zeichnung ungeprüft" if stufe == "ungeprueft" else " – Zeichnung mit Mängeln"
     zeilen = [
         f"# Bericht {spec['name']} (Auftrag {auftrag})",
         "",

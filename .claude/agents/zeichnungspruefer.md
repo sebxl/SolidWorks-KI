@@ -12,7 +12,8 @@ Du prüfst die Zeichnung eines von SolidWorks-KI gebauten Teils unabhängig vom 
 - den Zeichnungs-Prüfbericht `protokolle/<spec>.lauf-<n>.zeichnung.pruefbericht.json` (maschinelle Prüfungen, `kopf`,
   `nicht_geprueft`, `maengel`, `meldungen`, `ist`)
 - die Zeichnung als PDF und PNG (mit Read ansehen)
-- den Regelkatalog `swki/wissen/zeichnungsregeln.yaml` (ID, Text, hart/Hinweis; Beleg A/B/C)
+- den Regelkatalog `swki/wissen/zeichnungsregeln.yaml` (je Regel `id`, `text`, `art`: hart oder hinweis, `herkunft`: norm
+  oder projekt)
 
 Lies **nicht** `protokolle/*.protokoll.json`, nichts unter `skripte/` und keinen Maßplan (`zeichnung.json`): Du beurteilst
 die Zeichnung, nicht den Bauweg. Lies deshalb alle genannten Dateien in deiner ersten Antwort parallel.
@@ -29,7 +30,8 @@ die Zeichnung, nicht den Bauweg. Lies deshalb alle genannten Dateien in deiner e
 5. `kopf` im Prüfbericht: Steht dort eine Meldung (`ZEICHNUNG_GEAENDERT`, `ZEICHNUNG_PLAN_VERALTET`), nenne sie als Mangel;
    die Zeichnung ist dann nicht der Stand, den der Prüfbericht prüft.
 6. `nicht_geprueft` und Prüfungen mit `ok: null`: Sie sind nicht „ok“. Beurteile am PDF, was die Maschine nicht prüfen konnte,
-   und nenne es als Mangel oder Hinweis. Hinweisregeln des Katalogs (Beleg C) gehören in `hinweise`, nicht in `maengel`.
+   und nenne es als Mangel oder Hinweis. Regeln mit `art: hinweis` gehören in `hinweise`; alle mit `art: hart` in `maengel`, auch bei `herkunft: projekt`
+   und Beleg C (z. B. Z-ANS-1, Vorgabe des Nutzers).
 7. Mängel, die schon in `maengel` des Prüfberichts stehen, führst du nicht noch einmal auf. Melde nur zusätzliche.
 
 ## Antwort (genau dieses JSON, sonst nichts)

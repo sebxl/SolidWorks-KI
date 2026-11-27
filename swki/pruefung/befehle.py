@@ -1,5 +1,6 @@
 """Befehle "swki pruefen", "swki status" und "swki bericht"."""
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -8,7 +9,7 @@ from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner, laeuf
 from swki.cli import SwkiFehler, ganzzahl_ab
 from swki.compiler import sw
 from swki.konfig import PROJEKT, lade_rechner, lade_standard
-from swki.pruefung.bericht import _zeichnung_urteil_hinweise, bericht_markdown
+from swki.pruefung.bericht import bericht_markdown, zeichnung_stufe
 from swki.pruefung.bewertung import baum_kennzahl, bewerte
 from swki.pruefung.bilder import screenshots
 from swki.pruefung.messen import kontext_aus_datei, messe, oeffne
@@ -166,6 +167,16 @@ def _ausgabe_fuer_bericht(spec_pfad: Path, alle: list[dict]) -> dict | None:
         return {"fehler": str(e)}
 
 
+def pruefbericht_veraltet(pruefbericht: dict) -> bool:
+    """Gehört der Zeichnungs-Prüfbericht noch zur SLDDRW auf der Platte? Abweichender SHA-256, fehlende Datei oder fehlender
+    SHA im Bericht gelten als veraltet."""
+    sha = (pruefbericht.get("ist") or {}).get("sha256_slddrw")
+    pfad = Path(pruefbericht["zeichnung"]) if pruefbericht.get("zeichnung") else None
+    if not sha or pfad is None or not pfad.is_file():
+        return True
+    return hashlib.sha256(pfad.read_bytes()).hexdigest() != sha
+
+
 def bericht(spec_pfad: Path) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec_beliebig(spec_pfad)
@@ -176,7 +187,8 @@ def bericht(spec_pfad: Path) -> dict:
     erstes = _lies(lauf_datei(spec_pfad, alle[0]["lauf"], "protokoll")) if alle else None
     zeichnung = None
     if letzter and (zb := _lies(lauf_datei(spec_pfad, letzter, "zeichnung.pruefbericht"))) is not None:
-        zeichnung = {"pruefbericht": zb, "urteil": lies_urteil(lauf_datei(spec_pfad, letzter, "zeichnungspruefer"))}
+        zeichnung = {"pruefbericht": zb, "urteil": lies_urteil(lauf_datei(spec_pfad, letzter, "zeichnungspruefer")),
+                     "pruefbericht_veraltet": pruefbericht_veraltet(zb)}
     text = bericht_markdown(
         spec, auftrag_name(spec_pfad), alle, (stand["empfehlung"], stand["text"]),
         _lies(lauf_datei(spec_pfad, letzter, "pruefbericht")) if letzter else None,
@@ -190,7 +202,7 @@ def bericht(spec_pfad: Path) -> dict:
     ziel.write_text(text, encoding="utf-8")
     erg = {"bericht": str(ziel), "status": stand["empfehlung"]}
     if zeichnung:
-        erg["zeichnung"] = "ungeprueft" if _zeichnung_urteil_hinweise(zeichnung) else "geprueft"
+        erg["zeichnung"] = zeichnung_stufe(zeichnung)
     return erg
 
 

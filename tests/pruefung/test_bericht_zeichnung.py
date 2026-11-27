@@ -1,6 +1,6 @@
 """Abschnitt „Zeichnung“ im Bericht (Z1.4 Task 5): Prüfbericht, Prüfer-Urteil, ZEICHNUNGSPRUEFER_FEHLT."""
 
-from swki.pruefung.bericht import bericht_markdown
+from swki.pruefung.bericht import bericht_markdown, zeichnung_stufe, zeichnung_urteil_hinweise
 
 LAEUFE = [{"lauf": 2, "bau": "ok", "code_maengel": 0, "pruefer": "bestanden", "offen": 0, "dauer_s": 9.4}]
 PRUEFBERICHT = {"bestanden": True, "maengel": [], "pdf": "C:/l/zeichnung/a.pdf", "lauf": 2,
@@ -50,3 +50,86 @@ def test_kopfmeldungen_und_nicht_geprueft_stehen_im_bericht():
     pb = {**PRUEFBERICHT, "bestanden": False, "kopf": {"ok": False, "meldungen": ["ZEICHNUNG_GEAENDERT: Handänderung"]}}
     md = _md({"pruefbericht": pb, "urteil": {"bestanden": True, "maengel": [], "sha256_slddrw": "abc"}})
     assert "ZEICHNUNG_GEAENDERT" in md and "nicht geprüft (ok: null): lesbarkeit" in md
+
+
+def _statuszeile(zeichnung):
+    return _md(zeichnung).split(chr(10))[2]
+
+
+def test_stufen_geprueft_maengel_ungeprueft():
+    gut = {"bestanden": True, "maengel": [], "sha256_slddrw": "abc"}
+    assert zeichnung_stufe({"pruefbericht": PRUEFBERICHT, "urteil": gut}) == "geprueft"
+    z = _statuszeile({"pruefbericht": PRUEFBERICHT, "urteil": gut})
+    assert "ungeprüft" not in z and "Mängeln" not in z
+    # Prüfer sagt bestanden, Maschine nicht
+    pb = {**PRUEFBERICHT, "bestanden": False}
+    assert zeichnung_stufe({"pruefbericht": pb, "urteil": gut}) == "maengel"
+    assert "Zeichnung mit Mängeln" in _statuszeile({"pruefbericht": pb, "urteil": gut})
+    # Maschine ok, Prüfer nicht
+    schlecht = {"bestanden": False, "maengel": [{"knoten": [], "beschreibung": "x"}], "sha256_slddrw": "abc"}
+    assert zeichnung_stufe({"pruefbericht": PRUEFBERICHT, "urteil": schlecht}) == "maengel"
+    assert zeichnung_stufe({"pruefbericht": PRUEFBERICHT, "urteil": None}) == "ungeprueft"
+    # ungeprüft schlägt Mängel
+    assert zeichnung_stufe({"pruefbericht": pb, "urteil": None}) == "ungeprueft"
+
+
+def test_pruefbericht_veraltet_macht_alles_ungeprueft():
+    gut = {"bestanden": True, "maengel": [], "sha256_slddrw": "abc"}
+    z = {"pruefbericht": PRUEFBERICHT, "urteil": gut, "pruefbericht_veraltet": True}
+    assert zeichnung_stufe(z) == "ungeprueft"
+    assert "ZEICHNUNG_PRUEFBERICHT_VERALTET" in _md(z) and "Zeichnung ungeprüft" in _statuszeile(z)
+
+
+def test_fehlender_sha_im_pruefbericht_gilt_als_veraltet():
+    pb = {k: v for k, v in PRUEFBERICHT.items() if k != "ist"}
+    hinweise = zeichnung_urteil_hinweise({"pruefbericht": pb, "urteil": {"bestanden": True, "maengel": [],
+                                                                         "sha256_slddrw": "abc"}})
+    assert any("ZEICHNUNGSPRUEFER_VERALTET" in h for h in hinweise)
+
+
+def test_hinweise_keine_liste_wird_gemeldet():
+    urteil = {"bestanden": True, "maengel": [], "sha256_slddrw": "abc", "hinweise": "Text statt Liste"}
+    md = _md({"pruefbericht": PRUEFBERICHT, "urteil": urteil})
+    assert "hinweise" in md and "keine Liste" in md
+
+
+def test_beispiel_json_der_agent_datei_ist_ein_gueltiges_urteil(tmp_path):
+    import json
+    from pathlib import Path
+
+    from swki.pruefung.schleife import lies_urteil
+
+    agent = (Path(__file__).resolve().parents[2] / ".claude" / "agents" / "zeichnungspruefer.md").read_text(encoding="utf-8")
+    beispiele = [z.strip() for z in agent.splitlines() if z.startswith("    {")]
+    assert len(beispiele) == 2
+    for i, b in enumerate(beispiele):
+        datei = tmp_path / f"u{i}.json"
+        datei.write_text(b, encoding="utf-8")
+        assert lies_urteil(datei) == json.loads(b)
+
+
+def test_befehl_bericht_veraltet_wenn_slddrw_anders(tmp_path):
+    import hashlib
+
+    from swki.pruefung.befehle import pruefbericht_veraltet
+
+    drw = tmp_path / "a.slddrw"
+    drw.write_bytes(b"inhalt")
+    sha = hashlib.sha256(b"inhalt").hexdigest()
+    pb = {"zeichnung": str(drw), "ist": {"sha256_slddrw": sha}}
+    assert pruefbericht_veraltet(pb) is False
+    drw.write_bytes(b"anders")
+    assert pruefbericht_veraltet(pb) is True
+    drw.unlink()
+    assert pruefbericht_veraltet(pb) is True
+    assert pruefbericht_veraltet({"zeichnung": str(drw)}) is True
+
+
+def test_auftrag_ohne_sha_ist_ein_fehler(tmp_path):
+    import pytest
+
+    from swki.cli import SwkiFehler
+    from swki.durchlauf import zeichnungspruefer_auftrag
+
+    with pytest.raises(SwkiFehler):
+        zeichnungspruefer_auftrag(tmp_path / "a.yaml", 1, {"pdf": "x.pdf", "ist": {}})
