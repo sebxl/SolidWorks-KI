@@ -9,11 +9,14 @@ aus dem PDF (pymupdf), nicht die API-Rückgabe.
 Koordinaten der Befunde in Blatt-mm, Ursprung links unten (wie `IAnnotation.SetPosition2`).
 """
 
+import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 PT_MM = 25.4 / 72
 KERN = 0.22  # Anteil der Texthöhe, um den das Rechteck oben/unten verkleinert wird (Abstand zur eigenen Maßlinie)
+GLYPHE_MM = 0.5  # kürzer gezeichnete Striche in einem Text sind Teil eines Symbols (Hüllkreis Ⓔ)
 
 
 @dataclass(frozen=True)
@@ -100,9 +103,21 @@ def _zellteiler(a, b, r) -> bool:
             and min(a[1], b[1]) <= r[1] + 0.3 * h and max(a[1], b[1]) >= r[3] - 0.3 * h)
 
 
+def _huelle(wort: str) -> bool:
+    """Text mit dem Hüllsymbol `<MOD-EP>`: pymupdf liest es als einzelnes „E“ (Live 27.11.: „32,00 k6 E“)."""
+    return re.search(r"(^|\s)E(\s|$)", wort) is not None
+
+
+def _kreisstrich(a, b, r) -> bool:
+    """Stück des Kreises um das E (Live 27.11.: Kreis aus 0,25 mm langen Strichen) innerhalb des Textrechtecks."""
+    return (math.dist(a, b) < GLYPHE_MM
+            and all(r[0] - 0.3 <= p[0] <= r[2] + 0.3 and r[1] - 0.3 <= p[1] <= r[3] + 0.3 for p in (a, b)))
+
+
 def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int = 0,
                rahmen_texte: tuple[str, ...] = ()) -> list[Befund]:
-    """`rahmen_texte`: Texte von Toleranzrahmen; deren eigene Zelltrennlinien zählen nicht (`_zellteiler`)."""
+    """`rahmen_texte`: Texte von Toleranzrahmen; deren eigene Zelltrennlinien zählen nicht (`_zellteiler`). Ebenso
+    zählen die kurzen Striche des Hüllkreises in Texten mit Ⓔ nicht (`_kreisstrich`)."""
     import pymupdf
 
     ausschluss_mm = ausschluss_mm or []
@@ -151,7 +166,8 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
             if _ueberlappt(kerne[i], kerne[j]):  # Kern gegen Kern: Zeilenabstand des Textrahmens zählt nicht
                 befunde.append(Befund("text_ueber_text", wort, r, texte[j][0]))
         if achsparallel and any(_schneidet(a, b, kerne[i]) for a, b in linien
-                                if not (wort in rahmen_texte and _zellteiler(a, b, r))):
+                                if not (wort in rahmen_texte and _zellteiler(a, b, r))
+                                and not (_huelle(wort) and _kreisstrich(a, b, r))):
             befunde.append(Befund("linie_durch_text", wort, r))
         # schräge Schrift an ihrer Hinweislinie (R4, Ø6; Nutzer 18.11.2026: lag auf Kanten): gedrehter Kern, Linien
         # parallel zur Schrift (die eigene Hinweislinie) zählen nicht

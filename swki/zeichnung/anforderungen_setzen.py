@@ -297,25 +297,33 @@ def dauerhaft_machen(drw, mu, views: dict, plan: list[Mass]) -> tuple[dict[str, 
 def toleranz_setzen(dd, toleranz: Toleranz | None) -> bool:
     """Toleranz an ein Zeichnungsmaß: Passung als Typ 7 (`SetFitValues`, Bohrung groß, Welle klein geschrieben),
     symmetrische Abmaße als Typ 4, sonst Typ 2 mit `SetValues(unten, oben)` (m); Hülle als Suffix `<MOD-EP>` vor einem
-    vorhandenen Suffix. Wahr, wenn alles gesetzt ist."""
+    vorhandenen Suffix. Wahr, wenn alles gesetzt ist – geprüft nach Wirkung (Live 27.11.: `SetFitValues` meldete am
+    Drehteil-Ø False, „32,00 k6 Ⓔ“ stand trotzdem im PDF)."""
     if toleranz is None:
         return True
     tol = _ruf(dd.GetDimension2(0), "Tolerance")
     if toleranz.passung is not None:
         p = toleranz.passung
         tol.Type = TOL_PASSUNG
-        ok = bool(tol.SetFitValues(p, "") if p[:1].isupper() else tol.SetFitValues("", p))
+        if p[:1].isupper():
+            tol.SetFitValues(p, "")
+        else:
+            tol.SetFitValues("", p)
         tol.FitDisplayStyle = PASSUNG_EINZEILIG
+        ok = _ruf(tol, "Type") == TOL_PASSUNG and p in (_ruf(tol, "GetHoleFitValue"), _ruf(tol, "GetShaftFitValue"))
     elif toleranz.oben is not None and toleranz.unten is not None:
         symmetrisch = abs(toleranz.oben + toleranz.unten) < 1e-9
         tol.Type = TOL_SYMMETRISCH if symmetrisch else TOL_BILAT
-        ok = bool(tol.SetValues(toleranz.unten / 1000, toleranz.oben / 1000))
+        tol.SetValues(toleranz.unten / 1000, toleranz.oben / 1000)
+        ok = (abs(_ruf(tol, "GetMinValue") * 1000 - toleranz.unten) < 1e-6
+              and abs(_ruf(tol, "GetMaxValue") * 1000 - toleranz.oben) < 1e-6)
     else:
         ok = False
     if toleranz.huelle:
         alt = dd.GetText(SUFFIX_TEXT) or ""
         if HUELLE not in alt:
-            ok = bool(dd.SetText(SUFFIX_TEXT, f" {HUELLE}{alt}")) and ok
+            dd.SetText(SUFFIX_TEXT, f" {HUELLE}{alt}")
+        ok = ok and HUELLE in (dd.GetText(SUFFIX_TEXT) or "")
     return ok
 
 
@@ -738,6 +746,9 @@ def sammelband(format_: str, hoehe_mm: float) -> tuple[float, float, float, floa
 
 
 def _notiz_an(drw, text: str, x_mm: float, oben_mm: float):
+    """Hinweis auf dem Blatt (`IDrawingDoc.EditSheet` vorher; Live 27.11.: sonst gehört er zur zuletzt aktiven
+    Ansicht) mit der linken oberen Ecke bei (x, oben)."""
+    _ruf(drw, "EditSheet")
     drw.ClearSelection2(True)
     note = drw.InsertNote(text)
     if note is None:

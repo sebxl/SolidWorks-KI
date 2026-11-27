@@ -110,3 +110,18 @@ def test_zellteiler_im_toleranzrahmen_ist_kein_befund(tmp_path):
     assert pruefe_pdf(pdf, rahmen_texte=("0,05 A",)) == []
     durch = _pdf(tmp_path, lambda s: (rahmen(s), _linie(s, (95, 101.2), (125, 101.2))))
     assert [b.text for b in pruefe_pdf(durch, rahmen_texte=("0,05 A",))] == ["0,05 A"]
+
+
+def test_huellkreis_im_masstext_ist_kein_befund(tmp_path):
+    """Stufe 4 (Live 27.11.): `<MOD-EP>` zeichnet den Kreis um das E aus 0,25 mm kurzen Strichen; pymupdf liest „E“."""
+    import math
+
+    def huelle(s):
+        _text(s, 100, 100, "32,00 k6 E")
+        mitte, r = (122.0, 101.3), 2.0
+        punkte = [(mitte[0] + r * math.cos(i * math.pi / 24), mitte[1] + r * math.sin(i * math.pi / 24)) for i in range(49)]
+        for a, b in zip(punkte, punkte[1:]):
+            _linie(s, a, b)
+    assert pruefe_pdf(_pdf(tmp_path, huelle)) == []
+    durch = _pdf(tmp_path, lambda s: (huelle(s), _linie(s, (104, 95), (104, 110))))
+    assert [b.text for b in pruefe_pdf(durch)] == ["32,00 k6 E"]

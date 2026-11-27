@@ -15,16 +15,30 @@ from swki.zeichnung.toleranzangaben import FormLage, Toleranz
 
 
 class _Tol:
+    """Wie live (27.11.): die Setter melden False, die Wirkung ist trotzdem da."""
+
     def __init__(self):
-        self.Type, self.FitDisplayStyle, self.passung, self.werte = 0, 3, None, None
+        self.Type, self.FitDisplayStyle, self.passung, self.werte = 0, 3, ("", ""), (0.0, 0.0)
 
     def SetFitValues(self, bohrung, welle):
         self.passung = (bohrung, welle)
-        return True
+        return False
 
     def SetValues(self, unten, oben):
         self.werte = (unten, oben)
-        return True
+        return False
+
+    def GetHoleFitValue(self):
+        return self.passung[0]
+
+    def GetShaftFitValue(self):
+        return self.passung[1]
+
+    def GetMinValue(self):
+        return self.werte[0]
+
+    def GetMaxValue(self):
+        return self.werte[1]
 
 
 class _Dim:
@@ -222,6 +236,12 @@ def test_toleranz_passung_welle_und_abmasse():
     assert an.toleranz_setzen(bilat, Toleranz(None, 0.1, -0.05, False))
     assert bilat.dim.Tolerance.Type == 2 and bilat.dim.Tolerance.werte == pytest.approx((-0.00005, 0.0001))
     assert an.toleranz_setzen(bilat, None)
+
+
+def test_toleranz_ohne_wirkung_gemeldet():
+    dd = _DD(_View(), "RD5", 20.0, [], modell=False)
+    dd.dim.Tolerance.SetFitValues = lambda b, w: True          # meldet Erfolg, setzt aber nichts
+    assert not an.toleranz_setzen(dd, Toleranz("H7", None, None, False))
 
 
 def _rauheit(merkmal="t1"):
