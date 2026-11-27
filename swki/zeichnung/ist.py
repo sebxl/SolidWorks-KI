@@ -34,6 +34,7 @@ class IstAngabe:
     symbol: str | None
     wert: str | None
     bezug: tuple[str, ...]
+    merkmal: str | None = None  # Feature-ID, wenn das Rücklesen sie kennt (Task 3: Abgleich je Merkmal), sonst None
 
 
 @dataclass(frozen=True)

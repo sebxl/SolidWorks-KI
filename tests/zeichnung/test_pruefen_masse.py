@@ -465,7 +465,6 @@ def test_cluster_complete_linkage():
 import pytest  # noqa: E402
 
 
-@pytest.mark.xfail(strict=True, reason="Z-TOL-2 kommt in Task 3")
 def test_huelle_ohne_passmass_ist_mangel():
     """Ⓔ verschluckt der Zusatzvergleich bewusst; Hülle ohne Passmaß meldet pruefe_toleranzen (Z-TOL-2)."""
     from swki.zeichnung import pruefen

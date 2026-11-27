@@ -5,11 +5,16 @@ Jede Prüfung gibt ein dict `{id, regeln, ok, maengel, hinweis?}` zurück, Mäng
 `hinweis` bzw. Mängeln als Begründung). „Nicht prüfbar“ ist nie „ok“."""
 
 import re
+from dataclasses import replace
+from pathlib import Path
 
 from swki.zeichnung.angaben import zahl
-from swki.zeichnung.ist import Ist, IstMass
+from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
+from swki.zeichnung.ist import Ist, IstMass, IstToleranz
+from swki.zeichnung.lesbarkeit import pruefe_pdf
 from swki.zeichnung.massplan import Mass
 from swki.zeichnung.regeln import Regel, regel
+from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, Toleranz, sammelangaben, toleranztext
 
 # ISO 5455 (Entscheidung 5): Vorzugsreihe für das Blatt und jede Einzelheit.
 VORZUGSMASSSTAEBE: tuple[str, ...] = ("1:1", "1:2", "1:5", "1:10", "1:20", "1:50", "1:100",
@@ -24,9 +29,16 @@ _MASSQUELLEN = ("modell", "neu")
 _RASTER = 0.05  # mm, Knotenabstand des Maßgraphen (Entscheidung 2)
 
 
+# SolidWorks-Symboltags, wie das Rücklesen sie an Maßen liefert (`bemassen.DURCHMESSER` = <MOD-DIAM>): Tag → Zeichen
+_TAGS = {"<MOD-EP>": "Ⓔ", "<MOD-DIAM>": "Ø"}
+
+
 def normtext(text: str | None) -> str:
-    """Vergleichstext: das Rücklesen liefert Ⓔ an Maßen als Tag `<MOD-EP>`; Tag → Zeichen, Leerraum zusammenfassen."""
-    return " ".join((text or "").replace("<MOD-EP>", "Ⓔ").split())
+    """Vergleichstext: Symboltags (`<MOD-EP>` → Ⓔ, `<MOD-DIAM>` → Ø) werden Zeichen, Leerraum wird zusammengefasst."""
+    text = text or ""
+    for tag, zeichen in _TAGS.items():
+        text = text.replace(tag, zeichen)
+    return " ".join(text.split())
 
 
 _norm = normtext
@@ -270,7 +282,7 @@ def pruefe_drehteil(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
     if not any(m.quelle == "neu" for m in plan):
         return _pruefung("drehteil", regeln, ("Z-DRE-1",), [], unpruefbar="kein Drehteil")
     maengel = [_mangel(regeln, "Z-DRE-1", m.name, f"Ø-Zeichen fehlt am Durchmesser {zahl(m.wert)} ({m.ansicht})")
-               for m in ist.masse if m.art == "durchmesser" and "Ø" not in m.praefix]
+               for m in ist.masse if m.art == "durchmesser" and "Ø" not in normtext(m.praefix)]
     return _pruefung("drehteil", regeln, ("Z-DRE-1",), maengel)
 
 
@@ -296,3 +308,249 @@ def pruefe_gewinde(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
         elif wort not in notiz:
             maengel.append(_mangel(regeln, "Z-GEW-1", m.merkmal, f"Gewinde {bezeichnung}: Angabe ohne „{wort}“"))
     return _pruefung("gewinde", regeln, ("Z-GEW-1",), maengel, unpruefbar=None if gefunden else "kein Gewinde")
+
+
+# --- Toleranzen und Anforderungen (Task 3) -----------------------------------------------------------------------------------
+
+def _tol_text(i: IstToleranz) -> str:
+    if i.typ == "keine":
+        return "keine Toleranz"
+    if i.typ == "passung":
+        return i.passung or "Passung ohne Angabe"
+    if i.oben is None or i.unten is None:
+        return i.typ
+    return toleranztext(Toleranz(None, i.oben, i.unten, False))
+
+
+def _soll_text(m: Mass) -> str:
+    t = m.toleranz
+    return t.passung if t.passung else _tol_text(IstToleranz("bilateral", None, t.oben, t.unten))
+
+
+def _traegt_huelle(c: IstMass) -> bool:
+    return "Ⓔ" in normtext(f"{c.praefix} {c.suffix}")
+
+
+def _huelle_plan(m: Mass) -> bool:
+    return m.toleranz is not None and m.toleranz.huelle
+
+
+def _fl_text(symbol: str, wert: str, bezug: tuple[str, ...]) -> str:
+    return f"{symbol} {wert}" + (f" zu {'/'.join(bezug)}" if bezug else "")
+
+
+_ANGABEN_REGEL = {"rauheit": "Z-TOL-4", "form_lage": "Z-TOL-5", "bezug": "Z-TOL-6"}   # Plan-Quelle → Regel
+
+
+def _inhalt_plan(m: Mass) -> tuple:
+    if m.quelle == "form_lage":
+        return (m.form_lage.symbol, normtext(m.text), tuple(m.form_lage.bezug))
+    return (normtext(m.text),)
+
+
+def _inhalt_ist(art: str, a) -> tuple:
+    if art == "form_lage":
+        return (a.symbol or "", normtext(a.wert), tuple(a.bezug))
+    return (normtext(a.text),)
+
+
+def _text_plan(m: Mass) -> str:
+    if m.quelle == "rauheit":
+        return f"Rauheit {m.text}"
+    if m.quelle == "form_lage":
+        return "Form/Lage " + _fl_text(m.form_lage.art, m.text, tuple(m.form_lage.bezug))
+    return f"Bezug {m.text}"
+
+
+def _text_ist(art: str, a) -> str:
+    if art == "rauheit":
+        return f"Rauheit {normtext(a.text)}"
+    if art == "form_lage":
+        return "Form/Lage " + _fl_text(a.symbol or "?", normtext(a.wert), tuple(a.bezug))
+    return f"Bezug {normtext(a.text)}"
+
+
+def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[dict]:
+    """Rauheit, Form/Lage und Bezüge des Plans gegen `ist.angaben`. Hat eine IstAngabe ein Merkmal, gleicht Pass 1 je
+    Merkmal ab; eine IstAngabe ohne Merkmal (das Rücklesen kennt es nicht immer) deckt in Pass 2 einen Plan-Eintrag
+    gleichen Inhalts als Multimenge (Art, Text bzw. Symbol + Wert + Bezug). Eine IstAngabe mit anderem Merkmal deckt keinen.
+    Zuletzt gilt ein übrig gebliebener Ist-Eintrag derselben Art (Form/Lage: gleiches Symbol; Bezüge: nie) als „weicht
+    ab“, sonst „fehlt“. Überzählige IstAngaben dieser Arten meldet die Prüfung nicht."""
+    maengel = []
+    for art, regel_id in _ANGABEN_REGEL.items():
+        frei = [a for a in ist.angaben if a.art == art]
+        offen = [m for m in plan if m.quelle == art]
+        for je_merkmal in (True, False):
+            rest = []
+            for m in offen:
+                treffer = next((a for a in frei if _inhalt_ist(art, a) == _inhalt_plan(m)
+                                and (a.merkmal == m.merkmal if je_merkmal else a.merkmal is None)), None)
+                if treffer is None:
+                    rest.append(m)
+                else:
+                    frei.remove(treffer)
+            offen = rest
+        for m in offen:
+            nah = None if art == "bezug" else next(
+                (a for a in frei if a.merkmal in (m.merkmal, None)
+                 and (art != "form_lage" or (a.symbol or "") == m.form_lage.symbol)), None)
+            if nah is None:
+                maengel.append(_mangel(regeln, regel_id, m.merkmal, f"fehlt: {_text_plan(m)} ({m.merkmal})"))
+            else:
+                frei.remove(nah)
+                maengel.append(_mangel(regeln, regel_id, m.merkmal,
+                                       f"weicht ab: {_text_ist(art, nah)} statt {_text_plan(m)} ({m.merkmal})"))
+    return maengel
+
+
+def pruefe_toleranzen(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
+    """Z-TOL-1 (Passung oder Abmaße weichen ab, Ⓔ fehlt am Passmaß), Z-TOL-2 (Ⓔ an einem Maß ohne Passung), Z-TOL-3
+    (Toleranz ohne Funktion), Z-TOL-4/5/6 (Rauheit, Form/Lage, Bezüge). Maße ohne zugeordnetes Ist-Maß meldet
+    `pruefe_vollstaendig`."""
+    maengel = []
+    zuordnung = zuordnen(ist, plan)
+    for m in plan:
+        c = zuordnung.get(m.id)
+        if m.quelle not in _MASSQUELLEN or c is None:
+            continue
+        etikett = _etikett(c.art, m.wert)
+        if m.toleranz is None:
+            if c.toleranz.typ != "keine":
+                maengel.append(_mangel(regeln, "Z-TOL-3", m.merkmal,
+                                       f"{etikett}: Toleranz {_tol_text(c.toleranz)} ohne Funktion im Plan"))
+        else:
+            if not _toleranz_ok(c, m):
+                maengel.append(_mangel(regeln, "Z-TOL-1", m.merkmal,
+                                       f"{etikett}: Toleranz {_tol_text(c.toleranz)} statt {_soll_text(m)}"))
+            if m.toleranz.huelle and not _traegt_huelle(c):
+                maengel.append(_mangel(regeln, "Z-TOL-1", m.merkmal, f"{etikett}: Ⓔ fehlt an {_soll_text(m)}"))
+        if _traegt_huelle(c) and not _huelle_plan(m):
+            maengel.append(_mangel(regeln, "Z-TOL-2", m.merkmal, f"{etikett}: Ⓔ an einem Maß ohne Passung"))
+    maengel += _angaben_je_art(ist, plan, regeln)
+    return _pruefung("toleranzen", regeln, ("Z-TOL-1", "Z-TOL-2", "Z-TOL-3", "Z-TOL-4", "Z-TOL-5", "Z-TOL-6"), maengel)
+
+
+# --- Sammelangaben, Schriftfeld, Lesbarkeit -------------------------------------------------------------------------------
+
+_SAM_REGEL = ("Z-SAM-1", "Z-SAM-2", "Z-SAM-6", "Z-SAM-4")   # Reihenfolge von `sammelangaben`; danach Behandlung/Halbzeug
+_ISO_2768_K = re.compile(r"2768\s*-\s*\d?\s*[fmcv]?\s*K")   # „2768-mK“, „2768-1 mK“, „2768 - mK“; nicht „2768-1:1989 – m“
+
+
+def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
+    """Jede Zeile von `sammelangaben(spec)` steht (normalisiert) im Text aller Notizen, dazu die Sammelrauheit (Z-SAM-7).
+    Verboten (Z-SAM-3, je Notiz geprüft, damit „… 2768-1 m“ und eine Folgenotiz „K…“ kein „mK“ ergeben): „2768-…K“ und
+    „DIN 7167“. Das Muster erlaubt Leerraum vor dem Bindestrich (Plan-Variante „2768 - mK“)."""
+    notizen = [normtext(a.text) for a in ist.angaben if a.art == "hinweis"]
+    alle = " ".join(notizen)
+    maengel = []
+    for i, zeile in enumerate(sammelangaben(spec)):
+        if normtext(zeile) not in alle:
+            maengel.append(_mangel(regeln, _SAM_REGEL[i] if i < len(_SAM_REGEL) else "Z-SAM-5", "sammelangabe",
+                                   f"fehlt: {zeile}"))
+    if SAMMEL_RAUHEIT not in alle:
+        maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe", f"fehlt: Sammelrauheit {SAMMEL_RAUHEIT}"))
+    for n in notizen:
+        if _ISO_2768_K.search(n) or "DIN 7167" in n:
+            maengel.append(_mangel(regeln, "Z-SAM-3", "sammelangabe", f"verboten: {n}"))
+    return _pruefung("sammelangaben", regeln, tuple(f"Z-SAM-{i}" for i in range(1, 8)), maengel)
+
+
+_PFLICHT = (("sachnummer", "Sachnummer"), ("titel", "Benennung"), ("ersteller", "Ersteller"),
+            ("ausgabedatum", "Ausgabedatum"), ("dokumentart", "Dokumentart"), ("blatt", "Blatt"))
+
+
+def pruefe_schriftfeld(ist: Ist, standard: dict, regeln: list[Regel]) -> dict:
+    """Pflichtfelder (Z-SCH-1), „Freigegeben“ leer (Z-SCH-2), Blattmaßstab aus der Vorzugsreihe (Z-SCH-3). Die Werte
+    stehen in `ist.eigenschaften` unter den Namen aus `standard["zeichnung"]["schriftfeld"]`. Eigentümer leer ist nur
+    ein Hinweis (`ok` None) bis Z1.5."""
+    sf = (standard.get("zeichnung") or {}).get("schriftfeld") or {}
+
+    def wert(feld: str) -> str:
+        name = sf.get(feld, "")
+        return (ist.eigenschaften.get(name) or "").strip() if name else ""
+
+    maengel = []
+    for feld, bezeichnung in _PFLICHT:
+        if not wert(feld):
+            maengel.append(_mangel(regeln, "Z-SCH-1", bezeichnung,
+                                   f"Pflichtfeld {bezeichnung} leer (Eigenschaft {sf.get(feld) or 'nicht zugeordnet'})"))
+    if wert("freigegeben"):
+        maengel.append(_mangel(regeln, "Z-SCH-2", "Freigegeben", f"Feld Freigegeben ist gefüllt: {wert('freigegeben')}"))
+    massstab = re.sub(r"\s+", "", ist.massstab or "")
+    if not massstab:
+        maengel.append(_mangel(regeln, "Z-SCH-3", "Maßstab", "Maßstab des Blatts fehlt"))
+    elif massstab not in VORZUGSMASSSTAEBE:
+        maengel.append(_mangel(regeln, "Z-SCH-3", "Maßstab", f"Maßstab {massstab} nicht aus der Vorzugsreihe"))
+    unpruefbar = None if wert("eigentuemer") else "Eigentümer leer (bis Z1.5 nur Hinweis)"
+    return _pruefung("schriftfeld", regeln, ("Z-SCH-1", "Z-SCH-2", "Z-SCH-3"), maengel, unpruefbar=unpruefbar)
+
+
+def _ausschluss(format_: str) -> list[tuple]:
+    """Rand, Rahmen und Schriftfeld gehören nicht zur Lesbarkeitsprüfung (wie `zeichnen._ausschluss`)."""
+    b, h = FORMATE[format_]
+    x0, y0, x1, y1 = zeichenfeld(format_)
+    return [(0, 0, b, y0), (0, y1, b, h), (0, 0, x0, h), (x1, 0, b, h),
+            (x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])]
+
+
+def pruefe_lesbarkeit(pdf: Path | None, format_: str, regeln: list[Regel]) -> dict:
+    """Z-LES-1 (Hinweis): Befunde der PDF-Prüfung stehen in `maengel`, `ok` ist dann None. Ohne PDF, mit unbekanntem
+    Format oder ohne pymupdf ist die Lesbarkeit nicht geprüft (`ok` None, mit Grund)."""
+    ids = ("Z-LES-1",)
+    if pdf is None:
+        return _pruefung("lesbarkeit", regeln, ids, [], unpruefbar="kein PDF: Lesbarkeit nicht geprüft")
+    if format_ not in FORMATE:
+        return _pruefung("lesbarkeit", regeln, ids, [], unpruefbar=f"Format {format_} unbekannt: Lesbarkeit nicht geprüft")
+    try:
+        befunde = pruefe_pdf(pdf, _ausschluss(format_))
+    except ImportError:
+        return _pruefung("lesbarkeit", regeln, ids, [], unpruefbar="pymupdf fehlt (Extra pdf): Lesbarkeit nicht geprüft")
+    maengel = []
+    for b in befunde:
+        text = f"{b.art}: {b.text}" + (f" mit {b.anderes}" if b.anderes else "")
+        maengel.append(_mangel(regeln, "Z-LES-1", b.art, f"{text} (bei {b.rechteck_mm[0]:.0f}/{b.rechteck_mm[1]:.0f} mm)"))
+    return _pruefung("lesbarkeit", regeln, ids, maengel)
+
+
+# --- Soll-Lücken und Gesamturteil -----------------------------------------------------------------------------------------
+
+_SOLL_LUECKE = {"TOLERANZ_OHNE_MASS": ("toleranzen", "Z-TOL-1"), "TOLERANZ_MEHRDEUTIG": ("toleranzen", "Z-TOL-1"),
+                "FORM_LAGE_IT_OHNE_TABELLE": ("toleranzen", "Z-TOL-1"), "MASS_NICHT_GEPLANT": ("vollstaendig", "Z-VOLL-1")}
+
+
+def soll_luecken(meldungen_soll: list[str]) -> list[dict]:
+    """Meldungen des Maßplans (`massplan_meldungen`), die in der Zeichnung nicht gezeichnet sein können, werden Mängel
+    `{pruefung, regel, merkmal, text}`; alle anderen (FUNKTION_UNBESTAETIGT …) bleiben Hinweise in `meldungen`."""
+    aus = []
+    for meldung in meldungen_soll:
+        kopf, _, rest = meldung.partition(": ")
+        if kopf in _SOLL_LUECKE:
+            pruefung, regel_id = _SOLL_LUECKE[kopf]
+            aus.append({"pruefung": pruefung, "regel": regel_id, "merkmal": re.split(r"[\s:]", rest)[0], "text": meldung})
+    return aus
+
+
+def _nachtragen(p: dict, regeln: list[Regel], neu: list[dict]) -> None:
+    p["maengel"] = p["maengel"] + neu
+    if any(regel(regeln, m["regel"]).art == "hart" for m in p["maengel"]):
+        p["ok"] = False
+    elif p["ok"] is True and neu:
+        p["ok"] = None
+
+
+def bewerte(ist: Ist, plan: list[Mass], spec: dict, standard: dict, regeln: list[Regel], pdf: Path | None = None,
+            meldungen=(), meldungen_soll=()) -> dict:
+    """Alle neun Prüfungen und das Gesamturteil. `bestanden`: keine harte Prüfung mit `ok is False`; Hinweise und
+    „nicht prüfbar“ (`ok` None) stehen im Bericht, machen aber nie `ok False`. `meldungen_soll` (aus
+    `massplan_meldungen(spec, protokoll)`): Lücken des Solls sind Mängel (`soll_luecken`), alle Meldungen bleiben in
+    `meldungen`."""
+    pruefungen = {p["id"]: p for p in (
+        pruefe_vollstaendig(ist, plan, regeln), pruefe_ueberbestimmt(ist, regeln), pruefe_toleranzen(ist, plan, regeln),
+        pruefe_sammelangaben(ist, spec, regeln), pruefe_schriftfeld(ist, standard, regeln), pruefe_ansichten(ist, regeln),
+        pruefe_lesbarkeit(pdf, ist.format_, regeln), pruefe_gewinde(ist, plan, regeln), pruefe_drehteil(ist, plan, regeln))}
+    for luecke in soll_luecken(list(meldungen_soll)):
+        _nachtragen(pruefungen[luecke["pruefung"]], regeln, [{k: luecke[k] for k in ("regel", "merkmal", "text")}])
+    return {"bestanden": all(p["ok"] is not False for p in pruefungen.values()),
+            "pruefungen": list(pruefungen.values()),
+            "maengel": [{"pruefung": p["id"], **m} for p in pruefungen.values() for m in p["maengel"]],
+            "meldungen": list(meldungen) + list(meldungen_soll)}
