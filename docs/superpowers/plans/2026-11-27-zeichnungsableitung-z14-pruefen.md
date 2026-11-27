@@ -19,7 +19,7 @@
 - Soll ist die freigegebene Spec, nicht nur der Maßplan. Was `massplan_meldungen(soll, protokoll)` als nicht gezeichnet meldet, ist in der Zeichnung ein Mangel und kein stiller Ausfall. `TOLERANZ_OHNE_MASS`, `TOLERANZ_MEHRDEUTIG` (der unterlegene Parameter) und `FORM_LAGE_IT_OHNE_TABELLE` werden zu `Z-TOL-1`, `MASS_NICHT_GEPLANT` zu `Z-VOLL-1`. `FUNKTION_UNBESTAETIGT` bleibt ein Hinweis.
 - „Nicht prüfbar“ ist nie „ok“. Ein Ist-Feld mit `None` (z. B. `verdeckt`) ergibt in der betroffenen Prüfung `ok: null` mit Anzahl und Grund, außer die Prüfung hat schon einen harten Mangel.
 - Der Prüfer wird nie übersprungen. Ein Lauf mit Zeichnung, aber ohne `zeichnungspruefer.json`, gilt in `swki bericht` als „Zeichnung ungeprüft“ (Meldung `ZEICHNUNGSPRUEFER_FEHLT`).
-- Prüfungen haben die Form `{id, regel, ok: true|false|null, maengel: [{merkmal, text}], hinweis?}`, wie im Teil-Prüfbericht. `ok: null` heißt Hinweisregel oder nicht prüfbar, immer mit Begründung.
+- Prüfungen haben die Form `{id, regeln: [IDs], ok: true|false|null, maengel: [{regel, merkmal, text}], hinweis?}`, wie im Teil-Prüfbericht. `ok: null` heißt Hinweisregel oder nicht prüfbar, immer mit Begründung.
 - Ausgaben an den Nutzer in mm mit Dezimalkomma (`angaben.zahl`).
 
 ## Entscheidungen (selbst entschieden, im Ergebnisbericht als Vorschlag markiert)
