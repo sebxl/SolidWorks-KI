@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -12,7 +13,7 @@ from swki.cli import main
 from swki.konfig import lade_standard
 from swki.pruefung.schleife import lies_laeufe
 from swki.zeichnung import zeichnung_pruefen as zp
-from swki.zeichnung.massplan import massplan
+from swki.zeichnung.massplan import Mass, massplan
 from swki.zeichnung.zeichnen import ZeichnungFehler, schreibe_uebergabe, uebergabe, zeichnungsname
 from tests.zeichnung.ist_bau import ideal_ist
 from tests.zeichnung.test_massplan import _lade_ref, _spannplatte_protokoll
@@ -88,7 +89,8 @@ def test_pruefung_mit_fake_leser_bestanden(auftrag):
     assert gesehen == [(auftrag.drw, {"haupt": "Zeichnungsansicht1"})]
     assert "VORMELDUNG" in bericht["meldungen"]
     assert bericht["zeichnung"] == str(auftrag.drw)
-    assert bericht["pdf"] is None or bericht["pdf"].endswith(".pdf")
+    assert bericht["pdf"] is None  # im Test liegt kein PDF
+    assert bericht["kopf"] == {"ok": True, "meldungen": []}
     assert set(bericht) >= {"ist", "pdf", "png", "zeichnung", "pruefungen", "maengel", "lauf"}
     assert bericht["ist"]["format_"] == "A3quer"
     assert bericht["ist"]["sha256_slddrw"] == _sha(b"zeichnung")
@@ -110,6 +112,9 @@ def test_handaenderung_wird_gemeldet_nicht_abgebrochen(auftrag):
     auftrag.drw.write_bytes(b"von hand geaendert")
     bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
     assert any(m.startswith("ZEICHNUNG_GEAENDERT:") for m in bericht["meldungen"])
+    assert bericht["bestanden"] is False and bericht["kopf"]["ok"] is False
+    assert any(m.startswith("ZEICHNUNG_GEAENDERT:") for m in bericht["kopf"]["meldungen"])
+    assert len(bericht["pruefungen"]) == 9  # die Prüfungen laufen trotzdem
     assert bericht["ist"]["sha256_slddrw"] == _sha(b"von hand geaendert")
 
 
@@ -120,6 +125,25 @@ def test_plan_veraltet_wird_gemeldet(auftrag):
     pfad.write_text(json.dumps(daten), encoding="utf-8")
     bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
     assert any(m.startswith("ZEICHNUNG_PLAN_VERALTET") for m in bericht["meldungen"])
+    assert bericht["bestanden"] is False and bericht["kopf"]["ok"] is False
+    assert any(m.startswith("ZEICHNUNG_PLAN_VERALTET") for m in bericht["kopf"]["meldungen"])
+    assert len(bericht["pruefungen"]) == 9
+
+
+def test_kopfmangel_verwirft_pdf(auftrag):
+    auftrag.drw.with_suffix(".pdf").write_bytes(b"%PDF-kaputt")
+    auftrag.drw.write_bytes(b"von hand geaendert")
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
+    assert bericht["pdf"] is None
+    assert any(m.startswith("PDF_VERWORFEN") for m in bericht["meldungen"])
+
+
+def test_wirkung_vergleicht_geometrie_gerundet():
+    a = Mass("a", "neu", "durchmesser", 10.0, "f1", geometrie={"von": 0.0, "bis": 5.0})
+    gleich = Mass("b", "neu", "durchmesser", 10.0, "f1", geometrie={"von": 0.0000001, "bis": 5.0})
+    anders = Mass("c", "neu", "durchmesser", 10.0, "f1", geometrie={"von": 1.0, "bis": 5.0})
+    assert zp._wirkung([a]) == zp._wirkung([gleich])
+    assert zp._wirkung([a]) != zp._wirkung([anders])
 
 
 def test_plan_gleich_keine_veraltet_meldung(auftrag):
@@ -159,6 +183,36 @@ def test_leser_aendert_teil(auftrag):
     assert not lauf_datei(auftrag.spec_pfad, 1, "zeichnung.pruefbericht").exists()
 
 
+def test_fehlendes_teil_bricht_vor_dem_leser_ab(auftrag):
+    auftrag.teil.unlink()
+    gesehen = []
+    with pytest.raises(ZeichnungFehler) as e:
+        zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag, gesehen))
+    assert _code(e) == "ZEICHNUNG_TEIL_FEHLT" and gesehen == []
+
+
+def test_alter_bericht_wird_bei_jedem_abbruch_geloescht(auftrag):
+    ziel = lauf_datei(auftrag.spec_pfad, 1, "zeichnung.pruefbericht")
+    uebergabe_pfad = auftrag.ordner / "zeichnung" / "zeichnung.json"
+    uebergabe_text = uebergabe_pfad.read_bytes()
+
+    def aendernder_leser(slddrw, rollen):
+        auftrag.teil.write_bytes(b"veraendert")
+        return ideal_ist(auftrag.plan, spec=auftrag.spec)
+
+    faelle = [lambda: uebergabe_pfad.unlink(), lambda: auftrag.drw.unlink(), lambda: auftrag.teil.unlink(), None]
+    for fall in faelle:
+        uebergabe_pfad.write_bytes(uebergabe_text)
+        auftrag.drw.write_bytes(b"zeichnung")
+        auftrag.teil.write_bytes(b"teil")
+        ziel.write_text("{}", encoding="utf-8")
+        if fall:
+            fall()
+        with pytest.raises(ZeichnungFehler):
+            zp.zeichnung_pruefen(auftrag.spec_pfad, leser=aendernder_leser if fall is None else _ideal_leser(auftrag))
+        assert not ziel.exists()
+
+
 def test_fehlende_uebergabe(auftrag):
     (auftrag.ordner / "zeichnung" / "zeichnung.json").unlink()
     with pytest.raises(ZeichnungFehler) as e:
@@ -192,3 +246,10 @@ def test_lauf_meldung_aus_waehle_lauf(auftrag, monkeypatch):
 def test_cli_kennt_zeichnung_pruefen(capsys):
     assert main(["zeichnung", "pruefen", "--help"]) == 0
     assert "--lauf" in capsys.readouterr().out
+
+
+def test_cli_reicht_lauf_durch(monkeypatch, capsys):
+    aufrufe = []
+    monkeypatch.setattr(zp, "zeichnung_pruefen", lambda spec, lauf=None, leser=None: aufrufe.append((spec, lauf)) or {"x": 1})
+    assert main(["zeichnung", "pruefen", "a/spec.yaml", "--lauf", "3"]) == 0
+    assert aufrufe == [(Path("a/spec.yaml"), 3)]

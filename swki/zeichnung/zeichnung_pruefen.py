@@ -13,7 +13,7 @@ from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner
 from swki.konfig import lade_rechner, lade_standard
 from swki.spec.freigabe import freigegebene_spec
 from swki.zeichnung.ist import Ist, ist_zu_dict
-from swki.zeichnung.massplan import Mass, massplan, massplan_meldungen
+from swki.zeichnung.massplan import Mass, _rund, massplan, massplan_meldungen
 from swki.zeichnung.pruefen import bewerte
 from swki.zeichnung.regeln import lade_regeln
 from swki.zeichnung.zeichnen import ZeichnungFehler, _sha, schreibe_uebergabe, waehle_lauf, zeichnungsname
@@ -31,13 +31,25 @@ def kopf_pruefung(sha_ist: str, uebergabe: dict | None) -> list[str]:
     return []
 
 
+def _runde(x):
+    if isinstance(x, float):
+        return _rund(x)
+    if isinstance(x, dict):
+        return {k: _runde(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_runde(v) for v in x]
+    return x
+
+
 def _wirkung(plan: list[Mass] | list[dict]) -> list[str]:
-    """Plan nach Wirkung: ohne Id, Maßname und Geometrie, als sortierte JSON-Zeilen (Tupel und Listen sind gleich)."""
+    """Plan nach Wirkung: ohne Id und Maßname, Geometrie gerundet, als sortierte JSON-Zeilen (Tupel und Listen sind gleich)."""
     zeilen = []
     for m in plan:
         d = asdict(m) if isinstance(m, Mass) else dict(m)
-        for schluessel in ("id", "name", "geometrie"):
+        for schluessel in ("id", "name"):
             d.pop(schluessel, None)
+        if d.get("geometrie"):
+            d["geometrie"] = _runde(d["geometrie"])
         zeilen.append(json.dumps(d, sort_keys=True, ensure_ascii=False, default=str))
     return sorted(zeilen)
 
@@ -55,6 +67,7 @@ def zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser: Leser | N
     r, standard = lade_rechner(), lade_standard()
     auftrag = auftrag_name(spec_pfad)
     lauf, meldungen = waehle_lauf(spec_pfad, lauf)
+    lauf_datei(spec_pfad, lauf, "zeichnung.pruefbericht").unlink(missing_ok=True)  # nie ein alter Bericht nach Abbruch
     spec = freigegebene_spec(spec_pfad)
     ordner = lauf_ordner(r, auftrag, lauf)
     ausgabe = ordner / "zeichnung"
@@ -65,24 +78,33 @@ def zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser: Leser | N
     daten = json.loads(uebergabe_pfad.read_text(encoding="utf-8")) if uebergabe_pfad.exists() else None
     if not zeichnung.exists():
         raise ZeichnungFehler("ZEICHNUNG_FEHLT", f"{zeichnung} fehlt – zuerst swki zeichnen (Lauf {lauf})")
+    if not teil.exists():
+        raise ZeichnungFehler("ZEICHNUNG_TEIL_FEHLT", f"{teil} fehlt (Lauf {lauf})")
     sha_drw = _sha(zeichnung)
-    meldungen += kopf_pruefung(sha_drw, daten)
+    kopf = kopf_pruefung(sha_drw, daten)
     meldungen += daten.get("meldungen") or []
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
     plan = massplan(spec, protokoll)
     meldungen_soll = massplan_meldungen(spec, protokoll)
     if _wirkung(plan) != _wirkung(daten.get("plan") or []):
-        meldungen.append("ZEICHNUNG_PLAN_VERALTET: der Maßplan der freigegebenen Spec weicht vom Plan der Zeichnung ab "
-                         "– swki zeichnen neu ausführen")
+        kopf.append("ZEICHNUNG_PLAN_VERALTET: der Maßplan der freigegebenen Spec weicht vom Plan der Zeichnung ab "
+                    "– swki zeichnen neu ausführen")
+    meldungen += kopf
     leser = leser or _standardleser()
-    sha_teil = _sha(teil) if teil.exists() else None
+    sha_teil = _sha(teil)
     ist = leser(zeichnung, dict(daten.get("ansichten") or {}))
-    if _sha(zeichnung) != sha_drw or (teil.exists() and _sha(teil) != sha_teil):
+    if _sha(zeichnung) != sha_drw or _sha(teil) != sha_teil:
         raise ZeichnungFehler("ZEICHNUNG_PRUEFUNG_AENDERT", "das Rücklesen hat Zeichnung oder Teil verändert")
     ist = replace(ist, sha256_slddrw=sha_drw)
-    bericht = bewerte(ist, plan, spec, standard, lade_regeln(), pdf if pdf.exists() else None, meldungen=meldungen,
+    pdf_ok = pdf.exists() and not kopf
+    if kopf and pdf.exists():
+        meldungen.append("PDF_VERWORFEN: das PDF gehört nicht sicher zur geprüften Zeichnung")
+    bericht = bewerte(ist, plan, spec, standard, lade_regeln(), pdf if pdf_ok else None, meldungen=meldungen,
                       meldungen_soll=meldungen_soll)
-    bericht.update({"lauf": lauf, "ist": ist_zu_dict(ist), "pdf": str(pdf) if pdf.exists() else None,
+    if kopf:  # Handänderung oder veralteter Plan: nie still „bestanden“, die Prüfungen bleiben sichtbar
+        bericht["bestanden"] = False
+    bericht.update({"lauf": lauf, "kopf": {"ok": not kopf, "meldungen": kopf}, "ist": ist_zu_dict(ist),
+                    "pdf": str(pdf) if pdf_ok else None,
                     "png": str(png) if png.exists() else None, "zeichnung": str(zeichnung)})
     schreibe_uebergabe(lauf_datei(spec_pfad, lauf, "zeichnung.pruefbericht"), bericht)
     return bericht
