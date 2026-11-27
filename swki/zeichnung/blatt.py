@@ -47,9 +47,9 @@ def kandidaten():
             yield format_, m
 
 
-def waehle(bedarf_mm: tuple[float, float]) -> tuple[str, tuple[int, int]]:
+def waehle(bedarf_mm: tuple[float, float], sammel_mm: float = 0.0) -> tuple[str, tuple[int, int]]:
     """Format und Maßstab für einen Platzbedarf bei 1:1 (Ansichten samt Maßrand): der erste passende Kandidat."""
     for format_, m in kandidaten():
-        if passt(_skaliert(bedarf_mm, m), format_):
+        if passt(_skaliert(bedarf_mm, m), format_, sammel_mm):
             return format_, m
     return "A3quer", MASSSTAEBE[-1]

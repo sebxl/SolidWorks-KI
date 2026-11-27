@@ -38,8 +38,8 @@ def _einzelheit_massstaebe(massstab: tuple[int, int]) -> list[tuple[int, int]]:
 def einzelheit_passt(groessen_1zu1: dict[str, tuple[float, float]], einzelheit: tuple[float, float],
                      sammel_mm: float = 0.0) -> bool:
     """Lohnt die Einzelheit? Nur wenn sie vergrößert aufs Blatt passt, ohne Format oder Blattmaßstab zu ändern."""
-    ohne = anordnen(groessen_1zu1, sammel_mm)[:2]
     try:
+        ohne = anordnen(groessen_1zu1, sammel_mm)[:2]
         format_, massstab, plaetze = anordnen({**groessen_1zu1, "einzelheit": einzelheit}, sammel_mm)
     except ValueError:
         return False

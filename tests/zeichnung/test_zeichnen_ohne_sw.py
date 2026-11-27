@@ -301,10 +301,50 @@ def test_uebergabe_json_mit_toleranz_und_form_lage():
     assert u2["plan"][0]["toleranz"]["passung"] == "h7" and u2["plan"][0]["toleranz"]["unten"] == -0.021
     assert u2["plan"][1]["form_lage"]["bezug"] == ["A"]
     assert u2["gesetzt"] == {"plan": 1, "gesetzt": 1} and u2["sha256_slddrw"] == "ab" * 32 and u2["meldungen"] == ["X: y"]
-    assert set(u2) == {"plan", "gesetzt", "sha256_slddrw", "meldungen"}
+    assert set(u2) == {"schema", "format", "massstab", "lauf", "plan", "gesetzt", "sha256_slddrw", "meldungen"}
 
 
-def test_sammel_mm_aus_spec():
+def test_sammelhoehe_aus_spec():
     from swki.zeichnung.toleranzangaben import sammelangaben
     spec = {}
-    assert z.sammel_mm(spec) == len(sammelangaben(spec)) * z.SAMMEL_ZEILE_MM
+    assert z.sammelhoehe_mm(spec) == len(sammelangaben(spec)) * z.SAMMEL_ZEILE_MM
+
+
+def test_uebergabe_kopf_und_ansichten():
+    u = z.uebergabe([], {}, "x", [], "A3quer", (1, 2), 7, {"haupt": "Zeichnungsansicht1"})
+    assert (u["schema"], u["format"], u["massstab"], u["lauf"]) == (1, "A3quer", "1:2", 7)
+    assert u["ansichten"] == {"haupt": "Zeichnungsansicht1"}
+    assert "ansichten" not in z.uebergabe([], {}, "x", [])
+
+
+def test_uebergabe_tupel_anker_und_leere_toleranz():
+    import json
+    from swki.zeichnung.toleranzangaben import FormLage, Toleranz
+    plan = [Mass(id="m", quelle="modell", art="laenge", wert=5.0, merkmal="a", treiber_alle=("p", "q"),
+                 toleranz=Toleranz(None, None, None, False)),
+            Mass(id="b", quelle="bezug", art="bezug", wert=0.0, merkmal="a", anker={"feature": "a", "flaeche": "+y"}),
+            Mass(id="f", quelle="form_lage", art="form_lage", wert=0.0, merkmal="a",
+                 form_lage=FormLage("a", "ebenheit", "⏥", "0,05", ("A", "B"), False))]
+    u = json.loads(json.dumps(z.uebergabe(plan, {}, "x", [])))
+    assert u["plan"][0]["treiber_alle"] == ["p", "q"] and u["plan"][0]["toleranz"]["passung"] is None
+    assert u["plan"][1]["anker"] == {"feature": "a", "flaeche": "+y"}
+    assert u["plan"][2]["form_lage"]["bezug"] == ["A", "B"]
+
+
+def test_schreibe_uebergabe_atomar_utf8(tmp_path):
+    import json
+    ziel = tmp_path / "zeichnung.json"
+    ziel.write_text("alt", encoding="utf-8")
+    assert z.schreibe_uebergabe(ziel, {"text": "Hülle Ⓔ, Größe", "n": 1}) == ziel
+    roh = ziel.read_text(encoding="utf-8")
+    assert "Hülle Ⓔ, Größe" in roh and json.loads(roh)["n"] == 1
+    assert not (tmp_path / "zeichnung.json.tmp").exists()
+
+
+def test_sammelhoehe_ohne_und_mit_behandlung_halbzeug():
+    from pathlib import Path
+    from swki.spec.laden import lade_spec
+    assert z.sammelhoehe_mm({}) >= 20.0
+    spec = lade_spec(Path(__file__).resolve().parents[1] / "referenz" / "zeichnung" / "buchse_z.yaml")
+    n = len(spec["behandlung"])
+    assert z.sammelhoehe_mm(spec) == (4 + n) * 5 + 5  # + Halbzeug-Zeile

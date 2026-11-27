@@ -802,6 +802,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         raise SwkiFehler(f"{teil} fehlt (Lauf {lauf} ohne gespeichertes Teil)")
     ausgabe = ordner / "zeichnung"
     ausgabe.mkdir(exist_ok=True)
+    (ausgabe / "zeichnung.json").unlink(missing_ok=True)  # nie eine alte Übergabe neben einer neuen Zeichnung
     sha_teil = _sha(teil)
     ansichten = waehle_ansichten(spec)
     app = verbinde(r.sw_jahr)
@@ -824,7 +825,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         meldungen += nicht_erzeugt
         protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
         plan = massplan(spec, protokoll)
-        sammel = sammel_mm(spec)  # Platz der Sammelangaben über dem Schriftfeld (Task 5 schreibt sie)
+        sammel = sammelhoehe_mm(spec)  # Platz der Sammelangaben über dem Schriftfeld (Task 5 schreibt sie)
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         buchstabe, bereich = ("B" if schnitt else "A"), {}
         gruppe = _gruppen(spec)
@@ -905,9 +906,9 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         raise ZeichnungFehler("ZEICHNUNG_TEIL_GEAENDERT", f"{teil.name} wurde beim Zeichnen verändert")
     masse = {"plan": _planzahlen(plan)[0], "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
              "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}}
-    uebergabe_pfad = ausgabe / "zeichnung.json"
-    uebergabe_pfad.write_text(json.dumps(uebergabe(plan, masse, _sha(zeichnung), meldungen), ensure_ascii=False, indent=1),
-                              encoding="utf-8")  # Eingabe für Z1.4 (Design §8.1)
+    uebergabe_pfad = schreibe_uebergabe(  # Eingabe für Z1.4 (Design §8.1)
+        ausgabe / "zeichnung.json",
+        uebergabe(plan, masse, _sha(zeichnung), meldungen, format_, massstab, lauf, {i["rolle"]: i["name"] for i in info}))
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "meldungen": meldungen,
@@ -915,16 +916,30 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             "angaben": {"plan": _planzahlen(plan)[1], "gesetzt": len(notizen)}, "dauer_s": round(time.time() - t0, 1)}
 
 
-def sammel_mm(spec: dict) -> float:
+def sammelhoehe_mm(spec: dict) -> float:
     """Höhe der Sammelangaben über dem Schriftfeld: eine Zeile je Angabe."""
     return len(sammelangaben(spec)) * SAMMEL_ZEILE_MM
 
 
-def uebergabe(plan: list[Mass], gesetzt: dict, sha_zeichnung: str, meldungen: list[str]) -> dict:
+def schreibe_uebergabe(pfad: Path, daten: dict) -> Path:
+    """Schreibt die Übergabe atomar (tmp-Datei, dann replace), UTF-8, Umlaute und Ⓔ im Klartext."""
+    tmp = pfad.with_name(pfad.name + ".tmp")
+    tmp.write_text(json.dumps(daten, ensure_ascii=False, indent=1), encoding="utf-8")
+    tmp.replace(pfad)
+    return pfad
+
+
+def uebergabe(plan: list[Mass], gesetzt: dict, sha_zeichnung: str, meldungen: list[str], format_: str | None = None,
+              massstab: tuple[int, int] | None = None, lauf: int | None = None,
+              ansichten: dict[str, str] | None = None) -> dict:
     """Übergabe an die Zeichnungsprüfung Z1.4 (Design §8.1), reine Funktion: Maßplan (Toleranz und FormLage als dict),
     was gesetzt wurde, SHA-256 der .slddrw und die Meldungen. Das JSON schreibt `zeichnen` als `zeichnung/zeichnung.json`."""
-    return {"plan": [asdict(m) for m in plan], "gesetzt": gesetzt, "sha256_slddrw": sha_zeichnung,
-            "meldungen": list(meldungen)}
+    daten = {"schema": 1, "format": format_, "massstab": f"{massstab[0]}:{massstab[1]}" if massstab else None,
+             "lauf": lauf, "plan": [asdict(m) for m in plan], "gesetzt": gesetzt, "sha256_slddrw": sha_zeichnung,
+             "meldungen": list(meldungen)}
+    if ansichten is not None:
+        daten["ansichten"] = dict(ansichten)
+    return daten
 
 
 def _speichern(ext, ziel: Path) -> None:

@@ -128,10 +128,28 @@ def test_sammel_mm_null_aendert_nichts():
 
 def test_einzelheit_passt_mit_sammel_mm_nie_guenstiger():
     from swki.zeichnung.layout import einzelheit_passt
-    g = {"haupt": (120, 80), "drauf": (120, 40)}
-    for einzelheit in ((10, 10), (30, 20), (60, 40), (100, 80)):
-        if einzelheit_passt(g, einzelheit, sammel_mm=40.0):
-            assert einzelheit_passt(g, einzelheit)
+    g = {"haupt": (40, 50), "drauf": (40, 25)}
+    assert einzelheit_passt(g, (10, 30)) is True          # ohne Reserve lohnt die Einzelheit
+    assert einzelheit_passt(g, (10, 30), sammel_mm=40.0) is False  # mit Reserve ändert sich Format oder Maßstab
+    for gr in ({"haupt": (120, 80), "drauf": (120, 40)}, g):
+        for einzelheit in ((10, 10), (10, 30), (30, 20), (60, 40), (100, 80)):
+            assert einzelheit_passt(gr, einzelheit, 40.0) <= einzelheit_passt(gr, einzelheit, 0.0)
+
+
+def test_einzelheit_passt_false_statt_valueerror(monkeypatch):
+    from swki.zeichnung import layout
+
+    def kaputt(*a, **k):
+        raise ValueError("passt nicht")
+    monkeypatch.setattr(layout, "anordnen", kaputt)
+    assert layout.einzelheit_passt({"haupt": (10, 10)}, (5, 5)) is False
+
+
+def test_waehle_mit_sammel_mm():
+    from swki.zeichnung.blatt import waehle
+    assert waehle((100, 60)) == waehle((100, 60), 0.0)
+    assert waehle((100, 190)) == ("A4", (1, 1))
+    assert waehle((100, 190), 40.0) == ("A3quer", (1, 1))  # die Reserve verdrängt die Ansichten vom A4
 
 
 def test_freiflaechen_mit_sammel_mm():
