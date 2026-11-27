@@ -67,3 +67,7 @@ def test_sammelangaben_reihenfolge():
         "einsatzgehärtet und angelassen (60 ± 2) HRC, CHD = (0,8 +0,4/0) mm (550 HV1)",
         "Halbzeug: Rund EN 10060 – 55"]
     assert sammelangaben(_lade("stil/spannplatte.yaml"))[:4] == sammelangaben(spec)[:4]
+
+
+def test_toleranz_aus_ausdruck():
+    assert toleranz_aus(None, {"oben": "=T/2", "unten": "=-T/2"}, False, {"T": 0.04}) == Toleranz(None, 0.02, -0.02, False)

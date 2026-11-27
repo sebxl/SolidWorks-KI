@@ -3,6 +3,7 @@ Halbzeug, Sammelangaben), ohne SolidWorks."""
 
 from dataclasses import dataclass
 
+from swki.spec.ausdruck import auswerten
 from swki.zeichnung.angaben import zahl
 
 SAMMEL_RAUHEIT = "Ra 3,2"
@@ -45,13 +46,15 @@ class FormLage:
     mmr: bool
 
 
-def toleranz_aus(passung: str | None, toleranz: dict | None, huelle: bool) -> Toleranz | None:
+def toleranz_aus(passung: str | None, toleranz: dict | None, huelle: bool,
+                 parameter: dict | None = None) -> Toleranz | None:
     """Toleranz eines Features; None, wenn weder Passung noch Abmaße vorliegen."""
     if passung is None and not toleranz:
         return None
     if passung is not None:
         return Toleranz(passung, None, None, bool(huelle))
-    return Toleranz(None, float(toleranz["oben"]), float(toleranz["unten"]), bool(huelle))
+    return Toleranz(None, auswerten(toleranz["oben"], parameter or {}), auswerten(toleranz["unten"], parameter or {}),
+                     bool(huelle))
 
 
 def _vorzeichen(x: float) -> str:
