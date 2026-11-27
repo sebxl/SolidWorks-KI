@@ -57,7 +57,7 @@ class Ist:
 
 
 def ist_zu_dict(ist: Ist) -> dict:
-    """JSON-fähig: Tupel werden Listen."""
+    """Verschachteltes dict (asdict behält Tupel; erst json.dumps macht Listen daraus, ist_aus_dict nimmt beides)."""
     return asdict(ist)
 
 
