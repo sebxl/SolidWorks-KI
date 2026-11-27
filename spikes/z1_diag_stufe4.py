@@ -67,7 +67,7 @@ def anmerkungen(v) -> dict:
     g = _ruf(v, "GetFirstGTOL")
     while g is not None:
         aus["gtol"].append({"werte": list(g.GetFrameValues(1) or ()), "symbole": list(g.GetFrameSymbols2(1) or ())})
-        g = _ruf(g, "GetNext")
+        g = _ruf(g, "GetNextGTOL")
     d = _ruf(v, "GetFirstDatumTag")
     while d is not None:
         aus["bezug"].append(_ruf(d, "GetLabel"))
@@ -111,17 +111,17 @@ def main(pfad: Path, teil: Path) -> None:
     drw.ClearSelection2(True)
     g = kante_von(v, "f1", False)
     werte["bezug_kante"] = g is not None and bool(v.SelectEntity(g, False))
-    tag = drw.InsertDatumTag2()
+    tag = _ruf(drw, "InsertDatumTag2")
     werte["bezug"] = tag is not None and tag.SetLabel("A")
     drw.ClearSelection2(True)
     werte["gtol_kante"] = g is not None and bool(v.SelectEntity(g, False))
-    gt = drw.InsertGtol()
+    gt = _ruf(drw, "InsertGtol")
     if gt is not None:
         gt.SetFrameSymbols2(1, "<IGTOL-FLAT>", False, "", False, "", "", "", "")
         gt.SetFrameValues2(1, "0,02", "", "", "", "")
     werte["gtol_eben"] = gt is not None
     drw.ClearSelection2(True)
-    gt2 = drw.InsertGtol()
+    gt2 = _ruf(drw, "InsertGtol")
     if gt2 is not None:
         gt2.SetFrameSymbols2(1, "<IGTOL-PERP>", False, "", False, "", "", "", "")
         gt2.SetFrameValues2(1, "0,02", "", "A", "", "")
