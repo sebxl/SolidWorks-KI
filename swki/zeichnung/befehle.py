@@ -1,4 +1,4 @@
-"""Befehl "swki zeichnen <spec>" (Zeichnungsableitung Z1.3)."""
+"""Befehle "swki zeichnen <spec>" (Zeichnungsableitung Z1.3) und "swki zeichnung pruefen <spec>" (Z1.4)."""
 
 from pathlib import Path
 
@@ -16,3 +16,15 @@ def einrichten(subparsers) -> None:
         return zeichnen(Path(a.spec), a.lauf)
 
     p.set_defaults(func=ausfuehren)
+
+    gruppe = subparsers.add_parser("zeichnung", help="Zeichnung prüfen").add_subparsers(dest="unterbefehl", required=True)
+    p = gruppe.add_parser("pruefen", help="Zeichnung zurücklesen und gegen Spec, Maßplan und Regelkatalog prüfen")
+    p.add_argument("spec")
+    p.add_argument("--lauf", type=ganzzahl_ab(1, "--lauf"), help="Vorgabe: letzter bestandener Lauf")
+
+    def pruefen(a):
+        from swki.zeichnung.zeichnung_pruefen import zeichnung_pruefen
+
+        return zeichnung_pruefen(Path(a.spec), a.lauf)
+
+    p.set_defaults(func=pruefen)
