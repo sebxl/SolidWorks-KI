@@ -21,11 +21,17 @@ IST_ART: dict[str, str] = {
     "fase": "laenge", "durchmesser": "durchmesser", "radius": "radius", "winkel": "winkel",
 }
 _MASSQUELLEN = ("modell", "neu")
-_RASTER = 0.05  # mm, Knotenraster des Maßgraphen (Entscheidung 2)
+_RASTER = 0.05  # mm, Knotenabstand des Maßgraphen (Entscheidung 2)
 
 
-def _norm(text: str | None) -> str:
-    return " ".join((text or "").split())
+def normtext(text: str | None) -> str:
+    """Vergleichstext: das Rücklesen liefert Ⓔ an Maßen als Tag `<MOD-EP>`; Tag → Zeichen, Leerraum zusammenfassen."""
+    return " ".join((text or "").replace("<MOD-EP>", "Ⓔ").split())
+
+
+_norm = normtext
+_WERT_TOL = 0.005 + 1e-9  # mm: Werte gelten als gleich, wenn sie auf 0,01 mm übereinstimmen
+_TOL_GLEICH = 0.0005      # mm: Abmaße gleich
 
 
 def _mangel(regeln: list[Regel], id_: str, merkmal: str, text: str) -> dict:
@@ -53,44 +59,55 @@ def _etikett(art: str, wert: float) -> str:
     return {"durchmesser": "Ø", "radius": "R"}.get(art, "") + zahl(wert) + ("°" if art == "winkel" else "")
 
 
-def _schluessel(art: str, wert: float) -> tuple[str, int]:
-    return art, round(wert * 100)
-
-
 def _zusatz_ok(ist: IstMass, m: Mass) -> bool:
-    return _norm(m.praefix) in _norm(ist.praefix) and _norm(m.suffix) in _norm(ist.suffix)
+    """Präfix am Anfang, Suffix am Ende des Ist-Textzusatzes (Leerraum normalisiert); ein Ⓔ am Ende gehört zur Toleranz."""
+    praefix, suffix = normtext(m.praefix), normtext(m.suffix)
+    ist_suffix = normtext(ist.suffix)
+    if not suffix.endswith("Ⓔ"):
+        ist_suffix = ist_suffix.removesuffix("Ⓔ").rstrip()
+    return normtext(ist.praefix).startswith(praefix) and ist_suffix.endswith(suffix)
+
+
+def _gleich(a: float | None, b: float | None) -> bool:
+    return a is not None and b is not None and abs(a - b) <= _TOL_GLEICH
+
+
+def _toleranz_ok(ist: IstMass, m: Mass) -> bool:
+    t, i = m.toleranz, ist.toleranz
+    if t is None:
+        return i.typ == "keine"
+    if t.passung is not None:
+        return i.typ == "passung" and i.passung == t.passung
+    return i.typ in ("bilateral", "symmetrisch", "grenz") and _gleich(i.oben, t.oben) and _gleich(i.unten, t.unten)
+
+
+def _wert_gleich(ist: IstMass, m: Mass) -> bool:
+    return abs(ist.wert - m.wert) <= _WERT_TOL
 
 
 def _abgleich(ist: Ist, plan: list[Mass]) -> tuple[dict[str, IstMass | None], list[IstMass]]:
-    """Multimenge je (Ist-Art, Wert auf 0,01 mm), unabhängig von der Ansicht (Entscheidung 1). Ist-Maße in Klammern
-    zählen nicht. Je Gruppe bekommen zuerst Plan-Maße mit Textzusatz einen Kandidaten, der den Zusatz trägt, danach
-    alle übrigen irgendeinen freien. Zweiter Wert: die nicht zugeordneten Ist-Maße."""
-    kandidaten: dict[tuple, list[IstMass]] = {}
-    for m in ist.masse:
-        if not m.klammer:
-            kandidaten.setdefault(_schluessel(m.art, m.wert), []).append(m)
-    gruppen: dict[tuple, list[Mass]] = {}
+    """Multimenge je Ist-Art und Wert (auf 0,01 mm), unabhängig von der Ansicht (Entscheidung 1). Ist-Maße in Klammern
+    zählen nicht. Die Ist-Maße sind fest nach (Ansicht, Name) sortiert. Je Plan-Maß, in Planreihenfolge, gilt der
+    Vorrang: Toleranz und Textzusatz passen, nur Toleranz, nur Zusatz, irgendein freies. Zweiter Wert: die nicht
+    zugeordneten Ist-Maße."""
+    frei = sorted((m for m in ist.masse if not m.klammer), key=lambda m: (m.ansicht, m.name))
     zuordnung: dict[str, IstMass | None] = {}
+    offen = []
     for m in plan:
-        if m.quelle not in _MASSQUELLEN:
-            continue
-        zuordnung[m.id] = None
-        if m.art in IST_ART:
-            gruppen.setdefault(_schluessel(IST_ART[m.art], m.wert), []).append(m)
-    uebrig: list[IstMass] = []
-    for schluessel, cand in kandidaten.items():
-        frei = list(cand)
-        plan_gruppe = gruppen.get(schluessel, [])
-        for m in [x for x in plan_gruppe if x.praefix.strip() or x.suffix.strip()]:       # Zusatz zuerst
-            treffer = next((c for c in frei if _zusatz_ok(c, m)), None)
+        if m.quelle in _MASSQUELLEN:
+            zuordnung[m.id] = None
+            if m.art in IST_ART:
+                offen.append(m)
+    vorrang = (lambda c, m: _toleranz_ok(c, m) and _zusatz_ok(c, m), _toleranz_ok, _zusatz_ok, lambda c, m: True)
+    for passt in vorrang:
+        for m in offen:
+            if zuordnung[m.id] is not None:
+                continue
+            treffer = next((c for c in frei if c.art == IST_ART[m.art] and _wert_gleich(c, m) and passt(c, m)), None)
             if treffer is not None:
                 zuordnung[m.id] = treffer
                 frei.remove(treffer)
-        for m in plan_gruppe:
-            if zuordnung[m.id] is None and frei:
-                zuordnung[m.id] = frei.pop(0)
-        uebrig += frei
-    return zuordnung, uebrig
+    return zuordnung, frei
 
 
 def zuordnen(ist: Ist, plan: list[Mass]) -> dict[str, IstMass | None]:
@@ -106,7 +123,7 @@ def pruefe_vollstaendig(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict
     """Z-VOLL-1 (fehlt, Zusatz fehlt, Art unbekannt), Z-VOLL-2 (doppelt, überzählig)."""
     maengel: list[dict] = []
     zuordnung, uebrig = _abgleich(ist, plan)
-    plan_schluessel = {_schluessel(IST_ART[m.art], m.wert) for m in plan if m.quelle in _MASSQUELLEN and m.art in IST_ART}
+    geplant = [m for m in plan if m.quelle in _MASSQUELLEN and m.art in IST_ART]
     for m in plan:
         if m.quelle in _MASSQUELLEN:
             if m.art not in IST_ART:
@@ -120,9 +137,9 @@ def pruefe_vollstaendig(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict
                 maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal,
                                        f"Zusatz fehlt: {m.praefix}{etikett}{m.suffix}".strip()))
         elif m.quelle not in ("angabe", "rauheit", "form_lage", "bezug"):
-            maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal, f"Art {m.art} nicht prüfbar"))
+            maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal, f"Quelle {m.quelle} nicht prüfbar"))
     for m in uebrig:
-        wort = "doppelt" if _schluessel(m.art, m.wert) in plan_schluessel else "überzählig"
+        wort = "doppelt" if any(IST_ART[g.art] == m.art and _wert_gleich(m, g) for g in geplant) else "überzählig"
         maengel.append(_mangel(regeln, "Z-VOLL-2", m.name, f"{wort}: {_etikett(m.art, m.wert)}"))
     maengel += _angaben_abgleich(ist, plan, regeln)
     return _pruefung("vollstaendig", regeln, ("Z-VOLL-1", "Z-VOLL-2"), maengel)
@@ -135,8 +152,11 @@ def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[d
     frei = list(range(len(notizen)))
     texte = []
     for m in plan:
-        text = _norm(m.text) if m.quelle == "angabe" else ""
+        if m.quelle != "angabe":
+            continue
+        text = _norm(m.text)
         if not text:
+            maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal, f"Angabe ohne Text: {m.merkmal}"))
             continue
         texte.append(text)
         treffer = next((i for i in frei if notizen[i].startswith(text)), None)
@@ -150,39 +170,64 @@ def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[d
     return maengel
 
 
+def _cluster(koordinaten: list[float]) -> list[tuple[float, float]]:
+    """Sortierte Koordinaten zu Knoten: aufeinanderfolgende mit Abstand ≤ 0,05 mm bilden einen Knoten (von, bis)."""
+    knoten: list[list[float]] = []
+    for x in sorted(koordinaten):
+        if knoten and x - knoten[-1][1] <= _RASTER + 1e-9:
+            knoten[-1][1] = x
+        else:
+            knoten.append([x, x])
+    return [(a, b) for a, b in knoten]
+
+
+def _knoten(knoten: list[tuple[float, float]], x: float) -> int:
+    return next(i for i, (a, b) in enumerate(knoten) if a <= x <= b)
+
+
 def pruefe_ueberbestimmt(ist: Ist, regeln: list[Regel]) -> dict:
     """Z-UEB-1: je (Ansicht, Richtung) bilden die linearen Maße ohne Klammer einen Graphen über die Bezugskoordinaten
     (auf 0,05 mm gerundet). Eine Kante, die zwei schon verbundene Knoten verbindet, schließt einen Zyklus. Maße
     verschiedener Ansichten gelten als unabhängig (bekannte Grenze, Entscheidung 2)."""
-    vater: dict[tuple, tuple] = {}
-
-    def wurzel(x):
-        while vater.setdefault(x, x) != x:
-            vater[x] = vater[vater[x]]
-            x = vater[x]
-        return x
-
-    maengel, ohne_punkte = [], 0
+    gruppen: dict[tuple, list[IstMass]] = {}
+    ohne_punkte = 0
     for m in ist.masse:
         if m.art != "laenge" or m.klammer:
             continue
         if m.richtung not in ("h", "v") or m.punkte is None:
             ohne_punkte += 1
             continue
-        i = 0 if m.richtung == "h" else 1
-        a, b = ((m.ansicht, m.richtung, round(p[i] / _RASTER)) for p in m.punkte)
-        if a == b:
-            continue
-        wa, wb = wurzel(a), wurzel(b)
-        if wa == wb:
-            richtung = "waagrecht" if m.richtung == "h" else "senkrecht"
-            maengel.append(_mangel(regeln, "Z-UEB-1", m.name,
-                                   f"Maßkette geschlossen: {zahl(m.wert)} ({m.ansicht}, {richtung}) – Hilfsmaß in Klammern setzen"))
-        else:
-            vater[wa] = wb
+        gruppen.setdefault((m.ansicht, m.richtung), []).append(m)
+    maengel = []
+    for (ansicht, richtung), masse in gruppen.items():
+        i = 0 if richtung == "h" else 1
+        knoten = _cluster([p[i] for m in masse for p in m.punkte])
+        vater: dict[int, int] = {}
+
+        def wurzel(x):
+            while vater.setdefault(x, x) != x:
+                vater[x] = vater[vater[x]]
+                x = vater[x]
+            return x
+
+        gesehen: set[frozenset] = set()
+        for m in masse:
+            a, b = (_knoten(knoten, p[i]) for p in m.punkte)
+            kante = frozenset((a, b))
+            if a == b or kante in gesehen:      # gleiches Knotenpaar: Doppelmaß, das meldet nur Z-VOLL-2
+                continue
+            gesehen.add(kante)
+            wa, wb = wurzel(a), wurzel(b)
+            if wa == wb:
+                art = "waagrecht" if richtung == "h" else "senkrecht"
+                maengel.append(_mangel(regeln, "Z-UEB-1", m.name,
+                                       f"Maßkette geschlossen: {zahl(m.wert)} ({ansicht}, {art}) – Hilfsmaß in Klammern setzen"))
+            else:
+                vater[wa] = wb
     unpruefbar = f"{ohne_punkte} lineare Maße ohne Richtung oder Bezugspunkte nicht prüfbar" if ohne_punkte else None
     return _pruefung("ueberbestimmt", regeln, ("Z-UEB-1",), maengel, unpruefbar=unpruefbar,
-                     hinweis="Maße verschiedener Ansichten gelten als unabhängig")
+                     hinweis="Maße verschiedener Ansichten gelten als unabhängig; zufällig zusammenfallende Koordinaten "
+                             "verschiedener Merkmale (0–20, 20–50, 0–50) bleiben ein möglicher Fehlalarm")
 
 
 def pruefe_ansichten(ist: Ist, regeln: list[Regel]) -> dict:

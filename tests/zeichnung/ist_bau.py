@@ -30,14 +30,13 @@ def ist_toleranz(t: Toleranz | None) -> IstToleranz:
 
 def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None) -> Ist:
     """Ideale Zeichnung zum Plan. `ansichten`: Name → Art (ansicht | schnitt | einzelheit), die erste nimmt die
-    Maße und Notizen auf; Vorgabe {"haupt": "ansicht"}. Lineare Maße gleicher Richtung und gleichen Werts landen in
-    je einer weiteren Ansicht „<erste><n>“ (zwei Maße mit denselben Endpunkten in einer Ansicht wären ein Doppelmaß)."""
+    Maße und Notizen auf; Vorgabe {"haupt": "ansicht"}. Alle Maße liegen in dieser Ansicht, alle starten bei 0."""
     ansichten = ansichten or {"haupt": "ansicht"}
     erste = next(iter(ansichten))
     ist_ansichten = {name: IstAnsicht(name, None, art, "2:1" if art == "einzelheit" else "1:1",
                                       {"schnitt": "A-A", "einzelheit": "B"}.get(art))
                      for name, art in ansichten.items()}
-    masse, angaben, gesehen = [], [], {}
+    masse, angaben = [], []
     for m in plan:
         if m.quelle == "angabe":
             angaben.append(IstAngabe("hinweis", erste, m.text, None, None, ()))
@@ -50,10 +49,6 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None) -> Ist:
         suffix = m.suffix + (" Ⓔ" if m.toleranz is not None and m.toleranz.huelle else "")
         ansicht, richtung, punkte = erste, None, None
         if art == "laenge":
-            n = gesehen[m.wert] = gesehen.get(m.wert, -1) + 1
-            if n:
-                ansicht = f"{erste}{n + 1}"
-                ist_ansichten.setdefault(ansicht, IstAnsicht(ansicht, None, "ansicht", "1:1", None))
             richtung, punkte = "h", ((0.0, 0.0), (m.wert, 0.0))
         masse.append(IstMass(m.name or m.id, ansicht, art, m.wert, praefix, suffix, False, tol, richtung, punkte,
                              False if art == "laenge" else None))

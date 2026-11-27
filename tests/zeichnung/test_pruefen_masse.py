@@ -324,3 +324,103 @@ def test_gewinde_ohne_gewinde_im_plan():
     plan = plan_buchse_z()
     p = pruefe_gewinde(ideal_ist(plan), plan, REGELN)
     assert p["ok"] is None and p["hinweis"] == "kein Gewinde"
+
+
+# --- Nachbesserung Review (I-1, I-2, M-1, M-2, M-4, M-5, Ⓔ-Tag) ----------------------------------------------------------
+
+def test_gleicher_wert_zwei_merkmale_keine_kette():
+    plan = [Mass("a", "modell", "laenge", 20.0, "f1", name="a"), Mass("b", "modell", "lage", 20.0, "f2", name="b")]
+    ist = _ist_mit([_mass("a", 20.0, punkte=((0.0, 10.0), (20.0, 10.0))),
+                    _mass("b", 20.0, punkte=((0.0, 40.0), (20.0, 40.0)))])
+    assert pruefe_ueberbestimmt(ist, REGELN)["ok"] is True
+    assert pruefe_vollstaendig(ist, plan, REGELN)["ok"] is True
+
+
+def test_spannplatte_ideal_alle_in_einer_ansicht():
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    assert {m.ansicht for m in ist.masse} == {"haupt"}
+    assert pruefe_ueberbestimmt(ist, REGELN)["ok"] is True
+
+
+def test_ueberbestimmt_hinweis_nennt_zufall():
+    assert "zusammenfallende" in pruefe_ueberbestimmt(_kette(klammer=True), REGELN)["hinweis"]
+
+
+def _toleriert(name, wert, tol):
+    return replace(_mass(name, wert), toleranz=tol)
+
+
+def test_zuordnen_toleranz_hat_vorrang():
+    from swki.zeichnung.toleranzangaben import Toleranz
+
+    a = Mass("a", "modell", "laenge", 20.0, "f1", name="a", toleranz=Toleranz(None, 0.02, -0.02, False))
+    b = Mass("b", "modell", "laenge", 20.0, "f2", name="b")
+    mit = _toleriert("x", 20.0, IstToleranz("symmetrisch", None, 0.02, -0.02))
+    ohne = _mass("y", 20.0)
+    for ist_masse in ((mit, ohne), (ohne, mit)):
+        z = zuordnen(_ist_mit(ist_masse), [a, b])
+        assert z["a"] is mit and z["b"] is ohne
+        z = zuordnen(_ist_mit(ist_masse), [b, a])
+        assert z["a"] is mit and z["b"] is ohne
+
+
+def test_zuordnen_passung():
+    from swki.zeichnung.toleranzangaben import Toleranz
+
+    a = Mass("a", "neu", "durchmesser", 20.0, "f1", toleranz=Toleranz("H7", None, None, True))
+    b = Mass("b", "neu", "durchmesser", 20.0, "f2", toleranz=Toleranz("k6", None, None, True))
+    h7 = replace(_mass("h", 20.0), art="durchmesser", toleranz=IstToleranz("passung", "H7", None, None))
+    k6 = replace(_mass("k", 20.0), art="durchmesser", toleranz=IstToleranz("passung", "k6", None, None))
+    z = zuordnen(_ist_mit((h7, k6)), [b, a])
+    assert z["a"] is h7 and z["b"] is k6
+
+
+def test_werte_mit_toleranz_nicht_ueber_rundungsgrenze():
+    plan = [Mass("a", "modell", "laenge", 12.345, "f1", name="a")]
+    for wert in (12.345, 12.345 + 1e-9, 12.349):
+        assert pruefe_vollstaendig(_ist_mit([_mass("x", wert)]), plan, REGELN)["ok"] is True
+    assert pruefe_vollstaendig(_ist_mit([_mass("x", 12.36)]), plan, REGELN)["ok"] is False
+
+
+def test_knoten_clustern_statt_runden():
+    ist = _ist_mit([_mass("a", 50.0, punkte=((0.0, 0.0), (0.0249, 0.0))),
+                    _mass("b", 50.0, punkte=((0.0249, 0.0), (0.0498, 0.0))),
+                    _mass("c", 50.0, punkte=((0.0, 0.0), (0.0498, 0.0)))])
+    assert pruefe_ueberbestimmt(ist, REGELN)["ok"] is True      # alle in einem Cluster: keine Kante
+    ist = _ist_mit([_mass("a", 50.0, punkte=((0.0, 0.0), (50.0, 0.0))),
+                    _mass("b", 30.0, punkte=((50.04, 0.0), (80.0, 0.0))),
+                    _mass("c", 80.0, punkte=((0.04, 0.0), (80.03, 0.0)))])
+    assert pruefe_ueberbestimmt(ist, REGELN)["ok"] is False
+
+
+def test_unbekannte_quelle_genannt():
+    p = pruefe_vollstaendig(ideal_ist([]), [Mass("x", "foo", "laenge", 5.0, "f1")], REGELN)
+    assert p["ok"] is False and p["maengel"][0]["text"] == "Quelle foo nicht prüfbar"
+
+
+def test_angabe_ohne_text_ist_mangel():
+    p = pruefe_vollstaendig(ideal_ist([]), [Mass("x:angabe", "angabe", "angabe", 0.0, "g1", text=None)], REGELN)
+    assert p["ok"] is False and p["maengel"][0] == {"regel": "Z-VOLL-1", "merkmal": "g1", "text": "Angabe ohne Text: g1"}
+
+
+def test_zusatz_am_rand_nicht_in_der_mitte():
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    ist = replace(ist, masse=tuple(replace(m, praefix="14 × ") if m.name == "D3@m1" else m for m in ist.masse))
+    p = pruefe_vollstaendig(ist, plan, REGELN)
+    assert p["ok"] is False and p["maengel"][0]["text"].startswith("Zusatz fehlt")
+
+
+def test_huelle_tag_gleich_symbol():
+    from swki.zeichnung.pruefen import normtext
+    from swki.zeichnung.toleranzangaben import Toleranz
+
+    assert normtext("  Ø  <MOD-EP> ") == "Ø Ⓔ"
+    plan = [Mass("a", "neu", "durchmesser", 20.0, "f1", suffix=" Ⓔ", toleranz=Toleranz("H7", None, None, True))]
+    ist = replace(_mass("x", 20.0), art="durchmesser", praefix="Ø", suffix=" <MOD-EP>",
+                  toleranz=IstToleranz("passung", "H7", None, None))
+    assert pruefe_vollstaendig(_ist_mit([ist]), plan, REGELN)["ok"] is True
+    notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> – 15 tief", None, None, ())
+    angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief")
+    assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is True
