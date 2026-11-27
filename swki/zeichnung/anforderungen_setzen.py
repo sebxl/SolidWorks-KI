@@ -39,6 +39,8 @@ KANTE, ECKPUNKT, SILHOUETTE = 1, 2, 4               # swViewEntityType_e
 SF_BEARBEITET, FUEHRUNG_GERADE, PFEIL_GESCHLOSSEN = 1, 1, 1  # swSFSymType_e, swLeaderStyle_e, swArrowStyle_e
 LINEAR = (2, 11, 12)                                # swDimensionType_e: Linear, HorLinear, VertLinear
 PUNKT_TOL_MM = 0.1                                  # Bezugspunkt liegt auf der Kante / in der Kreismitte
+KANTE_VERLAENGERT_MM = 1.0                          # Bezugspunkt höchstens so weit hinter dem Kantenende (virtuelle
+#                                                     Ecke einer Fase: Buchse f3 setzt 0,5 mm über der Bohrungskante an)
 WERT_TOL_MM = 0.005                                 # neues Zeichnungsmaß misst dasselbe wie das Modellmaß
 HILFSLINIE_LUECKE_MM = 1.0                          # wie zeichnen.HILFSLINIE_LUECKE_MM
 HILFSLINIE_KREIS_MM = 6.0                           # Hilfslinie an einer Kreismitte beginnt höchstens so weit hinter dem Kreis
@@ -183,10 +185,24 @@ def _kreis_der_hilfslinie(hilfslinie: tuple, kanten: list[Kante]) -> Kante | Non
 def kante_am_punkt(punkt: tuple[float, float], richtung: str, kanten: list[Kante],
                    hilfslinie: tuple | None = None) -> Kante | None:
     """Kante, an der ein Maß in `punkt` ansetzt (Blatt-mm), in dieser Reihenfolge:
-    1. die Kreiskante, deren Mitte auf der Hilfslinie liegt (`_kreis_der_hilfslinie`; ohne Hilfslinie: Mitte im Punkt),
-    2. die gerade Kante quer zur Messrichtung durch den Punkt (Maßlinie waagrecht „h“ → senkrechte Kante),
+    1. die gerade Kante quer zur Messrichtung (Maßlinie waagrecht „h“ → senkrechte Kante), auf deren Strecke der Punkt
+       liegt, höchstens `KANTE_VERLAENGERT_MM` über ihr Ende hinaus (Review Task 5: nicht irgendwo auf ihrer Geraden –
+       live lag eine Taschenkante 15 mm weiter auf derselben Linie;
+       trifft zugleich ein Kreis, gewinnt die Kante),
+    2. die Kreiskante, deren Mitte auf der Hilfslinie liegt (`_kreis_der_hilfslinie`; ohne Hilfslinie: Mitte im Punkt),
     3. ein Eckpunkt im Punkt (Live 27.11.: Fase der Buchse, eine Seite endet an der Fasenkante).
     Toleranz `PUNKT_TOL_MM`; unter mehreren geraden Kanten die nächste zum Punkt."""
+    passend = []
+    for k in kanten:
+        if k.kreis or k.punkt or k.laenge() < 1e-6:
+            continue
+        dx, dy = abs(k.e[0] - k.a[0]), abs(k.e[1] - k.a[1])
+        quer = dx < 1e-3 * max(dy, 1e-9) if richtung == "h" else dy < 1e-3 * max(dx, 1e-9)
+        if (quer and _abstand_gerade(punkt, k.a, k.e) <= PUNKT_TOL_MM
+                and _abstand_strecke(punkt, k.a, k.e) <= KANTE_VERLAENGERT_MM):
+            passend.append(k)
+    if passend:
+        return min(passend, key=lambda k: _abstand_strecke(punkt, k.a, k.e))
     if hilfslinie is not None:
         k = _kreis_der_hilfslinie(hilfslinie, kanten)
         if k is not None:
@@ -194,16 +210,6 @@ def kante_am_punkt(punkt: tuple[float, float], richtung: str, kanten: list[Kante
     kreise = [k for k in kanten if k.kreis and math.dist(k.kreis[0], punkt) <= PUNKT_TOL_MM]
     if kreise:
         return max(kreise, key=lambda k: k.kreis[1])
-    passend = []
-    for k in kanten:
-        if k.kreis or k.punkt or k.laenge() < 1e-6:
-            continue
-        dx, dy = abs(k.e[0] - k.a[0]), abs(k.e[1] - k.a[1])
-        quer = dx < 1e-3 * max(dy, 1e-9) if richtung == "h" else dy < 1e-3 * max(dx, 1e-9)
-        if quer and _abstand_gerade(punkt, k.a, k.e) <= PUNKT_TOL_MM:
-            passend.append(k)
-    if passend:
-        return min(passend, key=lambda k: _abstand_strecke(punkt, k.a, k.e))
     return min((k for k in kanten if k.punkt and math.dist(k.a, punkt) <= PUNKT_TOL_MM),
                key=lambda k: math.dist(k.a, punkt), default=None)
 
@@ -234,9 +240,17 @@ def hilfslinien(dd) -> tuple[str, list[tuple], list[tuple[float, float]]] | None
 # --- Zeichnungsmaße ---------------------------------------------------------------------------------------------------
 
 
-def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None) -> tuple[object | None, str]:
+def _loesche_gezaehlt(drw, view, dd) -> bool:
+    """Anzeigemaß löschen und nach Wirkung prüfen: danach eins weniger in der Ansicht (Review Task 5, M2)."""
+    vorher = len(_anzeige(view))
+    _loesche(drw, dd)
+    return len(_anzeige(view)) == vorher - 1
+
+
+def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None, bezug=None) -> tuple[object | None, str]:
     """Ein Modellmaß als Zeichnungsmaß an denselben Bezugspunkten neu setzen. Liefert (neues Anzeigemaß, '') oder
-    (None, Grund); das Modellmaß wird nur gelöscht, wenn das neue denselben Wert misst und das Löschen wirkt."""
+    (None, Grund); das Modellmaß wird nur gelöscht, wenn das neue denselben Wert misst und das Löschen wirkt. Jedes
+    Löschen wird nach Wirkung geprüft; ein stehengebliebenes Maß steht im Grund."""
     b = hilfslinien(dd)
     if b is None:
         return None, "kein lineares Maß mit zwei Hilfslinien"
@@ -245,7 +259,8 @@ def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None) -> tuple[obje
     gewaehlt = [kante_am_punkt(p, richtung, kanten, h) for p, h in zip(punkte, linien)]
     if not all(gewaehlt):
         frei = [f"({p[0]:.1f}, {p[1]:.1f})" for p, k in zip(punkte, gewaehlt) if k is None]
-        return None, f"keine sichtbare Kante am Bezugspunkt {', '.join(frei)}"
+        wort = f"Bezug {bezug} ohne" if bezug in ("mitte", "ursprung") else "keine"
+        return None, f"{wort} sichtbare Kante am Bezugspunkt {', '.join(frei)}"
     alt = wert_mm(dd)
     x, y, _ = (list(_ruf(_ruf(dd, "GetAnnotation"), "GetPosition")) + [0.0])[:3]
     drw.ClearSelection2(True)
@@ -258,13 +273,15 @@ def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None) -> tuple[obje
         return None, "AddDimension2 abgelehnt"
     w = wert_mm(neu)
     if alt is None or w is None or abs(w - alt) > WERT_TOL_MM:
-        _loesche(drw, neu)
-        return None, f"neues Maß misst {w if w is None else round(w, 3)} statt {alt if alt is None else round(alt, 3)}"
-    vorher = len(_anzeige(view))
-    _loesche(drw, dd)
-    if len(_anzeige(view)) != vorher - 1:
-        _loesche(drw, neu)
-        return None, "Modellmaß nicht gelöscht"
+        grund = f"neues Maß misst {w if w is None else round(w, 3)} statt {alt if alt is None else round(alt, 3)}"
+        if not _loesche_gezaehlt(drw, view, neu):
+            grund += "; neues Maß nicht gelöscht, steht doppelt"
+        return None, grund
+    if not _loesche_gezaehlt(drw, view, dd):
+        grund = "Modellmaß nicht gelöscht"
+        if not _loesche_gezaehlt(drw, view, neu):
+            grund += "; neues Maß nicht gelöscht, steht doppelt"
+        return None, grund
     return neu, ""
 
 
@@ -272,6 +289,7 @@ def dauerhaft_machen(drw, mu, views: dict, plan: list[Mass]) -> tuple[dict[str, 
     """Jedes Modellmaß des Plans mit Toleranz oder Textzusatz wird ein Zeichnungsmaß (Spike Stufe 4). Liefert alter
     Name → neuer Name (`RD<n>@<Ansicht>`) und Meldungen `MASS_NICHT_DAUERHAFT: <name> – <grund>` (das Modellmaß bleibt
     dann stehen, mit Toleranz und Zusatz nur bis zum Wiederöffnen)."""
+    bezug = {m.name: m.bezug for m in plan if m.quelle == "modell" and m.name}
     ziel = {m.name for m in plan if m.quelle == "modell" and m.name and (m.toleranz or m.praefix or m.suffix)}
     namen, meldungen = {}, []
     if not ziel:
@@ -283,7 +301,7 @@ def dauerhaft_machen(drw, mu, views: dict, plan: list[Mass]) -> tuple[dict[str, 
         kanten = sichtbare_kanten(mu, v)
         for dd in dds:
             name = kurzname(dd)
-            neu, grund = _ersetze(drw, mu, v, dd, kanten)
+            neu, grund = _ersetze(drw, mu, v, dd, kanten, bezug.get(name))
             if neu is None:
                 meldungen.append(f"MASS_NICHT_DAUERHAFT: {name} – {grund}")
                 namen.setdefault(name, name)
@@ -372,6 +390,7 @@ class Anmerkung:
     lage: tuple[float, float] | None = None
     verworfen: list = field(default_factory=list)
     vermessen: bool = True
+    soll: tuple[float, float] | None = None   # gewählte Kandidatenlage (die zurückgelesene steht in `lage`)
 
     def rechteck(self, lage: tuple | None = None) -> tuple | None:
         lage = self.lage if lage is None else lage
@@ -426,10 +445,12 @@ class Anmerkung:
         return rechteck[0] < r[2] + n and r[0] - n < rechteck[2] and rechteck[1] < r[3] + n and r[1] - n < rechteck[3]
 
     def verwerfen(self) -> bool:
-        if self.lage is not None and self.lage not in self.verworfen:
-            self.verworfen.append(self.lage)
-        moeglich = len(BEZUG_TEILUNG) * len(BEZUG_ABSTAENDE_MM) if self.art == "bezug" and self.kante else 16
-        return len(self.verworfen) < moeglich
+        """PDF-Befund: die gewählte Soll-Lage verwerfen (nicht die zurückgelesene, Review Task 5 I3 – sonst wird ein
+        gerückter Bezugskasten nie als verworfen erkannt); False, wenn keine Lage mehr übrig ist."""
+        lage = self.soll if self.soll is not None else self.lage
+        if lage is not None and lage not in self.verworfen:
+            self.verworfen.append(lage)
+        return len(self.verworfen) < len(self._roh())
 
     def _roh(self) -> list[tuple[float, float]]:
         """Lagen (Mitte des Rechtecks) in fester Rangfolge. Bezug: Kasten quer zur Kante nach außen, entlang der Kante
@@ -465,6 +486,14 @@ def _ansichten_fuer(views: dict, achsen: dict, achse: int | None, modus: str | N
     if achse is None or modus is None:
         return []
     return [r for r in views if r != "einzelheit" and r in achsen and (achsen[r] == achse) == (modus == "flach")]
+
+
+def _ohne_kante(rollen: list[str], achse: int | None, modus: str | None) -> str:
+    """Grund, wenn keine Kante gewählt werden konnte: keine Ansicht passender Blickachse oder keine Kante darin."""
+    if not rollen:
+        return ("keine Ansicht mit passender Blickachse (Achse unbekannt)" if achse is None or modus is None
+                else f"keine Ansicht mit passender Blickachse ({'xyz'[achse]}, {modus})")
+    return f"keine passende Kante in {', '.join(rollen)}"
 
 
 def _zum_merkmal(k: Kante, namen: set[str]) -> bool:
@@ -563,11 +592,12 @@ def rauheit_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen: 
     ext = _ruf(drw, "Extension")
     for m in (m for m in plan if m.quelle == "rauheit"):
         namen = (enthalten or {}).get(m.merkmal) or {m.merkmal}
-        treffer = _kante_fuer(views, mu, _ansichten_fuer(views, achsen, m.achse, m.modus),
+        rollen = _ansichten_fuer(views, achsen, m.achse, m.modus)
+        treffer = _kante_fuer(views, mu, rollen,
                               _anmerkung_suche(typen.get(m.merkmal), m.achse, namen, (besetzt or {}).get(m.merkmal)),
                               cache)
         if treffer is None:
-            meldungen.append(f"RAUHEIT_NICHT_GESETZT: {m.merkmal} {m.text} – keine passende Kante")
+            meldungen.append(f"RAUHEIT_NICHT_GESETZT: {m.merkmal} {m.text} – {_ohne_kante(rollen, m.achse, m.modus)}")
             continue
         rolle, k, kanten = treffer
         if not _waehle(drw, views[rolle], k):
@@ -607,11 +637,12 @@ def form_lage_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen
         fl = m.form_lage
         etikett = f"{m.merkmal} {fl.art} {fl.wert}"
         namen = (enthalten or {}).get(m.merkmal) or {m.merkmal}
-        treffer = _kante_fuer(views, mu, _ansichten_fuer(views, achsen, m.achse, m.modus),
+        rollen = _ansichten_fuer(views, achsen, m.achse, m.modus)
+        treffer = _kante_fuer(views, mu, rollen,
                               _anmerkung_suche(typen.get(m.merkmal), m.achse, namen, (besetzt or {}).get(m.merkmal)),
                               cache)
         if treffer is None:
-            meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – keine passende Kante")
+            meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – {_ohne_kante(rollen, m.achse, m.modus)}")
             continue
         rolle, k, kanten = treffer
         if not _waehle(drw, views[rolle], k):
@@ -686,6 +717,7 @@ def anmerkungen_legen(anmerkungen: list[Anmerkung], hindernisse: list[tuple],
         kandidaten = a.kandidaten(hindernisse + gelegt, rechtecke)
         frei = [lage for lage in kandidaten if not any(math.dist(lage, w) <= 0.5 for w in a.verworfen)]
         lage = frei[0] if frei else kandidaten[0]
+        a.soll = lage
         versatz = a.versatz_bei(lage)
         a.ann.SetPosition2((lage[0] - versatz[0]) / 1000, (lage[1] - versatz[1]) / 1000, 0)
         ist = [c * 1000 for c in list(_ruf(a.ann, "GetPosition"))[:2]]

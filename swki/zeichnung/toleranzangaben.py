@@ -12,8 +12,9 @@ _TOLERIERUNG = "Tolerierung ISO 8015:2011"
 _KANTEN = "Kanten ISO 13715 −0,1 … −0,3"
 _MASSGEBEND = "Maßgebend ist die Zeichnung"
 
-# Codes aus der Symboldatei `lang/german/gtol97.sym`, Abschnitt #GTOL (Task 5, 27.11.: „<IGTOL-PARALLEL>“ erschien
-# im Rahmen nicht; die Datei kennt PARA, POSI, SYMMETRY, SRUN „Lauf“, TRUN „Gesamtlauf“)
+# Codes aus der Symboldatei `C:\ProgramData\SOLIDWORKS\SOLIDWORKS <Jahr>\lang\german\gtol.sym`, Abschnitt #IGTOL
+# („ISO-Form- und Lagetoleranzen“; Task 5, 27.11.: „<IGTOL-PARALLEL>“ erschien im Rahmen nicht; die Datei kennt PARA,
+# POSI, SYMMETRY, SRUN „Lauf“, TRUN „Gesamtlauf (offen)“)
 GTOL_SYMBOL = {
     "ebenheit": "<IGTOL-FLAT>", "rechtwinkligkeit": "<IGTOL-PERP>", "parallelitaet": "<IGTOL-PARA>",
     "rundheit": "<IGTOL-CIRC>", "zylindrizitaet": "<IGTOL-CYL>", "position": "<IGTOL-POSI>",

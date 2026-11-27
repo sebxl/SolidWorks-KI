@@ -86,6 +86,7 @@ EINZELHEIT_OBEN = 337                        # swDetailingDetailViewLabels_Above
 # Stufe 4: Rauheitstext so hoch wie Hinweise (swUserPreferenceTextFormat_e: Note = 0, SurfaceFinish = 5; Live 27.11.:
 # die Vorlage hat 6,35 mm, „Ra 0,8“ wurde so breit wie eine Maßreihe)
 TEXT_HINWEIS, TEXT_RAUHEIT = 0, 5
+DOKUMENTART = "Einzelteilzeichnung"           # Schriftfeld (Z1.4 Entscheidung 3)
 
 
 class ZeichnungFehler(SwkiFehler):
@@ -776,7 +777,8 @@ def _eigenschaften(drw, spec: dict, format_: str, massstab: tuple[int, int]) -> 
     eig = spec.get("eigenschaften", {})
     werte = {"Description": eig.get("Benennung", spec["name"]), "Benennung": eig.get("Benennung", spec["name"]),
              "Material": spec.get("material", ""), "Zeichnungsnummer": eig.get("Zeichnungsnummer", spec["name"]),
-             "DrawnBy": "swki", "DrawnDate": time.strftime("%d.%m.%Y")}
+             "DrawnBy": "swki", "DrawnDate": time.strftime("%d.%m.%Y"),
+             "Dokumentart": DOKUMENTART}
     cpm = _ruf(drw, "Extension").CustomPropertyManager("")
     for name, wert in werte.items():
         cpm.Add3(name, EIGENSCHAFT_TEXT, str(wert), EIGENSCHAFT_ERSETZEN)
@@ -801,6 +803,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     ausgabe = ordner / "zeichnung"
     ausgabe.mkdir(exist_ok=True)
     (ausgabe / "zeichnung.json").unlink(missing_ok=True)  # nie eine alte Übergabe neben einer neuen Zeichnung
+    lauf_datei(spec_pfad, lauf, "zeichnung.pruefbericht").unlink(missing_ok=True)  # alter Prüfbericht gilt nicht mehr
     sha_teil = _sha(teil)
     ansichten = waehle_ansichten(spec)
     app = verbinde(r.sw_jahr)
@@ -1063,8 +1066,9 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
             return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
         x0, y0, x1, _ = zeichenfeld(format_)
         sperren = [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])] + ([band] if band else [])
-        rahmen_texte = tuple(h.zeilen[0] for h in hinweise or [] if getattr(h, "art", "") == "form_lage")
-        befunde = pruefe_pdf(pdf, _ausschluss(format_), rahmen_texte=rahmen_texte) + ausserhalb(
+        rahmen = tuple((h.zeilen[0], h.rechteck()) for h in hinweise or []
+                       if getattr(h, "art", "") == "form_lage" and h.rechteck())
+        befunde = pruefe_pdf(pdf, _ausschluss(format_), rahmen=rahmen) + ausserhalb(
             [(f"{s[0]}/{s[1]}{s[2]}", x, y, laenge, s[1]) for s, (x, y), laenge in platz], zeichenfeld(format_),
             sperren)
         for h in hinweise or []:  # pruefe_pdf übergeht Rand und Schriftfeld

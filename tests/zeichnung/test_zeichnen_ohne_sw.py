@@ -351,3 +351,40 @@ def test_sammelhoehe_ohne_und_mit_behandlung_halbzeug():
     n = len(spec["behandlung"])
     # 4 feste Zeilen, Härteangabe (77 Zeichen) umgebrochen auf zwei (Task 5), Halbzeug
     assert z.sammelhoehe_mm(spec) == (4 + 2 * n + 1) * 5
+
+
+def test_eigenschaften_mit_dokumentart():
+    """Nachbesserung A: Z1.4 Entscheidung 3 – Dokumentart im Schriftfeld."""
+    gesetzt = {}
+    cpm = type("CPM", (), {"Add3": lambda s, n, t, w, o: gesetzt.__setitem__(n, w) or 1})()
+    ext = type("E", (), {"CustomPropertyManager": lambda s, k: cpm})()
+    drw = type("D", (), {"Extension": ext})()
+    werte = z._eigenschaften(drw, {"name": "Platte"}, "A3quer", (1, 2))
+    assert werte["Dokumentart"] == gesetzt["Dokumentart"] == "Einzelteilzeichnung"
+
+
+def test_zeichnen_loescht_alten_zeichnungspruefbericht(monkeypatch, tmp_path):
+    """Nachbesserung A: Nach dem Neuzeichnen gilt ein alter Zeichnungs-Prüfbericht nicht mehr – er wird gelöscht,
+    bevor SolidWorks gebraucht wird."""
+    ordner = tmp_path / "lauf-1"
+    ordner.mkdir()
+    (ordner / "teil.sldprt").write_bytes(b"x")
+    bericht = tmp_path / "s.lauf-1.zeichnung.pruefbericht.json"
+    bericht.write_text("{}", encoding="utf-8")
+    rechner = type("R", (), {"zeichnung": {"A3quer": "v"}, "sw_jahr": 2025})()
+    monkeypatch.setattr(z, "lade_spec", lambda p: {"name": "s", "features": []})
+    monkeypatch.setattr(z, "pruefe_freigabe", lambda p, s: None)
+    monkeypatch.setattr(z, "lade_rechner", lambda: rechner)
+    monkeypatch.setattr(z, "lade_standard", lambda: {})
+    monkeypatch.setattr(z, "auftrag_name", lambda p: "A")
+    monkeypatch.setattr(z, "waehle_lauf", lambda p, lauf: (1, []))
+    monkeypatch.setattr(z, "lauf_ordner", lambda r, a, lauf: ordner)
+    monkeypatch.setattr(z, "dateiname", lambda s, a, st: "teil")
+    monkeypatch.setattr(z, "lauf_datei", lambda p, lauf, art: tmp_path / f"s.lauf-{lauf}.{art}.json")
+
+    def halt(jahr):
+        raise RuntimeError("kein SolidWorks im Test")
+    monkeypatch.setattr(z, "verbinde", halt)
+    with pytest.raises(RuntimeError):
+        z.zeichnen(tmp_path / "s.yaml", 1)
+    assert not bericht.exists()

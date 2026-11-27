@@ -254,14 +254,14 @@ def test_rauheitskante_fehlt_gemeldet(monkeypatch):
     anm = []
     meld = an.rauheit_setzen(_Drw(v), None, {"haupt": v, "drauf": v}, [_rauheit()], {"haupt": 1, "drauf": 2},
                              {"t1": "schnitt"}, anmerkungen=anm)
-    assert meld == ["RAUHEIT_NICHT_GESETZT: t1 Ra 1,6 – keine passende Kante"] and anm == []
+    assert meld == ["RAUHEIT_NICHT_GESETZT: t1 Ra 1,6 – keine passende Kante in drauf"] and anm == []
 
 
 def test_rauheit_ohne_passende_ansicht_gemeldet(monkeypatch):
     v = _View()
     monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: pytest.fail("keine Ansicht passt"))
     meld = an.rauheit_setzen(_Drw(v), None, {"haupt": v}, [_rauheit()], {"haupt": 1}, {"t1": "schnitt"})
-    assert meld == ["RAUHEIT_NICHT_GESETZT: t1 Ra 1,6 – keine passende Kante"]
+    assert meld == ["RAUHEIT_NICHT_GESETZT: t1 Ra 1,6 – keine Ansicht mit passender Blickachse (y, quer)"]
 
 
 def test_rahmen_nicht_erzeugt_gemeldet(monkeypatch):
@@ -333,3 +333,78 @@ def test_notiztext_huelle_als_symbol():
     notiz, zeilen = z._notiztext("2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°")
     assert notiz == "2 × Ø8 H7 <MOD-EP> – 15 tief\nFase 0,5 × 45°"
     assert zeilen == ("2 × Ø8 H7 E – 15 tief", "Fase 0,5 × 45°")
+
+
+# --- Nachbesserung A (Review Task 5) -----------------------------------------------------------------------------------
+
+
+def test_kollineare_ferne_kante_zaehlt_nicht():
+    """I2: Kante quer zur Messrichtung zählt nur, wenn der Bezugspunkt auf der Strecke liegt – höchstens 1 mm über ihr
+    Ende hinaus (virtuelle Ecke einer Fase, Buchse f3) –, nicht 15 mm weiter auf derselben Geraden (live D3@m1)."""
+    fern = _kante((110.0, 218.9), (110.0, 229.9))
+    assert an.kante_am_punkt((110.0, 246.5), "h", [fern]) is None
+    nah = _kante((110.0, 240.0), (110.0, 250.0))
+    assert an.kante_am_punkt((110.0, 246.5), "h", [fern, nah]) is nah
+
+
+def test_kante_gewinnt_vor_kreis():
+    """M1: Trifft am Punkt eine Kante und über die Hilfslinie ein Kreis, gewinnt die Kante."""
+    kante = _kante((95.0, 240.0), (95.0, 250.0))
+    assert an.kante_am_punkt((95.0, 246.5), "h", _KREISE + [kante], _HILFSLINIEN[0]) is kante
+
+
+def test_mittenbezug_ohne_kante_gemeldet(monkeypatch):
+    """I2: Bezug mitte/ursprung ohne Kante – die Meldung nennt den Bezug."""
+    v = _View()
+    v.masse.append(_DD(v, "D1@x", 47.0, _HILFSLINIEN))
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: [])
+    m = Mass("D1@x", "modell", "lage", 47.0, "k1", name="D1@x", bezug="mitte", suffix=" (x)")
+    _, meld = an.dauerhaft_machen(_Drw(v, neu_wert=47.0), None, {"haupt": v}, [m])
+    assert meld == ["MASS_NICHT_DAUERHAFT: D1@x – Bezug mitte ohne sichtbare Kante am Bezugspunkt (95.0, 246.5), "
+                    "(110.0, 246.5)"]
+
+
+def test_neues_mass_nicht_geloescht_gemeldet(monkeypatch):
+    """M2: Weicht der Wert ab und lässt sich das neue Maß nicht löschen, steht es doppelt – Meldung."""
+    v = _View()
+    alt = _DD(v, "D3@m1", 30.0, _HILFSLINIEN)
+    v.masse.append(alt)
+    drw = _Drw(v, neu_wert=30.5)
+    drw.Extension.DeleteSelection2 = lambda o: True                # meldet Erfolg, löscht nichts
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: _KREISE)
+    _, meld = an.dauerhaft_machen(drw, None, {"haupt": v}, [_plan_mass()])
+    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – neues Maß misst 30.5 statt 30.0; neues Maß nicht gelöscht, "
+                    "steht doppelt"]
+
+
+class _AnnVersatz:
+    """Annotation, deren zurückgelesene Lage um 2 mm von der gesetzten abweicht (Bezugskasten rückt)."""
+
+    def __init__(self):
+        self.p = (0.0, 0.0)
+
+    def SetPosition2(self, x, y, zz):
+        self.p = (x + 0.002, y)
+        return True
+
+    def GetPosition(self):
+        return (*self.p, 0.0)
+
+
+def test_verwerfen_merkt_die_soll_lage():
+    """I3: verworfen wird die gewählte Lage, nicht die zurückgelesene; danach kommt eine andere."""
+    a = an.Anmerkung("rauheit", "st", ("Ra 0,8",), _AnnVersatz(), "haupt", (100.0, 100.0), (0.0, 0.0, 50.0, 50.0),
+                     (23.0, 16.0), (9.0, 8.0))
+    an.anmerkungen_legen([a], [])
+    soll = a.soll
+    assert a.lage != soll and a.verwerfen() and a.verworfen == [soll]
+    an.anmerkungen_legen([a], [])
+    assert a.soll != soll
+    assert len(a._roh()) == 16                                       # nicht mehr fest 16 (M4), sondern die Lagen
+
+
+def test_rauheit_ohne_ansicht_ehrlich_gemeldet():
+    """M4: Ohne Ansicht passender Blickachse heißt die Meldung so, nicht „keine passende Kante“."""
+    m = Mass("t1:rauheit", "rauheit", "rauheit", 0.0, "t1", text="Ra 1,6", achse=None, modus=None)
+    assert an.rauheit_setzen(_Drw(_View()), None, {"haupt": _View()}, [m], {"haupt": 1}, {"t1": "schnitt"}) == [
+        "RAUHEIT_NICHT_GESETZT: t1 Ra 1,6 – keine Ansicht mit passender Blickachse (Achse unbekannt)"]

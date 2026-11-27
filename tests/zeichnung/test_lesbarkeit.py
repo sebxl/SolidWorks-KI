@@ -99,29 +99,66 @@ def test_texte_mit_rechteck_in_blatt_mm(tmp_path):
     assert r[0] == pytest.approx(100, abs=0.5) and r[1] < 200 < r[3] and r[2] > r[0] + 20
 
 
+
+def _kreis(seite, mitte, r, n=64):
+    import math
+    p = [(mitte[0] + r * math.cos(2 * math.pi * i / n), mitte[1] + r * math.sin(2 * math.pi * i / n)) for i in range(n + 1)]
+    for a, b in zip(p, p[1:]):
+        _linie(seite, a, b)
+
+
+def _zeichen_mitte(seite, zeichen: str) -> tuple[tuple[float, float], float]:
+    """Mitte der Box des (letzten) Zeichens in Blatt-mm und die Schriftgröße in mm."""
+    for block in seite.get_text("rawdict")["blocks"]:
+        for zeile in block.get("lines", []):
+            for span in zeile["spans"]:
+                for c in span["chars"]:
+                    if c["c"] == zeichen:
+                        x0, y0, x1, y1 = c["bbox"]
+                        mitte = ((x0 + x1) / 2 / MM, A3[1] - (y0 + y1) / 2 / MM)
+                        groesse = span["size"] / MM
+    return mitte, groesse
+
+
 def test_zellteiler_im_toleranzrahmen_ist_kein_befund(tmp_path):
     """Stufe 4 (Live 27.11.): Das PDF liest „0,05 A“ als eine Zeile; der Strich zwischen Wert- und Bezugszelle kreuzt
-    sie. Für Rahmentexte zählt er nicht, eine waagrechte Linie durch denselben Text schon."""
+    sie. Ausgenommen nur an einer gelegten Anmerkung (Rahmenrechteck) und nur in der Lücke zwischen zwei Zeichen."""
+    rahmen_r = (92.0, 97.0, 125.0, 105.0)
+
     def rahmen(s):
         _text(s, 100, 100, "0,05 A")
-        _linie(s, (109, 98), (109, 105))          # Zelltrennlinie, so hoch wie der Rahmen
+        _linie(s, (110.2, 98), (110.2, 105))      # Zelltrennlinie in der Lücke vor „A“ (109,5–110,9), Rahmenhöhe
     pdf = _pdf(tmp_path, rahmen)
     assert [b.text for b in pruefe_pdf(pdf)] == ["0,05 A"]
-    assert pruefe_pdf(pdf, rahmen_texte=("0,05 A",)) == []
+    assert pruefe_pdf(pdf, rahmen=(("0,05 A", rahmen_r),)) == []
+    assert [b.text for b in pruefe_pdf(pdf, rahmen=(("0,05 A", (200.0, 97.0, 230.0, 105.0)),))] == ["0,05 A"]
+    doppelt = _pdf(tmp_path, lambda s: (rahmen(s), _linie(s, (110.2, 98), (110.2, 105))))  # live doppelt gezeichnet
+    assert pruefe_pdf(doppelt, rahmen=(("0,05 A", rahmen_r),)) == []
+    zwei = _pdf(tmp_path, lambda s: (rahmen(s), _linie(s, (110.6, 98), (110.6, 105))))  # mehr Teiler als Lücken
+    assert [b.text for b in pruefe_pdf(zwei, rahmen=(("0,05 A", rahmen_r),))] == ["0,05 A"]
     durch = _pdf(tmp_path, lambda s: (rahmen(s), _linie(s, (95, 101.2), (125, 101.2))))
-    assert [b.text for b in pruefe_pdf(durch, rahmen_texte=("0,05 A",))] == ["0,05 A"]
+    assert [b.text for b in pruefe_pdf(durch, rahmen=(("0,05 A", rahmen_r),))] == ["0,05 A"]
+
+
+def test_fremde_linie_durch_rahmenziffer_bleibt_befund(tmp_path):
+    """Review Task 5 (Gegenbeispiel g2): eine 9-mm-Linie (Taschenwand) durch die Ziffer des Rahmentexts."""
+    pdf = _pdf(tmp_path, lambda s: (_text(s, 100, 100, "0,05 A"), _linie(s, (102.0, 96.0), (102.0, 105.0))))
+    assert [b.text for b in pruefe_pdf(pdf, rahmen=(("0,05 A", (92.0, 95.0, 125.0, 106.0)),))] == ["0,05 A"]
 
 
 def test_huellkreis_im_masstext_ist_kein_befund(tmp_path):
-    """Stufe 4 (Live 27.11.): `<MOD-EP>` zeichnet den Kreis um das E aus 0,25 mm kurzen Strichen; pymupdf liest „E“."""
-    import math
-
+    """Stufe 4 (Live 27.11.): `<MOD-EP>` zeichnet einen Ring um das E (Radius 0,69–0,74 × Schriftgröße) aus kurzen
+    Strichen; pymupdf liest „E“. Nur dieser Ring ist ausgenommen."""
     def huelle(s):
         _text(s, 100, 100, "32,00 k6 E")
-        mitte, r = (122.0, 101.3), 2.0
-        punkte = [(mitte[0] + r * math.cos(i * math.pi / 24), mitte[1] + r * math.sin(i * math.pi / 24)) for i in range(49)]
-        for a, b in zip(punkte, punkte[1:]):
-            _linie(s, a, b)
+        mitte, groesse = _zeichen_mitte(s, "E")
+        _kreis(s, mitte, 0.71 * groesse)
     assert pruefe_pdf(_pdf(tmp_path, huelle)) == []
     durch = _pdf(tmp_path, lambda s: (huelle(s), _linie(s, (104, 95), (104, 110))))
     assert [b.text for b in pruefe_pdf(durch)] == ["32,00 k6 E"]
+
+
+def test_bohrungskreis_durch_text_mit_huelle_bleibt_befund(tmp_path):
+    """Review Task 5 (Gegenbeispiel g1): Bohrungskreis Ø4 aus kurzen Strichen mitten durch eine Angabe mit Ⓔ."""
+    pdf = _pdf(tmp_path, lambda s: (_text(s, 100, 100, "2 × Ø8 H7 E – 15 tief"), _kreis(s, (112.0, 101.2), 2.0)))
+    assert [b.art for b in pruefe_pdf(pdf)] == ["linie_durch_text"]  # Testschrift ohne „–“
