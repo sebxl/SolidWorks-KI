@@ -70,15 +70,21 @@ def parameter_toleranzen(spec: dict) -> dict[str, Toleranz]:
     return aus
 
 
-def treibender_parameter(roh, toleranzen: dict[str, Toleranz]) -> str | None:
-    """Erster Parameter aus `toleranzen`, dessen Name im Ausdruck `roh` ("=A/2") vorkommt; sonst None."""
+def treibende_parameter(roh, toleranzen: dict[str, Toleranz]) -> list[str]:
+    """Alle Parameter aus `toleranzen`, deren Name im Ausdruck `roh` ("=A/2") vorkommt (ganze Namen), in der
+    Reihenfolge von `toleranzen`."""
     if not isinstance(roh, str) or not roh.startswith("="):
-        return None
+        return []
     try:
         vorhanden = namen(roh)
     except AusdruckFehler:
-        return None
-    return next((p for p in toleranzen if p in vorhanden), None)
+        return []
+    return [p for p in toleranzen if p in vorhanden]
+
+
+def treibender_parameter(roh, toleranzen: dict[str, Toleranz]) -> str | None:
+    """Erster Parameter aus `treibende_parameter`; sonst None."""
+    return next(iter(treibende_parameter(roh, toleranzen)), None)
 
 
 def _vorzeichen(x: float) -> str:

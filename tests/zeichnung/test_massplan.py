@@ -350,3 +350,40 @@ def test_parameter_treibt_zwei_masse():
     plan = massplan(spec, protokoll)
     assert [m.toleranz for m in plan] == [Toleranz(None, 0.1, -0.1, False)] * 2
     assert len(plan) == 2
+
+
+# --- Nachbesserung Review Task 2 ----------------------------------------------------------------------------------------
+
+def test_unbekannte_funktion_an_bohrung_stuerzt_nicht_ab():
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    next(f for f in spec["features"] if f["id"] == "st")["funktion"] = "gibtsnicht"
+    plan = massplan(spec, _spannplatte_protokoll())
+    assert any(m.quelle == "angabe" and m.merkmal == "st" for m in plan)
+    assert any(m.startswith("FUNKTION_UNBEKANNT: st") for m in massplan_meldungen(spec))
+
+
+def test_toleranz_mehrdeutig_gemeldet():
+    spec = {"parameter": {"A": 10, "AB": 4}, "toleranzen": {"A": {"oben": 0.1, "unten": -0.1},
+                                                             "AB": {"oben": 0.2, "unten": -0.2}},
+            "features": [{"id": "f1"}]}
+    protokoll = {"knoten": [{"id": "f1", "masse": [
+        {"name": "D1@f1_skizze", "art": "groesse", "pfad": "features[0].skizze.elemente[0].kreis.durchmesser",
+         "wert": 14, "bezug": None, "roh": "=A+AB"}]}]}
+    plan = massplan(spec, protokoll)
+    assert plan[0].toleranz == Toleranz(None, 0.1, -0.1, False)                 # erster gewinnt
+    assert "TOLERANZ_MEHRDEUTIG: D1@f1_skizze: A, AB" in massplan_meldungen(spec, protokoll)
+    assert "TOLERANZ_OHNE_MASS: A" not in massplan_meldungen(spec, protokoll)       # AB verliert (erster gewinnt)
+
+
+def test_toleranz_an_gewinde_ohne_aufnahme_gemeldet():
+    spec = {"parameter": {}, "features": [
+        {"id": "g1", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "positionen": [[0, 0]], "tiefe": 10,
+         "flaeche": "oben", "toleranz": {"oben": 0.1, "unten": 0}}]}
+    assert "TOLERANZ_OHNE_MASS: g1" in massplan_meldungen(spec)
+
+
+def test_treibender_parameter_nur_ganze_namen():
+    from swki.zeichnung.toleranzangaben import treibender_parameter
+
+    tol = {"A": Toleranz(None, 0.1, -0.1, False)}
+    assert [treibender_parameter(r, tol) for r in ("=AB*2", "=TA+1", "=A2", 5, "=A/2")] == [None, None, None, None, "A"]

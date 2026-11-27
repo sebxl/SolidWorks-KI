@@ -101,11 +101,14 @@ def _nenn(groesse: str) -> str:
 def bohrungstoleranz(feature: dict, spec: dict):
     """Toleranz des Ø einer Bohrung/Normbohrung: eigene Anforderung des Features (Funktion, Passung, Abmaße), sonst die
     Toleranz eines Parameters aus `toleranzen`, der im Ausdruck des Ø steht (nur `bohrung`); sonst None."""
-    from swki.spec.funktionen import aufloesen
+    from swki.spec.funktionen import FunktionFehler, aufloesen
     from swki.zeichnung.toleranzangaben import parameter_toleranzen, toleranz_aus, treibender_parameter
 
     param = spec.get("parameter", {})
-    a = aufloesen(feature)
+    try:
+        a = aufloesen(feature)
+    except FunktionFehler:
+        return None                                   # FUNKTION_UNBEKANNT meldet der Maßplan
     eigene = toleranz_aus(a["passung"], a["toleranz"], a["huelle"], param)
     if eigene is not None or feature.get("typ") != "bohrung":
         return eigene
@@ -152,9 +155,11 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
     else:
         tief = ""
         meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Tiefe fehlt (weder durch noch tiefe/gewindetiefe)")
-    if not (feature["typ"] == "normbohrung" and art == "gewinde") and kopf.startswith("Ø"):
-        if (toleranz := bohrungstoleranz(feature, spec)) is not None:
+    if (toleranz := bohrungstoleranz(feature, spec)) is not None:
+        if not (feature["typ"] == "normbohrung" and art == "gewinde") and kopf.startswith("Ø"):
             kopf += " " + toleranztext(toleranz)
+        else:
+            meld.append(f"TOLERANZ_OHNE_MASS: {fid}")   # die Angabe hat kein Ø, an das die Toleranz gehört
     kopfzeile = (f"{bild.anzahl} × " if bild.anzahl > 1 else "") + kopf + (f" – {tief}" if tief else "")
     fase = feature.get("fase")
     if fase == "nenn" and art == "gewinde":

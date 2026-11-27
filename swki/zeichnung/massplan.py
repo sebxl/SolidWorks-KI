@@ -19,7 +19,7 @@ from swki.spec.konturen import kontur_punkte_roh
 from swki.zeichnung.angaben import _enthalten, bohrbilder, bohrungsangabe, reihenzusatz, zahl
 from swki.zeichnung.ansichten import achsvektor, drehachse, elementpunkte, ist_drehteil, profilpunkte
 from swki.zeichnung.toleranzangaben import (FormLage, Toleranz, form_lage_angaben, parameter_toleranzen, rauheitstext,
-                                            treibender_parameter)
+                                            treibende_parameter)
 
 WEG_ARTEN = {"versatz", "konstruktion", "skript"}
 _ARTEN = {"groesse": "laenge"}
@@ -43,6 +43,7 @@ class Mass:
     suffix: str = ""            # Textzusatz nach dem Maßwert, z. B. " (= 120)" oder " × 45°"
     toleranz: Toleranz | None = None   # Stufe 4: Toleranz des Parameters, der das Maß treibt (modell/neu)
     treiber: str | None = None  # Parameter, dessen Toleranz das Maß trägt (auch bei Ø in der Bohrungsangabe)
+    treiber_alle: tuple[str, ...] = ()  # alle tolerierten Parameter im Ausdruck, wenn es mehr als einer ist
     form_lage: FormLage | None = None  # nur quelle form_lage
     anker: dict | None = None   # nur quelle bezug: Flächenanker aus `bezuege`
 
@@ -122,9 +123,10 @@ def _angaben(spec: dict) -> tuple[list[Mass], list[str]]:
         if achse is None:
             meld.append(f"ANGABE_OHNE_ACHSE: {f['id']}")
         meldungen += meld
-        treiber = treibender_parameter(f.get("durchmesser"), tol) if f["typ"] == "bohrung" else None
+        alle = treibende_parameter(f.get("durchmesser"), tol) if f["typ"] == "bohrung" else []
+        treiber = alle[0] if alle else None
         plan.append(Mass(f"{f['id']}:angabe", "angabe", "angabe", 0.0, f["id"], text=text, achse=achse, modus="flach",
-                         treiber=treiber))
+                         treiber=treiber, treiber_alle=tuple(alle) if len(alle) > 1 else ()))
     return plan, meldungen
 
 
@@ -172,10 +174,12 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
                     continue
                 punktmasse.add(schluessel)
             achse, modus = _achse_modus(features, fid, pfad)
-            treiber = treibender_parameter(m.get("roh"), tol)
+            alle = treibende_parameter(m.get("roh"), tol)
+            treiber = alle[0] if alle else None
             plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"], achse=achse, modus=modus,
                              bezug=m.get("bezug"), praefix=praefix, suffix=suffix,
-                             toleranz=tol.get(treiber), treiber=treiber))
+                             toleranz=tol.get(treiber), treiber=treiber,
+                             treiber_alle=tuple(alle) if len(alle) > 1 else ()))
     return plan + _angaben(spec)[0]
 
 
@@ -230,8 +234,8 @@ def massplan_drehteil(spec: dict) -> list[Mass]:
     tol = parameter_toleranzen(spec)
     roh = {f["id"]: _profil_roh(f, parameter, drehachse(f, parameter)) for f in rotationen} if tol else {}
 
-    def treiber_von(vorhanden: set[str]) -> str | None:
-        return next((p for p in tol if p in vorhanden), None)
+    def treiber_von(vorhanden: set[str]) -> list[str]:
+        return [p for p in tol if p in vorhanden]
 
     erste = rotationen[0]
     achse = drehachse(erste, parameter)
@@ -254,18 +258,20 @@ def massplan_drehteil(spec: dict) -> list[Mass]:
         if r > 1e-9 and schluessel not in durchmesser_gesetzt:  # Review I1: nach Lage, nicht nach Wert
             durchmesser_gesetzt.add(schluessel)
             mid = f"{fid}:d{_rund(2 * r)!r}@{schluessel[1]!r}-{schluessel[2]!r}"
-            p = treiber_von(set().union(*(rt for rr, _, rt, _ in roh.get(fid, []) if abs(rr - r) < 1e-6)))
+            alle = treiber_von(set().union(*(rt for rr, _, rt, _ in roh.get(fid, []) if abs(rr - r) < 1e-6)))
+            p = alle[0] if alle else None
             plan[mid] = Mass(mid, "neu", "durchmesser", _rund(2 * r), fid,
                              geometrie={"radius": r, "achse_von": min(lagen), "achse_bis": max(lagen)},
-                             toleranz=tol.get(p), treiber=p)
+                             toleranz=tol.get(p), treiber=p, treiber_alle=tuple(alle) if len(alle) > 1 else ())
 
     def laenge(fid: str, a: float) -> None:
         if _rund(a) not in lagen_gesetzt:
             lagen_gesetzt.add(_rund(a))
             mid = f"{fid}:a{_rund(a)!r}"
-            p = treiber_von(set().union(*(at for _, aa, _, at in roh.get(fid, []) if abs(aa - a) < 1e-6)))
+            alle = treiber_von(set().union(*(at for _, aa, _, at in roh.get(fid, []) if abs(aa - a) < 1e-6)))
+            p = alle[0] if alle else None
             plan[mid] = Mass(mid, "neu", "laenge", _rund(abs(a - bezug)), fid, geometrie={"von": bezug, "bis": _rund(a)},
-                             toleranz=tol.get(p), treiber=p)
+                             toleranz=tol.get(p), treiber=p, treiber_alle=tuple(alle) if len(alle) > 1 else ())
 
     for r in sorted({r for r, _ in punkte}, reverse=True):
         durchmesser(erste["id"], r, [a for rr, a in punkte if rr == r])
@@ -367,6 +373,12 @@ def massplan_meldungen(spec: dict, protokoll: dict | None = None) -> list[str]:
     if tol:
         benutzt = _benutzte_parameter(spec, protokoll)
         aus += [f"TOLERANZ_OHNE_MASS: {p}" for p in tol if p not in benutzt]
+        plan = massplan(spec, protokoll) if protokoll is not None else massplan_drehteil(spec) + _angaben(spec)[0]
+        for m in plan:
+            if m.treiber_alle:
+                meldung = f"TOLERANZ_MEHRDEUTIG: {m.name or m.merkmal}: {', '.join(m.treiber_alle)}"
+                if meldung not in aus:
+                    aus.append(meldung)
     return aus + _angaben(spec)[1] + anforderung
 
 
