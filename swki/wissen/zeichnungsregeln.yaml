@@ -1,0 +1,156 @@
+# Regelkatalog der Zeichnungsprüfung (Design 2026-11-16 §8.1, Plan Z1.4 Task 1). Prüfer und Code lesen dieselbe Liste.
+# Eintrag: id, pruefung (eine der neun Prüfungen), text, quelle, beleg (A: >= 2 Quellen, B: eine Quelle, C: unbelegt),
+# art (hart: Mangel macht den Lauf nicht bestanden; hinweis: nie ok false).
+# quelle und beleg stammen aus docs/zeichnungsableitung/recherche.md (R-Kap. = Kapitel) und der Herkunftsspalte von
+# Design §8.1. "Hausregel swki (Z1.4)" mit beleg C steht, wo die Recherche keinen Beleg hat. Erweitern nur mit Quelle.
+
+- id: Z-VOLL-1
+  pruefung: vollstaendig
+  text: Jedes Merkmal des Maßplans ist bemaßt; jedes Spec-Maß der freigegebenen Kopie findet sich mit gleichem Wert.
+  quelle: "R-Kap. 4/8 (Maßbedarf des Fertigers)"
+  beleg: A
+  art: hart
+- id: Z-VOLL-2
+  pruefung: vollstaendig
+  text: Kein Doppelmaß; jedes Merkmal ist genau einmal bemaßt.
+  quelle: "R-Kap. 4 (jedes Maß nur einmal; TUM, buffl.co, Fictiv)"
+  beleg: A
+  art: hart
+- id: Z-UEB-1
+  pruefung: ueberbestimmt
+  text: Je Richtung kein geschlossener Maßzyklus; Ausnahme Hilfsmaß in Klammern.
+  quelle: "R-Kap. 4 (keine Überbemaßung, unterbrochene Kette; TUM, buffl.co, Fictiv, WTCS)"
+  beleg: A
+  art: hart
+- id: Z-TOL-1
+  pruefung: toleranzen
+  text: Passung oder Abmaße am Maß entsprechen der aufgelösten Spec (auch ein Maß, das die Zeichnung nicht tragen kann).
+  quelle: "Hausregel swki (Z1.4): Zeichnung gleich freigegebene Spec; Passungen R-Kap. 7 (ISO 286)"
+  beleg: C
+  art: hart
+- id: Z-TOL-2
+  pruefung: toleranzen
+  text: Die Hülle Ⓔ steht nur an Passmaßen aus der Funktion, nicht an Maßen mit reiner Abmaßtoleranz.
+  quelle: "Nutzer 16.11.2026 (ISO 8015, Hülle nur an Passmaßen); R-Kap. 7 (Hülle am Einzelmaß, Suchauszug)"
+  beleg: B
+  art: hart
+- id: Z-TOL-3
+  pruefung: toleranzen
+  text: Keine Toleranz am Maß ohne Funktion; Toleranzen folgen aus der Funktion der Spec.
+  quelle: "Hausregel swki (Z1.4); Design §4 (Toleranzen folgen aus der Funktion)"
+  beleg: C
+  art: hart
+- id: Z-TOL-4
+  pruefung: toleranzen
+  text: Rauheit je Merkmal wie in der aufgelösten Spec (ISO 21920, Max-Regel Standard).
+  quelle: "R-Kap. 6 (ISO 21920 ersetzt ISO 1302)"
+  beleg: A
+  art: hart
+- id: Z-TOL-5
+  pruefung: toleranzen
+  text: Form- und Lagetoleranz je Merkmal mit Symbol, Wert und Bezug wie in der aufgelösten Spec.
+  quelle: "R-Kap. 7 (Toleranzrahmen ISO 1101, Keyence)"
+  beleg: B
+  art: hart
+- id: Z-TOL-6
+  pruefung: toleranzen
+  text: Bezüge (Buchstaben) sind gezeichnet und stimmen mit den Bezügen der Spec überein.
+  quelle: "R-Kap. 7 (Bezüge ISO 5459; Bezugsregeln C, unbelegt); Hausregel swki (Z1.4)"
+  beleg: C
+  art: hart
+- id: Z-SAM-1
+  pruefung: sammelangaben
+  text: Allgemeintoleranz mit Normjahr und Klasse m nach ISO 2768-1.
+  quelle: "Nutzer 16.11.2026 (Klasse m, Ausgabejahr); R-Kap. 7 (Folge undatierter Verweise, GPSlife, Wevolver)"
+  beleg: A
+  art: hart
+- id: Z-SAM-2
+  pruefung: sammelangaben
+  text: Tolerierungsgrundsatz ISO 8015 ist vermerkt.
+  quelle: "Nutzer 16.11.2026 (ISO 8015); R-Kap. 7 (DIN 7167 zurückgezogen 2011, Wikipedia DE, DIN Media)"
+  beleg: A
+  art: hart
+- id: Z-SAM-3
+  pruefung: sammelangaben
+  text: Kein Vermerk "ISO 2768-...K" und kein "DIN 7167".
+  quelle: "R-Kap. 7 (ISO 2768-2 zurückgezogen 2021; DIN 7167 zurückgezogen 2011; genorma, Wevolver, GPSlife)"
+  beleg: A
+  art: hart
+- id: Z-SAM-4
+  pruefung: sammelangaben
+  text: Der Satz "Maßgebend ist die Zeichnung" steht in den Sammelangaben.
+  quelle: "Hausregel swki (Z1.4); Nutzerentscheid Design §7"
+  beleg: C
+  art: hart
+- id: Z-SAM-5
+  pruefung: sammelangaben
+  text: Behandlung und Halbzeug stehen wie in der Spec, soweit dort vorhanden.
+  quelle: "Hausregel swki (Z1.4); Design §8.1 (Behandlung und Halbzeug wie in der Spec)"
+  beleg: C
+  art: hart
+- id: Z-SAM-6
+  pruefung: sammelangaben
+  text: Kantenzustand als Sammelangabe nach ISO 13715.
+  quelle: "R-Kap. 5 (ISO 13715, Sammelangabe, werk24 Edges)"
+  beleg: B
+  art: hart
+- id: Z-SAM-7
+  pruefung: sammelangaben
+  text: Sammelrauheit steht nahe dem Schriftfeld.
+  quelle: "R-Kap. 6 (Sammelangabe Ra in Schriftfeldnähe: C, unbelegt); Hausregel swki (Z1.4)"
+  beleg: C
+  art: hart
+- id: Z-SCH-1
+  pruefung: schriftfeld
+  text: Die Pflichtfelder des Schriftfelds sind gefüllt (Eigentümer nur als Hinweis, bis die Firmenvorlage Z1.5 ihn liefert).
+  quelle: "R-Kap. 2 (ISO 7200, acht Pflichtfelder; Wikipedia DE, checkedcalc)"
+  beleg: A
+  art: hart
+- id: Z-SCH-2
+  pruefung: schriftfeld
+  text: Das Feld "Freigegeben" bleibt leer; ein gefülltes Feld vor der Abnahme ist ein Mangel.
+  quelle: "Hausregel swki (Z1.4); Design §8.1 (Pflichtfelder außer Freigegeben)"
+  beleg: C
+  art: hart
+- id: Z-SCH-3
+  pruefung: schriftfeld
+  text: Der Maßstab des Blatts liegt in der Vorzugsreihe (ISO 5455).
+  quelle: "R-Kap. 2 (ISO 5455, Vorzugsmaßstäbe; ingenieurkurse, checkedcalc)"
+  beleg: A
+  art: hart
+- id: Z-ANS-1
+  pruefung: ansichten
+  text: Kein Maß an einer verdeckten Kante.
+  quelle: "R-Kap. 4 (Maßlinien nicht an verdeckte Kanten: C, unbelegt); Hausregel swki (Z1.4)"
+  beleg: C
+  art: hart
+- id: Z-ANS-2
+  pruefung: ansichten
+  text: Jede Schnittansicht trägt ihre Schnittbezeichnung (z. B. A-A).
+  quelle: "R-Kap. 3 (Schnittverlauf und Bezeichnung, mechatronik-automatisierung.com)"
+  beleg: B
+  art: hart
+- id: Z-ANS-3
+  pruefung: ansichten
+  text: Jede Einzelheit trägt einen Maßstab aus der Vorzugsreihe.
+  quelle: "R-Kap. 2 (ISO 5455: abweichende Maßstäbe bei Einzelheit angeben; ingenieurkurse, checkedcalc)"
+  beleg: A
+  art: hart
+- id: Z-LES-1
+  pruefung: lesbarkeit
+  text: Keine überlappenden Maße und Annotationen; Maße außerhalb der Kontur, wo möglich.
+  quelle: "R-Kap. 4 (Hinweis, Belegstärke B)"
+  beleg: B
+  art: hinweis
+- id: Z-GEW-1
+  pruefung: gewinde
+  text: Ein Gewinde trägt Bezeichnung (z. B. M6) und Gewindetiefe; die Bohrtiefe steht getrennt.
+  quelle: "R-Kap. 5 (Gewindebezeichnung, hausjournal.net, werk24; Gewindetiefe bemaßen: C)"
+  beleg: B
+  art: hart
+- id: Z-DRE-1
+  pruefung: drehteil
+  text: Durchmesser stehen mit dem Zeichen Ø, nie als Radius.
+  quelle: "R-Kap. 8 Drehteile (Ø immer als Durchmesser: C, unbelegt); Hausregel swki (Z1.4)"
+  beleg: C
+  art: hart
