@@ -6,23 +6,28 @@
 
 **Architecture:** Das Rücklesen (COM, `rueckleser.py`) erzeugt ein reines Ist-Modell (`ist.py`, als JSON ablegbar). Alle Prüfungen (`pruefen.py`) sind reine Funktionen über Ist, Maßplan, freigegebene Spec, Regelkatalog und PDF. Die Negativfälle aus Design §10 sind deshalb ohne SolidWorks testbar. Live kommen nur das Rücklesen und eine kleine Regression mit manipulierten Kopien dazu.
 
-**Tech Stack:** Python 3, pywin32 (nur Task 4/6), pymupdf (PDF-Texte), pytest, PyYAML.
+**Tech Stack:** Python 3, pywin32 (nur Task 4b/6), pymupdf (PDF-Texte), pytest, PyYAML.
 
 **Spec:** `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md` §8 (Prüfen), §10 (Negativfälle); Recherche `docs/zeichnungsableitung/recherche.md` Kap. 2 (ISO 7200, ISO 5455), Kap. 4/8 (Überbestimmung), Kap. 7 (Sammelangaben).
 
 ## Global Constraints
 
-- Kein SolidWorks in Task 1–3 und 5. Task 4 und 6 erst, wenn der Organizer SolidWorks freigibt. Vor jedem Live-Lauf offene Dokumente prüfen; bei fremden Dokumenten nicht neu starten.
+- Kein SolidWorks in Task 1–3, 4a und 5. Task 4b und 6 erst, wenn der Organizer SolidWorks freigibt. Vor jedem Live-Lauf offene Dokumente prüfen; bei fremden Dokumenten nicht neu starten.
 - Rücklesen ändert nichts: SHA-256 von SLDDRW und SLDPRT sind vor und nach `swki zeichnung pruefen` gleich. Geschlossen wird ohne Speichern (`CloseAllDocuments(True)` nur, wenn außer den eigenen Dokumenten nichts offen ist, sonst `sw.schliesse` je Dokument).
 - Jeder neue SolidWorks-API-Aufruf wird vorher mit `swki api methode|enum` nachgeschlagen und muss in SW 2025 verfügbar sein (`swki api pruefe-code`).
-- Prüfbericht: `protokolle/<spec>.lauf-<n>.zeichnung-pruefbericht.json`. Prüfer-Urteil: `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json`. Art-Namen mit Bindestrich, damit `lauf_nummern_dateien` sie nicht als Teil-Lauf zählt.
+- Prüfbericht: `protokolle/<spec>.lauf-<n>.zeichnung.pruefbericht.json` (Name wie Design §8.1), also `lauf_datei(spec, lauf, "zeichnung.pruefbericht")`. Prüfer-Urteil: `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json`. Der Regex in `lauf_nummern_dateien` trifft keinen der beiden Namen, und `lies_laeufe` liest nur `pruefbericht` und `pruefer`. Ein Test hält das fest.
+- Soll ist die freigegebene Spec, nicht nur der Maßplan. Was `massplan_meldungen(soll, protokoll)` als nicht gezeichnet meldet, ist in der Zeichnung ein Mangel und kein stiller Ausfall. `TOLERANZ_OHNE_MASS`, `TOLERANZ_MEHRDEUTIG` (der unterlegene Parameter) und `FORM_LAGE_IT_OHNE_TABELLE` werden zu `Z-TOL-1`, `MASS_NICHT_GEPLANT` zu `Z-VOLL-1`. `FUNKTION_UNBESTAETIGT` bleibt ein Hinweis.
+- „Nicht prüfbar“ ist nie „ok“. Ein Ist-Feld mit `None` (z. B. `verdeckt`) ergibt in der betroffenen Prüfung `ok: null` mit Anzahl und Grund, außer die Prüfung hat schon einen harten Mangel.
 - Der Prüfer wird nie übersprungen. Ein Lauf mit Zeichnung, aber ohne `zeichnungspruefer.json`, gilt in `swki bericht` als „Zeichnung ungeprüft“ (Meldung `ZEICHNUNGSPRUEFER_FEHLT`).
 - Prüfungen haben die Form `{id, regel, ok: true|false|null, maengel: [{merkmal, text}], hinweis?}`, wie im Teil-Prüfbericht. `ok: null` heißt Hinweisregel oder nicht prüfbar, immer mit Begründung.
 - Ausgaben an den Nutzer in mm mit Dezimalkomma (`angaben.zahl`).
 
 ## Entscheidungen (selbst entschieden, im Ergebnisbericht als Vorschlag markiert)
 
-1. **Abgleich Ist ↔ Plan** als Multimenge je `(Ansichtsrolle egal, art, wert auf 0,01 mm)`. Weniger Ist als Plan → `fehlt`, mehr → `doppelt`. Angaben (Bohrung, Gewinde) werden über den Textanfang der Notiz abgeglichen. Der Abgleich nach Wirkung ist robust gegen Maßnamen, die SolidWorks beim Einfügen vergibt.
+1. **Abgleich Ist ↔ Plan** als Multimenge je `(Ist-Art, wert auf 0,01 mm)`, unabhängig von der Ansicht.
+   - Plan-Art → Ist-Art: `laenge`, `lage`, `tiefe`, `abstand`, `paarabstand`, `fase` → `laenge`; `durchmesser` → `durchmesser`; `radius` → `radius`; `winkel` → `winkel`.
+   - Das sind die Arten in den Plänen von Spannplatte Z und Buchse Z. Eine unbekannte Plan-Art ergibt einen Mangel `Z-VOLL-1` mit dem Text „Art <x> nicht prüfbar“, kein stilles Weglassen. Die Tabelle steht als Konstante `IST_ART` in `pruefen.py`.
+   - Zum Wert: Bei `abstand` mit Präfix „n × “ wird die Teilung (Plan-`wert`) verglichen, nicht die Summe im Text. Bei `fase` die Fasenlänge. Weniger Ist als Plan → `fehlt`, mehr → `doppelt`. Angaben (Bohrung, Gewinde) werden über den Textanfang der Notiz abgeglichen. Der Abgleich nach Wirkung ist robust gegen Maßnamen, die SolidWorks beim Einfügen vergibt.
 2. **Überbestimmt:** Der Maßgraph gilt je Ansicht und Richtung (`h`/`v`). Knoten sind Bezugskoordinaten (Blatt-mm, auf 0,05 mm gerundet), Kanten die linearen Maße ohne Klammer. Ein Zyklus bedeutet einen Mangel. Maße in verschiedenen Ansichten gelten als unabhängig, weil die Projektion keine gemeinsamen Blattkoordinaten hat. Diese Grenze ist bekannt und als Hinweis im Bericht vermerkt.
 3. **Schriftfeld (ISO 7200, acht Pflichtfelder):**
    - Die Zuordnung Pflichtfeld → Eigenschaft steht in `config/standard.yaml` unter `zeichnung.schriftfeld`.
@@ -31,6 +36,7 @@
    - `swki zeichnen` setzt zusätzlich `Dokumentart: Einzelteilzeichnung` (Hausregel bis Z1.5).
 4. **Lesbarkeit** prüft das PDF mit `lesbarkeit.pruefe_pdf` (wie beim Zeichnen). Die Regel ist ein Hinweis (Design §8.1: „R-Kap. 4 B (Hinweis)“): Befunde stehen in `maengel`, `ok` ist bei Befunden `null`, sonst `true`.
 5. **Maßstab aus der Vorzugsreihe** (ISO 5455): 1:1, 1:2, 1:5, 1:10, 1:20, 1:50, 1:100, 2:1, 5:1, 10:1, 20:1, 50:1. Das gilt für das Blatt und jede Einzelheit.
+6. **`durchlauf --zeichnung`** zeichnet den letzten bestandenen Lauf (Teil-Prüfer bestanden) und prüft ihn. Er baut nicht neu. Das Teil-Prüfer-Urteil ist Voraussetzung für `swki zeichnen` (Design §5), deshalb kann ein einziger Aufruf nicht bauen, prüfen und zeichnen. Der Auftrag des Organizers nennt `durchlauf --zeichnung`; diese Lesart wird als Vorschlag markiert.
 
 ## Review Focus
 
@@ -38,7 +44,7 @@
 2. Zwei Maße gleichen Werts (z. B. zweimal 20) an verschiedenen Merkmalen: Fehlt eines, wird es gemeldet; sind beide da, ist es kein Doppelmaß. → Test in Task 2.
 3. Hilfsmaß in Klammern schließt eine Kette, ohne dass ein Mangel entsteht. → Test in Task 2.
 4. Ⓔ an einem Maß, dessen Plan-Toleranz eine reine Abmaßtoleranz ist (keine Passung), ist ein Mangel. Ⓔ an einer Passung ist keiner. → Test in Task 3.
-5. Die Zeichnung wurde nach `swki zeichnen` von Hand geändert (SHA ≠ `sha256_slddrw` der Übergabe). Die Prüfung läuft trotzdem und meldet `ZEICHNUNG_GEAENDERT` in `meldungen`. Sie bricht nicht ab und behauptet auch nicht still „bestanden“. → Test in Task 4 (reiner Teil `kopf_pruefung`).
+5. Die Zeichnung wurde nach `swki zeichnen` von Hand geändert (SHA ≠ `sha256_slddrw` der Übergabe). Die Prüfung läuft trotzdem und meldet `ZEICHNUNG_GEAENDERT` in `meldungen`. Sie bricht nicht ab und behauptet auch nicht still „bestanden“. → Test in Task 4a (`kopf_pruefung`).
 
 ---
 
@@ -138,7 +144,8 @@
     - `Z-SCH-2`: „Freigegeben“ ist gefüllt.
     - `Z-SCH-3`: Der Blatt-Maßstab liegt nicht in `VORZUGSMASSSTAEBE`.
   - `pruefe_lesbarkeit(pdf: Path | None, format_: str, regeln) -> dict` (Entscheidung 4). Ohne PDF gilt `ok: null`.
-  - `bewerte(ist, plan, spec, standard, regeln, pdf=None, meldungen=()) -> dict`. Ergebnis: `{bestanden, pruefungen: [...9], maengel: [{pruefung, regel, merkmal, text}], meldungen}`.
+  - `soll_luecken(meldungen_soll: list[str]) -> list[dict]`: Macht aus `massplan_meldungen(soll, protokoll)` Mängel nach den Global Constraints. Die Mängel landen in den Prüfungen `toleranzen` bzw. `vollstaendig`.
+  - `bewerte(ist, plan, spec, standard, regeln, pdf=None, meldungen=(), meldungen_soll=()) -> dict`. Ergebnis: `{bestanden, pruefungen: [...9], maengel: [{pruefung, regel, merkmal, text}], meldungen}`.
     - `bestanden` ist True, wenn keine harte Prüfung `ok is False` hat.
     - Hinweisregeln (`art: hinweis`) machen nie `ok False`.
   - In `config/standard.yaml` unter `zeichnung:` kommt dazu: `schriftfeld: {eigentuemer: "", sachnummer: Zeichnungsnummer, titel: Benennung, ersteller: DrawnBy, ausgabedatum: DrawnDate, dokumentart: Dokumentart, blatt: Blatt, freigegeben: Freigegeben}`. Die Werte sind Eigenschaftsnamen der Zeichnung, `eigentuemer` ist leer bis Z1.5. Kommentar: Design §7, Z1.5 ersetzt die Namen. `blatt` liefert der Rückleser aus dem Blatt (Nummer/Anzahl), nicht aus einer Eigenschaft.
@@ -154,44 +161,71 @@
   - `test_iso_2768_mk`: Notiz „Allgemeintoleranzen ISO 2768-mK“ → `Z-SAM-3`. Varianten „ISO 2768-1 mK“ und „2768 - mK“ ebenfalls. „ISO 2768-1:1989 – m“ ist kein Treffer.
   - `test_pflichtfeld_fehlt`: Benennung leer → `Z-SCH-1`. Eigentümer leer → nur Hinweis, bestanden bleibt True.
   - `test_freigegeben_gefuellt` und `test_massstab_3zu1`.
+  - `test_soll_luecke_toleranz` (Advisor): `buchse_z` mit `toleranzen.GIBTSNICHT: {passung: h9}`. Die Meldungen kommen aus `massplan_meldungen`, das Ergebnis ist nicht bestanden, mit `Z-TOL-1` und „GIBTSNICHT“ im Text. Ebenso `TOLERANZ_MEHRDEUTIG` und `MASS_NICHT_GEPLANT` → `Z-VOLL-1`. `FUNKTION_UNBESTAETIGT` lässt bestanden True.
+  - `test_verdeckt_unbekannt`: Alle Maße mit `verdeckt=None` → Prüfung `ansichten` `ok is None`, die Anzahl steht im Hinweis. bestanden bleibt True, der Bericht nennt die Lücke.
   - `test_lesbarkeit_ist_hinweis`: Mit einem PDF mit Befund (vorhandene Test-PDF aus `tests/zeichnung/daten`, falls es eine gibt, sonst `monkeypatch` von `pruefe_pdf`) gilt `ok is None` und bestanden bleibt True.
 - [ ] **Step 2–4:** rot, umsetzen, grün (`pytest tests/zeichnung tests/test_konfig.py -q`).
 - [ ] **Step 5:** Commit.
 
-### Task 4: Rückleser und `swki zeichnung pruefen` (live, gesperrt bis SolidWorks frei und Stufe 4 Task 5 fertig)
+### Task 4a: `swki zeichnung pruefen` ohne Rückleser (rein, jetzt)
+
+**Files:**
+- Create: `swki/zeichnung/zeichnung_pruefen.py`
+- Modify: `swki/zeichnung/befehle.py` (Unterbefehl `zeichnung pruefen`), `swki/zeichnung/zeichnen.py` (`_eigenschaften`: `Dokumentart`), `tests/zeichnung/test_zeichnen_ohne_sw.py`
+- Test: `tests/zeichnung/test_zeichnung_pruefen.py`
+
+**Interfaces:**
+- Consumes: Tasks 1–3.
+- Produces:
+  - Die Orchestrierung `zeichnung_pruefen(spec_pfad, lauf=None, leser=None)` (unten). `leser` hat die Signatur `(slddrw: Path, rollen: dict[str, str]) -> Ist`. Vorgabe `None` heißt: spät `rueckleser.lies_zeichnung` mit eigener COM-Verbindung (Task 4b). Tests übergeben einen Fake-Leser mit `ideal_ist`.
+  - `kopf_pruefung` (unten).
+  - CLI.
+  - `Dokumentart` in `_eigenschaften`.
+
+### Task 4b: Rückleser (live, gesperrt bis SolidWorks frei und Stufe 4 Task 5 fertig)
 
 **Files:**
 - Create: `swki/zeichnung/rueckleser.py`, `tests/live/test_live_zeichnung_pruefen.py`
-- Modify: `swki/zeichnung/befehle.py` (Unterbefehl `zeichnung pruefen`), `swki/zeichnung/zeichnen.py` (`_eigenschaften`: `Dokumentart`), `tests/zeichnung/test_zeichnen_ohne_sw.py`
 
 **Interfaces:**
-- Consumes: Tasks 1–3; `zeichnen._bezuege(dd)` (Richtung und Bezugspunkte linearer Maße, schon live erprobt), `bemassen._anzeige`, `kurzname`.
+- Consumes: Task 4a; `zeichnen._bezuege(dd)` (Richtung und Bezugspunkte linearer Maße, schon live erprobt), `zeichnen._kanten`, `bemassen._anzeige`, `kurzname`.
 - Produces:
-  - `lies_zeichnung(app, slddrw: Path, rollen: dict[str, str]) -> Ist` (COM).
+  - `lies_zeichnung(slddrw: Path, rollen: dict[str, str], app=None) -> Ist` (COM).
     - `IView` je Blatt: Name, `ScaleDecimal` → „n:m“, Art. Die Schnittbezeichnung liest `IView.GetSection`/Label bzw. `IDetailCircle`, nachschlagen.
-    - Maße mit Wert, `GetText(1/2)`, Klammer, `Tolerance` (Type, Fit, Werte) und `_bezuege`. `verdeckt` aus den angehängten Entitäten gegen `GetVisibleEntities2`. Ist das nicht bestimmbar, gilt None.
+    - Maße mit Wert, `GetText(1/2)`, Klammer, `Tolerance` (Type, Fit, Werte) und `_bezuege`.
+    - `verdeckt`: Beide Bezugspunkte aus `_bezuege` werden gegen die sichtbaren Kanten der Ansicht (`_kanten`, Blatt-mm) geprüft, mit 0,1 mm Toleranz. Liegt ein Punkt auf keiner sichtbaren Kante und auf keiner Mittellinie, ist das Maß verdeckt bzw. ohne sichtbaren Bezug (Nutzer Stufe 2: „Maß ohne sichtbaren Bezug“). Nicht lineare Maße ergeben None.
     - Notizen (`GetFirstNote`/`GetNext`), `GetFirstGTOL`, `GetFirstDatumTag`, `GetFirstSFSymbol` (wie `spikes/z1_diag_stufe4.py`).
     - Eigenschaften über `CustomPropertyManager.Get6`.
     - Öffnet die Zeichnung ohne Speichern und schließt sie wieder.
+
+**Produces in Task 4a (Fortsetzung):**
   - `kopf_pruefung(sha_ist: str, uebergabe: dict) -> list[str]` (rein): Ist `sha_ist != uebergabe["sha256_slddrw"]`, entsteht `["ZEICHNUNG_GEAENDERT: <name> weicht von der Übergabe ab (Handänderung?) – swki aenderungen"]`. Bei fehlender Übergabe entsteht `ZEICHNUNG_UEBERGABE_FEHLT` und der Befehl bricht mit `ZeichnungFehler` ab.
-  - `zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None) -> dict`:
+  - `zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser=None) -> dict`:
     - Lauf wie `waehle_lauf`.
     - Liest `lauf-<n>/zeichnung/zeichnung.json` und die freigegebene Spec (`freigegebene_spec`).
-    - Plan neu: `massplan(soll, protokoll)`. Weicht er nach Wirkung vom Übergabe-Plan ab, kommt die Meldung `ZEICHNUNG_PLAN_VERALTET`.
-    - Danach `lies_zeichnung` und `bewerte`. Das Ergebnis enthält zusätzlich `ist`, `pdf`, `png`, `zeichnung`. Es wird über `schreibe_uebergabe` als `lauf_datei(spec, lauf, "zeichnung-pruefbericht")` geschrieben.
+    - Plan neu: `massplan(soll, protokoll)` und `massplan_meldungen(soll, protokoll)`. Weicht der Plan nach Wirkung vom Übergabe-Plan ab, kommt die Meldung `ZEICHNUNG_PLAN_VERALTET`.
+    - Danach `leser(...)` und `bewerte(..., meldungen_soll=...)`. Das Ergebnis enthält zusätzlich `ist`, `pdf`, `png`, `zeichnung`. Es wird über `schreibe_uebergabe` als `lauf_datei(spec, lauf, "zeichnung.pruefbericht")` geschrieben.
     - SHA von SLDDRW und SLDPRT vor und nach dem Rücklesen sind gleich, sonst `ZeichnungFehler("ZEICHNUNG_PRUEFUNG_AENDERT", …)`.
   - CLI: `swki zeichnung pruefen <spec> [--lauf N]`. `swki zeichnen` bleibt unverändert.
-- [ ] **Step 1: Unit-Tests** (ohne SolidWorks)
+
+Task 4a:
+- [ ] **Step 1: Unit-Tests** (ohne SolidWorks; Laufordner und Protokolle in `tmp_path` wie in bestehenden Tests mit `lade_rechner`-Monkeypatch)
   - `kopf_pruefung` für SHA gleich, SHA abweichend (Review Focus 5) und fehlende Übergabe.
+  - `zeichnung_pruefen` mit Fake-Leser (`ideal_ist`): Der Bericht liegt unter `…lauf-1.zeichnung.pruefbericht.json` und ist bestanden. `lies_laeufe` zählt ihn nicht als Teil-Prüfbericht.
+  - Ein Fake-Leser, der eine Datei verändert → `ZEICHNUNG_PRUEFUNG_AENDERT`.
   - `_eigenschaften` setzt `Dokumentart`, geprüft mit einem Fake-CustomPropertyManager.
   - Der CLI-Parser kennt `zeichnung pruefen`.
-- [ ] **Step 2: API nachschlagen** für jeden neuen Aufruf (`swki api methode IView.GetFirstNote` usw.); Ergebnis in den Docstring.
-- [ ] **Step 3: Umsetzen**, dann `swki api pruefe-code swki/zeichnung/rueckleser.py`.
-- [ ] **Step 4: Live** (nur nach Freigabe):
+- [ ] **Step 2–4:** rot, umsetzen, grün. **Step 5:** Commit.
+
+Task 4b (gesperrt):
+- [ ] **Step 1: API nachschlagen** für jeden neuen Aufruf (`swki api methode IView.GetFirstNote` usw.), Ergebnis in den Docstring.
+- [ ] **Step 2: Umsetzen**, dann `swki api pruefe-code swki/zeichnung/rueckleser.py`.
+- [ ] **Step 3: Live** (nur nach Freigabe):
   - `swki zeichnen` und `swki zeichnung pruefen` für Spannplatte Z und Buchse Z im Auftrag `Z1-STUFE4`.
   - Erwartet: bestanden oder nur echte Mängel. Jeder Mangel wird erklärt, ein Fehler im Rückleser wird behoben.
   - SHA-Prüfung grün.
-- [ ] **Step 5: Commit.**
+  - `verdeckt` ist für alle linearen Maße bestimmt (kein None).
+- [ ] **Step 4: Commit.**
 
 ### Task 5: Agent `zeichnungspruefer`, `durchlauf --zeichnung`, Bericht
 
@@ -214,7 +248,7 @@
     - Sonst läuft der normale Durchlauf, und `naechstes` nennt „Prüfer-Agent, danach swki durchlauf --zeichnung“.
     - Ergebnis: `zeichnung: {pdf, bestanden, maengel, meldungen}`, `zeichnungspruefer_auftrag`, `naechstes`.
     - Option `--zeichnung` in `einrichten`.
-  - `bericht`: Hat der letzte Lauf einen `zeichnung-pruefbericht`, kommt ein Abschnitt „Zeichnung“ dazu (PDF, maschinelles Ergebnis, Prüfer-Urteil). Fehlt `zeichnungspruefer.json`, steht dort `ZEICHNUNGSPRUEFER_FEHLT`, und der Status sagt „Zeichnung ungeprüft“.
+  - `bericht`: Hat der letzte Lauf einen `zeichnung.pruefbericht`, kommt ein Abschnitt „Zeichnung“ dazu (PDF, maschinelles Ergebnis, Prüfer-Urteil). Fehlt `zeichnungspruefer.json`, steht dort `ZEICHNUNGSPRUEFER_FEHLT`, und der Status sagt „Zeichnung ungeprüft“.
 - [ ] **Step 1: Tests** (monkeypatch wie in `tests/test_durchlauf.py`)
   - `--zeichnung` mit bestandenem letzten Lauf: kein Bauen, Zeichnen und Prüfen aufgerufen, der Auftrag enthält den Prüfbericht-Pfad und das PDF.
   - Ohne bestandenen Lauf: `naechstes` nennt den Prüfer.
@@ -223,7 +257,7 @@
 - [ ] **Step 2–4:** rot, umsetzen, grün (`pytest -q -x`).
 - [ ] **Step 5:** Commit.
 
-### Task 6: Live-Regression mit Negativfällen, Prüfer-Lauf, Ergebnisse (gesperrt wie Task 4)
+### Task 6: Live-Regression mit Negativfällen, Prüfer-Lauf, Ergebnisse (gesperrt wie Task 4b)
 
 **Files:**
 - Modify: `tests/live/test_live_zeichnung_pruefen.py`, `docs/zeichnungsableitung/ergebnisse.md`, `tests/referenz` (Regressions-Einträge, wie beim Zeichnen-Live-Test)
