@@ -87,7 +87,7 @@ def _zusatz_ok(ist: IstMass, m: Mass) -> bool:
 
 
 def _gleich(a: float | None, b: float | None) -> bool:
-    return a is not None and b is not None and abs(a - b) <= _TOL_GLEICH
+    return a is not None and b is not None and abs(a - b) <= _TOL_GLEICH + 1e-9
 
 
 def _toleranz_ok(ist: IstMass, m: Mass) -> bool:
@@ -370,13 +370,14 @@ def _text_ist(art: str, a) -> str:
     return f"Bezug {normtext(a.text)}"
 
 
-def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[dict]:
+def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> tuple[list[dict], list[str]]:
     """Rauheit, Form/Lage und Bezüge des Plans gegen `ist.angaben`. Hat eine IstAngabe ein Merkmal, gleicht Pass 1 je
     Merkmal ab; eine IstAngabe ohne Merkmal (das Rücklesen kennt es nicht immer) deckt in Pass 2 einen Plan-Eintrag
     gleichen Inhalts als Multimenge (Art, Text bzw. Symbol + Wert + Bezug). Eine IstAngabe mit anderem Merkmal deckt keinen.
     Zuletzt gilt ein übrig gebliebener Ist-Eintrag derselben Art (Form/Lage: gleiches Symbol; Bezüge: nie) als „weicht
-    ab“, sonst „fehlt“. Überzählige IstAngaben dieser Arten meldet die Prüfung nicht."""
-    maengel = []
+    ab“, sonst „fehlt“. Was dann noch übrig ist, ist überzählig: mit Merkmal ein harter Mangel (keine Anforderung ohne
+    Funktion), ohne Merkmal nur eine Meldung (zweiter Rückgabewert)."""
+    maengel, meldungen = [], []
     for art, regel_id in _ANGABEN_REGEL.items():
         frei = [a for a in ist.angaben if a.art == art]
         offen = [m for m in plan if m.quelle == art]
@@ -400,7 +401,13 @@ def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[dic
                 frei.remove(nah)
                 maengel.append(_mangel(regeln, regel_id, m.merkmal,
                                        f"weicht ab: {_text_ist(art, nah)} statt {_text_plan(m)} ({m.merkmal})"))
-    return maengel
+        for a in frei:
+            wort = _text_ist(art, a)
+            if a.merkmal is None:
+                meldungen.append(f"überzählige {wort} ohne Merkmal")
+            else:
+                maengel.append(_mangel(regeln, regel_id, a.merkmal, f"überzählig: {wort} ({a.merkmal})"))
+    return maengel, meldungen
 
 
 def pruefe_toleranzen(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
@@ -426,20 +433,25 @@ def pruefe_toleranzen(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
                 maengel.append(_mangel(regeln, "Z-TOL-1", m.merkmal, f"{etikett}: Ⓔ fehlt an {_soll_text(m)}"))
         if _traegt_huelle(c) and not _huelle_plan(m):
             maengel.append(_mangel(regeln, "Z-TOL-2", m.merkmal, f"{etikett}: Ⓔ an einem Maß ohne Passung"))
-    maengel += _angaben_je_art(ist, plan, regeln)
-    return _pruefung("toleranzen", regeln, ("Z-TOL-1", "Z-TOL-2", "Z-TOL-3", "Z-TOL-4", "Z-TOL-5", "Z-TOL-6"), maengel)
+    mehr, meldungen = _angaben_je_art(ist, plan, regeln)
+    p = _pruefung("toleranzen", regeln, ("Z-TOL-1", "Z-TOL-2", "Z-TOL-3", "Z-TOL-4", "Z-TOL-5", "Z-TOL-6"), maengel + mehr)
+    if meldungen:
+        p["meldungen"] = meldungen
+    return p
 
 
 # --- Sammelangaben, Schriftfeld, Lesbarkeit -------------------------------------------------------------------------------
 
 _SAM_REGEL = ("Z-SAM-1", "Z-SAM-2", "Z-SAM-6", "Z-SAM-4")   # Reihenfolge von `sammelangaben`; danach Behandlung/Halbzeug
-_ISO_2768_K = re.compile(r"2768\s*-\s*\d?\s*[fmcv]?\s*K")   # „2768-mK“, „2768-1 mK“, „2768 - mK“; nicht „2768-1:1989 – m“
+_BS = "[-–−‑]"   # Bindestrich, Gedankenstrich, Minus, geschützter Bindestrich
+# „2768 mK“, „2768-mK“, „2768-m-K“, „2768-1 mK“, „2768 – mK“, „2768-1:1989 – mK“; nicht „2768-1:1989 – m“, nicht „… m Kanten“
+_ISO_2768_K = re.compile(rf"2768(?:\s*{_BS}\s*\d?(?::\d{{4}})?)?\s*{_BS}?\s*[fmcv]?\s*{_BS}?\s*K\b", re.I)
 
 
 def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
     """Jede Zeile von `sammelangaben(spec)` steht (normalisiert) im Text aller Notizen, dazu die Sammelrauheit (Z-SAM-7).
     Verboten (Z-SAM-3, je Notiz geprüft, damit „… 2768-1 m“ und eine Folgenotiz „K…“ kein „mK“ ergeben): „2768-…K“ und
-    „DIN 7167“. Das Muster erlaubt Leerraum vor dem Bindestrich (Plan-Variante „2768 - mK“)."""
+    „DIN 7167“. Das Muster erlaubt Leerraum, verschiedene Striche, Jahr und Groß-/Kleinschreibung."""
     notizen = [normtext(a.text) for a in ist.angaben if a.art == "hinweis"]
     alle = " ".join(notizen)
     maengel = []
@@ -447,7 +459,7 @@ def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
         if normtext(zeile) not in alle:
             maengel.append(_mangel(regeln, _SAM_REGEL[i] if i < len(_SAM_REGEL) else "Z-SAM-5", "sammelangabe",
                                    f"fehlt: {zeile}"))
-    if SAMMEL_RAUHEIT not in alle:
+    if not re.search(re.escape(SAMMEL_RAUHEIT) + r"(?!\d)", alle):
         maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe", f"fehlt: Sammelrauheit {SAMMEL_RAUHEIT}"))
     for n in notizen:
         if _ISO_2768_K.search(n) or "DIN 7167" in n:
@@ -550,7 +562,9 @@ def bewerte(ist: Ist, plan: list[Mass], spec: dict, standard: dict, regeln: list
         pruefe_lesbarkeit(pdf, ist.format_, regeln), pruefe_gewinde(ist, plan, regeln), pruefe_drehteil(ist, plan, regeln))}
     for luecke in soll_luecken(list(meldungen_soll)):
         _nachtragen(pruefungen[luecke["pruefung"]], regeln, [{k: luecke[k] for k in ("regel", "merkmal", "text")}])
+    zusatz = [m for p in pruefungen.values() for m in p.get("meldungen", [])]
     return {"bestanden": all(p["ok"] is not False for p in pruefungen.values()),
+            "nicht_geprueft": [p["id"] for p in pruefungen.values() if p["ok"] is None],
             "pruefungen": list(pruefungen.values()),
             "maengel": [{"pruefung": p["id"], **m} for p in pruefungen.values() for m in p["maengel"]],
-            "meldungen": list(meldungen) + list(meldungen_soll)}
+            "meldungen": list(meldungen) + list(meldungen_soll) + zusatz}

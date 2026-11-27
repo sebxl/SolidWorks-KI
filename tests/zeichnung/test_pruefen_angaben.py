@@ -396,3 +396,67 @@ def test_jede_quelle_wird_ausgewertet(quelle):
     assert any(m.quelle == quelle for m in plan)
     u = _bewerte(ist, plan, spec)
     assert u["bestanden"] is False, quelle
+
+
+# --- Nachbesserung Review ---------------------------------------------------------------------------------------------------
+
+_UEBERZAEHLIG = {
+    "rauheit": (lambda mk: IstAngabe("rauheit", "haupt", "Ra 0,4", None, None, (), mk), "Z-TOL-4", "Ra 0,4"),
+    "form_lage": (lambda mk: IstAngabe("form_lage", "haupt", "x", "<IGTOL-CIRC>", "0,01", (), mk), "Z-TOL-5", "0,01"),
+    "bezug": (lambda mk: IstAngabe("bezug", "haupt", "C", None, None, ("C",), mk), "Z-TOL-6", "C"),
+}
+
+
+@pytest.mark.parametrize("art", list(_UEBERZAEHLIG))
+def test_ueberzaehlige_angabe_mit_merkmal_ist_mangel(art):
+    bau, regel_id, text = _UEBERZAEHLIG[art]
+    ist = replace(_ideal_sp(), angaben=_ideal_sp().angaben + (bau("frei"),))
+    u = _bewerte(ist, plan_spannplatte_z(), _spec_sp())
+    assert u["bestanden"] is False
+    m = next(m for m in u["maengel"] if m["regel"] == regel_id)
+    assert m["text"].startswith("überzählig:") and text in m["text"] and "(frei)" in m["text"]
+
+
+@pytest.mark.parametrize("art", list(_UEBERZAEHLIG))
+def test_ueberzaehlige_angabe_ohne_merkmal_ist_meldung(art):
+    bau, _, text = _UEBERZAEHLIG[art]
+    ist = replace(_ideal_sp(), angaben=_ideal_sp().angaben + (bau(None),))
+    u = _bewerte(ist, plan_spannplatte_z(), _spec_sp())
+    assert u["bestanden"] is True
+    assert any(m.startswith("überzählige") and "ohne Merkmal" in m and text in m for m in u["meldungen"])
+
+
+@pytest.mark.parametrize("text", ["ISO 2768 mK", "ISO 2768-m-K", "2768-2 K", "2768 – mK", "2768−mK", "2768-mk",
+                                  "ISO 2768-1:1989 – mK", "ISO 2768-mK", "ISO 2768-1 mK", "2768 - mK"])
+def test_iso_2768_k_treffer(text):
+    assert _regeln_der(pruefe_sammelangaben(_notizen(_ideal_bu(), text), _spec_bu(), REGELN)) == {"Z-SAM-3"}
+
+
+@pytest.mark.parametrize("text", ["ISO 2768-1:1989 – m", "ISO 2768-1 m Kanten ISO 13715", "2768-1 Kanten"])
+def test_iso_2768_k_kein_treffer(text):
+    assert _regeln_der(pruefe_sammelangaben(_notizen(_ideal_bu(), text), _spec_bu(), REGELN)) == set()
+
+
+def test_sammelrauheit_wortgrenze():
+    ist = _ohne_notiz_mit(_ideal_bu(), "Ra 3,2")
+    assert "Z-SAM-7" not in _regeln_der(pruefe_sammelangaben(_notizen(ist, "Ra 3,2"), _spec_bu(), REGELN))
+    assert "Z-SAM-7" in _regeln_der(pruefe_sammelangaben(_notizen(ist, "Ra 3,25"), _spec_bu(), REGELN))
+
+
+def test_tolerenz_gleich_mit_rundungsrand():
+    from swki.zeichnung.pruefen import _gleich
+
+    assert _gleich(0.02, 0.0205) and not _gleich(0.02, 0.0206)
+
+
+def test_nicht_geprueft_liste():
+    u = _bewerte(_ideal_sp(), plan_spannplatte_z(), _spec_sp())
+    assert set(u["nicht_geprueft"]) == {p["id"] for p in u["pruefungen"] if p["ok"] is None} >= {"schriftfeld", "lesbarkeit"}
+
+
+def test_ausschluss_wie_zeichnen():
+    from swki.zeichnung import zeichnen
+    from swki.zeichnung.blatt import FORMATE
+
+    for f in FORMATE:
+        assert pruefen._ausschluss(f) == zeichnen._ausschluss(f)
