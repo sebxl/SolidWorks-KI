@@ -195,6 +195,7 @@
   - `lies_zeichnung(slddrw: Path, rollen: dict[str, str], app=None) -> Ist` (COM).
     - `IView` je Blatt: Name, `ScaleDecimal` → „n:m“, Art. Die Schnittbezeichnung liest `IView.GetSection`/Label bzw. `IDetailCircle`, nachschlagen.
     - Maße mit Wert, `GetText(1/2)`, Klammer, `Tolerance` (Type, Fit, Werte) und `_bezuege`.
+    - Toleranz im Ist (Review Task 3, M2): `unten` mit Vorzeichen (negativ unter Nennmaß), `oben`/`unten` in mm. ±0,02 ergibt `typ: symmetrisch, oben 0,02, unten −0,02`, nicht (0,02/0,02). Wert über `GetSystemValue3`, bei Zeichnungsmaßen None, dann `GetSystemValue2("")` (Spike Stufe 4). Ⓔ kommt als `<MOD-EP>` im Suffix. Jede Angabe bekommt ihr `merkmal`, soweit das Rücklesen es über die angehängte Kante bestimmen kann. Ohne Merkmal wird überzähliges nur gemeldet (Task 3).
     - `verdeckt`: Beide Bezugspunkte aus `_bezuege` werden gegen die sichtbaren Kanten der Ansicht (`_kanten`, Blatt-mm) geprüft, mit 0,1 mm Toleranz. Liegt ein Punkt auf keiner sichtbaren Kante und auf keiner Mittellinie, ist das Maß verdeckt bzw. ohne sichtbaren Bezug (Nutzer Stufe 2: „Maß ohne sichtbaren Bezug“). Nicht lineare Maße ergeben None.
     - Notizen (`GetFirstNote`/`GetNext`), `GetFirstGTOL`, `GetFirstDatumTag`, `GetFirstSFSymbol` (wie `spikes/z1_diag_stufe4.py`).
     - Eigenschaften über `CustomPropertyManager.Get6`.
