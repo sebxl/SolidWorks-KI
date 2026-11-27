@@ -287,3 +287,24 @@ def test_neuer_hinweis_ohne_hinweislinie_gemeldet():
     meldungen = []
     z._hinweise_legen(drw, [h], {}, sperre, meldungen)
     assert meldungen == ["ANGABE_OHNE_HINWEISLINIE: g1 in haupt"]
+
+
+def test_uebergabe_json_mit_toleranz_und_form_lage():
+    import json
+    from swki.zeichnung.toleranzangaben import FormLage, Toleranz
+    plan = [Mass(id="m1", quelle="modell", art="durchmesser", wert=20.0, merkmal="welle",
+                 toleranz=Toleranz("h7", 0.0, -0.021, True), treiber="d"),
+            Mass(id="f1", quelle="form_lage", art="form_lage", wert=0.0, merkmal="welle",
+                 form_lage=FormLage("welle", "rundlauf", "↗", "0,02", ("A",), False))]
+    u = z.uebergabe(plan, {"plan": 1, "gesetzt": 1}, "ab" * 32, ["X: y"])
+    u2 = json.loads(json.dumps(u))
+    assert u2["plan"][0]["toleranz"]["passung"] == "h7" and u2["plan"][0]["toleranz"]["unten"] == -0.021
+    assert u2["plan"][1]["form_lage"]["bezug"] == ["A"]
+    assert u2["gesetzt"] == {"plan": 1, "gesetzt": 1} and u2["sha256_slddrw"] == "ab" * 32 and u2["meldungen"] == ["X: y"]
+    assert set(u2) == {"plan", "gesetzt", "sha256_slddrw", "meldungen"}
+
+
+def test_sammel_mm_aus_spec():
+    from swki.zeichnung.toleranzangaben import sammelangaben
+    spec = {}
+    assert z.sammel_mm(spec) == len(sammelangaben(spec)) * z.SAMMEL_ZEILE_MM

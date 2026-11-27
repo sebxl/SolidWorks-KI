@@ -17,7 +17,7 @@ swDimensionTextPrefix = 1, swDimensionTextSuffix = 2); IModelDocExtension.SetUse
 """
 
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from fractions import Fraction
 from typing import Callable
 import json
@@ -42,11 +42,12 @@ from swki.zeichnung.angaben import (HINWEIS_ABSTAENDE_MM, HINWEIS_RICHTUNGEN_GRA
 from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
                                      waehle_ansichten, weitere_rollen)
 from swki.zeichnung.bemassen import EINZELHEIT_MIN, MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
-from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
+from swki.zeichnung.blatt import FORMATE, SAMMEL_ZEILE_MM, SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.lesbarkeit import Befund, _ueberlappt, ausserhalb, pruefe_pdf, texte
 from swki.zeichnung.reihen import ABSTAND_MM, LinMass, radius_zahl_frei, reihen, seite
 from swki.zeichnung.layout import anordnen, einzelheit_passt
-from swki.zeichnung.massplan import massplan, massplan_meldungen
+from swki.zeichnung.massplan import Mass, massplan, massplan_meldungen
+from swki.zeichnung.toleranzangaben import sammelangaben
 from swki.zeichnung.mittellinien import bezugspunkt, linien, ohne_kante
 from swki.zeichnung.zuordnung import max_je_ansicht
 
@@ -280,7 +281,7 @@ def _bezuege(dd) -> tuple[str, list[tuple[float, float]]] | None:
 
 
 def _einzelheit(drw, mu, views: dict, rolle: str, angebot: list[tuple[str, list[str]]], genutzt: list[str],
-                gruppe: dict[str, str], mitten: set[str], buchstabe: str, bereich: dict, meldungen: list[str]):
+                gruppe: dict[str, str], mitten: set[str], buchstabe: str, bereich: dict, meldungen: list[str], sammel_mm: float = 0.0):
     """Einzelheit (Nutzer 18.11.2026: dichte Hauptansicht; „Details werden in der Regel vergrößert“). Je angebotenem
     Merkmal (meiste Maße zuerst): Rechteck um seine sichtbaren Kanten (`_kanten`, auch Unter-Features `<id>_…` und
     Merkmale, die zu ihm zählen, z. B. seine Verrundung); hinein dürfen nur Maße, deren beide Bezüge im Rechteck liegen
@@ -327,7 +328,7 @@ def _einzelheit(drw, mu, views: dict, rolle: str, angebot: list[tuple[str, list[
         if len(hinein) < EINZELHEIT_MIN:
             meldungen.append(f"EINZELHEIT_NICHT_FUER: {merkmal} – nur {len(hinein)} Maße mit beiden Bezügen im Rahmen")
             continue
-        if not einzelheit_passt({r: _groesse_1zu1(views[r]) for r in genutzt}, groesse):
+        if not einzelheit_passt({r: _groesse_1zu1(views[r]) for r in genutzt}, groesse, sammel_mm):
             meldungen.append(f"EINZELHEIT_ZU_GROSS: {merkmal} ({groesse[0]:.0f} × {groesse[1]:.0f} mm) passt "
                              "vergrößert nicht aufs Blatt")
             continue
@@ -823,6 +824,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         meldungen += nicht_erzeugt
         protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
         plan = massplan(spec, protokoll)
+        sammel = sammel_mm(spec)  # Platz der Sammelangaben über dem Schriftfeld (Task 5 schreibt sie)
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         buchstabe, bereich = ("B" if schnitt else "A"), {}
         gruppe = _gruppen(spec)
@@ -831,7 +833,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                       weitere_rollen(spec), lambda rolle: _projektion(drw, views["haupt"], rolle),
                       vorzugsansichten(spec, plan), blickachsen(ansichten, weitere_rollen(spec)),
                       lambda rolle, angebot, genutzt: _einzelheit(drw, mu, views, rolle, angebot, genutzt, gruppe,
-                                                                  mitten, buchstabe, bereich, meldungen),
+                                                                  mitten, buchstabe, bereich, meldungen, sammel),
                       {spec["features"][0]["id"]} if spec.get("features") else set(), gruppe)
         meldungen += bem.meldungen
         meldungen += massplan_meldungen(spec, protokoll)
@@ -841,7 +843,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         groessen = {rolle: _groesse_1zu1(v) for rolle, v in views.items()}
         if "einzelheit" in views:
             groessen["einzelheit"] = bereich["groesse"]  # GetOutline einer Einzelheit: Rand ~12 mm, später veraltet
-        format_, massstab, plaetze = anordnen(groessen)
+        format_, massstab, plaetze = anordnen(groessen, sammel)
         blattformat = r.zeichnung.get(format_)
         if blattformat is None:
             raise ZeichnungFehler("ZEICHNUNG_VORLAGE_FEHLT", f"config/rechner.yaml: zeichnung.{format_} fehlt")
@@ -901,12 +903,28 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         sw.schliesse(app, model)
     if _sha(teil) != sha_teil:
         raise ZeichnungFehler("ZEICHNUNG_TEIL_GEAENDERT", f"{teil.name} wurde beim Zeichnen verändert")
+    masse = {"plan": _planzahlen(plan)[0], "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
+             "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}}
+    uebergabe_pfad = ausgabe / "zeichnung.json"
+    uebergabe_pfad.write_text(json.dumps(uebergabe(plan, masse, _sha(zeichnung), meldungen), ensure_ascii=False, indent=1),
+                              encoding="utf-8")  # Eingabe für Z1.4 (Design §8.1)
     return {"zeichnung": str(zeichnung), "pdf": str(pdf), "png": _png(pdf), "format": format_,
             "massstab": f"{massstab[0]}:{massstab[1]}", "ansichten": info, "schnitt": schnitt,
             "eigenschaften": eigenschaften, "meldungen": meldungen,
-            "masse": {"plan": _planzahlen(plan)[0], "gesetzt": bem.gesetzt + sum(neu_gesetzt.values()), "geloescht": bem.geloescht,
-                      "je_ansicht": {r: len(bem.je_ansicht.get(r, [])) + neu_gesetzt.get(r, 0) for r in views}},
+            "masse": masse, "uebergabe": str(uebergabe_pfad),
             "angaben": {"plan": _planzahlen(plan)[1], "gesetzt": len(notizen)}, "dauer_s": round(time.time() - t0, 1)}
+
+
+def sammel_mm(spec: dict) -> float:
+    """Höhe der Sammelangaben über dem Schriftfeld: eine Zeile je Angabe."""
+    return len(sammelangaben(spec)) * SAMMEL_ZEILE_MM
+
+
+def uebergabe(plan: list[Mass], gesetzt: dict, sha_zeichnung: str, meldungen: list[str]) -> dict:
+    """Übergabe an die Zeichnungsprüfung Z1.4 (Design §8.1), reine Funktion: Maßplan (Toleranz und FormLage als dict),
+    was gesetzt wurde, SHA-256 der .slddrw und die Meldungen. Das JSON schreibt `zeichnen` als `zeichnung/zeichnung.json`."""
+    return {"plan": [asdict(m) for m in plan], "gesetzt": gesetzt, "sha256_slddrw": sha_zeichnung,
+            "meldungen": list(meldungen)}
 
 
 def _speichern(ext, ziel: Path) -> None:

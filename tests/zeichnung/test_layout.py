@@ -106,3 +106,35 @@ def test_einzelheit_passt_nur_vergroessert_und_ohne_kleineren_blattmassstab():
     ansichten = {"haupt": (224, 144), "seite": (44, 144), "drauf": (224, 44)}
     assert einzelheit_passt(ansichten, (113, 36))      # Kanten der Kabelnut
     assert not einzelheit_passt(ansichten, (132, 72))  # samt entfernter Bezugspunkte: nur im Blattmaßstab
+
+
+def test_sammelangaben_halten_platz_ueber_dem_schriftfeld_frei():
+    from swki.zeichnung.blatt import RAND_MM
+    sammel = 40.0
+    for groessen in ({"haupt": (100, 60), "seite": (60, 60), "drauf": (100, 40)}, {"haupt": (300, 100)},
+                     {"haupt": (170, 200)}):
+        format_, massstab, plaetze = anordnen(groessen, sammel_mm=sammel)
+        x0, y0, x1, y1 = zeichenfeld(format_)
+        band = (x1 - SCHRIFTFELD_MM[0], y0 + SCHRIFTFELD_MM[1], x1, y0 + SCHRIFTFELD_MM[1] + sammel)
+        for p in plaetze:
+            assert not _ueberlappt(_rechteck(p), band), p
+        _pruefe(format_, plaetze)
+
+
+def test_sammel_mm_null_aendert_nichts():
+    g = {"haupt": (100, 60), "seite": (60, 60), "drauf": (100, 40)}
+    assert anordnen(g) == anordnen(g, sammel_mm=0.0)
+
+
+def test_einzelheit_passt_mit_sammel_mm_nie_guenstiger():
+    from swki.zeichnung.layout import einzelheit_passt
+    g = {"haupt": (120, 80), "drauf": (120, 40)}
+    for einzelheit in ((10, 10), (30, 20), (60, 40), (100, 80)):
+        if einzelheit_passt(g, einzelheit, sammel_mm=40.0):
+            assert einzelheit_passt(g, einzelheit)
+
+
+def test_freiflaechen_mit_sammel_mm():
+    from swki.zeichnung.blatt import freiflaechen
+    ohne, mit = freiflaechen("A3quer"), freiflaechen("A3quer", sammel_mm=25.0)
+    assert mit[0][1] == ohne[0][1] + 25.0 and mit[1] == ohne[1]
