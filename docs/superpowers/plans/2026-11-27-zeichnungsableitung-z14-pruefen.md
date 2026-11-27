@@ -95,6 +95,7 @@
     - Plan-Einträge mit quelle modell/neu werden gegen `ist.masse` abgeglichen, Einträge mit quelle angabe gegen Notizen (`IstAngabe.art == "hinweis"`, `text.startswith(m.text)`).
     - Abgleich laenge ↔ laenge, durchmesser ↔ durchmesser, radius ↔ radius, winkel ↔ winkel. Ist-Maße in Klammern zählen nicht.
     - Mängel: `{merkmal, text: "fehlt: Ø8 (st)"}` mit Regel Z-VOLL-1 bzw. `"doppelt: 150"` mit Regel Z-VOLL-2.
+    - Textzusätze (Advisor nach Spike 27.11.: Die Stufe-3-Zusätze fehlten in der wieder geöffneten SLDDRW): Ein zugeordnetes Ist-Maß muss Präfix und Suffix des Plans enthalten, Leerraum normalisiert. Plan „4 × “ / „ (= 120)“ und Ist ohne diese Zusätze → Mangel Z-VOLL-1 mit dem Text „Zusatz fehlt: 4 × 30 (= 120)“. Die Zuordnung je Plan-ID macht `zuordnen(ist, plan) -> dict[str, IstMass | None]`. Sie entsteht in diesem Task, Task 3 nutzt sie mit.
   - `pruefe_ueberbestimmt(ist, regeln) -> dict` (Entscheidung 2). Union-Find oder DFS je (ansicht, richtung). Knoten sind `round(koordinate / 0.05)` der Messrichtung (`h` → x der Punkte, `v` → y).
   - `pruefe_ansichten(ist, regeln) -> dict`:
     - `verdeckt is True` → Mangel Z-ANS-1.
@@ -120,6 +121,7 @@
   - `test_schnitt_ohne_bezeichnung` und `test_einzelheit_massstab_3zu1`: jeweils ein Mangel.
   - `test_durchmesser_ohne_zeichen`: Bei der Buchse Z fehlt an einem Ø-Maß „Ø“ → `Z-DRE-1`.
   - `test_gewinde_ohne_tiefe`: Aus der Gewinde-Notiz der Spannplatte Z wird „tief“ entfernt → `Z-GEW-1`.
+  - `test_zusatz_fehlt`: Beim Maß D3@m1 der Spannplatte Z fehlen im Ist Präfix und Suffix → `Z-VOLL-1` mit „Zusatz fehlt“. Bei der Fase (Buchse Z, Suffix „ × 45°“) gilt dasselbe.
 - [ ] **Step 2–4:** rot, umsetzen, grün.
 - [ ] **Step 5:** Commit.
 
