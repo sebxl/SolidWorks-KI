@@ -59,13 +59,19 @@ def _etikett(art: str, wert: float) -> str:
     return {"durchmesser": "Ø", "radius": "R"}.get(art, "") + zahl(wert) + ("°" if art == "winkel" else "")
 
 
+def _ohne_huelle(text: str) -> str:
+    return normtext(normtext(text).replace("Ⓔ", ""))
+
+
 def _zusatz_ok(ist: IstMass, m: Mass) -> bool:
-    """Präfix am Anfang, Suffix am Ende des Ist-Textzusatzes (Leerraum normalisiert); ein Ⓔ am Ende gehört zur Toleranz."""
-    praefix, suffix = normtext(m.praefix), normtext(m.suffix)
-    ist_suffix = normtext(ist.suffix)
-    if not suffix.endswith("Ⓔ"):
-        ist_suffix = ist_suffix.removesuffix("Ⓔ").rstrip()
-    return normtext(ist.praefix).startswith(praefix) and ist_suffix.endswith(suffix)
+    """Textzusatz exakt nach `normtext`: Ist-Präfix = Plan-Präfix, Ist-Suffix = Plan-Suffix, leer passt nur zu leer.
+    Ⓔ bleibt auf beiden Seiten unberücksichtigt, ebenso das Durchmesser- bzw. Radiuszeichen am Ist-Präfix. Die Hülle
+    prüft `pruefe_toleranzen` (Z-TOL-2, Task 3)."""
+    zeichen = {"durchmesser": "Ø", "radius": "R"}.get(ist.art, "")
+    praefix = _ohne_huelle(ist.praefix)
+    if zeichen and praefix.endswith(zeichen):
+        praefix = praefix[:-len(zeichen)].rstrip()
+    return praefix == _ohne_huelle(m.praefix) and _ohne_huelle(ist.suffix) == _ohne_huelle(m.suffix)
 
 
 def _gleich(a: float | None, b: float | None) -> bool:
@@ -88,8 +94,10 @@ def _wert_gleich(ist: IstMass, m: Mass) -> bool:
 def _abgleich(ist: Ist, plan: list[Mass]) -> tuple[dict[str, IstMass | None], list[IstMass]]:
     """Multimenge je Ist-Art und Wert (auf 0,01 mm), unabhängig von der Ansicht (Entscheidung 1). Ist-Maße in Klammern
     zählen nicht. Die Ist-Maße sind fest nach (Ansicht, Name) sortiert. Je Plan-Maß, in Planreihenfolge, gilt der
-    Vorrang: Toleranz und Textzusatz passen, nur Toleranz, nur Zusatz, irgendein freies. Zweiter Wert: die nicht
-    zugeordneten Ist-Maße."""
+    Vorrang: Toleranz und Textzusatz passen, nur Toleranz, nur Zusatz, irgendein freies. Die Plan-Maße kommen in fester
+    Reihenfolge dran (zuerst mit Zusatz, dann mit Toleranz, dann der Rest, je nach id), das Ergebnis hängt also nicht
+    von der Reihenfolge in Plan oder Ist ab. Die Hülle Ⓔ prüft `pruefe_toleranzen` (Z-TOL-2, Task 3). Zweiter Wert:
+    die nicht zugeordneten Ist-Maße."""
     frei = sorted((m for m in ist.masse if not m.klammer), key=lambda m: (m.ansicht, m.name))
     zuordnung: dict[str, IstMass | None] = {}
     offen = []
@@ -98,6 +106,7 @@ def _abgleich(ist: Ist, plan: list[Mass]) -> tuple[dict[str, IstMass | None], li
             zuordnung[m.id] = None
             if m.art in IST_ART:
                 offen.append(m)
+    offen.sort(key=lambda m: (0 if normtext(m.praefix) or normtext(m.suffix) else 1 if m.toleranz is not None else 2, m.id))
     vorrang = (lambda c, m: _toleranz_ok(c, m) and _zusatz_ok(c, m), _toleranz_ok, _zusatz_ok, lambda c, m: True)
     for passt in vorrang:
         for m in offen:
@@ -171,10 +180,11 @@ def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[d
 
 
 def _cluster(koordinaten: list[float]) -> list[tuple[float, float]]:
-    """Sortierte Koordinaten zu Knoten: aufeinanderfolgende mit Abstand ≤ 0,05 mm bilden einen Knoten (von, bis)."""
+    """Sortierte Koordinaten zu Knoten (von, bis), Complete-Linkage: ein Knoten reicht höchstens 0,05 mm über seinen
+    kleinsten Wert hinaus."""
     knoten: list[list[float]] = []
     for x in sorted(koordinaten):
-        if knoten and x - knoten[-1][1] <= _RASTER + 1e-9:
+        if knoten and x - knoten[-1][0] <= _RASTER + 1e-9:
             knoten[-1][1] = x
         else:
             knoten.append([x, x])

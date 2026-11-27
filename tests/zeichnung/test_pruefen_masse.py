@@ -424,3 +424,53 @@ def test_huelle_tag_gleich_symbol():
     notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> – 15 tief", None, None, ())
     angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief")
     assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is True
+
+
+# --- Nachbesserung Re-Review ---------------------------------------------------------------------------------------------
+
+def test_zuordnung_unabhaengig_von_reihenfolge():
+    import itertools
+
+    a = Mass("a", "modell", "laenge", 20.0, "f1", name="a")
+    b = Mass("b", "modell", "laenge", 20.0, "f2", name="b", suffix=" tief")
+    x = replace(_mass("x", 20.0), suffix=" tief")
+    y = _mass("y", 20.0)
+    for plan in itertools.permutations([a, b]):
+        for masse in itertools.permutations([x, y]):
+            ist = _ist_mit(masse)
+            assert pruefe_vollstaendig(ist, list(plan), REGELN)["ok"] is True
+            z = zuordnen(ist, list(plan))
+            assert z["a"] is y and z["b"] is x
+
+
+def test_zusatz_exakt_leer_nur_zu_leer():
+    plan = [Mass("a", "modell", "laenge", 20.0, "f1", name="a")]
+    p = pruefe_vollstaendig(_ist_mit([replace(_mass("x", 20.0), suffix=" tief")]), plan, REGELN)
+    assert p["ok"] is False                      # Ist trägt einen Zusatz, den der Plan nicht kennt
+
+
+def test_huelle_im_zusatz_wird_ignoriert():
+    plan = [Mass("a", "modell", "laenge", 20.0, "f1", name="a", suffix=" (= 20)")]
+    ist = _ist_mit([replace(_mass("x", 20.0), suffix=" (= 20) <MOD-EP>")])
+    assert pruefe_vollstaendig(ist, plan, REGELN)["ok"] is True
+
+
+def test_cluster_complete_linkage():
+    from swki.zeichnung.pruefen import _cluster
+
+    assert len(_cluster([0.0, 0.04, 0.08])) == 2
+    assert len(_cluster([0.0, 0.03, 0.05])) == 1
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.xfail(strict=True, reason="Z-TOL-2 kommt in Task 3")
+def test_huelle_ohne_passmass_ist_mangel():
+    """Ⓔ verschluckt der Zusatzvergleich bewusst; Hülle ohne Passmaß meldet pruefe_toleranzen (Z-TOL-2)."""
+    from swki.zeichnung import pruefen
+
+    plan = [Mass("a", "modell", "laenge", 20.0, "f1", name="a")]
+    ist = _ist_mit([replace(_mass("x", 20.0), suffix=" <MOD-EP>")])
+    p = pruefen.pruefe_toleranzen(ist, plan, REGELN)
+    assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-2"}
