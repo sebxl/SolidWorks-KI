@@ -205,6 +205,18 @@
       - Form/Lage-Instanzen: „n ד über dem Rahmen aus `IGtol.GetText(3)` in ein neues Feld `IstAngabe.anzahl`. Das Soll liefert `anforderungen_setzen.instanzen(spec, merkmal)`. `pruefe_toleranzen` prüft die Anzahl (Z-TOL-5).
       - `RAUHEIT_NUR_EINE_INSTANZ` und `FORM_LAGE_NUR_EINE_INSTANZ` aus den Zeichnungsmeldungen der Übergabe werden in `soll_luecken` zu Mängeln Z-TOL-4 bzw. Z-TOL-5. Eine Anforderung an nur einer von n Instanzen ist ein Mangel.
       - Ebenso wird `ANMERKUNG_KREUZT` aus der Übergabe zu Z-LES-1 (Hinweisregel), `MASS_NICHT_DAUERHAFT` zu Z-VOLL-1.
+      - Nachtrag 2 (Runde C, 28.11.): Die Zuordnung Meldungscode → Regel steht als Tabelle `MELDUNG_REGEL` in
+        `pruefen.py` (`ANMERKUNG_KREUZT`, `ANGABE_ZU_NAH`, `ANSATZ_NICHT_FREI`, `LESBARKEIT` → Z-LES-1;
+        `*_NICHT_GESETZT` → Regel der Angabe (Z-TOL-1/2/4/5, Bezug Z-TOL-3); `*_NUR_EINE_INSTANZ` → Z-TOL-4/5;
+        `MASS_NICHT_DAUERHAFT`, `TOLERANZ_OHNE_MASS`, `TOLERANZ_MEHRDEUTIG`, `MASS_NICHT_GEPLANT` → Z-VOLL-1 bzw. Z-TOL-1;
+        `FUNKTION_UNBESTAETIGT` nur Hinweis). Test `test_jeder_meldungscode_hat_regel`: Er sammelt per Regex alle Codes
+        `"[A-Z][A-Z_]+:` aus `swki/zeichnung/*.py` und verlangt für jeden einen Eintrag (oder einen Eintrag in einer
+        ausdrücklichen Liste „nur Bericht“ mit Begründung). Ein unbekannter Code in einer Übergabe wird Mangel Z-VOLL-1
+        mit dem Text „unbekannte Zeichnungsmeldung“, nie still. `ANMERKUNG_KREUZT` hat das Format
+        `<merkmal> <art> „<text>“ – <was> (<n>), …`; `<was>` ∈ Maßlinie, Text, Kante, Schraffur, Hinweislinie,
+        Rechteck auf Linie, eigenes Symbol, Ansatz < 4 mm.
+      - Rauheit und Form/Lage werden nach Merkmal (über `enthalten`, also inklusive Spiegel- und Musterinstanzen) und
+        Inhalt abgeglichen; der Wechsel des Ansatzes an eine gleichwertige Instanz ist kein Mangel.
       - Merkmal je Angabe: über die angehängte Kante, mit derselben `enthalten`-Logik wie beim Setzen (Spiegel- und Musterinstanzen). Das Bezugsdreieck liefert das Merkmal nur über die angehängte Entität.
       - Maße: `zeichnungsmasse` aus der Übergabe (Modellmaß → `RD<n>@<Ansicht>`) ordnet umgewandelten Maßen den Plan-Namen zu.
       - Lesbarkeit: `pruefe_lesbarkeit` übergibt `pruefe_pdf` die gelegten Rahmen (`rahmen=`), mit dem Text der Form/Lage-Angaben und dem Rechteck aus dem PDF. Sonst gilt jede Rahmentrennlinie als Linie durch den Text.
