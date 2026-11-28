@@ -444,6 +444,27 @@ Vorschläge – Nutzer entscheidet (Plan „Entscheidungen“):
 6. **Lesart von `durchlauf --zeichnung`:** zeichnet und prüft den letzten bestandenen Lauf, baut nicht neu. Das
    Teil-Prüfer-Urteil ist Voraussetzung für `swki zeichnen`, deshalb kann ein Aufruf nicht bauen, prüfen und zeichnen.
 
+### Urteile des Agenten `zeichnungspruefer` (28.11.2026, Lauf 1 der Referenzen, Urteil unverändert abgelegt)
+
+Beide Urteile lauten „maengel“. Der Agent findet, was die Maschine nicht sieht: Die Maschine vergleicht die Zeichnung mit
+dem **Maßplan**, der Agent mit der **Spezifikation**. Fehlt ein Maß schon im Maßplan, bemerkt es nur der Agent.
+
+| Zeichnung | Mängel (Regel) | Herkunft |
+|---|---|---|
+| BuchseZ | Benennung nicht im Schriftfeld, Dokumentart nirgends auf dem Blatt (Z-SCH-1) | Vorlage SW 2025 → Z1.5; seit der Fix-Welle auch maschinell |
+| SpannplatteZ | Radius R20 des Nutbogens und Lage des auslaufenden Schenkels fehlen (Z-VOLL-1, k1) | Maßplan Stufe 2 |
+| | Kernlochtiefe 12 fehlt, nur „M6 – 10 tief“ (Z-GEW-1, g1/m1) | Bohrungsangabe Stufe 3 |
+| | 16 + 4 = 20 über Seitenansicht und Schnitt geschlossen (Z-UEB-1, k1) | Maßplan Stufe 2 (Kette über Ansichten) |
+| | Nutlage doppelt: 27 (Hauptansicht) und 24 + 6/2 (Seitenansicht) (Z-VOLL-2, k1) | Maßplan Stufe 2 |
+| | Rechte Tasche (Spiegelung s1) ohne „2 ד bzw. Symmetriekennzeichen (Z-VOLL-1, s1) | Maßplan Stufe 2/3 |
+| | Benennung/Dokumentart wie bei der Buchse (Z-SCH-1) | Z1.5 |
+
+Hinweise des Agenten u. a.: Fasenmaße der Buchse als senkrechte Maße schwer lesbar (besser Hinweislinie), zwei
+Nachkommastellen überall (Vorschlag: ohne Nachkommanullen), Passflächen ohne eigene Rauheit (Spec verlangt keine).
+Die Maßplan-Lücken sind Folgearbeit (nicht Teil von Stufe 4/Z1.4); die maschinelle Prüfung wird sie erst finden, wenn sie
+auch gegen die Spec statt nur gegen den Maßplan prüft (Vorschlag: Ketten über Ansichten, Kernlochtiefe aus `tiefe` ≠
+`gewindetiefe`, Radien aller Bögen).
+
 ## Gesamtreview Z1.3 Stufe 4 + Z1.4 – Fix-Welle (28.11.2026)
 
 Befund `c2cb853..2013662`, eine Fix-Welle:
