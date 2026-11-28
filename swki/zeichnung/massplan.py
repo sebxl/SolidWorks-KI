@@ -11,7 +11,7 @@ Je Merkmal genau ein Maß, je Richtung ein Bezug, keine geschlossene Kette.
   `quelle`).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from swki.spec.ausdruck import AusdruckFehler, auswerten, namen
 from swki.spec.funktionen import FunktionFehler, aufloesen
@@ -386,7 +386,11 @@ def massplan(spec: dict, protokoll: dict) -> list[Mass]:
     """Maßplan je nach Teileart (Drehteil mit Rotationsprofil, sonst Frästeil), dazu die Anforderungseinträge."""
     rotationen = frozenset(f["id"] for f in spec.get("features", []) if f.get("typ") == "rotation")
     if ist_drehteil(spec) and rotationen:
-        plan = massplan_drehteil(spec) + massplan_fraesteil(spec, protokoll, ohne=rotationen)
+        # Fasenmaße in die Ansicht quer zur Drehachse (Review Task 5, I5: in der Stirnansicht setzte D1@f2 an zwei
+        # konzentrischen Kreisen an und ließ sich nicht als Zeichnungsmaß setzen)
+        achse = next(i for i, c in enumerate(achsvektor(spec)) if c)
+        plan = massplan_drehteil(spec) + [replace(m, achse=achse, modus="quer") if m.art == "fase" else m
+                                          for m in massplan_fraesteil(spec, protokoll, ohne=rotationen)]
     else:
         plan = massplan_fraesteil(spec, protokoll)
     return plan + _anforderungen(spec)[0]

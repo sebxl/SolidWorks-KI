@@ -23,7 +23,7 @@ import math
 from dataclasses import dataclass, field
 
 from swki.verbindung import callout_leer, r8_array
-from swki.zeichnung.angaben import hinweis_lagen_bewertet
+from swki.zeichnung.angaben import _enthalten, bohrbilder, hinweis_lagen_bewertet
 from swki.zeichnung.bemassen import _anzeige, _loesche, _ruf, kurzname
 from swki.zeichnung.blatt import SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.lesbarkeit import _schneidet
@@ -38,6 +38,7 @@ EINE_KONFIG = 1                                     # swInConfigurationOpts_e.sw
 KANTE, ECKPUNKT, SILHOUETTE = 1, 2, 4               # swViewEntityType_e
 SF_BEARBEITET, FUEHRUNG_GERADE, PFEIL_GESCHLOSSEN = 1, 1, 1  # swSFSymType_e, swLeaderStyle_e, swArrowStyle_e
 LINEAR = (2, 11, 12)                                # swDimensionType_e: Linear, HorLinear, VertLinear
+RUND = (5, 6, 14, 15)                               # swDimensionType_e: Radial, Diameter, RadialLinear, DiametricLinear
 PUNKT_TOL_MM = 0.1                                  # Bezugspunkt liegt auf der Kante / in der Kreismitte
 KANTE_VERLAENGERT_MM = 1.0                          # Bezugspunkt höchstens so weit hinter dem Kantenende (virtuelle
 #                                                     Ecke einer Fase: Buchse f3 setzt 0,5 mm über der Bohrungskante an)
@@ -47,11 +48,20 @@ HILFSLINIE_KREIS_MM = 6.0                           # Hilfslinie an einer Kreism
 # Größe (Breite, Höhe) und Versatz (Mitte − Bezugspunkt der Annotation) in Blatt-mm, live gemessen 27.11. (Text 3,5 mm):
 # Rauheit: Bezugspunkt = Spitze des Symbols, Symbol und Text rechts darüber (Breite = Grundbreite + Text);
 # Rahmen: Bezugspunkt = linke obere Ecke; Bezug: Bezugspunkt = Ansatz der Hinweislinie am Kasten
-GROESSE_RAUHEIT, VERSATZ_RAUHEIT = (8.5, 16.0), (-2.6, 8.0)  # „Ra 0,8“: 23,4 × 16 mm, Spitze 2,6 mm vom linken Rand
+# Rauheit mit Text im Feld a (unter dem Strich): Höhe und Versatz geschätzt nach Spike g, live nachgemessen
+GROESSE_RAUHEIT, VERSATZ_RAUHEIT = (8.5, 10.0), (-2.6, 5.0)
+SF_TEXT_FELD_A = 8                                  # swSurfaceFinishSymbolText_e.swSFSymbolRoughnessValue1
+RAHMEN_TEXT_OBEN, RAHMEN_TEXT_OBEN_MM = 3, 5.5      # swGTolTextParts_e.swGTolTextCalloutAbove; Höhe der Zeile
+ABSTAND_KANTE_MM = 3.0                              # Symbol/Rahmen/Kasten so weit von sichtbaren Kanten (Review C2)
+ANSATZ_ABSTAND_MM = 4.0                             # zwei Hinweislinien setzen nicht näher beieinander an
+ANSATZ_TEILUNG = (0.5, 0.35, 0.65, 0.2, 0.8, 0.1, 0.9)  # Ansatz auf einer geraden Kante (Anteil der Länge)
+KREIS_WINKEL = (45, 135, 315, 225)                  # Ansatz auf einem Kreis (Grad)
 GROESSE_BEZUG = (7.0, 7.0)
 RAHMEN_HOEHE_MM, RAHMEN_ZELLE_MM, ZEICHEN_MM = 7.0, 7.0, 2.5
 NAEHE_ANMERKUNG_MM = 4.0                            # PDF-Befund gehört zur Anmerkung, wenn er ihr Rechteck so nah trifft
 BEZUG_TEILUNG = (0.5, 0.3, 0.7, 0.15, 0.85)         # Lagen des Bezugskastens entlang der Kante
+ANM_RICHTUNGEN_GRAD = (45, 135, 315, 225, 0, 180, 90, 270)  # Lagen von Rauheit und Rahmen um den Anker
+ANM_ABSTAENDE_MM = (10.0, 15.0, 22.0, 30.0, 40.0)
 BEZUG_ABSTAENDE_MM = (6.0, 10.0, 15.0)              # Abstand Kante – Kasten
 SAMMEL_ZEICHEN = 72                                 # Zeichen je Zeile im Band (180 mm, live 2,36 mm je Zeichen)
 SAMMEL_ZEILENABSTAND_MM = 4.55                      # Hinweistext 3,5 mm, live 27.11. vermessen
@@ -92,6 +102,7 @@ class Kante:
     kreis: tuple | None = None             # (Mitte Blatt-mm, Radius Blatt-mm) oder None (Gerade, Eckpunkt)
     features: set = field(default_factory=set)
     punkt: bool = False                    # Eckpunkt (IVertex) statt Kante
+    radius_mm: float | None = None         # Kreis: Radius im Modell (mm)
 
     def laenge(self) -> float:
         return math.dist(self.a, self.e)
@@ -132,7 +143,7 @@ def sichtbare_kanten(mu, view) -> list[Kante]:
             except Exception:  # noqa: BLE001 – COM: Kante ohne Kurve/Flächen überspringen
                 continue
             aus.append(Kante(k, blatt(a_m), blatt(e_m), tuple(x * 1000 for x in a_m), tuple(x * 1000 for x in e_m),
-                             kreis, namen))
+                             kreis, namen, radius_mm=r * 1000 if kreis else None))
     for p in list(view.GetVisibleEntities2(callout_leer(), ECKPUNKT) or ()):
         try:
             q_m = tuple(_ruf(p, "GetPoint"))[:3]
@@ -210,8 +221,16 @@ def kante_am_punkt(punkt: tuple[float, float], richtung: str, kanten: list[Kante
     kreise = [k for k in kanten if k.kreis and math.dist(k.kreis[0], punkt) <= PUNKT_TOL_MM]
     if kreise:
         return max(kreise, key=lambda k: k.kreis[1])
-    return min((k for k in kanten if k.punkt and math.dist(k.a, punkt) <= PUNKT_TOL_MM),
+    ecke = min((k for k in kanten if k.punkt and math.dist(k.a, punkt) <= PUNKT_TOL_MM),
                key=lambda k: math.dist(k.a, punkt), default=None)
+    if ecke is not None:
+        return ecke
+    # Ende einer sichtbaren Kante ohne Eckpunkt-Objekt (Live 28.11.: Schnittansicht der Buchse liefert keine
+    # IVertex) – gewählt wird dann über den Punkt (`waehle_punkt`)
+    if any(not k.kreis and not k.punkt and min(math.dist(k.a, punkt), math.dist(k.e, punkt)) <= PUNKT_TOL_MM
+           for k in kanten):
+        return Kante(None, punkt, punkt, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), punkt=True)
+    return None
 
 
 def _bezugspunkt(a, e, luecke: float) -> tuple[float, float]:
@@ -240,6 +259,16 @@ def hilfslinien(dd) -> tuple[str, list[tuple], list[tuple[float, float]]] | None
 # --- Zeichnungsmaße ---------------------------------------------------------------------------------------------------
 
 
+def waehle_punkt(drw, view, k: Kante, anhaengen: bool) -> bool:
+    """Kante bzw. Eckpunkt wählen: Objekt über `IView.SelectEntity`, ein Kantenende ohne Objekt über
+    `SelectByID2("", "VERTEX", x, y, …)` am Blattpunkt."""
+    if k.obj is not None:
+        return bool(view.SelectEntity(k.obj, anhaengen))
+    drw.ActivateView(_ruf(view, "GetName2"))
+    return bool(_ruf(drw, "Extension").SelectByID2("", "VERTEX", k.a[0] / 1000, k.a[1] / 1000, 0, anhaengen, 0,
+                                                    callout_leer(), 0))
+
+
 def _loesche_gezaehlt(drw, view, dd) -> bool:
     """Anzeigemaß löschen und nach Wirkung prüfen: danach eins weniger in der Ansicht (Review Task 5, M2)."""
     vorher = len(_anzeige(view))
@@ -251,6 +280,8 @@ def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None, bezug=None) -
     """Ein Modellmaß als Zeichnungsmaß an denselben Bezugspunkten neu setzen. Liefert (neues Anzeigemaß, '') oder
     (None, Grund); das Modellmaß wird nur gelöscht, wenn das neue denselben Wert misst und das Löschen wirkt. Jedes
     Löschen wird nach Wirkung geprüft; ein stehengebliebenes Maß steht im Grund."""
+    if _ruf(dd, "Type2") in RUND:
+        return _ersetze_rund(drw, mu, view, dd, kanten)
     b = hilfslinien(dd)
     if b is None:
         return None, "kein lineares Maß mit zwei Hilfslinien"
@@ -264,7 +295,7 @@ def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None, bezug=None) -
     alt = wert_mm(dd)
     x, y, _ = (list(_ruf(_ruf(dd, "GetAnnotation"), "GetPosition")) + [0.0])[:3]
     drw.ClearSelection2(True)
-    if not (view.SelectEntity(gewaehlt[0].obj, False) and view.SelectEntity(gewaehlt[1].obj, True)):
+    if not (waehle_punkt(drw, view, gewaehlt[0], False) and waehle_punkt(drw, view, gewaehlt[1], True)):
         drw.ClearSelection2(True)
         return None, "Kanten nicht auswählbar"
     neu = drw.AddDimension2(x, y, 0)
@@ -274,6 +305,47 @@ def _ersetze(drw, mu, view, dd, kanten: list[Kante] | None = None, bezug=None) -
     w = wert_mm(neu)
     if alt is None or w is None or abs(w - alt) > WERT_TOL_MM:
         grund = f"neues Maß misst {w if w is None else round(w, 3)} statt {alt if alt is None else round(alt, 3)}"
+        if not _loesche_gezaehlt(drw, view, neu):
+            grund += "; neues Maß nicht gelöscht, steht doppelt"
+        return None, grund
+    if not _loesche_gezaehlt(drw, view, dd):
+        grund = "Modellmaß nicht gelöscht"
+        if not _loesche_gezaehlt(drw, view, neu):
+            grund += "; neues Maß nicht gelöscht, steht doppelt"
+        return None, grund
+    return neu, ""
+
+
+def _ersetze_rund(drw, mu, view, dd, kanten: list[Kante] | None = None) -> tuple[object | None, str]:
+    """Ø- oder R-Modellmaß über die Kreiskante allein als Zeichnungsmaß (Review Task 5, I5): der Kreis, dessen
+    Modellradius zum Wert passt und dessen Mitte oder Rand eine Linie des Maßes berührt; `AddDimension2` an der Lage
+    der Zahl, Wert vergleichen, Modellmaß löschen (nach Wirkung)."""
+    alt = wert_mm(dd)
+    if alt is None:
+        return None, "Wert des Modellmaßes nicht lesbar"
+    r_soll = alt / 2 if _ruf(dd, "Type2") in (6, 15) else alt
+    daten = _ruf(dd, "GetDisplayData")
+    punkte = []
+    for i in range(_ruf(daten, "GetLineCount")):
+        li = list(daten.GetLineAtIndex3(i))
+        punkte += [(li[4] * 1000, li[5] * 1000), (li[7] * 1000, li[8] * 1000)]
+    kanten = sichtbare_kanten(mu, view) if kanten is None else kanten
+    kreise = [k for k in kanten if k.kreis and k.radius_mm is not None and abs(k.radius_mm - r_soll) < WERT_TOL_MM
+              and any(math.dist(p, k.kreis[0]) < PUNKT_TOL_MM or abs(math.dist(p, k.kreis[0]) - k.kreis[1]) < 0.3
+                      for p in punkte)]
+    if not kreise:
+        return None, f"keine Kreiskante mit Radius {round(r_soll, 3)} am Maß"
+    x, y, _ = (list(_ruf(_ruf(dd, "GetAnnotation"), "GetPosition")) + [0.0])[:3]
+    drw.ClearSelection2(True)
+    if not view.SelectEntity(kreise[0].obj, False):
+        return None, "Kreiskante nicht auswählbar"
+    neu = drw.AddDimension2(x, y, 0)
+    drw.ClearSelection2(True)
+    if neu is None:
+        return None, "AddDimension2 abgelehnt"
+    w = wert_mm(neu)
+    if w is None or abs(w - alt) > WERT_TOL_MM:
+        grund = f"neues Maß misst {w if w is None else round(w, 3)} statt {round(alt, 3)}"
         if not _loesche_gezaehlt(drw, view, neu):
             grund += "; neues Maß nicht gelöscht, steht doppelt"
         return None, grund
@@ -303,12 +375,12 @@ def dauerhaft_machen(drw, mu, views: dict, plan: list[Mass]) -> tuple[dict[str, 
             name = kurzname(dd)
             neu, grund = _ersetze(drw, mu, v, dd, kanten, bezug.get(name))
             if neu is None:
-                meldungen.append(f"MASS_NICHT_DAUERHAFT: {name} – {grund}")
+                meldungen.append(f"MASS_NICHT_DAUERHAFT: {name} – {grund}; Toleranz und Zusatz entfallen")
                 namen.setdefault(name, name)
             else:
                 namen[name] = kurzname(neu)
     for name in sorted(ziel - set(namen)):
-        meldungen.append(f"MASS_NICHT_DAUERHAFT: {name} – nicht in der Zeichnung")
+        meldungen.append(f"MASS_NICHT_DAUERHAFT: {name} – nicht in der Zeichnung; Toleranz und Zusatz entfallen")
     return {a: n for a, n in namen.items() if a != n}, meldungen
 
 
@@ -345,12 +417,15 @@ def toleranz_setzen(dd, toleranz: Toleranz | None) -> bool:
     return ok
 
 
-def zusaetze_setzen(views: dict, plan: list[Mass], namen: dict[str, str] | None = None) -> list[str]:
+def zusaetze_setzen(views: dict, plan: list[Mass], namen: dict[str, str] | None = None,
+                    nur: set[str] | None = None) -> list[str]:
     """Textzusätze und Toleranzen aus dem Maßplan an die Anzeigemaße gleichen (bzw. neuen, `namen`) Namens. Präfix und
-    Suffix nur, wenn gesetzt (ein leeres Präfix löschte z. B. das Ø). Liefert Meldungen `TOLERANZ_NICHT_GESETZT`."""
+    Suffix nur, wenn gesetzt (ein leeres Präfix löschte z. B. das Ø). `nur`: nur diese (alten) Namen – die Maße, die
+    `dauerhaft_machen` umgewandelt hat; ein Modellmaß bekommt nichts (Review Task 5, I5: sonst zeigt das PDF, was die
+    SLDDRW nach dem Wiederöffnen verliert). Liefert Meldungen `TOLERANZ_NICHT_GESETZT`."""
     namen = namen or {}
     je = {namen.get(m.name, m.name): m for m in plan if m.quelle == "modell" and m.name
-          and (m.praefix or m.suffix or m.toleranz)}
+          and (m.praefix or m.suffix or m.toleranz) and (nur is None or m.name in nur)}
     meldungen = []
     if not je:
         return meldungen
@@ -371,12 +446,26 @@ def zusaetze_setzen(views: dict, plan: list[Mass], namen: dict[str, str] | None 
 # --- Anmerkungen (Rauheit, Bezug, Form/Lage) --------------------------------------------------------------------------
 
 
+def _strecke_quer(a, b, c, d) -> bool:
+    """Schneiden sich die Strecken a–b und c–d (echt, nicht nur in einem gemeinsamen Endpunkt)?"""
+    def seite(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+    d1, d2, d3, d4 = seite(c, d, a), seite(c, d, b), seite(a, b, c), seite(a, b, d)
+    return d1 * d2 < -1e-9 and d3 * d4 < -1e-9
+
+
+def _auf_strecke(p, s, tol: float = 0.1) -> bool:
+    return _abstand_strecke(p, s[0], s[1]) <= tol
+
+
 @dataclass
 class Anmerkung:
-    """Gesetzte Anmerkung mit Hinweislinie an `anker` (Blatt-mm). Verhält sich in der Lesbarkeitsschleife wie ein
-    Hinweis (`zeichnen._Hinweis`): `zeilen`, `lage` (Mitte des Rechtecks), `rechteck()`, `verwerfen()`; Größe und
-    Versatz (Mitte − `IAnnotation.GetPosition`) sind je Art live gemessen, `vermessen` bleibt wahr (Symbol und Rahmen
-    sind größer als ihr Text im PDF). `kante`: die gewählte gerade Kante (Bezug: Lagen quer zu ihr)."""
+    """Gesetzte Anmerkung mit Hinweislinie an `anker` (Blatt-mm, zurückgelesen). Verhält sich in der
+    Lesbarkeitsschleife wie ein Hinweis (`zeichnen._Hinweis`): `zeilen`, `lage` (Mitte des Rechtecks), `rechteck()`,
+    `verwerfen()`; Größe und Versatz (Mitte − `IAnnotation.GetPosition`) sind je Art live gemessen, `vermessen` bleibt
+    wahr. `kante`: die gewählte gerade Kante (Bezug: Lagen quer zu ihr; vom Abstand zu Kanten ausgenommen).
+    `einhaengen`: (Kreiskante, Punkt) → (Annotation, Ansatz) oder None – Bohrung: an eine andere Instanz hängen;
+    `kreise`: die Kreiskanten aller Instanzen."""
     art: str                       # rauheit | form_lage | bezug
     merkmal: str
     zeilen: tuple[str, ...]
@@ -391,6 +480,9 @@ class Anmerkung:
     verworfen: list = field(default_factory=list)
     vermessen: bool = True
     soll: tuple[float, float] | None = None   # gewählte Kandidatenlage (die zurückgelesene steht in `lage`)
+    kreise: list = field(default_factory=list)
+    einhaengen: object = None
+    fixiert: tuple | None = None              # Lage der besten Runde (zeichnen._lesbar_anlegen stellt sie wieder her)
 
     def rechteck(self, lage: tuple | None = None) -> tuple | None:
         lage = self.lage if lage is None else lage
@@ -398,6 +490,10 @@ class Anmerkung:
             return None
         (x, y), (b, h) = lage, self.groesse
         return (x - b / 2, y - h / 2, x + b / 2, y + h / 2)
+
+    def stand(self) -> tuple | None:
+        """Gewählte Lage dieser Runde (`zeichnen._lesbar_anlegen` stellt die beste Runde über `fixiert` wieder her)."""
+        return self.soll
 
     def _normale(self) -> tuple[float, float]:
         """Bezug: Normale der Kante, vom Körper weg."""
@@ -415,6 +511,19 @@ class Anmerkung:
             return (n[0] * self.groesse[1] / 2, n[1] * self.groesse[1] / 2)
         return self.versatz
 
+    def fusspunkt(self, lage: tuple | None = None) -> tuple[float, float]:
+        """Wo die Hinweislinie die Kante trifft: Bezug senkrecht unter dem Kasten, sonst der Anker."""
+        if self.art != "bezug" or self.kante is None:
+            return self.anker
+        lage = self.lage if lage is None else lage
+        v = self.versatz_bei(lage)
+        p = (lage[0] - v[0], lage[1] - v[1])
+        a, e = self.kante
+        lang = math.dist(a, e) or 1.0
+        d = ((e[0] - a[0]) / lang, (e[1] - a[1]) / lang)
+        t = (p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]
+        return (a[0] + d[0] * t, a[1] + d[1] * t)
+
     def hinweislinie(self, lage: tuple | None = None) -> tuple | None:
         """Hinweislinie, wie SolidWorks sie zieht (Live 27.11.): Rauheit vom Anker zur Spitze des Symbols (Bezugspunkt),
         Rahmen zur Mitte der nahen Schmalseite, Bezug senkrecht von der Kante zum Kasten."""
@@ -423,14 +532,8 @@ class Anmerkung:
             return None
         v = self.versatz_bei(lage)
         p = (lage[0] - v[0], lage[1] - v[1])
-        if self.art == "rauheit":
-            return (self.anker, p)
-        if self.art == "bezug" and self.kante is not None:
-            a, e = self.kante
-            lang = math.dist(a, e) or 1.0
-            d = ((e[0] - a[0]) / lang, (e[1] - a[1]) / lang)
-            t = (p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]
-            return ((a[0] + d[0] * t, a[1] + d[1] * t), p)
+        if self.art in ("rauheit", "bezug"):
+            return (self.fusspunkt(lage), p)
         r = self.rechteck(lage)
         seite = r[0] if abs(self.anker[0] - r[0]) <= abs(self.anker[0] - r[2]) else r[2]
         return (self.anker, (seite, (r[1] + r[3]) / 2))
@@ -452,12 +555,21 @@ class Anmerkung:
             self.verworfen.append(lage)
         return len(self.verworfen) < len(self._roh())
 
-    def _roh(self) -> list[tuple[float, float]]:
+    def _roh(self, anker: tuple | None = None) -> list[tuple[float, float]]:
         """Lagen (Mitte des Rechtecks) in fester Rangfolge. Bezug: Kasten quer zur Kante nach außen, entlang der Kante
-        verteilt; sonst wie die Bohrungsangaben um den Anker (`hinweis_lagen_bewertet`, ohne Bewertung)."""
+        verteilt; sonst in acht Richtungen um den Anker (diagonal zuerst) im Abstand `ANM_ABSTAENDE_MM`, das Rechteck
+        auf der vom Anker abgewandten Seite (Review Task 5: die 16 Lagen der Bohrungsangaben reichten nicht)."""
         if self.art != "bezug" or self.kante is None:
-            lagen = hinweis_lagen_bewertet((self.anker, 0.0), self.umriss, [], self.groesse)
-            return [lage for (_, _, i), lage in sorted(lagen, key=lambda t: t[0][2])]
+            ax, ay = self.anker if anker is None else anker
+            b, h = self.groesse
+            aus = []
+            for d in ANM_ABSTAENDE_MM:
+                for w in ANM_RICHTUNGEN_GRAD:
+                    c, s = math.cos(math.radians(w)), math.sin(math.radians(w))
+                    ex, ey = ax + d * c, ay + d * s
+                    aus.append((round(ex + (b / 2 if c > 0.1 else -b / 2 if c < -0.1 else 0.0), 3),
+                                round(ey + (h / 2 if s > 0.9 else -h / 2 if s < -0.9 else 0.0), 3)))
+            return aus
         a, e = self.kante
         n = self._normale()
         aus = []
@@ -467,18 +579,55 @@ class Anmerkung:
                 aus.append((round(p[0] + n[0] * self.groesse[1] / 2, 3), round(p[1] + n[1] * self.groesse[1] / 2, 3)))
         return aus
 
-    def kandidaten(self, hindernisse: list[tuple], texte: list[tuple] = ()) -> list[tuple[float, float]]:
-        """Lagen, beste zuerst: zuerst die, deren Rechteck keine Strecke aus `hindernisse` kreuzt und deren Hinweislinie
-        kein Rechteck aus `texte` (Hinweise, schon gelegte Anmerkungen) quert; dann außerhalb des Körpers; dann Rang."""
+    def bewerten(self, lage, hindernisse=(), texte=(), kanten=(), masslinien=(), ansaetze=()) -> int:
+        """Zahl der Verstöße einer Lage (0 = frei; Review Task 5, C2):
+        - das Rechteck kreuzt eine Strecke aus `hindernisse`,
+        - Rechteck samt `ABSTAND_KANTE_MM` kreuzt eine sichtbare Kante (`kanten`) außer der eigenen,
+        - die Hinweislinie quert ein Textrechteck (`texte`: Hinweise, gelegte Anmerkungen) oder eine Maß- bzw.
+          Hilfslinie (`masslinien`),
+        - ihr Fußpunkt liegt näher als `ANSATZ_ABSTAND_MM` an einem anderen Ansatz (`ansaetze`)."""
+        r = self.rechteck(lage)
+        g = ABSTAND_KANTE_MM
+        weit = (r[0] - g, r[1] - g, r[2] + g, r[3] + g)
+        linie = self.hinweislinie(lage)
+        eigen = self.kante
+        zahl = sum(1 for a, b in hindernisse if _schneidet(a, b, r))
+        zahl += sum(1 for a, b in kanten if _schneidet(a, b, weit)
+                    and not (eigen and _auf_strecke(a, eigen) and _auf_strecke(b, eigen)))
+        zahl += sum(1 for t in texte if _schneidet(linie[0], linie[1], t))
+        zahl += sum(1 for a, b in masslinien if _strecke_quer(linie[0], linie[1], a, b))
+        fuss = self.fusspunkt(lage)
+        zahl += sum(1 for p in ansaetze if math.dist(p, fuss) < ANSATZ_ABSTAND_MM)
+        return zahl
+
+    def kandidaten(self, hindernisse: list[tuple] = (), texte: list[tuple] = (), kanten: list[tuple] = (),
+                   masslinien: list[tuple] = (), ansaetze: list = ()) -> list[tuple[float, float]]:
+        """Lagen, beste zuerst: wenigste Verstöße (`bewerten`), dann außerhalb des Körpers, dann Rang."""
         bewertet = []
         for i, lage in enumerate(self._roh()):
             r = self.rechteck(lage)
-            linie = self.hinweislinie(lage)
-            kreuzt = (any(_schneidet(a, b, r) for a, b in hindernisse)
-                      or any(_schneidet(linie[0], linie[1], t) for t in texte))
             im_koerper = r[0] < self.umriss[2] and self.umriss[0] < r[2] and r[1] < self.umriss[3] and self.umriss[1] < r[3]
-            bewertet.append((kreuzt, im_koerper, i, lage))
+            bewertet.append((self.bewerten(lage, hindernisse, texte, kanten, masslinien, ansaetze), im_koerper, i, lage))
         return [lage for *_, lage in sorted(bewertet)]
+
+
+def instanzen(spec: dict, fid: str) -> int:
+    """Wie oft ein Merkmal am Teil vorkommt: Positionen einer Bohrung bzw. ihres Bohrbilds, sonst mal 2 je Spiegeln und
+    mal Anzahl je Muster, das es enthält (Review Task 5, I4: Ra 1,6 und // 0,05 gelten beiden Taschen)."""
+    features = {f["id"]: f for f in spec.get("features", [])}
+    f = features.get(fid, {})
+    if f.get("typ") in ("bohrung", "normbohrung"):
+        bild = bohrbilder(spec).get(fid)
+        return bild.anzahl if bild else 1
+    n = 1
+    for m in _enthalten(spec, fid):
+        if m["typ"] == "spiegeln":
+            n *= 2
+        elif m["typ"] == "muster_linear":
+            n *= int((m.get("richtung1") or {}).get("anzahl", 1)) * int((m.get("richtung2") or {}).get("anzahl", 1))
+        elif m["typ"] == "muster_kreis":
+            n *= int(m.get("anzahl", 1))
+    return n
 
 
 def _ansichten_fuer(views: dict, achsen: dict, achse: int | None, modus: str | None) -> list[str]:
@@ -513,22 +662,26 @@ def endkante(kanten: list[Kante], namen: set[str], achse: int, vorzeichen: int) 
     return max(auf, key=lambda k: k.laenge(), default=None)
 
 
+def bohrungskreise(kanten: list[Kante], namen: set[str]) -> list[Kante]:
+    """Je Bohrung (Kreismitte) die kleinste Kreiskante des Merkmals – die Bohrung selbst, nicht ihre Fase."""
+    je: dict[tuple, Kante] = {}
+    for k in kanten:
+        if k.kreis and _zum_merkmal(k, namen):
+            s = (round(k.kreis[0][0], 1), round(k.kreis[0][1], 1))
+            if s not in je or k.kreis[1] < je[s].kreis[1]:
+                je[s] = k
+    return sorted(je.values(), key=lambda k: k.kreis[0])
+
+
 def kreiskante(kanten: list[Kante], namen: set[str], meiden: list | None = None) -> Kante | None:
-    """Kleinste Kreiskante des Merkmals (die Bohrung selbst, nicht ihre Fase), an der Bohrung, die am weitesten von den
-    Punkten `meiden` liegt (Live 27.11.: Rauheit und Bohrungsangabe an derselben Stiftbohrung lagen übereinander)."""
-    kreise = [k for k in kanten if k.kreis and _zum_merkmal(k, namen)]
+    """Kreiskante der Bohrung, die am weitesten von den Punkten `meiden` liegt (Live 27.11.: Rauheit und
+    Bohrungsangabe an derselben Stiftbohrung lagen übereinander)."""
+    kreise = bohrungskreise(kanten, namen)
     if not kreise:
         return None
     if meiden:
-        weit = max(min(math.dist(k.kreis[0], p) for p in meiden) for k in kreise)
-        kreise = [k for k in kreise if min(math.dist(k.kreis[0], p) for p in meiden) >= weit - PUNKT_TOL_MM]
-    return min(kreise, key=lambda k: (k.kreis[1], k.kreis[0]))
-
-
-def _anker(k: Kante) -> tuple[float, float]:
-    if k.kreis:
-        return k.kreis[0]
-    return ((k.a[0] + k.e[0]) / 2, (k.a[1] + k.e[1]) / 2)
+        return max(kreise, key=lambda k: min(math.dist(k.kreis[0], p) for p in meiden))
+    return kreise[0]
 
 
 def _umriss(kanten: list[Kante]) -> tuple[float, float, float, float]:
@@ -553,10 +706,58 @@ def _kante_fuer(views: dict, mu, rollen: list[str], suche, cache: dict) -> tuple
     return rolle, k, cache[rolle]
 
 
-def _waehle(drw, view, kante: Kante) -> bool:
+def ansatzpunkt(k: Kante, kanten: list[Kante], belegt: list, umriss: tuple | None = None) -> tuple[float, float]:
+    """Punkt auf der Kante, an dem die Hinweislinie ansetzt (Review Task 5, C2: ohne Pickpunkt endeten die Linien an
+    Kantenenden, zwei teilten sich einen Ecke): auf einer Geraden bei 50/35/65/20/80 % ihrer Länge, auf einem Kreis
+    unter 45°/135°/315°/225° (vom Körper weg zuerst); mindestens `ANSATZ_ABSTAND_MM` von schon belegten Ansätzen und
+    0,5 mm von anderen Kanten, damit die Wahl am Punkt eindeutig ist."""
+    if k.kreis:
+        (mx, my), r = k.kreis
+        mitte = ((umriss[0] + umriss[2]) / 2, (umriss[1] + umriss[3]) / 2) if umriss else (mx, my)
+        winkel = sorted(KREIS_WINKEL, key=lambda w: -((math.cos(math.radians(w)) * (mx - mitte[0]))
+                                                      + (math.sin(math.radians(w)) * (my - mitte[1]))))
+        punkte = [(mx + r * math.cos(math.radians(w)), my + r * math.sin(math.radians(w))) for w in winkel]
+    else:
+        punkte = [(k.a[0] + (k.e[0] - k.a[0]) * t, k.a[1] + (k.e[1] - k.a[1]) * t) for t in ANSATZ_TEILUNG]
+
+    def frei(p) -> bool:
+        if any(math.dist(p, q) < ANSATZ_ABSTAND_MM for q in belegt):
+            return False
+        for o in kanten:
+            if o is k or o.punkt:
+                continue
+            d = abs(math.dist(p, o.kreis[0]) - o.kreis[1]) if o.kreis else _abstand_strecke(p, o.a, o.e)
+            if d < 0.5 and not (not o.kreis and not k.kreis and _auf_strecke(o.a, (k.a, k.e), 0.05)
+                                and _auf_strecke(o.e, (k.a, k.e), 0.05)):
+                return False
+        return True
+
+    return next((p for p in punkte if frei(p)), punkte[0])
+
+
+def _waehle_am_punkt(drw, view, k: Kante, punkt: tuple[float, float]) -> bool:
+    """Kante am Punkt wählen (`SelectByID2("", "EDGE", x, y, …)`, wie Stufe 3 `_kreis_am_punkt`; Spike h: die
+    Hinweislinie setzt dann dort an). Wahr, wenn eine Kante gewählt ist; sonst `IView.SelectEntity` (ohne Punkt)."""
     drw.ClearSelection2(True)
     drw.ActivateView(_ruf(view, "GetName2"))
-    return bool(view.SelectEntity(kante.obj, False))
+    if _ruf(drw, "Extension").SelectByID2("", "EDGE", punkt[0] / 1000, punkt[1] / 1000, 0, False, 0,
+                                         callout_leer(), 0):
+        sm = _ruf(drw, "SelectionManager")
+        if any(sm.GetSelectedObjectType3(i, -1) == KANTE for i in range(1, sm.GetSelectedObjectCount2(-1) + 1)):
+            return True
+    drw.ClearSelection2(True)
+    return bool(view.SelectEntity(k.obj, False))
+
+
+def ansatz_lesen(ann) -> tuple[float, float] | None:
+    """Ende der ersten Hinweislinie an der Kante (Spike h: letzter Punkt von `IAnnotation.GetLeaderPointsAtIndex`)."""
+    try:
+        if not _ruf(ann, "GetLeaderCount"):
+            return None
+        p = list(ann.GetLeaderPointsAtIndex(0) or ())
+    except Exception:  # noqa: BLE001 – COM
+        return None
+    return (p[-3] * 1000, p[-2] * 1000) if len(p) >= 3 else None
 
 
 def _anmerkung_suche(spec_typ: str | None, achse: int | None, namen: set[str], meiden: list | None = None):
@@ -573,22 +774,44 @@ def _anmerkung_suche(spec_typ: str | None, achse: int | None, namen: set[str], m
 
 def anmerkungen_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen: dict[str, str],
                        enthalten: dict[str, set[str]] | None = None, anmerkungen: list | None = None,
-                       besetzt: dict[str, list] | None = None) -> list[str]:
-    """Rauheit, Form/Lage und Bezüge des Plans setzen (je Eintrag Kante wählen, einfügen); die Lage setzt später
-    `anmerkungen_legen`. `besetzt`: Merkmal → Kreismitten, an denen schon eine Bohrungsangabe hängt. Liefert die
-    Meldungen; nie stilles Weglassen."""
+                       besetzt: dict[str, list] | None = None, anzahl: dict[str, int] | None = None) -> list[str]:
+    """Rauheit, Form/Lage und Bezüge des Plans setzen (je Eintrag Kante am Ansatzpunkt wählen, einfügen); die Lage setzt
+    später `anmerkungen_legen`. `besetzt`: Merkmal → Kreismitten, an denen schon eine Bohrungsangabe hängt; `anzahl`:
+    Merkmal → Instanzen (`instanzen`). Liefert die Meldungen; nie stilles Weglassen."""
     cache: dict = {}
-    return (rauheit_setzen(drw, mu, views, plan, achsen, typen, enthalten, anmerkungen, cache, besetzt)
-            + form_lage_setzen(drw, mu, views, plan, achsen, typen, enthalten, anmerkungen, cache, besetzt)
-            + bezuege_setzen(drw, mu, views, plan, achsen, anmerkungen, cache))
+    belegt: list = []
+    return (rauheit_setzen(drw, mu, views, plan, achsen, typen, enthalten, anmerkungen, cache, besetzt, anzahl, belegt)
+            + form_lage_setzen(drw, mu, views, plan, achsen, typen, enthalten, anmerkungen, cache, besetzt, anzahl,
+                               belegt)
+            + bezuege_setzen(drw, mu, views, plan, achsen, anmerkungen, cache, belegt))
+
+
+def _einfuegen_mit(drw, view, kanten: list[Kante], belegt: list, umriss: tuple, einfuegen):
+    """Fabrik: Kreis- oder Geradenkante am Ansatzpunkt wählen, mit `einfuegen()` einsetzen, Ansatz zurücklesen.
+    Liefert (Annotation, Ansatz) oder None."""
+    def am(k: Kante):
+        p = ansatzpunkt(k, kanten, belegt, umriss)
+        if not _waehle_am_punkt(drw, view, k, p):
+            return None
+        ann = einfuegen()
+        drw.ClearSelection2(True)
+        if ann is None:
+            return None
+        ist = ansatz_lesen(ann) or p
+        belegt.append(ist)
+        return ann, ist
+    return am
 
 
 def rauheit_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen: dict[str, str],
                    enthalten: dict[str, set[str]] | None = None, anmerkungen: list | None = None,
-                   cache: dict | None = None, besetzt: dict[str, list] | None = None) -> list[str]:
-    """Rauheitssymbol (bearbeitet, Text an Platz 3) mit Hinweislinie an der Kante des Merkmals in einer Ansicht des
-    Eintrags (`achse`/`modus`). Meldung `RAUHEIT_NICHT_GESETZT`, wenn keine Kante passt oder das Einfügen scheitert."""
-    meldungen, cache = [], {} if cache is None else cache
+                   cache: dict | None = None, besetzt: dict[str, list] | None = None,
+                   anzahl: dict[str, int] | None = None, belegt: list | None = None) -> list[str]:
+    """Rauheitssymbol (bearbeitet) mit Hinweislinie an der Kante des Merkmals in einer Ansicht des Eintrags
+    (`achse`/`modus`). Die Anforderung steht im Feld a unter dem waagrechten Strich (`ISFSymbol.SetText(
+    swSFSymbolRoughnessValue1 = 8)`, Spike g; ISO 1302:2002/ISO 21920-1). Meldungen `RAUHEIT_NICHT_GESETZT` (keine Kante,
+    Einfügen gescheitert) und `RAUHEIT_NUR_EINE_INSTANZ` (Spike h: eine Mehrfachauswahl ergibt nur eine Hinweislinie)."""
+    meldungen, cache, belegt = [], {} if cache is None else cache, [] if belegt is None else belegt
     ext = _ruf(drw, "Extension")
     for m in (m for m in plan if m.quelle == "rauheit"):
         namen = (enthalten or {}).get(m.merkmal) or {m.merkmal}
@@ -600,21 +823,32 @@ def rauheit_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen: 
             meldungen.append(f"RAUHEIT_NICHT_GESETZT: {m.merkmal} {m.text} – {_ohne_kante(rollen, m.achse, m.modus)}")
             continue
         rolle, k, kanten = treffer
-        if not _waehle(drw, views[rolle], k):
-            meldungen.append(f"RAUHEIT_NICHT_GESETZT: {m.merkmal} {m.text} – Kante in {rolle} nicht auswählbar")
+
+        def einfuegen(text=m.text):
+            sf = ext.InsertSurfaceFinishSymbol3(SF_BEARBEITET, FUEHRUNG_GERADE, 0, 0, 0, 0, PFEIL_GESCHLOSSEN,
+                                                "", "", "", "", "", "", "")
+            if sf is None:
+                return None
+            sf.SetText(SF_TEXT_FELD_A, text)
+            return _ruf(sf, "GetAnnotation") if sf.GetText(SF_TEXT_FELD_A) == text else None
+
+        umriss = _umriss(kanten)
+        am = _einfuegen_mit(drw, views[rolle], kanten, belegt, umriss, einfuegen)
+        gesetzt = am(k)
+        if gesetzt is None:
+            meldungen.append(f"RAUHEIT_NICHT_GESETZT: {m.merkmal} {m.text} – Kante in {rolle} nicht auswählbar oder "
+                             "Symbol nicht eingefügt")
             continue
-        x, y = _anker(k)
-        sf = ext.InsertSurfaceFinishSymbol3(SF_BEARBEITET, FUEHRUNG_GERADE, x / 1000, y / 1000, 0, 0,
-                                            PFEIL_GESCHLOSSEN, "", "", m.text, "", "", "", "")
-        drw.ClearSelection2(True)
-        if sf is None:
-            meldungen.append(f"RAUHEIT_NICHT_GESETZT: {m.merkmal} {m.text} – InsertSurfaceFinishSymbol3 abgelehnt")
-            continue
+        n = (anzahl or {}).get(m.merkmal, 1)
+        if n > 1:
+            meldungen.append(f"RAUHEIT_NUR_EINE_INSTANZ: {m.merkmal} {m.text} – Symbol an einer von {n} Instanzen")
         if anmerkungen is not None:
             breite = GROESSE_RAUHEIT[0] + ZEICHEN_MM * len(m.text)
-            anmerkungen.append(Anmerkung("rauheit", m.merkmal, (m.text,), _ruf(sf, "GetAnnotation"), rolle, (x, y),
-                                         _umriss(kanten), (breite, GROESSE_RAUHEIT[1]),
-                                         (breite / 2 + VERSATZ_RAUHEIT[0], VERSATZ_RAUHEIT[1])))
+            ist_bohrung = typen.get(m.merkmal) in ("bohrung", "normbohrung")
+            anmerkungen.append(Anmerkung(
+                "rauheit", m.merkmal, (m.text,), gesetzt[0], rolle, gesetzt[1], umriss, (breite, GROESSE_RAUHEIT[1]),
+                (breite / 2 + VERSATZ_RAUHEIT[0], VERSATZ_RAUHEIT[1]), kante=None if k.kreis else (k.a, k.e),
+                kreise=bohrungskreise(kanten, namen) if ist_bohrung else [], einhaengen=am if ist_bohrung else None))
     return meldungen
 
 
@@ -629,10 +863,12 @@ def _rahmen_gesetzt(gt, symbol: str, werte: list[str]) -> bool:
 
 def form_lage_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen: dict[str, str],
                      enthalten: dict[str, set[str]] | None = None, anmerkungen: list | None = None,
-                     cache: dict | None = None, besetzt: dict[str, list] | None = None) -> list[str]:
-    """Toleranzrahmen (Symbol, Wert, Bezüge) mit Hinweislinie an der Kante des Merkmals (wie die Rauheit). Meldung
-    `FORM_LAGE_NICHT_GESETZT`."""
-    meldungen, cache = [], {} if cache is None else cache
+                     cache: dict | None = None, besetzt: dict[str, list] | None = None,
+                     anzahl: dict[str, int] | None = None, belegt: list | None = None) -> list[str]:
+    """Toleranzrahmen (Symbol, Wert, Bezüge) mit Hinweislinie an der Kante des Merkmals (wie die Rauheit). Mehrere
+    Instanzen: „n ×“ über dem Rahmen (ISO 1101; `IGtol.SetText(swGTolTextCalloutAbove = 3, …)`, Spike h). Meldungen
+    `FORM_LAGE_NICHT_GESETZT`, `FORM_LAGE_NUR_EINE_INSTANZ`."""
+    meldungen, cache, belegt = [], {} if cache is None else cache, [] if belegt is None else belegt
     for m in (m for m in plan if m.quelle == "form_lage" and m.form_lage):
         fl = m.form_lage
         etikett = f"{m.merkmal} {fl.art} {fl.wert}"
@@ -645,34 +881,52 @@ def form_lage_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen
             meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – {_ohne_kante(rollen, m.achse, m.modus)}")
             continue
         rolle, k, kanten = treffer
-        if not _waehle(drw, views[rolle], k):
-            meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – Kante in {rolle} nicht auswählbar")
-            continue
-        gt = _ruf(drw, "InsertGtol")
-        if gt is None:
-            drw.ClearSelection2(True)
-            meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – InsertGtol abgelehnt")
-            continue
         bez = list(fl.bezug) + ["", "", ""]
         wert = fl.wert + (" <MOD-MMC>" if fl.mmr else "")
-        gt.SetFrameSymbols2(1, fl.symbol, False, "", False, "", "", "", "")
-        gt.SetFrameValues2(1, wert, "", bez[0], bez[1], bez[2])
-        drw.ClearSelection2(True)
-        if not _rahmen_gesetzt(gt, fl.symbol, [wert, "", bez[0], bez[1], bez[2]]):
+        n = (anzahl or {}).get(m.merkmal, 1)
+        zustand: dict = {}
+
+        def einfuegen(fl=fl, bez=bez, wert=wert, n=n, zustand=zustand):
+            gt = _ruf(drw, "InsertGtol")
+            if gt is None:
+                return None
+            gt.SetFrameSymbols2(1, fl.symbol, False, "", False, "", "", "", "")
+            gt.SetFrameValues2(1, wert, "", bez[0], bez[1], bez[2])
+            zustand["beschriftet"] = _rahmen_gesetzt(gt, fl.symbol, [wert, "", bez[0], bez[1], bez[2]])
+            if n > 1:
+                gt.SetText(RAHMEN_TEXT_OBEN, f"{n} ×")
+                zustand["oben"] = gt.GetText(RAHMEN_TEXT_OBEN) == f"{n} ×"
+            return _ruf(gt, "GetAnnotation")
+
+        umriss = _umriss(kanten)
+        am = _einfuegen_mit(drw, views[rolle], kanten, belegt, umriss, einfuegen)
+        gesetzt = am(k)
+        if gesetzt is None:
+            meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – Kante in {rolle} nicht auswählbar oder "
+                             "InsertGtol abgelehnt")
+            continue
+        if not zustand.get("beschriftet"):
             meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – Rahmen nicht beschriftet")
+        if n > 1 and not zustand.get("oben"):
+            meldungen.append(f"FORM_LAGE_NUR_EINE_INSTANZ: {etikett} – „{n} ×“ über dem Rahmen nicht gesetzt")
         if anmerkungen is not None:
             breite = RAHMEN_ZELLE_MM * (1 + len(fl.bezug)) + ZEICHEN_MM * len(fl.wert) + 2
-            anmerkungen.append(Anmerkung("form_lage", m.merkmal, (" ".join((fl.wert,) + tuple(fl.bezug)),),
-                                         _ruf(gt, "GetAnnotation"), rolle, _anker(k), _umriss(kanten),
-                                         (breite, RAHMEN_HOEHE_MM), (breite / 2, -RAHMEN_HOEHE_MM / 2)))
+            hoehe = RAHMEN_HOEHE_MM + (RAHMEN_TEXT_OBEN_MM if n > 1 else 0.0)
+            ist_bohrung = typen.get(m.merkmal) in ("bohrung", "normbohrung")
+            anmerkungen.append(Anmerkung(
+                "form_lage", m.merkmal, (" ".join((fl.wert,) + tuple(fl.bezug)),) + ((f"{n} ×",) if n > 1 else ()),
+                gesetzt[0], rolle, gesetzt[1],
+                umriss, (breite, hoehe), (breite / 2, hoehe / 2 - RAHMEN_HOEHE_MM),
+                kante=None if k.kreis else (k.a, k.e),
+                kreise=bohrungskreise(kanten, namen) if ist_bohrung else [], einhaengen=am if ist_bohrung else None))
     return meldungen
 
 
 def bezuege_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, anmerkungen: list | None = None,
-                   cache: dict | None = None) -> list[str]:
+                   cache: dict | None = None, belegt: list | None = None) -> list[str]:
     """Bezugsdreieck mit Buchstabe an der Kante der Ankerfläche (`{feature, flaeche: "±a"}`) in einer Ansicht quer zu
     ihrer Normale. Meldung `BEZUG_NICHT_GESETZT`."""
-    meldungen, cache = [], {} if cache is None else cache
+    meldungen, cache, belegt = [], {} if cache is None else cache, [] if belegt is None else belegt
     for m in (m for m in plan if m.quelle == "bezug"):
         anker = m.anker or {}
         flaeche = anker.get("flaeche")
@@ -688,35 +942,86 @@ def bezuege_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, anmerku
             meldungen.append(f"BEZUG_NICHT_GESETZT: {m.text} – keine Kante der Fläche {anker['feature']} {flaeche}")
             continue
         rolle, k, kanten = treffer
-        if not _waehle(drw, views[rolle], k):
-            meldungen.append(f"BEZUG_NICHT_GESETZT: {m.text} – Kante in {rolle} nicht auswählbar")
+        zustand: dict = {}
+
+        def einfuegen(text=m.text, zustand=zustand):
+            tag = _ruf(drw, "InsertDatumTag2")
+            if tag is None:
+                return None
+            tag.SetLabel(text)
+            zustand["label"] = _ruf(tag, "GetLabel") == text
+            return _ruf(tag, "GetAnnotation")
+
+        umriss = _umriss(kanten)
+        gesetzt = _einfuegen_mit(drw, views[rolle], kanten, belegt, umriss, einfuegen)(k)
+        if gesetzt is None:
+            meldungen.append(f"BEZUG_NICHT_GESETZT: {m.text} – Kante in {rolle} nicht auswählbar oder InsertDatumTag2 "
+                             "abgelehnt")
             continue
-        tag = _ruf(drw, "InsertDatumTag2")
-        drw.ClearSelection2(True)
-        if tag is None:
-            meldungen.append(f"BEZUG_NICHT_GESETZT: {m.text} – InsertDatumTag2 abgelehnt")
-            continue
-        tag.SetLabel(m.text)
-        if _ruf(tag, "GetLabel") != m.text:
+        if not zustand.get("label"):
             meldungen.append(f"BEZUG_NICHT_GESETZT: {m.text} – Buchstabe nicht gesetzt")
         if anmerkungen is not None:
-            anmerkungen.append(Anmerkung("bezug", m.merkmal, (m.text,), _ruf(tag, "GetAnnotation"), rolle, _anker(k),
-                                         _umriss(kanten), GROESSE_BEZUG, (0.0, 0.0), kante=(k.a, k.e)))
+            anmerkungen.append(Anmerkung("bezug", m.merkmal, (m.text,), gesetzt[0], rolle, gesetzt[1], umriss,
+                                         GROESSE_BEZUG, (0.0, 0.0), kante=(k.a, k.e)))
     return meldungen
 
 
-def anmerkungen_legen(anmerkungen: list[Anmerkung], hindernisse: list[tuple],
-                      texte: list[tuple] | None = None) -> list[tuple]:
-    """Lage jeder Anmerkung: die beste nicht verworfene ihrer `kandidaten`, frei von `hindernisse` und den schon
-    gelegten; ihre Hinweislinie quert kein Rechteck aus `texte` (Hinweise) und keine schon gelegte Anmerkung.
-    `SetPosition2` mit Bezugspunkt = Mitte − Versatz; danach die wirkliche Lage zurücklesen (ein Bezugskasten rückt auf
-    die Senkrechte zur Kante). Liefert Rechtecke und Hinweislinien als Strecken."""
+def _loesche_anmerkung(drw, ann) -> bool:
+    drw.ClearSelection2(True)
+    ok = ann.Select2(False, 0) and _ruf(drw, "Extension").DeleteSelection2(0)
+    drw.ClearSelection2(True)
+    return bool(ok)
+
+
+def instanzen_umhaengen(drw, anmerkungen: list[Anmerkung], hinweise: list, meldungen: list | None = None,
+                        hindernisse: list[tuple] = (), kanten: list[tuple] = (), masslinien: list[tuple] = ()) -> None:
+    """Rauheit/Rahmen an einer Bohrung erst nach der Lage der Bohrungsangabe an eine Instanz hängen (Review Task 5, I1):
+    je Bohrung die beste erreichbare Lage bewerten (`Anmerkung.bewerten`, Text- und Hinweislinien der Angaben als
+    Hindernis, die Bohrung der Angabe zählt einen Verstoß mehr); ist das eine andere Bohrung, wird die Anmerkung dort neu
+    eingefügt und die alte gelöscht."""
+    texte = [h.rechteck() for h in hinweise if h.rechteck()]
+    for a in anmerkungen:
+        if not a.kreise or a.einhaengen is None or a.fixiert is not None:
+            continue
+        besetzt = [h.kreis[0] for h in hinweise if h.merkmal == a.merkmal]
+
+        def guete(k, a=a, besetzt=besetzt):
+            m, r = k.kreis
+            beste = min(a.bewerten(lage, hindernisse, texte, kanten, masslinien) for lage in a._roh(m))
+            return beste + (1 if any(math.dist(m, p) < PUNKT_TOL_MM for p in besetzt) else 0)
+
+        heute = min(a.kreise, key=lambda k: abs(math.dist(a.anker, k.kreis[0]) - k.kreis[1]))
+        ziel = min(a.kreise, key=lambda k: (guete(k), k is not heute))
+        if ziel is heute:
+            continue
+        neu = a.einhaengen(ziel)
+        if neu is None:
+            if meldungen is not None and f"ANMERKUNG_NICHT_UMGEHAENGT: {a.merkmal} {a.zeilen[0]}" not in meldungen:
+                meldungen.append(f"ANMERKUNG_NICHT_UMGEHAENGT: {a.merkmal} {a.zeilen[0]}")
+            continue
+        if not _loesche_anmerkung(drw, a.ann) and meldungen is not None:
+            meldungen.append(f"ANMERKUNG_DOPPELT: {a.merkmal} {a.zeilen[0]} – alte nicht gelöscht")
+        a.ann, a.anker = neu
+        a.verworfen.clear()
+
+
+def anmerkungen_legen(anmerkungen: list[Anmerkung], hindernisse: list[tuple], texte: list[tuple] | None = None,
+                      kanten: list[tuple] = (), masslinien: list[tuple] = ()) -> list[tuple]:
+    """Lage jeder Anmerkung: die beste nicht verworfene ihrer `kandidaten` (Verstöße nach `Anmerkung.bewerten` gegen
+    `hindernisse`, die schon gelegten, `texte`, `kanten`, `masslinien` und die Ansätze der anderen); eine fixierte
+    Lage (beste Runde) gilt unverändert. `SetPosition2` mit Bezugspunkt = Mitte − Versatz; danach die wirkliche Lage
+    zurücklesen (ein Bezugskasten rückt auf die Senkrechte zur Kante). Liefert Rechtecke und Hinweislinien als
+    Strecken."""
     gelegt: list[tuple] = []
     rechtecke = list(texte or [])
     for a in anmerkungen:
-        kandidaten = a.kandidaten(hindernisse + gelegt, rechtecke)
-        frei = [lage for lage in kandidaten if not any(math.dist(lage, w) <= 0.5 for w in a.verworfen)]
-        lage = frei[0] if frei else kandidaten[0]
+        ansaetze = [b.fusspunkt() if b.lage else b.anker for b in anmerkungen if b is not a]
+        if a.fixiert is not None:
+            lage = a.fixiert
+        else:
+            kandidaten = a.kandidaten(hindernisse + gelegt, rechtecke, kanten, masslinien, ansaetze)
+            frei = [lage for lage in kandidaten if not any(math.dist(lage, w) <= 0.5 for w in a.verworfen)]
+            lage = frei[0] if frei else kandidaten[0]
         a.soll = lage
         versatz = a.versatz_bei(lage)
         a.ann.SetPosition2((lage[0] - versatz[0]) / 1000, (lage[1] - versatz[1]) / 1000, 0)

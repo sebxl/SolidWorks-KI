@@ -44,7 +44,7 @@ from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise
                                      waehle_ansichten, weitere_rollen)
 from swki.zeichnung.bemassen import EINZELHEIT_MIN, MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
 from swki.zeichnung.blatt import FORMATE, SAMMEL_ZEILE_MM, SCHRIFTFELD_MM, zeichenfeld
-from swki.zeichnung.lesbarkeit import Befund, _ueberlappt, ausserhalb, pruefe_pdf, texte
+from swki.zeichnung.lesbarkeit import Befund, _schneidet, _ueberlappt, ausserhalb, pruefe_pdf, texte
 from swki.zeichnung.reihen import ABSTAND_MM, LinMass, radius_zahl_frei, reihen, seite
 from swki.zeichnung.layout import anordnen, einzelheit_passt
 from swki.zeichnung.massplan import Mass, massplan, massplan_meldungen
@@ -86,6 +86,7 @@ EINZELHEIT_OBEN = 337                        # swDetailingDetailViewLabels_Above
 # Stufe 4: Rauheitstext so hoch wie Hinweise (swUserPreferenceTextFormat_e: Note = 0, SurfaceFinish = 5; Live 27.11.:
 # die Vorlage hat 6,35 mm, „Ra 0,8“ wurde so breit wie eine Maßreihe)
 TEXT_HINWEIS, TEXT_RAUHEIT = 0, 5
+SF_NORM, SF_NORM_1302_2002 = 629, 1          # swDetailingSFSymbolStandard / …_1302_2002 (Vorlage: 2 = ISO 21920-1)
 DOKUMENTART = "Einzelteilzeichnung"           # Schriftfeld (Z1.4 Entscheidung 3)
 
 
@@ -441,10 +442,24 @@ class _Hinweis:
     view: object = None
     winkel: float | None = None    # Ansatz der Hinweislinie am Kreis (Grad); None: wo SelectEntity ihn hinlegt
     punktwahl: bool = True         # False: Wahl am Kreispunkt gelang nicht – nicht jede Runde neu versuchen
+    # Review Task 5 (I1): Textformen (Hinweistext, Zeilen im PDF); [0] zweizeilig, [1] dreizeilig („… –“ / „15 tief“)
+    varianten: list = field(default_factory=list)
+    variante: int = 0
+    fixiert: tuple | None = None   # (Bohrung, Lage, Variante) der besten Runde
 
     @property
     def kreis(self) -> tuple:
         return self.kreise[self.instanz][1]
+
+    def stand(self) -> tuple:
+        return (self.instanz, self.lage, self.variante)
+
+    def groesse_von(self, v: int) -> tuple[float, float]:
+        """Größe der Textform `v`: die heutige gemessen/geschätzt, eine andere aus Zeichen- und Zeilenzahl umgerechnet."""
+        if v == self.variante or not self.varianten:
+            return self.groesse
+        heute, andere = self.varianten[self.variante][1], self.varianten[v][1]
+        return (self.groesse[0] * max(map(len, andere)) / max(map(len, heute)), self.groesse[1] * len(andere) / len(heute))
 
     def rechteck(self) -> tuple | None:
         if self.lage is None:
@@ -481,6 +496,9 @@ def _hinweis_zu(b, hinweise: list) -> "_Hinweis | None":
     """Hinweis, zu dem ein PDF-Befund gehört (Text oder anderer Text eine seiner Zeilen; bei mehreren der nächste)."""
     treffer = [h for h in hinweise if h.lage is not None and (b.text in h.zeilen or b.anderes in h.zeilen)
                and (not hasattr(h, "nahe") or h.nahe(b.rechteck_mm))]  # Anmerkung: Text allein ist mehrdeutig
+    if not treffer and b.art == "linie_durch_text":  # fremder Text, von der Hinweislinie einer Anmerkung gekreuzt
+        treffer = [h for h in hinweise if hasattr(h, "nahe") and h.lage is not None
+                   and _schneidet(*h.hinweislinie(), b.rechteck_mm)]
     if not treffer:
         return None
     if b.anderes and all(b.text in h.zeilen and b.anderes in h.zeilen for h in treffer):
@@ -597,10 +615,25 @@ def _angaben_setzen(drw, mu, views: dict, plan: list, achsen: dict[str, int],
         if _ruf(ann, "GetLeaderCount") != 1:
             meldungen.append(f"ANGABE_OHNE_HINWEISLINIE: {m.merkmal} in {rolle}")
         if hinweise is not None:  # Lage = linke obere Ecke (Live 19.11.: Textoberkante im PDF knapp darüber)
+            drei = _dreizeilig(m.text or "")
             hinweise.append(_Hinweis(m.merkmal, zeilen, ann, rolle, kreise, i, umriss, schaetzung,
                                      (schaetzung[0] / 2, HINWEIS_OBERKANTE_MM - schaetzung[1] / 2), text=notiz,
-                                     view=v, winkel=winkel))
+                                     view=v, winkel=winkel,
+                                     varianten=[(notiz, zeilen)] + ([_notiztext(drei)] if drei else [])))
     return meldungen
+
+
+ZEILENUMBRUCH = chr(10)
+
+
+def _dreizeilig(text: str) -> str | None:
+    """Dreizeilige Form einer Bohrungsangabe: erste Zeile nach dem Strich umbrechen, der Strich bleibt am Ende der
+    ersten Zeile („2 × Ø8 H7 Ⓔ –“ / „15 tief“ / „Fase 0,5 × 45°“; Review Task 5, I1). None ohne „ – “."""
+    zeilen = text.split(ZEILENUMBRUCH)
+    i = zeilen[0].find(" – ")
+    if i < 0:
+        return None
+    return ZEILENUMBRUCH.join([zeilen[0][:i] + " –", zeilen[0][i + 3:]] + zeilen[1:])
 
 
 def _notiztext(text: str) -> tuple[str, tuple[str, ...]]:
@@ -722,18 +755,30 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
     hindernisse = statisch + _masslinien(views)
     gelegt: list[tuple] = []
     for h in hinweise:
+        formen = range(len(h.varianten)) if h.varianten else [h.variante]
         beste = None
-        for j, (_, kreis) in enumerate(h.kreise):
-            for wert, lage in hinweis_lagen_bewertet(kreis, h.umriss, hindernisse + gelegt, h.groesse):
-                if any(math.dist(lage, w) <= 0.5 for w in h.verworfen):
-                    continue
-                schluessel = (*wert, j != h.instanz, j)
-                if beste is None or schluessel < beste[0]:
-                    beste = (schluessel, j, lage)
-                break  # Lagen kommen sortiert: die erste nicht verworfene ist die beste dieser Bohrung
-        if beste is None:  # alle verworfen: heutige Bohrung, erste Lage
-            beste = (None, h.instanz, hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0])
-        _, j, lage = beste
+        if h.fixiert is not None:  # beste Runde wiederherstellen
+            beste = (None, h.fixiert[0], h.fixiert[1], h.fixiert[2])
+        for v in ([] if beste else formen):
+            groesse = h.groesse_von(v)
+            for j, (_, kreis) in enumerate(h.kreise):
+                for wert, lage in hinweis_lagen_bewertet(kreis, h.umriss, hindernisse + gelegt, groesse):
+                    if any(math.dist(lage, w) <= 0.5 for w in h.verworfen):
+                        continue
+                    # frei vor Form: die dreizeilige Form nur, wenn die zweizeilige keine freie Lage hat (Review I1)
+                    schluessel = (wert[0], v, *wert[1:], j != h.instanz, j)
+                    if beste is None or schluessel < beste[0]:
+                        beste = (schluessel, j, lage, v)
+                    break  # Lagen kommen sortiert: die erste nicht verworfene ist die beste dieser Bohrung
+        if beste is None:  # alle verworfen: heutige Bohrung und Form, erste Lage
+            beste = (None, h.instanz, hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0],
+                     h.variante)
+        _, j, lage, v = beste
+        if v != h.variante:
+            groesse = h.groesse_von(v)
+            h.text, h.zeilen = h.varianten[v]
+            h.groesse, h.versatz = groesse, (groesse[0] / 2, HINWEIS_OBERKANTE_MM - groesse[1] / 2)
+            h.variante, h.vermessen, h.winkel, h.punktwahl = v, False, None, True  # neu einfügen, dann am PDF vermessen
         winkel = _ansatz(h.kreise[j][1], lage, h.groesse, len(h.zeilen))
         gedreht = (h.punktwahl if h.winkel is None
                    else abs((winkel - h.winkel + 180) % 360 - 180) > HINWEIS_ANSATZ_GRAD)
@@ -823,6 +868,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         rauheit_text = ext.GetUserPreferenceTextFormat(TEXT_RAUHEIT, 0)
         rauheit_text.CharHeight = _ruf(ext.GetUserPreferenceTextFormat(TEXT_HINWEIS, 0), "CharHeight")
         ext.SetUserPreferenceTextFormat(TEXT_RAUHEIT, 0, rauheit_text)
+        ext.SetUserPreferenceInteger(SF_NORM, 0, SF_NORM_1302_2002)  # Spike g: ohne losen Strich, Text im Feld a
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         mu = mathutil(app)
         views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten)
@@ -885,12 +931,13 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         # Stufe 4: nach allen Schritten, die Maße über `kurzname` suchen, vor der Reihenanlage (Toleranz und Zusatz
         # verbreitern die Zahl). Toleranz und Zusatz nur an Zeichnungsmaßen (Spike Stufe 4: am Modellmaß verloren).
         namen, d_meld = anf.dauerhaft_machen(drw, mu, views, plan)
-        meldungen += d_meld + anf.zusaetze_setzen(views, plan, namen)
+        meldungen += d_meld + anf.zusaetze_setzen(views, plan, namen, nur=set(namen))
         anmerkungen: list[anf.Anmerkung] = []
         meldungen += anf.anmerkungen_setzen(drw, mu, views, plan, achsen,
                                             {f["id"]: f.get("typ") for f in spec.get("features", [])},
                                             _enthaltene(spec, plan), anmerkungen,
-                                            {h.merkmal: [h.kreis[0]] for h in notizen})
+                                            {h.merkmal: [h.kreis[0]] for h in notizen},
+                                            {m.merkmal: anf.instanzen(spec, m.merkmal) for m in plan})
         zeilen_sammel = sammelangaben(spec)
         band = anf.sammelband(format_, sammel)
         s_meld = anf.sammelangaben_setzen(drw, zeilen_sammel, format_, sammel)
@@ -902,18 +949,29 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
         statisch, angaben_meld = _hindernisse_fest(mu, views, fest, mittel, format_, band), []
 
+        fremde: list[tuple] = []  # Textrechtecke des letzten PDFs außer Hinweisen und Anmerkungen (Live 28.11.: Rahmen
+        #                           lag auf „SCHNITT A-A“)
+
         def nach_reihen():  # Hinweise zuerst (meiden Maße und Kanten), dann Anmerkungen, dann die Radiuszahlen
             if notizen or anmerkungen:  # IDisplayData zeigt die eben gesetzten Reihen erst nach dem Neuaufbau (19.11.)
                 _ruf(drw, "EditRebuild3")
-            gelegt = _hinweise_legen(drw, notizen, views, statisch, angaben_meld)
+            # Anmerkungen der letzten Runde sind Hindernis für die Hinweise (Review Task 5, I1)
+            anm = [s for a in anmerkungen if a.lage for s in _rechteck_strecken(a.rechteck()) + [a.hinweislinie()]]
+            fremd = [s for r in fremde for s in _rechteck_strecken(r)]
+            gelegt = _hinweise_legen(drw, notizen, views, statisch + anm + fremd, angaben_meld)
             if anmerkungen:
-                gelegt += anf.anmerkungen_legen(anmerkungen, statisch + _masslinien(views) + gelegt,
-                                                [h.rechteck() for h in notizen if h.rechteck()])
+                masslinien = _masslinien(views)
+                anf.instanzen_umhaengen(drw, anmerkungen, notizen, angaben_meld, masslinien + gelegt, statisch,
+                                        masslinien)
+                gelegt += anf.anmerkungen_legen(anmerkungen, masslinien + gelegt + fremd,
+                                                [h.rechteck() for h in notizen if h.rechteck()] + fremde, statisch,
+                                                masslinien)
             _radien_setzen(mu, views, rahmen, mittel, gelegt)
 
         meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, nach_reihen,
                                      _kennbuchstabe(views[bereich["eltern"]], fest["rahmen"], buchstabe)
-                                     if "rahmen" in fest else None, hinweise=notizen + anmerkungen, band=band)
+                                     if "rahmen" in fest else None, runden=5 if anmerkungen else 3,
+                                     hinweise=notizen + anmerkungen, band=band, fremde_texte=fremde)
         meldungen += angaben_meld + anf.sammel_pruefen(texte(pdf), zeilen_sammel, band)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),
@@ -1038,7 +1096,8 @@ def _rand(fest: dict | None, rolle: str):
 def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict | None = None,
                     nach_reihen: Callable[[], None] | None = None,
                     kennbuchstabe: tuple[str, Callable[[], bool]] | None = None, runden: int = 3,
-                    hinweise: list | None = None, band: tuple | None = None) -> list[str]:
+                    hinweise: list | None = None, band: tuple | None = None,
+                    fremde_texte: list | None = None) -> list[str]:
     """Reihen anlegen, PDF speichern, am PDF prüfen (was der Leser sieht). Ein Befund an einer Maßzahl rückt alle
     Reihen ihrer Ansichtsseite um einen Reihenabstand nach außen (Beschriftungen von SolidWorks, die die Reihenanlage
     nicht kennt), dann neu; höchstens `runden` Mal. Ein Befund am Kennbuchstaben der Einzelheit (`kennbuchstabe`:
@@ -1047,7 +1106,9 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
     legt ihn auf die nächste (Plan Stufe 3 Task 4); Hinweise rücken keine Reihen. Anmerkungen (Stufe 4: Rauheit,
     Rahmen, Bezug) stehen mit in `hinweise` und gelten nur bei Nähe als betroffen; Befunde an Hinweisen und Anmerkungen
     zählen nicht für den Kennbuchstaben („A“, „B“ gibt es als Bezug und als Kennbuchstabe). `band`: Sammelangaben, für
-    Maßzahlen und Hinweise gesperrt wie das Schriftfeld. Was bleibt, wird gemeldet."""
+    Maßzahlen und Hinweise gesperrt wie das Schriftfeld. Endet die letzte Runde mit mehr Befunden als die beste, wird
+    die beste wiederhergestellt (Reihenabstände und `fixiert` je Hinweis/Anmerkung, Review Task 5 I1). Was bleibt,
+    wird gemeldet."""
     try:
         import pymupdf  # noqa: F401
     except ImportError:
@@ -1055,17 +1116,17 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
     else:
         pruefen = True
     vorlauf: dict[tuple, float] = {}
-    befunde = []
-    for runde in range(runden + 2):
+    x0, y0, x1, _ = zeichenfeld(format_)
+    sperren = [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])] + ([band] if band else [])
+
+    def anlegen_und_pruefen():
         platz = _reihen_anlegen(views, vorlauf, fest)
         if nach_reihen:  # Radiuszahlen meiden die Linien der eben angelegten Maße
             nach_reihen()
         _ruf(drw, "EditRebuild3")
         _speichern(ext, pdf)
         if not pruefen:
-            return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
-        x0, y0, x1, _ = zeichenfeld(format_)
-        sperren = [(x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])] + ([band] if band else [])
+            return platz, None
         rahmen = tuple((h.zeilen[0], h.rechteck()) for h in hinweise or []
                        if getattr(h, "art", "") == "form_lage" and h.rechteck())
         befunde = pruefe_pdf(pdf, _ausschluss(format_), rahmen=rahmen) + ausserhalb(
@@ -1076,6 +1137,18 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
             if r and (r[0] < x0 or r[1] < y0 or r[2] > x1 or r[3] > zeichenfeld(format_)[3] or
                       any(_ueberlappt(r, s) for s in sperren)):
                 befunde.append(Befund("ausserhalb", h.zeilen[0], r))
+        return platz, befunde
+
+    befunde, beste = [], None
+    for runde in range(runden + 2):
+        platz, befunde = anlegen_und_pruefen()
+        if befunde is None:
+            return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
+        if fremde_texte is not None:  # Texte, die sich nicht bewegen (Ansichtsbeschriftung, Maßzahlen): Hindernis
+            eigene = {z for h in hinweise or [] for z in h.zeilen}
+            fremde_texte[:] = [r for wort, r in texte(pdf) if wort not in eigene]
+        if beste is None or len(befunde) < beste[0]:  # Review Task 5 (I1): beste Runde merken
+            beste = (len(befunde), dict(vorlauf), [(h, h.stand()) for h in hinweise or []])
         if not befunde or runde == runden + 1:
             break
         umgesetzt = False
@@ -1100,6 +1173,14 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
             break
         for s in seiten:
             vorlauf[s] = vorlauf.get(s, 0.0) + ABSTAND_MM
+    if beste is not None and len(befunde) > beste[0]:  # letzte Runde schlechter: die beste wiederherstellen
+        vorlauf.clear()
+        vorlauf.update(beste[1])
+        for h, stand in beste[2]:
+            h.fixiert = stand
+        platz, befunde = anlegen_und_pruefen()
+        for h, _ in beste[2]:
+            h.fixiert = None
     return [f"LESBARKEIT: {b.art} „{b.text}“{' / „' + b.anderes + '“' if b.anderes else ''} bei "
             f"({b.rechteck_mm[0]:.0f}, {b.rechteck_mm[1]:.0f}) mm" for b in befunde]
 

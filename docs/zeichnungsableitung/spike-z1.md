@@ -142,3 +142,15 @@ Folge für Stufe 4 Task 5:
 - Jedes Plan-Maß mit Toleranz oder Textzusatz wird zum Zeichnungsmaß. Die Zusätze aus Stufe 3 sind eingeschlossen, damit die SLDDRW dem PDF entspricht.
 - Fall Modellmaß: umwandeln an denselben Bezugspunkten. Wo das nicht gelingt, bleibt das Modellmaß stehen, mit der Meldung `MASS_NICHT_DAUERHAFT`.
 - Fall Drehteil-Maß (`neu`): Es ist schon ein Zeichnungsmaß, Toleranz und Zusatz kommen direkt daran.
+
+## Nachtrag: Stufe 4, Teil g und h – Rauheitstext und Hinweislinien (28.11.2026)
+
+Spikes `spikes/z1_diag_stufe4g.py` (g) und `z1_diag_stufe4h.py` (h) auf der SpannplatteZ (Review Task 5, I6, C2, I4).
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Wo erscheinen die Textplätze von `InsertSurfaceFinishSymbol3`? (g) | Vorlage: Norm 2 = ISO 21920-1. Dort und bei ISO 1302:2002 zeigt nur Platz 3 (ProdMethod) Text, **über** dem Strich (Feld c); 1302:2002 zeigt dazu Platz 1 links. ISO 1302:1992 zeigt alle sieben | `swDetailingSFSymbolStandard` (629), `swDetailingSFSymbolStandard_e` 0/1/2 | Text an Platz 3 ist das Fertigungsverfahren, nicht die Anforderung |
+| Feld a unter dem Strich (g) | `ISFSymbol.SetText(swSFSymbolRoughnessValue1 = 8, "Ra 0,8")` setzt den Text unter den Strich, bei 1302:2002 und 21920-1 | `ISFSymbol.SetText` (2), `swSurfaceFinishSymbolText_e` | Anforderung über `SetText(8)` |
+| Loser Strich über dem Dreieck (g) | Erscheint nur bei Norm 2 (ISO 21920-1), an jedem Symbol; bei 1302:2002 nicht | `SetUserPreferenceInteger(629, 0, 1)` | `zeichnen` stellt die Zeichnung auf ISO 1302:2002 (Abweichung von der Vorlage, im Bericht) |
+| Kante am Punkt wählen (h) | `SelectByID2("", "EDGE", x, y, …)` wählt die Kante; Hinweislinie von Rauheit und Rahmen endet am Punkt (102,53 statt 102,56 mm). Bezugsdreieck: `GetLeaderPointsAtIndex` liefert keine Punkte | `IModelDocExtension.SelectByID2` (9), `IAnnotation.GetLeaderPointsAtIndex` (1) | Ansatz wählbar und rücklesbar (letzter Punkt) |
+| Mehrfachauswahl vor dem Einfügen (h) | Zwei Kreiskanten bzw. zwei Taschenböden gewählt: eine Hinweislinie | `IAnnotation.GetLeaderCount` | Rahmen: „2 ×“ darüber (`IGtol.SetText(swGTolTextCalloutAbove = 3)`, gelesen „2 ×“); Rauheit: Meldung `RAUHEIT_NUR_EINE_INSTANZ` |

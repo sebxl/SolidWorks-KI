@@ -387,3 +387,13 @@ def test_treibender_parameter_nur_ganze_namen():
 
     tol = {"A": Toleranz(None, 0.1, -0.1, False)}
     assert [treibender_parameter(r, tol) for r in ("=AB*2", "=TA+1", "=A2", 5, "=A/2")] == [None, None, None, None, "A"]
+
+
+def test_drehteil_fasenmass_quer_zur_drehachse():
+    """Review Task 5 (I5): Das Fasenmaß eines Drehteils gehört in die Ansicht quer zur Drehachse (Längsschnitt); in
+    der Stirnansicht setzte D1@f2 an zwei konzentrischen Kreisen an und ließ sich nicht als Zeichnungsmaß setzen."""
+    plan = massplan(_lade_ref("zeichnung/buchse_z.yaml"), _buchse_protokoll())
+    fasen = [m for m in plan if m.art == "fase"]
+    assert fasen and all((m.achse, m.modus) == (1, "quer") for m in fasen)
+    platte = massplan(*_spannplatte())
+    assert all(m.modus != "quer" or m.art != "fase" for m in platte)

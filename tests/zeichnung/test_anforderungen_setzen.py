@@ -3,6 +3,8 @@
 Meldungswege (Plan Task 5 Step 1): Punkt ohne Kante, neuer Wert weicht ab, Rauheitskante fehlt, Rahmen nicht erzeugt;
 `toleranz_setzen` (Passung → Typ 7, Abmaße → SetValues, Hülle → Suffix <MOD-EP>)."""
 
+import math
+
 import pytest
 
 from swki.zeichnung import anforderungen_setzen as an
@@ -126,7 +128,8 @@ class _Drw:
                 drw.view.masse.remove(drw.view.gewaehlt)
             return True
 
-        self.Extension = type("E", (), {"DeleteSelection2": loeschen})()
+        self.Extension = type("E", (), {"DeleteSelection2": loeschen,
+                                         "SelectByID2": lambda s, *a: False})()  # Punktwahl scheitert: SelectEntity
 
     def ClearSelection2(self, alle):
         self.view.gewaehlt = None
@@ -169,7 +172,8 @@ def test_punkt_ohne_kante_gemeldet_modellmass_bleibt(monkeypatch):
     monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: _KREISE[:1])
     namen, meld = an.dauerhaft_machen(drw, None, {"haupt": v}, [_plan_mass()])
     assert namen == {} and v.masse == [alt] and drw.neu == []
-    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – keine sichtbare Kante am Bezugspunkt (110.0, 246.5)"]
+    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – keine sichtbare Kante am Bezugspunkt (110.0, 246.5); "
+                    "Toleranz und Zusatz entfallen"]
 
 
 def test_neuer_wert_weicht_ab_neues_geloescht(monkeypatch):
@@ -180,7 +184,7 @@ def test_neuer_wert_weicht_ab_neues_geloescht(monkeypatch):
     monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: _KREISE)
     namen, meld = an.dauerhaft_machen(drw, None, {"haupt": v}, [_plan_mass()])
     assert namen == {} and v.masse == [alt]
-    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – neues Maß misst 30.5 statt 30.0"]
+    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – neues Maß misst 30.5 statt 30.0; Toleranz und Zusatz entfallen"]
 
 
 def test_zeichnungsmass_ersetzt_modellmass(monkeypatch):
@@ -272,7 +276,8 @@ def test_rahmen_nicht_erzeugt_gemeldet(monkeypatch):
     fl = FormLage("t1", "parallelitaet", "<IGTOL-PARA>", "0,05", ("A",), False)
     m = Mass("t1:form_lage:0", "form_lage", "form_lage", 0.0, "t1", text="0,05", achse=1, modus="quer", form_lage=fl)
     meld = an.form_lage_setzen(_Drw(v, gtol=False), None, {"drauf": v}, [m], {"drauf": 2}, {"t1": "schnitt"})
-    assert meld == ["FORM_LAGE_NICHT_GESETZT: t1 parallelitaet 0,05 – InsertGtol abgelehnt"]
+    assert meld == ["FORM_LAGE_NICHT_GESETZT: t1 parallelitaet 0,05 – Kante in drauf nicht auswählbar oder "
+                    "InsertGtol abgelehnt"]
     assert v.auswahl == [boden.obj]                                  # Taschenboden: kleinste Lage auf der Achse
 
 
@@ -361,7 +366,7 @@ def test_mittenbezug_ohne_kante_gemeldet(monkeypatch):
     m = Mass("D1@x", "modell", "lage", 47.0, "k1", name="D1@x", bezug="mitte", suffix=" (x)")
     _, meld = an.dauerhaft_machen(_Drw(v, neu_wert=47.0), None, {"haupt": v}, [m])
     assert meld == ["MASS_NICHT_DAUERHAFT: D1@x – Bezug mitte ohne sichtbare Kante am Bezugspunkt (95.0, 246.5), "
-                    "(110.0, 246.5)"]
+                    "(110.0, 246.5); Toleranz und Zusatz entfallen"]
 
 
 def test_neues_mass_nicht_geloescht_gemeldet(monkeypatch):
@@ -374,7 +379,7 @@ def test_neues_mass_nicht_geloescht_gemeldet(monkeypatch):
     monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: _KREISE)
     _, meld = an.dauerhaft_machen(drw, None, {"haupt": v}, [_plan_mass()])
     assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – neues Maß misst 30.5 statt 30.0; neues Maß nicht gelöscht, "
-                    "steht doppelt"]
+                    "steht doppelt; Toleranz und Zusatz entfallen"]
 
 
 class _AnnVersatz:
@@ -400,7 +405,7 @@ def test_verwerfen_merkt_die_soll_lage():
     assert a.lage != soll and a.verwerfen() and a.verworfen == [soll]
     an.anmerkungen_legen([a], [])
     assert a.soll != soll
-    assert len(a._roh()) == 16                                       # nicht mehr fest 16 (M4), sondern die Lagen
+    assert len(a._roh()) == len(an.ANM_ABSTAENDE_MM) * len(an.ANM_RICHTUNGEN_GRAD)  # nicht fest 16 (M4)
 
 
 def test_rauheit_ohne_ansicht_ehrlich_gemeldet():
@@ -408,3 +413,83 @@ def test_rauheit_ohne_ansicht_ehrlich_gemeldet():
     m = Mass("t1:rauheit", "rauheit", "rauheit", 0.0, "t1", text="Ra 1,6", achse=None, modus=None)
     assert an.rauheit_setzen(_Drw(_View()), None, {"haupt": _View()}, [m], {"haupt": 1}, {"t1": "schnitt"}) == [
         "RAUHEIT_NICHT_GESETZT: t1 Ra 1,6 – keine Ansicht mit passender Blickachse (Achse unbekannt)"]
+
+
+# --- Nachbesserung B (Review Task 5) -----------------------------------------------------------------------------------
+
+
+def _lade_ref(pfad):
+    from pathlib import Path
+    from swki.spec.laden import lade_spec
+    return lade_spec(Path(__file__).resolve().parents[1] / "referenz" / pfad)
+
+
+def test_instanzen_aus_spec():
+    """I4: Stifte 2, Taschenboden t1 2 (s1 spiegelt), Platte 1, M6-Reihe 5."""
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    assert [an.instanzen(spec, f) for f in ("st", "t1", "f1", "g1")] == [2, 2, 1, 5]
+
+
+def test_ansatzpunkt_meidet_belegte_und_andere_kanten():
+    """C2: Ansatz auf der Kante, nicht im Kantenende, nicht dort, wo schon eine Hinweislinie ansetzt."""
+    boden = _kante((85.0, 128.6), (110.0, 128.6))
+    wand = _kante((97.5, 128.6), (97.5, 122.6))                     # trifft den Boden in der Mitte
+    p = an.ansatzpunkt(boden, [boden, wand], [])
+    assert p == pytest.approx((85.0 + 0.35 * 25.0, 128.6))           # 50 % liegt auf der Wand
+    q = an.ansatzpunkt(boden, [boden, wand], [p])
+    assert math.dist(p, q) >= an.ANSATZ_ABSTAND_MM
+
+
+def test_lage_ohne_kreuzung_der_masslinie_bevorzugt():
+    """C2: Hinweislinie kreuzt keine Maßlinie (Bezug B lief über das 12,00); Kasten 3 mm von fremden Kanten."""
+    a = an.Anmerkung("bezug", "f1", ("B",), None, "drauf", (60.0, 127.0), (60.0, 122.0, 160.0, 132.0), (7.0, 7.0),
+                     (0.0, 0.0), kante=((60.0, 122.0), (60.0, 132.0)))
+    masslinie = [((50.0, 120.0), (50.0, 140.0))]                    # senkrechte Hilfslinie links der Kante
+    erste = a.kandidaten(masslinien=masslinie)[0]
+    assert a.bewerten(erste, masslinien=masslinie) == 0
+    assert a.bewerten((40.0, 127.0), masslinien=masslinie) >= 1
+
+
+def test_umhaengen_an_bohrung_ohne_angabe():
+    """I1: Hängt die Rauheit an der Bohrung der Bohrungsangabe, kommt sie an die andere."""
+    k1, k2 = _kante((86.0, 204.4), (86.0, 204.4), ((87.6, 204.4), 2.0)), _kante((161.0, 204.4), (161.0, 204.4),
+                                                                               ((162.6, 204.4), 2.0))
+    alt = type("Ann", (), {"Select2": lambda s, a, m: True})()
+    neu = object()
+    a = an.Anmerkung("rauheit", "st", ("Ra 0,8",), alt, "haupt", (164.0, 205.8), (0, 0, 1, 1), (20.0, 10.0), (0.0, 0.0),
+                     kreise=[k1, k2], einhaengen=lambda k: (neu, (k.kreis[0][0] + 1.4, k.kreis[0][1] + 1.4)))
+    hinweis = type("H", (), {"merkmal": "st", "kreis": ((162.6, 204.4), 2.0), "rechteck": lambda s: None})()
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    an.instanzen_umhaengen(drw, [a], [hinweis])
+    assert a.ann is neu and a.anker == pytest.approx((89.0, 205.8))
+
+
+def test_radiusmass_ueber_kreiskante(monkeypatch):
+    """I5: R-Modellmaß (Typ 5) mit Zusatz wird über die Kreiskante allein ein Zeichnungsmaß."""
+    v = _View()
+    alt = _DD(v, "D1@r1", 4.0, [((20.0, 20.0), (13.4, 13.4)), ((13.4, 13.4), (12.0, 12.0))])  # Ende in der Mitte
+    alt.Type2 = 5
+    v.masse.append(alt)
+    bogen = _kante((8.0, 12.0), (12.0, 8.0), ((12.0, 12.0), 2.0))
+    bogen.radius_mm = 4.0
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: [bogen])
+    m = Mass("D1@r1", "modell", "radius", 4.0, "r1", name="D1@r1", suffix=" (x)")
+    namen, meld = an.dauerhaft_machen(_Drw(v, neu_wert=4.0), None, {"haupt": v}, [m])
+    assert meld == [] and namen == {"D1@r1": "RD1@Zeichenansicht1"} and v.auswahl == [bogen.obj]
+
+
+def test_befund_an_fremdem_text_gehoert_zur_kreuzenden_hinweislinie():
+    """Live 28.11.: Die Hinweislinie des Rahmens lief durch „SCHNITT A-A“ – der Befund gehört dem Rahmen, nicht den
+    Maßreihen."""
+    a = an.Anmerkung("form_lage", "t1", ("0,05 A",), None, "drauf", (105.0, 128.6), (60.0, 122.0, 160.0, 132.0),
+                     (26.0, 7.0), (13.0, -3.5), lage=(135.0, 100.0))
+    assert z._hinweis_zu(Befund("linie_durch_text", "SCHNITT A-A", (104.0, 109.0, 147.0, 121.0)), [a]) is a
+    assert z._hinweis_zu(Befund("linie_durch_text", "SCHNITT A-A", (204.0, 109.0, 247.0, 121.0)), [a]) is None
+
+
+def test_kantenende_ohne_eckpunkt_wird_punkt():
+    """Live 28.11. (Buchse f2 im Schnitt): Bezugspunkt am Ende einer Kante, aber keine IVertex – Wahl am Punkt."""
+    wand = _kante((129.06, 178.5), (129.06, 183.0))
+    k = an.kante_am_punkt((129.06, 178.5), "v", [wand])
+    assert k is not None and k.punkt and k.obj is None and k.a == (129.06, 178.5)

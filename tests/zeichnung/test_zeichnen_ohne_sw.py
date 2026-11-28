@@ -388,3 +388,42 @@ def test_zeichnen_loescht_alten_zeichnungspruefbericht(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError):
         z.zeichnen(tmp_path / "s.yaml", 1)
     assert not bericht.exists()
+
+
+# --- Nachbesserung B (Review Task 5) -----------------------------------------------------------------------------------
+
+
+def test_dreizeilige_form_der_bohrungsangabe():
+    assert z._dreizeilig("2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°") == "2 × Ø8 H7 Ⓔ –\n15 tief\nFase 0,5 × 45°"
+    assert z._dreizeilig("Ø6 durch") is None
+
+
+def test_dreizeilig_nur_wenn_zweizeilig_nicht_frei():
+    """I1: Die dreizeilige Form gewinnt nur, wenn die zweizeilige keine freie Lage hat (Stift der SpannplatteZ: 48,9 mm
+    Text, 46 mm Platz zwischen Hilfslinie und Seitenansicht)."""
+    drw = _NotizDrw()
+    alt = _NotizAnn(drw)
+    drw.notizen.append(alt)
+    text = "2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°"
+    zwei, drei = z._notiztext(text), z._notiztext(z._dreizeilig(text))
+    h = z._Hinweis("st", zwei[1], alt, "haupt", [("k0", ((146.0, 240.0), 1.5))], 0, (111.0, 190.0, 211.0, 250.0),
+                   (60.0, 11.0), (30.0, -4.1), text=zwei[0], view=drw.view, winkel=45.0, varianten=[zwei, drei])
+    sperre = [((199.5, 0.0), (199.5, 400.0)), ((100.0, 0.0), (100.0, 400.0))]
+    z._hinweise_legen(drw, [h], {}, sperre, [])
+    assert h.variante == 1 and len(h.zeilen) == 3 and h.zeilen[0] == "2 × Ø8 H7 E –" and not h.vermessen
+    assert drw.notizen == [h.ann]                                   # neu eingefügt, alter gelöscht
+    frei = z._Hinweis("st", zwei[1], _NotizAnn(drw), "haupt", [("k0", ((146.0, 240.0), 1.5))], 0,
+                      (111.0, 190.0, 211.0, 250.0), (60.0, 11.0), (30.0, -4.1), text=zwei[0], view=drw.view,
+                      winkel=45.0, varianten=[zwei, drei])
+    z._hinweise_legen(drw, [frei], {}, [], [])
+    assert frei.variante == 0                                       # Stufe-3-Fälle bleiben zweizeilig
+
+
+def test_zusaetze_nur_an_dauerhaften_massen():
+    """I5: Ein Modellmaß, das nicht umgewandelt werden konnte, bekommt keinen Zusatz (PDF wie SLDDRW)."""
+    a, b = _ZusatzDim("RD1@Zeichenansicht1"), _ZusatzDim("D1@f2")
+    view = type("V", (), {"GetDisplayDimensions": lambda s: (a, b)})()
+    plan = [Mass("D3@m1", "modell", "abstand", 30.0, "m1", name="D3@m1", praefix="4 × "),
+            Mass("D1@f2", "modell", "fase", 1.0, "f2", name="D1@f2", suffix=" × 45°")]
+    assert anf.zusaetze_setzen({"haupt": view}, plan, {"D3@m1": "RD1@Zeichenansicht1"}, nur={"D3@m1"}) == []
+    assert a.texte == {1: "4 × "} and b.texte == {}
