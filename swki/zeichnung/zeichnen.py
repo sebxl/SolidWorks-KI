@@ -348,6 +348,8 @@ def _einzelheit(drw, mu, views: dict, rolle: str, angebot: list[tuple[str, list[
         z = Fraction(2 * s).limit_denominator(100)
         det = drw.CreateDetailViewAt4(ux1 / 1000 + ABSTAND_PROBE_M, uy0 / 1000, 0, DETAIL_STANDARD, z.numerator,
                                       z.denominator, buchstabe, DETAIL_PROFIL, True, False, False, 5)
+        if det is not None:
+            meldungen += _buchstabe_pruefen(eltern, buchstabe)
         return (det, merkmal, hinein) if det is not None else None
     return None
 
@@ -398,6 +400,25 @@ def _mittellinien(drw, mu, views: dict, plan: list) -> tuple[dict[str, list[tupl
     return je, meldungen
 
 
+EINZELHEIT_BUCHSTABEN = "ZYXWVUTSRPNMLKJHGFEDCBA"  # ab Z rückwärts, ohne I, O, Q (recherche.md: TUM, Beleg B)
+
+
+def einzelheit_buchstabe(i: int, vergeben: set[str] | frozenset = frozenset()) -> str:
+    """Buchstabe der `i`-ten Einzelheit (0 = erste): Einzelheiten vom Alphabetende (Z, Y, X …), Schnitte vom Anfang
+    (A-A, B-B …; docs/zeichnungsableitung/recherche.md, TUM Zeichnungserstellung, Beleg B). Ohne I, O, Q und ohne
+    `vergeben` (Bezugsbuchstaben, Schnitte; Runde D: die Einzelheit hieß „B“ wie Bezug B)."""
+    return [b for b in EINZELHEIT_BUCHSTABEN if b not in vergeben][i]
+
+
+def _buchstabe_pruefen(eltern, buchstabe: str) -> list[str]:
+    """Nach Wirkung: trägt ein Einzelheitenkreis der Elternansicht den Buchstaben (`IDetailCircle.GetLabel`)?"""
+    labels = [str(_ruf(k, "GetLabel")) for k in list(_ruf(eltern, "GetDetailCircles") or ())]
+    if buchstabe in labels:
+        return []
+    ist = ", ".join(f"„{b}“" for b in labels) or "keinen"
+    return [f"EINZELHEIT_BUCHSTABE: „{buchstabe}“ verlangt, Einzelheitenkreis trägt {ist}"]
+
+
 def _kennbuchstabe(eltern, rahmen: tuple, buchstabe: str) -> tuple[str, Callable[[], bool]] | None:
     """Kennbuchstabe der Einzelheit um den Rahmen in der Elternansicht weitersetzen: oben links, oben rechts, unten
     links, unten rechts außen. `IDetailCircle.Get/SetLabelPosition` in Blatt-m; SolidWorks rückt den Buchstaben selbst
@@ -443,7 +464,7 @@ class _Hinweis:
     view: object = None
     winkel: float | None = None    # Ansatz der Hinweislinie am Kreis (Grad); None: wo SelectEntity ihn hinlegt
     punktwahl: bool = True         # False: Wahl am Kreispunkt gelang nicht – nicht jede Runde neu versuchen
-    # Review Task 5 (I1): Textformen (Hinweistext, Zeilen im PDF); [0] zweizeilig, [1] dreizeilig („… –“ / „15 tief“)
+    # Review Task 5 (I1): Textformen (Hinweistext, Zeilen im PDF); [0] zweizeilig, [1] dreizeilig (Umbruch statt „ – “)
     varianten: list = field(default_factory=list)
     variante: int = 0
     fixiert: tuple | None = None   # (Bohrung, Lage, Variante) der besten Runde
@@ -545,16 +566,18 @@ def _enthaltene(spec: dict, plan: list, quellen: tuple[str, ...] = ("angabe",)) 
 def _fremde_texte(pdf_texte: list[tuple[str, tuple]], hinweise: list) -> list[tuple]:
     """Textrechtecke des PDFs, die zu keinem Hinweis bzw. keiner Anmerkung gehören. Eigen ist ein Text nur in der Nähe
     seines Hinweises (Nachbesserung C: Bezug „A“ machte sonst die Kennbuchstaben „A“ der Schnittlinie unsichtbar, der
-    Stifthinweis legte sich darauf)."""
+    Stifthinweis legte sich darauf) und nur, wenn seine Wörter in den Zeilen des Hinweises stehen (Runde D, I3: pymupdf
+    liefert Rahmenzellen getrennt oder anders umbrochen; Wörter ohne Buchstaben und Ziffern – Symbolzeichen – zählen
+    nicht)."""
+    def woerter(text: str) -> set[str]:
+        return {w for w in text.split() if any(c.isalnum() for c in w)}
+
+    eigene = [(h.rechteck(), set().union(*(woerter(z) for z in h.zeilen))) for h in hinweise]
+
     def eigen(wort, r) -> bool:
-        for h in hinweise:
-            q = h.rechteck()
-            if q is None or wort not in h.zeilen:
-                continue
-            n = NAEHE_EIGENER_TEXT_MM
-            if r[0] < q[2] + n and q[0] - n < r[2] and r[1] < q[3] + n and q[1] - n < r[3]:
-                return True
-        return False
+        n = NAEHE_EIGENER_TEXT_MM
+        return any(q is not None and woerter(wort) <= w and r[0] < q[2] + n and q[0] - n < r[2]
+                   and r[1] < q[3] + n and q[1] - n < r[3] for q, w in eigene)
     return [r for wort, r in pdf_texte if not eigen(wort, r)]
 
 
@@ -645,13 +668,15 @@ ZEILENUMBRUCH = chr(10)
 
 
 def _dreizeilig(text: str) -> str | None:
-    """Dreizeilige Form einer Bohrungsangabe: erste Zeile nach dem Strich umbrechen, der Strich bleibt am Ende der
-    ersten Zeile („2 × Ø8 H7 Ⓔ –“ / „15 tief“ / „Fase 0,5 × 45°“; Review Task 5, I1). None ohne „ – “."""
+    """Dreizeilige Form einer Bohrungsangabe: erste Zeile am Strich umbrechen („2 × Ø8 H7 Ⓔ“ / „15 tief“ /
+    „Fase 0,5 × 45°“; Review Task 5, I1). Der Umbruch trennt, der Strich entfällt (Runde D: „… Ⓔ –“ am Zeilenende
+    stand im PDF direkt vor „16,00“ und las sich als „–16,00“); die Prüfung behandelt Umbruch und „ – “ gleich
+    (`pruefen.angabentext`). None ohne „ – “."""
     zeilen = text.split(ZEILENUMBRUCH)
     i = zeilen[0].find(" – ")
     if i < 0:
         return None
-    return ZEILENUMBRUCH.join([zeilen[0][:i] + " –", zeilen[0][i + 3:]] + zeilen[1:])
+    return ZEILENUMBRUCH.join([zeilen[0][:i], zeilen[0][i + 3:]] + zeilen[1:])
 
 
 def _notiztext(text: str) -> tuple[str, tuple[str, ...]]:
@@ -704,22 +729,42 @@ def _hindernisse_fest(mu, views: dict, fest: dict, mittel: dict, format_: str,
     """Was sich in der Lesbarkeitsschleife nicht bewegt (Blatt-mm): Kanten aller Ansichten (die Einzelheit als ihr
     Rahmen), Mittellinien, Rahmen der Einzelheit in der Elternansicht, Zeichenfeld, Schriftfeld und das Band der
     Sammelangaben."""
-    aus = []
+    kanten, linien = _kanten_und_linien(mu, views, fest, mittel, format_, band)
+    return kanten + linien
+
+
+def _einmal(strecken: list[tuple]) -> list[tuple]:
+    """Jede Strecke einmal (Runde D, M3: `_kanten` legt eine Kante zwischen zwei Features bei beiden ab)."""
+    gesehen, aus = set(), []
+    for a, e in strecken:
+        schluessel = frozenset(((round(a[0], 2), round(a[1], 2)), (round(e[0], 2), round(e[1], 2))))
+        if schluessel not in gesehen:
+            gesehen.add(schluessel)
+            aus.append((a, e))
+    return aus
+
+
+def _kanten_und_linien(mu, views: dict, fest: dict, mittel: dict, format_: str,
+                       band: tuple | None = None) -> tuple[list[tuple], list[tuple]]:
+    """(sichtbare Kanten aller Ansichten, je einmal; übrige feste Linien: Rahmen der Einzelheit und in der
+    Elternansicht, Mittellinien, Zeichenfeld, Schriftfeld, Band). Für die Anmerkungen sind nur die Kanten „Kante“
+    (Runde D, M3); die übrigen Linien sind Hindernis für das Rechteck."""
+    kanten, linien = [], []
     for rolle, v in views.items():
         if rolle == "einzelheit" and fest.get("einzelheit"):
-            aus += _rechteck_strecken(fest["einzelheit"])
+            linien += _rechteck_strecken(fest["einzelheit"])
         else:
-            aus += _strecken(_kanten(mu, v), _ruf(v, "ScaleDecimal"))
+            kanten += _strecken(_kanten(mu, v), _ruf(v, "ScaleDecimal"))
     for linien_rolle in mittel.values():
-        aus += linien_rolle
+        linien += linien_rolle
     if fest.get("rahmen"):
-        aus += _rechteck_strecken(fest["rahmen"])
+        linien += _rechteck_strecken(fest["rahmen"])
     x0, y0, x1, y1 = zeichenfeld(format_)
-    aus += _rechteck_strecken((x0, y0, x1, y1))
-    aus += _rechteck_strecken((x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1]))
+    linien += _rechteck_strecken((x0, y0, x1, y1))
+    linien += _rechteck_strecken((x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1]))
     if band:
-        aus += _rechteck_strecken(band)
-    return aus
+        linien += _rechteck_strecken(band)
+    return _einmal(kanten), linien
 
 
 def _masslinien(views: dict) -> list[tuple]:
@@ -823,24 +868,37 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
     return gelegt
 
 
-def _anmerkungen_kreuzen(views: dict, notizen: list, anmerkungen: list, statisch: list[tuple], pdf: Path) -> list[str]:
-    """`ANMERKUNG_KREUZT` aus dem Endstand (Nachbesserung C): Maße, wie sie liegen, Bohrungsangaben (Rechteck und
-    Hinweislinie), fremde Texte des letzten PDFs, Kanten (`statisch`) und die anderen Anmerkungen an ihrer
-    zurückgelesenen Lage (`anforderungen_setzen.anmerkungen_pruefen`)."""
+def _anmerkungen_kreuzen(views: dict, notizen: list, anmerkungen: list, kanten: list[tuple], pdf: Path,
+                         linien: list[tuple] = ()) -> list[str]:
+    """`ANMERKUNG_KREUZT`/`ANMERKUNG_ZU_NAH` aus dem Endstand (Nachbesserung C): Maße, wie sie liegen,
+    Bohrungsangaben (Rechteck und Hinweislinie), fremde Texte des letzten PDFs, die sichtbaren Kanten (`kanten`), die
+    übrigen festen Linien (`linien`: Rahmen, Mittellinien – Hindernis für das Rechteck, Runde D M3) und die anderen
+    Anmerkungen an ihrer zurückgelesenen Lage (`anforderungen_setzen.anmerkungen_pruefen`)."""
     masslinien = _masslinien(views)
     try:
         fremde = _fremde_texte(texte(pdf), notizen + anmerkungen) if pdf.exists() else []
     except ImportError:  # ohne pymupdf: nur gegen Maße, Angaben und Kanten
         fremde = []
     hinw = [s for h in notizen if h.lage for s in _rechteck_strecken(h.rechteck()) + [h.hinweislinie()]]
-    return anf.anmerkungen_pruefen(anmerkungen, masslinien + hinw + [s for r in fremde for s in _rechteck_strecken(r)],
-                                   [h.rechteck() for h in notizen if h.rechteck()] + fremde, statisch, masslinien,
-                                   [h.hinweislinie() for h in notizen if h.lage])
+    return anf.anmerkungen_pruefen(anmerkungen, masslinien + hinw + [s for r in fremde for s in _rechteck_strecken(r)]
+                                   + list(linien), [h.rechteck() for h in notizen if h.rechteck()] + fremde, kanten,
+                                   masslinien, [h.hinweislinie() for h in notizen if h.lage])
 
 
 def hinweis_im_pdf(h, pdf_texte: list[tuple[str, tuple]]) -> tuple | None:
     """Rechteck eines Hinweises, wie das PDF ihn zeigt: je Zeile der nächste gleichlautende Text (wie
     `_hinweise_vermessen`), vereinigt; None, wenn eine Zeile fehlt."""
+    if h.lage is None:
+        return None
+    rechtecke = zeilen_im_pdf(h, pdf_texte)
+    if rechtecke is None:
+        return None
+    return (min(r[0] for r in rechtecke), min(r[1] for r in rechtecke), max(r[2] for r in rechtecke),
+            max(r[3] for r in rechtecke))
+
+
+def zeilen_im_pdf(h, pdf_texte: list[tuple[str, tuple]]) -> list[tuple] | None:
+    """Je Zeile eines Hinweises das Rechteck des nächsten gleichlautenden PDF-Texts; None, wenn eine Zeile fehlt."""
     if h.lage is None:
         return None
     rechtecke = []
@@ -849,8 +907,7 @@ def hinweis_im_pdf(h, pdf_texte: list[tuple[str, tuple]]) -> tuple | None:
         if not treffer:
             return None
         rechtecke.append(min(treffer, key=lambda r: math.dist(h.lage, ((r[0] + r[2]) / 2, (r[1] + r[3]) / 2))))
-    return (min(r[0] for r in rechtecke), min(r[1] for r in rechtecke), max(r[2] for r in rechtecke),
-            max(r[3] for r in rechtecke))
+    return rechtecke
 
 
 def zu_nah(rechteck: tuple, strecken: list[tuple]) -> int:
@@ -862,8 +919,10 @@ def zu_nah(rechteck: tuple, strecken: list[tuple]) -> int:
 
 
 def _hinweise_zu_nah(views: dict, notizen: list, anmerkungen: list, pdf: Path) -> list[str]:
-    """Endprüfung Punkt 4 am PDF (nie still): ein Hinweis, dessen Text (Rechteck aus dem PDF) näher als eine
-    Schrifthöhe in Zeilenrichtung bzw. 1 mm quer an fremdem Text, Maß- oder Hilfslinien liegt → `ANGABE_ZU_NAH`."""
+    """Endprüfung Punkt 4 am PDF (nie still): ein Hinweis, dessen Text näher als eine Schrifthöhe in Zeilenrichtung
+    bzw. 1 mm quer an fremdem Text, Maß- oder Hilfslinien liegt → `ANGABE_ZU_NAH`. Gemessen je Zeile (Rechtecke aus dem
+    PDF, `zeilen_im_pdf`; Runde D: am umschließenden Rechteck galt „Fase …“ als zu nah an „16,00“, das 4,8 mm höher
+    stand); fehlt eine Zeile im PDF, das geschätzte Rechteck. Die Zahl zählt jede fremde Strecke einmal."""
     if not notizen:
         return []
     try:
@@ -874,12 +933,12 @@ def _hinweise_zu_nah(views: dict, notizen: list, anmerkungen: list, pdf: Path) -
     fremde = _fremde_texte(pdf_texte, alle)
     aus = []
     for h in notizen:
-        r = hinweis_im_pdf(h, pdf_texte) or h.rechteck()
-        if r is None:
+        rechtecke = zeilen_im_pdf(h, pdf_texte) or ([h.rechteck()] if h.rechteck() else [])
+        if not rechtecke:
             continue
         nah = (_masslinien(views) + [s for q in fremde for s in _rechteck_strecken(q)]
                + [s for o in alle if o is not h and o.rechteck() for s in _rechteck_strecken(o.rechteck())])
-        n = zu_nah(r, nah)
+        n = sum(1 for s in nah if any(zu_nah(r, [s]) for r in rechtecke))
         if n:
             aus.append(f"ANGABE_ZU_NAH: {h.merkmal} in {h.rolle} – Text „{h.zeilen[0]}“ näher als "
                        f"{zahl_mm(HINWEIS_ABSTAND_ZEILE_MM)} mm (Zeilenrichtung) bzw. {zahl_mm(HINWEIS_ABSTAND_QUER_MM)} mm "
@@ -969,7 +1028,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         plan = massplan(spec, protokoll)
         sammel = sammelhoehe_mm(spec)  # Platz der Sammelangaben über dem Schriftfeld (Task 5 schreibt sie)
         basis = next(a.rolle for a in ansichten if a.modellansicht)
-        buchstabe, bereich = ("B" if schnitt else "A"), {}
+        # Runde D: Einzelheit ab Z rückwärts, Schnitt ab A; Bezugsbuchstaben sind vergeben
+        buchstabe, bereich = einzelheit_buchstabe(0, {m.text for m in plan if m.quelle == "bezug"} | {"A"}), {}
         gruppe = _gruppen(spec)
         mitten = {m.name for m in plan if m.quelle == "modell" and m.bezug in MITTENBEZUG}
         bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
@@ -1039,7 +1099,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
         rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
-        statisch, angaben_meld = _hindernisse_fest(mu, views, fest, mittel, format_, band), []
+        anm_kanten, anm_linien = _kanten_und_linien(mu, views, fest, mittel, format_, band)
+        statisch, angaben_meld = anm_kanten + anm_linien, []
 
         fremde: list[tuple] = []  # Textrechtecke des letzten PDFs außer Hinweisen und Anmerkungen (Live 28.11.: Rahmen
         #                           lag auf „SCHNITT A-A“)
@@ -1054,11 +1115,12 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             gelegt = _hinweise_legen(drw, notizen, views, statisch + anm + fremd, angaben_meld, fremd + anm_text)
             if anmerkungen:
                 masslinien = _masslinien(views)
-                anf.instanzen_umhaengen(drw, anmerkungen, notizen, angaben_meld, masslinien + gelegt + fremd, statisch,
-                                        masslinien, fremde)
-                gelegt += anf.anmerkungen_legen(anmerkungen, masslinien + gelegt + fremd,
-                                                [h.rechteck() for h in notizen if h.rechteck()] + fremde, statisch,
-                                                masslinien, [h.hinweislinie() for h in notizen if h.lage])
+                anf.instanzen_umhaengen(drw, anmerkungen, notizen, angaben_meld,
+                                        masslinien + gelegt + fremd + anm_linien, anm_kanten, masslinien, fremde)
+                gelegt += anf.anmerkungen_legen(anmerkungen, masslinien + gelegt + fremd + anm_linien,
+                                                [h.rechteck() for h in notizen if h.rechteck()] + fremde, anm_kanten,
+                                                masslinien, [h.hinweislinie() for h in notizen if h.lage], drw,
+                                                angaben_meld, {h.merkmal: [h.kreis[0]] for h in notizen})
             _radien_setzen(mu, views, rahmen, mittel, gelegt)
 
         meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, nach_reihen,
@@ -1067,7 +1129,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                                      hinweise=notizen + anmerkungen, band=band, fremde_texte=fremde)
         meldungen += angaben_meld + anf.sammel_pruefen(texte(pdf), zeilen_sammel, band)
         if anmerkungen:  # Nachbesserung C: was nach der letzten Runde noch kreuzt, steht in den Meldungen
-            meldungen += _anmerkungen_kreuzen(views, notizen, anmerkungen, statisch, pdf)
+            meldungen += _anmerkungen_kreuzen(views, notizen, anmerkungen, anm_kanten, pdf, anm_linien)
         meldungen += _hinweise_zu_nah(views, notizen, anmerkungen, pdf)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),

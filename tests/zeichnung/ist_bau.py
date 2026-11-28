@@ -46,7 +46,7 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: d
     ansichten = ansichten or {"haupt": "ansicht"}
     erste = next(iter(ansichten))
     ist_ansichten = {name: IstAnsicht(name, None, art, "2:1" if art == "einzelheit" else "1:1",
-                                      {"schnitt": "A-A", "einzelheit": "B"}.get(art))
+                                      {"schnitt": "A-A", "einzelheit": "Z"}.get(art))
                      for name, art in ansichten.items()}
     masse, angaben = [], []
     for m in plan:

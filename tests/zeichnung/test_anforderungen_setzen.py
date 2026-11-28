@@ -102,6 +102,8 @@ class _DD:
 
 
 class _View:
+    ScaleDecimal = 1.0
+
     def __init__(self, name="Zeichenansicht1"):
         self.masse, self.gewaehlt, self.name, self.auswahl = [], None, name, []
 
@@ -117,10 +119,12 @@ class _View:
 
 
 class _Drw:
-    """Zeichnung: AddDimension2 legt ein Zeichnungsmaß mit `neu_wert` an; DeleteSelection2 löscht das gewählte Maß."""
+    """Zeichnung: AddDimension2 legt ein Zeichnungsmaß mit `neu_wert` und den Hilfslinien `neu_linien` an (Vorgabe:
+    `_HILFSLINIEN`, wie das Modellmaß); DeleteSelection2 löscht das gewählte Maß."""
 
-    def __init__(self, view, neu_wert=None, gtol=True):
+    def __init__(self, view, neu_wert=None, gtol=True, neu_linien=None):
         self.view, self.neu_wert, self.neu, self.gtol = view, neu_wert, [], gtol
+        self.neu_linien = neu_linien
         drw = self
 
         def loeschen(s, o):
@@ -140,7 +144,8 @@ class _Drw:
     def AddDimension2(self, x, y, zz):
         if self.neu_wert is None:
             return None
-        dd = _DD(self.view, f"RD{len(self.neu) + 1}@{self.view.name}", self.neu_wert, [], modell=False)
+        linien = _HILFSLINIEN if self.neu_linien is None else self.neu_linien
+        dd = _DD(self.view, f"RD{len(self.neu) + 1}@{self.view.name}", self.neu_wert, linien, modell=False)
         self.neu.append(dd)
         self.view.masse.append(dd)
         return dd
@@ -200,13 +205,16 @@ def test_zeichnungsmass_ersetzt_modellmass(monkeypatch):
     assert drw.neu[0].texte == {1: "4 × ", 2: " (= 120)"}
 
 
-def test_kante_am_punkt_gerade_quer_und_eckpunkt():
+def test_kante_am_punkt_gerade_quer_und_kantenende():
+    """Runde D (I2): kein IVertex mehr (Eckpunkte liegen live 54–89 mm daneben); am Kantenende wird über den Punkt
+    gewählt (Kante ohne Objekt)."""
     senkrecht = _kante((129.06, 176.0), (129.06, 180.5))
     waagrecht = _kante((129.56, 181.0), (189.06, 181.0))
-    ecke = _kante((129.56, 181.0), (129.56, 181.0), punkt=True)
-    kanten = [senkrecht, waagrecht, ecke]
+    fremde_ecke = _kante((129.56, 181.0), (129.56, 181.0), punkt=True)  # zufällig im Punkt: wird nicht gewählt
+    kanten = [senkrecht, waagrecht, fremde_ecke]
     assert an.kante_am_punkt((129.06, 181.0), "h", kanten) is senkrecht   # Gerade durch den Punkt, quer zur Messung
-    assert an.kante_am_punkt((129.56, 181.0), "h", kanten) is ecke        # keine senkrechte Kante: Eckpunkt
+    ende = an.kante_am_punkt((129.56, 181.0), "h", kanten)                # keine senkrechte Kante: Kantenende
+    assert ende is not fremde_ecke and ende.punkt and ende.obj is None and ende.a == (129.56, 181.0)
     assert an.kante_am_punkt((150.0, 181.0), "v", kanten) is waagrecht
     assert an.kante_am_punkt((140.0, 170.0), "h", kanten) is None
 
@@ -685,7 +693,7 @@ def test_orte_der_flaeche_im_schnitt():
     rechts = kante((165.06, 122.56), (175.06, 122.56), ["Schnitt1", "f1"])
     rand = kante((87.06, 122.56), (108.06, 122.56), ["f1", "t1"])
     oben = kante((75.06, 132.56), (175.06, 132.56), ["Schnitt1", "f1"])
-    orte = an.orte_der_flaeche([oben, links, rand, mitte, rechts], mitte, {"f1"}, 2, -1, _SCHNITT)
+    orte = an.orte_der_flaeche([oben, links, rand, mitte, rechts], mitte, {"f1"}, 2, _SCHNITT)
     assert orte[0] is mitte and set(map(id, orte[1:])) == {id(links), id(rechts)}
 
 
@@ -743,3 +751,370 @@ def test_rahmen_hinweislinie_durch_das_eigene_rechteck():
                      (13.0, 6.25 - 7.0))
     assert a.verstoesse((150.0, 90.0)) == {an.V_SYMBOL: 1}            # Anker über dem Rahmen, Linie zur linken Seite
     assert a.verstoesse((185.0, 90.0)) == {}                           # Rahmen rechts unten, Linie zur linken Seite
+
+
+# --- Runde D: Review C (I1–I4, M1–M4, M6, M7, M9, M11) ------------------------------------------------------------------
+
+
+def _kreis_kante(m, r, feature):
+    p = (m[0] + r, m[1])
+    return an.Kante(object(), p, p, (p[0], p[1], 0.0), (p[0], p[1], 0.0), (m, r), {feature}, radius_mm=r)
+
+
+def _kreis_strecken(*kreise):
+    return [s for k in kreise for s in an._bogen(k.a, k.a, k.kreis[0])]
+
+
+def _rauheit_an_bohrung(k1, k2, offen, statt=None):
+    anker = (k1.kreis[0][0] + k1.kreis[1] * math.cos(math.radians(45)),
+             k1.kreis[0][1] + k1.kreis[1] * math.sin(math.radians(45)))
+    return an.Anmerkung("rauheit", "b1", ("Ra 0,8",), None, "drauf", statt or anker, (90, 90, 120, 120), (23.7, 11.0),
+                        (8.95, 5.5), orte=[k1, k2], offen=offen)
+
+
+def test_hinweislinie_durch_die_nachbarbohrung_zaehlt():
+    """I1 (Probe probe_offen.py): `offen` gilt nur am Ort der Instanz – die Linie quer durch die zweite Bohrung desselben
+    Bohrbilds kreuzt eine fremde Kante; die konzentrische Fase der eigenen Bohrung ist frei."""
+    k1, k2 = _kreis_kante((100.0, 100.0), 3.0, "b1"), _kreis_kante((115.0, 115.0), 3.0, "mu1")
+    fase = _kreis_kante((100.0, 100.0), 4.0, "b1")
+    offen = an.offene_kanten([k1, k2, fase], {"b1", "mu1"}, [])
+    a = _rauheit_an_bohrung(k1, k2, offen)
+    durch_k2 = (125.0 + 8.95, 125.0 + 5.5)                             # Spitze bei (125, 125): Linie durch Bohrung 2
+    assert a.verstoesse(durch_k2, kanten=_kreis_strecken(k1, k2, fase)) == {an.V_KANTE: 2}
+    frei = (95.0 + 8.95 + 30, 104.0 + 5.5)                             # Spitze rechts der eigenen Fase, fern von k2
+    assert an.V_KANTE not in a.verstoesse(frei, kanten=_kreis_strecken(k1, fase))
+
+
+def test_offen_folgt_der_instanz():
+    """I1: Nach dem Umhängen an die zweite Bohrung ist deren Rand offen, der der ersten fremd."""
+    k1, k2 = _kreis_kante((100.0, 100.0), 3.0, "b1"), _kreis_kante((115.0, 115.0), 3.0, "mu1")
+    fase2 = _kreis_kante((115.0, 115.0), 5.0, "mu1")
+    a = _rauheit_an_bohrung(k1, k2, an.offene_kanten([k1, k2, fase2], {"b1", "mu1"}, []))
+    assert a._offen_hier() == [k1]
+    a.anker = (115.0 + 3.0 * math.cos(math.radians(225)), 115.0 + 3.0 * math.sin(math.radians(225)))
+    assert set(map(id, a._offen_hier())) == {id(k2), id(fase2)}
+
+
+def test_gespiegelter_taschenrand_zaehlt():
+    """I1: Durch die eigene Öffnung (erste Kreuzung ab dem Fußpunkt) frei; der Rand der gespiegelten Tasche zählt, und
+    nach einer fremden Kante zählt auch der eigene Rand."""
+    boden = _kante((110.06, 128.56), (85.06, 128.56), features=["t1"])
+    rand2 = _kante((142.06, 122.56), (163.06, 122.56), features=["f1", "s1"])
+    offen = an.offene_kanten([boden, _RAND_T1, rand2], {"t1", "s1"}, _SCHNITT)
+    assert set(map(id, offen)) == {id(_RAND_T1), id(rand2)}
+    a = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), None, "drauf", (97.5, 128.56), _UMRISS, (23.5, 10.0), (9.15, 5.0),
+                     kante=(boden.a, boden.e), schraffur=[], offen=offen, orte=[boden])
+    kanten = [(_RAND_T1.a, _RAND_T1.e), (rand2.a, rand2.e)]
+    assert a.verstoesse(_VON_RECHTS_UNTEN, kanten=kanten) == {}         # nur durch die eigene Öffnung
+    a.anker = (150.0, 128.56)                                          # Linie von der Mitte des Bodens der Tasche 2 …
+    a.orte = [boden]                                                   # … gehört aber zu Tasche 1: Rand 2 ist fremd
+    lage = (150.0 + 9.15 + 10.0, 105.0)
+    assert a.verstoesse(lage, kanten=kanten).get(an.V_KANTE) == 1
+    fremd = ((90.0, 125.0), (110.0, 125.0))                            # vor dem eigenen Rand: beide zählen
+    a.anker = (97.5, 128.56)
+    assert a.verstoesse(_VON_RECHTS_UNTEN, kanten=kanten + [fremd]).get(an.V_KANTE) == 2
+
+
+def test_hilfslinie_quer_zur_kante_zaehlt_als_masslinie():
+    """M2: Ausgenommen ist eine Maßlinie nur, wo sie auf einer Kante liegt (kollinear); quer über eine Kante
+    hinweg bleibt die Kreuzung eine Maßlinie."""
+    a = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), None, "drauf", (97.5, 128.56), _UMRISS, (23.5, 10.0), (9.15, 5.0))
+    linie = a.hinweislinie(_VON_RECHTS_UNTEN)
+    p = (linie[0][0] + (linie[1][0] - linie[0][0]) * 0.5, linie[0][1] + (linie[1][1] - linie[0][1]) * 0.5)
+    quer = [((p[0] - 5.0, p[1]), (p[0] + 5.0, p[1]))]                  # waagrechte Hilfslinie durch p
+    senkrecht = [((p[0], p[1] - 5.0), (p[0], p[1] + 5.0))]             # Kante quer zur Hilfslinie, durch p
+    assert a.verstoesse(_VON_RECHTS_UNTEN, kanten=senkrecht, masslinien=quer).get(an.V_MASSLINIE) == 1
+    assert an.V_MASSLINIE not in a.verstoesse(_VON_RECHTS_UNTEN, kanten=quer, masslinien=quer)
+
+
+def test_naehe_eigene_meldung():
+    """M3: „Kante < 3 mm“ und „Ansatz < 4 mm“ sind Nähe, keine Kreuzung: Meldung ANMERKUNG_ZU_NAH."""
+    a = an.Anmerkung("bezug", "f1", ("B",), None, "drauf", (75.06, 127.56), _UMRISS, (7.0, 7.0), (0.0, 0.0),
+                     kante=((75.06, 122.56), (75.06, 132.56)), lage=(66.56, 127.56))
+    nah = [((61.0, 120.0), (61.0, 135.0))]                             # im 3-mm-Saum des Kastens (63,06–70,06)
+    assert an.anmerkungen_pruefen([a], kanten=nah) == ["ANMERKUNG_ZU_NAH: f1 bezug „B“ – Kante näher als 3 mm (1)"]
+
+
+def test_jenseits_nur_nahe_masslinien():
+    """M4: Maßlinien einer fernen Ansicht schieben die Lagen nicht hinaus."""
+    a = an.Anmerkung("rauheit", "st", ("Ra 0,8",), None, "haupt", (100.0, 100.0), (0, 0, 1, 1), (20.0, 10.0), (0.0, 0.0))
+    nah = [((140.0, 95.0), (140.0, 105.0))]                            # 40 mm rechts
+    fern = [((300.0, 95.0), (300.0, 105.0))]                           # 200 mm rechts (andere Ansicht)
+    assert a._jenseits(nah).get(0) == pytest.approx(40.0 + an.JENSEITS_LUECKE_MM)
+    assert a._jenseits(fern) == {}
+
+
+def test_umhaengen_an_gerade_orte_und_wirkung_gemeldet():
+    """M11/M7: Umhängen an eine gleichwertige gerade Kante; der neue Rahmen wird nach Wirkung geprüft."""
+    links = _kante((75.06, 122.56), (85.06, 122.56), features=["f1"])
+    rechts = _kante((165.06, 122.56), (175.06, 122.56), features=["f1"])
+    zustand = {"beschriftet": True}
+
+    def einhaengen(k, meld=None):
+        zustand["beschriftet"] = False                                 # neuer Rahmen: SetFrameValues2 ohne Wirkung
+        return _AnnLage(), ((k.a[0] + k.e[0]) / 2, k.a[1])
+
+    def wirkung():
+        return [] if zustand["beschriftet"] else ["FORM_LAGE_NICHT_GESETZT: f1 ebenheit 0,02 – Rahmen nicht beschriftet"]
+
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), _AnnLage(), "drauf", (80.06, 122.56), _UMRISS, (16.0, 7.0),
+                     (8.0, -3.5), kante=(links.a, links.e), orte=[links, rechts], einhaengen=einhaengen,
+                     wirkung=wirkung)
+    sperre = [((x, 50.0), (x, 200.0)) for x in range(20, 145, 5)]     # Gitter über der linken Kante
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    meld: list = []
+    an.instanzen_umhaengen(drw, [a], [], meld, hindernisse=sperre)
+    assert a.instanz() is rechts and a.kante == (rechts.a, rechts.e)
+    assert meld == ["FORM_LAGE_NICHT_GESETZT: f1 ebenheit 0,02 – Rahmen nicht beschriftet"]
+
+
+def test_bezugspunkte_des_neuen_masses_nach_wirkung(monkeypatch):
+    """I2: Das neue Zeichnungsmaß misst denselben Wert, setzt aber 40 mm daneben an – Meldung, Modellmaß bleibt."""
+    v = _View()
+    alt = _DD(v, "D3@m1", 30.0, _HILFSLINIEN)
+    v.masse.append(alt)
+    daneben = [((95.0, 207.5), (95.0, 226.0)), ((110.0, 207.5), (110.0, 226.0))]
+    drw = _Drw(v, neu_wert=30.0, neu_linien=daneben)
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: _KREISE)
+    namen, meld = an.dauerhaft_machen(drw, None, {"haupt": v}, [_plan_mass()])
+    assert namen == {} and v.masse == [alt]
+    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – neues Maß setzt bei (95.0, 206.5), (110.0, 206.5) an statt "
+                    "(95.0, 246.5), (110.0, 246.5); Toleranz und Zusatz entfallen"]
+    leer = _Drw(v, neu_wert=30.0, neu_linien=[])                       # Hilfslinien nicht lesbar: nie still
+    _, meld = an.dauerhaft_machen(leer, None, {"haupt": v}, [_plan_mass()])
+    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – Hilfslinien des neuen Maßes nicht lesbar; Toleranz und Zusatz "
+                    "entfallen"] and v.masse == [alt]
+    knapp = [((95.0, 250.0), (95.0, 266.0)), ((110.0, 250.0), (110.0, 266.0))]  # 2,5 mm entlang: Lücke, gleich
+    _, meld = an.dauerhaft_machen(_Drw(v, neu_wert=30.0, neu_linien=knapp), None, {"haupt": v}, [_plan_mass()])
+    assert meld == []
+
+
+def test_massstab_nicht_lesbar_gemeldet(monkeypatch):
+    """M6: Fällt `ScaleDecimal` aus, ist das eine Meldung, kein stilles 1:1."""
+    class _OhneMassstab(_View):
+        @property
+        def ScaleDecimal(self):
+            raise RuntimeError("COM")
+
+    v = _OhneMassstab()
+    alt = _DD(v, "D3@m1", 30.0, _HILFSLINIEN)
+    v.masse.append(alt)
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: _KREISE)
+    _, meld = an.dauerhaft_machen(_Drw(v, neu_wert=30.0), None, {"haupt": v}, [_plan_mass()])
+    assert meld == ["MASS_NICHT_DAUERHAFT: D3@m1 – Maßstab der Ansicht nicht lesbar; Toleranz und Zusatz entfallen"]
+
+
+class _Sel:
+    def __init__(self, obj):
+        self.obj = obj
+
+    def GetSelectedObjectCount2(self, mark):
+        return 1
+
+    def GetSelectedObjectType3(self, i, mark):
+        return an.KANTE
+
+    def GetSelectedObject6(self, i, mark):
+        return self.obj
+
+
+class _Kurve:
+    def __init__(self, a_m, e_m):
+        self.StartPoint, self.EndPoint = tuple(c / 1000 for c in a_m), tuple(c / 1000 for c in e_m)
+
+
+class _GewKante:
+    def __init__(self, a_m, e_m):
+        self.cp = _Kurve(a_m, e_m)
+
+    def GetCurveParams3(self):
+        return self.cp
+
+
+def test_wahl_am_punkt_prueft_die_gewaehlte_kante():
+    """M1: Wählt SelectByID2 am Punkt eine andere Kante (Fase 0,25 mm daneben), gilt die Wahl nicht – zurück auf
+    SelectEntity der gesuchten Kante."""
+    k = _kreis_kante((100.0, 100.0), 3.0, "b1")
+    v = _View()
+    drw = _Drw(v)
+    drw.Extension.SelectByID2 = lambda *a: True
+    drw.SelectionManager = _Sel(_GewKante((103.25, 100.0, 0.0), (103.25, 100.0, 0.0)))  # Fasenkreis
+    assert an._waehle_am_punkt(drw, v, k, (103.0, 100.0)) and v.auswahl == [k.obj]
+    v.auswahl = []
+    drw.SelectionManager = _Sel(_GewKante(k.a_m, k.e_m))
+    assert an._waehle_am_punkt(drw, v, k, (103.0, 100.0)) and v.auswahl == []  # am Punkt gewählt, kein Rückfall
+
+
+def test_fremde_texte_eigen_nach_woertern():
+    """I3: Eigen ist ein Text nahe der Anmerkung, dessen Wörter in ihren Zeilen stehen – auch getrennt geliefert oder
+    mit Symbolzeichen; ein fremdes Wort daneben bleibt fremd."""
+    a = an.Anmerkung("form_lage", "t1", ("0,05 A", "2 ×"), None, "drauf", (145.0, 128.56), _UMRISS, (26.0, 12.5),
+                     (13.0, -0.75), lage=(67.5, 97.0))
+    texte = [("0,05", (59.5, 94.3, 68.0, 100.7)), ("A", (71.0, 94.3, 75.5, 100.7)), ("∥", (52.0, 94.3, 56.0, 100.7)),
+             ("2 ×", (50.8, 101.0, 57.5, 107.4)), ("20,00", (58.0, 86.0, 66.0, 92.5)), ("A", (186.5, 227.6, 192.8, 239.2))]
+    assert z._fremde_texte(texte, [a]) == [(58.0, 86.0, 66.0, 92.5), (186.5, 227.6, 192.8, 239.2)]
+
+
+class _Hatch:
+    def __init__(self, kanten):
+        self.kanten = kanten
+
+    @property
+    def Face(self):
+        return type("F", (), {"GetEdges": lambda s: tuple(self.kanten)})()
+
+
+class _KaputteKante:
+    def GetCurveParams3(self):
+        raise RuntimeError("COM")
+
+
+class _HatchView:
+    def __init__(self, hatches, typ=2, fehler=False):
+        self.hatches, self.Type, self.fehler = hatches, typ, fehler
+        self.ModelToViewTransform = None
+
+    def GetFaceHatches(self):
+        if self.fehler:
+            raise RuntimeError("COM")
+        return tuple(self.hatches)
+
+    def GetName2(self):
+        return "Schnittansicht A-A"
+
+
+def test_schraffur_ungelesen_gemeldet():
+    """I4: GetFaceHatches gescheitert, Schnitt ohne Schraffur, eine Kante unlesbar → Gründe; keine Schraffur in
+    einer Projektion ist kein Befund."""
+    assert an.schraffur_strecken(None, _HatchView([], fehler=True))[1] == ["GetFaceHatches gescheitert"]
+    assert an.schraffur_strecken(None, _HatchView([]))[1] == ["Schnittansicht ohne Schraffur"]
+    assert an.schraffur_strecken(None, _HatchView([], typ=4)) == ([], [])
+    assert an.schraffur_strecken(None, _HatchView([_Hatch([_KaputteKante()])]))[1] == ["Fläche 1: Kante 1 nicht lesbar"]
+    meld: list = []
+    cache: dict = {}
+    assert an._schraffur(cache, None, {"drauf": _HatchView([])}, "drauf", meld) is None
+    assert meld == ["SCHRAFFUR_UNGELESEN: Schnittansicht A-A – Schnittansicht ohne Schraffur"]
+
+
+def test_ungelesene_schraffur_schliesst_nichts_auf():
+    """I4: Ohne gelesene Schraffur ist nichts offen und die Fläche hat nur ihren eigenen Ort."""
+    boden = _kante((110.06, 128.56), (85.06, 128.56), features=["t1"])
+    boden2 = _kante((165.06, 128.56), (140.06, 128.56), features=["t1"])
+    assert an._orte("schnitt", [boden, boden2], boden, {"t1"}, 1, []) == [boden, boden2]
+    assert an._orte("schnitt", [boden, boden2], boden, {"t1"}, 1, None) == [boden]
+
+
+def test_bogen_in_stuecken():
+    """M11: Viertelkreis gegen den Uhrzeigersinn in `SCHRAFFUR_BOGEN_STUECKE` Stücken auf dem Kreis."""
+    stuecke = an._bogen((10.0, 0.0), (0.0, 10.0), (0.0, 0.0))
+    assert len(stuecke) == an.SCHRAFFUR_BOGEN_STUECKE
+    assert all(abs(math.dist(p, (0.0, 0.0)) - 10.0) < 1e-9 for s in stuecke for p in s)
+    assert stuecke[0][0] == pytest.approx((10.0, 0.0)) and stuecke[-1][1] == pytest.approx((0.0, 10.0))
+
+
+def test_verdrahtung_kreuzen_und_zu_nah(monkeypatch, tmp_path):
+    """M11: `_anmerkungen_kreuzen` zählt fremde PDF-Texte (nicht die eigenen) und die Kanten; `_hinweise_zu_nah`
+    misst den Hinweis am PDF gegen fremden Text."""
+    pdf = tmp_path / "z.pdf"
+    pdf.write_bytes(b"%PDF")
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), None, "drauf", (124.9, 122.56), _UMRISS, (16.0, 7.0), (8.0, -3.5),
+                     kante=((110.06, 122.56), (140.06, 122.56)), lage=(140.0, 105.0))
+    linie = a.hinweislinie()
+    mitte = ((linie[0][0] + linie[1][0]) / 2, (linie[0][1] + linie[1][1]) / 2)
+    schnitt_aa = (mitte[0] - 20.0, mitte[1] - 2.0, mitte[0] + 20.0, mitte[1] + 4.0)
+    texte = [("0,02", (113.0, 102.0, 127.0, 108.0)), ("SCHNITT A-A", schnitt_aa)]
+    monkeypatch.setattr(z, "texte", lambda p: texte)
+    assert z._anmerkungen_kreuzen({}, [], [a], [], pdf) == ["ANMERKUNG_KREUZT: f1 form_lage „0,02“ – Text (1)"]
+    h = type("H", (), {"merkmal": "st", "rolle": "haupt", "zeilen": ("2 × Ø8 H7 E", "15 tief"), "lage": (200.0, 185.0),
+                       "rechteck": lambda s: (187.3, 177.1, 221.4, 188.1)})()
+    texte[:] = [("2 × Ø8 H7 E", (187.3, 181.6, 221.4, 188.1)), ("15 tief", (187.3, 177.1, 200.8, 183.5)),
+                ("16,00", (221.2, 183.1, 235.4, 189.5))]
+    meld = z._hinweise_zu_nah({}, [h], [], pdf)
+    assert len(meld) == 1 and meld[0].startswith("ANGABE_ZU_NAH: st in haupt – Text „2 × Ø8 H7 E“")
+    texte[-1] = ("16,00", (230.0, 183.1, 244.2, 189.5))
+    assert z._hinweise_zu_nah({}, [h], [], pdf) == []
+
+
+# --- Runde D, C: gemeinsame Lagewahl der Anmerkungen einer Ansicht ------------------------------------------------------
+
+
+from dataclasses import dataclass  # noqa: E402
+
+
+@dataclass
+class _FesteLagen(an.Anmerkung):
+    """Anmerkung mit vorgegebenen Kandidatenlagen (Rang = Reihenfolge)."""
+    lagen: tuple = ()
+
+    def _roh(self, anker=None, weiter=None):
+        return list(self.lagen)
+
+
+def test_gemeinsame_lagewahl_summe_minimal():
+    """Runde D (C): Die einzeln beste Lage von a (A0) liegt auf der Hinweislinie von b, dessen einzige Lage B0 ist; a
+    hat noch A1 (selbst ein Verstoß). Nacheinander bleibt a auf A0 (an A1 hätte es genauso viele), b kreuzt – gemeinsam
+    ist die Summe minimal: a auf A1, b frei."""
+    a = _FesteLagen("rauheit", "a", ("Ra 1,6",), _AnnLage(), "drauf", (125.0, 105.0), (0, 0, 1, 1), (20.0, 10.0),
+                    (0.0, 0.0), lagen=((115.0, 115.0), (160.0, 90.0)))
+    b = _FesteLagen("rauheit", "b", ("Ra 0,8",), _AnnLage(), "drauf", (100.0, 100.0), (0, 0, 1, 1), (20.0, 10.0),
+                    (0.0, 0.0), lagen=((130.0, 130.0),))
+    sperre = [((155.0, 80.0), (155.0, 100.0))]                          # quer durch A1
+    an.anmerkungen_legen([a, b], sperre)
+    assert (a.soll, b.soll) == ((160.0, 90.0), (130.0, 130.0))
+    assert an.anmerkungen_pruefen([a, b], sperre) == ["ANMERKUNG_KREUZT: a rauheit „Ra 1,6“ – Rechteck auf Linie (1)"]
+
+
+def test_gemeinsame_lagewahl_je_ansicht_und_fixiert():
+    """Runde D (C): Anmerkungen anderer Ansichten und fixierte (beste Runde) gelten als fest; verworfene Lagen nicht."""
+    a = _FesteLagen("rauheit", "a", ("Ra 1,6",), _AnnLage(), "drauf", (125.0, 105.0), (0, 0, 1, 1), (20.0, 10.0),
+                    (0.0, 0.0), lagen=((115.0, 115.0), (160.0, 90.0)))
+    b = _FesteLagen("rauheit", "b", ("Ra 0,8",), _AnnLage(), "drauf", (100.0, 100.0), (0, 0, 1, 1), (20.0, 10.0),
+                    (0.0, 0.0), lagen=((130.0, 130.0),))
+    b.fixiert = ((130.0, 130.0), None)
+    an.anmerkungen_legen([a, b], [])
+    assert a.soll == (160.0, 90.0)                                      # weicht der fixierten b aus
+    b.fixiert = None
+    a.verworfen = [(160.0, 90.0)]
+    an.anmerkungen_legen([a, b], [])
+    assert a.soll == (115.0, 115.0)                                     # A1 verworfen: A0, auch wenn b kreuzt
+
+
+def test_gemeinsame_lagewahl_ueber_die_orte():
+    """Runde D (C, live SpannplatteZ): ▱ 0,02 an der Unterseite zwischen den Taschen – unter ihr steht „SCHNITT A-A“,
+    jede Lage dort kreuzt. Die gemeinsame Wahl schließt die gleichwertigen Orte ein und hängt an die freie linke Kante
+    um (neu eingefügt, alte gelöscht)."""
+    mitte = _kante((110.06, 122.56), (140.06, 122.56), features=["f1"])
+    links = _kante((75.06, 122.56), (85.06, 122.56), features=["f1"])
+
+    def einhaengen(k, meld=None):
+        return _AnnLage(), ((k.a[0] + k.e[0]) / 2, k.a[1])
+
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), _AnnLage(), "drauf", (125.06, 122.56), _UMRISS, (16.0, 7.0),
+                     (8.0, -3.5), kante=(mitte.a, mitte.e), orte=[mitte, links], einhaengen=einhaengen)
+    sperre = [((float(x), 50.0), (float(x), 200.0)) for x in range(84, 205, 5)]  # alles um die Mitte belegt
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    meld: list = []
+    an.anmerkungen_legen([a], sperre, drw=drw, meldungen=meld)
+    assert a.instanz() is links and a.kante == (links.a, links.e) and meld == []
+    assert an.anmerkungen_pruefen([a], sperre) == []
+    ohne = an.Anmerkung("form_lage", "f1", ("0,02",), _AnnLage(), "drauf", (125.06, 122.56), _UMRISS, (16.0, 7.0),
+                        (8.0, -3.5), kante=(mitte.a, mitte.e), orte=[mitte, links], einhaengen=einhaengen)
+    an.anmerkungen_legen([ohne], sperre)                                # ohne Zeichnung: Ort bleibt, Meldung später
+    assert ohne.instanz() is mitte and an.anmerkungen_pruefen([ohne], sperre)
+
+
+def test_zu_nah_je_zeile(monkeypatch, tmp_path):
+    """Runde D (Live SpannplatteZ): „Fase 0,5 × 45°“ endet 3,4 mm vor „16,00“, liegt aber 4,8 mm tiefer; die Zeile auf
+    der Höhe von „16,00“ endet 6,9 mm davor. Gemessen wird je Zeile, nicht am umschließenden Rechteck."""
+    pdf = tmp_path / "z.pdf"
+    pdf.write_bytes(b"%PDF")
+    h = type("H", (), {"merkmal": "st", "rolle": "haupt", "zeilen": ("2 × Ø8 H7 E", "15 tief", "Fase 0,5 × 45°"),
+                       "lage": (200.0, 180.0), "rechteck": lambda s: (187.3, 171.9, 217.8, 187.5)})()
+    texte = [("2 × Ø8 H7 E", (187.3, 181.0, 214.3, 187.5)), ("15 tief", (187.3, 176.4, 200.8, 182.8)),
+             ("Fase 0,5 × 45°", (187.3, 171.9, 217.8, 178.3)), ("16,00", (221.2, 183.1, 235.4, 189.5))]
+    monkeypatch.setattr(z, "texte", lambda p: texte)
+    assert z._hinweise_zu_nah({}, [h], [], pdf) == []
+    texte[-1] = ("16,00", (221.2, 174.0, 235.4, 180.4))                # auf Höhe der Fase-Zeile: zu nah
+    assert len(z._hinweise_zu_nah({}, [h], [], pdf)) == 1

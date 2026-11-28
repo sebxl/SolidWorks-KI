@@ -473,3 +473,34 @@ def test_huelle_ohne_passmass_ist_mangel():
     ist = _ist_mit([replace(_mass("x", 20.0), suffix=" <MOD-EP>")])
     p = pruefen.pruefe_toleranzen(ist, plan, REGELN)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-2"}
+
+
+# --- Runde D: Umbruch und „ – “ sind gleichwertige Trenner einer Bohrungsangabe -------------------------------------
+
+_UMBRUCH = chr(10)
+
+
+@pytest.mark.parametrize("ist_text", ["2 × Ø8 H7 <MOD-EP> – 15 tief" + _UMBRUCH + "Fase 0,5 × 45°",
+                                      _UMBRUCH.join(["2 × Ø8 H7 <MOD-EP>", "15 tief", "Fase 0,5 × 45°"]),
+                                      (chr(13) + _UMBRUCH).join(["2 × Ø8 H7 <MOD-EP>", "15 tief", "Fase 0,5 × 45°"])])
+def test_angabe_umbruch_statt_strich_gleich(ist_text):
+    from swki.zeichnung.pruefen import angabentext
+
+    angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief" + _UMBRUCH + "Fase 0,5 × 45°")
+    notiz = IstAngabe("hinweis", "haupt", ist_text, None, None, ())
+    assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is True
+    assert angabentext(ist_text) == angabentext(angabe.text)
+
+
+def test_angabe_trenner_gleich_inhalt_nicht():
+    """Die Form des Trenners zählt nicht, der Inhalt schon."""
+    angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief")
+    notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["2 × Ø8 H7 <MOD-EP>", "16 tief"]), None, None, ())
+    assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is False
+
+
+def test_gewinde_umbrochen_gleich():
+    angabe = Mass("g:angabe", "angabe", "angabe", 0.0, "g", text="5 × M6 – 10 tief" + _UMBRUCH + "Senkung Ø6 × 90°")
+    notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["5 × M6", "10 tief", "Senkung Ø6 × 90°"]), None, None, ())
+    p = pruefe_gewinde(_ist_mit(angaben=[notiz]), [angabe], REGELN)
+    assert p["ok"] is True, p

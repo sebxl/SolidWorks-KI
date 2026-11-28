@@ -42,6 +42,17 @@ def normtext(text: str | None) -> str:
 
 
 _norm = normtext
+_STRICH = re.compile(r"\s+–\s+")
+
+
+def angabentext(text: str | None) -> str:
+    """Vergleichstext einer Bohrungsangabe (Runde D): „ – “ ist ein Trenner wie der Zeilenumbruch – die dreizeilige
+    Form „2 × Ø8 H7 Ⓔ“ / „15 tief“ / „Fase …“ gleicht „2 × Ø8 H7 Ⓔ – 15 tief“ / „Fase …“. Wie bisher gilt der
+    Umbruch als Leerraum (`normtext`; Test `test_angabe_text_normalisiert_und_doppelt`), also auch der Strich: geprüft
+    wird der Inhalt, nicht die Form des Trenners."""
+    return normtext(_STRICH.sub(" ", text or ""))
+
+
 _WERT_TOL = 0.005 + 1e-9  # mm: Werte gelten als gleich, wenn sie auf 0,01 mm übereinstimmen
 _TOL_GLEICH = 0.0005      # mm: Abmaße gleich
 
@@ -169,13 +180,13 @@ def pruefe_vollstaendig(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict
 def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[dict]:
     """Plan-Angaben (Bohrungen, Gewinde) gegen die Notizen: Textanfang, Leerraum normalisiert."""
     maengel = []
-    notizen = [_norm(a.text) for a in ist.angaben if a.art == "hinweis"]
+    notizen = [angabentext(a.text) for a in ist.angaben if a.art == "hinweis"]
     frei = list(range(len(notizen)))
     texte = []
     for m in plan:
         if m.quelle != "angabe":
             continue
-        text = _norm(m.text)
+        text = angabentext(m.text)
         if not text:
             maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal, f"Angabe ohne Text: {m.merkmal}"))
             continue
@@ -292,10 +303,10 @@ _GEWINDE = re.compile(r"\bM\d+(?:[.,]\d+)?")
 def pruefe_gewinde(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
     """Z-GEW-1: Jede Plan-Angabe eines Gewindes (Text beginnt mit M<Zahl> oder enthält „× M<Zahl>“) hat eine Notiz mit
     Bezeichnung und „tief“ (bei Durchgangsgewinde im Plan „durch“)."""
-    notizen = [_norm(a.text) for a in ist.angaben if a.art == "hinweis"]
+    notizen = [angabentext(a.text) for a in ist.angaben if a.art == "hinweis"]
     maengel, gefunden = [], False
     for m in plan:
-        text = _norm(m.text) if m.quelle == "angabe" else ""
+        text = angabentext(m.text) if m.quelle == "angabe" else ""
         treffer = _GEWINDE.search(text)
         if not treffer or not (text.startswith("M") or "× M" in text):
             continue

@@ -394,7 +394,8 @@ def test_zeichnen_loescht_alten_zeichnungspruefbericht(monkeypatch, tmp_path):
 
 
 def test_dreizeilige_form_der_bohrungsangabe():
-    assert z._dreizeilig("2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°") == "2 × Ø8 H7 Ⓔ –\n15 tief\nFase 0,5 × 45°"
+    # Runde D: der Umbruch trennt, der Strich entfällt (im PDF stand „… Ⓔ –“ vor „16,00“ und las sich als „–16,00“)
+    assert z._dreizeilig("2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°") == "2 × Ø8 H7 Ⓔ\n15 tief\nFase 0,5 × 45°"
     assert z._dreizeilig("Ø6 durch") is None
 
 
@@ -410,7 +411,7 @@ def test_dreizeilig_nur_wenn_zweizeilig_nicht_frei():
                    (60.0, 11.0), (30.0, -4.1), text=zwei[0], view=drw.view, winkel=45.0, varianten=[zwei, drei])
     sperre = [((199.5, 0.0), (199.5, 400.0)), ((100.0, 0.0), (100.0, 400.0))]
     z._hinweise_legen(drw, [h], {}, sperre, [])
-    assert h.variante == 1 and len(h.zeilen) == 3 and h.zeilen[0] == "2 × Ø8 H7 E –" and not h.vermessen
+    assert h.variante == 1 and len(h.zeilen) == 3 and h.zeilen[0] == "2 × Ø8 H7 E" and not h.vermessen
     assert drw.notizen == [h.ann]                                   # neu eingefügt, alter gelöscht
     frei = z._Hinweis("st", zwei[1], _NotizAnn(drw), "haupt", [("k0", ((146.0, 240.0), 1.5))], 0,
                       (111.0, 190.0, 211.0, 250.0), (60.0, 11.0), (30.0, -4.1), text=zwei[0], view=drw.view,
@@ -427,3 +428,28 @@ def test_zusaetze_nur_an_dauerhaften_massen():
             Mass("D1@f2", "modell", "fase", 1.0, "f2", name="D1@f2", suffix=" × 45°")]
     assert anf.zusaetze_setzen({"haupt": view}, plan, {"D3@m1": "RD1@Zeichenansicht1"}, nur={"D3@m1"}) == []
     assert a.texte == {1: "4 × "} and b.texte == {}
+
+
+# --- Runde D: Einzelheit-Buchstaben ab Z rückwärts (recherche.md, TUM, Beleg B) ---------------------------------------
+
+
+def test_einzelheit_buchstabe_ab_z_rueckwaerts():
+    assert [z.einzelheit_buchstabe(i) for i in range(4)] == ["Z", "Y", "X", "W"]
+    # ohne I, O, Q und ohne Buchstaben, die schon vergeben sind (Bezüge, Schnitte)
+    assert [z.einzelheit_buchstabe(i, {"Y", "W"}) for i in range(3)] == ["Z", "X", "V"]
+    alle = [z.einzelheit_buchstabe(i) for i in range(23)]
+    assert not {"I", "O", "Q"} & set(alle) and len(set(alle)) == 23 and alle[-1] == "A"
+
+
+def test_einzelheit_buchstabe_nach_wirkung_geprueft():
+    class _Kreis:
+        def __init__(self, label):
+            self.label = label
+
+        def GetLabel(self):
+            return self.label
+
+    eltern = type("V", (), {"GetDetailCircles": lambda s: (_Kreis("B"),)})()
+    assert z._buchstabe_pruefen(eltern, "Z") == ["EINZELHEIT_BUCHSTABE: „Z“ verlangt, Einzelheitenkreis trägt „B“"]
+    eltern = type("V", (), {"GetDetailCircles": lambda s: (_Kreis("Z"),)})()
+    assert z._buchstabe_pruefen(eltern, "Z") == []
