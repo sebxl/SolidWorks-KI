@@ -199,6 +199,16 @@
     - `verdeckt`: Beide Bezugspunkte aus `_bezuege` werden gegen die sichtbaren Kanten der Ansicht (`_kanten`, Blatt-mm) geprüft, mit 0,1 mm Toleranz. Liegt ein Punkt auf keiner sichtbaren Kante und auf keiner Mittellinie, ist das Maß verdeckt bzw. ohne sichtbaren Bezug (Nutzer Stufe 2: „Maß ohne sichtbaren Bezug“). Nicht lineare Maße ergeben None.
     - Notizen (`GetFirstNote`/`GetNext`), `GetFirstGTOL`, `GetFirstDatumTag`, `GetFirstSFSymbol` (wie `spikes/z1_diag_stufe4.py`).
     - Eigenschaften über `CustomPropertyManager.Get6`.
+    - Nachtrag nach Stufe 4 Task 5 (Review 28.11.), verbindlich für den Rückleser:
+      - Rauheit: Text aus `ISFSymbol.GetText(8)` (Feld a). Steht Text in Platz 3 (Feld c), meldet der Rückleser das als „weicht ab“.
+      - Ⓔ: als `<MOD-EP>` im Maß-Suffix und im Hinweistext. `normtext` übersetzt es.
+      - Form/Lage-Instanzen: „n ד über dem Rahmen aus `IGtol.GetText(3)` in ein neues Feld `IstAngabe.anzahl`. Das Soll liefert `anforderungen_setzen.instanzen(spec, merkmal)`. `pruefe_toleranzen` prüft die Anzahl (Z-TOL-5).
+      - `RAUHEIT_NUR_EINE_INSTANZ` und `FORM_LAGE_NUR_EINE_INSTANZ` aus den Zeichnungsmeldungen der Übergabe werden in `soll_luecken` zu Mängeln Z-TOL-4 bzw. Z-TOL-5. Eine Anforderung an nur einer von n Instanzen ist ein Mangel.
+      - Ebenso wird `ANMERKUNG_KREUZT` aus der Übergabe zu Z-LES-1 (Hinweisregel), `MASS_NICHT_DAUERHAFT` zu Z-VOLL-1.
+      - Merkmal je Angabe: über die angehängte Kante, mit derselben `enthalten`-Logik wie beim Setzen (Spiegel- und Musterinstanzen). Das Bezugsdreieck liefert das Merkmal nur über die angehängte Entität.
+      - Maße: `zeichnungsmasse` aus der Übergabe (Modellmaß → `RD<n>@<Ansicht>`) ordnet umgewandelten Maßen den Plan-Namen zu.
+      - Lesbarkeit: `pruefe_lesbarkeit` übergibt `pruefe_pdf` die gelegten Rahmen (`rahmen=`), mit dem Text der Form/Lage-Angaben und dem Rechteck aus dem PDF. Sonst gilt jede Rahmentrennlinie als Linie durch den Text.
+      - `verdeckt`: dieselbe Streckenregel wie `anforderungen_setzen.kante_am_punkt`, also mit verlängerter Kante bei einer virtuellen Fasenecke. Bei nur 0,1 mm entstünde ein falscher Mangel „ohne sichtbaren Bezug“.
     - Öffnet die Zeichnung ohne Speichern und schließt sie wieder.
 
 **Produces in Task 4a (Fortsetzung):**
