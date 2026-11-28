@@ -301,7 +301,7 @@ def test_zeichnungsmasse_und_merkmale_nach_dem_lesen(auftrag):
     bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=leser)
     assert bericht["bestanden"] is True, bericht["maengel"]
     assert any(m["name"] == "D3@m1" for m in bericht["ist"]["masse"])
-    assert {a["merkmal"] for a in bericht["ist"]["angaben"] if a["art"] == "rauheit"} == {"t1", "st"}
+    assert {a["merkmal"] for a in bericht["ist"]["angaben"] if a["art"] == "rauheit"} == {"t1"}  # st: Nutzer 28.11.
 
 
 def test_meldungen_des_ruecklesers_im_bericht(auftrag):

@@ -263,7 +263,8 @@ def test_spannplatte_z_anforderungen():
     plan = massplan(spec, _spannplatte_protokoll())
     stift = next(m for m in plan if m.quelle == "angabe" and m.merkmal == "st")
     assert stift.text.startswith("2 × Ø8 H7 Ⓔ – 15 tief")
-    assert {(m.merkmal, m.text) for m in plan if m.quelle == "rauheit"} == {("st", "Ra 0,8"), ("t1", "Ra 1,6")}
+    # Nutzer 28.11.2026: Stiftbohrung ohne eigene Rauheit (Sammelrauheit gilt)
+    assert {(m.merkmal, m.text) for m in plan if m.quelle == "rauheit"} == {("t1", "Ra 1,6")}
     assert {(m.merkmal, m.form_lage.symbol, m.text) for m in plan if m.quelle == "form_lage"} == {
         ("f1", "<IGTOL-FLAT>", "0,02"), ("t1", "<IGTOL-PARA>", "0,05")}
     assert sorted(m.text for m in plan if m.quelle == "bezug") == ["A", "B"]
@@ -281,7 +282,9 @@ def test_anforderungseintraege_sind_keine_masse():
 
 
 def test_achse_der_anforderungseintraege():
-    plan = massplan(_lade_ref("zeichnung/spannplatte_z.yaml"), _spannplatte_protokoll())
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    next(f for f in spec["features"] if f["id"] == "st")["rauheit"] = {"Ra": 0.8}  # eigene Rauheit an der Bohrung
+    plan = massplan(spec, _spannplatte_protokoll())
     ra = {m.merkmal: (m.achse, m.modus) for m in plan if m.quelle == "rauheit"}
     assert ra["st"] == (1, "flach")                         # Bohrung: Achse ihrer Angabe
     assert ra["t1"] == (1, "quer")                          # Schnitt mit Tiefe: Achse der Skizze, Ansicht quer

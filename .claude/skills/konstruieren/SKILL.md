@@ -274,7 +274,7 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   „Selbst entschieden“ (eigene Entscheidungen und umgesetzte Review-Befunde, je eine Zeile mit Grund).
   Bezüge stehen in der Feature-Liste in Worten („2 × M6, 10 mm vom linken Rand, symmetrisch zur Mitte, Abstand 40“).
   Der Bezug ist Bauweg: die Prüfsumme schützt ihn nicht, die KI darf ihn beim Nachbessern ändern.
-- Funktionsangaben in Worten zeigen („2 × Stiftbohrung Ø 8 H7 Ⓔ, Ra 0,8“). Hinweise `art: funktion` (Wert aus
+- Funktionsangaben in Worten zeigen („2 × Stiftbohrung Ø 8 H7 Ⓔ“; Lagersitz „Ø 32 k6 Ⓔ, Ra 0,8“). Hinweise `art: funktion` (Wert aus
   `funktionen.yaml` mit Beleg C, unbestätigt) dem Nutzer ausdrücklich vorlegen; bestätigt er, in der Tabelle
   `bestaetigt: true` setzen (mit Datum in `quelle`).
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:

@@ -9,9 +9,9 @@
 stiftbohrung:
   passung: H7
   huelle: true
-  rauheit: {Ra: 0.8}
-  quelle: "Recherche Kap. 7 (Stiftbohrung H7 für m6-Stift: C, unbelegt)"
-  beleg: {passung: C, rauheit: C}
+  quelle: "Recherche Kap. 7 (Stiftbohrung H7 für m6-Stift: C, unbelegt); Nutzer 28.11.2026: Stiftbohrung ohne eigene
+    Rauheit (Sammelrauheit gilt)"
+  beleg: {passung: C}
   bestaetigt: false
 
 lagersitz_welle:

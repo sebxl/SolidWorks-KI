@@ -17,6 +17,19 @@ def plan_spannplatte_z() -> list[Mass]:
     return massplan(_lade_ref("zeichnung/spannplatte_z.yaml"), _spannplatte_protokoll())
 
 
+def spec_spannplatte_z_stift_ra() -> dict:
+    """SpannplatteZ mit eigener Rauheit Ra 0,8 an der Stiftbohrung `st` (Fall: zwei Merkmale mit Rauheit an einer
+    Kante). Seit dem 28.11.2026 hat `stiftbohrung` keine Tabellenrauheit mehr (Nutzer); die Referenz trägt dort keine."""
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    st = next(f for f in spec["features"] if f["id"] == "st")
+    st["rauheit"] = {"Ra": 0.8}
+    return spec
+
+
+def plan_spannplatte_z_stift_ra() -> list[Mass]:
+    return massplan(spec_spannplatte_z_stift_ra(), _spannplatte_protokoll())
+
+
 def plan_buchse_z() -> list[Mass]:
     return massplan(_lade_ref("zeichnung/buchse_z.yaml"), _buchse_protokoll())
 

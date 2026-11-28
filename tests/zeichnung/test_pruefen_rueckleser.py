@@ -14,7 +14,8 @@ from swki.zeichnung.ist import IstAngabe
 from swki.zeichnung.pruefen import (MELDUNG_REGEL, NUR_BERICHT, bewerte, masse_umbenennen, meldungscode,
                                     merkmale_zuordnen, normtext, pruefe_lesbarkeit, pruefe_toleranzen, soll_luecken)
 from swki.zeichnung.regeln import lade_regeln, regel
-from tests.zeichnung.ist_bau import ideal_ist, plan_buchse_z, plan_spannplatte_z
+from tests.zeichnung.ist_bau import (ideal_ist, plan_buchse_z, plan_spannplatte_z, plan_spannplatte_z_stift_ra,
+                                     spec_spannplatte_z_stift_ra)
 from tests.zeichnung.test_massplan import _lade_ref
 
 REGELN = lade_regeln()
@@ -244,8 +245,8 @@ def test_merkmal_ueber_spiegel_und_unterfeature():
 
 def test_merkmal_mehrdeutig_nach_inhalt():
     """Kante zwischen zwei Merkmalen mit Rauheit im Plan: der Inhalt entscheidet; passt er zu keinem, heißt das
-    Merkmal „st/t1“ (Review 4b, I1: nie None, sonst wirkte die Angabe als Joker)."""
-    spec, plan = _spec_sp(), plan_spannplatte_z()
+    Merkmal „st/t1“ (Review 4b, I1: nie None, sonst wirkte die Angabe als Joker). Stiftbohrung mit eigener Rauheit."""
+    spec, plan = spec_spannplatte_z_stift_ra(), plan_spannplatte_z_stift_ra()
     ist = replace(_ideal_sp(), angaben=(_angabe("rauheit", "Ra 0,8", ("st", "t1")),
                                         _angabe("rauheit", "Ra 3,2", ("st", "t1"))))
     assert [a.merkmal for a in merkmale_zuordnen(ist, spec, plan).angaben] == ["st", "st/t1"]
@@ -269,9 +270,11 @@ def test_ra_3_2_zusaetzlich_nie_bestanden(features):
 
 def test_mehrdeutig_gleicher_inhalt_deckt_genau_einen():
     """Zwei Kandidaten mit gleichem Inhalt (Ra 0,8 an st und an t1): die Angabe an der gemeinsamen Kante heißt
-    „st/t1“ und deckt genau einen der beiden Einträge – kein Joker, aber auch kein falscher Mangel."""
-    spec = _spec_sp()
-    plan = [replace(m, text="Ra 0,8") if m.quelle == "rauheit" and m.merkmal == "t1" else m for m in plan_spannplatte_z()]
+    „st/t1“ und deckt genau einen der beiden Einträge – kein Joker, aber auch kein falscher Mangel. Stiftbohrung mit
+    eigener Rauheit."""
+    spec = spec_spannplatte_z_stift_ra()
+    plan = [replace(m, text="Ra 0,8") if m.quelle == "rauheit" and m.merkmal == "t1" else m
+            for m in plan_spannplatte_z_stift_ra()]
     ideal = ideal_ist(plan, spec=spec)
     t1 = next(a for a in ideal.angaben if a.art == "rauheit" and a.merkmal == "t1")
     gemeinsam = replace(t1, merkmal=None, features=("st", "t1"))

@@ -210,8 +210,7 @@ def test_angaben_je_merkmal_ohne_merkmal_kein_joker():
                                               if a.art == "rauheit" else a for a in ideal.angaben))
     assert _regeln_der(pruefe_toleranzen(vertauscht, plan, REGELN)) == {"Z-TOL-4"}
     # Multimenge je Merkmal: zweimal dieselbe Rauheit an t1 deckt nur den Plan-Eintrag von t1
-    doppelt = _ohne_angabe(ideal, lambda a: a.art == "rauheit" and a.text == "Ra 0,8")
-    doppelt = replace(doppelt, angaben=doppelt.angaben + (IstAngabe("rauheit", "haupt", "Ra 1,6", None, None, (), "t1"),))
+    doppelt = replace(ideal, angaben=ideal.angaben + (IstAngabe("rauheit", "haupt", "Ra 1,6", None, None, (), "t1"),))
     assert _regeln_der(pruefe_toleranzen(doppelt, plan, REGELN)) == {"Z-TOL-4"}
 
 
