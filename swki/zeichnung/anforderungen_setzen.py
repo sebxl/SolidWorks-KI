@@ -584,7 +584,9 @@ class Anmerkung:
     `schraffur`: Ränder der geschnittenen Flächen der Ansicht (`schraffur_strecken`); `offen`: Kanten des eigenen
     Merkmals (samt Muster/Spiegel), durch deren Öffnung die Hinweislinie laufen darf (Tasche, Bohrung; nicht im
     Schnitt) – gelten nur am Ort der heutigen Instanz (`_offen_hier`, Runde D I1). `wirkung`: () → Meldungen, wenn die
-    zuletzt eingefügte Annotation nicht wirkt (Rahmen unbeschriftet; nach dem Umhängen geprüft, Runde D M7)."""
+    zuletzt eingefügte Annotation nicht wirkt (Rahmen unbeschriftet; ausgewertet nach der Lesbarkeitsschleife,
+    `anmerkungen_wirkung`, Runde E). `verworfen`: verworfene Lagen am heutigen Ort; `verworfen_orte`: die der anderen
+    Orte (Index in `orte`) – Umhängen tauscht, statt zu leeren (Runde E, I-3)."""
     art: str                       # rauheit | form_lage | bezug
     merkmal: str
     zeilen: tuple[str, ...]
@@ -606,6 +608,7 @@ class Anmerkung:
     schraffur: list = field(default_factory=list)
     offen: list = field(default_factory=list)
     wirkung: object = None
+    verworfen_orte: dict = field(default_factory=dict)
 
     def rechteck(self, lage: tuple | None = None) -> tuple | None:
         lage = self.lage if lage is None else lage
@@ -613,6 +616,10 @@ class Anmerkung:
             return None
         (x, y), (b, h) = lage, self.groesse
         return (x - b / 2, y - h / 2, x + b / 2, y + h / 2)
+
+    def ort_nr(self, ort: Kante | None) -> int | None:
+        """Index von `ort` in `orte` (nach Identität); None ohne Orte."""
+        return next((i for i, o in enumerate(self.orte) if o is ort), None)
 
     def instanz(self) -> Kante | None:
         """Ort (Kante aus `orte`), an dem die Hinweislinie heute hängt; ohne Orte None."""
@@ -697,11 +704,16 @@ class Anmerkung:
 
     def verwerfen(self) -> bool:
         """PDF-Befund: die gewählte Soll-Lage verwerfen (nicht die zurückgelesene, Review Task 5 I3 – sonst wird ein
-        gerückter Bezugskasten nie als verworfen erkannt); False, wenn keine Lage mehr übrig ist."""
+        gerückter Bezugskasten nie als verworfen erkannt); False, wenn keine Lage mehr übrig ist – am heutigen Ort und,
+        wenn die Anmerkung umgehängt werden kann, an den anderen Orten (Runde E, I-3: Verwerfungen bleiben je Ort)."""
         lage = self.soll if self.soll is not None else self.lage
         if lage is not None and lage not in self.verworfen:
             self.verworfen.append(lage)
-        return len(self.verworfen) < len(self._roh())
+        if len(self.verworfen) < len(self._roh()) or self.einhaengen is None:
+            return len(self.verworfen) < len(self._roh())
+        heute = self.instanz()
+        return any(len(self.verworfen_orte.get(i, ())) < len(_probe(self, o)._roh())
+                   for i, o in enumerate(self.orte) if o is not heute)
 
     def _roh(self, anker: tuple | None = None, weiter: dict | None = None) -> list[tuple[float, float]]:
         """Lagen (Mitte des Rechtecks) in fester Rangfolge. Bezug: Kasten quer zur Kante nach außen, entlang der Kante
@@ -844,7 +856,7 @@ class Anmerkung:
         return False
 
     def verstoesse(self, lage, hindernisse=(), texte=(), kanten=(), masslinien=(), ansaetze=(),
-                   hinweislinien=()) -> dict[str, int]:
+                   hinweislinien=(), selbst: bool = True) -> dict[str, int]:
         """Verstöße einer Lage je Art (Review Task 5, C2; Nachbesserung C):
         - `Rechteck auf Linie`: das Rechteck kreuzt eine Strecke aus `hindernisse` (auch Zeichenfeld, Schriftfeld,
           Band, Mittellinien – sie sind keine Kanten, Runde D M3),
@@ -857,7 +869,9 @@ class Anmerkung:
         - `Kante`: sie kreuzt eine sichtbare Kante (`_kanten_kreuzungen`),
         - `Schraffur`: sie läuft durch eine geschnittene Fläche,
         - `Ansatz näher als 4 mm` (Nähe): ihr Fußpunkt liegt näher als `ANSATZ_ABSTAND_MM` an einem anderen Ansatz,
-        - `eigenes Symbol`: die Hinweislinie läuft durch die eigene Anmerkung (`_durch_symbol`)."""
+        - `eigenes Symbol`: die Hinweislinie läuft durch die eigene Anmerkung (`_durch_symbol`).
+        `selbst=False` (Runde E, `_paar`): Schraffur und eigenes Symbol gehören zur Lage selbst und werden nicht
+        gerechnet."""
         r = self.rechteck(lage)
         g = ABSTAND_KANTE_MM
         weit = (r[0] - g, r[1] - g, r[2] + g, r[3] + g)
@@ -884,10 +898,10 @@ class Anmerkung:
             V_TEXT: sum(1 for t in texte if t and any(_schneidet(a, b, t) for a, b in linien)),
             V_MASSLINIE: sum(1 for s in masslinien if masslinie_quer(s)),
             V_HINWEISLINIE: sum(1 for s in hinweislinien if s and quer(s)),
-            V_KANTE: self._kanten_kreuzungen(linien, kanten),
-            V_SCHRAFFUR: int(self._durch_schraffur(linien)),
+            V_KANTE: self._kanten_kreuzungen(linien, kanten) if kanten else 0,
+            V_SCHRAFFUR: int(selbst and self._durch_schraffur(linien)),
             V_ANSATZ: sum(1 for p in ansaetze if math.dist(p, fuss) < ANSATZ_ABSTAND_MM),
-            V_SYMBOL: int(self._durch_symbol(lage)),
+            V_SYMBOL: int(selbst and self._durch_symbol(lage)),
         }
         return {k: v for k, v in aus.items() if v}
 
@@ -1355,8 +1369,9 @@ def form_lage_setzen(drw, mu, views: dict, plan: list[Mass], achsen: dict, typen
             meldungen.append(f"FORM_LAGE_NICHT_GESETZT: {etikett} – Kante in {rolle} nicht auswählbar oder "
                              "InsertGtol abgelehnt")
             continue
-        meldungen += wirkung()
-        if anmerkungen is not None:
+        if anmerkungen is None:  # sonst im Endstand (`anmerkungen_wirkung`, Runde E M7)
+            meldungen += wirkung()
+        else:
             breite = RAHMEN_ZELLE_MM * (1 + len(fl.bezug)) + ZEICHEN_MM * len(fl.wert) + 2
             hoehe = RAHMEN_HOEHE_MM + (RAHMEN_TEXT_OBEN_MM if n > 1 else 0.0)
             schraffur = _schraffur(cache, mu, views, rolle, meldungen)
@@ -1424,8 +1439,11 @@ def _loesche_anmerkung(drw, ann) -> bool:
 
 
 def _umhaengen(drw, a: Anmerkung, ziel: Kante, meldungen: list | None) -> bool:
-    """Anmerkung an die Kreiskante `ziel` neu einfügen und die alte löschen (nach Wirkung gemeldet). Der alte Ansatz
-    verlässt `belegt` vorher (Nachbesserung C: sonst sperrt er am kleinen Kreis die Nachbarpunkte)."""
+    """Anmerkung an den Ort `ziel` neu einfügen und die alte löschen (nach Wirkung gemeldet). Der alte Ansatz
+    verlässt `belegt` vorher (Nachbesserung C: sonst sperrt er am kleinen Kreis die Nachbarpunkte). Die verworfenen
+    Lagen bleiben am alten Ort, die des neuen kommen zurück (Runde E, I-3). Ob der neue Rahmen beschriftet ist, zählt
+    erst im Endstand (`anmerkungen_wirkung`, Runde E M7: sonst blieb die Meldung einer Zwischenstufe stehen)."""
+    alt = a.ort_nr(a.instanz())
     if a.belegt is not None and a.anker in a.belegt:
         a.belegt.remove(a.anker)
     neu = a.einhaengen(ziel, meldungen)
@@ -1439,48 +1457,27 @@ def _umhaengen(drw, a: Anmerkung, ziel: Kante, meldungen: list | None) -> bool:
     a.ann, a.anker = neu
     if not ziel.kreis:
         a.kante = (ziel.a, ziel.e)
-    a.verworfen.clear()
-    for text in (a.wirkung() if a.wirkung else []):  # Runde D (M7): der neue Rahmen nach Wirkung
-        _melde(meldungen, text)
+    if alt is not None:
+        a.verworfen_orte[alt] = a.verworfen
+    a.verworfen = a.verworfen_orte.pop(a.ort_nr(ziel), [])
     return True
 
 
-def instanzen_umhaengen(drw, anmerkungen: list[Anmerkung], hinweise: list, meldungen: list | None = None,
-                        hindernisse: list[tuple] = (), kanten: list[tuple] = (), masslinien: list[tuple] = (),
-                        texte: list[tuple] = ()) -> None:
-    """Rauheit/Rahmen erst nach der Lage der Bohrungsangaben an einen Ort hängen (Review Task 5, I1): je Ort (`orte`:
-    Bohrung oder gleichwertige Kante der Fläche) die beste erreichbare Lage bewerten (`Anmerkung.bewerten` gegen
-    Text- und Hinweislinien der Angaben, `texte` und die anderen Anmerkungen der letzten Runde; die Bohrung der Angabe
-    zählt einen Verstoß mehr); ist das ein anderer Ort, wird die Anmerkung dort neu eingefügt und die alte gelöscht.
-    Ist die beste Runde fixiert (`fixiert` = (Lage, Ort)), kommt sie an deren Ort zurück (Nachbesserung C)."""
-    angaben = [h.rechteck() for h in hinweise if h.rechteck()]
+def anmerkungen_wirkung(anmerkungen: list[Anmerkung]) -> list[str]:
+    """Runde E (M7): Wirkung jeder Anmerkung im Endstand (`wirkung`: Rahmen beschriftet, „n ×“ gesetzt) – nach der
+    Lesbarkeitsschleife, also an der zuletzt eingefügten Annotation (auch nach dem Umhängen)."""
+    return [text for a in anmerkungen for text in (a.wirkung() if a.wirkung else [])]
+
+
+def instanzen_umhaengen(drw, anmerkungen: list[Anmerkung], meldungen: list | None = None) -> None:
+    """Ist die beste Runde fixiert (`fixiert` = (Lage, Ort)), kommt die Anmerkung an deren Ort zurück (Nachbesserung
+    C). Die Wahl des Orts selbst trifft `_gemeinsam` (Runde E, I-3: eine zweite Bewertung hier – ohne die Hinweislinien
+    der Angaben, ein belegter Ort als Verstoß – hängte jede Runde um, `_gemeinsam` hängte zurück)."""
     for a in anmerkungen:
-        if len(a.orte) < 2 or a.einhaengen is None:
+        if a.fixiert is None or len(a.orte) < 2 or a.einhaengen is None:
             continue
-        heute = a.instanz()
-        if a.fixiert is not None:
-            ziel = a.fixiert[1]
-            if ziel is not None and ziel is not heute:
-                _umhaengen(drw, a, ziel, meldungen)
-            continue
-        besetzt = [h.kreis[0] for h in hinweise if h.merkmal == a.merkmal]
-        h_, t_, ans, hl = _gegen_andere(a, anmerkungen, hindernisse, list(angaben) + list(texte), ())
-
-        andere_orte = [b.instanz() for b in anmerkungen if b is not a and b.orte]
-
-        def guete(k, a=a, besetzt=besetzt, h_=h_, t_=t_, ans=ans, hl=hl, andere_orte=andere_orte):
-            m = k.kreis[0] if k.kreis else ((k.a[0] + k.e[0]) / 2, (k.a[1] + k.e[1]) / 2)
-            probe = _probe(a, k)
-            # Runde D (M4): bewertet wie `kandidaten` – mit den Lagen jenseits der Maßlinien und den Ansätzen
-            beste = min(probe.bewerten(lage, h_, t_, kanten, masslinien, ans, hl)
-                        for lage in probe._roh(None, probe._jenseits(masslinien)))
-            # die Bohrung der Angabe und ein Ort, an dem schon eine andere Anmerkung hängt, zählen einen Verstoß mehr
-            # (Live 28.11.: Ra 1,6 und ∥ 0,05 wechselten in derselben Runde an denselben Taschenboden und kreuzten sich)
-            return (beste + (1 if k.kreis and any(math.dist(m, p) < PUNKT_TOL_MM for p in besetzt) else 0)
-                    + (1 if any(k is o for o in andere_orte) else 0))
-
-        ziel = min(a.orte, key=lambda k: (guete(k), k is not heute))
-        if ziel is not heute:
+        ziel = a.fixiert[1]
+        if ziel is not None and ziel is not a.instanz():
             _umhaengen(drw, a, ziel, meldungen)
 
 
@@ -1507,9 +1504,33 @@ def _paar(a: Anmerkung, la: tuple, b: Anmerkung, lb: tuple) -> int:
     Hindernis, sein Rechteck als Text, sein Ansatz, seine Linien als Hinweislinien); Schraffur und eigenes Symbol
     gehören zur Lage selbst und zählen hier nicht."""
     linien = b.linien(lb)
-    v = a.verstoesse(la, _rechteck_strecken(b.rechteck(lb)) + linien, [b.rechteck(lb)], (), (), [b.fusspunkt(lb)],
-                     linien)
-    return sum(n for k, n in v.items() if k not in (V_SCHRAFFUR, V_SYMBOL))
+    return sum(a.verstoesse(la, _rechteck_strecken(b.rechteck(lb)) + linien, [b.rechteck(lb)], (), (),
+                            [b.fusspunkt(lb)], linien, selbst=False).values())
+
+
+def _huelle(a: Anmerkung, lage: tuple) -> tuple[float, float, float, float]:
+    """Hüllrechteck einer Anmerkung an `lage`: Rechteck, Hinweislinie, Verlängerung (samt Fußpunkt)."""
+    r = a.rechteck(lage)
+    xs, ys = [r[0], r[2]], [r[1], r[3]]
+    for p, q in a.linien(lage):
+        xs += [p[0], q[0]]
+        ys += [p[1], q[1]]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _getrennt(h1: tuple, h2: tuple) -> bool:
+    """Liegen zwei Hüllen weiter als `ANSATZ_ABSTAND_MM` auseinander? Dann gibt es zwischen ihnen keinen Verstoß
+    (Kreuzungen brauchen Berührung, ein Ansatz zählt erst unter diesem Abstand)."""
+    g = ANSATZ_ABSTAND_MM
+    return h1[0] - h2[2] > g or h2[0] - h1[2] > g or h1[1] - h2[3] > g or h2[1] - h1[3] > g
+
+
+def _paar_kosten(a: Anmerkung, la: tuple, ha: tuple, b: Anmerkung, lb: tuple, hb: tuple) -> int:
+    """Gegenseitige Verstöße zweier Kandidaten (`_paar` in beide Richtungen); getrennte Hüllen zählen nichts und werden
+    nicht gerechnet (Runde E: die Paare machten den Großteil der Laufzeit von `_gemeinsam`)."""
+    if _getrennt(ha, hb):
+        return 0
+    return _paar(a, la, b, lb) + _paar(b, lb, a, la)
 
 
 def _probe(a: Anmerkung, ort: Kante) -> Anmerkung:
@@ -1517,7 +1538,8 @@ def _probe(a: Anmerkung, ort: Kante) -> Anmerkung:
     weg, Gerade: Mitte) – Runde D: mit der Kreismitte als Anker lief die Probe-Hinweislinie durch die eigene Bohrung
     und ein anderer Ort sah schlechter aus, als er ist."""
     anker = ansatzpunkt(ort, [ort], [], a.umriss)
-    return replace(a, anker=anker, kante=None if ort.kreis else (ort.a, ort.e), lage=None, verworfen=[])
+    return replace(a, anker=anker, kante=None if ort.kreis else (ort.a, ort.e), lage=None,
+                   verworfen=list(a.verworfen_orte.get(a.ort_nr(ort), ())))
 
 
 def _gemeinsam(gruppe: list[Anmerkung], alle: list[Anmerkung], hindernisse, texte, kanten, masslinien,
@@ -1527,10 +1549,12 @@ def _gemeinsam(gruppe: list[Anmerkung], alle: list[Anmerkung], hindernisse, text
     mit `drw` auch an den gleichwertigen anderen Orten (`orte`; Live SpannplatteZ: unter ▱ 0,02 zwischen den Taschen
     steht „SCHNITT A-A“, frei ist es nur an der Unterseite links oder rechts; ein Ort mit der Bohrungsangabe desselben
     Merkmals, `besetzt`, verliert bei Gleichstand). Dann die Kombination mit der kleinsten Summe aller Verstöße samt
-    der gegenseitigen (`_paar`, in beide Richtungen – so zählt `anmerkungen_pruefen`); bei Gleichstand weniger Orte mit
-    Bohrungsangabe, dann der heutige Ort, dann der Rang. Bis `SUCHE_HOECHSTENS` Kombinationen vollständig, sonst Strahlsuche (`STRAHL_BREITE`). Liegt die Wahl
-    an einem anderen Ort, wird umgehängt (`_umhaengen`); scheitert das, gilt die beste Lage am heutigen Ort."""
-    kand = []                                   # je Anmerkung: [(Kosten, besetzt, Ortrang, Rang, Lage, Probe, Ort)]
+    der gegenseitigen (`_paar_kosten`, in beide Richtungen – so zählt `anmerkungen_pruefen`; getrennte Hüllen zählen
+    nichts, Runde E); bei Gleichstand weniger Orte mit Bohrungsangabe, dann der heutige Ort, dann der Rang. Ein Ort,
+    an dem alle Lagen verworfen sind, bietet nur die beste verworfene, und die kommt nach allen freien (Runde E). Bis
+    `SUCHE_HOECHSTENS` Kombinationen vollständig, sonst Strahlsuche (`STRAHL_BREITE`). Liegt die Wahl an einem anderen
+    Ort, wird umgehängt (`_umhaengen`); scheitert das, gilt die beste Lage am heutigen Ort."""
+    kand = []                    # je Anmerkung: [(Kosten, besetzt, Ortrang, Rang, Lage, Probe, Ort, alle verworfen)]
     for a in gruppe:
         h, t_, ans, hl = _gegen_andere(a, alle, hindernisse, texte, hinweislinien)
         heute = a.instanz()
@@ -1540,29 +1564,36 @@ def _gemeinsam(gruppe: list[Anmerkung], alle: list[Anmerkung], hindernisse, text
             probe = a if r_ort == 0 else _probe(a, ort)
             liste = probe.kandidaten(h, t_, kanten, masslinien, ans, hl)
             frei = [lage for lage in liste if not any(math.dist(lage, w) <= 0.5 for w in probe.verworfen)]
+            alle_verworfen = int(not frei)   # Rückfall: die beste verworfene Lage, nach allen freien (Runde E)
             frei = (frei or liste[:1])[:SUCHE_JE_ANMERKUNG]
+            # Runde E: die Lage der letzten Runde bleibt am heutigen Ort Kandidat, solange nicht verworfen – nach dem
+            # Umhängen setzt die Hinweislinie anders an als die Probe annahm, ihre Lage fehlt dann unter `_roh`
+            if (r_ort == 0 and a.soll is not None and not any(math.dist(a.soll, w) <= 0.5 for w in a.verworfen)
+                    and not any(math.dist(a.soll, lage) <= 0.5 for lage in frei)):
+                frei, alle_verworfen = (frei + [a.soll], 0) if not alle_verworfen else ([a.soll], 0)
             mehr = int(ort is not None and ort.kreis is not None
                        and any(math.dist(ort.kreis[0], q) < PUNKT_TOL_MM for q in (besetzt or {}).get(a.merkmal, ())))
-            liste_a += [(probe.bewerten(lage, h, t_, kanten, masslinien, ans, hl), mehr, r_ort, i, lage, probe, ort)
-                        for i, lage in enumerate(frei)]
-        kand.append(sorted(liste_a, key=lambda e: e[:4]))
+            liste_a += [(probe.bewerten(lage, h, t_, kanten, masslinien, ans, hl), mehr, r_ort, i, lage, probe, ort,
+                         alle_verworfen) for i, lage in enumerate(frei)]
+        kand.append(sorted(liste_a, key=lambda e: (e[7],) + e[:4]))
     n = len(gruppe)
-    paar = {(i, j): [[_paar(ei[5], ei[4], ej[5], ej[4]) + _paar(ej[5], ej[4], ei[5], ei[4]) for ej in kand[j]]
-                     for ei in kand[i]] for i in range(n) for j in range(i + 1, n)}
-    strahl = [((0, 0, 0), ())]                           # ((Summe, besetzt, Ortwechsel), Wahl je Anmerkung bisher)
+    huellen = [[_huelle(e[5], e[4]) for e in liste] for liste in kand]
+    paar = {(i, j): [[_paar_kosten(ei[5], ei[4], hi, ej[5], ej[4], hj) for ej, hj in zip(kand[j], huellen[j])]
+                     for ei, hi in zip(kand[i], huellen[i])] for i in range(n) for j in range(i + 1, n)}
+    strahl = [((0, 0, 0, 0), ())]              # ((verworfen, Summe, besetzt, Ortwechsel), Wahl je Anmerkung bisher)
     zahl = 1
     for i in range(n):
         zahl *= len(kand[i])
         weiter = []
-        for (summe, besetzt_n, wechsel), wahl in strahl:
+        for (verw, summe, besetzt_n, wechsel), wahl in strahl:
             for k, e in enumerate(kand[i]):
                 plus = e[0] + sum(paar[(j, i)][wahl[j]][k] for j in range(i))
-                weiter.append(((summe + plus, besetzt_n + e[1], wechsel + (e[2] > 0)), wahl + (k,)))
+                weiter.append(((verw + e[7], summe + plus, besetzt_n + e[1], wechsel + (e[2] > 0)), wahl + (k,)))
         weiter.sort()
         strahl = weiter if zahl <= SUCHE_HOECHSTENS else weiter[:STRAHL_BREITE]
     _, wahl = min(strahl)
     for a, liste, k in zip(gruppe, kand, wahl):
-        _, _, r_ort, _, lage, _, ort = liste[k]
+        _, _, r_ort, _, lage, _, ort, _ = liste[k]
         if r_ort and not _umhaengen(drw, a, ort, meldungen):
             lage = next(e[4] for e in liste if e[2] == 0)
         _setze(a, lage)
@@ -1581,6 +1612,8 @@ def anmerkungen_legen(anmerkungen: list[Anmerkung], hindernisse: list[tuple], te
     zurückgelesen (ein Bezugskasten rückt auf die Senkrechte zur Kante). Liefert Rechtecke und Linien aller
     Anmerkungen als Strecken."""
     texte = list(texte or [])
+    if drw is not None:  # beste Runde: an deren Ort zurück (Runde E: den Ort sonst wählt allein `_gemeinsam`)
+        instanzen_umhaengen(drw, anmerkungen, meldungen)
     for a in anmerkungen:
         a.lage = None  # noch nicht gelegt: zählt für die anderen nicht
     for a in anmerkungen:

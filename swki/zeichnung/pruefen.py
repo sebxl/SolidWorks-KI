@@ -42,15 +42,17 @@ def normtext(text: str | None) -> str:
 
 
 _norm = normtext
-_STRICH = re.compile(r"\s+–\s+")
+_TRENNER = re.compile(r"(?:\s*(?:\r?\n|\s–(?=\s|$)))+\s*")
+TRENNER = " – "
 
 
 def angabentext(text: str | None) -> str:
-    """Vergleichstext einer Bohrungsangabe (Runde D): „ – “ ist ein Trenner wie der Zeilenumbruch – die dreizeilige
-    Form „2 × Ø8 H7 Ⓔ“ / „15 tief“ / „Fase …“ gleicht „2 × Ø8 H7 Ⓔ – 15 tief“ / „Fase …“. Wie bisher gilt der
-    Umbruch als Leerraum (`normtext`; Test `test_angabe_text_normalisiert_und_doppelt`), also auch der Strich: geprüft
-    wird der Inhalt, nicht die Form des Trenners."""
-    return normtext(_STRICH.sub(" ", text or ""))
+    """Vergleichstext einer Bohrungsangabe (Runde D/E): Zeilenumbruch (auch CRLF), „ – “ und ein Strich am Zeilenende
+    sind derselbe Trenner und werden `TRENNER` – die dreizeilige Form „2 × Ø8 H7 Ⓔ“ / „15 tief“ / „Fase …“ gleicht
+    „2 × Ø8 H7 Ⓔ – 15 tief“ / „Fase …“; mehrere Trenner hintereinander sind einer. Ein fehlender Trenner („2 × Ø8 H7 Ⓔ
+    15 tief“) ist ein Unterschied (Runde E: vorher galt jeder Trenner als Leerraum). Leerraum in den Abschnitten wird
+    zusammengefasst, Symboltags werden Zeichen (`normtext`)."""
+    return TRENNER.join(t for t in (normtext(a) for a in _TRENNER.split(" " + (text or "") + " ")) if t)
 
 
 _WERT_TOL = 0.005 + 1e-9  # mm: Werte gelten als gleich, wenn sie auf 0,01 mm übereinstimmen
@@ -198,7 +200,7 @@ def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[d
             frei.remove(treffer)
     for i in frei:
         if any(notizen[i].startswith(t) for t in texte):
-            maengel.append(_mangel(regeln, "Z-VOLL-2", "angabe", f"doppelt: Angabe {notizen[i].split(' – ')[0]}"))
+            maengel.append(_mangel(regeln, "Z-VOLL-2", "angabe", f"doppelt: Angabe {notizen[i].split(TRENNER)[0]}"))
     return maengel
 
 

@@ -40,7 +40,7 @@ class _View:
 
 class _Drw:
     def __init__(self):
-        self.n, self.schnitte = 0, 0
+        self.n, self.schnitte, self.label = 0, 0, None
         self.Extension = type("E", (), {"SelectByID2": lambda *a: True})()
         self.SketchManager = type("S", (), {"CreateLine": lambda *a: object()})()
 
@@ -54,10 +54,11 @@ class _Drw:
     def CreateUnfoldedViewAt3(self, *a):
         return self._neu()
 
-    def CreateSectionViewAt5(self, *a):
+    def CreateSectionViewAt5(self, x, y, z, label, *a):
         self.schnitte += 1
         v = self._neu()
-        v.GetName2 = "Schnittansicht A-A"
+        v.GetName2 = f"Schnittansicht {label}-{label}"
+        v.GetSection = type("Sch", (), {"GetLabel": self.label or label})()  # `label`: so trägt ihn SolidWorks
         return v
 
     def ActivateView(self, name):
@@ -77,6 +78,38 @@ def test_drehteil_laengsschnitt_aus_stirn():
     views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
                                            [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
     assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == []
+
+
+def test_schnittbuchstabe_ohne_bezugsbuchstaben():
+    """Runde E: Schnitte ab A vorwärts ohne I, O, Q und ohne die Bezugsbuchstaben (SpannplatteZ: Bezüge A, B →
+    Schnitt C-C); der Buchstabe wird nach Wirkung geprüft (`IView.GetSection` → `IDrSection.GetLabel`)."""
+    assert [z.schnitt_buchstabe(i) for i in range(4)] == ["A", "B", "C", "D"]
+    assert z.schnitt_buchstabe(0, {"A", "B"}) == "C"
+    alle = [z.schnitt_buchstabe(i) for i in range(23)]
+    assert not {"I", "O", "Q"} & set(alle) and len(set(alle)) == 23 and alle[-1] == "Z"
+    drw = _Drw()
+    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                           [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], "C")
+    assert schnitt == "Schnittansicht C-C" and meldungen == []
+    drw = _Drw()
+    drw.label = "A"                                                  # SolidWorks übergeht den verlangten Buchstaben
+    _, _, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                 [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], "C")
+    assert meldungen == ["SCHNITT_BUCHSTABE: „C“ verlangt, Schnitt trägt „A“"]
+
+
+def test_buchstaben_aus_gemeldet_statt_indexerror():
+    """Runde E: Gehen die Buchstaben aus, kommt None (Meldung beim Aufrufer), kein IndexError."""
+    alle = set("ABCDEFGHJKLMNPRSTUVWXYZ")
+    assert z.schnitt_buchstabe(0, alle) is None and z.einzelheit_buchstabe(0, alle) is None
+    assert z.schnitt_buchstabe(23) is None and z.einzelheit_buchstabe(23) is None
+    meld: list = []
+    assert z._einzelheit(None, None, {"haupt": None}, "haupt", [("t1", ["D1"])], [], {}, set(), None, {}, meld) is None
+    assert meld == ["EINZELHEIT_BUCHSTABE: kein freier Buchstabe – Einzelheit entfällt"]
+    drw = _Drw()
+    _, _, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                 [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], None)
+    assert meldungen[0].startswith("SCHNITT_BUCHSTABE: kein freier Buchstabe") and drw.schnitte == 1
 
 
 def test_zeichnungsname_kurz():

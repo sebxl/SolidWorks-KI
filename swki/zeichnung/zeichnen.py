@@ -14,9 +14,11 @@ Stufe 3 (spikes/z1_diag_bohrungsangabe.py, z1_diag_hinweis_ansatz.py): IView.Sel
 GetSelectedObjectType3 (2), GetSelectedObject6 (2, 2006), IModelDoc2.InsertNote (1), INote.GetAnnotation,
 IAnnotation.GetLeaderCount, GetPosition, SetPosition2 (3, 2014); IDisplayDimension.SetText (2;
 swDimensionTextPrefix = 1, swDimensionTextSuffix = 2); IModelDocExtension.SetUserPreferenceInteger/String (3, 2009).
+Runde E: IView.GetSection (0, 2000) → IDrSection.GetLabel (0, 2000) – Schnittbuchstabe nach Wirkung.
 """
 
 import hashlib
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from fractions import Fraction
 from typing import Callable
@@ -141,17 +143,18 @@ def _waehle_ansicht(drw, view) -> None:
     drw.ActivateView(name)
 
 
-def _laengsschnitt(drw, stirn):
-    """Schnittlinie senkrecht durch die Mitte der ungedrehten Stirnansicht, Schnitt A-A links daneben (Spike Z1.0)."""
+def _laengsschnitt(drw, stirn, buchstabe: str = "A"):
+    """Schnittlinie senkrecht durch die Mitte der ungedrehten Stirnansicht, Schnitt (A-A, ohne Bezugsbuchstaben der
+    nächste, `schnitt_buchstabe`) links daneben (Spike Z1.0)."""
     x0, y0, x1, y1 = (v / 1000 for v in _umriss_mm(stirn))
     xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
     _waehle_ansicht(drw, stirn)
     oben, unten = _in_ansicht(stirn, xm, y1 + 0.005), _in_ansicht(stirn, xm, y0 - 0.005)
     _ruf(drw, "SketchManager").CreateLine(oben[0], oben[1], 0, unten[0], unten[1], 0)
-    return drw.CreateSectionViewAt5(x0 - ABSTAND_PROBE_M, ym, 0, "A", 0, None, 0)
+    return drw.CreateSectionViewAt5(x0 - ABSTAND_PROBE_M, ym, 0, buchstabe, 0, None, 0)
 
 
-def _fraesschnitt(drw, mu, haupt, durch: tuple[str, ...]):
+def _fraesschnitt(drw, mu, haupt, durch: tuple[str, ...], buchstabe: str = "A"):
     """Nutzer 19.11.2026: Taschentiefe in der unteren Ansicht ohne sichtbaren Bezug → untere Ansicht als Schnitt A-A.
     Schnittlinie waagrecht durch die Mitte des ersten Merkmals aus `durch` (seine sichtbaren Kanten in der Hauptansicht),
     über den Umriss hinaus; Schnitt darunter, Blick von oben wie die Projektion nach Methode 1
@@ -165,7 +168,7 @@ def _fraesschnitt(drw, mu, haupt, durch: tuple[str, ...]):
     _waehle_ansicht(drw, haupt)
     a, b = _in_ansicht(haupt, (x0 - 5) / 1000, ym / 1000), _in_ansicht(haupt, (x1 + 5) / 1000, ym / 1000)
     _ruf(drw, "SketchManager").CreateLine(a[0], a[1], 0, b[0], b[1], 0)
-    return drw.CreateSectionViewAt5((x0 + x1) / 2000, y0 / 1000 - ABSTAND_PROBE_M, 0, "A", 0, None, 0)
+    return drw.CreateSectionViewAt5((x0 + x1) / 2000, y0 / 1000 - ABSTAND_PROBE_M, 0, buchstabe, 0, None, 0)
 
 
 def _in_ansicht(view, x_m: float, y_m: float) -> tuple[float, float]:
@@ -287,7 +290,8 @@ def _bezuege(dd) -> tuple[str, list[tuple[float, float]]] | None:
 
 
 def _einzelheit(drw, mu, views: dict, rolle: str, angebot: list[tuple[str, list[str]]], genutzt: list[str],
-                gruppe: dict[str, str], mitten: set[str], buchstabe: str, bereich: dict, meldungen: list[str], sammel_mm: float = 0.0):
+                gruppe: dict[str, str], mitten: set[str], buchstabe: str | None, bereich: dict, meldungen: list[str],
+                sammel_mm: float = 0.0):
     """Einzelheit (Nutzer 18.11.2026: dichte Hauptansicht; „Details werden in der Regel vergrößert“). Je angebotenem
     Merkmal (meiste Maße zuerst): Rechteck um seine sichtbaren Kanten (`_kanten`, auch Unter-Features `<id>_…` und
     Merkmale, die zu ihm zählen, z. B. seine Verrundung); hinein dürfen nur Maße, deren beide Bezüge im Rechteck liegen
@@ -297,6 +301,9 @@ def _einzelheit(drw, mu, views: dict, rolle: str, angebot: list[tuple[str, list[
     spikes/z1_diag_einzelheit.py) und doppelt so groß angelegt. `bereich` bekommt Größe des Rechtecks und Versatz seiner
     Mitte von `IView.Position` in Modell-mm (Position einer Einzelheit = Modellpunkt der Elternansicht,
     spikes/z1_diag_einzelheit_lage.py). Liefert (Ansicht, Merkmal, Maßnamen) oder None."""
+    if buchstabe is None:  # Runde E: alle Buchstaben vergeben
+        _melde(meldungen, "EINZELHEIT_BUCHSTABE: kein freier Buchstabe – Einzelheit entfällt")
+        return None
     eltern = views[rolle]
     kanten = _kanten(mu, eltern)
     ux0, uy0, ux1, uy1 = _umriss_mm(eltern)
@@ -401,13 +408,32 @@ def _mittellinien(drw, mu, views: dict, plan: list) -> tuple[dict[str, list[tupl
 
 
 EINZELHEIT_BUCHSTABEN = "ZYXWVUTSRPNMLKJHGFEDCBA"  # ab Z rückwärts, ohne I, O, Q (recherche.md: TUM, Beleg B)
+SCHNITT_BUCHSTABEN = EINZELHEIT_BUCHSTABEN[::-1]   # ab A vorwärts
 
 
-def einzelheit_buchstabe(i: int, vergeben: set[str] | frozenset = frozenset()) -> str:
+def einzelheit_buchstabe(i: int, vergeben: set[str] | frozenset = frozenset()) -> str | None:
     """Buchstabe der `i`-ten Einzelheit (0 = erste): Einzelheiten vom Alphabetende (Z, Y, X …), Schnitte vom Anfang
     (A-A, B-B …; docs/zeichnungsableitung/recherche.md, TUM Zeichnungserstellung, Beleg B). Ohne I, O, Q und ohne
-    `vergeben` (Bezugsbuchstaben, Schnitte; Runde D: die Einzelheit hieß „B“ wie Bezug B)."""
-    return [b for b in EINZELHEIT_BUCHSTABEN if b not in vergeben][i]
+    `vergeben` (Bezugsbuchstaben, Schnitte; Runde D: die Einzelheit hieß „B“ wie Bezug B). None, wenn keiner frei ist
+    (Runde E: Meldung beim Aufrufer statt IndexError)."""
+    frei = [b for b in EINZELHEIT_BUCHSTABEN if b not in vergeben]
+    return frei[i] if 0 <= i < len(frei) else None
+
+
+def schnitt_buchstabe(i: int, vergeben: set[str] | frozenset = frozenset()) -> str | None:
+    """Buchstabe des `i`-ten Schnitts: ab A vorwärts, ohne I, O, Q und ohne `vergeben` (Bezugsbuchstaben; Runde E: der
+    Schnitt hieß fest „A“ wie Bezug A der SpannplatteZ). None, wenn keiner frei ist."""
+    frei = [b for b in SCHNITT_BUCHSTABEN if b not in vergeben]
+    return frei[i] if 0 <= i < len(frei) else None
+
+
+def _schnitt_pruefen(view, buchstabe: str) -> list[str]:
+    """Nach Wirkung: trägt die Schnittansicht den verlangten Buchstaben (`IView.GetSection` → `IDrSection.GetLabel`)?"""
+    try:
+        ist = str(_ruf(_ruf(view, "GetSection"), "GetLabel"))
+    except Exception:  # noqa: BLE001 – COM
+        return [f"SCHNITT_BUCHSTABE: „{buchstabe}“ verlangt, Schnittbezeichnung nicht lesbar"]
+    return [] if ist == buchstabe else [f"SCHNITT_BUCHSTABE: „{buchstabe}“ verlangt, Schnitt trägt „{ist}“"]
 
 
 def _buchstabe_pruefen(eltern, buchstabe: str) -> list[str]:
@@ -568,17 +594,48 @@ def _fremde_texte(pdf_texte: list[tuple[str, tuple]], hinweise: list) -> list[tu
     seines Hinweises (Nachbesserung C: Bezug „A“ machte sonst die Kennbuchstaben „A“ der Schnittlinie unsichtbar, der
     Stifthinweis legte sich darauf) und nur, wenn seine Wörter in den Zeilen des Hinweises stehen (Runde D, I3: pymupdf
     liefert Rahmenzellen getrennt oder anders umbrochen; Wörter ohne Buchstaben und Ziffern – Symbolzeichen – zählen
-    nicht)."""
-    def woerter(text: str) -> set[str]:
-        return {w for w in text.split() if any(c.isalnum() for c in w)}
+    nicht).
+    Runde E (I-2): Die eigenen Zeilen werden verbraucht – jede eigene Zeile bzw. jedes eigene Wort deckt höchstens
+    einen PDF-Text, den nächstgelegenen (Abstand zum Rechteck, dann zur Mitte), und jeder PDF-Text gehört höchstens
+    einem Hinweis. Erst ganze Zeilen (wortgleich; das geschätzte Rechteck eines unvermessenen Hinweises entscheidet
+    zwischen „Fase 0,5 × 45°“ und dem Fasenmaß „0,5 × 45°“ darunter nicht sicher), dann die Wörter der übrigen Zeilen
+    als Multimenge (getrennt gelieferte Rahmenzellen). Sonst schluckte „0,05 A“ das „A“ der Schnittlinie daneben."""
+    def woerter(text: str) -> Counter:
+        return Counter(w for w in text.split() if any(c.isalnum() for c in w))
 
-    eigene = [(h.rechteck(), set().union(*(woerter(z) for z in h.zeilen))) for h in hinweise]
+    n = NAEHE_EIGENER_TEXT_MM
+    eigene = [(h.rechteck(), [" ".join(z.split()) for z in h.zeilen]) for h in hinweise]
 
-    def eigen(wort, r) -> bool:
-        n = NAEHE_EIGENER_TEXT_MM
-        return any(q is not None and woerter(wort) <= w and r[0] < q[2] + n and q[0] - n < r[2]
-                   and r[1] < q[3] + n and q[1] - n < r[3] for q, w in eigene)
-    return [r for wort, r in pdf_texte if not eigen(wort, r)]
+    def nahe(r, q) -> bool:
+        return r[0] < q[2] + n and q[0] - n < r[2] and r[1] < q[3] + n and q[1] - n < r[3]
+
+    def abstand(r, q) -> tuple[float, float]:
+        dx, dy = max(q[0] - r[2], r[0] - q[2], 0.0), max(q[1] - r[3], r[1] - q[3], 0.0)
+        return (math.hypot(dx, dy), math.dist(((r[0] + r[2]) / 2, (r[1] + r[3]) / 2), ((q[0] + q[2]) / 2,
+                                                                                         (q[1] + q[3]) / 2)))
+
+    paare = sorted((abstand(r, q), i, j) for i, (_, r) in enumerate(pdf_texte)
+                   for j, (q, _) in enumerate(eigene) if q is not None and nahe(r, q))
+    vergeben: set[int] = set()
+    zeilen_rest = [Counter(z) for _, z in eigene]
+    for _, i, j in paare:  # ganze Zeilen
+        text = " ".join(pdf_texte[i][0].split())
+        if i not in vergeben and zeilen_rest[j][text] > 0:
+            zeilen_rest[j][text] -= 1
+            vergeben.add(i)
+    worte_rest = [Counter() for _ in eigene]
+    for j, rest in enumerate(zeilen_rest):
+        for z, k in rest.items():
+            for _ in range(k):
+                worte_rest[j] += woerter(z)
+    for _, i, j in paare:  # Wörter der übrigen Zeilen; Texte ohne Wörter (Symbolzeichen) sind bei Nähe eigen
+        if i in vergeben:
+            continue
+        w = woerter(pdf_texte[i][0])
+        if w <= worte_rest[j]:
+            worte_rest[j] -= w
+            vergeben.add(i)
+    return [r for i, (_, r) in enumerate(pdf_texte) if i not in vergeben]
 
 
 def _kreiskanten(mu, view, namen: set[str]) -> list[tuple]:
@@ -1022,14 +1079,18 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         ext.SetUserPreferenceInteger(SF_NORM, 0, SF_NORM_1302_2002)  # Spike g: ohne losen Strich, Text im Feld a
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         mu = mathutil(app)
-        views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten)
+        bezugsbuchstaben = set(spec.get("bezuege") or {})  # Runde E: der Schnitt heißt nicht wie ein Bezug
+        schnittbuchstabe = schnitt_buchstabe(0, bezugsbuchstaben)
+        views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten, schnittbuchstabe)
         meldungen += nicht_erzeugt
         protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
         plan = massplan(spec, protokoll)
         sammel = sammelhoehe_mm(spec)  # Platz der Sammelangaben über dem Schriftfeld (Task 5 schreibt sie)
         basis = next(a.rolle for a in ansichten if a.modellansicht)
-        # Runde D: Einzelheit ab Z rückwärts, Schnitt ab A; Bezugsbuchstaben sind vergeben
-        buchstabe, bereich = einzelheit_buchstabe(0, {m.text for m in plan if m.quelle == "bezug"} | {"A"}), {}
+        # Runde D/E: Einzelheit ab Z rückwärts, Schnitt ab A; Bezugsbuchstaben und der Schnittbuchstabe sind vergeben
+        buchstabe = einzelheit_buchstabe(0, {m.text for m in plan if m.quelle == "bezug"} | bezugsbuchstaben
+                                         | ({schnittbuchstabe} if schnittbuchstabe else set()))
+        bereich: dict = {}
         gruppe = _gruppen(spec)
         mitten = {m.name for m in plan if m.quelle == "modell" and m.bezug in MITTENBEZUG}
         bem = bemasse(drw, views, plan, ["haupt"] + [r for r in views if r != "haupt"], max_je_ansicht(standard),
@@ -1113,10 +1174,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             anm = anm_text + [s for a in anmerkungen if a.lage for s in a.linien()]
             fremd = [s for r in fremde for s in _rechteck_strecken(r)]
             gelegt = _hinweise_legen(drw, notizen, views, statisch + anm + fremd, angaben_meld, fremd + anm_text)
-            if anmerkungen:
+            if anmerkungen:  # Orte wählt `_gemeinsam` (Runde E: kein zweites Umhängen davor)
                 masslinien = _masslinien(views)
-                anf.instanzen_umhaengen(drw, anmerkungen, notizen, angaben_meld,
-                                        masslinien + gelegt + fremd + anm_linien, anm_kanten, masslinien, fremde)
                 gelegt += anf.anmerkungen_legen(anmerkungen, masslinien + gelegt + fremd + anm_linien,
                                                 [h.rechteck() for h in notizen if h.rechteck()] + fremde, anm_kanten,
                                                 masslinien, [h.hinweislinie() for h in notizen if h.lage], drw,
@@ -1128,6 +1187,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                                      if "rahmen" in fest else None, runden=5 if anmerkungen else 3,
                                      hinweise=notizen + anmerkungen, band=band, fremde_texte=fremde)
         meldungen += angaben_meld + anf.sammel_pruefen(texte(pdf), zeilen_sammel, band)
+        meldungen += anf.anmerkungen_wirkung(anmerkungen)  # Runde E (M7): Rahmen im Endstand nach Wirkung
         if anmerkungen:  # Nachbesserung C: was nach der letzten Runde noch kreuzt, steht in den Meldungen
             meldungen += _anmerkungen_kreuzen(views, notizen, anmerkungen, anm_kanten, pdf, anm_linien)
         meldungen += _hinweise_zu_nah(views, notizen, anmerkungen, pdf)
@@ -1397,10 +1457,12 @@ def waehle_lauf(spec_pfad: Path, lauf: int | None) -> tuple[int, list[str]]:
     return lauf, []
 
 
-def _erzeuge(drw, mu, teil: Path, ansichten: list[Ansicht]) -> tuple[dict, str | None, list[str]]:
+def _erzeuge(drw, mu, teil: Path, ansichten: list[Ansicht],
+             buchstabe: str | None = "A") -> tuple[dict, str | None, list[str]]:
     """Basis = die Ansicht mit Modellansicht. Ein Schnitt ohne Modellansicht entsteht aus ihr (Längsschnitt eines
     Drehteils), die übrigen werden aus der Hauptansicht projiziert. Liefert Ansichten, Name des wirklich erzeugten
-    Schnitts und Meldungen für verlangte, aber nicht erzeugte Schnitte (Review I1)."""
+    Schnitts und Meldungen für verlangte, aber nicht erzeugte Schnitte (Review I1). Der Schnitt heißt `buchstabe`
+    (`schnitt_buchstabe`; nach Wirkung geprüft, `SCHNITT_BUCHSTABE`; None: keiner frei – gemeldet, SolidWorks wählt)."""
     basis = next(a for a in ansichten if a.modellansicht)
     view = drw.CreateDrawViewFromModelView3(str(teil), basis.modellansicht, 0.25, 0.2, 0)
     if view is None:
@@ -1408,14 +1470,20 @@ def _erzeuge(drw, mu, teil: Path, ansichten: list[Ansicht]) -> tuple[dict, str |
     if basis.winkel_grad:
         view.Angle = math.radians(basis.winkel_grad)
     views, schnitt, meldungen = {basis.rolle: view}, None, []
+    if buchstabe is None and any(a.schnitt for a in ansichten):
+        meldungen.append("SCHNITT_BUCHSTABE: kein freier Buchstabe (alle als Bezug vergeben) – SolidWorks wählt")
     for a in ansichten:
         if a is basis:
             continue
         if a.modellansicht is None and a.schnitt and a.rolle == "haupt":
-            v = _laengsschnitt(drw, view)
+            v = _laengsschnitt(drw, view, buchstabe or "")
             schnitt = _ruf(v, "GetName2") if v is not None else None
+            if v is not None and buchstabe:
+                meldungen += _schnitt_pruefen(v, buchstabe)
         elif a.schnitt and a.durch and a.rolle == "drauf":
-            v = _fraesschnitt(drw, mu, views["haupt"], a.durch)
+            v = _fraesschnitt(drw, mu, views["haupt"], a.durch, buchstabe or "")
+            if v is not None and buchstabe:
+                meldungen += _schnitt_pruefen(v, buchstabe)
             if v is None:
                 meldungen.append(f"SCHNITT_NICHT_ERZEUGT: durch {', '.join(a.durch)} – Projektion statt Schnitt")
                 v = _projektion(drw, views["haupt"], a.rolle)

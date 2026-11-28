@@ -459,17 +459,17 @@ def test_lage_ohne_kreuzung_der_masslinie_bevorzugt():
 
 
 def test_umhaengen_an_bohrung_ohne_angabe():
-    """I1: Hängt die Rauheit an der Bohrung der Bohrungsangabe, kommt sie an die andere."""
+    """I1: Hängt die Rauheit an der Bohrung der Bohrungsangabe, kommt sie an die andere (Runde E: gewählt von der
+    gemeinsamen Lagewahl, die Bohrung der Angabe verliert den Gleichstand)."""
     k1, k2 = _kante((86.0, 204.4), (86.0, 204.4), ((87.6, 204.4), 2.0)), _kante((161.0, 204.4), (161.0, 204.4),
                                                                                ((162.6, 204.4), 2.0))
-    alt = type("Ann", (), {"Select2": lambda s, a, m: True})()
-    neu = object()
+    alt = _AnnLage()
+    neu = _AnnLage()
     a = an.Anmerkung("rauheit", "st", ("Ra 0,8",), alt, "haupt", (164.0, 205.8), (0, 0, 1, 1), (20.0, 10.0), (0.0, 0.0),
                      orte=[k1, k2], einhaengen=lambda k, meld=None: (neu, (k.kreis[0][0] + 1.4, k.kreis[0][1] + 1.4)))
-    hinweis = type("H", (), {"merkmal": "st", "kreis": ((162.6, 204.4), 2.0), "rechteck": lambda s: None})()
     drw = _Drw(_View())
     drw.Extension.DeleteSelection2 = lambda o: True
-    an.instanzen_umhaengen(drw, [a], [hinweis])
+    an.anmerkungen_legen([a], [], drw=drw, besetzt={"st": [(162.6, 204.4)]})
     assert a.ann is neu and a.anker == pytest.approx((89.0, 205.8))
 
 
@@ -582,12 +582,10 @@ def test_wiederherstellen_haengt_zurueck():
     assert beste == (a.soll, k1)
     drw = _Drw(_View())
     drw.Extension.DeleteSelection2 = lambda o: True
-    hinweis = type("H", (), {"merkmal": "st", "kreis": ((87.6, 204.4), 2.0), "rechteck": lambda s: None})()
-    an.instanzen_umhaengen(drw, [a], [hinweis])                        # Angabe an k1 → Rauheit an k2
+    an.anmerkungen_legen([a], [], drw=drw, besetzt={"st": [(87.6, 204.4)]})  # Angabe an k1 → Rauheit an k2
     assert a.instanz() is k2 and belegt == [(164.0, 205.8)]
     a.fixiert = beste
-    an.instanzen_umhaengen(drw, [a], [])
-    an.anmerkungen_legen([a], [])
+    an.anmerkungen_legen([a], [], drw=drw)
     assert a.instanz() is k1 and a.soll == beste[0] and belegt == [(89.0, 205.8)]
 
 
@@ -845,7 +843,8 @@ def test_jenseits_nur_nahe_masslinien():
 
 
 def test_umhaengen_an_gerade_orte_und_wirkung_gemeldet():
-    """M11/M7: Umhängen an eine gleichwertige gerade Kante; der neue Rahmen wird nach Wirkung geprüft."""
+    """M11/M7: Umhängen an eine gleichwertige gerade Kante; der neue Rahmen wird nach Wirkung geprüft (Runde E: im
+    Endstand, `anmerkungen_wirkung`)."""
     links = _kante((75.06, 122.56), (85.06, 122.56), features=["f1"])
     rechts = _kante((165.06, 122.56), (175.06, 122.56), features=["f1"])
     zustand = {"beschriftet": True}
@@ -864,9 +863,9 @@ def test_umhaengen_an_gerade_orte_und_wirkung_gemeldet():
     drw = _Drw(_View())
     drw.Extension.DeleteSelection2 = lambda o: True
     meld: list = []
-    an.instanzen_umhaengen(drw, [a], [], meld, hindernisse=sperre)
-    assert a.instanz() is rechts and a.kante == (rechts.a, rechts.e)
-    assert meld == ["FORM_LAGE_NICHT_GESETZT: f1 ebenheit 0,02 – Rahmen nicht beschriftet"]
+    an.anmerkungen_legen([a], sperre, drw=drw, meldungen=meld)
+    assert a.instanz() is rechts and a.kante == (rechts.a, rechts.e) and meld == []
+    assert an.anmerkungen_wirkung([a]) == ["FORM_LAGE_NICHT_GESETZT: f1 ebenheit 0,02 – Rahmen nicht beschriftet"]
 
 
 def test_bezugspunkte_des_neuen_masses_nach_wirkung(monkeypatch):
@@ -1118,3 +1117,241 @@ def test_zu_nah_je_zeile(monkeypatch, tmp_path):
     assert z._hinweise_zu_nah({}, [h], [], pdf) == []
     texte[-1] = ("16,00", (221.2, 174.0, 235.4, 180.4))                # auf Höhe der Fase-Zeile: zu nah
     assert len(z._hinweise_zu_nah({}, [h], [], pdf)) == 1
+
+
+# --- Runde E -----------------------------------------------------------------------------------------------------------
+
+
+def test_fremde_texte_eigene_woerter_einmal_verbraucht():
+    """Runde E (I-2): Jedes Wort der eigenen Zeilen deckt höchstens einen PDF-Text, den nächstgelegenen. Das „A“ der
+    Schnittlinie 2 mm neben dem Rahmen „0,05 A“ bleibt fremd, die eigene Zelle „A“ eigen."""
+    r = an.Anmerkung("form_lage", "t1", ("0,05 A",), None, "drauf", (0, 0), (0, 0, 1, 1), (26.0, 7.0), (13.0, 0.0),
+                     lage=(100.0, 100.0))                              # Rechteck 87…113 × 96,5…103,5
+    fremd = (115.0, 97.0, 118.0, 103.0)
+    texte = [("A", fremd), ("0,05", (95.0, 97.0, 103.0, 103.0)), ("A", (105.0, 97.0, 108.0, 103.0))]
+    assert z._fremde_texte(texte, [r]) == [fremd]
+    # ohne die eigene Zelle (pymupdf liefert „0,05 A“ in einem Stück) ist das „A“ daneben fremd
+    assert z._fremde_texte([("A", fremd), ("0,05 A", (95.0, 97.0, 108.0, 103.0))], [r]) == [fremd]
+
+
+def test_fremde_texte_fasenmass_unter_der_angabe_bleibt_fremd():
+    """Runde E (I-2): Das Fasenmaß „0,5 × 45°“ 2 mm unter der Zeile „Fase 0,5 × 45°“ ist fremd – die Wörter der
+    Zeile hat die Zeile selbst verbraucht (ganze Zeilen zuerst)."""
+    h = type("H", (), {"zeilen": ("2 × Ø8 H7 E", "15 tief", "Fase 0,5 × 45°"),
+                       "rechteck": lambda s: (187.3, 171.9, 217.8, 187.5)})()
+    fase = (190.0, 166.0, 210.0, 170.0)
+    texte = [("0,5 × 45°", fase), ("2 × Ø8 H7 E", (187.3, 181.0, 214.3, 187.5)),
+             ("15 tief", (187.3, 176.4, 200.8, 182.8)), ("Fase 0,5 × 45°", (187.3, 171.9, 217.8, 178.3))]
+    assert z._fremde_texte(texte, [h]) == [fase]
+    # geschätztes Rechteck (unvermessen, 3 mm daneben): die ganze Zeile gewinnt trotzdem gegen das nähere Fasenmaß
+    h.rechteck = lambda: (187.3, 165.0, 217.8, 181.5)
+    assert z._fremde_texte(texte, [h]) == [fase]
+
+
+def test_fremde_texte_je_text_hoechstens_eine_anmerkung():
+    """Zwei Rauheiten „Ra 0,8“ nebeneinander und drei PDF-Texte „Ra 0,8“: zwei sind eigen (je der nächste), der dritte
+    fremd; Symbolzeichen ohne Wörter bleiben bei Nähe eigen."""
+    a = an.Anmerkung("rauheit", "b1", ("Ra 0,8",), None, "drauf", (0, 0), (0, 0, 1, 1), (20.0, 8.0), (0.0, 0.0),
+                     lage=(100.0, 100.0))
+    b = an.Anmerkung("rauheit", "b2", ("Ra 0,8",), None, "drauf", (0, 0), (0, 0, 1, 1), (20.0, 8.0), (0.0, 0.0),
+                     lage=(130.0, 100.0))
+    dritte = (112.0, 105.0, 118.0, 107.0)
+    texte = [("Ra 0,8", dritte), ("Ra 0,8", (95.0, 97.0, 105.0, 103.0)), ("Ra 0,8", (125.0, 97.0, 135.0, 103.0)),
+             ("×", (110.0, 96.0, 111.0, 97.0))]
+    assert z._fremde_texte(texte, [a, b]) == [dritte]
+
+
+def test_paar_ueberspringt_getrennte_huellen_gleichwertig():
+    """Runde E (Punkt 6): Liegen die Hüllen zweier Kandidaten (Rechteck samt Linien) weiter als `ANSATZ_ABSTAND_MM`
+    auseinander, zählt das Paar nichts – `_paar_kosten` überspringt die Rechnung und kommt auf dasselbe wie `_paar` in
+    beide Richtungen; Schraffur und eigenes Symbol rechnet `_paar` gar nicht."""
+    import random
+
+    zufall = random.Random(5)
+    k1, k2 = _kante((80.0, 100.0), (120.0, 100.0)), _kante((140.0, 100.0), (180.0, 100.0))
+    arten = [("rauheit", (20.0, 10.0), (9.0, 5.0), None), ("form_lage", (26.0, 7.0), (13.0, -3.5), None),
+             ("bezug", (7.0, 7.0), (0.0, 0.0), (k2.a, k2.e))]
+    getrennt = 0
+    for _ in range(300):
+        art, g, v, kante = zufall.choice(arten)
+        a = an.Anmerkung(art, "a", ("x",), None, "drauf", (zufall.uniform(80, 120), 100.0), _UMRISS, g, v,
+                         kante=kante, schraffur=_SCHNITT)
+        b = an.Anmerkung("rauheit", "b", ("y",), None, "drauf", (zufall.uniform(140, 180), 100.0), _UMRISS,
+                         (20.0, 10.0), (9.0, 5.0), schraffur=_SCHNITT)
+        la, lb = zufall.choice(a._roh()), zufall.choice(b._roh())
+        voll = an._paar(a, la, b, lb) + an._paar(b, lb, a, la)
+        assert an._paar_kosten(a, la, an._huelle(a, la), b, lb, an._huelle(b, lb)) == voll
+        getrennt += an._getrennt(an._huelle(a, la), an._huelle(b, lb))
+        if an._getrennt(an._huelle(a, la), an._huelle(b, lb)):
+            assert voll == 0
+    assert 30 < getrennt < 290                                       # beide Fälle kommen vor
+
+
+def test_paar_rechnet_schraffur_und_symbol_nicht(monkeypatch):
+    a = an.Anmerkung("rauheit", "a", ("x",), None, "drauf", (100.0, 100.0), _UMRISS, (20.0, 10.0), (9.0, 5.0),
+                     schraffur=_SCHNITT)
+    monkeypatch.setattr(an.Anmerkung, "_durch_schraffur", lambda *x: pytest.fail("Schraffur gerechnet"))
+    monkeypatch.setattr(an.Anmerkung, "_durch_symbol", lambda *x: pytest.fail("Symbol gerechnet"))
+    an._paar(a, a._roh()[0], a, a._roh()[1])
+
+
+def _runden_probe():
+    """Probe des Reviewers (Runde D): Rauheit an k1, Bohrungsangabe desselben Merkmals an k1 mit einer Hinweislinie,
+    die die Linie einer Lage an k2 quert."""
+    k1 = _kante((103.0, 100.0), (103.0, 100.0), ((100.0, 100.0), 3.0))
+    k2 = _kante((203.0, 100.0), (203.0, 100.0), ((200.0, 100.0), 3.0))
+    umriss = (80.0, 80.0, 220.0, 120.0)
+    zaehler = {"einhaengen": 0}
+
+    def einhaengen(k, meld=None):
+        zaehler["einhaengen"] += 1
+        return _AnnLage(), an.ansatzpunkt(k, [k], [], umriss)
+
+    lage = (150.0, 160.0)
+
+    @dataclass
+    class _Fest(an.Anmerkung):
+        lagen: tuple = ()
+
+        def _roh(self, anker=None, weiter=None):
+            return list(self.lagen)
+
+    a = _Fest("rauheit", "b1", ("Ra 0,8",), _AnnLage(), "drauf", an.ansatzpunkt(k1, [k1], [], umriss), umriss,
+              (2.0, 2.0), (0.0, 0.0), orte=[k1, k2], einhaengen=einhaengen, belegt=[], lagen=(lage,))
+    p2 = an.ansatzpunkt(k2, [k2], [], umriss)
+    m = (p2[0] + (lage[0] - p2[0]) * 0.3, p2[1] + (lage[1] - p2[1]) * 0.3)
+    d = (lage[0] - p2[0], lage[1] - p2[1])
+    n = (-d[1] / math.hypot(*d), d[0] / math.hypot(*d))
+    linie = ((m[0] - 3 * n[0], m[1] - 3 * n[1]), (m[0] + 3 * n[0], m[1] + 3 * n[1]))
+    return a, k1, k2, zaehler, (30.0, 35.0, 50.0, 45.0), linie
+
+
+def test_umhaengen_springt_nicht_je_runde():
+    """Runde E (I-3, Probe des Reviewers): Über mehrere Runden der Lesbarkeitsschleife wählt allein `_gemeinsam` den
+    Ort – die Hinweislinie der Angabe an k2 zählt, die Rauheit bleibt an k1, keine Einfügung in irgendeiner Runde
+    (Runde D: jede Runde k1 → k2 → k1, zwei Einfügungen)."""
+    a, k1, _, zaehler, rechteck, linie = _runden_probe()
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    for _ in range(4):
+        gelegt = an._rechteck_strecken(rechteck) + [linie]
+        an.instanzen_umhaengen(drw, [a], [])                           # ohne fixierte Runde: nichts
+        assert a.instanz() is k1
+        an.anmerkungen_legen([a], gelegt, [rechteck], [], [], [linie], drw, [], {"b1": [k1.kreis[0]]})
+        assert a.instanz() is k1
+    assert zaehler["einhaengen"] == 0
+
+
+def test_umhaengen_hoechstens_einmal_ueber_runden():
+    """Runde E (I-3): Ist der heutige Ort gesperrt, wird einmal umgehängt; die folgenden Runden bleiben dort."""
+    links = _kante((75.06, 122.56), (85.06, 122.56), features=["f1"])
+    rechts = _kante((165.06, 122.56), (175.06, 122.56), features=["f1"])
+    zaehler = {"n": 0}
+
+    def einhaengen(k, meld=None):
+        zaehler["n"] += 1
+        return _AnnLage(), ((k.a[0] + k.e[0]) / 2, k.a[1])
+
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), _AnnLage(), "drauf", (80.06, 122.56), _UMRISS, (16.0, 7.0),
+                     (8.0, -3.5), kante=(links.a, links.e), orte=[links, rechts], einhaengen=einhaengen)
+    sperre = [((float(x), 50.0), (float(x), 200.0)) for x in range(20, 145, 5)]
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    for _ in range(4):
+        an.anmerkungen_legen([a], sperre, drw=drw, meldungen=[])
+        assert a.instanz() is rechts
+    assert zaehler["n"] == 1
+
+
+def test_verworfen_bleibt_je_ort():
+    """Runde E (I-3): Verwerfungen aus dem PDF bleiben am Ort, auch über das Umhängen; keine Lage kommt zweimal, und
+    `verwerfen()` meldet erst False, wenn an allen Orten alles verworfen ist (Runde D: Umhängen leerte die Liste,
+    `verwerfen()` meldete immer „umgesetzt“)."""
+    k1 = _kante((103.0, 100.0), (103.0, 100.0), ((100.0, 100.0), 3.0))
+    k2 = _kante((203.0, 100.0), (203.0, 100.0), ((200.0, 100.0), 3.0))
+    umriss = (80.0, 80.0, 220.0, 120.0)
+    zaehler = {"n": 0}
+
+    def einhaengen(k, meld=None):
+        zaehler["n"] += 1
+        return _AnnLage(), an.ansatzpunkt(k, [k], [], umriss)
+
+    a = an.Anmerkung("rauheit", "b1", ("Ra 0,8",), _AnnLage(), "drauf", an.ansatzpunkt(k1, [k1], [], umriss), umriss,
+                     (20.0, 10.0), (9.0, 5.0), orte=[k1, k2], einhaengen=einhaengen, belegt=[])
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    gesehen = set()
+    for runde in range(200):
+        an.anmerkungen_legen([a], [], drw=drw, meldungen=[])
+        schluessel = (a.ort_nr(a.instanz()), a.soll)
+        assert schluessel not in gesehen, runde
+        gesehen.add(schluessel)
+        if not a.verwerfen():
+            break
+    assert len(gesehen) == 2 * len(a._roh()) and {o for o, _ in gesehen} == {0, 1}
+    assert zaehler["n"] <= 2
+
+
+def test_rahmen_nach_umhaengen_beschriftet_keine_meldung(monkeypatch):
+    """Runde E (M7-Rest): Der erste Rahmen bleibt unbeschriftet, der umgehängte ist beschriftet – keine Meldung
+    „Rahmen nicht beschriftet“, weder aus `form_lage_setzen` noch im Endstand."""
+    v = _View("Zeichenansicht2")
+    k1 = _kante((103.0, 100.0), (103.0, 100.0), ((100.0, 100.0), 3.0), features=["b1"])
+    k2 = _kante((203.0, 100.0), (203.0, 100.0), ((200.0, 100.0), 3.0), features=["b1"])
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: [k1, k2])
+    monkeypatch.setattr(an, "schraffur_strecken", lambda mu, view: ([], []))
+
+    class _Gt:
+        def __init__(self, wirkt):
+            self.wirkt, self.sym, self.werte = wirkt, (), ()
+
+        def SetFrameSymbols2(self, i, symbol, *rest):
+            self.sym = (symbol,)
+            return False
+
+        def SetFrameValues2(self, i, *werte):
+            self.werte = werte if self.wirkt else ()
+            return False
+
+        def GetFrameSymbols2(self, i):
+            return self.sym
+
+        def GetFrameValues(self, i):
+            return self.werte
+
+        def GetAnnotation(self):
+            return _AnnLage()
+
+    gts = [_Gt(False), _Gt(True)]
+    drw = _Drw(v)
+    drw.InsertGtol = lambda: gts.pop(0)
+    drw.Extension.DeleteSelection2 = lambda o: True
+    fl = FormLage("b1", "position", "<IGTOL-POSI>", "0,05", ("A",), False)
+    m = Mass("b1:form_lage:0", "form_lage", "form_lage", 0.0, "b1", text="0,05", achse=2, modus="flach", form_lage=fl)
+    anm: list = []
+    meld = an.form_lage_setzen(drw, None, {"drauf": v}, [m], {"drauf": 2}, {"b1": "bohrung"}, anmerkungen=anm)
+    assert meld == [] and len(anm) == 1 and an.anmerkungen_wirkung(anm)    # erster Rahmen: unbeschriftet
+    a = anm[0]
+    heute = a.instanz()
+    mx = heute.kreis[0][0]
+    sperre = [((mx + dx, 0.0), (mx + dx, 300.0)) for dx in range(-60, 61, 4)]  # alles um den heutigen Ort belegt
+    an.anmerkungen_legen(anm, sperre, drw=drw, meldungen=meld)
+    assert a.instanz() is not heute and meld == [] and an.anmerkungen_wirkung(anm) == []
+
+
+def test_lage_der_letzten_runde_bleibt_kandidat():
+    """Runde E (live SpannplatteZ): Nach dem Umhängen setzt die Hinweislinie anders an, als die Probe am Ort annahm; die
+    gewählte Lage liegt dann nicht mehr unter den Lagen um den wirklichen Ansatz. Sie bleibt am heutigen Ort Kandidat
+    (sonst wählte die nächste Runde eine schlechtere Lage: Ra 1,6 mit Hinweislinie durch das eigene Symbol)."""
+    a = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), _AnnLage(), "drauf", (100.0, 100.0), _UMRISS, (20.0, 10.0),
+                     (9.0, 5.0))
+    frei = (150.0, 40.0)
+    assert all(math.dist(frei, lage) > 1 for lage in a._roh())
+    sperre = [((0.0, 50.0 + y), (300.0, 50.0 + y)) for y in range(0, 100, 3)]  # alle Lagen um den Anker belegt
+    assert a.bewerten(frei, sperre) == 0 and min(a.bewerten(lage, sperre) for lage in a._roh()) > 0
+    a.soll = frei
+    an.anmerkungen_legen([a], sperre)
+    assert a.soll == frei
+    a.verwerfen()                                                     # verworfen: kein Kandidat mehr
+    an.anmerkungen_legen([a], sperre)
+    assert a.soll != frei

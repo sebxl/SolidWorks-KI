@@ -152,7 +152,9 @@ def test_angabe_text_normalisiert_und_doppelt():
     plan = plan_spannplatte_z()
     ist = ideal_ist(plan)
     erste = ist.angaben[0]
-    umbruch = replace(erste, text=erste.text.replace("\n", " ") + " extra")
+    # Runde E: Textanfang und Leerraum (Umbruch als „ – “, doppelte Leerzeichen, Zusatz dahinter) sind gleich; der
+    # Umbruch ist ein Trenner, kein Leerzeichen (früher replace("\n", " ") – das schrieb nur die alte Normalisierung fest)
+    umbruch = replace(erste, text=erste.text.replace("\n", "  –  ").replace(" × ", "  ×  ") + " extra")
     assert pruefe_vollstaendig(replace(ist, angaben=(umbruch,) + ist.angaben[1:]), plan, REGELN)["ok"] is True
     p = pruefe_vollstaendig(replace(ist, angaben=ist.angaben + (erste,)), plan, REGELN)
     assert p["ok"] is False and _regeln_der(p) == {"Z-VOLL-2"}
@@ -504,3 +506,32 @@ def test_gewinde_umbrochen_gleich():
     notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["5 × M6", "10 tief", "Senkung Ø6 × 90°"]), None, None, ())
     p = pruefe_gewinde(_ist_mit(angaben=[notiz]), [angabe], REGELN)
     assert p["ok"] is True, p
+
+
+# --- Runde E: Trenner einer Bohrungsangabe -----------------------------------------------------------------------------
+
+
+def test_angabe_fehlender_trenner_ist_unterschied():
+    """Runde E: „2 × Ø8 H7 Ⓔ 15 tief“ (Trenner fehlt) ist nicht „2 × Ø8 H7 Ⓔ – 15 tief“; Umbruch, „ – “, CRLF und ein
+    Strich am Zeilenende sind derselbe Trenner."""
+    from swki.zeichnung.pruefen import angabentext
+
+    soll = "2 × Ø8 H7 Ⓔ – 15 tief" + _UMBRUCH + "Fase 0,5 × 45°"
+    assert angabentext("2 × Ø8 H7 Ⓔ 15 tief" + _UMBRUCH + "Fase 0,5 × 45°") != angabentext(soll)
+    for gleich in ("2 × Ø8 H7 Ⓔ –" + _UMBRUCH + "15 tief" + chr(13) + _UMBRUCH + "Fase 0,5 × 45°",
+                   "2 × Ø8 H7 Ⓔ – 15 tief – Fase 0,5 × 45°" + _UMBRUCH,
+                   "2 × Ø8 H7 Ⓔ" + _UMBRUCH + _UMBRUCH + "15 tief" + _UMBRUCH + " Fase 0,5 × 45°"):
+        assert angabentext(gleich) == angabentext(soll), gleich
+    angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text=soll)
+    notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> 15 tief" + _UMBRUCH + "Fase 0,5 × 45°", None, None, ())
+    p = pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)
+    assert p["ok"] is False and _regeln_der(p) == {"Z-VOLL-1"}
+
+
+def test_angabe_doppelt_nennt_ersten_abschnitt():
+    """Runde E: Z-VOLL-2 „doppelt“ zeigt den ersten Abschnitt des Ist-Texts, auch bei dreizeiliger Form."""
+    angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief" + _UMBRUCH + "Fase 0,5 × 45°")
+    drei = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["2 × Ø8 H7 <MOD-EP>", "15 tief", "Fase 0,5 × 45°"]), None,
+                     None, ())
+    p = pruefe_vollstaendig(_ist_mit(angaben=[drei, drei]), [angabe], REGELN)
+    assert [m["text"] for m in p["maengel"]] == ["doppelt: Angabe 2 × Ø8 H7 Ⓔ"]
