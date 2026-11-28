@@ -194,6 +194,97 @@ Schnittansicht anpassen“)
   Tiefe, Senkung und Fasenwinkel stehen nur im Angabetext bzw. Suffix (kein zweites Maß); eine Lochkreisposition mit zwei
   Komponenten ungleich 0 meldet `ANGABE_UNVOLLSTAENDIG` (Winkellage).
 
+## Z1.3 Stufe 4 – Toleranzen, Rauheit, Form/Lage, Sammelangaben (28.11.2026)
+
+Plan `docs/superpowers/plans/2026-11-27-zeichnungsableitung-z13-stufe4.md`, Spike `spike-z1.md` (Nachträge Stufe 4,
+a–i), Referenzen `tests/referenz/zeichnung/spannplatte_z.yaml` und `buchse_z.yaml`.
+
+Was jetzt gilt:
+- **Toleranz und Passung am Zeichnungsmaß.** An einem eingefügten Modellmaß gingen Toleranz und Textzusatz beim
+  Wiederöffnen der SLDDRW verloren (Spike a). Das betraf auch die Zusätze der Stufe 3: „4 × 30,00 (= 120)“ stand im
+  PDF, fehlte aber in der wieder geöffneten Zeichnung. Jedes Plan-Maß mit Toleranz oder Zusatz wird deshalb über die
+  Bezugspunkte seiner Hilfslinien ein Zeichnungsmaß `RD<n>@<Ansicht>` (`anforderungen_setzen.dauerhaft_machen`). Gelingt
+  das nicht, bleibt das Modellmaß stehen, ohne Zusatz und mit `MASS_NICHT_DAUERHAFT`. Drehteilmaße sind schon
+  Zeichnungsmaße. Abmaße setzt `SetValues`, Passungen `Type = 7` mit `SetFitValues`, Anzeige einzeilig „20,00 H7“.
+- **Ⓔ nur an Passmaßen**, immer als Symbol `<MOD-EP>`, auch in der Bohrungsangabe („2 × Ø8 H7 Ⓔ“). Das Unicode-Zeichen
+  lässt den ganzen Maßtext verschwinden (Spike e/f). pymupdf liest das Symbol als alleinstehendes „E“ mit Ring.
+- **Rauheit** im Feld a unter dem Strich nach ISO 1302:2002 (`ISFSymbol.SetText(8)`). Die Zeichnung wird dafür von
+  ISO 21920-1 (Vorlage) auf ISO 1302:2002 umgestellt (Spike g). Die Hinweislinie setzt an der Kante des Merkmals an.
+- **Form/Lage** als Toleranzrahmen mit Bezug, an mehreren Instanzen mit „n ד über dem Rahmen. Bezugsdreiecke stehen
+  auf der Fläche oder ihrer Verlängerung (ISO 5459). Form/Lage an einer `extrusion`/`schnitt` gilt für deren Endfläche.
+  `form_lage` mit IT-Grad meldet `FORM_LAGE_IT_OHNE_TABELLE` (keine ISO-286-Tabelle).
+- **Sammelangaben** als Hinweis im Band über dem Schriftfeld:
+  - immer: Allgemeintoleranzen ISO 2768-1:1989 – m, Tolerierung ISO 8015:2011, Kanten ISO 13715 −0,1 … −0,3,
+    „Maßgebend ist die Zeichnung“;
+  - dazu Behandlung und Halbzeug aus der Spec;
+  - rechts daneben „Oberflächen ohne Angabe: Ra 3,2“.
+- **Buchstaben:** Schnitte ab A ohne I, O, Q und ohne Bezugsbuchstaben (SpannplatteZ: Schnitt C-C, weil A und B
+  Bezüge sind). Einzelheiten ab Z rückwärts.
+- Anmerkungen (Rauheit, Rahmen, Bezüge) stellen sich der PDF-Prüfung wie die Hinweise. Was keine freie Lage findet,
+  wird gemeldet (`ANMERKUNG_KREUZT`, `ANMERKUNG_ZU_NAH`), nie still hingenommen.
+- `swki zeichnen` schreibt die Übergabe `zeichnung/zeichnung.json` für die Zeichnungsprüfung Z1.4. Sie enthält Plan,
+  Gesetztes, SHA-256 der SLDDRW, Meldungen, Ansichten und die umgewandelten Maße.
+
+Live 28.11.2026 (frisches SolidWorks 2025, `tests/live/test_live_zeichnen.py`, 4/4 grün). Jede Zeichnung wurde danach
+schreibgeschützt wieder geöffnet (Rückleser Z1.4). Toleranzen, Zusätze, Ⓔ und Bohrungsangaben waren erhalten,
+Teil- und Zeichnungs-SHA unverändert, danach keine Dokumente offen.
+
+| Zeichnung | Blatt | Ansichten | Restmeldungen |
+|---|---|---|---|
+| SpannplatteZ | A3 quer 1:2 | Haupt, Schnitt C-C, Seite, Einzelheit Z 1:1 | `RAUHEIT_NUR_EINE_INSTANZ` (t1 Ra 1,6; st Ra 0,8), `ANMERKUNG_KREUZT: st rauheit „Ra 0,8“` (Linie, 2 Maßlinien, Kante), `FUNKTION_UNBESTAETIGT: st: passung, rauheit`, `ANSICHT_DICHT` (D9@k1_pfad), `EINZELHEIT: t1`, `EINZELHEIT_NICHT_FUER: k1`, `LAUF_NICHT_BESTANDEN` |
+| BuchseZ | A3 quer 1:1 | Stirnansicht, Schnitt A-A | nur `LAUF_NICHT_BESTANDEN` |
+| Spannplatte (Stufe 3) | A3 quer 1:2 | Haupt, Schnitt A-A, Seite, Einzelheit Z 1:1 | `ANSICHT_DICHT`, `EINZELHEIT: t1`, `EINZELHEIT_NICHT_FUER: k1`, `LAUF_NICHT_BESTANDEN` |
+| Buchse (Stufe 3) | A3 quer 1:1 | Stirnansicht, Schnitt A-A | ohne `LESBARKEIT`/`ANGABE_*` |
+
+- `LAUF_NICHT_BESTANDEN` kommt nur, weil der Test ohne Prüfer-Urteil zeichnet.
+- Im PDF gefunden:
+  - SpannplatteZ: „2 × Ø8 H7 Ⓔ“ / „15 tief“ / „Fase 0,5 × 45°“ (dreizeilig, ohne Strich am Zeilenende),
+    „150,00 ±0,02“, „Ra 0,8“, „Ra 1,6“, „▱ 0,02“, „2 ×“ über „// 0,05 A“, „SCHNITT C-C“, „EINZELHEIT Z“;
+  - BuchseZ: „Ø32,00 k6 Ⓔ“, „Ø20,00 H7 Ⓔ“, „einsatzgehärtet und angelassen (60 ± 2) HRC, CHD = (0,8 +0,4/0) mm
+    (550 HV1)“, „Halbzeug: Rund EN 10060 – 55“;
+  - alle vier: die Sammelzeilen.
+- Durchsicht der Blätter (PNG, Ausschnitte):
+  - Rahmen, Bezüge A/B und Ra 1,6 im Schnitt C-C stehen frei. Die Hinweislinien laufen durch die Taschenöffnung, nicht
+    durch die Schraffur.
+  - Ra 0,8 (Stiftbohrung) steht links neben der Hauptansicht auf der Maßlinie 27,00. Seine Hinweislinie kreuzt die
+    Plattenkante und die Kabelnut, das ist gemeldet.
+  - BuchseZ: Die Ø-Maße mit Passung stehen unter dem Schnitt, ihre Maßlinien sind dafür weit nach unten verlängert.
+    Das ist lesbar, aber ungewohnt.
+  - Das Schriftfeld zeigt keine Benennung (Zuordnung Z1.5).
+- 20-mm-Reserve für die Sammelangaben: In jedem echten Lauf sind es mindestens vier Pflichtzeilen à 5 mm
+  (`SAMMEL_ZEILE_MM`). Die Ansichten haben dadurch weniger Platz über dem Schriftfeld. Format, Maßstab oder die
+  Einzelheit können kippen; `einzelheit_passt` ist mit Reserve nie günstiger. Live ist an den vier Referenzen nichts
+  gekippt: Die Spannplatte bleibt wie am 18.11. bei 1:2 mit Einzelheit 1:1. Einen Vergleichslauf ohne Reserve gibt es
+  nicht.
+- Die Stufe-3-PDFs in `<arbeitsordner>/Z1-STUFE1/` sind mit diesem Lauf neu geschrieben, jetzt mit Sammelangaben und
+  Einzelheit Z. Die Stufe-4-PDFs liegen in `Z1-STUFE4/`, mit `<name>.zeichnung.json` (Meldungen).
+
+Vorschläge – Nutzer entscheidet:
+- **Härtestil** nach ISO 15787:2016 / DIN ISO 15787:2018 („(60 ± 2) HRC“, „CHD = (0,8 +0,4/0) mm“) statt DIN 6773
+  („58+4 HRC“). Der Normtext liegt uns nicht vor (`haerteangabe.md`).
+- **Ⓔ aus `toleranzen`:** Jede Passung aus `toleranzen` gilt als Passmaß und bekommt Ⓔ, reine Abmaße nicht. Das ist
+  eine feste Regel, kein Feld. Alternative: Ⓔ ausdrücklich je Toleranz angeben.
+- **IT-Grad für Form/Lage** (`{it: 4}` aus `funktionen.yaml`) bleibt ohne Zahl, bis eine ISO-286-Tabelle mit ≥ 2
+  Quellen vorliegt (`FORM_LAGE_IT_OHNE_TABELLE`).
+- **Symbolnorm Rauheit:** ISO 1302:2002 statt ISO 21920-1 der Vorlage. Mit 21920-1 zeichnet SolidWorks über jedes
+  Symbol einen losen Strich (Spike g).
+- **Wortlaut** „Oberflächen ohne Angabe: Ra 3,2“. ISO 21920-1 sähe ein Symbol „√Ra 3,2 (√)“ in Schriftfeldnähe vor
+  (recherche.md Kap. 6, Belegstärke C).
+- **Schnittbezeichnung C-C** bei Bezügen A/B, damit Schnitt- und Bezugsbuchstaben verschieden sind.
+- **Rauheit an nur einer von n Instanzen:** SolidWorks setzt bei Mehrfachauswahl nur eine Hinweislinie (Spike h).
+  Optionen: je Instanz ein eigenes Symbol, oder hinnehmen (heute `RAUHEIT_NUR_EINE_INSTANZ`, in Z1.4 ein Mangel).
+- **Ra 0,8 an den Stiftbohrungen** findet keine freie Lage (`ANMERKUNG_KREUZT`). Optionen: Rauheit in die
+  Bohrungsangabe schreiben, an die zweite Bohrung hängen, oder hinnehmen.
+
+Offen:
+- Z1.5: Die ISO-Vorlage druckt „ENTGRATEN UND SCHARFE KANTEN BRECHEN“ und leere Felder „OBERFLÄCHENGÜTE“,
+  „TOLERANZEN: LINEAR / WINKEL“. Das widerspricht den Sammelangaben (Kanten ISO 13715 −0,1 … −0,3, ISO 2768-1 m,
+  Ra 3,2). Mit dem Firmenformat entscheiden, ob die Werte in die Felder kommen oder der Vordruck entfällt. Ebenso fehlt
+  die Benennung im Schriftfeld.
+- Stufe-3-Hinweislagen sind nicht neu bewertet (Review Task 5, I-1/M10 zurückgestellt). Live sind sie unverändert.
+- Kleinere Punkte aus dem Review der Nachbesserung E (Ledger: M-2 Umhängen leeren, M-4 zwei Schnitte mit gleichem
+  Buchstaben) sind für eine letzte Fix-Welle vorgesehen.
+
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
 - Härteangabe nach DIN ISO 15787:2018-08 (= ISO 15787:2016): Wert mit Grenzabmaßen in Klammern, „(60 ± 2) HRC“;
