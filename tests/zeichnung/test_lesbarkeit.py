@@ -91,6 +91,29 @@ def test_linie_quer_durch_schraegen_text(tmp_path):
     assert [(b.art, b.text) for b in befunde] == [("linie_durch_text", "R4,00")]
 
 
+def test_rahmen_der_einzelheit_als_viereck_durch_schraegen_text(tmp_path):
+    """Nutzer 28.11.2026: In der Einzelheit Z brach der Rahmen der Einzelheit das „R“ von „R4,00“. SolidWorks schreibt
+    diesen Rahmen als Viereck (`qu`) ins PDF, die Prüfung las nur Linien und Rechtecke. Zahlen wie live: Schrift ab
+    (357,3; 212,3) unter −27°, Rahmenkante bei x = 360,86."""
+    def zeichne(s):
+        o = pymupdf.Point(357.3 * MM, (A3[1] - 212.3) * MM)
+        s.insert_text(o, "R4,00", fontsize=4.67 * MM * 1.4, morph=(o, pymupdf.Matrix(-27)))
+        _linie(s, (352.85, 213.43), (369.71, 204.82))          # eigene Hinweislinie entlang der Schrift
+        ecken = [(302.86, 243.42), (360.86, 243.42), (302.86, 205.42), (360.86, 205.42)]  # ul, ur, ll, lr
+        s.draw_quad(pymupdf.Quad(*[pymupdf.Point(x * MM, (A3[1] - y) * MM) for x, y in ecken]), width=0.18 * MM)
+    befunde = pruefe_pdf(_pdf(tmp_path, zeichne))
+    assert [(b.art, b.text) for b in befunde] == [("linie_durch_text", "R4,00")]
+
+
+def test_viereck_neben_schraegem_text_ist_kein_befund(tmp_path):
+    def zeichne(s):
+        o = pymupdf.Point(357.3 * MM, (A3[1] - 212.3) * MM)
+        s.insert_text(o, "R4,00", fontsize=4.67 * MM * 1.4, morph=(o, pymupdf.Matrix(-27)))
+        ecken = [(302.86, 243.42), (350.0, 243.42), (302.86, 205.42), (350.0, 205.42)]
+        s.draw_quad(pymupdf.Quad(*[pymupdf.Point(x * MM, (A3[1] - y) * MM) for x, y in ecken]), width=0.18 * MM)
+    assert pruefe_pdf(_pdf(tmp_path, zeichne)) == []
+
+
 def test_texte_mit_rechteck_in_blatt_mm(tmp_path):
     """Stufe 3: Hinweise werden am PDF vermessen – Zeile und Rechteck (Ursprung links unten)."""
     pdf = _pdf(tmp_path, lambda s: _text(s, 100, 200, "Senkung Ø6 × 90°"))  # Grundschrift ohne „–“

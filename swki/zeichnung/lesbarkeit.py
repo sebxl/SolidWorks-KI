@@ -183,6 +183,10 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
                     q = element[1]
                     ecken = [mm(q.x0, q.y0), mm(q.x1, q.y0), mm(q.x1, q.y1), mm(q.x0, q.y1)]
                     linien += list(zip(ecken, ecken[1:] + ecken[:1]))
+                elif element[0] == "qu":  # Nutzer 28.11.2026: Rahmen der Einzelheit kommt als Viereck, brach „R4,00“
+                    q = element[1]
+                    ecken = [mm(p.x, p.y) for p in (q.ul, q.ur, q.lr, q.ll)]  # reihum (Punktfolge ist ul, ur, ll, lr)
+                    linien += list(zip(ecken, ecken[1:] + ecken[:1]))
     befunde = []
     kerne = [_kern(t[1]) for t in texte]
     for i, (wort, r, achsparallel, gedreht, luecken, ringe) in enumerate(texte):

@@ -532,3 +532,23 @@ def test_sammelangaben_ohne_pymupdf_gemeldet(monkeypatch, tmp_path):
     meldungen = z._sammel_im_pdf(tmp_path / "z.pdf", ["Allgemeintoleranzen"], (230, 65, 410, 90))
     assert [m.split(":")[0] for m in meldungen] == ["SAMMELANGABE_FEHLT"] and "pymupdf" in meldungen[0]
     assert [(m["pruefung"], m["regel"]) for m in soll_luecken(meldungen)] == [("sammelangaben", "Z-SAM-1")]
+
+
+def test_radiuszahl_meidet_den_rahmen_der_einzelheit():
+    """Nutzer 28.11.2026: In der Einzelheit Z brach der Rahmen der Einzelheit das „R“ von „R4,00“ – Hindernis war nur der
+    Rahmen in der Elternansicht. Jetzt gilt der eigene Rahmen in der Einzelheit mit (`_radius_rahmen`); Zahlen wie live
+    (SpannplatteZ: Bogen um (352,85; 213,43), r = 4, Rahmen bis x = 360,86)."""
+    from swki.zeichnung.reihen import radius_zahl_frei
+
+    fest = {"rahmen": (60.0, 180.0, 90.0, 200.0), "einzelheit": (302.86, 205.42, 360.86, 243.42)}
+    assert z._radius_rahmen(fest, "haupt") == {"haupt": fest["rahmen"], "einzelheit": fest["einzelheit"]}
+    assert z._radius_rahmen({}, "haupt") is None
+    mitte, a, e = (352.85, 213.43), (352.85, 209.41), (356.87, 213.43)
+    kanten = [((310.87, 209.41), (352.85, 209.41)), ((356.87, 213.43), (356.87, 235.41)),
+              ((356.87, 208.42), (356.87, 193.43))]           # Taschenkanten, Hilfslinie des Maßes 50
+    hindernisse = kanten + z._rechteck_strecken(z._radius_rahmen(fest, "haupt")["einzelheit"])
+    laenge = z.ZEICHENBREITE_MM * len("R4,00")
+    x, y = radius_zahl_frei(mitte, a, e, z.RADIUS_ABSTAND_MM, hindernisse, laenge)
+    d = ((x - mitte[0]) / math.dist((x, y), mitte), (y - mitte[1]) / math.dist((x, y), mitte))
+    anfang = (x - d[0] * laenge / 2, y - d[1] * laenge / 2)
+    assert anfang[0] > 360.86 + 1.0, (x, y)                    # die ganze Zahl außerhalb des Rahmens

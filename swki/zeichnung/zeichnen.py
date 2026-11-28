@@ -232,6 +232,17 @@ def _rechteck_strecken(r: tuple) -> list[tuple]:
     return list(zip(ecken, ecken[1:] + ecken[:1]))
 
 
+def _radius_rahmen(fest: dict, eltern: str | None) -> dict[str, tuple] | None:
+    """Rahmen als Hindernis der Radiuszahlen je Rolle: der Rahmen der Einzelheit in ihrer Elternansicht und ihr eigener
+    Rahmen in der Einzelheit (Nutzer 28.11.2026: der brach das „R“ von „R4,00“); None ohne Einzelheit."""
+    aus = {}
+    if fest.get("rahmen") and eltern:
+        aus[eltern] = fest["rahmen"]
+    if fest.get("einzelheit"):
+        aus["einzelheit"] = fest["einzelheit"]
+    return aus or None
+
+
 def _radien_setzen(mu, views: dict, rahmen: dict | None = None, mittel: dict | None = None,
                    extra: list[tuple] | None = None) -> None:
     """Nutzer 18.11.2026: Pfeil von R4 zeigte auf das Mittelpunktkreuz. Zahl jedes Radiusmaßes außen auf einen Strahl
@@ -1160,7 +1171,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         _ruf(drw, "EditRebuild3")
         zeichnung, pdf = ausgabe / f"{zeichnungsname(spec)}.slddrw", ausgabe / f"{zeichnungsname(spec)}.pdf"
         _speichern(ext, zeichnung)  # zuerst: das Schriftfeld zeigt den Dateinamen (sonst „Zeichn1“ im PDF)
-        rahmen = {bereich["eltern"]: fest["rahmen"]} if "rahmen" in fest else None
+        rahmen = _radius_rahmen(fest, bereich.get("eltern"))
         anm_kanten, anm_linien = _kanten_und_linien(mu, views, fest, mittel, format_, band)
         statisch, angaben_meld = anm_kanten + anm_linien, []
 
