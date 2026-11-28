@@ -382,7 +382,14 @@ def _code(aufruf) -> str:
 
 def test_schliesst_nur_selbst_geladenes(monkeypatch):
     """Review 4b (M4): geschlossen werden Zeichnung und Teil, die `OpenDoc6` geladen hat – nicht ein Dokument, das
-    während des Lesens jemand anderes geöffnet hat, und nicht, was vorher offen war."""
+    während des Lesens dazukam (jemand anderes, oder ein spät nachgeladenes Teil), und nicht, was vorher offen war.
+    Was während des Lesens dazukam, wird gemeldet, nie still."""
+    app = _App(offen=("C:/anders/offen.SLDPRT",))
+    monkeypatch.setattr(rl, "_lies", lambda *a: _leeres_ist())
+    ist = rl.lies_zeichnung(Path("C:/arbeit/z.SLDDRW"), {}, app=app)
+    assert app.geschlossen == ["z.SLDDRW", "teil.SLDPRT"] and ist.meldungen == ()
+    assert [d.GetTitle for d in app.docs] == ["offen.SLDPRT"]
+
     app = _App(offen=("C:/anders/offen.SLDPRT",))
 
     def lies(app_, drw, rollen):
@@ -391,8 +398,10 @@ def test_schliesst_nur_selbst_geladenes(monkeypatch):
 
     monkeypatch.setattr(rl, "_lies", lies)
     ist = rl.lies_zeichnung(Path("C:/arbeit/z.SLDDRW"), {}, app=app)
-    assert app.geschlossen == ["z.SLDDRW", "teil.SLDPRT"] and ist.meldungen == ()
+    assert app.geschlossen == ["z.SLDDRW", "teil.SLDPRT"]
     assert [d.GetTitle for d in app.docs] == ["offen.SLDPRT", "fremd.SLDPRT"]
+    assert ist.meldungen == ("RUECKLESEN_NICHT_GESCHLOSSEN: fremd.SLDPRT kam während des Lesens dazu – offen gelassen "
+                             "(nicht sicher selbst geladen)",)
 
 
 def test_oeffnen_scheitert_schliesst_trotzdem():

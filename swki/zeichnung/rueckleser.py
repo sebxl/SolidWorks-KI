@@ -471,9 +471,11 @@ def _oeffne(app, slddrw: Path, vorher: set[str], eigene: list) -> object:
     return drw
 
 
-def _schliesse(app, eigene: list) -> list[str]:
+def _schliesse(app, eigene: list, vorher: set[str]) -> list[str]:
     """Schließt die selbst geladenen Dokumente ohne Speichern, die Zeichnung zuerst (das Teil schließt SolidWorks oft
-    mit ihr). Danach wird nachgesehen: was noch offen ist, kommt als Meldung zurück, nie still."""
+    mit ihr). Danach wird nachgesehen, nie still: was davon noch offen ist, und was erst während des Lesens dazukam
+    (etwa ein Teil, das SolidWorks spät nachlädt, oder ein Dokument eines anderen) – das bleibt offen, weil es nicht
+    sicher selbst geladen ist, und kommt als Meldung zurück."""
     fehler = {}
     for p, roh, d in sorted(eigene, key=lambda x: not x[0].endswith(".slddrw")):
         try:
@@ -481,11 +483,15 @@ def _schliesse(app, eigene: list) -> list[str]:
         except Exception as e:  # noqa: BLE001 – COM: geprüft wird unten, ob es noch offen ist
             fehler[p] = type(e).__name__
     try:
-        offen = {p for p, _, _ in _offen(app)}
+        offen = _offen(app)
     except Exception as e:  # noqa: BLE001 – COM
         return [f"RUECKLESEN_NICHT_GESCHLOSSEN: offene Dokumente nicht lesbar ({type(e).__name__})"]
-    return [f"RUECKLESEN_NICHT_GESCHLOSSEN: {Path(roh).name} blieb in SolidWorks offen"
-            + (f" ({fehler[p]})" if p in fehler else "") for p, roh, _ in eigene if p in offen]
+    pfade, selbst = {p for p, _, _ in offen}, {p for p, _, _ in eigene}
+    aus = [f"RUECKLESEN_NICHT_GESCHLOSSEN: {Path(roh).name} blieb in SolidWorks offen"
+           + (f" ({fehler[p]})" if p in fehler else "") for p, roh, _ in eigene if p in pfade]
+    aus += [f"RUECKLESEN_NICHT_GESCHLOSSEN: {Path(roh).name} kam während des Lesens dazu – offen gelassen (nicht "
+            "sicher selbst geladen)" for p, roh, _ in offen if p and p not in vorher and p not in selbst]
+    return aus
 
 
 def lies_zeichnung(slddrw: Path, rollen: dict[str, str], app=None) -> Ist:
@@ -510,5 +516,5 @@ def lies_zeichnung(slddrw: Path, rollen: dict[str, str], app=None) -> Ist:
             raise ZeichnungFehler("RUECKLESEN_FEHLER",
                                   f"{slddrw.name}: Rücklesen abgebrochen ({type(e).__name__}: {e})") from e
     finally:
-        geblieben = _schliesse(app, eigene)
+        geblieben = _schliesse(app, eigene, vorher)
     return replace(ist, meldungen=ist.meldungen + tuple(geblieben)) if geblieben else ist

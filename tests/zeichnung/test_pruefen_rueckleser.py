@@ -42,19 +42,24 @@ def _pruefung(urteil: dict, id_: str) -> dict:
 
 _CODE_ANFANG = re.compile(r"([A-Z][A-Z_]+):")
 # f-Strings, die mit einem Ausdruck beginnen und danach mit `[A-Z_]*:` weitergehen (f"{code}: …", f"{x}_FEHLT: …"):
-# der Code steckt (womöglich) im Ausdruck. Je (Datei, Ausdruck) die Codes, die er annehmen kann; leer = kein
-# Meldungscode, mit Grund (Review 4b, M6). Ein neuer solcher f-String muss hier eingetragen werden.
-_F_AUSDRUECKE: dict[tuple[str, str], tuple[set[str], str]] = {
-    ("anforderungen_setzen.py", "code"): ({"ANMERKUNG_KREUZT", "ANMERKUNG_ZU_NAH"}, "anmerkungen_pruefen"),
-    ("massplan.py", "fid"): (set(), "Plan-IDs „<fid>:d…“, „<fid>:a…“, „<fid>:rauheit“, „<fid>:form_lage:<i>“"),
-    ("massplan.py", "f['id']"): (set(), "Plan-ID „<fid>:angabe“"),
-    ("pruefen.py", "b.art"): (set(), "Mangeltext der Lesbarkeit (Art des PDF-Befunds)"),
-    ("pruefen.py", "wort"): (set(), "Mangeltext „doppelt:“/„überzählig:“"),
-    ("pruefen.py", "etikett"): (set(), "Mangeltext mit Maßetikett"),
-    ("rueckleser.py", "z(zaehler)"): (set(), "Maßstab „n:m“"),
-    ("rueckleser.py", "slddrw.name"): (set(), "Text eines ZeichnungFehler (Code RUECKLESEN_FEHLER steht davor)"),
-    ("zeichnen.py", "massstab[0]"): (set(), "Maßstab „n:m“ der Übergabe"),
-    ("zeichnen.py", "_ruf(view, 'GetName2')"): (set(), "Text eines ZeichnungFehler (Code steht davor)"),
+# der Code steckt (womöglich) im Ausdruck. Je (Datei, Funktion, Ausdruck) die Codes, die er annehmen kann; leer =
+# kein Meldungscode, mit Grund (Review 4b, M6). Ein neuer solcher f-String – auch derselbe Ausdruck in einer anderen
+# Funktion – muss hier eingetragen werden.
+_F_AUSDRUECKE: dict[tuple[str, str, str], tuple[set[str], str]] = {
+    ("anforderungen_setzen.py", "anmerkungen_pruefen", "code"): ({"ANMERKUNG_KREUZT", "ANMERKUNG_ZU_NAH"},
+                                                                 "Code aus dem Tupel davor"),
+    ("massplan.py", "durchmesser", "fid"): (set(), "Plan-ID „<fid>:d…“"),
+    ("massplan.py", "laenge", "fid"): (set(), "Plan-ID „<fid>:a…“"),
+    ("massplan.py", "_angaben", "f['id']"): (set(), "Plan-ID „<fid>:angabe“"),
+    ("massplan.py", "_anforderungen", "fid"): (set(), "Plan-IDs „<fid>:rauheit“, „<fid>:form_lage:<i>“"),
+    ("pruefen.py", "pruefe_lesbarkeit", "b.art"): (set(), "Mangeltext der Lesbarkeit (Art des PDF-Befunds)"),
+    ("pruefen.py", "pruefe_vollstaendig", "wort"): (set(), "Mangeltext „doppelt:“/„überzählig:“"),
+    ("pruefen.py", "pruefe_toleranzen", "etikett"): (set(), "Mangeltext mit Maßetikett"),
+    ("rueckleser.py", "massstab_text", "z(zaehler)"): (set(), "Maßstab „n:m“"),
+    ("rueckleser.py", "lies_zeichnung", "slddrw.name"): (set(), "Text eines ZeichnungFehler (Code davor)"),
+    ("zeichnen.py", "zeichnen", "massstab[0]"): (set(), "Maßstab „n:m“"),
+    ("zeichnen.py", "uebergabe", "massstab[0]"): (set(), "Maßstab „n:m“ der Übergabe"),
+    ("zeichnen.py", "_setze_lage", "_ruf(view, 'GetName2')"): (set(), "Text eines ZeichnungFehler (Code davor)"),
 }
 
 
@@ -66,6 +71,10 @@ def _codes_im_code() -> set[str]:
     for p in sorted(ZEICHNUNG.glob("*.py")):
         baum = ast.parse(p.read_text(encoding="utf-8"))
         in_fstring = {id(v) for k in ast.walk(baum) if isinstance(k, ast.JoinedStr) for v in k.values}
+        funktion = {}   # Knoten → innerste umgebende Funktion (äußere zuerst, innere überschreiben)
+        for f in ast.walk(baum):
+            if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                funktion.update({id(k): f.name for k in ast.walk(f)})
         for k in ast.walk(baum):
             if isinstance(k, ast.Constant) and isinstance(k.value, str) and id(k) not in in_fstring:
                 if t := _CODE_ANFANG.match(k.value):
@@ -77,7 +86,7 @@ def _codes_im_code() -> set[str]:
                         codes.add(t.group(1))
                 elif (len(k.values) > 1 and isinstance(k.values[1], ast.Constant)
                       and re.match(r"[A-Z_]*:", k.values[1].value)):
-                    schluessel = (p.name, ast.unparse(erstes.value))
+                    schluessel = (p.name, funktion.get(id(k), "<modul>"), ast.unparse(erstes.value))
                     if schluessel in _F_AUSDRUECKE:
                         codes |= _F_AUSDRUECKE[schluessel][0]
                     else:
@@ -91,7 +100,8 @@ def test_codesuche_findet_fstring_codes():
     baum = ast.parse('x = f"NEU_CODE: {a} – {b}"\ny = f"{c}: {d}"')
     erste = [k.values[0] for k in ast.walk(baum) if isinstance(k, ast.JoinedStr)]
     assert _CODE_ANFANG.match(erste[0].value).group(1) == "NEU_CODE"
-    assert isinstance(erste[1], ast.FormattedValue) and ("pruefen.py", ast.unparse(erste[1].value)) not in _F_AUSDRUECKE
+    assert isinstance(erste[1], ast.FormattedValue)
+    assert ("pruefen.py", "<modul>", ast.unparse(erste[1].value)) not in _F_AUSDRUECKE
     assert all(grund for _, grund in _F_AUSDRUECKE.values())
 
 
