@@ -496,6 +496,15 @@ Fehlalarm). `swki zeichnung pruefen --lauf 1` auf den drei Referenzen: Kopf ok, 
 Benennung und Dokumentart „nicht auf dem Blatt“; die Spannplatte Z hat dazu wie bisher RAUHEIT_NUR_EINE_INSTANZ (t1, st,
 Z-TOL-4). Teil- und Zeichnungs-SHA unverändert.
 
+Kurzreview der Fix-Welle (28.11.), bewusst so gelassen bzw. offen:
+- Eine Freigabe ohne gespeicherten Tabellenstand (vor Z1.1, 17.11.) bei Specs mit `funktion` gilt als
+  `FUNKTIONEN_VERALTET`: Die Tabellenwerte sind dann nie freigegeben worden, also neu freigeben. Praktisch betrifft das
+  keine Spec, weil `funktion` erst mit Z1.1 kam.
+- Schriftfeld am PDF: Werte, die die Vorlage umbricht oder anders formatiert (Datum), würden als „nicht auf dem Blatt“
+  gemeldet; kurze Werte könnten eine fremde Zeile treffen. Mit dem Firmenschriftfeld (Z1.5) nachschärfen.
+- Lage der Sammelangaben: Jede Hinweisnotiz mit „Ra 3,2“ muss im Band stehen. Geprüft wird nur der Ankerpunkt, also links
+  oben; bei anderer Textausrichtung passt das nicht. `_angaben_abgleich` läuft doppelt. Alles Minor.
+
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
 - Härteangabe nach DIN ISO 15787:2018-08 (= ISO 15787:2016): Wert mit Grenzabmaßen in Klammern, „(60 ± 2) HRC“;
