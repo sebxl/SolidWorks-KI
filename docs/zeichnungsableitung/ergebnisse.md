@@ -11,7 +11,7 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 | Z1.0 Spike (API live) | erledigt 17.11. (`spike-z1.md`): alles ohne Dialog außer Bohrungsangaben; Modellmaße nur gefiltert brauchbar |
 | Z1.1 Spec-Erweiterung | umgesetzt (Branch `claude/zeichnungsableitung-recherche`) |
 | Z1.2 Freistich, Zentrierbohrung | offen (Skill `compiler-erweitern`) |
-| Z1.3 Zeichnen | umgesetzt: Stufe 1 (Blatt, Ansichten) und 2 (Maße) 17.11., Stufe 3 (Bohrungsangaben) 19.11., Stufe 4 (Toleranzen, Rauheit, Form/Lage, Sammelangaben) und 5 (Übergabe an Z1.4, `zeichnung/zeichnung.json`) 28.11.; Durchsicht der PDFs durch den Nutzer offen |
+| Z1.3 Zeichnen | umgesetzt: Stufe 1 (Blatt, Ansichten) und 2 (Maße) 17.11., Stufe 3 (Bohrungsangaben) 19.11., Stufe 4 (Toleranzen, Rauheit, Form/Lage, Sammelangaben) und 5 (Übergabe an Z1.4, `zeichnung/zeichnung.json`) 28.11.; Nutzerentscheidungen 28.11. umgesetzt (Stiftbohrung ohne Rauheit, Rauheitsfeld, R-Maß frei) |
 | Z1.4 Prüfen | umgesetzt 28.11. (Abschnitt Z1.4), Fix-Welle nach dem Gesamtreview 28.11. (Abschnitt „Gesamtreview“) |
 | Z1.5 Firmenvorlage | wartet auf die Vorlage des Nutzers; Fertigungszeichnungen nur auf dem Firmenrechner |
 
@@ -271,16 +271,15 @@ Vorschläge – Nutzer entscheidet:
   Alternative: `huelle` auch in `toleranzen` zulassen.
 - **IT-Grad für Form/Lage** (`{it: 4}` aus `funktionen.yaml`) bleibt ohne Zahl, bis eine ISO-286-Tabelle mit ≥ 2
   Quellen vorliegt (`FORM_LAGE_IT_OHNE_TABELLE`).
-- **Symbolnorm Rauheit:** ISO 1302:2002 statt ISO 21920-1 der Vorlage. Mit 21920-1 zeichnet SolidWorks über jedes
-  Symbol einen losen Strich (Spike g).
-- **Wortlaut** „Oberflächen ohne Angabe: Ra 3,2“. ISO 21920-1 sähe ein Symbol „√Ra 3,2 (√)“ in Schriftfeldnähe vor
-  (recherche.md Kap. 6, Belegstärke C).
+- **Symbolnorm Rauheit** – *entschieden 28.11.2026:* ISO 1302:2002 statt ISO 21920-1 der Vorlage. Mit 21920-1
+  zeichnet SolidWorks über jedes Symbol einen losen Strich (Spike g), für den Nutzer unbrauchbar.
+- **Wortlaut** „Oberflächen ohne Angabe: Ra 3,2“ – *entschieden 28.11.2026:* ersetzt durch das Rauheitsfeld (Symbol
+  „Ra 3,2“ und „Alle Flächen ohne andere Angabe“), siehe „Nutzerentscheidungen 28.11.2026“.
 - **Schnittbezeichnung C-C** bei Bezügen A/B, damit Schnitt- und Bezugsbuchstaben verschieden sind.
 - **Rauheit an nur einer von n Instanzen:** SolidWorks setzt bei Mehrfachauswahl nur eine Hinweislinie (Spike h).
   Optionen: je Instanz ein eigenes Symbol, oder hinnehmen (heute `RAUHEIT_NUR_EINE_INSTANZ`, in Z1.4 ein Mangel).
-- **Ra 0,8 an den Stiftbohrungen** findet keine freie Lage (`ANMERKUNG_KREUZT`). Die Lagewahl probiert schon beide
-  Instanzen und gleichwertige Orte durch (Nachbesserung C–E). Optionen (Vorschlag): Rauheit in die Bohrungsangabe
-  aufnehmen, oder die Kreuzung hinnehmen.
+- **Ra 0,8 an den Stiftbohrungen** findet keine freie Lage (`ANMERKUNG_KREUZT`) – *entschieden 28.11.2026:*
+  Stiftbohrungen bekommen keine eigene Rauheit, die Sammelrauheit gilt.
 
 Offen:
 - Z1.5: Die ISO-Vorlage druckt „ENTGRATEN UND SCHARFE KANTEN BRECHEN“ und leere Felder „OBERFLÄCHENGÜTE“,
@@ -290,6 +289,43 @@ Offen:
 - Stufe-3-Hinweislagen sind nicht neu bewertet (Review Task 5, I-1/M10 zurückgestellt). Live sind sie unverändert.
 - Kleinere Punkte aus dem Review der Nachbesserung E (M-2 Umhängen leeren, M-4 zwei Schnitte mit gleichem
   Buchstaben) sind mit der Fix-Welle nach dem Gesamtreview erledigt (siehe unten).
+
+## Nutzerentscheidungen 28.11.2026
+
+- **Stiftbohrung ohne eigene Rauheit.** `funktionen.yaml`: `stiftbohrung` ohne `rauheit` (auch nicht im `beleg`), Quelle
+  „Nutzer 28.11.2026“. Passung H7 bleibt C und unbestätigt (`FUNKTION_UNBESTAETIGT: st: passung`). Bestehende Freigaben
+  mit `stiftbohrung` melden jetzt `FUNKTIONEN_VERALTET` (Tabellenstand ≠ Freigabe), also neu freigeben. Damit entfallen
+  an der SpannplatteZ „Ra 0,8“, `ANMERKUNG_KREUZT` und `RAUHEIT_NUR_EINE_INSTANZ` an st.
+- **Rauheitsfeld statt Textzeile.** Rechts oben im Band über dem Schriftfeld ein Kasten 71 × 14 mm mit dem
+  Rauheitssymbol (Grundsymbol, Feld a „Ra 3,2“, ohne Hinweislinie) und dem Hinweis „Alle Flächen ohne andere Angabe“
+  (zwei Zeilen). Er ersetzt „Oberflächen ohne Angabe: Ra 3,2“. Die Sammelzeilen stehen links daneben, der Kasten
+  beginnt an der ersten Zeile, ab der drei Zeilen höchstens 42 Zeichen haben; das Band wird bei den Referenzen nicht
+  höher (SpannplatteZ 5, BuchseZ 7 Zeilen). Rahmen als Blattskizze mit Farbe Schwarz (Spike: Blattskizzen folgen dem
+  Blattmaßstab und kämen sonst blau ins PDF). Grundsymbol statt „Bearbeitung verlangt“, weil Halbzeugflächen roh
+  bleiben dürfen. Geometrie ohne SolidWorks in `swki/zeichnung/sammelfeld.py`, genutzt von Zeichnen, PDF-Prüfung
+  (`sammel_pruefen`: Texte im Kasten, keine Sammelzeile darüber) und Zeichnungsprüfung. Spike: `spike-z1.md`, Nachtrag
+  Rauheitsfeld.
+  - Prüfung: Ein Rauheitssymbol ohne Kante mit Lage (Spitze) im Band ist die Sammelrauheit (Z-SAM-7: genau ein Symbol
+    mit Feld a „Ra 3,2“ und der Hinweis), keine Merkmalsrauheit. Außerhalb des Bands bleibt es eine Rauheit ohne
+    Merkmal (Z-TOL-4, hart). Die alte Textzeile genügt nicht mehr. Der Rückleser liest die Lage aller Rauheitssymbole
+    und meldet ein freies Symbol auf dem Blatt nicht als `RUECKLESEN_UNVOLLSTAENDIG`. Den Regeltext von Z-SAM-7 („nahe
+    dem Schriftfeld“) braucht es dafür nicht zu ändern.
+- **Symbolnorm ISO 1302:2002** (entschieden). Mit ISO 21920-1 zeigt SolidWorks über jedem Symbol einen losen Strich.
+- **R-Maß in der Einzelheit frei.** „R4,00“ in der Einzelheit Z wurde vom Rahmen der Einzelheit durchbrochen. Ursache:
+  Hindernis der Radiuszahl war nur der Rahmen in der Elternansicht, nicht der eigene Rahmen in der Einzelheit
+  (`zeichnen._radius_rahmen`). Die PDF-Prüfung übersah es, weil SolidWorks diesen Rahmen als Viereck (`qu`) ins PDF
+  schreibt und `pruefe_pdf` nur Linien und Rechtecke las; jetzt zählen Vierecke mit (Test mit den Live-Zahlen). Am
+  alten PDF findet die Prüfung den Befund jetzt (SpannplatteZ und Spannplatte).
+- **Beschriftung „EINZELHEIT Z“ über der Ansicht** bleibt.
+
+Live 28.11.2026 nach den Entscheidungen (je Datei frisches SolidWorks 2025): `tests/live/test_live_zeichnen.py` 4/4,
+`tests/live/test_live_zeichnung_pruefen.py` 6/6 grün, darunter neu `test_rauheitssymbol_ausserhalb_des_felds` (Symbol
+der Kopie links oben aufs Blatt gesetzt: genau Z-SAM-7 „fehlt“ und Z-TOL-4 „überzählig, ohne Merkmal“). Restmeldungen
+der SpannplatteZ jetzt nur `RAUHEIT_NUR_EINE_INSTANZ: t1 Ra 1,6`, `FUNKTION_UNBESTAETIGT: st: passung`,
+`ANSICHT_DICHT`, `EINZELHEIT: t1`, `EINZELHEIT_NICHT_FUER: k1`, `LAUF_NICHT_BESTANDEN`; kein `ANMERKUNG_KREUZT`, kein
+„Ra 0,8“ im PDF. BuchseZ, Buchse, Spannplatte unverändert bis auf das Rauheitsfeld. „R4,00“ steht in beiden
+Spannplatten außerhalb des Rahmens der Einzelheit, nur die Hinweislinie kreuzt ihn. Das Rauheitsfeld steht rechts oben
+im Band, schwarz, ohne Überlappung mit den Sammelzeilen; das Band ist so hoch wie vorher (Format und Maßstab gleich).
 
 ## Z1.4 – Zeichnungsprüfung (28.11.2026)
 
@@ -502,7 +538,7 @@ Kurzreview der Fix-Welle (28.11.), bewusst so gelassen bzw. offen:
   keine Spec, weil `funktion` erst mit Z1.1 kam.
 - Schriftfeld am PDF: Werte, die die Vorlage umbricht oder anders formatiert (Datum), würden als „nicht auf dem Blatt“
   gemeldet; kurze Werte könnten eine fremde Zeile treffen. Mit dem Firmenschriftfeld (Z1.5) nachschärfen.
-- Lage der Sammelangaben: Jede Hinweisnotiz mit „Ra 3,2“ muss im Band stehen. Geprüft wird nur der Ankerpunkt, also links
+- Lage der Sammelangaben: Jede Hinweisnotiz mit „Ra 3,2“ muss im Band stehen (seit 28.11.: der Hinweis des Rauheitsfelds und die Spitze des Symbols). Geprüft wird nur der Ankerpunkt, also links
   oben; bei anderer Textausrichtung passt das nicht. `_angaben_abgleich` läuft doppelt. Alles Minor.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
