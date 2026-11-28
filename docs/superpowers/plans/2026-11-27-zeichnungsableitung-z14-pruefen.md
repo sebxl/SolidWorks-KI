@@ -214,7 +214,10 @@
         ausdrücklichen Liste „nur Bericht“ mit Begründung). Ein unbekannter Code in einer Übergabe wird Mangel Z-VOLL-1
         mit dem Text „unbekannte Zeichnungsmeldung“, nie still. `ANMERKUNG_KREUZT` hat das Format
         `<merkmal> <art> „<text>“ – <was> (<n>), …`; `<was>` ∈ Maßlinie, Text, Kante, Schraffur, Hinweislinie,
-        Rechteck auf Linie, eigenes Symbol, Ansatz < 4 mm.
+        Rechteck auf Linie, eigenes Symbol. Seit Runde D (08e1e2f) zusätzlich: `ANMERKUNG_ZU_NAH` (Nähe: „Kante näher als
+        3 mm“, „Ansatz näher als 4 mm“) → Z-LES-1 als Hinweis; `SCHRAFFUR_UNGELESEN` → Z-LES-1 (Prüfung der Anmerkungen
+        unvollständig, `ok None`); `EINZELHEIT_BUCHSTABE` → Z-ANS-2 (Bezeichnung der Ansicht). Die Einzelheit heißt ab Z rückwärts.
+        Bohrungsangaben: Umbruch und „ – “ sind gleichwertig (`pruefen.angabentext`).
       - Rauheit und Form/Lage werden nach Merkmal (über `enthalten`, also inklusive Spiegel- und Musterinstanzen) und
         Inhalt abgeglichen; der Wechsel des Ansatzes an eine gleichwertige Instanz ist kein Mangel.
       - Merkmal je Angabe: über die angehängte Kante, mit derselben `enthalten`-Logik wie beim Setzen (Spiegel- und Musterinstanzen). Das Bezugsdreieck liefert das Merkmal nur über die angehängte Entität.
