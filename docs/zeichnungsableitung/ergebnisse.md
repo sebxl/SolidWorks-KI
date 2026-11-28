@@ -288,8 +288,8 @@ Offen:
   Ra 3,2). Mit dem Firmenformat entscheiden, ob die Werte in die Felder kommen oder der Vordruck entfällt. Ebenso fehlt
   die Benennung im Schriftfeld.
 - Stufe-3-Hinweislagen sind nicht neu bewertet (Review Task 5, I-1/M10 zurückgestellt). Live sind sie unverändert.
-- Kleinere Punkte aus dem Review der Nachbesserung E (Ledger: M-2 Umhängen leeren, M-4 zwei Schnitte mit gleichem
-  Buchstaben) sind für eine letzte Fix-Welle vorgesehen.
+- Kleinere Punkte aus dem Review der Nachbesserung E (M-2 Umhängen leeren, M-4 zwei Schnitte mit gleichem
+  Buchstaben) sind mit der Fix-Welle nach dem Gesamtreview erledigt (siehe unten).
 
 ## Z1.4 – Zeichnungsprüfung (28.11.2026)
 
@@ -351,8 +351,8 @@ Live 28.11.2026 (frisches SolidWorks 2025): `swki zeichnung pruefen <spec> --lau
 | Zeichnung | Ergebnis | Mängel und Hinweise |
 |---|---|---|
 | SpannplatteZ | nicht bestanden | 2 × Z-TOL-4 aus `RAUHEIT_NUR_EINE_INSTANZ` (t1 Ra 1,6; st Ra 0,8), Hinweis Z-LES-1 (`ANMERKUNG_KREUZT` st Ra 0,8) |
-| BuchseZ | bestanden | – |
-| Spannplatte (Stufe 3) | bestanden | – |
+| BuchseZ | bestanden (seit der Fix-Welle: nicht bestanden, Z-SCH-1 Schriftfeld, s. u.) | – |
+| Spannplatte (Stufe 3) | bestanden (seit der Fix-Welle: nicht bestanden, Z-SCH-1 Schriftfeld, s. u.) | – |
 
 - Die Prüfberichte liegen unter `protokolle/<spec>.lauf-1.zeichnung.pruefbericht.json` neben den Arbeits-Specs der
   drei Läufe. Diese Specs liegen im Scratchpad der Sitzung, nicht im Repo; die Berichte sind also temporär.
@@ -517,6 +517,15 @@ Kurzreview der Fix-Welle (28.11.), bewusst so gelassen bzw. offen:
 
 ## Offen für Z1.3/Z1.4
 
+- **Maßplan-Lücken (Urteile des Zeichnungsprüfers, 28.11.):** Radius R20 und Schenkellage der Kabelnut, Kette
+  16 + 4 = 20 über Seitenansicht und Schnitt, Nutlage doppelt (27 und 24 + 6/2), gespiegelte Tasche ohne „2 ד bzw.
+  Symmetrie, Kernlochtiefe der Gewinde (nur „M6 – 10 tief“, Bohrtiefe 12 fehlt). Eigene Folgeaufgabe (Stufe 2/3).
+- **Z-GEW-1 maschinell zu schwach (bekannter Fehlschluss):** `pruefe_gewinde` prüft nur Bezeichnung und „tief“ gegen
+  den Maßplan, nicht die getrennte Bohrtiefe, die der Regeltext verlangt. Die SpannplatteZ besteht Z-GEW-1 deshalb
+  maschinell, obwohl die Kernlochtiefe fehlt; nur der Agent findet es. Mit der Folgeaufgabe oben beheben.
+- **Z-SCH-1 am PDF (Vorschlag – Nutzer entscheidet):** Bis zum Firmenschriftfeld (Z1.5) fällt damit jede Zeichnung
+  durch, weil die SW-2025-Vorlage Benennung und Dokumentart nicht zeigt (auch an der Prüfstation). Alternative: bis
+  Z1.5 nur als Hinweis führen.
 - Bezugsvorschlag aus `deckungsgleich`-Verknüpfungen der Baugruppe (Design §4.1).
 - Zahlenwert für `form_lage` mit `it` (Rundheit IT4/IT5) aus ISO 286 rechnen.
 - Prüfung der Lage und Anzahl der Funktionsmerkmale am Modell (`ANFORDERUNG_GEAENDERT`, Design §4.2).
