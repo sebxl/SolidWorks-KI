@@ -177,16 +177,47 @@ def pruefe_vollstaendig(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict
     for m in uebrig:
         wort = "doppelt" if any(IST_ART[g.art] == m.art and _wert_gleich(m, g) for g in geplant) else "überzählig"
         maengel.append(_mangel(regeln, "Z-VOLL-2", m.name, f"{wort}: {_etikett(m.art, m.wert)}"))
-    maengel += _angaben_abgleich(ist, plan, regeln)
+    maengel += [m for m in _angaben_abgleich(ist, plan, regeln) if m["regel"].startswith("Z-VOLL")]
     return _pruefung("vollstaendig", regeln, ("Z-VOLL-1", "Z-VOLL-2"), maengel)
 
 
+_OE_ZAHL = re.compile(r"(.*?Ø\d+(?:,\d+)?)(.*)")
+
+
+def _toleranz_teil(text: str) -> tuple[str, str]:
+    """(Angabe ohne Toleranz, Toleranz) nach `angabentext`: die Toleranz steht im ersten Abschnitt hinter dem Ø
+    („2 × Ø8 H7 Ⓔ – 15 tief“ → („2 × Ø8 – 15 tief“, „H7 Ⓔ“), `bohrungsangabe`); ohne Ø (Gewinde) ist sie leer."""
+    kopf, _, rest = text.partition(TRENNER)
+    t = _OE_ZAHL.fullmatch(kopf)
+    if t is None:
+        return text, ""
+    return TRENNER.join(x for x in (t.group(1), rest) if x), t.group(2).strip()
+
+
+def _angabe_abweichung(regeln: list[Regel], m: Mass, ist_text: str, soll_text: str) -> dict:
+    """Eine Notiz am Merkmal mit anderem Text: nur die Toleranz anders → Regel der Toleranz (Z-TOL-1; ohne Toleranz im
+    Plan Z-TOL-3 bzw. Z-TOL-2 für ein bloßes Ⓔ), sonst Z-VOLL-1 „weicht ab“ (auch ein Rest hinter dem Plantext, M4)."""
+    (b_ist, t_ist), (b_soll, t_soll) = _toleranz_teil(ist_text), _toleranz_teil(soll_text)
+    if b_ist != b_soll:
+        return _mangel(regeln, "Z-VOLL-1", m.merkmal, f"weicht ab: Angabe {ist_text} statt {soll_text}")
+    regel_id = "Z-TOL-1" if t_soll else "Z-TOL-2" if t_ist == "Ⓔ" else "Z-TOL-3"
+    return _mangel(regeln, regel_id, m.merkmal, f"weicht ab: Angabe {b_ist.split(TRENNER)[0]} – Toleranz "
+                                               f"{t_ist or 'keine'} statt {t_soll or 'keine'} ({m.merkmal})")
+
+
 def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[dict]:
-    """Plan-Angaben (Bohrungen, Gewinde) gegen die Notizen: Textanfang, Leerraum normalisiert."""
+    """Plan-Angaben (Bohrungen, Gewinde) gegen die Notizen, je Merkmal der Hinweislinie (Gesamtreview I3; wie
+    `_angaben_je_art`): Text nach `angabentext` gleich (ein Rest dahinter zählt, M4). Pass 1: Notiz mit genau dem
+    Merkmal, Pass 2: an einer Kante zwischen mehreren Merkmalen („st/g1“), Pass 3: Notiz ohne Merkmal mit gleichem
+    Text – sie deckt den Eintrag, ist aber ein Mangel RUECKLESEN_UNVOLLSTAENDIG (ohne angehängte Kante nicht prüfbar,
+    nie still passend). Danach: eine übrige Notiz am Merkmal ist „weicht ab“ (`_angabe_abweichung`: nur die Toleranz
+    anders → Z-TOL-1), sonst fehlt die Angabe (Z-VOLL-1). Übrige Notizen mit dem Text einer Plan-Angabe sind doppelt
+    bzw. stehen am falschen Merkmal (Z-VOLL-2). Liefert Mängel der Regeln Z-VOLL-1/2 und Z-TOL-1/2/3; die
+    Prüfungen nehmen je ihre Regeln."""
     maengel = []
-    notizen = [angabentext(a.text) for a in ist.angaben if a.art == "hinweis"]
+    notizen = [(a, angabentext(a.text)) for a in ist.angaben if a.art == "hinweis"]
     frei = list(range(len(notizen)))
-    texte = []
+    offen, texte = [], {}
     for m in plan:
         if m.quelle != "angabe":
             continue
@@ -194,15 +225,38 @@ def _angaben_abgleich(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> list[d
         if not text:
             maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal, f"Angabe ohne Text: {m.merkmal}"))
             continue
-        texte.append(text)
-        treffer = next((i for i in frei if notizen[i].startswith(text)), None)
-        if treffer is None:
+        offen.append((m, text))
+        texte.setdefault(text, []).append(m.merkmal)
+    for durchgang in (lambda a, m: a.merkmal == m.merkmal, lambda a, m: m.merkmal in _kandidaten(a),
+                      lambda a, m: a.merkmal is None):
+        rest = []
+        for m, text in offen:
+            treffer = next((i for i in frei if notizen[i][1] == text and durchgang(notizen[i][0], m)), None)
+            if treffer is None:
+                rest.append((m, text))
+                continue
+            frei.remove(treffer)
+            if notizen[treffer][0].merkmal is None:
+                maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal,
+                                       f"RUECKLESEN_UNVOLLSTAENDIG: Angabe {_erste_zeile(m.text)} ohne angehängte Kante "
+                                       f"– Merkmal {m.merkmal} nicht prüfbar"))
+        offen = rest
+    for m, text in offen:
+        nah = next((i for i in frei if m.merkmal in _kandidaten(notizen[i][0])), None)
+        if nah is None:
             maengel.append(_mangel(regeln, "Z-VOLL-1", m.merkmal, f"fehlt: Angabe {_erste_zeile(m.text)}"))
         else:
-            frei.remove(treffer)
+            frei.remove(nah)
+            maengel.append(_angabe_abweichung(regeln, m, notizen[nah][1], text))
     for i in frei:
-        if any(notizen[i].startswith(t) for t in texte):
-            maengel.append(_mangel(regeln, "Z-VOLL-2", "angabe", f"doppelt: Angabe {notizen[i].split(TRENNER)[0]}"))
+        a, text = notizen[i]
+        if text not in texte:
+            continue
+        soll = texte[text]
+        wo = "" if a.merkmal is None or set(_kandidaten(a)) & set(soll) else f" an {a.merkmal} statt {'/'.join(soll)}"
+        wort = "überzählig" if wo else "doppelt"
+        maengel.append(_mangel(regeln, "Z-VOLL-2", a.merkmal or "angabe",
+                               wort + f": Angabe {text.split(TRENNER)[0]}{wo}"))
     return maengel
 
 
@@ -306,8 +360,9 @@ _GEWINDE = re.compile(r"\bM\d+(?:[.,]\d+)?")
 
 def pruefe_gewinde(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
     """Z-GEW-1: Jede Plan-Angabe eines Gewindes (Text beginnt mit M<Zahl> oder enthält „× M<Zahl>“) hat eine Notiz mit
-    Bezeichnung und „tief“ (bei Durchgangsgewinde im Plan „durch“)."""
-    notizen = [angabentext(a.text) for a in ist.angaben if a.art == "hinweis"]
+    Bezeichnung und „tief“ (bei Durchgangsgewinde im Plan „durch“). Gesucht wird zuerst an der Hinweislinie des
+    Merkmals (Gesamtreview I3), dann unter den Notizen ohne Merkmal (die fehlende Kante meldet „vollständig“)."""
+    angaben = [a for a in ist.angaben if a.art == "hinweis"]
     maengel, gefunden = [], False
     for m in plan:
         text = angabentext(m.text) if m.quelle == "angabe" else ""
@@ -317,7 +372,9 @@ def pruefe_gewinde(ist: Ist, plan: list[Mass], regeln: list[Regel]) -> dict:
         gefunden = True
         bezeichnung, anfang = treffer.group(), text[:treffer.end()]
         wort = "durch" if "durch" in text and "tief" not in text else "tief"
-        notiz = next((n for n in notizen if n.startswith(anfang)), None)
+        kandidaten = ([a for a in angaben if m.merkmal in _kandidaten(a)]
+                      or [a for a in angaben if a.merkmal is None])
+        notiz = next((n for n in (angabentext(a.text) for a in kandidaten) if n.startswith(anfang)), None)
         if notiz is None:
             maengel.append(_mangel(regeln, "Z-GEW-1", m.merkmal, f"Gewinde {bezeichnung}: keine Angabe gezeichnet"))
         elif wort not in notiz:
@@ -472,6 +529,7 @@ def pruefe_toleranzen(ist: Ist, plan: list[Mass], regeln: list[Regel], anzahl: d
         if _traegt_huelle(c) and not _huelle_plan(m):
             maengel.append(_mangel(regeln, "Z-TOL-2", m.merkmal, f"{etikett}: Ⓔ an einem Maß ohne Passung"))
     mehr = _angaben_je_art(ist, plan, regeln, anzahl)
+    mehr += [m for m in _angaben_abgleich(ist, plan, regeln) if m["regel"].startswith("Z-TOL")]  # Bohrungsangaben
     return _pruefung("toleranzen", regeln, ("Z-TOL-1", "Z-TOL-2", "Z-TOL-3", "Z-TOL-4", "Z-TOL-5", "Z-TOL-6"),
                      maengel + mehr)
 
@@ -609,7 +667,7 @@ MELDUNG_REGEL: dict[str, tuple[str, str]] = {
     "TOLERANZ_MEHRDEUTIG": ("toleranzen", "Z-TOL-1"), "FORM_LAGE_IT_OHNE_TABELLE": ("toleranzen", "Z-TOL-1"),
     "FUNKTION_UNBEKANNT": ("toleranzen", "Z-TOL-1"),
     "RAUHEIT_NICHT_GESETZT": ("toleranzen", "Z-TOL-4"), "RAUHEIT_NUR_EINE_INSTANZ": ("toleranzen", "Z-TOL-4"),
-    "FORM_LAGE_NICHT_GESETZT": ("toleranzen", "Z-TOL-5"), "FORM_LAGE_NUR_EINE_INSTANZ": ("toleranzen", "Z-TOL-5"),
+    "FORM_LAGE_NICHT_GESETZT": ("toleranzen", "Z-TOL-5"), "FORM_LAGE_NICHT_UNTERSTUETZT": ("toleranzen", "Z-TOL-5"), "FORM_LAGE_NUR_EINE_INSTANZ": ("toleranzen", "Z-TOL-5"),
     "BEZUG_NICHT_GESETZT": ("toleranzen", "Z-TOL-6"),   # Plan nennt Z-TOL-3; Bezüge sind im Katalog Z-TOL-6
     "SAMMELANGABEN_NICHT_GESETZT": ("sammelangaben", "Z-SAM-1"),
     # Vollständigkeit: Maß bzw. Angabe fehlt oder steht doppelt
@@ -698,7 +756,7 @@ def _gehoert(features: tuple[str, ...], namen: set[str]) -> bool:
 
 def _inhalt_gleich(a: IstAngabe, m: Mass) -> bool:
     if a.art == "hinweis":
-        return angabentext(a.text).startswith(angabentext(m.text))
+        return angabentext(a.text) == angabentext(m.text)
     if a.art == "bezug":
         return normtext(a.text) == normtext(m.text)
     return _inhalt_ist(a.art, a) == _inhalt_plan(m)

@@ -9,6 +9,8 @@ Feature-Baum zusammenfassen lassen, auch Kandidaten für Muster und Spiegeln (Re
 art "fertigung": Innenecken unter der Fräserregel R ≥ T/5 (Regel 8, nicht bei bearbeitung: erodieren), Bohrungseintritte
 ohne Fase (Regel 6), Rauheit feiner als Ra 0,8 ohne Schleifen, geschliffenes Drehteil ohne Freistich.
 art "funktion": Werte aus einem unbestätigten Eintrag von swki/wissen/funktionen.yaml (Zeichnungsableitung §4.3).
+art "zeichnung": Anforderungen, die swki zeichnen noch nicht richtig darstellt (Position und Koaxialität ohne
+Ø-Toleranzzone und theoretisch exakte Maße; Gesamtreview M2) – die Zeichnungsprüfung meldet sie als Mangel (Z-TOL-5).
 """
 
 import json
@@ -454,9 +456,28 @@ def funktion_hinweise(spec: dict) -> list[dict]:
     return ergebnis
 
 
+def zeichnung_hinweise(spec: dict) -> list[dict]:
+    """Form/Lage, die die Zeichnung noch nicht trägt (`toleranzangaben.OHNE_OE_ZONE`), je Eintrag der aufgelösten
+    Anforderung (auch aus funktionen.yaml) – vor der Freigabe dem Nutzer nennen."""
+    from swki.zeichnung.toleranzangaben import OHNE_OE_ZONE  # spät: Zeichnungspaket
+
+    ergebnis = []
+    for i, f in enumerate(spec.get("features", [])):
+        try:
+            eintraege = aufloesen(f)["form_lage"] or []
+        except FunktionFehler:
+            continue
+        for j, e in enumerate(eintraege):
+            if e.get("art") in OHNE_OE_ZONE:
+                ergebnis.append({"art": "zeichnung", "pfad": f"features[{i}].form_lage[{j}]",
+                                 "meldung": f"FORM_LAGE_NICHT_UNTERSTUETZT: {e['art']} ohne Ø-Toleranzzone und "
+                                            "theoretisch exakte Maße – die Zeichnung trägt sie noch nicht (Z-TOL-5)"})
+    return ergebnis
+
+
 def hinweise(spec: dict) -> list[dict]:
     """Alle Hinweise für swki validieren: erst Prüfwerte, dann feste Zahlen, Bemaßungsbezug, Zusammenfassbares,
     Fertigung (auch Bearbeitung und Rauheit), Verzahnung und unbestätigte Funktionswerte. Hinweise blockieren nie
     (swki durchlauf --freigeben hält bei art "pruefwert" vor der Freigabe an)."""
     return (pruefwert_hinweise(spec) + feste_masse(spec) + bezug_hinweise(spec) + zusammenfassen(spec)
-            + fertigung_hinweise(spec) + verzahnung_hinweise(spec) + funktion_hinweise(spec))
+            + fertigung_hinweise(spec) + verzahnung_hinweise(spec) + funktion_hinweise(spec) + zeichnung_hinweise(spec))

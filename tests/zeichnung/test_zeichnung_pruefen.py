@@ -290,7 +290,7 @@ def test_zeichnungsmasse_und_merkmale_nach_dem_lesen(auftrag):
     ordnet über `zeichnungsmasse` und die `enthalten`-Logik zu."""
     from dataclasses import replace
     _uebergabe_aendern(auftrag, zeichnungsmasse={"D3@m1": "RD1@Zeichenansicht1"})
-    features = {"t1": ("Schnitt1", "s1"), "st": ("st", "st_fase"), "f1": ("Schnitt1", "f1")}
+    features = {"t1": ("Schnitt1", "s1"), "st": ("st", "st_fase"), "f1": ("Schnitt1", "f1"), "g1": ("f1", "m1")}
 
     def leser(slddrw, rollen):
         ist = ideal_ist(auftrag.plan, spec=auftrag.spec)

@@ -64,3 +64,15 @@ def test_hinweise_enthaelt_funktion():
         {"features": [PLATTE, {"id": "s1", "typ": "normbohrung", "art": "stift", "groesse": "8", "fase": 0.5,
                                "flaeche": {"feature": "f1", "flaeche": "+y"}, "positionen": [[0, 0]], "tiefe": 8,
                                "funktion": "stiftbohrung"}]}))
+
+
+def test_position_ohne_oe_zone_als_hinweis():
+    """Gesamtreview M2: validieren nennt Form/Lage, die die Zeichnung noch nicht richtig trägt (art „zeichnung“)."""
+    from swki.spec.hinweise import zeichnung_hinweise
+
+    f = {"id": "b1", "typ": "bohrung", "durchmesser": 6, "tiefe": 10, "fase": 0.5, "positionen": [[0, 0]],
+         "flaeche": {"feature": "f1", "flaeche": "+y"}, "form_lage": [{"art": "position", "wert": 0.1, "bezug": ["A"]}]}
+    [h] = zeichnung_hinweise({"features": [PLATTE, f]})
+    assert h["art"] == "zeichnung" and h["pfad"] == "features[1].form_lage[0]" and "FORM_LAGE_NICHT_UNTERSTUETZT" in h["meldung"]
+    assert any(x["art"] == "zeichnung" for x in hinweise({"features": [PLATTE, f]}))
+    assert zeichnung_hinweise({"features": [PLATTE]}) == []

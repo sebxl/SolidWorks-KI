@@ -466,3 +466,18 @@ def test_blatt_nicht_erfunden_und_mehrere_blaetter_gemeldet(monkeypatch):
     assert ist.eigenschaften == {"Benennung": "X"} and ist.format_ == "A3quer" and ist.meldungen == ()
     ist = rl._lies(None, _Zeichnung(["Blatt1", "Blatt2"]), {})
     assert ist.meldungen == ("RUECKLESEN_UNVOLLSTAENDIG: Blatt1 – Zeichnung hat 2 Blätter, gelesen nur das aktuelle",)
+
+
+def test_toleranz_beide_passungswerte_gesetzt():
+    """Gesamtreview M3: Bohrung und Welle gesetzt („H7/g6“) ist ein anderer Typ als „H7“ – nicht still die Bohrung."""
+    assert rl.toleranz(7, 0.0, 2.1e-05, "H7", "g6").passung == "H7/g6"
+    assert rl.toleranz(7, 0.0, 2.1e-05, "H7", "  ").passung == "H7"
+    from swki.zeichnung.ist import IstMass
+    from swki.zeichnung.massplan import Mass
+    from swki.zeichnung.pruefen import _toleranz_ok
+    from swki.zeichnung.toleranzangaben import Toleranz
+
+    m = Mass("a", "neu", "durchmesser", 20.0, "f1", toleranz=Toleranz("H7", None, None, False))
+    ist = IstMass("x", "haupt", "durchmesser", 20.0, "Ø", "", False, rl.toleranz(7, 0.0, 2.1e-05, "H7", "g6"), None,
+                  None, None)
+    assert _toleranz_ok(ist, m) is False

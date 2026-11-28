@@ -303,7 +303,7 @@ def test_merkmal_bleibt_wenn_gesetzt():
 def test_zugeordnete_angaben_bestehen():
     """Ideal ohne Merkmale, aber mit den Feature-Namen wie live gelesen → nach der Zuordnung bestanden."""
     spec, plan = _spec_sp(), plan_spannplatte_z()
-    features = {"t1": ("Schnitt1", "s1"), "st": ("st", "st_fase"), "f1": ("Schnitt1", "f1")}
+    features = {"t1": ("Schnitt1", "s1"), "st": ("st", "st_fase"), "f1": ("Schnitt1", "f1"), "g1": ("f1", "m1")}
     ist = _ideal_sp()
     ist = replace(ist, angaben=tuple(replace(a, merkmal=None, features=features.get(a.merkmal, ()))
                                      for a in ist.angaben))

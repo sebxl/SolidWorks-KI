@@ -116,13 +116,22 @@ def rauheitstext(rauheit: dict) -> str:
     return f"{kenngroesse} {zahl(wert)}"
 
 
+# Arten, deren Rahmen eine Ø-Toleranzzone und theoretisch exakte Maße braucht; der Rahmen trägt heute nur „zahl(wert)“
+# (Gesamtreview M2) – bis das unterstützt ist, Meldung FORM_LAGE_NICHT_UNTERSTUETZT (Z-TOL-5), nie still
+OHNE_OE_ZONE = ("position", "koaxialitaet")
+
+
 def form_lage_angaben(merkmal: str, eintraege: list[dict]) -> tuple[list[FormLage], list[str]]:
-    """Form-/Lagetoleranzen eines Merkmals; Einträge mit IT-Grad statt Wert ergeben eine Meldung (keine Tabelle)."""
+    """Form-/Lagetoleranzen eines Merkmals; Einträge mit IT-Grad statt Wert ergeben eine Meldung (keine Tabelle),
+    Position und Koaxialität eine Meldung FORM_LAGE_NICHT_UNTERSTUETZT (`OHNE_OE_ZONE`; der Eintrag bleibt im Plan)."""
     angaben, meldungen = [], []
     for e in eintraege:
         if "wert" not in e:
             meldungen.append(f"FORM_LAGE_IT_OHNE_TABELLE: {merkmal} {e['art']} IT{e.get('it')} – keine ISO-286-Tabelle")
             continue
+        if e["art"] in OHNE_OE_ZONE:
+            meldungen.append(f"FORM_LAGE_NICHT_UNTERSTUETZT: {merkmal} {e['art']} {zahl(e['wert'])} – Ø-Toleranzzone "
+                             "und theoretisch exakte Maße zeichnet swki noch nicht")
         angaben.append(FormLage(merkmal, e["art"], GTOL_SYMBOL[e["art"]], zahl(e["wert"]),
                                 tuple(e.get("bezug", ())), bool(e.get("mmr", False))))
     return angaben, meldungen

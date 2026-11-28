@@ -420,3 +420,14 @@ def test_fasenmass_nur_an_rotationskanten_quer(monkeypatch):
     plan = {m.name: (m.achse, m.modus) for m in mp.massplan(spec, _buchse_protokoll()) if m.art == "fase"}
     assert plan == {"D1@fa": (achse, "quer"), "D1@fb": (andere, "flach"), "D1@fc": (andere, "quer"),
                     "D1@fx": (None, None), "D1@fy": (None, None), "D1@f2": (achse, "quer")}
+
+
+def test_position_nicht_unterstuetzt_in_den_meldungen():
+    """Gesamtreview M2: die Meldung geht über `massplan_meldungen` in die Prüfung (Z-TOL-5)."""
+    from swki.zeichnung.pruefen import MELDUNG_REGEL
+
+    spec = {"parameter": {}, "features": [{"id": "f1", "typ": "extrusion",
+                                           "form_lage": [{"art": "koaxialitaet", "wert": 0.02, "bezug": ["A"]}]}]}
+    meldung = next(m for m in massplan_meldungen(spec) if m.startswith("FORM_LAGE_NICHT_UNTERSTUETZT: f1"))
+    assert MELDUNG_REGEL[meldung.split(":")[0]] == ("toleranzen", "Z-TOL-5")
+    assert [m.form_lage.art for m in massplan(spec, {"knoten": []}) if m.quelle == "form_lage"] == ["koaxialitaet"]

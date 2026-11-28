@@ -71,3 +71,14 @@ def test_sammelangaben_reihenfolge():
 
 def test_toleranz_aus_ausdruck():
     assert toleranz_aus(None, {"oben": "=T/2", "unten": "=-T/2"}, False, {"T": 0.04}) == Toleranz(None, 0.02, -0.02, False)
+
+
+def test_position_und_koaxialitaet_nicht_unterstuetzt():
+    """Gesamtreview M2: Position und Koaxialität brauchen Ø-Toleranzzone und theoretisch exakte Maße, die der Rahmen
+    (nur „zahl(wert)“) nicht trägt – Meldung, der Eintrag bleibt im Plan (die Übergabe ändert sich nicht)."""
+    fl, meld = form_lage_angaben("b1", [{"art": "position", "wert": 0.1, "bezug": ["A", "B"]},
+                                        {"art": "koaxialitaet", "wert": 0.02, "bezug": ["A"]},
+                                        {"art": "ebenheit", "wert": 0.02}])
+    assert [f.art for f in fl] == ["position", "koaxialitaet", "ebenheit"]
+    assert [m.split(" – ")[0] for m in meld] == ["FORM_LAGE_NICHT_UNTERSTUETZT: b1 position 0,1",
+                                                  "FORM_LAGE_NICHT_UNTERSTUETZT: b1 koaxialitaet 0,02"]

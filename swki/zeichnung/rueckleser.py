@@ -67,13 +67,15 @@ FORMAT_TOL_MM = 1.0
 
 def toleranz(typ: int, minimum: float, maximum: float, bohrung: str, welle: str) -> IstToleranz:
     """IDimensionTolerance → IstToleranz: Abmaße in mm, `unten` mit Vorzeichen (negativ unter dem Nennmaß; ±0,02 ergibt
-    symmetrisch 0,02 / −0,02, Review Task 3 M2). Passung: Bohrung (groß) oder Welle (klein)."""
+    symmetrisch 0,02 / −0,02, Review Task 3 M2). Passung: Bohrung (groß) oder Welle (klein); sind beide gesetzt, ist
+    die Passung „Bohrung/Welle“ (Gesamtreview M3: sonst gälte „H7/g6“ an einer Bohrung still als „H7“)."""
     art = TOL_TYP.get(typ, f"swTolType {typ}")
     if art == "keine":
         return IstToleranz("keine", None, None, None)
     oben, unten = maximum * 1000, minimum * 1000
     if art == "passung":
-        return IstToleranz("passung", (bohrung or welle or "").strip() or None, oben, unten)
+        werte = [w.strip() for w in (bohrung or "", welle or "") if w and w.strip()]
+        return IstToleranz("passung", "/".join(werte) or None, oben, unten)
     return IstToleranz(art, None, oben, unten)
 
 

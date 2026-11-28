@@ -152,9 +152,10 @@ def test_angabe_text_normalisiert_und_doppelt():
     plan = plan_spannplatte_z()
     ist = ideal_ist(plan)
     erste = ist.angaben[0]
-    # Runde E: Textanfang und Leerraum (Umbruch als „ – “, doppelte Leerzeichen, Zusatz dahinter) sind gleich; der
-    # Umbruch ist ein Trenner, kein Leerzeichen (früher replace("\n", " ") – das schrieb nur die alte Normalisierung fest)
-    umbruch = replace(erste, text=erste.text.replace("\n", "  –  ").replace(" × ", "  ×  ") + " extra")
+    # Runde E: Leerraum (Umbruch als „ – “, doppelte Leerzeichen) ist gleich; der Umbruch ist ein Trenner, kein
+    # Leerzeichen (früher replace("\n", " ") – das schrieb nur die alte Normalisierung fest). Ein Zusatz dahinter ist
+    # seit dem Gesamtreview (M4) ein Unterschied: test_angabe_rest_hinter_dem_plantext_weicht_ab
+    umbruch = replace(erste, text=erste.text.replace("\n", "  –  ").replace(" × ", "  ×  "))
     assert pruefe_vollstaendig(replace(ist, angaben=(umbruch,) + ist.angaben[1:]), plan, REGELN)["ok"] is True
     p = pruefe_vollstaendig(replace(ist, angaben=ist.angaben + (erste,)), plan, REGELN)
     assert p["ok"] is False and _regeln_der(p) == {"Z-VOLL-2"}
@@ -423,7 +424,7 @@ def test_huelle_tag_gleich_symbol():
     ist = replace(_mass("x", 20.0), art="durchmesser", praefix="Ø", suffix=" <MOD-EP>",
                   toleranz=IstToleranz("passung", "H7", None, None))
     assert pruefe_vollstaendig(_ist_mit([ist]), plan, REGELN)["ok"] is True
-    notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> – 15 tief", None, None, ())
+    notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> – 15 tief", None, None, (), "st")
     angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief")
     assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is True
 
@@ -489,7 +490,7 @@ def test_angabe_umbruch_statt_strich_gleich(ist_text):
     from swki.zeichnung.pruefen import angabentext
 
     angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief" + _UMBRUCH + "Fase 0,5 × 45°")
-    notiz = IstAngabe("hinweis", "haupt", ist_text, None, None, ())
+    notiz = IstAngabe("hinweis", "haupt", ist_text, None, None, (), "st")
     assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is True
     assert angabentext(ist_text) == angabentext(angabe.text)
 
@@ -497,13 +498,14 @@ def test_angabe_umbruch_statt_strich_gleich(ist_text):
 def test_angabe_trenner_gleich_inhalt_nicht():
     """Die Form des Trenners zählt nicht, der Inhalt schon."""
     angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief")
-    notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["2 × Ø8 H7 <MOD-EP>", "16 tief"]), None, None, ())
+    notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["2 × Ø8 H7 <MOD-EP>", "16 tief"]), None, None, (), "st")
     assert pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)["ok"] is False
 
 
 def test_gewinde_umbrochen_gleich():
     angabe = Mass("g:angabe", "angabe", "angabe", 0.0, "g", text="5 × M6 – 10 tief" + _UMBRUCH + "Senkung Ø6 × 90°")
-    notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["5 × M6", "10 tief", "Senkung Ø6 × 90°"]), None, None, ())
+    notiz = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["5 × M6", "10 tief", "Senkung Ø6 × 90°"]), None, None, (),
+                      "g")
     p = pruefe_gewinde(_ist_mit(angaben=[notiz]), [angabe], REGELN)
     assert p["ok"] is True, p
 
@@ -523,7 +525,8 @@ def test_angabe_fehlender_trenner_ist_unterschied():
                    "2 × Ø8 H7 Ⓔ" + _UMBRUCH + _UMBRUCH + "15 tief" + _UMBRUCH + " Fase 0,5 × 45°"):
         assert angabentext(gleich) == angabentext(soll), gleich
     angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text=soll)
-    notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> 15 tief" + _UMBRUCH + "Fase 0,5 × 45°", None, None, ())
+    notiz = IstAngabe("hinweis", "haupt", "2 × Ø8 H7 <MOD-EP> 15 tief" + _UMBRUCH + "Fase 0,5 × 45°", None, None, (),
+                      "st")
     p = pruefe_vollstaendig(_ist_mit(angaben=[notiz]), [angabe], REGELN)
     assert p["ok"] is False and _regeln_der(p) == {"Z-VOLL-1"}
 
@@ -532,6 +535,101 @@ def test_angabe_doppelt_nennt_ersten_abschnitt():
     """Runde E: Z-VOLL-2 „doppelt“ zeigt den ersten Abschnitt des Ist-Texts, auch bei dreizeiliger Form."""
     angabe = Mass("s:angabe", "angabe", "angabe", 0.0, "st", text="2 × Ø8 H7 Ⓔ – 15 tief" + _UMBRUCH + "Fase 0,5 × 45°")
     drei = IstAngabe("hinweis", "haupt", _UMBRUCH.join(["2 × Ø8 H7 <MOD-EP>", "15 tief", "Fase 0,5 × 45°"]), None,
-                     None, ())
+                     None, (), "st")
     p = pruefe_vollstaendig(_ist_mit(angaben=[drei, drei]), [angabe], REGELN)
     assert [m["text"] for m in p["maengel"]] == ["doppelt: Angabe 2 × Ø8 H7 Ⓔ"]
+
+
+# --- Gesamtreview I3/M4: Bohrungsangaben je Merkmal der Hinweislinie ------------------------------------------------
+
+def _angabe_von(ist, merkmal):
+    return next(a for a in ist.angaben if a.art == "hinweis" and a.merkmal == merkmal)
+
+
+def _ersetze(ist, alt, neu):
+    return replace(ist, angaben=tuple(neu if a is alt else a for a in ist.angaben))
+
+
+def test_ideal_angaben_tragen_merkmal():
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    assert {_angabe_von(ist, mk).merkmal for mk in ("g1", "st")} == {"g1", "st"}
+
+
+def test_angabe_an_fremder_hinweislinie_fehlt():
+    """Folge 1: „2 × Ø8 H7 Ⓔ – 15 tief“ hängt an der M6-Bohrung (g1) – für st fehlt die Angabe, an g1 ist sie
+    überzählig; der Text allein reicht nicht."""
+    from swki.zeichnung.pruefen import pruefe_toleranzen
+
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    st = _angabe_von(ist, "st")
+    ist = _ersetze(ist, st, replace(st, merkmal="g1"))
+    p = pruefe_vollstaendig(ist, plan, REGELN)
+    assert p["ok"] is False
+    assert [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-VOLL-1", "st"), ("Z-VOLL-2", "g1")], p["maengel"]
+    assert "fehlt" in p["maengel"][0]["text"] and "an g1 statt st" in p["maengel"][1]["text"]
+    assert pruefe_toleranzen(ist, plan, REGELN)["ok"] is True
+
+
+def test_angabe_nur_passung_abweichend_ist_z_tol_1():
+    """Folge 2 (bekannt d): H7 → H8 im Hinweis ist eine falsche Passung (Z-TOL-1), kein fehlender Hinweis."""
+    from swki.zeichnung.pruefen import pruefe_toleranzen
+
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    st = _angabe_von(ist, "st")
+    ist = _ersetze(ist, st, replace(st, text=st.text.replace("H7", "H8")))
+    assert pruefe_vollstaendig(ist, plan, REGELN)["ok"] is True
+    p = pruefe_toleranzen(ist, plan, REGELN)
+    assert p["ok"] is False and [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-TOL-1", "st")]
+    assert "H8 Ⓔ statt H7 Ⓔ" in p["maengel"][0]["text"]
+
+
+def test_angabe_huelle_fehlt_ist_z_tol_1():
+    from swki.zeichnung.pruefen import pruefe_toleranzen
+
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    st = _angabe_von(ist, "st")
+    ist = _ersetze(ist, st, replace(st, text=st.text.replace(" Ⓔ", "")))
+    p = pruefe_toleranzen(ist, plan, REGELN)
+    assert [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-TOL-1", "st")] and "H7 statt H7 Ⓔ" in p["maengel"][0]["text"]
+
+
+def test_angabe_toleranz_ohne_funktion_ist_z_tol_3():
+    from swki.zeichnung.pruefen import pruefe_toleranzen
+
+    angabe = Mass("g:angabe", "angabe", "angabe", 0.0, "b1", text="4 × Ø6 – durch")
+    notiz = IstAngabe("hinweis", "haupt", "4 × Ø6 H7 – durch", None, None, (), "b1")
+    p = pruefe_toleranzen(_ist_mit(angaben=[notiz]), [angabe], REGELN)
+    assert [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-TOL-3", "b1")]
+
+
+def test_angabe_ohne_kante_ist_ruecklesen_unvollstaendig():
+    """Passt der Text, fehlt aber die angehängte Kante (kein Merkmal), ist das nie still passend."""
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    st = _angabe_von(ist, "st")
+    p = pruefe_vollstaendig(_ersetze(ist, st, replace(st, merkmal=None)), plan, REGELN)
+    assert p["ok"] is False and [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-VOLL-1", "st")]
+    assert p["maengel"][0]["text"].startswith("RUECKLESEN_UNVOLLSTAENDIG:")
+
+
+def test_angabe_rest_hinter_dem_plantext_weicht_ab():
+    """M4: „… – 15 tief XYZ“ ist nicht „… – 15 tief“."""
+    plan = plan_spannplatte_z()
+    ist = ideal_ist(plan)
+    st = _angabe_von(ist, "st")
+    p = pruefe_vollstaendig(_ersetze(ist, st, replace(st, text=st.text + " XYZ")), plan, REGELN)
+    assert p["ok"] is False and [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-VOLL-1", "st")]
+    assert p["maengel"][0]["text"].startswith("weicht ab:") and "XYZ" in p["maengel"][0]["text"]
+
+
+def test_gewinde_nimmt_die_notiz_des_merkmals():
+    """Eine freie Notiz „5 × M6 – 10 tief“ ohne Merkmal deckt nicht die Notiz am Gewinde, der „tief“ fehlt."""
+    angabe = Mass("g:angabe", "angabe", "angabe", 0.0, "g1", text="5 × M6 – 10 tief")
+    frei = IstAngabe("hinweis", "haupt", "5 × M6 – 10 tief", None, None, ())
+    am_gewinde = IstAngabe("hinweis", "haupt", "5 × M6", None, None, (), "g1")
+    p = pruefe_gewinde(_ist_mit(angaben=[frei, am_gewinde]), [angabe], REGELN)
+    assert p["ok"] is False and "tief" in p["maengel"][0]["text"]

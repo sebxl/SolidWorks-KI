@@ -52,7 +52,7 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: d
     masse, angaben = [], []
     for m in plan:
         if m.quelle == "angabe":
-            angaben.append(IstAngabe("hinweis", erste, m.text, None, None, ()))
+            angaben.append(IstAngabe("hinweis", erste, m.text, None, None, (), m.merkmal))  # Merkmal der Hinweislinie
             continue
         if m.quelle == "rauheit":
             angaben.append(IstAngabe("rauheit", erste, m.text, None, None, (), m.merkmal))
