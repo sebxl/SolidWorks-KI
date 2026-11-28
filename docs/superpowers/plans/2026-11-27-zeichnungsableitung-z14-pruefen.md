@@ -195,7 +195,7 @@
   - `lies_zeichnung(slddrw: Path, rollen: dict[str, str], app=None) -> Ist` (COM).
     - `IView` je Blatt: Name, `ScaleDecimal` → „n:m“, Art. Die Schnittbezeichnung liest `IView.GetSection`/Label bzw. `IDetailCircle`, nachschlagen.
     - Maße mit Wert, `GetText(1/2)`, Klammer, `Tolerance` (Type, Fit, Werte) und `_bezuege`.
-    - Toleranz im Ist (Review Task 3, M2): `unten` mit Vorzeichen (negativ unter Nennmaß), `oben`/`unten` in mm. ±0,02 ergibt `typ: symmetrisch, oben 0,02, unten −0,02`, nicht (0,02/0,02). Wert über `GetSystemValue3`, bei Zeichnungsmaßen None, dann `GetSystemValue2("")` (Spike Stufe 4). Ⓔ kommt als `<MOD-EP>` im Suffix. Jede Angabe bekommt ihr `merkmal`, soweit das Rücklesen es über die angehängte Kante bestimmen kann. Ohne Merkmal wird überzähliges nur gemeldet (Task 3).
+    - Toleranz im Ist (Review Task 3, M2): `unten` mit Vorzeichen (negativ unter Nennmaß), `oben`/`unten` in mm. ±0,02 ergibt `typ: symmetrisch, oben 0,02, unten −0,02`, nicht (0,02/0,02). Wert über `GetSystemValue3`, bei Zeichnungsmaßen None, dann `GetSystemValue2("")` (Spike Stufe 4). Ⓔ kommt als `<MOD-EP>` im Suffix. Jede Angabe bekommt ihr `merkmal`, soweit das Rücklesen es über die angehängte Kante bestimmen kann. Ohne Merkmal wird überzähliges nur gemeldet (Task 3) – überholt durch Nachtrag 3 (Review 4b): ohne Merkmal ist eine Angabe nicht zuordenbar, ein harter Mangel der Art.
     - `verdeckt`: Beide Bezugspunkte aus `_bezuege` werden gegen die sichtbaren Kanten der Ansicht (`_kanten`, Blatt-mm) geprüft, mit 0,1 mm Toleranz. Liegt ein Punkt auf keiner sichtbaren Kante und auf keiner Mittellinie, ist das Maß verdeckt bzw. ohne sichtbaren Bezug (Nutzer Stufe 2: „Maß ohne sichtbaren Bezug“). Nicht lineare Maße ergeben None.
     - Notizen (`GetFirstNote`/`GetNext`), `GetFirstGTOL`, `GetFirstDatumTag`, `GetFirstSFSymbol` (wie `spikes/z1_diag_stufe4.py`).
     - Eigenschaften über `CustomPropertyManager.Get6`.
@@ -225,6 +225,15 @@
       - Lesbarkeit: `pruefe_lesbarkeit` übergibt `pruefe_pdf` die gelegten Rahmen (`rahmen=`), mit dem Text der Form/Lage-Angaben und dem Rechteck aus dem PDF. Sonst gilt jede Rahmentrennlinie als Linie durch den Text.
       - `verdeckt`: dieselbe Streckenregel wie `anforderungen_setzen.kante_am_punkt`, also mit verlängerter Kante bei einer virtuellen Fasenecke. Bei nur 0,1 mm entstünde ein falscher Mangel „ohne sichtbaren Bezug“.
     - Öffnet die Zeichnung ohne Speichern und schließt sie wieder.
+      - Nachtrag 3 (Review 4b, 28.11.): Ein Merkmal None ist nie ein Joker. Eine Angabe ohne Merkmal deckt keinen
+        Plan-Eintrag und ist überzählig „ohne Merkmal, nicht zuordenbar“ (harter Mangel Z-TOL-4/5/6). Eine Kante
+        zwischen mehreren Merkmalen, bei der der Inhalt nicht entscheidet, ergibt „a/b“; die Angabe deckt genau
+        einen Eintrag eines dieser Merkmale. Rauheit, Form/Lage und Bezug ohne angehängte Kante meldet der
+        Rückleser (`RUECKLESEN_UNVOLLSTAENDIG`), ebenso jedes lineare Maß mit unlesbaren Hilfslinien, mehrere
+        Blätter und unlesbare Anmerkungen. `SAMMELANGABE_FEHLT` → Z-SAM-1, Sammelrauheit fehlt oder läuft über →
+        Z-SAM-7, andere Zeile läuft über → Z-LES-1. „Blatt“ setzt der Rückleser nicht selbst; fehlt die
+        Eigenschaft, ist das Feld nicht geprüft. Gedachte scharfe Ecke nur an einem tangentialen Bogen oder einer
+        Fasenkante höchstens `mittellinien.ECKE_MM` von der Ecke. Geschlossen wird nur, was `OpenDoc6` geladen hat.
 
 **Produces in Task 4a (Fortsetzung):**
   - `kopf_pruefung(sha_ist: str, uebergabe: dict) -> list[str]` (rein): Ist `sha_ist != uebergabe["sha256_slddrw"]`, entsteht `["ZEICHNUNG_GEAENDERT: <name> weicht von der Übergabe ab (Handänderung?) – swki aenderungen"]`. Bei fehlender Übergabe entsteht `ZEICHNUNG_UEBERGABE_FEHLT` und der Befehl bricht mit `ZeichnungFehler` ab.

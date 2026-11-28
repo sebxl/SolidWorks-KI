@@ -31,11 +31,11 @@ def ist_toleranz(t: Toleranz | None) -> IstToleranz:
 
 def schriftfeld_eigenschaften(spec: dict) -> dict[str, str]:
     """Eigenschaften einer idealen Zeichnung (Namen wie `zeichnung.schriftfeld` in config/standard.yaml, Eigentümer
-    und Freigegeben leer, Blatt wie der Rückleser es liefert)."""
+    und Freigegeben leer). „Blatt“ fehlt wie beim Rückleser: den Blattzähler setzt SolidWorks, der Rückleser erfindet
+    ihn nicht (Review 4b, M5; `pruefe_schriftfeld`: nicht geprüft)."""
     eig = spec.get("eigenschaften") or {}
     return {"Zeichnungsnummer": eig.get("Zeichnungsnummer", spec["name"]), "Benennung": eig.get("Benennung", spec["name"]),
-            "DrawnBy": "swki", "DrawnDate": "27.11.2026", "Dokumentart": "Einzelteilzeichnung", "Blatt": "1/1",
-            "Freigegeben": ""}
+            "DrawnBy": "swki", "DrawnDate": "27.11.2026", "Dokumentart": "Einzelteilzeichnung", "Freigegeben": ""}
 
 
 def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: dict | None = None,

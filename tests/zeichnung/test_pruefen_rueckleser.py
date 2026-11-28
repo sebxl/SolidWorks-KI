@@ -1,6 +1,7 @@
 """Nachträge zum Rückleser (Plan Z1.4 Task 4b) in den reinen Prüfungen: Meldungscode → Regel (`MELDUNG_REGEL`),
 Merkmal je Angabe über die angehängte Kante, Instanzzahl über dem Rahmen, Zeichnungsmaße, Rahmen für die Lesbarkeit."""
 
+import ast
 import re
 from dataclasses import replace
 from pathlib import Path
@@ -39,20 +40,65 @@ def _pruefung(urteil: dict, id_: str) -> dict:
 
 # --- Meldungscode → Regel ---------------------------------------------------------------------------------------------
 
+_CODE_ANFANG = re.compile(r"([A-Z][A-Z_]+):")
+# f-Strings, die mit einem Ausdruck beginnen und danach mit `[A-Z_]*:` weitergehen (f"{code}: …", f"{x}_FEHLT: …"):
+# der Code steckt (womöglich) im Ausdruck. Je (Datei, Ausdruck) die Codes, die er annehmen kann; leer = kein
+# Meldungscode, mit Grund (Review 4b, M6). Ein neuer solcher f-String muss hier eingetragen werden.
+_F_AUSDRUECKE: dict[tuple[str, str], tuple[set[str], str]] = {
+    ("anforderungen_setzen.py", "code"): ({"ANMERKUNG_KREUZT", "ANMERKUNG_ZU_NAH"}, "anmerkungen_pruefen"),
+    ("massplan.py", "fid"): (set(), "Plan-IDs „<fid>:d…“, „<fid>:a…“, „<fid>:rauheit“, „<fid>:form_lage:<i>“"),
+    ("massplan.py", "f['id']"): (set(), "Plan-ID „<fid>:angabe“"),
+    ("pruefen.py", "b.art"): (set(), "Mangeltext der Lesbarkeit (Art des PDF-Befunds)"),
+    ("pruefen.py", "wort"): (set(), "Mangeltext „doppelt:“/„überzählig:“"),
+    ("pruefen.py", "etikett"): (set(), "Mangeltext mit Maßetikett"),
+    ("rueckleser.py", "z(zaehler)"): (set(), "Maßstab „n:m“"),
+    ("rueckleser.py", "slddrw.name"): (set(), "Text eines ZeichnungFehler (Code RUECKLESEN_FEHLER steht davor)"),
+    ("zeichnen.py", "massstab[0]"): (set(), "Maßstab „n:m“ der Übergabe"),
+    ("zeichnen.py", "_ruf(view, 'GetName2')"): (set(), "Text eines ZeichnungFehler (Code steht davor)"),
+}
+
+
 def _codes_im_code() -> set[str]:
-    """Alle Meldungscodes in swki/zeichnung/*.py: `"CODE: …` (auch in f-Strings) und Codes, die als Name in einem Tupel
-    stehen und erst per f"{code}: …" Meldung werden (`anmerkungen_pruefen`: ANMERKUNG_KREUZT, ANMERKUNG_ZU_NAH)."""
-    codes = set()
-    for p in ZEICHNUNG.glob("*.py"):
-        text = p.read_text(encoding="utf-8")
-        codes |= set(re.findall(r'"([A-Z][A-Z_]+):', text))
-        codes |= set(re.findall(r'\(\("([A-Z][A-Z_]+)",', text)) | set(re.findall(r'\("([A-Z][A-Z_]+)", \[', text))
+    """Alle Meldungscodes in swki/zeichnung/*.py über den Syntaxbaum: Zeichenketten und f-Strings, die mit
+    `CODE:` beginnen; dazu die Codes der f-Strings aus `_F_AUSDRUECKE`. Ein f-String der Form f"{ausdruck}: …" bzw.
+    f"{ausdruck}_X: …", der dort fehlt, lässt den Test scheitern (sonst bliebe sein Code unentdeckt)."""
+    codes, unbekannt = set(), []
+    for p in sorted(ZEICHNUNG.glob("*.py")):
+        baum = ast.parse(p.read_text(encoding="utf-8"))
+        in_fstring = {id(v) for k in ast.walk(baum) if isinstance(k, ast.JoinedStr) for v in k.values}
+        for k in ast.walk(baum):
+            if isinstance(k, ast.Constant) and isinstance(k.value, str) and id(k) not in in_fstring:
+                if t := _CODE_ANFANG.match(k.value):
+                    codes.add(t.group(1))
+            elif isinstance(k, ast.JoinedStr) and k.values:
+                erstes = k.values[0]
+                if isinstance(erstes, ast.Constant):
+                    if t := _CODE_ANFANG.match(erstes.value):
+                        codes.add(t.group(1))
+                elif (len(k.values) > 1 and isinstance(k.values[1], ast.Constant)
+                      and re.match(r"[A-Z_]*:", k.values[1].value)):
+                    schluessel = (p.name, ast.unparse(erstes.value))
+                    if schluessel in _F_AUSDRUECKE:
+                        codes |= _F_AUSDRUECKE[schluessel][0]
+                    else:
+                        unbekannt.append(f"{p.name}:{k.lineno} {ast.unparse(k)}")
+    assert unbekannt == [], f"f-Strings mit Code im Ausdruck ohne Eintrag in _F_AUSDRUECKE: {unbekannt}"
     return codes
+
+
+def test_codesuche_findet_fstring_codes():
+    """Selbsttest der Suche (M6): ein Code mitten in einem f-String mit Variablen, ein f"{code}: …" ohne Eintrag."""
+    baum = ast.parse('x = f"NEU_CODE: {a} – {b}"\ny = f"{c}: {d}"')
+    erste = [k.values[0] for k in ast.walk(baum) if isinstance(k, ast.JoinedStr)]
+    assert _CODE_ANFANG.match(erste[0].value).group(1) == "NEU_CODE"
+    assert isinstance(erste[1], ast.FormattedValue) and ("pruefen.py", ast.unparse(erste[1].value)) not in _F_AUSDRUECKE
+    assert all(grund for _, grund in _F_AUSDRUECKE.values())
 
 
 def test_jeder_meldungscode_hat_regel():
     codes = _codes_im_code()
-    assert {"ANMERKUNG_KREUZT", "ANMERKUNG_ZU_NAH", "RAUHEIT_NUR_EINE_INSTANZ", "SCHNITT_BUCHSTABE"} <= codes
+    assert {"ANMERKUNG_KREUZT", "ANMERKUNG_ZU_NAH", "RAUHEIT_NUR_EINE_INSTANZ", "SCHNITT_BUCHSTABE",
+            "RUECKLESEN_UNVOLLSTAENDIG", "SAMMELANGABE_UEBERLAUF"} <= codes
     ohne = sorted(c for c in codes if c not in MELDUNG_REGEL and c not in NUR_BERICHT)
     assert ohne == [], f"Meldungscodes ohne Regel und ohne Eintrag „nur Bericht“: {ohne}"
     assert not set(MELDUNG_REGEL) & set(NUR_BERICHT)
@@ -187,16 +233,50 @@ def test_merkmal_ueber_spiegel_und_unterfeature():
 
 
 def test_merkmal_mehrdeutig_nach_inhalt():
-    """Kante zwischen zwei Merkmalen mit Rauheit im Plan: der Inhalt entscheidet; gleicher Inhalt → kein Merkmal."""
+    """Kante zwischen zwei Merkmalen mit Rauheit im Plan: der Inhalt entscheidet; passt er zu keinem, heißt das
+    Merkmal „st/t1“ (Review 4b, I1: nie None, sonst wirkte die Angabe als Joker)."""
     spec, plan = _spec_sp(), plan_spannplatte_z()
     ist = replace(_ideal_sp(), angaben=(_angabe("rauheit", "Ra 0,8", ("st", "t1")),
                                         _angabe("rauheit", "Ra 3,2", ("st", "t1"))))
-    assert [a.merkmal for a in merkmale_zuordnen(ist, spec, plan).angaben] == ["st", None]
+    assert [a.merkmal for a in merkmale_zuordnen(ist, spec, plan).angaben] == ["st", "st/t1"]
+
+
+def _mit_zusatz(angabe, plan=None, spec=None):
+    """Ideal-Spannplatte plus eine zurückgelesene Angabe, zugeordnet und bewertet (Probe q6_check des Reviews)."""
+    spec, plan = spec or _spec_sp(), plan or plan_spannplatte_z()
+    ist = replace(ideal_ist(plan, spec=spec), angaben=ideal_ist(plan, spec=spec).angaben + (angabe,))
+    return _bewerte(merkmale_zuordnen(ist, spec, plan), plan, spec)
+
+
+@pytest.mark.parametrize("features", [("st", "t1"), ("f1",), ("Schnitt1",), ()])
+def test_ra_3_2_zusaetzlich_nie_bestanden(features):
+    """Review 4b (I1/I2): ein zusätzliches „Ra 3,2“ an einer mehrdeutigen Kante, an einem Merkmal ohne Rauheit, an
+    einer Kante ohne Spec-Feature oder ohne angehängte Kante ist ein harter Mangel Z-TOL-4 – nie bestanden."""
+    u = _mit_zusatz(_angabe("rauheit", "Ra 3,2", features))
+    assert u["bestanden"] is False and _pruefung(u, "toleranzen")["ok"] is False
+    assert any(m["regel"] == "Z-TOL-4" and "Ra 3,2" in m["text"] for m in u["maengel"])
+
+
+def test_mehrdeutig_gleicher_inhalt_deckt_genau_einen():
+    """Zwei Kandidaten mit gleichem Inhalt (Ra 0,8 an st und an t1): die Angabe an der gemeinsamen Kante heißt
+    „st/t1“ und deckt genau einen der beiden Einträge – kein Joker, aber auch kein falscher Mangel."""
+    spec = _spec_sp()
+    plan = [replace(m, text="Ra 0,8") if m.quelle == "rauheit" and m.merkmal == "t1" else m for m in plan_spannplatte_z()]
+    ideal = ideal_ist(plan, spec=spec)
+    t1 = next(a for a in ideal.angaben if a.art == "rauheit" and a.merkmal == "t1")
+    gemeinsam = replace(t1, merkmal=None, features=("st", "t1"))
+    ist = merkmale_zuordnen(replace(ideal, angaben=tuple(gemeinsam if a is t1 else a for a in ideal.angaben)), spec, plan)
+    assert sorted(a.merkmal for a in ist.angaben if a.art == "rauheit") == ["st", "st/t1"]
+    assert _bewerte(ist, plan, spec)["bestanden"] is True
+    # deckt nur einen: fehlt auch die Angabe an st, fehlt ein Eintrag
+    ohne_st = replace(ist, angaben=tuple(a for a in ist.angaben if not (a.art == "rauheit" and a.merkmal == "st")))
+    u = _bewerte(ohne_st, plan, spec)
+    assert u["bestanden"] is False and [m["text"][:5] for m in u["maengel"] if m["regel"] == "Z-TOL-4"] == ["fehlt"]
 
 
 def test_merkmal_ausserhalb_des_plans():
     """An einer Fläche ohne Eintrag dieser Art: das Merkmal der Kante (mehrere mit „/“) – überzählig, ein harter
-    Mangel; ohne Feature-Namen bleibt es None (nur Meldung)."""
+    Mangel; ohne Feature-Namen bleibt es None (dann ebenfalls harter Mangel „ohne Merkmal“, Review 4b I2)."""
     spec, plan = _spec_sp(), plan_spannplatte_z()
     ist = replace(_ideal_sp(), angaben=(_angabe("rauheit", "Ra 1,6", ("Schnitt1", "f1")),
                                         _angabe("rauheit", "Ra 1,6", ("g1", "f1")),
@@ -259,3 +339,38 @@ def test_rahmen_texte_aus_ist():
 def test_buchse_ideal_bleibt_bestanden():
     spec = _lade_ref("zeichnung/buchse_z.yaml")
     assert bewerte(ideal_ist(plan_buchse_z(), spec=spec), plan_buchse_z(), spec, STANDARD, REGELN)["bestanden"] is True
+
+
+def test_stil_spannplatte_ideal_bleibt_bestanden():
+    from tests.zeichnung.test_massplan import _spannplatte
+    from swki.zeichnung.massplan import massplan
+
+    spec, protokoll = _spannplatte()
+    plan = massplan(spec, protokoll)
+    assert bewerte(ideal_ist(plan, spec=spec), plan, spec, STANDARD, REGELN)["bestanden"] is True
+
+
+# --- Sammelangaben: Lage aus dem PDF (Review 4b, I3) -----------------------------------------------------------------
+
+@pytest.mark.parametrize("meldung,pruefung,regel_id,bestanden", [
+    ("SAMMELANGABE_FEHLT: „Halbzeug: Flach“ nicht im PDF", "sammelangaben", "Z-SAM-1", False),
+    ("SAMMELANGABE_FEHLT: „Oberflächen ohne Angabe: Ra 3,2“ nicht im PDF", "sammelangaben", "Z-SAM-7", False),
+    ("SAMMELANGABE_UEBERLAUF: „Oberflächen ohne Angabe: Ra 3,2“ bei (300, 20)–(400, 24) mm außerhalb des Bands "
+     "(200, 30)–(390, 60)", "sammelangaben", "Z-SAM-7", False),
+    ("SAMMELANGABE_UEBERLAUF: „Maßgebend ist die Zeichnung“ bei (200, 20)–(300, 24) mm außerhalb des Bands "
+     "(200, 30)–(390, 60)", "lesbarkeit", "Z-LES-1", True),
+])
+def test_sammelangabe_aus_dem_pdf(meldung, pruefung, regel_id, bestanden):
+    """`pruefe_sammelangaben` liest nur den Text der Notizen, nicht ihre Lage: eine Notiz unter dem Blatt (gescheitertes
+    `SetPosition2`) erfüllt Z-SAM-1/2/4/6 trotzdem. Die PDF-Prüfung beim Zeichnen (`sammel_pruefen`) sieht die Lage –
+    fehlt eine Zeile im PDF, ist das ein Mangel der Sammelangaben; die Sammelrauheit außerhalb des Bands verletzt
+    Z-SAM-7 (nahe dem Schriftfeld), jede andere übergelaufene Zeile ist ein Lesbarkeitshinweis."""
+    u = _bewerte(_ideal_sp(), meldungen=[meldung])
+    assert u["bestanden"] is bestanden
+    assert any(m["regel"] == regel_id and m["pruefung"] == pruefung and m["text"] == meldung for m in u["maengel"])
+
+
+def test_sammel_rauheit_zeile_eine_quelle():
+    from swki.zeichnung import anforderungen_setzen, toleranzangaben
+
+    assert anforderungen_setzen.SAMMEL_RAUHEIT_ZEILE is toleranzangaben.SAMMEL_RAUHEIT_ZEILE

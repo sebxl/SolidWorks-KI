@@ -32,7 +32,7 @@ from swki.zeichnung.bemassen import _anzeige, _loesche, _ruf, kurzname
 from swki.zeichnung.blatt import SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.lesbarkeit import _schneidet
 from swki.zeichnung.massplan import Mass
-from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, Toleranz
+from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT_ZEILE, Toleranz
 
 TOL_BILAT, TOL_SYMMETRISCH, TOL_PASSUNG = 2, 4, 7   # swTolType_e
 PASSUNG_EINZEILIG = 3                               # FitDisplayStyle (Spike e: „200,00 H7“ in einer Zeile)
@@ -89,9 +89,6 @@ SAMMEL_ZEILENABSTAND_MM = 4.55                      # Hinweistext 3,5 mm, live 2
 SAMMEL_RAUHEIT_ZEICHEN_MM = 2.6                     # „Oberflächen ohne Angabe: Ra 3,2“ live 78 mm für 31 Zeichen
 SAMMEL_SPALT_ZEICHEN = 4                            # Abstand Sammelzeile – allgemeine Rauheit rechts daneben
 SAMMEL_OBERKANTE_MM = 1.4                           # Textoberkante über `IAnnotation.GetPosition` (Live 19.11.)
-# Allgemeine Rauheit als eigener Hinweis rechts im Band (Z1.4 sucht `SAMMEL_RAUHEIT` im Text der Notizen); Wortlaut
-# ist ein Vorschlag (ISO 21920-1 zeichnet sie als Symbol „√Ra 3,2 (√)“ in Schriftfeldnähe, recherche.md Kap. 6: C)
-SAMMEL_RAUHEIT_ZEILE = f"Oberflächen ohne Angabe: {SAMMEL_RAUHEIT}"
 
 
 def wert_mm(dd) -> float | None:

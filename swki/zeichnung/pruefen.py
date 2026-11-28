@@ -14,7 +14,7 @@ from swki.zeichnung.ist import Ist, IstAngabe, IstMass, IstToleranz
 from swki.zeichnung.lesbarkeit import pruefe_pdf, texte
 from swki.zeichnung.massplan import Mass
 from swki.zeichnung.regeln import Regel, regel
-from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, Toleranz, sammelangaben, toleranztext
+from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, SAMMEL_RAUHEIT_ZEILE, Toleranz, sammelangaben, toleranztext
 
 # ISO 5455 (Entscheidung 5): Vorzugsreihe für das Blatt und jede Einzelheit.
 VORZUGSMASSSTAEBE: tuple[str, ...] = ("1:1", "1:2", "1:5", "1:10", "1:20", "1:50", "1:100",
@@ -397,25 +397,34 @@ def _text_ist(art: str, a) -> str:
     return f"Bezug {normtext(a.text)}"
 
 
+OHNE_MERKMAL = "ohne Merkmal"   # Feld `merkmal` eines Mangels an einer Angabe, deren Merkmal das Rücklesen nicht kennt
+
+
+def _kandidaten(a: IstAngabe) -> tuple[str, ...]:
+    """Merkmale, die eine Angabe decken darf: ihr Merkmal, bei einer Kante zwischen mehreren Merkmalen
+    (`merkmale_zuordnen`: „st/t1“) jedes davon; ohne Merkmal keines (Review 4b, I1/I2: None ist nie ein Joker)."""
+    return tuple(a.merkmal.split("/")) if a.merkmal else ()
+
+
 def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel],
-                    anzahl: dict[str, int] | None = None) -> tuple[list[dict], list[str]]:
-    """Rauheit, Form/Lage und Bezüge des Plans gegen `ist.angaben`. Hat eine IstAngabe ein Merkmal, gleicht Pass 1 je
-    Merkmal ab; eine IstAngabe ohne Merkmal (das Rücklesen kennt es nicht immer) deckt in Pass 2 einen Plan-Eintrag
-    gleichen Inhalts als Multimenge (Art, Text bzw. Symbol + Wert + Bezug). Eine IstAngabe mit anderem Merkmal deckt keinen.
-    Zuletzt gilt ein übrig gebliebener Ist-Eintrag derselben Art (Form/Lage: gleiches Symbol; Bezüge: nie) als „weicht
-    ab“, sonst „fehlt“. Was dann noch übrig ist, ist überzählig: mit Merkmal ein harter Mangel (keine Anforderung ohne
-    Funktion), ohne Merkmal nur eine Meldung (zweiter Rückgabewert). `anzahl` (Merkmal → Instanzen,
-    `anforderungen_setzen.instanzen`; Task 4b): bei Form/Lage gehört „n ד über dem Rahmen zum Inhalt; None: nicht
-    verglichen."""
-    maengel, meldungen = [], []
+                    anzahl: dict[str, int] | None = None) -> list[dict]:
+    """Rauheit, Form/Lage und Bezüge des Plans gegen `ist.angaben`, je Merkmal und Inhalt als Multimenge (Art, Text bzw.
+    Symbol + Wert + Bezug). Pass 1: Angabe mit genau dem Merkmal des Plan-Eintrags; Pass 2: Angabe an einer Kante
+    zwischen mehreren Merkmalen („st/t1“), deren eines das Merkmal ist – sie deckt genau einen Eintrag. Eine Angabe
+    ohne Merkmal deckt keinen (Review 4b, I1/I2). Danach gilt ein übrig gebliebener Ist-Eintrag eines passenden
+    Merkmals (Form/Lage: gleiches Symbol; Bezüge: nie) als „weicht ab“, sonst „fehlt“. Was dann noch übrig ist, ist
+    überzählig, immer ein harter Mangel der Art (keine Anforderung ohne Funktion; ohne Merkmal: nicht zuordenbar).
+    `anzahl` (Merkmal → Instanzen, `anforderungen_setzen.instanzen`; Task 4b): bei Form/Lage gehört „n ד über dem
+    Rahmen zum Inhalt; None: nicht verglichen."""
+    maengel = []
     for art, regel_id in _ANGABEN_REGEL.items():
         frei = [a for a in ist.angaben if a.art == art]
         offen = [m for m in plan if m.quelle == art]
-        for je_merkmal in (True, False):
+        for genau in (True, False):
             rest = []
             for m in offen:
                 treffer = next((a for a in frei if _inhalt_ist(art, a, anzahl is not None) == _inhalt_plan(m, anzahl)
-                                and (a.merkmal == m.merkmal if je_merkmal else a.merkmal is None)), None)
+                                and (a.merkmal == m.merkmal if genau else m.merkmal in _kandidaten(a))), None)
                 if treffer is None:
                     rest.append(m)
                 else:
@@ -423,7 +432,7 @@ def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel],
             offen = rest
         for m in offen:
             nah = None if art == "bezug" else next(
-                (a for a in frei if a.merkmal in (m.merkmal, None)
+                (a for a in frei if m.merkmal in _kandidaten(a)
                  and (art != "form_lage" or (a.symbol or "") == m.form_lage.symbol)), None)
             if nah is None:
                 maengel.append(_mangel(regeln, regel_id, m.merkmal, f"fehlt: {_text_plan(m, anzahl)} ({m.merkmal})"))
@@ -432,12 +441,10 @@ def _angaben_je_art(ist: Ist, plan: list[Mass], regeln: list[Regel],
                 maengel.append(_mangel(regeln, regel_id, m.merkmal,
                                        f"weicht ab: {_text_ist(art, nah)} statt {_text_plan(m, anzahl)} ({m.merkmal})"))
         for a in frei:
-            wort = _text_ist(art, a)
-            if a.merkmal is None:
-                meldungen.append(f"überzählige {wort} ohne Merkmal")
-            else:
-                maengel.append(_mangel(regeln, regel_id, a.merkmal, f"überzählig: {wort} ({a.merkmal})"))
-    return maengel, meldungen
+            merkmal = a.merkmal or OHNE_MERKMAL
+            zusatz = f"{OHNE_MERKMAL}, nicht zuordenbar" if a.merkmal is None else a.merkmal
+            maengel.append(_mangel(regeln, regel_id, merkmal, f"überzählig: {_text_ist(art, a)} ({zusatz})"))
+    return maengel
 
 
 def pruefe_toleranzen(ist: Ist, plan: list[Mass], regeln: list[Regel], anzahl: dict[str, int] | None = None) -> dict:
@@ -464,11 +471,9 @@ def pruefe_toleranzen(ist: Ist, plan: list[Mass], regeln: list[Regel], anzahl: d
                 maengel.append(_mangel(regeln, "Z-TOL-1", m.merkmal, f"{etikett}: Ⓔ fehlt an {_soll_text(m)}"))
         if _traegt_huelle(c) and not _huelle_plan(m):
             maengel.append(_mangel(regeln, "Z-TOL-2", m.merkmal, f"{etikett}: Ⓔ an einem Maß ohne Passung"))
-    mehr, meldungen = _angaben_je_art(ist, plan, regeln, anzahl)
-    p = _pruefung("toleranzen", regeln, ("Z-TOL-1", "Z-TOL-2", "Z-TOL-3", "Z-TOL-4", "Z-TOL-5", "Z-TOL-6"), maengel + mehr)
-    if meldungen:
-        p["meldungen"] = meldungen
-    return p
+    mehr = _angaben_je_art(ist, plan, regeln, anzahl)
+    return _pruefung("toleranzen", regeln, ("Z-TOL-1", "Z-TOL-2", "Z-TOL-3", "Z-TOL-4", "Z-TOL-5", "Z-TOL-6"),
+                     maengel + mehr)
 
 
 # --- Sammelangaben, Schriftfeld, Lesbarkeit -------------------------------------------------------------------------------
@@ -482,7 +487,9 @@ _ISO_2768_K = re.compile(rf"2768(?:\s*{_BS}\s*\d?(?::\d{{4}})?)?\s*{_BS}?\s*[fmc
 def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
     """Jede Zeile von `sammelangaben(spec)` steht (normalisiert) im Text aller Notizen, dazu die Sammelrauheit (Z-SAM-7).
     Verboten (Z-SAM-3, je Notiz geprüft, damit „… 2768-1 m“ und eine Folgenotiz „K…“ kein „mK“ ergeben): „2768-…K“ und
-    „DIN 7167“. Das Muster erlaubt Leerraum, verschiedene Striche, Jahr und Groß-/Kleinschreibung."""
+    „DIN 7167“. Das Muster erlaubt Leerraum, verschiedene Striche, Jahr und Groß-/Kleinschreibung. Nur der Text, nicht
+    die Lage: ob die Zeilen auf dem Blatt und im Band stehen, prüft `swki zeichnen` am PDF (SAMMELANGABE_FEHLT,
+    SAMMELANGABE_UEBERLAUF; Mängel über `MELDUNG_REGEL`, Review 4b I3)."""
     notizen = [normtext(a.text) for a in ist.angaben if a.art == "hinweis"]
     alle = " ".join(notizen)
     maengel = []
@@ -505,15 +512,22 @@ _PFLICHT = (("sachnummer", "Sachnummer"), ("titel", "Benennung"), ("ersteller", 
 def pruefe_schriftfeld(ist: Ist, standard: dict, regeln: list[Regel]) -> dict:
     """Pflichtfelder (Z-SCH-1), „Freigegeben“ leer (Z-SCH-2), Blattmaßstab aus der Vorzugsreihe (Z-SCH-3). Die Werte
     stehen in `ist.eigenschaften` unter den Namen aus `standard["zeichnung"]["schriftfeld"]`. Eigentümer leer ist nur
-    ein Hinweis (`ok` None) bis Z1.5."""
+    ein Hinweis (`ok` None) bis Z1.5. Blatt (Review 4b, M5): den Blattzähler füllt SolidWorks aus dem Blatt selbst
+    (Systemeigenschaft), `swki zeichnen` schreibt keine Eigenschaft „Blatt“ und der Rückleser erfindet keine – fehlt
+    sie in den Eigenschaften, ist das Feld nicht geprüft (bis Z1.5, Schriftfeld des Nutzers); ist sie da, aber leer,
+    ein Mangel."""
     sf = (standard.get("zeichnung") or {}).get("schriftfeld") or {}
 
     def wert(feld: str) -> str:
         name = sf.get(feld, "")
         return (ist.eigenschaften.get(name) or "").strip() if name else ""
 
-    maengel = []
+    maengel, ungeprueft = [], []
     for feld, bezeichnung in _PFLICHT:
+        if feld == "blatt" and sf.get(feld) and sf[feld] not in ist.eigenschaften:
+            ungeprueft.append(f"Blatt nicht gelesen (Eigenschaft {sf[feld]} fehlt, Blattzähler von SolidWorks; "
+                              "bis Z1.5 nicht geprüft)")
+            continue
         if not wert(feld):
             maengel.append(_mangel(regeln, "Z-SCH-1", bezeichnung,
                                    f"Pflichtfeld {bezeichnung} leer (Eigenschaft {sf.get(feld) or 'nicht zugeordnet'})"))
@@ -524,8 +538,10 @@ def pruefe_schriftfeld(ist: Ist, standard: dict, regeln: list[Regel]) -> dict:
         maengel.append(_mangel(regeln, "Z-SCH-3", "Maßstab", "Maßstab des Blatts fehlt"))
     elif massstab not in VORZUGSMASSSTAEBE:
         maengel.append(_mangel(regeln, "Z-SCH-3", "Maßstab", f"Maßstab {massstab} nicht aus der Vorzugsreihe"))
-    unpruefbar = None if wert("eigentuemer") else "Eigentümer leer (bis Z1.5 nur Hinweis)"
-    return _pruefung("schriftfeld", regeln, ("Z-SCH-1", "Z-SCH-2", "Z-SCH-3"), maengel, unpruefbar=unpruefbar)
+    if not wert("eigentuemer"):
+        ungeprueft.insert(0, "Eigentümer leer (bis Z1.5 nur Hinweis)")
+    return _pruefung("schriftfeld", regeln, ("Z-SCH-1", "Z-SCH-2", "Z-SCH-3"), maengel,
+                     unpruefbar="; ".join(ungeprueft) or None)
 
 
 def _ausschluss(format_: str) -> list[tuple]:
@@ -578,8 +594,13 @@ MELDUNG_REGEL: dict[str, tuple[str, str]] = {
     # Lesbarkeit und Lage der Anmerkungen (Hinweis)
     "ANMERKUNG_KREUZT": _LES, "ANMERKUNG_ZU_NAH": _LES, "ANGABE_ZU_NAH": _LES, "ANSATZ_NICHT_FREI": _LES,
     "LESBARKEIT": _LES, "LESBARKEIT_UNGEPRUEFT": _LES, "SCHRAFFUR_UNGELESEN": _LES, "ANMERKUNG_NICHT_UMGEHAENGT": _LES,
-    "SAMMELANGABE_FEHLT": _LES, "SAMMELANGABE_UEBERLAUF": _LES, "MASSE_NICHT_ANGEORDNET": _LES,
-    "HILFSLINIE_NICHT_MITTELLINIE": _LES,
+    "MASSE_NICHT_ANGEORDNET": _LES, "HILFSLINIE_NICHT_MITTELLINIE": _LES,
+    # Sammelangaben im PDF (`anforderungen_setzen.sammel_pruefen`, Review 4b I3): `pruefe_sammelangaben` liest nur den
+    # Text der Notizen, nicht ihre Lage – eine Notiz unter dem Blatt (gescheitertes `SetPosition2`) erfüllte Z-SAM-1/2/
+    # 4/6 trotzdem. Fehlt eine Zeile im PDF, fehlt die Sammelangabe (Z-SAM-1, hart). Läuft eine Zeile über das Band
+    # hinaus, steht sie noch auf dem Blatt: ein Lesbarkeitshinweis – außer der Sammelrauheit, die nahe dem Schriftfeld
+    # stehen muss (Z-SAM-7, `_SAMMEL_RAUHEIT_REGEL`).
+    "SAMMELANGABE_FEHLT": ("sammelangaben", "Z-SAM-1"), "SAMMELANGABE_UEBERLAUF": _LES,
     # Bezeichnung der Ansichten, sichtbarer Bezug
     "EINZELHEIT_BUCHSTABE": ("ansichten", "Z-ANS-2"), "SCHNITT_BUCHSTABE": ("ansichten", "Z-ANS-2"),
     "BEZUG_OHNE_KANTE": ("ansichten", "Z-ANS-1"), "MITTELLINIE_NICHT_GEZEICHNET": ("ansichten", "Z-ANS-1"),
@@ -611,13 +632,26 @@ NUR_BERICHT: dict[str, str] = {
     "EINZELHEIT_ZU_GROSS": "Protokoll der Ansichtswahl",
     "ANSICHT_GERATEN": "Ansichtswahl ohne Anker; die Darstellung beurteilt der Zeichnungsprüfer",
     "ANSICHT_NICHT_GELOESCHT": "Ansicht ohne Maß blieb; beurteilt der Zeichnungsprüfer (kein Maß fehlt)",
-    "SCHNITT_NICHT_ERZEUGT": "Projektion statt Schnitt; Maße ohne sichtbaren Bezug meldet Z-ANS-1 über `verdeckt`",
+    "SCHNITT_NICHT_ERZEUGT": "Projektion statt Schnitt; lineare Maße (auch Ø im Längsschnitt) ohne sichtbaren Bezug "
+                             "meldet Z-ANS-1 über `verdeckt`, unlesbare Hilfslinien RUECKLESEN_UNVOLLSTAENDIG; Ø-, R- "
+                             "und Winkelmaße prüft `verdeckt` nicht (None, bekannte Grenze: beurteilt der "
+                             "Zeichnungsprüfer)",
     "SCHNITT_NICHT_UNTERSTUETZT": "wie SCHNITT_NICHT_ERZEUGT",
+    "RUECKLESEN_NICHT_GESCHLOSSEN": "Zustand von SolidWorks nach dem Lesen, nicht der Zeichnung (SHA-Vergleich zeigt, "
+                                    "dass nichts geändert ist); vor dem nächsten Lauf von Hand schließen",
     "ZEICHNUNG_GEAENDERT": "Kopfprüfung: `zeichnung_pruefen` setzt bestanden False",
     "ZEICHNUNG_PLAN_VERALTET": "Kopfprüfung: `zeichnung_pruefen` setzt bestanden False",
     "PDF_VERWORFEN": "Folge der Kopfprüfung; Lesbarkeit dann nicht geprüft (ok None)",
 }
 _CODE = re.compile(r"^([A-Z][A-Z_]+):")
+_SAMMEL_RAUHEIT_REGEL = ("sammelangaben", "Z-SAM-7")
+
+
+def _regel_der_meldung(code: str, meldung: str) -> tuple[str, str]:
+    """`MELDUNG_REGEL`, bei den Sammelangaben im PDF je Zeile: die Sammelrauheit (`SAMMEL_RAUHEIT_ZEILE`) ist Z-SAM-7."""
+    if code in ("SAMMELANGABE_FEHLT", "SAMMELANGABE_UEBERLAUF") and f"„{SAMMEL_RAUHEIT_ZEILE}“" in meldung:
+        return _SAMMEL_RAUHEIT_REGEL
+    return MELDUNG_REGEL[code]
 
 
 def meldungscode(meldung: str) -> str | None:
@@ -640,9 +674,9 @@ def soll_luecken(meldungen: list[str]) -> list[dict]:
             continue
         rest = meldung.partition(": ")[2]
         if code in MELDUNG_REGEL:
-            pruefung, regel_id = MELDUNG_REGEL[code]
-            aus.append({"pruefung": pruefung, "regel": regel_id, "merkmal": re.split(r"[\s:]", rest)[0],
-                        "text": meldung})
+            pruefung, regel_id = _regel_der_meldung(code, meldung)
+            merkmal = "sammelangabe" if code.startswith("SAMMELANGABE") else re.split(r"[\s:]", rest)[0]
+            aus.append({"pruefung": pruefung, "regel": regel_id, "merkmal": merkmal, "text": meldung})
         else:
             aus.append({"pruefung": "vollstaendig", "regel": "Z-VOLL-1", "merkmal": code or "meldung",
                         "text": f"unbekannte Zeichnungsmeldung: {meldung}"})
@@ -671,10 +705,13 @@ def _inhalt_gleich(a: IstAngabe, m: Mass) -> bool:
 def merkmale_zuordnen(ist: Ist, spec: dict, plan: list[Mass]) -> Ist:
     """Merkmal je Angabe aus den Features der angehängten Kante (`IstAngabe.features`), mit derselben
     `enthalten`-Logik wie beim Setzen (Merkmal, seine Muster und Spiegel, Unter-Features). Kandidaten sind die
-    Plan-Merkmale mit einem Eintrag dieser Art; bei mehreren entscheidet der Inhalt (Text, Symbol + Wert + Bezug),
-    bleibt es mehrdeutig, None. Gehört die Kante zu keinem: die Feature-IDs der Spec an der Kante (mehrere mit „/“) –
-    die Angabe ist dann überzählig an diesem Merkmal (harter Mangel). Ohne Feature-Namen bzw. ohne Spec-Feature: None
-    (überzählig nur als Meldung). Gesetzte Merkmale bleiben."""
+    Plan-Merkmale mit einem Eintrag dieser Art; bei mehreren entscheidet der Inhalt (Text, Symbol + Wert + Bezug).
+    Bleibt es mehrdeutig, heißt das Merkmal „a/b“ (Review 4b, I1): die inhaltsgleichen Kandidaten, passt der Inhalt zu
+    keinem, alle Kandidaten – die Angabe deckt dann höchstens einen Eintrag eines dieser Merkmale (`_angaben_je_art`),
+    sonst ist sie überzählig. Gehört die Kante zu keinem: die Feature-IDs der Spec an der Kante (mehrere mit „/“) –
+    die Angabe ist dann überzählig an diesem Merkmal (harter Mangel). Ohne Feature-Namen bzw. ohne Spec-Feature: None,
+    was ebenfalls ein harter Mangel „ohne Merkmal“ ist (nie ein Joker; der Rückleser meldet die fehlende Kante).
+    Gesetzte Merkmale bleiben."""
     ids = [f["id"] for f in spec.get("features", [])]
     enthalten = {}
     for m in plan:
@@ -689,8 +726,8 @@ def merkmale_zuordnen(ist: Ist, spec: dict, plan: list[Mass]) -> Ist:
         eintraege = [m for m in plan if m.quelle == quelle and _gehoert(a.features, enthalten[m.merkmal])]
         kandidaten = sorted({m.merkmal for m in eintraege})
         if len(kandidaten) > 1:
-            kandidaten = sorted({m.merkmal for m in eintraege if _inhalt_gleich(a, m)})
-            merkmal = kandidaten[0] if len(kandidaten) == 1 else None
+            gleich = sorted({m.merkmal for m in eintraege if _inhalt_gleich(a, m)})
+            merkmal = "/".join(gleich or kandidaten)
         elif kandidaten:
             merkmal = kandidaten[0]
         else:
@@ -736,9 +773,8 @@ def bewerte(ist: Ist, plan: list[Mass], spec: dict, standard: dict, regeln: list
     alle = list(dict.fromkeys(list(meldungen_soll) + list(meldungen) + list(ist.meldungen)))
     for luecke in soll_luecken(alle):
         _nachtragen(pruefungen[luecke["pruefung"]], regeln, [{k: luecke[k] for k in ("regel", "merkmal", "text")}])
-    zusatz = [m for p in pruefungen.values() for m in p.get("meldungen", [])]
     return {"bestanden": all(p["ok"] is not False for p in pruefungen.values()),
             "nicht_geprueft": [p["id"] for p in pruefungen.values() if p["ok"] is None],
             "pruefungen": list(pruefungen.values()),
             "maengel": [{"pruefung": p["id"], **m} for p in pruefungen.values() for m in p["maengel"]],
-            "meldungen": list(dict.fromkeys(list(meldungen) + list(meldungen_soll) + list(ist.meldungen) + zusatz))}
+            "meldungen": list(dict.fromkeys(list(meldungen) + list(meldungen_soll) + list(ist.meldungen)))}

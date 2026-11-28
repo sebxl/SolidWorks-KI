@@ -192,20 +192,24 @@ def test_bezug_fehlt():
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-6"} and "B" in p["maengel"][0]["text"]
 
 
-def test_angaben_je_merkmal_und_als_multimenge():
-    """Mit Merkmal je Merkmal, ohne Merkmal (Rücklesen kennt es nicht) als Multimenge."""
+def test_angaben_je_merkmal_ohne_merkmal_kein_joker():
+    """Abgleich je Merkmal. Eine Angabe ohne Merkmal deckt nichts (Review 4b, I1/I2: kein Joker): der Plan-Eintrag
+    fehlt, die Angabe ist überzählig ohne Merkmal – beides harte Mängel der Art."""
     plan = plan_spannplatte_z()
     ideal = _ideal_sp()
     assert all(a.merkmal for a in ideal.angaben if a.art in ("rauheit", "form_lage"))
     ohne = replace(ideal, angaben=tuple(replace(a, merkmal=None) for a in ideal.angaben))
-    assert pruefe_toleranzen(ohne, plan, REGELN)["ok"] is True
-    # gleiche Rauheit am falschen Merkmal zählt nicht, wenn das Rücklesen das Merkmal kennt
+    p = pruefe_toleranzen(ohne, plan, REGELN)
+    assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-4", "Z-TOL-5", "Z-TOL-6"}
+    assert any(m["text"].startswith("fehlt:") for m in p["maengel"])
+    assert any(m["text"].startswith("überzählig:") and "ohne Merkmal" in m["text"] for m in p["maengel"])
+    # gleiche Rauheit am falschen Merkmal zählt nicht
     vertauscht = replace(ideal, angaben=tuple(replace(a, merkmal="st" if a.art == "rauheit" and a.merkmal == "t1" else a.merkmal)
                                               if a.art == "rauheit" else a for a in ideal.angaben))
     assert _regeln_der(pruefe_toleranzen(vertauscht, plan, REGELN)) == {"Z-TOL-4"}
-    # Multimenge: zweimal derselbe Text deckt nur einen Plan-Eintrag
-    doppelt = _ohne_angabe(ohne, lambda a: a.art == "rauheit" and a.text == "Ra 0,8")
-    doppelt = replace(doppelt, angaben=doppelt.angaben + (IstAngabe("rauheit", "haupt", "Ra 1,6", None, None, ()),))
+    # Multimenge je Merkmal: zweimal dieselbe Rauheit an t1 deckt nur den Plan-Eintrag von t1
+    doppelt = _ohne_angabe(ideal, lambda a: a.art == "rauheit" and a.text == "Ra 0,8")
+    doppelt = replace(doppelt, angaben=doppelt.angaben + (IstAngabe("rauheit", "haupt", "Ra 1,6", None, None, (), "t1"),))
     assert _regeln_der(pruefe_toleranzen(doppelt, plan, REGELN)) == {"Z-TOL-4"}
 
 
@@ -283,6 +287,18 @@ def test_massstab_3zu1():
     p = pruefe_schriftfeld(replace(_ideal_sp(), massstab="3:1"), STANDARD, REGELN)
     assert p["ok"] is False and _regeln_der(p) == {"Z-SCH-3"} and "3:1" in p["maengel"][0]["text"]
     assert pruefe_schriftfeld(replace(_ideal_sp(), massstab="1 : 2"), STANDARD, REGELN)["ok"] is None
+
+
+def test_blatt_nicht_gelesen_ist_nicht_geprueft():
+    """Review 4b (M5): den Blattzähler setzt SolidWorks (Systemeigenschaft), der Rückleser liest ihn nicht – fehlt
+    die Eigenschaft, ist das Feld nicht geprüft (`ok` None mit Grund), kein erfundener Wert und kein falscher Mangel."""
+    ist = _ideal_sp()
+    ohne = replace(ist, eigenschaften={k: v for k, v in ist.eigenschaften.items() if k != "Blatt"})
+    p = pruefe_schriftfeld(ohne, STANDARD, REGELN)
+    assert p["ok"] is None and p["maengel"] == [] and "Blatt" in p["hinweis"]
+    leer = replace(ist, eigenschaften={**ist.eigenschaften, "Blatt": " "})
+    p = pruefe_schriftfeld(leer, STANDARD, REGELN)
+    assert p["ok"] is False and [m["merkmal"] for m in p["maengel"]] == ["Blatt"]
 
 
 def test_standard_schriftfeld_belegt():
@@ -419,12 +435,17 @@ def test_ueberzaehlige_angabe_mit_merkmal_ist_mangel(art):
 
 
 @pytest.mark.parametrize("art", list(_UEBERZAEHLIG))
-def test_ueberzaehlige_angabe_ohne_merkmal_ist_meldung(art):
-    bau, _, text = _UEBERZAEHLIG[art]
+def test_ueberzaehlige_angabe_ohne_merkmal_ist_mangel(art):
+    """Review 4b (I2): ohne Merkmal ist eine überzählige Angabe nicht zuordenbar – harter Mangel der Art, keine
+    bloße Meldung."""
+    bau, regel_id, text = _UEBERZAEHLIG[art]
     ist = replace(_ideal_sp(), angaben=_ideal_sp().angaben + (bau(None),))
     u = _bewerte(ist, plan_spannplatte_z(), _spec_sp())
-    assert u["bestanden"] is True
-    assert any(m.startswith("überzählige") and "ohne Merkmal" in m and text in m for m in u["meldungen"])
+    assert u["bestanden"] is False
+    m = next(m for m in u["maengel"] if m["regel"] == regel_id)
+    assert m["text"].startswith("überzählig:") and "ohne Merkmal" in m["text"] and text in m["text"]
+    assert m["merkmal"] == "ohne Merkmal"
+    assert not any(x.startswith("überzählige") for x in u["meldungen"])
 
 
 @pytest.mark.parametrize("text", ["ISO 2768 mK", "ISO 2768-m-K", "2768-2 K", "2768 – mK", "2768−mK", "2768-mk",
