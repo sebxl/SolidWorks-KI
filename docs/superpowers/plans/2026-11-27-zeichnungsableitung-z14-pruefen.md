@@ -216,7 +216,7 @@
         `<merkmal> <art> „<text>“ – <was> (<n>), …`; `<was>` ∈ Maßlinie, Text, Kante, Schraffur, Hinweislinie,
         Rechteck auf Linie, eigenes Symbol. Seit Runde D (08e1e2f) zusätzlich: `ANMERKUNG_ZU_NAH` (Nähe: „Kante näher als
         3 mm“, „Ansatz näher als 4 mm“) → Z-LES-1 als Hinweis; `SCHRAFFUR_UNGELESEN` → Z-LES-1 (Prüfung der Anmerkungen
-        unvollständig, `ok None`); `EINZELHEIT_BUCHSTABE` → Z-ANS-2 (Bezeichnung der Ansicht). Die Einzelheit heißt ab Z rückwärts.
+        unvollständig, `ok None`); `EINZELHEIT_BUCHSTABE` und `SCHNITT_BUCHSTABE` (Runde E) → Z-ANS-2 (Bezeichnung der Ansicht). Die Einzelheit heißt ab Z rückwärts, Schnitte ab A vorwärts ohne I, O, Q und ohne Bezugsbuchstaben (SpannplatteZ: SCHNITT C-C); die Schnittbezeichnung liest der Rückleser über `IView.GetSection` → `IDrSection.GetLabel`.
         Bohrungsangaben: Umbruch und „ – “ sind gleichwertig (`pruefen.angabentext`).
       - Rauheit und Form/Lage werden nach Merkmal (über `enthalten`, also inklusive Spiegel- und Musterinstanzen) und
         Inhalt abgeglichen; der Wechsel des Ansatzes an eine gleichwertige Instanz ist kein Mangel.
