@@ -287,8 +287,12 @@ def test_zeichnen_stufe4(capsys, tmp_path, spec, drehteil, erlaubt, min_tol, min
             erwartet += ["4 × Ø6 – durch", "TK Ø40", "H7", "k6", "einsatzgehärtet und angelassen (60 ± 2) HRC"]
         else:
             # Stiftangabe dreizeilig ohne Strich am Zeilenende (Nachbesserung D), Ⓔ als Hüllsymbol (unten)
-            erwartet += ["2 × Ø8 H7", "15 tief", "Fase 0,5 × 45°", "Ra 0,8", "Ra 1,6", "0,02", "0,05", "±0,02",
-                         "4 × 30,00 (= 120)", "SCHNITT C-C", "EINZELHEIT Z"]
+            erwartet += ["2 × Ø8 H7", "15 tief", "Fase 0,5 × 45°", "±0,02", "4 × 30,00 (= 120)", "SCHNITT C-C",
+                         "EINZELHEIT Z"]
+            # Anmerkungen als ganze Zeilen (sonst erfüllt „±0,02“ schon „0,02“): Rauheit, ▱-Rahmen, //-Rahmen mit Bezug
+            zeilen = {" ".join(z.split()) for z in roh.splitlines()}
+            fehlt = [z for z in ("Ra 0,8", "Ra 1,6", "0,02", "0,05 A", "2 ×") if z not in zeilen]
+            assert not fehlt, (fehlt, roh)
         fehlt = [zeile for zeile in erwartet if zeile not in text]
         assert not fehlt, (fehlt, roh)
         assert "– 15 tief" not in text, "Stiftangabe mit Strich am Zeilenende (vor Nachbesserung D)"

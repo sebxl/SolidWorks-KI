@@ -234,7 +234,7 @@ Teil- und Zeichnungs-SHA unverändert, danach keine Dokumente offen.
 | SpannplatteZ | A3 quer 1:2 | Haupt, Schnitt C-C, Seite, Einzelheit Z 1:1 | `RAUHEIT_NUR_EINE_INSTANZ` (t1 Ra 1,6; st Ra 0,8), `ANMERKUNG_KREUZT: st rauheit „Ra 0,8“` (Linie, 2 Maßlinien, Kante), `FUNKTION_UNBESTAETIGT: st: passung, rauheit`, `ANSICHT_DICHT` (D9@k1_pfad), `EINZELHEIT: t1`, `EINZELHEIT_NICHT_FUER: k1`, `LAUF_NICHT_BESTANDEN` |
 | BuchseZ | A3 quer 1:1 | Stirnansicht, Schnitt A-A | nur `LAUF_NICHT_BESTANDEN` |
 | Spannplatte (Stufe 3) | A3 quer 1:2 | Haupt, Schnitt A-A, Seite, Einzelheit Z 1:1 | `ANSICHT_DICHT`, `EINZELHEIT: t1`, `EINZELHEIT_NICHT_FUER: k1`, `LAUF_NICHT_BESTANDEN` |
-| Buchse (Stufe 3) | A3 quer 1:1 | Stirnansicht, Schnitt A-A | ohne `LESBARKEIT`/`ANGABE_*` |
+| Buchse (Stufe 3) | A3 quer 1:1 | Stirnansicht, Schnitt A-A | nur `LAUF_NICHT_BESTANDEN` |
 
 - `LAUF_NICHT_BESTANDEN` kommt nur, weil der Test ohne Prüfer-Urteil zeichnet.
 - Im PDF gefunden:
@@ -245,17 +245,21 @@ Teil- und Zeichnungs-SHA unverändert, danach keine Dokumente offen.
   - alle vier: die Sammelzeilen.
 - Durchsicht der Blätter (PNG, Ausschnitte):
   - Rahmen, Bezüge A/B und Ra 1,6 im Schnitt C-C stehen frei. Die Hinweislinien laufen durch die Taschenöffnung, nicht
-    durch die Schraffur.
+    durch die Schraffur. Die Hinweislinie von Ra 1,6 schneidet dabei die Übergangslinie des Eckradius der eigenen
+    Tasche (r1). Gemeldet ist das nicht, vermutlich weil die Öffnung des eigenen Merkmals als frei gilt
+    (Nachbesserung C). Das ist ungeprüft.
   - Ra 0,8 (Stiftbohrung) steht links neben der Hauptansicht auf der Maßlinie 27,00. Seine Hinweislinie kreuzt die
     Plattenkante und die Kabelnut, das ist gemeldet.
   - BuchseZ: Die Ø-Maße mit Passung stehen unter dem Schnitt, ihre Maßlinien sind dafür weit nach unten verlängert.
-    Das ist lesbar, aber ungewohnt.
+    Das ist lesbar, aber ungewohnt. Die Mittellinie im Schnitt A-A fehlte in einem Lauf und war im letzten da; die
+    Ursache ist offen.
   - Das Schriftfeld zeigt keine Benennung (Zuordnung Z1.5).
 - 20-mm-Reserve für die Sammelangaben: In jedem echten Lauf sind es mindestens vier Pflichtzeilen à 5 mm
   (`SAMMEL_ZEILE_MM`). Die Ansichten haben dadurch weniger Platz über dem Schriftfeld. Format, Maßstab oder die
-  Einzelheit können kippen; `einzelheit_passt` ist mit Reserve nie günstiger. Live ist an den vier Referenzen nichts
-  gekippt: Die Spannplatte bleibt wie am 18.11. bei 1:2 mit Einzelheit 1:1. Einen Vergleichslauf ohne Reserve gibt es
-  nicht.
+  Einzelheit können kippen; `einzelheit_passt` ist mit Reserve nie günstiger. In den Tests ohne SolidWorks
+  (`tests/zeichnung/test_layout.py`) verdrängen 40 mm Reserve einen Platzbedarf von 100 × 190 mm vom A4 auf A3 quer, und
+  eine Einzelheit, die ohne Reserve passt, gilt mit Reserve nicht mehr als passend. Live hat nur die Spannplatte einen Vorher-Wert: Blatt 1:2 und Einzelheit 1:1
+  wie am 18.11. (damals die Kabelnut, seit 19.11. die Tasche). Für die Buchse gibt es keinen dokumentierten Vorher-Wert.
 - Die Stufe-3-PDFs in `<arbeitsordner>/Z1-STUFE1/` sind mit diesem Lauf neu geschrieben, jetzt mit Sammelangaben und
   Einzelheit Z. Die Stufe-4-PDFs liegen in `Z1-STUFE4/`, mit `<name>.zeichnung.json` (Meldungen).
 
@@ -263,7 +267,8 @@ Vorschläge – Nutzer entscheidet:
 - **Härtestil** nach ISO 15787:2016 / DIN ISO 15787:2018 („(60 ± 2) HRC“, „CHD = (0,8 +0,4/0) mm“) statt DIN 6773
   („58+4 HRC“). Der Normtext liegt uns nicht vor (`haerteangabe.md`).
 - **Ⓔ aus `toleranzen`:** Jede Passung aus `toleranzen` gilt als Passmaß und bekommt Ⓔ, reine Abmaße nicht. Das ist
-  eine feste Regel, kein Feld. Alternative: Ⓔ ausdrücklich je Toleranz angeben.
+  eine feste Regel: `toleranzen` kennt nur `passung` bzw. Abmaße, ein Feld `huelle` gibt es nur am Feature.
+  Alternative: `huelle` auch in `toleranzen` zulassen.
 - **IT-Grad für Form/Lage** (`{it: 4}` aus `funktionen.yaml`) bleibt ohne Zahl, bis eine ISO-286-Tabelle mit ≥ 2
   Quellen vorliegt (`FORM_LAGE_IT_OHNE_TABELLE`).
 - **Symbolnorm Rauheit:** ISO 1302:2002 statt ISO 21920-1 der Vorlage. Mit 21920-1 zeichnet SolidWorks über jedes
@@ -273,8 +278,9 @@ Vorschläge – Nutzer entscheidet:
 - **Schnittbezeichnung C-C** bei Bezügen A/B, damit Schnitt- und Bezugsbuchstaben verschieden sind.
 - **Rauheit an nur einer von n Instanzen:** SolidWorks setzt bei Mehrfachauswahl nur eine Hinweislinie (Spike h).
   Optionen: je Instanz ein eigenes Symbol, oder hinnehmen (heute `RAUHEIT_NUR_EINE_INSTANZ`, in Z1.4 ein Mangel).
-- **Ra 0,8 an den Stiftbohrungen** findet keine freie Lage (`ANMERKUNG_KREUZT`). Optionen: Rauheit in die
-  Bohrungsangabe schreiben, an die zweite Bohrung hängen, oder hinnehmen.
+- **Ra 0,8 an den Stiftbohrungen** findet keine freie Lage (`ANMERKUNG_KREUZT`). Die Lagewahl probiert schon beide
+  Instanzen und gleichwertige Orte durch (Nachbesserung C–E). Optionen (Vorschlag): Rauheit in die Bohrungsangabe
+  aufnehmen, oder die Kreuzung hinnehmen.
 
 Offen:
 - Z1.5: Die ISO-Vorlage druckt „ENTGRATEN UND SCHARFE KANTEN BRECHEN“ und leere Felder „OBERFLÄCHENGÜTE“,
