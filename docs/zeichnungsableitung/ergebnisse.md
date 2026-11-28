@@ -12,7 +12,7 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 | Z1.1 Spec-Erweiterung | umgesetzt (Branch `claude/zeichnungsableitung-recherche`) |
 | Z1.2 Freistich, Zentrierbohrung | offen (Skill `compiler-erweitern`) |
 | Z1.3 Zeichnen | Stufe 1 (Blatt, Ansichten) und Stufe 2 (Maße) umgesetzt 17.11.; Stufe 2 wartet auf Durchsicht der PDFs; Stufen 3–5 offen |
-| Z1.4 Prüfen | offen |
+| Z1.4 Prüfen | umgesetzt 28.11. (Abschnitt Z1.4); Prüfer-Urteile und Gesamtreview offen |
 | Z1.5 Firmenvorlage | wartet auf die Vorlage des Nutzers; Fertigungszeichnungen nur auf dem Firmenrechner |
 
 ## Z1.1 – was jetzt gilt
@@ -336,10 +336,10 @@ Meldungscode → Regel (`MELDUNG_REGEL` in `pruefen.py`):
 | `RAUHEIT_NICHT_GESETZT`, `RAUHEIT_NUR_EINE_INSTANZ` | Z-TOL-4 |
 | `FORM_LAGE_NICHT_GESETZT`, `FORM_LAGE_NUR_EINE_INSTANZ` | Z-TOL-5 |
 | `BEZUG_NICHT_GESETZT` | Z-TOL-6 |
-| `SAMMELANGABE_FEHLT`, `SAMMELANGABEN_NICHT_GESETZT` (Sammelrauheit: Z-SAM-7) | Z-SAM-1 |
+| `SAMMELANGABE_FEHLT`, `SAMMELANGABEN_NICHT_GESETZT` | Z-SAM-1 (Zeile der Sammelrauheit: Z-SAM-7) |
 | `EINZELHEIT_BUCHSTABE`, `SCHNITT_BUCHSTABE` | Z-ANS-2 |
 | `BEZUG_OHNE_KANTE`, `MITTELLINIE_NICHT_GEZEICHNET` | Z-ANS-1 |
-| `ANMERKUNG_KREUZT`, `ANMERKUNG_ZU_NAH`, `ANGABE_ZU_NAH`, `ANSATZ_NICHT_FREI`, `LESBARKEIT`, `LESBARKEIT_UNGEPRUEFT`, `SCHRAFFUR_UNGELESEN`, `ANMERKUNG_NICHT_UMGEHAENGT`, `MASSE_NICHT_ANGEORDNET`, `HILFSLINIE_NICHT_MITTELLINIE`, `SAMMELANGABE_UEBERLAUF` | Z-LES-1 (Hinweis) |
+| `ANMERKUNG_KREUZT`, `ANMERKUNG_ZU_NAH`, `ANGABE_ZU_NAH`, `ANSATZ_NICHT_FREI`, `LESBARKEIT`, `LESBARKEIT_UNGEPRUEFT`, `SCHRAFFUR_UNGELESEN`, `ANMERKUNG_NICHT_UMGEHAENGT`, `MASSE_NICHT_ANGEORDNET`, `HILFSLINIE_NICHT_MITTELLINIE`, `SAMMELANGABE_UEBERLAUF` | Z-LES-1 (Hinweis); Überlauf der Sammelrauheit: Z-SAM-7 |
 | `FUNKTION_UNBESTAETIGT`, `LAUF_NICHT_BESTANDEN`, `ANSICHT_DICHT`/`_VOLL`, `EINZELHEIT*` (Ansichtswahl), `ANSICHT_GERATEN`, `ANSICHT_NICHT_GELOESCHT`, `SCHNITT_NICHT_*`, `RUECKLESEN_NICHT_GESCHLOSSEN`, `ZEICHNUNG_GEAENDERT`, `ZEICHNUNG_PLAN_VERALTET`, `PDF_VERWORFEN` | nur Bericht, mit Begründung (`NUR_BERICHT`); Kopfmeldungen setzen bestanden False |
 
 Live 28.11.2026 (frisches SolidWorks 2025): `swki zeichnung pruefen <spec> --lauf 1` auf den Läufen der Stufe 4
@@ -352,7 +352,8 @@ Live 28.11.2026 (frisches SolidWorks 2025): `swki zeichnung pruefen <spec> --lau
 | BuchseZ | bestanden | – |
 | Spannplatte (Stufe 3) | bestanden | – |
 
-- Die Prüfberichte liegen unter `protokolle/<spec>.lauf-1.zeichnung.pruefbericht.json` neben den Specs der drei Läufe.
+- Die Prüfberichte liegen unter `protokolle/<spec>.lauf-1.zeichnung.pruefbericht.json` neben den Arbeits-Specs der
+  drei Läufe. Diese Specs liegen im Scratchpad der Sitzung, nicht im Repo; die Berichte sind also temporär.
 - SpannplatteZ ist nicht bestanden, weil die Regel hart bleibt: Eine Rauheit an nur einer von n Instanzen ist ein
   Mangel (Vorschlag Stufe 4, Entscheidung des Nutzers offen). Der Rückleser selbst verursacht keinen harten Mangel.
 - Nachweise zur Nachbesserung 4b (Commits c16a541, 3c9676d):
@@ -368,8 +369,11 @@ Live 28.11.2026 (frisches SolidWorks 2025): `swki zeichnung pruefen <spec> --lau
   - Eine Eigenschaft „Blatt“ gibt es nicht. Das Schriftfeld-Feld Blatt ist deshalb „nicht geprüft“ (Prüfung
     `schriftfeld` ok None, zusammen mit dem Hinweis Eigentümer leer). Vor der Nachbesserung stand „Blatt: 1/1“ im Ist,
     das hatte der Rückleser selbst gesetzt (M5).
-- `tests/live/test_live_zeichnung_pruefen.py` sichert diese Nachweise je Referenz zu. Ergebnis: 5/5 grün, davon ist
-  der Sammelnotiz-Fall ein erwartetes xfail (siehe unten).
+- `tests/live/test_live_zeichnung_pruefen.py` sichert diese Nachweise für SpannplatteZ und BuchseZ zu (Merkmal je
+  Anforderung, lineare Ø-Maße, `ansichten` und `ueberbestimmt` ok, Blatt „nicht gelesen“). Die Stufe-3-Spannplatte
+  ist nur über die CLI gelaufen, nicht im Test. Ganze Datei über `tests\live_einzeln.py --zeit 1500` auf frischem
+  SolidWorks: 5/5 „OK“. Davon ist der Sammelnotiz-Fall ein xfail (siehe unten); `live_einzeln` zeigt einen xfail als
+  „OK“ an.
 
 Negativfälle live (Kopie der Zeichnung im Laufordner per COM verändert und gespeichert, geprüft über dieselbe Kette
 wie `swki zeichnung pruefen`). Verglichen wird mit dem Bericht des unveränderten Originals. Teil und Original-Zeichnung
@@ -400,9 +404,11 @@ haben vor und nach der Prüfung dieselbe SHA.
 - „Geschlossene Kette“ (Z-UEB-1) und „Maß an verdeckter Kante“ (Z-ANS-1) sind nur Unit-Tests
   (`tests/zeichnung/test_pruefen_masse.py`).
   - `swki zeichnen` erzeugt keines von beiden.
-  - Ein Maß, das man in der Kopie nachträglich einfügt, hat keinen Plan-Namen. Die Prüfung meldete es als überzählig
-    (Z-VOLL-2), nicht als Kette oder verdeckt.
-  - Die Regeln sind reine Funktionen über das Ist und dort vollständig abgedeckt.
+  - Die Regeln sind reine Funktionen über das Ist und dort getestet.
+  - Live gezeigt ist der Anteil des Rücklesers: Bezugspunkte, Richtung und `verdeckt` sind für jedes lineare Maß
+    bestimmt, `ueberbestimmt` und `ansichten` sind auf den drei Referenzen ok.
+  - Ein Live-Negativfall bräuchte ein per COM neu gesetztes Maß an einer Kette bzw. einer verdeckten Kante. Das ist
+    nicht gemacht.
 
 Grenzen:
 - Gelesen wird nur das aktuelle Blatt. Hat eine Zeichnung mehrere Blätter, kommt `RUECKLESEN_UNVOLLSTAENDIG`.

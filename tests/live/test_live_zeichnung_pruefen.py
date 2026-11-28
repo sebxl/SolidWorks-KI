@@ -12,10 +12,12 @@ Negativfälle (Task 6, Design §10): eine Kopie der Zeichnung im Laufordner wird
 über dieselbe Kette wie `swki zeichnung pruefen` (`zeichnung_pruefen` mit einem Leser, der die Kopie liest: Maßnamen
 aus der Übergabe, Merkmal je Angabe) geprüft. Verglichen wird mit dem Bericht des unveränderten Originals: die neuen
 Mängel sind genau die erwarteten, je am manipulierten Merkmal. Original (Teil und Zeichnung) bleibt unverändert (SHA).
-Die Fälle „geschlossene Kette“ und „Maß an verdeckter Kante“ stehen nur als Unit-Tests (`tests/zeichnung/
-test_pruefen_masse.py`): `swki zeichnen` setzt keine Kette und kein Maß an eine verdeckte Kante, und ein nachträglich
-eingefügtes Maß bekäme in der Kopie keinen Plan-Namen – die Prüfung meldete es als überzählig (Z-VOLL-2), nicht als
-Kette bzw. verdeckt. Die Regeln selbst sind rein (Ist → Mängel), dort vollständig abgedeckt.
+Die Fälle „geschlossene Kette“ (Z-UEB-1) und „Maß an verdeckter Kante“ (Z-ANS-1) stehen nur als Unit-Tests
+(`tests/zeichnung/test_pruefen_masse.py`): `swki zeichnen` erzeugt keines von beiden, und die Regeln sind reine
+Funktionen über das Ist (Ist → Mängel), dort abgedeckt. Live gezeigt ist der Anteil des Rücklesers: Bezugspunkte,
+Richtung und `verdeckt` sind für jedes lineare Maß bestimmt, `ueberbestimmt` und `ansichten` sind auf den Referenzen
+ok. Ein Live-Negativfall bräuchte ein per COM neu gesetztes Maß an einer Kette bzw. einer verdeckten Kante – nicht
+gemacht.
 
 API (swki api methode, SW 2025): ISldWorks.OpenDoc6 (6; swOpenDocOptions_Silent = 1, ohne ReadOnly), IModelDoc2.Save3
 (3; swSaveAsOptions_Silent = 1), IAnnotation.Select2 (2) + IModelDocExtension.DeleteSelection2 (1; 0), INote.SetText
@@ -107,6 +109,11 @@ def test_zeichnung_pruefen(capsys, tmp_path, spec, bestanden):
             assert len(anf) == 6, [(a["art"], a["text"]) for a in anf]
         # kein Maß an verdeckter Kante oder ohne sichtbaren Bezug (auch nicht an der gedachten Ecke der R4-Tasche)
         assert next(p for p in b["pruefungen"] if p["id"] == "ansichten")["ok"] is True
+        assert next(p for p in b["pruefungen"] if p["id"] == "ueberbestimmt")["ok"] is True
+        # Blatt (Review 4b, M5): der Rückleser erfindet keine Eigenschaft; fehlt sie, ist das Feld nicht geprüft
+        if "Blatt" not in ist["eigenschaften"]:
+            sf = next(p for p in b["pruefungen"] if p["id"] == "schriftfeld")
+            assert "Blatt nicht gelesen" in (sf.get("hinweis") or ""), sf
         assert len(ist["masse"]) == z["masse"]["gesetzt"], (len(ist["masse"]), z["masse"])
         uebergabe = set(z["meldungen"])
         aus_dem_lesen = [m for m in b["maengel"] if m["text"] not in uebergabe
@@ -182,6 +189,8 @@ def _neue_maengel(capsys, spec_pfad: Path, lauf: str, kopie: Path) -> tuple[list
     assert not [m for m in bericht["meldungen"] if m.startswith("RUECKLESEN_")], bericht["meldungen"]
     assert not bericht["ist"]["meldungen"], bericht["ist"]["meldungen"]
     assert not bericht["kopf"]["meldungen"], bericht["kopf"]
+    weg = _mangelmenge(basis) - _mangelmenge(bericht)
+    assert not weg, f"Mängel des Originals fehlen in der Kopie: {sorted(weg.elements())}"
     return sorted((_mangelmenge(bericht) - _mangelmenge(basis)).elements()), bericht
 
 
