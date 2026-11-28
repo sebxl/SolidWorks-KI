@@ -12,7 +12,7 @@ import sys
 
 from swki.compiler import sw
 from swki.konfig import lade_rechner
-from swki.verbindung import byref_long, verbinde
+from swki.verbindung import byref_long, callout_leer, verbinde
 from swki.zeichnung.zeichnen import (SF_NORM, SF_NORM_1302_2002, SW_DEFAULT_TEMPLATE_DRAWING, TEXT_HINWEIS,
                                      TEXT_RAUHEIT, _blatt, _ruf, _speichern)
 
@@ -68,6 +68,21 @@ def main() -> None:
         segs = skm.CreateCornerRectangle(330 / 1000, 70 / 1000, 0, 400 / 1000, 90 / 1000, 0)
         erg["rechteck"] = len(list(segs or ()))
         drw.ClearSelection2(True)
+        # Live 28.11.: die Linien kamen blau ins PDF (Farbe einer unterbestimmten Skizze). Varianten: Farbe 0 (schwarz)
+        # bzw. Beziehung „Fixieren“ (voll bestimmt)
+        skm.AddToDB = True
+        schwarz = list(skm.CreateCornerRectangle(250 / 1000, 70 / 1000, 0, 300 / 1000, 90 / 1000, 0) or ())
+        erg["farbe_vorher"] = [s.Color for s in schwarz]
+        for s in schwarz:
+            s.Color = 0
+        erg["farbe_nachher"] = [s.Color for s in schwarz]
+        fix = list(skm.CreateCornerRectangle(250 / 1000, 100 / 1000, 0, 300 / 1000, 120 / 1000, 0) or ())
+        skm.AddToDB = False
+        drw.ClearSelection2(True)
+        for i, s in enumerate(fix):
+            s.Select4(i > 0, callout_leer())
+        drw.SketchAddConstraints("sgFIXED")
+        drw.ClearSelection2(True)
         _ruf(drw, "EditRebuild3")
         slddrw, pdf = ordner / "rauheitsfeld.SLDDRW", ordner / "rauheitsfeld.pdf"
         _speichern(ext, slddrw)
@@ -105,10 +120,11 @@ def main() -> None:
         linien = []
         for d in seite.get_drawings():
             r_ = d["rect"]
-            if r_.y0 / pt > h - 110 and r_.x0 / pt > 240 and r_.y1 / pt < h - 60:
+            if r_.y0 / pt > h - 110 and r_.x0 / pt > 100 and r_.y1 / pt < h - 30:
+                farbe = d.get("color")
                 for e in d["items"]:
                     pts = [p for p in e[1:] if hasattr(p, "x")]
-                    linien.append((e[0], [(round(p.x / pt, 2), round(h - p.y / pt, 2)) for p in pts]))
+                    linien.append((e[0], [(round(p.x / pt, 2), round(h - p.y / pt, 2)) for p in pts], farbe))
         erg["pdf_linien"] = linien
         seite.get_pixmap(dpi=300, clip=pymupdf.Rect(240 * pt, (h - 110) * pt, 410 * pt, (h - 60) * pt)).save(
             ordner / "rauheitsfeld_ausschnitt.png")

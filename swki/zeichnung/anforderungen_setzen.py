@@ -22,7 +22,8 @@ Runde D: IView.Type (swDrawingViewTypes_e, swDrawingSectionView = 2), ISelection
 IEdge.GetCurveParams3 (0) zur Prüfung der am Punkt gewählten Kante; kein IVertex mehr (Eckpunkte liegen live 54–89 mm
 neben ihrem Ort).
 Rauheitsfeld (Nutzer 28.11.2026): InsertSurfaceFinishSymbol3 mit swSFBasic = 0, swNO_LEADER = 0, ISFSymbol.SetText (2),
-IModelDoc2.SketchManager (2005) → ISketchManager.AddToDB (2008), CreateCornerRectangle (6, 2008), ISheet.GetProperties2
+IModelDoc2.SketchManager (2005) → ISketchManager.AddToDB (2008), CreateCornerRectangle (6, 2008), ISketchSegment.Color,
+ISheet.GetProperties2
 (Maßstab; eine Blattskizze folgt ihm, spikes/z1_diag_rauheitsfeld.py).
 """
 
@@ -92,6 +93,7 @@ VERTIEFT = ("schnitt", "bohrung", "normbohrung")    # Merkmale mit Öffnung: Hin
 KONZENTRISCH_MM, OFFEN_RAND_MM = 0.3, 0.5           # `Anmerkung._offen_hier`: Kreise derselben Mitte; Ränder im Feld
 SCHRAFFUR_BOGEN_STUECKE = 12
 SF_GRUND, OHNE_FUEHRUNG = 0, 0                      # swSFSymType_e.swSFBasic, swLeaderStyle_e.swNO_LEADER
+SCHWARZ = 0                                         # ISketchSegment.Color (COLORREF 0x00BBGGRR)
 
 
 def wert_mm(dd) -> float | None:
@@ -1701,8 +1703,11 @@ def _rechteck_auf_blatt(drw, r: tuple[float, float, float, float]) -> bool:
         segs = skm.CreateCornerRectangle(r[0] / 1000 / f, r[1] / 1000 / f, 0, r[2] / 1000 / f, r[3] / 1000 / f, 0)
     finally:
         skm.AddToDB = False
+    segs = list(segs or ())
+    for s in segs:  # Live 28.11.: sonst blau im PDF (Farbe der unterbestimmten Skizze); 0 = schwarz (COLORREF)
+        s.Color = SCHWARZ
     drw.ClearSelection2(True)
-    return len(list(segs or ())) == 4
+    return len(segs) == 4 and all(s.Color == SCHWARZ for s in segs)
 
 
 def sammelangaben_setzen(drw, zeilen: list[str], format_: str, hoehe_mm: float) -> list[str]:
