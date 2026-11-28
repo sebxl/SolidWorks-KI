@@ -20,6 +20,7 @@ solidworks_hintergrund: true  # Nutzer 07.11.2026: Neustart minimiert und ohne F
 zeichnung:
   max_masse_je_ansicht: 12  # Zeichnungsableitung Design §6.1 (Nutzer 17.11.2026: meist 3–4 Ansichten, keine überladen)
   # Design §7: Zuordnung Pflichtfeld des Schriftfelds (ISO 7200) -> Eigenschaft der Zeichnung; Z1.5 ersetzt die Namen.
-  # Blatt liefert der Rückleser aus dem Blatt (Nummer/Anzahl), eigentuemer bleibt leer bis Z1.5.
+  # Blatt: den Blattzähler setzt SolidWorks, der Rückleser erfindet keine Eigenschaft – fehlt sie, ist das Feld bis
+  # Z1.5 nicht geprüft (Review 4b M5). Gesetzte Felder müssen im Schriftfeld des PDFs stehen. eigentuemer leer bis Z1.5.
   schriftfeld: {eigentuemer: "", sachnummer: Zeichnungsnummer, titel: Benennung, ersteller: DrawnBy,
                 ausgabedatum: DrawnDate, dokumentart: Dokumentart, blatt: Blatt, freigegeben: Freigegeben}

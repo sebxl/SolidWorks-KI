@@ -217,7 +217,7 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
 - Zeichnung (Zeichnungsableitung Z1.3): `swki zeichnen <spec>` zeichnet den letzten bestandenen Lauf (`--lauf N` für einen
   ungeprüften, mit Meldung) – Blatt, Ansichten nach Maßbedarf, Maße aus dem Maßplan (SLDDRW, PDF, PNG im Laufordner unter
   `zeichnung/`). Die Maße kommen aus der Spec: `bezug` an Lagen entscheidet, von wo bemaßt wird. `meldungen` lesen;
-  Bohrungsangaben und Toleranzen folgen in den Stufen 3–4. Fertigungszeichnungen nur auf der SolidWorks-Vollversion (Firmenrechner).
+  Bohrungsangaben, Toleranzen, Rauheit, Form/Lage und Sammelangaben setzt es mit (Stufen 3–4). Fertigungszeichnungen nur auf der SolidWorks-Vollversion (Firmenrechner).
   Prüfen (Z1.4): `swki zeichnung pruefen <spec>` liest die Zeichnung zurück und prüft sie maschinell (`kopf`, `nicht_geprueft`
   lesen); danach ist der Agent `zeichnungspruefer` Pflicht (Prompt: `zeichnungspruefer_auftrag` aus `swki durchlauf --zeichnung`),
   Urteil unverändert nach `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json` (Feld `sha256_slddrw` muss zur Zeichnung passen).

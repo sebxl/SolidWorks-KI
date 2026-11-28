@@ -6,7 +6,9 @@ frisch gestartet).
 vorher offenen Dokumente offen), `verdeckt` ist für jedes lineare Maß bestimmt (auch die Ø-Maße im Längsschnitt der
 Buchse), jede Rauheit, Form/Lage und jeder Bezug hängt an einer Kante mit Merkmal, und kein harter Mangel stammt aus dem
 Rücklesen selbst – harte Mängel kommen nur aus Meldungen der Übergabe (`swki zeichnen`, z. B. RAUHEIT_NUR_EINE_INSTANZ
-der Spannplatte Z).
+der Spannplatte Z) und aus dem Schriftfeld der SW-2025-Vorlage (`Z1_5_SCHRIFTFELD`: BENENNUNG und Dokumentart stehen
+nicht auf dem Blatt, Gesamtreview „Z“; bekannte Lücke bis zum Schriftfeld des Nutzers, Z1.5). Damit besteht auch die
+Buchse Z die Prüfung nicht – richtig, nicht abgeschwächt.
 
 Negativfälle (Task 6, Design §10): eine Kopie der Zeichnung im Laufordner wird per COM verändert und gespeichert, dann
 über dieselbe Kette wie `swki zeichnung pruefen` (`zeichnung_pruefen` mit einem Leser, der die Kopie liest: Maßnamen
@@ -43,7 +45,9 @@ from swki.zeichnung.zeichnung_pruefen import zeichnung_pruefen
 
 pytestmark = pytest.mark.sw
 REFERENZ = Path(__file__).parents[1] / "referenz" / "zeichnung"
-FAELLE = [("spannplatte_z.yaml", False), ("buchse_z.yaml", True)]
+FAELLE = [("spannplatte_z.yaml", False), ("buchse_z.yaml", False)]   # Buchse: nur Z1_5_SCHRIFTFELD
+# Gesamtreview „Z“: die Vorlage verknüpft BENENNUNG nicht mit der Eigenschaft und zeigt keine Dokumentart (Z1.5)
+Z1_5_SCHRIFTFELD = {("schriftfeld", "Z-SCH-1", "Benennung"), ("schriftfeld", "Z-SCH-1", "Dokumentart")}
 OEFFNEN_SCHREIBEN = 1     # swOpenDocOptions_Silent (ohne ReadOnly: die Kopie wird verändert)
 SPEICHERN_STILL = 1       # swSaveAsOptions_Silent
 SUFFIX = 2                # swDimensionTextParts_e.swDimensionTextSuffix
@@ -117,12 +121,19 @@ def test_zeichnung_pruefen(capsys, tmp_path, spec, bestanden):
         assert len(ist["masse"]) == z["masse"]["gesetzt"], (len(ist["masse"]), z["masse"])
         uebergabe = set(z["meldungen"])
         aus_dem_lesen = [m for m in b["maengel"] if m["text"] not in uebergabe
-                         and next(p for p in b["pruefungen"] if p["id"] == m["pruefung"])["ok"] is False]
+                         and next(p for p in b["pruefungen"] if p["id"] == m["pruefung"])["ok"] is False
+                         and (m["pruefung"], m["regel"], m["merkmal"]) not in Z1_5_SCHRIFTFELD]
         assert aus_dem_lesen == [], aus_dem_lesen
+        schriftfeld = {(m["pruefung"], m["regel"], m["merkmal"]) for m in b["maengel"] if m["pruefung"] == "schriftfeld"}
+        assert schriftfeld == Z1_5_SCHRIFTFELD, b["maengel"]
+        assert all("nicht auf dem Blatt" in m["text"] for m in b["maengel"] if m["pruefung"] == "schriftfeld")
         if spec == "buchse_z.yaml":
             assert oe_linear, "Längsschnitt der Buchse ohne lineare Ø-Maße"
-        if bestanden:
-            assert b["bestanden"] is True, b["maengel"]
+        assert b["bestanden"] is bestanden, b["maengel"]
+        if spec == "buchse_z.yaml":   # ohne die Lücke des Schriftfelds bestünde die Buchse Z
+            hart = {(m["pruefung"], m["regel"], m["merkmal"]) for m in b["maengel"]
+                    if next(p for p in b["pruefungen"] if p["id"] == m["pruefung"])["ok"] is False}
+            assert hart == Z1_5_SCHRIFTFELD, b["maengel"]
     finally:
         shutil.rmtree(lade_rechner().arbeitsordner / auftrag.name, ignore_errors=True)
 
@@ -180,9 +191,10 @@ def _mangelmenge(bericht: dict) -> Counter:
     return Counter((m["pruefung"], m["regel"], m["merkmal"], m["text"]) for m in bericht["maengel"])
 
 
-def _neue_maengel(capsys, spec_pfad: Path, lauf: str, kopie: Path) -> tuple[list[tuple], dict]:
+def _neue_maengel(capsys, spec_pfad: Path, lauf: str, kopie: Path, ersetzt=frozenset()) -> tuple[list[tuple], dict]:
     """Bericht des Originals (CLI) und der Kopie (dieselbe Kette mit einem Leser, der die Kopie liest); zurück: die
-    Mängel, die nur die Kopie hat, und ihr Bericht."""
+    Mängel, die nur die Kopie hat, und ihr Bericht. `ersetzt`: (Prüfung, Regel, Merkmal) von Mängeln des Originals,
+    die die Änderung durch einen anderen ersetzt (eine geleerte Benennung ist „leer“ statt „nicht auf dem Blatt“)."""
     code, basis = _lauf(capsys, "zeichnung", "pruefen", str(spec_pfad), "--lauf", lauf)
     assert code == 0, basis
     bericht = zeichnung_pruefen(spec_pfad, int(lauf), leser=lambda _pfad, rollen: lies_zeichnung(kopie, rollen))
@@ -190,6 +202,7 @@ def _neue_maengel(capsys, spec_pfad: Path, lauf: str, kopie: Path) -> tuple[list
     assert not bericht["ist"]["meldungen"], bericht["ist"]["meldungen"]
     assert not bericht["kopf"]["meldungen"], bericht["kopf"]
     weg = _mangelmenge(basis) - _mangelmenge(bericht)
+    weg = Counter({k: n for k, n in weg.items() if k[:3] not in ersetzt})
     assert not weg, f"Mängel des Originals fehlen in der Kopie: {sorted(weg.elements())}"
     return sorted((_mangelmenge(bericht) - _mangelmenge(basis)).elements()), bericht
 
@@ -197,8 +210,9 @@ def _neue_maengel(capsys, spec_pfad: Path, lauf: str, kopie: Path) -> tuple[list
 def test_negativ_spannplatte_z(capsys, tmp_path):
     """Maß löschen (27, k1), Passung H7 → H8 im Bohrungshinweis (st), „ Ⓔ“ an 150 ± 0,02 (st), Notiz „ISO 2768-mK“,
     Benennung leeren. Die Passung der Spannplatte steht nur im Hinweis „2 × Ø8 H7 Ⓔ – 15 tief“ (Plan-Quelle angabe,
-    kein Maß mit Passung): eine falsche Passung dort ist „fehlt: Angabe …“ (Z-VOLL-1); Z-TOL-1 an einem Passmaß
-    belegt `test_negativ_passung_buchse_z`."""
+    kein Maß mit Passung): seit dem Gesamtreview (I3, bekannt d) ist eine falsche Passung dort Z-TOL-1 an st (Abgleich
+    je Merkmal der Hinweislinie); Z-TOL-1 an einem Passmaß belegt `test_negativ_passung_buchse_z`. Die geleerte
+    Benennung ersetzt „nicht auf dem Blatt“ (Original) durch „leer“."""
     auftrag = tmp_path / "Z1-Z14NEG-spannplatte_z"
     auftrag.mkdir()
     try:
@@ -225,19 +239,19 @@ def test_negativ_spannplatte_z(capsys, tmp_path):
             assert cpm.Set2("Benennung", "") == 0, "Benennung nicht geleert"
 
         kopie = _veraendere(drw, "negativ", aendern)
-        neu, bericht = _neue_maengel(capsys, spec_pfad, lauf, kopie)
+        neu, bericht = _neue_maengel(capsys, spec_pfad, lauf, kopie, {("schriftfeld", "Z-SCH-1", "Benennung")})
         assert (_sha(teil), _sha(drw)) == vorher, "das Original (Teil oder Zeichnung) wurde verändert"
         assert bericht["bestanden"] is False
         regeln = Counter((p, r, m) for p, r, m, _ in neu)
-        assert regeln == Counter({("vollstaendig", "Z-VOLL-1", "k1"): 1, ("vollstaendig", "Z-VOLL-1", "st"): 1,
+        assert regeln == Counter({("vollstaendig", "Z-VOLL-1", "k1"): 1, ("toleranzen", "Z-TOL-1", "st"): 1,
                                   ("toleranzen", "Z-TOL-2", "st"): 1, ("sammelangaben", "Z-SAM-3", "sammelangabe"): 1,
                                   ("schriftfeld", "Z-SCH-1", "Benennung"): 1}), neu
         text = {(r, m): t for _, r, m, t in neu}
         assert "27" in text[("Z-VOLL-1", "k1")]
-        assert "H7" in text[("Z-VOLL-1", "st")]
+        assert "H8" in text[("Z-TOL-1", "st")] and "H7" in text[("Z-TOL-1", "st")]
         assert "150" in text[("Z-TOL-2", "st")]
         assert "2768-mK" in text[("Z-SAM-3", "sammelangabe")]
-        assert "Benennung" in text[("Z-SCH-1", "Benennung")]
+        assert "Benennung" in text[("Z-SCH-1", "Benennung")] and "leer" in text[("Z-SCH-1", "Benennung")]
     finally:
         shutil.rmtree(lade_rechner().arbeitsordner / auftrag.name, ignore_errors=True)
 
@@ -271,10 +285,10 @@ def test_negativ_passung_buchse_z(capsys, tmp_path):
 
 
 def test_sammelnotiz_ausserhalb_des_blatts(capsys, tmp_path):
-    """Fix-Runde 4b, I3: Sammelangaben-Notiz der Kopie per `SetPosition2` unter das Blatt. Erwartet wäre Z-SAM-1
-    (SAMMELANGABE_FEHLT). Die Lage prüft aber nur `swki zeichnen` am PDF; der Rückleser liest Text, nicht Lage, und
-    `pruefe_sammelangaben` prüft nur den Text. Im CLI-Weg hält eine solche Handänderung nur `ZEICHNUNG_GEAENDERT`
-    (SHA ≠ Übergabe) auf, keine Regel. Befund Task 6 (nicht wegdefiniert): xfail, solange kein neuer Mangel entsteht."""
+    """Fix-Runde 4b, I3 / Gesamtreview (c): Sammelangaben-Notiz der Kopie per `SetPosition2` unter das Blatt. Der
+    Rückleser liest die Lage (`IAnnotation.GetPosition`), `pruefe_sammelangaben` prüft den Ankerpunkt gegen das Band
+    über dem Schriftfeld: genau ein neuer Mangel Z-SAM-1 (die Notiz beginnt mit der Allgemeintoleranz). Vorher: xfail,
+    nur `swki zeichnen` prüfte die Lage am PDF."""
     auftrag = tmp_path / "Z1-Z14NEG-sammel"
     auftrag.mkdir()
     try:
@@ -292,10 +306,8 @@ def test_sammelnotiz_ausserhalb_des_blatts(capsys, tmp_path):
         kopie = _veraendere(drw, "sammel", aendern)
         neu, bericht = _neue_maengel(capsys, spec_pfad, lauf, kopie)
         assert (_sha(teil), _sha(drw)) == vorher, "das Original (Teil oder Zeichnung) wurde verändert"
-        if any(r == "Z-SAM-1" for _, r, _, _ in neu):
-            return
-        assert neu == [], neu
-        pytest.xfail(f"Befund: Sammelangabe bei y = {lage[0] * 1000:.0f} mm (unter dem Blatt) ergibt keinen Mangel – "
-                     "die Lage prüft nur swki zeichnen am PDF (SAMMELANGABE_FEHLT)")
+        assert [(p, r, m) for p, r, m, _ in neu] == [("sammelangaben", "Z-SAM-1", "sammelangabe")], neu
+        assert "außerhalb des Bands" in neu[0][3] and f"{lage[0] * 1000:.0f}) mm" in neu[0][3], neu
+        assert bericht["bestanden"] is False
     finally:
         shutil.rmtree(lade_rechner().arbeitsordner / auftrag.name, ignore_errors=True)

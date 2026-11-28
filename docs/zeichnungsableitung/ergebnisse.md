@@ -4,15 +4,15 @@ Design: `docs/superpowers/specs/2026-11-16-zeichnungsableitung-design.md`. Plan 
 `docs/superpowers/plans/2026-11-16-zeichnungsableitung-z1-spike-spec.md`. Recherche: `recherche.md`, Härte und Halbzeug:
 `haerteangabe.md`.
 
-## Stand 17.11.2026
+## Stand 28.11.2026
 
 | Etappe | Stand |
 |---|---|
 | Z1.0 Spike (API live) | erledigt 17.11. (`spike-z1.md`): alles ohne Dialog außer Bohrungsangaben; Modellmaße nur gefiltert brauchbar |
 | Z1.1 Spec-Erweiterung | umgesetzt (Branch `claude/zeichnungsableitung-recherche`) |
 | Z1.2 Freistich, Zentrierbohrung | offen (Skill `compiler-erweitern`) |
-| Z1.3 Zeichnen | Stufe 1 (Blatt, Ansichten) und Stufe 2 (Maße) umgesetzt 17.11.; Stufe 2 wartet auf Durchsicht der PDFs; Stufen 3–5 offen |
-| Z1.4 Prüfen | umgesetzt 28.11. (Abschnitt Z1.4); Prüfer-Urteile und Gesamtreview offen |
+| Z1.3 Zeichnen | umgesetzt: Stufe 1 (Blatt, Ansichten) und 2 (Maße) 17.11., Stufe 3 (Bohrungsangaben) 19.11., Stufe 4 (Toleranzen, Rauheit, Form/Lage, Sammelangaben) und 5 (Übergabe an Z1.4, `zeichnung/zeichnung.json`) 28.11.; Durchsicht der PDFs durch den Nutzer offen |
+| Z1.4 Prüfen | umgesetzt 28.11. (Abschnitt Z1.4), Fix-Welle nach dem Gesamtreview 28.11. (Abschnitt „Gesamtreview“) |
 | Z1.5 Firmenvorlage | wartet auf die Vorlage des Nutzers; Fertigungszeichnungen nur auf dem Firmenrechner |
 
 ## Z1.1 – was jetzt gilt
@@ -298,12 +298,14 @@ Plan `docs/superpowers/plans/2026-11-27-zeichnungsableitung-z14-pruefen.md`, Des
 
 Befehle:
 - `swki zeichnung pruefen <spec> [--lauf N]` liest die von `swki zeichnen` gespeicherte SLDDRW schreibgeschützt zurück
-  (`swki/zeichnung/rueckleser.py`, Ist-Modell `ist.py`). Danach prüft er sie gegen die freigegebene Spec, den neu
-  gerechneten Maßplan und den Regelkatalog (`pruefen.py`, rein, ohne SolidWorks). Der Bericht steht unter
+  (`swki/zeichnung/rueckleser.py`, Ist-Modell `ist.py`). Danach prüft er sie gegen die Spec (Arbeitsdatei nach
+  geprüfter Freigabe, wie `swki zeichnen`), den neu gerechneten Maßplan und den Regelkatalog (`pruefen.py`, rein, ohne
+  SolidWorks). Der Bericht steht unter
   `protokolle/<spec>.lauf-<n>.zeichnung.pruefbericht.json`.
   - Kopfprüfung: Weicht die SHA-256 der Zeichnung von der Übergabe `zeichnung/zeichnung.json` ab, kommt
-    `ZEICHNUNG_GEAENDERT` (Handänderung). Weicht der Maßplan ab, kommt `ZEICHNUNG_PLAN_VERALTET`. Beides heißt nie
-    „bestanden“, und das PDF wird dann verworfen.
+    `ZEICHNUNG_GEAENDERT` (Handänderung). Weicht der Maßplan ab, kommt `ZEICHNUNG_PLAN_VERALTET`; gelten die Werte
+    aus `funktionen.yaml` nicht mehr wie bei der Freigabe, `FUNKTIONEN_VERALTET`. Das heißt nie „bestanden“, und das
+    PDF wird dann verworfen.
   - Ändert das Rücklesen Teil oder Zeichnung (SHA vorher ≠ nachher), bricht der Befehl ab
     (`ZEICHNUNG_PRUEFUNG_AENDERT`).
   - Geschlossen wird nur, was das Öffnen geladen hat. Bleibt etwas offen, kommt `RUECKLESEN_NICHT_GESCHLOSSEN`.
@@ -427,8 +429,9 @@ Grenzen:
   steht als Hinweis in der Prüfung `ueberbestimmt`.
 
 Vorschläge – Nutzer entscheidet (Plan „Entscheidungen“):
-1. **Abgleich Ist ↔ Plan** als Multimenge je (Ist-Art, Wert auf 0,01 mm), unabhängig von der Ansicht. Angaben werden über
-   den Textanfang abgeglichen, Zusätze („4 × “, „ (= 120)“) exakt verglichen.
+1. **Abgleich Ist ↔ Plan** als Multimenge je (Ist-Art, Wert auf 0,01 mm), unabhängig von der Ansicht. Angaben werden je
+   Merkmal der Hinweislinie mit ganzem Text abgeglichen (seit dem Gesamtreview), Zusätze („4 × “, „ (= 120)“) exakt
+   verglichen.
 2. **Überbestimmt** je Ansicht und Richtung als Maßgraph. Hilfsmaße in Klammern schließen eine Kette ohne Mangel.
 3. **Schriftfeld:** acht Pflichtfelder nach ISO 7200, Zuordnung zu den Eigenschaften in `config/standard.yaml`
    (`zeichnung.schriftfeld`).
@@ -440,6 +443,37 @@ Vorschläge – Nutzer entscheidet (Plan „Entscheidungen“):
 5. **Maßstab aus der Vorzugsreihe** nach ISO 5455 für Blatt und Einzelheit.
 6. **Lesart von `durchlauf --zeichnung`:** zeichnet und prüft den letzten bestandenen Lauf, baut nicht neu. Das
    Teil-Prüfer-Urteil ist Voraussetzung für `swki zeichnen`, deshalb kann ein Aufruf nicht bauen, prüfen und zeichnen.
+
+## Gesamtreview Z1.3 Stufe 4 + Z1.4 – Fix-Welle (28.11.2026)
+
+Befund `c2cb853..2013662`, eine Fix-Welle:
+- **C1** `funktionen_veraltet` (`swki/spec/freigabe.py`): die aufgelösten Anforderungen in `freigabe.json` gegen die
+  heutige Auflösung der freigegebenen Kopie (Mehrfachmenge ohne Feature-ID; fehlt der Schlüssel: keine). `swki zeichnen`
+  bricht mit `FUNKTIONEN_VERALTET` ab, `swki zeichnung pruefen` setzt es als Kopfmangel.
+- **I1** `zeichnung pruefen` nimmt die Arbeitsdatei und prüft die Freigabe (wie `zeichnen`); eine Bauweg-Umbenennung
+  nach der Freigabe macht den Plan nicht mehr „veraltet“.
+- **I2** `swki bericht`: Zeichnung im letzten Lauf ohne Prüfbericht → `ZEICHNUNG_PRUEFBERICHT_FEHLT`, „Zeichnung ungeprüft“.
+- **I3/M4** Bohrungs- und Gewindeangaben je Merkmal der Hinweislinie, ganzer Text: nur die Toleranz anders → Z-TOL-1
+  („H8 Ⓔ statt H7 Ⓔ“), sonst „weicht ab“ (Z-VOLL-1); eine Angabe an fremder Hinweislinie fehlt am Soll-Merkmal (Z-VOLL-1)
+  und ist dort überzählig (Z-VOLL-2); passender Text ohne angehängte Kante → `RUECKLESEN_UNVOLLSTAENDIG` (Z-VOLL-1).
+- **I4** `swki zeichnen` ohne Extra pdf: `SAMMELANGABE_FEHLT … ungeprüft – pymupdf fehlt` statt ImportError.
+- **(a)** Jeder Schnitt bekommt den nächsten freien Buchstaben; zwei gleiche Schnittbezeichnungen sind Z-ANS-2.
+- **(b)** Umhängen einer Anmerkung leert die gewählte Lage; scheitert es zum Ort der besten Runde, verfällt deren Lage.
+- **(c)** Lage der Sammelangaben: der Rückleser liest `IAnnotation.GetPosition` je Notiz (`IstAngabe.lage`); jede Notiz
+  mit einer Sammelzeile steht mit ihrem Ankerpunkt im Band über dem Schriftfeld (±1 mm), sonst Z-SAM-1 … bzw. Z-SAM-7.
+- **M2** Position und Koaxialität (Ø-Zone, theoretisch exakte Maße fehlen): `FORM_LAGE_NICHT_UNTERSTUETZT` (Z-TOL-5),
+  `validieren` meldet sie als Hinweis art `zeichnung`.
+- **M3** Rückleser: beide Passungswerte gesetzt → „H7/g6“ (an einer Bohrung mit H7 ein Z-TOL-1).
+- **Schriftfeld (Controller)** Ein gesetztes Pflichtfeld muss mit seinem Wert im Schriftfeld des PDFs stehen (ganzes
+  Wort, Mehrfachmenge), sonst Z-SCH-1 „nicht auf dem Blatt“; ohne PDF nicht geprüft. Die SW-2025-Vorlage zeigt
+  BENENNUNG und die Dokumentart nicht: die Referenzen fallen damit durch, bis das Schriftfeld des Nutzers kommt (Z1.5).
+
+Live 28.11. (frisches SolidWorks): `tests/live/test_live_zeichnung_pruefen.py` 5/5 grün, auch
+`test_sammelnotiz_ausserhalb_des_blatts` (vorher xfail; jetzt genau ein neuer Mangel Z-SAM-1); im Negativfall der
+Spannplatte Z ist H7 → H8 im Hinweis jetzt Z-TOL-1 an st. Die Buchse Z liest H7 an Ø20 ohne Wellenwert (M3 ohne
+Fehlalarm). `swki zeichnung pruefen --lauf 1` auf den drei Referenzen: Kopf ok, alle nicht bestanden durch Z-SCH-1
+Benennung und Dokumentart „nicht auf dem Blatt“; die Spannplatte Z hat dazu wie bisher RAUHEIT_NUR_EINE_INSTANZ (t1, st,
+Z-TOL-4). Teil- und Zeichnungs-SHA unverändert.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 

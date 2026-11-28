@@ -150,7 +150,8 @@
   - `bewerte(ist, plan, spec, standard, regeln, pdf=None, meldungen=(), meldungen_soll=()) -> dict`. Ergebnis: `{bestanden, pruefungen: [...9], maengel: [{pruefung, regel, merkmal, text}], meldungen}`.
     - `bestanden` ist True, wenn keine harte Prüfung `ok is False` hat.
     - Hinweisregeln (`art: hinweis`) machen nie `ok False`.
-  - In `config/standard.yaml` unter `zeichnung:` kommt dazu: `schriftfeld: {eigentuemer: "", sachnummer: Zeichnungsnummer, titel: Benennung, ersteller: DrawnBy, ausgabedatum: DrawnDate, dokumentart: Dokumentart, blatt: Blatt, freigegeben: Freigegeben}`. Die Werte sind Eigenschaftsnamen der Zeichnung, `eigentuemer` ist leer bis Z1.5. Kommentar: Design §7, Z1.5 ersetzt die Namen. `blatt` liefert der Rückleser aus dem Blatt (Nummer/Anzahl), nicht aus einer Eigenschaft.
+  - In `config/standard.yaml` unter `zeichnung:` kommt dazu: `schriftfeld: {eigentuemer: "", sachnummer: Zeichnungsnummer, titel: Benennung, ersteller: DrawnBy, ausgabedatum: DrawnDate, dokumentart: Dokumentart, blatt: Blatt, freigegeben: Freigegeben}`. Die Werte sind Eigenschaftsnamen der Zeichnung, `eigentuemer` ist leer bis Z1.5. Kommentar: Design §7, Z1.5 ersetzt die Namen. `blatt` liefert der Rückleser aus dem Blatt (Nummer/Anzahl), nicht aus einer Eigenschaft. *(Überholt, Review 4b M5 /
+    Gesamtreview M1: der Rückleser erfindet kein Blatt; fehlt die Eigenschaft, ist das Feld bis Z1.5 nicht geprüft.)*
   - `ideal_ist` bekommt `spec` und `eigenschaften` als optionale Parameter. Daraus setzt es Sammelangaben-Notizen und Schriftfeld-Eigenschaften.
 
 - [ ] **Step 1: Tests**
