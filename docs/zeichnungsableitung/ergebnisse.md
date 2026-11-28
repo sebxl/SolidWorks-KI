@@ -291,6 +291,150 @@ Offen:
 - Kleinere Punkte aus dem Review der Nachbesserung E (Ledger: M-2 Umhängen leeren, M-4 zwei Schnitte mit gleichem
   Buchstaben) sind für eine letzte Fix-Welle vorgesehen.
 
+## Z1.4 – Zeichnungsprüfung (28.11.2026)
+
+Plan `docs/superpowers/plans/2026-11-27-zeichnungsableitung-z14-pruefen.md`, Design §8 (Prüfen) und §10
+(Negativfälle). Live-Test `tests/live/test_live_zeichnung_pruefen.py`.
+
+Befehle:
+- `swki zeichnung pruefen <spec> [--lauf N]` liest die von `swki zeichnen` gespeicherte SLDDRW schreibgeschützt zurück
+  (`swki/zeichnung/rueckleser.py`, Ist-Modell `ist.py`). Danach prüft er sie gegen die freigegebene Spec, den neu
+  gerechneten Maßplan und den Regelkatalog (`pruefen.py`, rein, ohne SolidWorks). Der Bericht steht unter
+  `protokolle/<spec>.lauf-<n>.zeichnung.pruefbericht.json`.
+  - Kopfprüfung: Weicht die SHA-256 der Zeichnung von der Übergabe `zeichnung/zeichnung.json` ab, kommt
+    `ZEICHNUNG_GEAENDERT` (Handänderung). Weicht der Maßplan ab, kommt `ZEICHNUNG_PLAN_VERALTET`. Beides heißt nie
+    „bestanden“, und das PDF wird dann verworfen.
+  - Ändert das Rücklesen Teil oder Zeichnung (SHA vorher ≠ nachher), bricht der Befehl ab
+    (`ZEICHNUNG_PRUEFUNG_AENDERT`).
+  - Geschlossen wird nur, was das Öffnen geladen hat. Bleibt etwas offen, kommt `RUECKLESEN_NICHT_GESCHLOSSEN`.
+- `swki durchlauf <spec> --zeichnung` zeichnet den letzten bestandenen Lauf (Teil-Prüfer bestanden), prüft die
+  Zeichnung und gibt den fertigen Auftrag für den Agenten aus (`zeichnungspruefer_auftrag`). Es baut nicht neu.
+- Agent `zeichnungspruefer` (`.claude/agents/zeichnungspruefer.md`, nur Read und Glob). Er bekommt Eingabe,
+  freigegebene Spec, Prüfbericht, PDF/PNG und Regelkatalog, aber keine Bauprotokolle und keinen Maßplan als Maßstab. Sein
+  Urteil liegt in `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json`. Fehlt es, meldet `swki bericht`
+  `ZEICHNUNGSPRUEFER_FEHLT` („Zeichnung ungeprüft“).
+
+Regelkatalog `swki/wissen/zeichnungsregeln.yaml`:
+- 25 Regeln für die neun Prüfungen aus Design §8.1: vollständig 2, überbestimmt 1, Toleranzen 6, Sammelangaben 7,
+  Schriftfeld 3, Ansichten 3, Lesbarkeit 1, Gewinde 1, Drehteil 1.
+- 24 Regeln sind hart. Nur Z-LES-1 (Lesbarkeit) ist ein Hinweis.
+- Belegstärke: 10 × A, 10 × B, 5 × C.
+- Herkunft: 17 × `norm`, 8 × `projekt` (Z-TOL-1, Z-TOL-2, Z-SAM-2, Z-SAM-4, Z-SAM-5, Z-SCH-2, Z-ANS-1, Z-GEW-1).
+- Der Lader erzwingt: Eine harte Regel hat Beleg A/B oder `herkunft: projekt` mit Quelle (Nutzer bzw. Design und Datum).
+  Alle fünf C-Regeln (Z-TOL-1, Z-SAM-4, Z-SAM-5, Z-SCH-2, Z-ANS-1) sind Projektregeln.
+
+Meldungscode → Regel (`MELDUNG_REGEL` in `pruefen.py`):
+- Die Meldungen der Übergabe (`swki zeichnen`) und des Rücklesers werden zu Mängeln der Regel, zu der sie gehören.
+  `test_jeder_meldungscode_hat_regel` sammelt alle Codes aus `swki/zeichnung/*.py` über den Syntaxbaum.
+- Ein unbekannter Code wird Mangel Z-VOLL-1 („unbekannte Zeichnungsmeldung“), nie still.
+
+| Meldungen | Regel |
+|---|---|
+| `MASS_NICHT_DAUERHAFT`, `MASS_NICHT_GEPLANT`, `MASS_NICHT_GESETZT`, `MASS_OHNE_ANSICHT`, `ANGABE_*` (nicht gesetzt, ohne Ansicht/Hinweislinie/Achse, unbekannt, unvollständig), `RUECKLESEN_UNVOLLSTAENDIG` | Z-VOLL-1 |
+| `ANGABE_DOPPELT`, `ANMERKUNG_DOPPELT`, `MASS_NICHT_GELOESCHT` | Z-VOLL-2 |
+| `TOLERANZ_NICHT_GESETZT`, `TOLERANZ_OHNE_MASS`, `TOLERANZ_MEHRDEUTIG`, `FORM_LAGE_IT_OHNE_TABELLE`, `FUNKTION_UNBEKANNT` | Z-TOL-1 |
+| `RAUHEIT_NICHT_GESETZT`, `RAUHEIT_NUR_EINE_INSTANZ` | Z-TOL-4 |
+| `FORM_LAGE_NICHT_GESETZT`, `FORM_LAGE_NUR_EINE_INSTANZ` | Z-TOL-5 |
+| `BEZUG_NICHT_GESETZT` | Z-TOL-6 |
+| `SAMMELANGABE_FEHLT`, `SAMMELANGABEN_NICHT_GESETZT` (Sammelrauheit: Z-SAM-7) | Z-SAM-1 |
+| `EINZELHEIT_BUCHSTABE`, `SCHNITT_BUCHSTABE` | Z-ANS-2 |
+| `BEZUG_OHNE_KANTE`, `MITTELLINIE_NICHT_GEZEICHNET` | Z-ANS-1 |
+| `ANMERKUNG_KREUZT`, `ANMERKUNG_ZU_NAH`, `ANGABE_ZU_NAH`, `ANSATZ_NICHT_FREI`, `LESBARKEIT`, `LESBARKEIT_UNGEPRUEFT`, `SCHRAFFUR_UNGELESEN`, `ANMERKUNG_NICHT_UMGEHAENGT`, `MASSE_NICHT_ANGEORDNET`, `HILFSLINIE_NICHT_MITTELLINIE`, `SAMMELANGABE_UEBERLAUF` | Z-LES-1 (Hinweis) |
+| `FUNKTION_UNBESTAETIGT`, `LAUF_NICHT_BESTANDEN`, `ANSICHT_DICHT`/`_VOLL`, `EINZELHEIT*` (Ansichtswahl), `ANSICHT_GERATEN`, `ANSICHT_NICHT_GELOESCHT`, `SCHNITT_NICHT_*`, `RUECKLESEN_NICHT_GESCHLOSSEN`, `ZEICHNUNG_GEAENDERT`, `ZEICHNUNG_PLAN_VERALTET`, `PDF_VERWORFEN` | nur Bericht, mit Begründung (`NUR_BERICHT`); Kopfmeldungen setzen bestanden False |
+
+Live 28.11.2026 (frisches SolidWorks 2025): `swki zeichnung pruefen <spec> --lauf 1` auf den Läufen der Stufe 4
+(`<arbeitsordner>/Z1S4-spz`, `Z1S4-bz`, `Z1S4-stil`). Teil- und Zeichnungs-SHA waren vorher und nachher gleich.
+`GetDocuments` war vorher und nachher leer.
+
+| Zeichnung | Ergebnis | Mängel und Hinweise |
+|---|---|---|
+| SpannplatteZ | nicht bestanden | 2 × Z-TOL-4 aus `RAUHEIT_NUR_EINE_INSTANZ` (t1 Ra 1,6; st Ra 0,8), Hinweis Z-LES-1 (`ANMERKUNG_KREUZT` st Ra 0,8) |
+| BuchseZ | bestanden | – |
+| Spannplatte (Stufe 3) | bestanden | – |
+
+- Die Prüfberichte liegen unter `protokolle/<spec>.lauf-1.zeichnung.pruefbericht.json` neben den Specs der drei Läufe.
+- SpannplatteZ ist nicht bestanden, weil die Regel hart bleibt: Eine Rauheit an nur einer von n Instanzen ist ein
+  Mangel (Vorschlag Stufe 4, Entscheidung des Nutzers offen). Der Rückleser selbst verursacht keinen harten Mangel.
+- Nachweise zur Nachbesserung 4b (Commits c16a541, 3c9676d):
+  - Alle sechs Anforderungen der SpannplatteZ hängen an einer Kante mit Merkmal: Ra 0,8 → st, ▱ 0,02 → f1,
+    „2 ד // 0,05 A → t1, Bezüge A und B → f1, Ra 1,6 → t1. Es gibt kein „ohne Merkmal“ und kein
+    `RUECKLESEN_UNVOLLSTAENDIG`, die Meldungen des Rücklesers sind in allen drei Läufen leer.
+  - BuchseZ: Die vier linearen Ø-Maße im Längsschnitt (Präfix `<MOD-DIAM>`, Ø50, Ø32 k6, Ø20 H7, Ø30) haben lesbare
+    Hilfslinien, `verdeckt` ist bestimmt (False).
+  - Einzelheit Z (Tasche 50 × 30 mit R4) in SpannplatteZ und Spannplatte: 50 und 30 sind nicht verdeckt, die gedachte
+    Ecke wird erkannt. Die Prüfung `ansichten` ist ok, es gibt keinen Z-ANS-1. Das R4-Maß selbst hat `verdeckt` None
+    (Radiusmaß, bekannte Grenze).
+  - Kein lineares Maß hat `verdeckt` None.
+  - Eine Eigenschaft „Blatt“ gibt es nicht. Das Schriftfeld-Feld Blatt ist deshalb „nicht geprüft“ (Prüfung
+    `schriftfeld` ok None, zusammen mit dem Hinweis Eigentümer leer). Vor der Nachbesserung stand „Blatt: 1/1“ im Ist,
+    das hatte der Rückleser selbst gesetzt (M5).
+- `tests/live/test_live_zeichnung_pruefen.py` sichert diese Nachweise je Referenz zu. Ergebnis: 5/5 grün, davon ist
+  der Sammelnotiz-Fall ein erwartetes xfail (siehe unten).
+
+Negativfälle live (Kopie der Zeichnung im Laufordner per COM verändert und gespeichert, geprüft über dieselbe Kette
+wie `swki zeichnung pruefen`). Verglichen wird mit dem Bericht des unveränderten Originals. Teil und Original-Zeichnung
+haben vor und nach der Prüfung dieselbe SHA.
+
+| Kopie | Manipulation | neue Mängel (genau diese) |
+|---|---|---|
+| SpannplatteZ | Maß 27 (Kabelnut k1) gelöscht | Z-VOLL-1 k1 „fehlt: 27 (k1)“ |
+| | Bohrungsangabe „2 × Ø8 H7 Ⓔ“ → H8 | Z-VOLL-1 st „fehlt: Angabe 2 × Ø8 H7 Ⓔ – 15 tief“ |
+| | „ <MOD-EP>“ (Ⓔ) an 150 ±0,02 | Z-TOL-2 st „150: Ⓔ an einem Maß ohne Passung“ |
+| | Notiz „ISO 2768-mK“ | Z-SAM-3 „verboten: ISO 2768-mK“ |
+| | Eigenschaft Benennung geleert | Z-SCH-1 „Pflichtfeld Benennung leer (Eigenschaft Benennung)“ |
+| BuchseZ | Ø20: Passung H7 → H8 (`SetFitValues`) | Z-TOL-1 f1 „Ø20: Toleranz H8 statt H7“ |
+| SpannplatteZ | Sammelangaben-Notiz per `SetPosition2` unter das Blatt (y = −50 mm) | **keiner** (Befund, xfail) |
+
+- Abweichungen vom Plan (Task 6, Step 1):
+  - **Passung H7 → H8 an der SpannplatteZ** ergibt Z-VOLL-1, nicht Z-TOL-1. Die Passung der Stiftbohrung steht nur in
+    der Bohrungsangabe (Plan-Quelle `angabe`, kein Maß mit Passung). Angaben werden über den Textanfang abgeglichen
+    (Entscheidung 1). Der Mangel ist hart und dem Merkmal st zugeordnet, der Text nennt das Soll H7.
+  - Für Z-TOL-1 an einem Passmaß deshalb eine zweite Kopie, die BuchseZ (Ø20 H7, Zeichnungsmaß).
+  - Ob eine falsche Passung in einer Bohrungsangabe als Z-TOL-1 gemeldet werden soll: Vorschlag – Nutzer entscheidet.
+- **Befund Sammelangabe außerhalb des Blatts:** Die Prüfung meldet nichts. Der Rückleser liest Text, keine Lage, und
+  `pruefe_sammelangaben` prüft nur den Text. Die Lage auf dem Blatt prüft nur `swki zeichnen` am PDF
+  (`SAMMELANGABE_FEHLT` → Z-SAM-1, `SAMMELANGABE_UEBERLAUF` → Z-LES-1).
+  - Im CLI-Weg hält eine solche Handänderung nur die Kopfprüfung auf (`ZEICHNUNG_GEAENDERT`, SHA ≠ Übergabe), keine
+    Regel.
+  - Der Test `test_sammelnotiz_ausserhalb_des_blatts` endet als xfail, solange kein Mangel entsteht. Er erwartet Z-SAM-1.
+- „Geschlossene Kette“ (Z-UEB-1) und „Maß an verdeckter Kante“ (Z-ANS-1) sind nur Unit-Tests
+  (`tests/zeichnung/test_pruefen_masse.py`).
+  - `swki zeichnen` erzeugt keines von beiden.
+  - Ein Maß, das man in der Kopie nachträglich einfügt, hat keinen Plan-Namen. Die Prüfung meldete es als überzählig
+    (Z-VOLL-2), nicht als Kette oder verdeckt.
+  - Die Regeln sind reine Funktionen über das Ist und dort vollständig abgedeckt.
+
+Grenzen:
+- Gelesen wird nur das aktuelle Blatt. Hat eine Zeichnung mehrere Blätter, kommt `RUECKLESEN_UNVOLLSTAENDIG`.
+- Merkmal einer Angabe ist das Feature der angehängten Kante (über die Nachbarflächen), nicht die Fläche. Eine Kante
+  zwischen zwei Merkmalen ergibt „a/b“ und deckt genau einen Plan-Eintrag. Ohne Merkmal ist eine Angabe nie ein Joker,
+  sondern überzählig.
+- Die Instanzzahl der Rauheit kennt die Prüfung nur aus der Übergabe (`RAUHEIT_NUR_EINE_INSTANZ`). Das Rauheitssymbol
+  hat kein „n ד wie der Toleranzrahmen.
+- Z-DRE-1 an Linearmaßen des Längsschnitts: Dort kommt Ø als Präfix `<MOD-DIAM>`, und der Rückleser liest die Maßart
+  aus dem Präfix (`rueckleser.massart`). Fehlt dort das Ø, ist das Maß eine Länge. Laut Code (nicht live) kommt dann
+  Z-VOLL-1 „fehlt: Ø…“ und Z-VOLL-2 „überzählig“, nicht Z-DRE-1. Hart bleibt es trotzdem.
+- `verdeckt` gibt es nur für lineare Maße. Ø-, R- und Winkelmaße haben None und werden nicht als Mangel gezählt; die
+  Darstellung beurteilt der Zeichnungsprüfer.
+- Die Lage von Anmerkungen und Sammelangaben prüft nur das PDF aus `swki zeichnen`, nicht der Rückleser (Befund oben).
+- Überbestimmung gilt je Ansicht und Richtung (Entscheidung 2). Maße verschiedener Ansichten gelten als unabhängig, das
+  steht als Hinweis in der Prüfung `ueberbestimmt`.
+
+Vorschläge – Nutzer entscheidet (Plan „Entscheidungen“):
+1. **Abgleich Ist ↔ Plan** als Multimenge je (Ist-Art, Wert auf 0,01 mm), unabhängig von der Ansicht. Angaben werden über
+   den Textanfang abgeglichen, Zusätze („4 × “, „ (= 120)“) exakt verglichen.
+2. **Überbestimmt** je Ansicht und Richtung als Maßgraph. Hilfsmaße in Klammern schließen eine Kette ohne Mangel.
+3. **Schriftfeld:** acht Pflichtfelder nach ISO 7200, Zuordnung zu den Eigenschaften in `config/standard.yaml`
+   (`zeichnung.schriftfeld`).
+   - Eigentümer leer ist nur ein Hinweis bis Z1.5.
+   - „Freigegeben“ bleibt leer.
+   - Dokumentart „Einzelteilzeichnung“ als Hausregel.
+   - Blatt nicht geprüft, solange keine Eigenschaft da ist.
+4. **Lesbarkeit** (Z-LES-1) ist nur ein Hinweis. Die PDF-Prüfung bekommt die gelegten Toleranzrahmen mit.
+5. **Maßstab aus der Vorzugsreihe** nach ISO 5455 für Blatt und Einzelheit.
+6. **Lesart von `durchlauf --zeichnung`:** zeichnet und prüft den letzten bestandenen Lauf, baut nicht neu. Das
+   Teil-Prüfer-Urteil ist Voraussetzung für `swki zeichnen`, deshalb kann ein Aufruf nicht bauen, prüfen und zeichnen.
+
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
 - Härteangabe nach DIN ISO 15787:2018-08 (= ISO 15787:2016): Wert mit Grenzabmaßen in Klammern, „(60 ± 2) HRC“;
