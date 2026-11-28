@@ -217,7 +217,8 @@ Was jetzt gilt:
   - immer: Allgemeintoleranzen ISO 2768-1:1989 – m, Tolerierung ISO 8015:2011, Kanten ISO 13715 −0,1 … −0,3,
     „Maßgebend ist die Zeichnung“;
   - dazu Behandlung und Halbzeug aus der Spec;
-  - rechts daneben „Oberflächen ohne Angabe: Ra 3,2“.
+  - rechts daneben das Rauheitsfeld (Symbol „Ra 3,2“, „Alle Flächen ohne andere Angabe“; bis 28.11. die Textzeile
+    „Oberflächen ohne Angabe: Ra 3,2“, siehe „Nutzerentscheidungen 28.11.2026“).
 - **Buchstaben:** Schnitte ab A ohne I, O, Q und ohne Bezugsbuchstaben (SpannplatteZ: Schnitt C-C, weil A und B
   Bezüge sind). Einzelheiten ab Z rückwärts.
 - Anmerkungen (Rauheit, Rahmen, Bezüge) stellen sich der PDF-Prüfung wie die Hinweise. Was keine freie Lage findet,
@@ -225,8 +226,9 @@ Was jetzt gilt:
 - `swki zeichnen` schreibt die Übergabe `zeichnung/zeichnung.json` für die Zeichnungsprüfung Z1.4. Sie enthält Plan,
   Gesetztes, SHA-256 der SLDDRW, Meldungen, Ansichten und die umgewandelten Maße.
 
-Live 28.11.2026 (frisches SolidWorks 2025, `tests/live/test_live_zeichnen.py`, 4/4 grün). Jede Zeichnung wurde danach
-schreibgeschützt wieder geöffnet (Rückleser Z1.4). Toleranzen, Zusätze, Ⓔ und Bohrungsangaben waren erhalten,
+Live 28.11.2026 (frisches SolidWorks 2025, `tests/live/test_live_zeichnen.py`, 4/4 grün; Stand vor den
+Nutzerentscheidungen, Ra 0,8 an st gibt es seitdem nicht mehr, siehe „Nutzerentscheidungen 28.11.2026“). Jede
+Zeichnung wurde danach schreibgeschützt wieder geöffnet (Rückleser Z1.4). Toleranzen, Zusätze, Ⓔ und Bohrungsangaben waren erhalten,
 Teil- und Zeichnungs-SHA unverändert, danach keine Dokumente offen.
 
 | Zeichnung | Blatt | Ansichten | Restmeldungen |
@@ -302,9 +304,9 @@ Offen:
   beginnt an der ersten Zeile, ab der drei Zeilen höchstens 42 Zeichen haben; das Band wird bei den Referenzen nicht
   höher (SpannplatteZ 5, BuchseZ 7 Zeilen). Rahmen als Blattskizze mit Farbe Schwarz (Spike: Blattskizzen folgen dem
   Blattmaßstab und kämen sonst blau ins PDF). Grundsymbol statt „Bearbeitung verlangt“, weil Halbzeugflächen roh
-  bleiben dürfen. Geometrie ohne SolidWorks in `swki/zeichnung/sammelfeld.py`, genutzt von Zeichnen, PDF-Prüfung
-  (`sammel_pruefen`: Texte im Kasten, keine Sammelzeile darüber) und Zeichnungsprüfung. Spike: `spike-z1.md`, Nachtrag
-  Rauheitsfeld.
+  bleiben dürfen (Vorschlag, Nutzer entscheidet; siehe unten). Geometrie ohne SolidWorks in
+  `swki/zeichnung/sammelfeld.py`, genutzt von Zeichnen, PDF-Prüfung (`sammel_pruefen`: Texte im Kasten, keine
+  Sammelzeile darüber) und Zeichnungsprüfung. Spike: `spike-z1.md`, Nachtrag Rauheitsfeld.
   - Prüfung: Ein Rauheitssymbol ohne Kante mit Lage (Spitze) im Band ist die Sammelrauheit (Z-SAM-7: genau ein Symbol
     mit Feld a „Ra 3,2“ und der Hinweis), keine Merkmalsrauheit. Außerhalb des Bands bleibt es eine Rauheit ohne
     Merkmal (Z-TOL-4, hart). Die alte Textzeile genügt nicht mehr. Der Rückleser liest die Lage aller Rauheitssymbole
@@ -317,6 +319,10 @@ Offen:
   schreibt und `pruefe_pdf` nur Linien und Rechtecke las; jetzt zählen Vierecke mit (Test mit den Live-Zahlen). Am
   alten PDF findet die Prüfung den Befund jetzt (SpannplatteZ und Spannplatte).
 - **Beschriftung „EINZELHEIT Z“ über der Ansicht** bleibt.
+
+Offen: Ob das Grundsymbol (beliebiges Verfahren) oder „Bearbeitung verlangt“ (wie an den Merkmalsrauheiten) gelten
+soll, entscheidet der Nutzer. Die Lage des Rahmens im PDF ist an den vier Referenzen (Blatt 1:1 und 1:2) nachgemessen,
+nicht in einem Test; Blätter in 2:1 oder 5:1 sind ungeprüft.
 
 Live 28.11.2026 nach den Entscheidungen (je Datei frisches SolidWorks 2025): `tests/live/test_live_zeichnen.py` 4/4,
 `tests/live/test_live_zeichnung_pruefen.py` 6/6 grün, darunter neu `test_rauheitssymbol_ausserhalb_des_felds` (Symbol
@@ -538,8 +544,9 @@ Kurzreview der Fix-Welle (28.11.), bewusst so gelassen bzw. offen:
   keine Spec, weil `funktion` erst mit Z1.1 kam.
 - Schriftfeld am PDF: Werte, die die Vorlage umbricht oder anders formatiert (Datum), würden als „nicht auf dem Blatt“
   gemeldet; kurze Werte könnten eine fremde Zeile treffen. Mit dem Firmenschriftfeld (Z1.5) nachschärfen.
-- Lage der Sammelangaben: Jede Hinweisnotiz mit „Ra 3,2“ muss im Band stehen (seit 28.11.: der Hinweis des Rauheitsfelds und die Spitze des Symbols). Geprüft wird nur der Ankerpunkt, also links
-  oben; bei anderer Textausrichtung passt das nicht. `_angaben_abgleich` läuft doppelt. Alles Minor.
+- Lage der Sammelangaben: Jede Hinweisnotiz mit „Ra 3,2“ muss im Band stehen (seit 28.11.: der Hinweis des
+  Rauheitsfelds und die Spitze des Symbols). Geprüft wird nur der Ankerpunkt, also links oben; bei anderer
+  Textausrichtung passt das nicht. `_angaben_abgleich` läuft doppelt. Alles Minor.
 
 ## Härte und Halbzeug (Nachrecherche `haerteangabe.md`)
 
