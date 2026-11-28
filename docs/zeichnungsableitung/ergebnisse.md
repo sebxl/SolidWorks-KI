@@ -375,7 +375,7 @@ Live 28.11.2026 (frisches SolidWorks 2025): `swki zeichnung pruefen <spec> --lau
   Anforderung, lineare Ø-Maße, `ansichten` und `ueberbestimmt` ok, Blatt „nicht gelesen“). Die Stufe-3-Spannplatte
   ist nur über die CLI gelaufen, nicht im Test. Ganze Datei über `tests\live_einzeln.py --zeit 1500` auf frischem
   SolidWorks: 5/5 „OK“. Davon ist der Sammelnotiz-Fall ein xfail (siehe unten); `live_einzeln` zeigt einen xfail als
-  „OK“ an.
+  „OK“ an. *(Stand vor dem Gesamtreview; seither echt grün, Abschnitt „Gesamtreview“.)*
 
 Negativfälle live (Kopie der Zeichnung im Laufordner per COM verändert und gespeichert, geprüft über dieselbe Kette
 wie `swki zeichnung pruefen`). Verglichen wird mit dem Bericht des unveränderten Originals. Teil und Original-Zeichnung
@@ -384,12 +384,12 @@ haben vor und nach der Prüfung dieselbe SHA.
 | Kopie | Manipulation | neue Mängel (genau diese) |
 |---|---|---|
 | SpannplatteZ | Maß 27 (Kabelnut k1) gelöscht | Z-VOLL-1 k1 „fehlt: 27 (k1)“ |
-| | Bohrungsangabe „2 × Ø8 H7 Ⓔ“ → H8 | Z-VOLL-1 st „fehlt: Angabe 2 × Ø8 H7 Ⓔ – 15 tief“ |
+| | Bohrungsangabe „2 × Ø8 H7 Ⓔ“ → H8 | Z-VOLL-1 st „fehlt: Angabe 2 × Ø8 H7 Ⓔ – 15 tief“ (seit dem Gesamtreview: Z-TOL-1 st) |
 | | „ <MOD-EP>“ (Ⓔ) an 150 ±0,02 | Z-TOL-2 st „150: Ⓔ an einem Maß ohne Passung“ |
 | | Notiz „ISO 2768-mK“ | Z-SAM-3 „verboten: ISO 2768-mK“ |
 | | Eigenschaft Benennung geleert | Z-SCH-1 „Pflichtfeld Benennung leer (Eigenschaft Benennung)“ |
 | BuchseZ | Ø20: Passung H7 → H8 (`SetFitValues`) | Z-TOL-1 f1 „Ø20: Toleranz H8 statt H7“ |
-| SpannplatteZ | Sammelangaben-Notiz per `SetPosition2` unter das Blatt (y = −50 mm) | **keiner** (Befund, xfail) |
+| SpannplatteZ | Sammelangaben-Notiz per `SetPosition2` unter das Blatt (y = −50 mm) | **keiner** (Befund, xfail; seit dem Gesamtreview: Z-SAM-1) |
 
 - Abweichungen vom Plan (Task 6, Step 1):
   - **Passung H7 → H8 an der SpannplatteZ** ergibt Z-VOLL-1, nicht Z-TOL-1. Die Passung der Stiftbohrung steht nur in

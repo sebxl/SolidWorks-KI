@@ -754,9 +754,9 @@ MELDUNG_REGEL: dict[str, tuple[str, str]] = {
     "ANMERKUNG_KREUZT": _LES, "ANMERKUNG_ZU_NAH": _LES, "ANGABE_ZU_NAH": _LES, "ANSATZ_NICHT_FREI": _LES,
     "LESBARKEIT": _LES, "LESBARKEIT_UNGEPRUEFT": _LES, "SCHRAFFUR_UNGELESEN": _LES, "ANMERKUNG_NICHT_UMGEHAENGT": _LES,
     "MASSE_NICHT_ANGEORDNET": _LES, "HILFSLINIE_NICHT_MITTELLINIE": _LES,
-    # Sammelangaben im PDF (`anforderungen_setzen.sammel_pruefen`, Review 4b I3): `pruefe_sammelangaben` liest nur den
-    # Text der Notizen, nicht ihre Lage – eine Notiz unter dem Blatt (gescheitertes `SetPosition2`) erfüllte Z-SAM-1/2/
-    # 4/6 trotzdem. Fehlt eine Zeile im PDF, fehlt die Sammelangabe (Z-SAM-1, hart). Läuft eine Zeile über das Band
+    # Sammelangaben im PDF (`anforderungen_setzen.sammel_pruefen`, Review 4b I3; den Ankerpunkt je Notiz prüft seit dem
+    # Gesamtreview (c) `pruefe_sammelangaben` selbst). Vorher: eine Notiz unter dem Blatt (gescheitertes
+    # `SetPosition2`) erfüllte Z-SAM-1/2/4/6 trotzdem. Fehlt eine Zeile im PDF, fehlt die Sammelangabe (Z-SAM-1, hart). Läuft eine Zeile über das Band
     # hinaus, steht sie noch auf dem Blatt: ein Lesbarkeitshinweis – außer der Sammelrauheit, die nahe dem Schriftfeld
     # stehen muss (Z-SAM-7, `_SAMMEL_RAUHEIT_REGEL`).
     "SAMMELANGABE_FEHLT": ("sammelangaben", "Z-SAM-1"), "SAMMELANGABE_UEBERLAUF": _LES,
