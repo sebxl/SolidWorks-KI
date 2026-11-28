@@ -407,6 +407,7 @@ def test_zeichnen_loescht_alten_zeichnungspruefbericht(monkeypatch, tmp_path):
     rechner = type("R", (), {"zeichnung": {"A3quer": "v"}, "sw_jahr": 2025})()
     monkeypatch.setattr(z, "lade_spec", lambda p: {"name": "s", "features": []})
     monkeypatch.setattr(z, "pruefe_freigabe", lambda p, s: None)
+    monkeypatch.setattr(z, "funktionen_veraltet", lambda p: None)
     monkeypatch.setattr(z, "lade_rechner", lambda: rechner)
     monkeypatch.setattr(z, "lade_standard", lambda: {})
     monkeypatch.setattr(z, "auftrag_name", lambda p: "A")
@@ -486,3 +487,17 @@ def test_einzelheit_buchstabe_nach_wirkung_geprueft():
     assert z._buchstabe_pruefen(eltern, "Z") == ["EINZELHEIT_BUCHSTABE: „Z“ verlangt, Einzelheitenkreis trägt „B“"]
     eltern = type("V", (), {"GetDetailCircles": lambda s: (_Kreis("Z"),)})()
     assert z._buchstabe_pruefen(eltern, "Z") == []
+
+
+def test_zeichnen_bricht_bei_funktionen_veraltet_ab(monkeypatch, tmp_path):
+    """Gesamtreview C1: geänderte Werte in funktionen.yaml nach der Freigabe – nie still mit den neuen Werten zeichnen."""
+    monkeypatch.setattr(z, "lade_spec", lambda p: {"name": "s", "features": []})
+    monkeypatch.setattr(z, "pruefe_freigabe", lambda p, s: None)
+    monkeypatch.setattr(z, "funktionen_veraltet", lambda p: "FUNKTIONEN_VERALTET: H7 → H8")
+
+    def halt(*a):
+        raise AssertionError("darf nicht bis zu SolidWorks kommen")
+    monkeypatch.setattr(z, "lade_rechner", halt)
+    with pytest.raises(z.ZeichnungFehler) as e:
+        z.zeichnen(tmp_path / "s.yaml", 1)
+    assert e.value.daten["code"] == "FUNKTIONEN_VERALTET"

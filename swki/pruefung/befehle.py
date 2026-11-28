@@ -177,6 +177,12 @@ def pruefbericht_veraltet(pruefbericht: dict) -> bool:
     return hashlib.sha256(pfad.read_bytes()).hexdigest() != sha
 
 
+def zeichnung_liegt_vor(ordner: Path) -> bool:
+    """Liegt im Lauf-Ordner eine Zeichnung (Übergabe `zeichnung/zeichnung.json` oder eine SLDDRW)?"""
+    ausgabe = ordner / "zeichnung"
+    return (ausgabe / "zeichnung.json").is_file() or any(p.suffix.lower() == ".slddrw" for p in ausgabe.glob("*"))
+
+
 def bericht(spec_pfad: Path) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec_beliebig(spec_pfad)
@@ -189,6 +195,9 @@ def bericht(spec_pfad: Path) -> dict:
     if letzter and (zb := _lies(lauf_datei(spec_pfad, letzter, "zeichnung.pruefbericht"))) is not None:
         zeichnung = {"pruefbericht": zb, "urteil": lies_urteil(lauf_datei(spec_pfad, letzter, "zeichnungspruefer")),
                      "pruefbericht_veraltet": pruefbericht_veraltet(zb)}
+    elif letzter and zeichnung_liegt_vor(lauf_ordner(lade_rechner(), auftrag_name(spec_pfad), letzter)):
+        # Gesamtreview I2: `swki zeichnen` löscht den alten Prüfbericht, `zeichnung pruefen` bei Abbruch – nie still
+        zeichnung = {"pruefbericht": None, "urteil": None, "pruefbericht_fehlt": True}
     text = bericht_markdown(
         spec, auftrag_name(spec_pfad), alle, (stand["empfehlung"], stand["text"]),
         _lies(lauf_datei(spec_pfad, letzter, "pruefbericht")) if letzter else None,

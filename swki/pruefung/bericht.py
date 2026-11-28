@@ -202,6 +202,9 @@ def zeichnung_urteil_hinweise(zeichnung: dict | None) -> list[str]:
     anderen Zeichnung (ZEICHNUNGSPRUEFER_VERALTET, SHA-256 der SLDDRW)."""
     if not zeichnung:
         return []
+    if zeichnung.get("pruefbericht_fehlt"):   # Gesamtreview I2: neu gezeichnet oder Prüfung abgebrochen
+        return ["ZEICHNUNG_PRUEFBERICHT_FEHLT: im Lauf liegt eine Zeichnung, aber kein Zeichnungs-Prüfbericht – "
+                "swki zeichnung pruefen ausführen"]
     if zeichnung.get("pruefbericht_veraltet"):
         return ["ZEICHNUNG_PRUEFBERICHT_VERALTET: der Zeichnungs-Prüfbericht gehört nicht zur SLDDRW auf der Platte – "
                 "swki zeichnung pruefen neu ausführen"]
@@ -228,8 +231,9 @@ def zeichnung_stufe(zeichnung: dict | None) -> str:
 def _zeichnung_abschnitt(zeichnung: dict, hinweise: list[str]) -> list[str]:
     pb = zeichnung.get("pruefbericht") or {}
     urteil = zeichnung.get("urteil")
-    zeilen = ["", "## Zeichnung (letzter Lauf)", "", f"- PDF: `{pb.get('pdf') or 'fehlt'}`",
-              f"- maschinell: {'bestanden' if pb.get('bestanden') else 'nicht bestanden'}"]
+    maschinell = ("kein Prüfbericht" if zeichnung.get("pruefbericht") is None
+                  else "bestanden" if pb.get("bestanden") else "nicht bestanden")
+    zeilen = ["", "## Zeichnung (letzter Lauf)", "", f"- PDF: `{pb.get('pdf') or 'fehlt'}`", f"- maschinell: {maschinell}"]
     kopf = pb.get("kopf") or {}
     zeilen += [f"- Kopfprüfung: {m}" for m in kopf.get("meldungen", [])]
     if pb.get("nicht_geprueft"):

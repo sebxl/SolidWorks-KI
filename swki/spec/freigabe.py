@@ -19,6 +19,7 @@ import yaml
 
 from swki.cli import SwkiFehler
 from swki.spec.anforderungen import anforderungs_tupel, aufgeloeste_anforderungen
+from swki.spec.funktionen import FunktionFehler
 
 PRUEF_FELDER = ("art", "name", "parameter", "material", "eigenschaften", "pruefung")
 PRUEF_FELDER_BAUGRUPPE = ("art", "name", "parameter", "eigenschaften", "komponenten", "freiheitsgrade", "pruefung")
@@ -129,3 +130,29 @@ def pruefe_freigabe(spec_pfad: Path, spec: dict, teile: dict[str, str] | None = 
 def freigegebene_spec(spec_pfad: Path) -> dict:
     """Die Spezifikation im Stand der Freigabe (Soll für Prüfer und Sollvolumen)."""
     return yaml.safe_load(kopie_pfad(spec_pfad).read_text(encoding="utf-8"))
+
+
+def _anforderungs_menge(liste: list[dict]) -> list[str]:
+    """Aufgelöste Anforderungen nach Wirkung: ohne Feature-ID und `unbestaetigt`, als sortierte JSON-Zeilen
+    (Mehrfachmenge; Tupel und Listen sind gleich)."""
+    return sorted(json.dumps({k: v for k, v in e.items() if k not in ("feature", "unbestaetigt")}, sort_keys=True,
+                             ensure_ascii=False) for e in liste)
+
+
+def funktionen_veraltet(spec_pfad: Path) -> str | None:
+    """Zeichnungsableitung §4.2 (Gesamtreview C1): Gelten die Werte aus funktionen.yaml noch, die bei der Freigabe galten?
+    Die Prüfsumme schützt nur den Funktionsnamen; `freigeben` legt die aufgelösten Werte in freigabe.json ab
+    (`anforderungen`, fehlt der Schlüssel: keine). Verglichen wird mit der heutigen Auflösung der freigegebenen Kopie –
+    dieselben Features wie bei der Freigabe, Bauweg-Änderungen der Arbeitsdatei (Umbenennen, Zusammenfassen, Muster)
+    zählen nicht. Liefert die Meldung FUNKTIONEN_VERALTET oder None."""
+    alt = (freigabe_eintrag(spec_pfad) or {}).get("anforderungen") or []
+    try:
+        neu = aufgeloeste_anforderungen(freigegebene_spec(spec_pfad))
+    except FunktionFehler as e:
+        return f"FUNKTIONEN_VERALTET: {e} – funktionen.yaml hat sich seit der Freigabe geändert; Nutzer fragen und neu freigeben"
+    if _anforderungs_menge(alt) == _anforderungs_menge(neu):
+        return None
+    weg = sorted(set(_anforderungs_menge(alt)) - set(_anforderungs_menge(neu)))
+    dazu = sorted(set(_anforderungs_menge(neu)) - set(_anforderungs_menge(alt)))
+    return ("FUNKTIONEN_VERALTET: die Werte aus funktionen.yaml weichen vom Stand der Freigabe ab "
+            f"(Freigabe: {'; '.join(weg) or '–'}; heute: {'; '.join(dazu) or '–'}) – Nutzer fragen und neu freigeben")

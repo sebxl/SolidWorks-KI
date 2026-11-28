@@ -118,3 +118,75 @@ def test_freigeben_legt_aufgeloeste_werte_ab(tmp_path):
     _freigeben(SimpleNamespace(spec=str(pfad)))
     eintrag = json.loads(freigabe_pfad(pfad).read_text(encoding="utf-8"))["p.yaml"]
     assert eintrag["anforderungen"][0]["feature"] == "s1" and eintrag["anforderungen"][0]["passung"] == "H7"
+
+
+# --- Gesamtreview C1: Tabellenstand der Freigabe gegen heute ---------------------------------------------------------
+
+def _freigegeben(tmp_path, spec):
+    import yaml
+
+    from swki.spec.freigabe import freigeben
+
+    pfad = tmp_path / "t.yaml"
+    pfad.write_text(yaml.safe_dump(spec, allow_unicode=True), encoding="utf-8")
+    freigeben(pfad, spec)
+    return pfad
+
+
+def test_funktionen_unveraendert_keine_meldung(tmp_path):
+    from swki.spec.freigabe import funktionen_veraltet
+
+    assert funktionen_veraltet(_freigegeben(tmp_path, _mit({"id": "s1", **STIFT}))) is None
+    ohne = tmp_path / "ohne"
+    ohne.mkdir()
+    assert funktionen_veraltet(_freigegeben(ohne, SPEC)) is None   # ohne Anforderungen: kein Schlüssel, keine Meldung
+
+
+def test_tabellenwert_geaendert_meldet_funktionen_veraltet(tmp_path, monkeypatch):
+    """C-Wert der Stiftbohrung H7 → H8 nach der Freigabe: die Prüfsumme (nur der Name) bleibt, die Meldung nicht."""
+    from swki.spec import funktionen
+    from swki.spec.freigabe import funktionen_veraltet, pruefe_freigabe
+
+    spec = _mit({"id": "s1", **STIFT})
+    pfad = _freigegeben(tmp_path, spec)
+    tabelle = {**funktionen.lade_funktionen(), "stiftbohrung": {**funktionen.lade_funktionen()["stiftbohrung"],
+                                                               "passung": "H8"}}
+    monkeypatch.setattr(funktionen, "lade_funktionen", lambda pfad=None: tabelle)
+    pruefe_freigabe(pfad, spec)                                   # die Freigabe selbst sieht nichts
+    meldung = funktionen_veraltet(pfad)
+    assert meldung.startswith("FUNKTIONEN_VERALTET:") and "H7" in meldung and "H8" in meldung
+
+
+def test_funktion_aus_tabelle_entfernt_meldet_funktionen_veraltet(tmp_path, monkeypatch):
+    from swki.spec import funktionen
+    from swki.spec.freigabe import funktionen_veraltet
+
+    pfad = _freigegeben(tmp_path, _mit({"id": "s1", **STIFT}))
+    tabelle = {k: v for k, v in funktionen.lade_funktionen().items() if k != "stiftbohrung"}
+    monkeypatch.setattr(funktionen, "lade_funktionen", lambda pfad=None: tabelle)
+    assert funktionen_veraltet(pfad).startswith("FUNKTIONEN_VERALTET:")
+
+
+def test_bauweg_der_arbeitsdatei_zaehlt_nicht(tmp_path):
+    """Verglichen wird die freigegebene Kopie: Zusammenfassen oder Umbenennen in der Arbeitsdatei ist kein Tabellenwechsel."""
+    import yaml
+
+    from swki.spec.freigabe import funktionen_veraltet
+
+    zwei = _mit({"id": "s1", **STIFT, "positionen": [[0, 0]]}, {"id": "s2", **STIFT, "positionen": [[10, 0]]})
+    pfad = _freigegeben(tmp_path, zwei)
+    eins = _mit({"id": "stifte", **STIFT, "positionen": [[0, 0], [10, 0]]})
+    pfad.write_text(yaml.safe_dump(eins, allow_unicode=True), encoding="utf-8")
+    assert funktionen_veraltet(pfad) is None
+
+
+def test_freigabe_ohne_anforderungen_schluessel_heisst_keine(tmp_path):
+    """`freigeben` legt `anforderungen` nur ab, wenn es welche gibt: fehlt der Schlüssel, aber die Kopie hat welche,
+    gilt der Stand als veraltet (Freigabe aus der Zeit vor Z1.1)."""
+    from swki.spec.freigabe import freigabe_pfad, funktionen_veraltet
+
+    pfad = _freigegeben(tmp_path, _mit({"id": "s1", **STIFT}))
+    daten = json.loads(freigabe_pfad(pfad).read_text(encoding="utf-8"))
+    del daten["t.yaml"]["anforderungen"]
+    freigabe_pfad(pfad).write_text(json.dumps(daten), encoding="utf-8")
+    assert funktionen_veraltet(pfad).startswith("FUNKTIONEN_VERALTET:")

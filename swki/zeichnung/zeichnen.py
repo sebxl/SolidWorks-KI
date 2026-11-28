@@ -36,7 +36,7 @@ from swki.compiler.sw import mathutil
 from swki.konfig import lade_rechner, lade_standard
 from swki.pruefung.messen import oeffne
 from swki.pruefung.schleife import lies_laeufe
-from swki.spec.freigabe import pruefe_freigabe
+from swki.spec.freigabe import funktionen_veraltet, pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
 from swki.zeichnung import anforderungen_setzen as anf
@@ -1043,6 +1043,8 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
     spec_pfad = spec_pfad.resolve()
     spec = lade_spec(spec_pfad)
     pruefe_freigabe(spec_pfad, spec)
+    if veraltet := funktionen_veraltet(spec_pfad):  # Gesamtreview C1: nie mit geänderten Tabellenwerten zeichnen
+        raise ZeichnungFehler("FUNKTIONEN_VERALTET", veraltet)
     r, standard = lade_rechner(), lade_standard()
     if not r.zeichnung:
         raise ZeichnungFehler("ZEICHNUNG_VORLAGE_FEHLT", "config/rechner.yaml: zeichnung: {A4: …, A3quer: …} fehlt")

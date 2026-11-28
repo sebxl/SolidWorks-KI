@@ -13,7 +13,8 @@ from typing import Callable
 
 from swki.auftrag import auftrag_name, dateiname, lauf_datei, lauf_ordner
 from swki.konfig import lade_rechner, lade_standard
-from swki.spec.freigabe import freigegebene_spec
+from swki.spec.freigabe import funktionen_veraltet, pruefe_freigabe
+from swki.spec.laden import lade_spec
 from swki.zeichnung.ist import Ist, ist_zu_dict
 from swki.zeichnung.massplan import Mass, _rund, massplan, massplan_meldungen
 from swki.zeichnung.pruefen import bewerte, masse_umbenennen, merkmale_zuordnen
@@ -70,7 +71,10 @@ def zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser: Leser | N
     auftrag = auftrag_name(spec_pfad)
     lauf, meldungen = waehle_lauf(spec_pfad, lauf)
     lauf_datei(spec_pfad, lauf, "zeichnung.pruefbericht").unlink(missing_ok=True)  # nie ein alter Bericht nach Abbruch
-    spec = freigegebene_spec(spec_pfad)
+    # Gesamtreview I1: wie `swki zeichnen` die Arbeitsdatei (Bauweg des Laufs) nach geprüfter Freigabe; das Soll der
+    # Anforderungen schützt die Prüfsumme, den Tabellenstand von funktionen.yaml die Kopfprüfung (C1)
+    spec = lade_spec(spec_pfad)
+    pruefe_freigabe(spec_pfad, spec)
     ordner = lauf_ordner(r, auftrag, lauf)
     ausgabe = ordner / "zeichnung"
     teil = ordner / f"{dateiname(spec, auftrag, standard)}.sldprt"
@@ -84,12 +88,14 @@ def zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser: Leser | N
         raise ZeichnungFehler("ZEICHNUNG_TEIL_FEHLT", f"{teil} fehlt (Lauf {lauf})")
     sha_drw = _sha(zeichnung)
     kopf = kopf_pruefung(sha_drw, daten)
+    if veraltet := funktionen_veraltet(spec_pfad):
+        kopf.append(veraltet)
     meldungen += daten.get("meldungen") or []
     protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
     plan = massplan(spec, protokoll)
     meldungen_soll = massplan_meldungen(spec, protokoll)
     if _wirkung(plan) != _wirkung(daten.get("plan") or []):
-        kopf.append("ZEICHNUNG_PLAN_VERALTET: der Maßplan der freigegebenen Spec weicht vom Plan der Zeichnung ab "
+        kopf.append("ZEICHNUNG_PLAN_VERALTET: der Maßplan der Spec weicht vom Plan der Zeichnung ab "
                     "– swki zeichnen neu ausführen")
     meldungen += kopf
     leser = leser or _standardleser()
@@ -105,7 +111,7 @@ def zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser: Leser | N
         meldungen.append("PDF_VERWORFEN: das PDF gehört nicht sicher zur geprüften Zeichnung")
     bericht = bewerte(ist, plan, spec, standard, lade_regeln(), pdf if pdf_ok else None, meldungen=meldungen,
                       meldungen_soll=meldungen_soll)
-    if kopf:  # Handänderung oder veralteter Plan: nie still „bestanden“, die Prüfungen bleiben sichtbar
+    if kopf:  # Handänderung, veralteter Plan oder Tabellenstand: nie still „bestanden“, die Prüfungen bleiben sichtbar
         bericht["bestanden"] = False
     bericht.update({"lauf": lauf, "kopf": {"ok": not kopf, "meldungen": kopf}, "ist": ist_zu_dict(ist),
                     "pdf": str(pdf) if pdf_ok else None,

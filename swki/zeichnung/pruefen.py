@@ -641,6 +641,8 @@ NUR_BERICHT: dict[str, str] = {
                                     "dass nichts geändert ist); vor dem nächsten Lauf von Hand schließen",
     "ZEICHNUNG_GEAENDERT": "Kopfprüfung: `zeichnung_pruefen` setzt bestanden False",
     "ZEICHNUNG_PLAN_VERALTET": "Kopfprüfung: `zeichnung_pruefen` setzt bestanden False",
+    "FUNKTIONEN_VERALTET": "Kopfprüfung (Gesamtreview C1): Tabellenstand von funktionen.yaml ≠ Freigabe; "
+                           "`zeichnung_pruefen` setzt bestanden False, `swki zeichnen` bricht ab",
     "PDF_VERWORFEN": "Folge der Kopfprüfung; Lesbarkeit dann nicht geprüft (ok None)",
 }
 _CODE = re.compile(r"^([A-Z][A-Z_]+):")

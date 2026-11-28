@@ -133,3 +133,38 @@ def test_auftrag_ohne_sha_ist_ein_fehler(tmp_path):
 
     with pytest.raises(SwkiFehler):
         zeichnungspruefer_auftrag(tmp_path / "a.yaml", 1, {"pdf": "x.pdf", "ist": {}})
+
+
+# --- Gesamtreview I2: Zeichnung ohne Prüfbericht ---------------------------------------------------------------------
+
+def test_zeichnung_ohne_pruefbericht_ist_ungeprueft():
+    z = {"pruefbericht": None, "urteil": None, "pruefbericht_fehlt": True}
+    assert zeichnung_stufe(z) == "ungeprueft"
+    assert [h.split(":")[0] for h in zeichnung_urteil_hinweise(z)] == ["ZEICHNUNG_PRUEFBERICHT_FEHLT"]
+    md = _md(z)
+    assert "Zeichnung ungeprüft" in _statuszeile(z) and "ZEICHNUNG_PRUEFBERICHT_FEHLT" in md
+    assert "maschinell: nicht bestanden" not in md and "maschinell: kein Prüfbericht" in md
+
+
+def test_befehl_bericht_meldet_zeichnung_ohne_pruefbericht(tmp_path, monkeypatch):
+    """`swki zeichnen` löscht den alten Prüfbericht, `zeichnung pruefen` bei Abbruch auch: liegt danach eine Zeichnung
+    im Lauf, ist der Bericht „Zeichnung ungeprüft“, nie still „bestanden“."""
+    from types import SimpleNamespace
+
+    from swki.pruefung import befehle
+
+    spec = tmp_path / "auftraege" / "A-1" / "p.yaml"
+    (spec.parent / "protokolle").mkdir(parents=True)
+    spec.write_text("art: teil\nname: Platte\n", encoding="utf-8")
+    arbeit = tmp_path / "arbeit"
+    monkeypatch.setattr(befehle, "lade_rechner", lambda: SimpleNamespace(arbeitsordner=arbeit))
+    monkeypatch.setattr(befehle, "lade_spec_beliebig", lambda p: {"name": "Platte", "art": "teil"})
+    monkeypatch.setattr(befehle, "status", lambda p: {"laeufe": LAEUFE, "empfehlung": "bestanden", "text": "ok"})
+    monkeypatch.setattr(befehle, "_compiler_aenderungen", lambda seit: [])
+    monkeypatch.setattr(befehle, "_lies", lambda p: None)
+    assert "zeichnung" not in befehle.bericht(spec)                    # ohne Zeichnung kein Abschnitt
+    (arbeit / "A-1" / "lauf-2" / "zeichnung").mkdir(parents=True)
+    (arbeit / "A-1" / "lauf-2" / "zeichnung" / "Platte.SLDDRW").write_bytes(b"x")
+    erg = befehle.bericht(spec)
+    assert erg["zeichnung"] == "ungeprueft"
+    assert "ZEICHNUNG_PRUEFBERICHT_FEHLT" in (spec.parent / "bericht.md").read_text(encoding="utf-8")

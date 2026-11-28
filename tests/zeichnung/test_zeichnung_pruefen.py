@@ -12,6 +12,7 @@ from swki.auftrag import dateiname, lauf_datei, lauf_nummern_dateien
 from swki.cli import main
 from swki.konfig import lade_standard
 from swki.pruefung.schleife import lies_laeufe
+from swki.spec.freigabe import freigeben
 from swki.zeichnung import zeichnung_pruefen as zp
 from swki.zeichnung.massplan import Mass, massplan
 from swki.zeichnung.zeichnen import ZeichnungFehler, schreibe_uebergabe, uebergabe, zeichnungsname
@@ -59,7 +60,7 @@ def auftrag(tmp_path, monkeypatch):
     spec_pfad = spec_dir / "spannplatte_z.yaml"
     text = yaml.safe_dump(spec, allow_unicode=True)
     spec_pfad.write_text(text, encoding="utf-8")
-    spec_pfad.with_name("spannplatte_z.freigegeben.yaml").write_text(text, encoding="utf-8")
+    freigeben(spec_pfad, spec)                     # Gesamtreview I1: `zeichnung pruefen` prüft die Freigabe
     arbeits = tmp_path / "arbeit"
     ordner = arbeits / "T-AUF" / "lauf-1"
     (ordner / "zeichnung").mkdir(parents=True)
@@ -317,3 +318,51 @@ def test_meldungen_des_ruecklesers_im_bericht(auftrag):
 def test_standardleser_ist_der_rueckleser():
     from swki.zeichnung import rueckleser
     assert zp._standardleser() is rueckleser.lies_zeichnung
+
+
+# --- Gesamtreview: Spec und Freigabe (I1, C1) -------------------------------------------------------------------------
+
+def _umbenannt(x, alt: str, neu: str):
+    """Feature-ID überall ersetzen (nur ganze Werte, keine Teilwörter)."""
+    if isinstance(x, dict):
+        return {k: _umbenannt(v, alt, neu) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_umbenannt(v, alt, neu) for v in x]
+    return neu if x == alt else x
+
+
+def test_bauweg_umbenennung_nach_der_freigabe_gilt(auftrag):
+    """I1: Freigegeben wurde die Kabelnut als `kabelnut`, gebaut und gezeichnet aus der Arbeitsdatei mit `k1`
+    (erlaubte Bauweg-Umbenennung, Prüfsumme gleich). Plan und Merkmale kommen aus der Arbeitsdatei – wie bei
+    `swki zeichnen` – sonst wäre der Plan „veraltet“ und k1 fehlte."""
+    kopie = _umbenannt(auftrag.spec, "k1", "kabelnut")
+    text = auftrag.spec_pfad.read_text(encoding="utf-8")
+    auftrag.spec_pfad.write_text(yaml.safe_dump(kopie, allow_unicode=True), encoding="utf-8")
+    freigeben(auftrag.spec_pfad, kopie)
+    auftrag.spec_pfad.write_text(text, encoding="utf-8")
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
+    assert bericht["bestanden"] is True, (bericht["kopf"], bericht["maengel"])
+
+
+def test_freigabe_veraltet_bricht_ab(auftrag):
+    """I1: `zeichnung pruefen` prüft die Freigabe wie `swki zeichnen` (Anforderung nach der Freigabe geändert)."""
+    from swki.spec.freigabe import FreigabeFehler
+    spec = {**auftrag.spec, "material": "1.0037"}
+    auftrag.spec_pfad.write_text(yaml.safe_dump(spec, allow_unicode=True), encoding="utf-8")
+    ziel = lauf_datei(auftrag.spec_pfad, 1, "zeichnung.pruefbericht")
+    ziel.write_text("{}", encoding="utf-8")
+    with pytest.raises(FreigabeFehler) as e:
+        zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
+    assert _code(e) == "FREIGABE_VERALTET" and not ziel.exists()
+
+
+def test_funktionen_veraltet_ist_kopfmangel(auftrag, monkeypatch):
+    """C1: C-Wert der Stiftbohrung H7 → H8 nach der Freigabe – die Prüfsumme sieht es nicht, die Kopfprüfung schon."""
+    from swki.spec import funktionen
+    tabelle = {**funktionen.lade_funktionen(), "stiftbohrung": {**funktionen.lade_funktionen()["stiftbohrung"],
+                                                               "passung": "H8"}}
+    monkeypatch.setattr(funktionen, "lade_funktionen", lambda pfad=None: tabelle)
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
+    assert bericht["bestanden"] is False and bericht["kopf"]["ok"] is False
+    assert any(m.startswith("FUNKTIONEN_VERALTET:") for m in bericht["kopf"]["meldungen"])
+    assert not any("unbekannte Zeichnungsmeldung" in m["text"] for m in bericht["maengel"])
