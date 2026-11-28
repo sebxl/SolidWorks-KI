@@ -65,7 +65,9 @@ def _ohne_angabe(ist, pred):
 
 
 def _notizen(ist, *texte):
-    return replace(ist, angaben=ist.angaben + tuple(IstAngabe("hinweis", "haupt", t, None, None, ()) for t in texte))
+    """Weitere Notizen, Ankerpunkt im Band über dem Schriftfeld (A3quer, Gesamtreview c)."""
+    return replace(ist, angaben=ist.angaben + tuple(IstAngabe("hinweis", "haupt", t, None, None, (), lage=(231.0, 66.0))
+                                                    for t in texte))
 
 
 def _ohne_notiz_mit(ist, teil):
@@ -364,7 +366,7 @@ def test_lesbarkeit_ist_hinweis(monkeypatch, tmp_path):
     ort = []
     monkeypatch.setattr(pruefen, "pruefe_pdf", lambda pdf, ausschluss=None, **kw: (ort.append(ausschluss) or
                         [Befund("text_ueber_text", "40", (1.0, 2.0, 3.0, 4.0), "50")]))
-    monkeypatch.setattr(pruefen, "texte", lambda pdf: [])  # Rahmentexte (Task 4b) aus der Test-PDF
+    monkeypatch.setattr(pruefen, "texte", lambda pdf: _sf_zeilen(_ideal_sp()))  # Schriftfeld, keine Rahmentexte
     pdf = tmp_path / "z.pdf"
     pdf.write_bytes(b"%PDF")
     p = pruefe_lesbarkeit(pdf, "A3quer", REGELN)
@@ -482,3 +484,97 @@ def test_ausschluss_wie_zeichnen():
 
     for f in FORMATE:
         assert pruefen._ausschluss(f) == zeichnen._ausschluss(f)
+
+
+# --- Gesamtreview: Schriftfeld auf dem Blatt (Controller „Z“) --------------------------------------------------------
+
+def _sf_zeilen(ist, ohne=()):
+    """PDF-Zeilen im Schriftfeld (A3quer: x 230–410, y 10–65 mm) mit den Werten der Pflichtfelder, ohne `ohne`."""
+    sf = STANDARD["zeichnung"]["schriftfeld"]
+    werte = [ist.eigenschaften.get(sf[f], "") for f in ("sachnummer", "titel", "ersteller", "ausgabedatum",
+                                                         "dokumentart") if sf[f] not in ohne]
+    return [("BENENNUNG:", (330.0, 44.5, 342.0, 47.0))] + [(w, (240.0 + 30 * i, 15.0, 260.0 + 30 * i, 18.0))
+                                                         for i, w in enumerate(werte) if w]
+
+
+def test_schriftfeld_pflichtfelder_auf_dem_blatt():
+    ist = _ideal_sp()
+    p = pruefe_schriftfeld(ist, STANDARD, REGELN, _sf_zeilen(ist))
+    assert p["maengel"] == [] and p["ok"] is None and "Eigentümer" in p["hinweis"]
+
+
+def test_schriftfeld_benennung_und_dokumentart_nicht_auf_dem_blatt():
+    """Die Vorlage verknüpft BENENNUNG nicht mit der Eigenschaft: gesetzt, aber nicht auf dem Blatt → Z-SCH-1."""
+    ist = _ideal_sp()
+    p = pruefe_schriftfeld(ist, STANDARD, REGELN, _sf_zeilen(ist, ohne=("Benennung", "Dokumentart")))
+    assert p["ok"] is False
+    assert [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-SCH-1", "Benennung"), ("Z-SCH-1", "Dokumentart")]
+    assert all("nicht auf dem Blatt" in m["text"] for m in p["maengel"])
+
+
+def test_schriftfeld_ganzes_wort_und_mehrfachmenge():
+    """„Spannplatte“ steckt in „SpannplatteZ“ – das zählt nicht; zwei gleiche Werte brauchen zwei Zeilen."""
+    ist = _mit_eig(_ideal_sp(), Benennung="Spannplatte", Zeichnungsnummer="SpannplatteZ")
+    zeilen = [z for z in _sf_zeilen(ist) if z[0] != "Spannplatte"]
+    p = pruefe_schriftfeld(ist, STANDARD, REGELN, zeilen)
+    assert [m["merkmal"] for m in p["maengel"]] == ["Benennung"]
+    gleich = _mit_eig(_ideal_sp(), Benennung="Spannplatte", Zeichnungsnummer="Spannplatte")
+    einmal = [z for z in _sf_zeilen(gleich)]
+    einmal.remove(next(z for z in einmal if z[0] == "Spannplatte"))
+    assert [m["merkmal"] for m in pruefe_schriftfeld(gleich, STANDARD, REGELN, einmal)["maengel"]] == ["Benennung"]
+
+
+def test_schriftfeld_wert_ausserhalb_des_schriftfelds_zaehlt_nicht():
+    ist = _ideal_sp()
+    zeilen = _sf_zeilen(ist, ohne=("Benennung",)) + [(ist.eigenschaften["Benennung"], (50.0, 200.0, 70.0, 203.0))]
+    assert [m["merkmal"] for m in pruefe_schriftfeld(ist, STANDARD, REGELN, zeilen)["maengel"]] == ["Benennung"]
+
+
+def test_schriftfeld_ohne_pdf_nicht_geprueft():
+    p = pruefe_schriftfeld(_ideal_sp(), STANDARD, REGELN)
+    assert p["ok"] is None and "kein PDF" in p["hinweis"]
+
+
+def test_bewerte_prueft_schriftfeld_am_pdf(monkeypatch, tmp_path):
+    ist = _ideal_sp()
+    monkeypatch.setattr(pruefen, "pruefe_pdf", lambda pdf, ausschluss=None, **kw: [])
+    monkeypatch.setattr(pruefen, "texte", lambda pdf: _sf_zeilen(ist, ohne=("Benennung",)))
+    pdf = tmp_path / "z.pdf"
+    pdf.write_bytes(b"%PDF")
+    u = _bewerte(ist, plan_spannplatte_z(), _spec_sp(), pdf=pdf)
+    assert u["bestanden"] is False
+    assert [(m["regel"], m["merkmal"]) for m in u["maengel"] if m["pruefung"] == "schriftfeld"] == [("Z-SCH-1", "Benennung")]
+
+
+# --- Gesamtreview (c): Lage der Sammelangaben -------------------------------------------------------------------------
+
+def _verschiebe_notiz(ist, teil, lage):
+    return replace(ist, angaben=tuple(replace(a, lage=lage) if a.art == "hinweis" and teil in a.text else a
+                                      for a in ist.angaben))
+
+
+def test_sammelangaben_ideal_im_band():
+    assert pruefe_sammelangaben(_ideal_sp(), _spec_sp(), REGELN)["ok"] is True
+
+
+def test_sammelangabe_unter_dem_blatt_ist_z_sam_1():
+    p = pruefe_sammelangaben(_verschiebe_notiz(_ideal_sp(), "Allgemeintoleranzen", (230.0, -50.0)), _spec_sp(), REGELN)
+    assert p["ok"] is False and [(m["regel"], m["merkmal"]) for m in p["maengel"]] == [("Z-SAM-1", "sammelangabe")]
+    assert "außerhalb" in p["maengel"][0]["text"]
+
+
+def test_sammelrauheit_weg_vom_schriftfeld_ist_z_sam_7():
+    p = pruefe_sammelangaben(_verschiebe_notiz(_ideal_sp(), "Ra 3,2", (60.0, 250.0)), _spec_sp(), REGELN)
+    assert p["ok"] is False and _regeln_der(p) == {"Z-SAM-7"}
+
+
+def test_sammelangabe_ohne_lage_nicht_geprueft():
+    p = pruefe_sammelangaben(_verschiebe_notiz(_ideal_sp(), "Allgemeintoleranzen", None), _spec_sp(), REGELN)
+    assert p["ok"] is None and "Lage" in p["hinweis"]
+
+
+def test_halbzeug_als_eigene_notiz_ist_z_sam_5():
+    """Die Regel einer Notiz folgt ihrer ersten Zeile aus `sammelangaben`: eine einzelne Halbzeug-Notiz ist Z-SAM-5."""
+    ist = _notizen(_ideal_sp(), "Halbzeug: Flach EN 10058 – 120 × 20")
+    ist = replace(ist, angaben=ist.angaben[:-1] + (replace(ist.angaben[-1], lage=(50.0, 50.0)),))
+    assert _regeln_der(pruefe_sammelangaben(ist, _spec_sp(), REGELN)) == {"Z-SAM-5"}

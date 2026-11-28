@@ -481,3 +481,20 @@ def test_toleranz_beide_passungswerte_gesetzt():
     ist = IstMass("x", "haupt", "durchmesser", 20.0, "Ø", "", False, rl.toleranz(7, 0.0, 2.1e-05, "H7", "g6"), None,
                   None, None)
     assert _toleranz_ok(ist, m) is False
+
+
+def test_notiz_liest_lage_in_blatt_mm():
+    """Gesamtreview (c): die Lage einer Notiz (`IAnnotation.GetPosition`, Blatt-m) kommt in Blatt-mm ins Ist; ist sie
+    nicht lesbar, bleibt sie None (die Prüfung nennt sie „nicht geprüft“)."""
+    class _AnnMitLage(_Ann):
+        def GetPosition(self):
+            return (0.231, 0.0851, 0.0)
+
+    class _NotizMitLage(_Notiz):
+        def GetAnnotation(self):
+            return _AnnMitLage()
+
+    (a,) = rl._angaben(_Ansicht([_NotizMitLage("Allgemeintoleranzen")]), "Blatt1", [])
+    assert a.lage == (231.0, 85.1)
+    (b,) = rl._angaben(_Ansicht([_Notiz("ISO 8015")]), "Blatt1", [])
+    assert b.lage is None

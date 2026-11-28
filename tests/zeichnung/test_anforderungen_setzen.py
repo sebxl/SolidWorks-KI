@@ -1355,3 +1355,33 @@ def test_lage_der_letzten_runde_bleibt_kandidat():
     a.verwerfen()                                                     # verworfen: kein Kandidat mehr
     an.anmerkungen_legen([a], sperre)
     assert a.soll != frei
+
+
+# --- Gesamtreview (b): Umhängen -------------------------------------------------------------------------------------
+
+def _zwei_orte(einhaengen):
+    links = _kante((75.06, 122.56), (85.06, 122.56), features=["f1"])
+    rechts = _kante((165.06, 122.56), (175.06, 122.56), features=["f1"])
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), _AnnLage(), "drauf", (80.06, 122.56), _UMRISS, (16.0, 7.0),
+                     (8.0, -3.5), kante=(links.a, links.e), orte=[links, rechts], einhaengen=einhaengen)
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    return a, links, rechts, drw
+
+
+def test_umhaengen_leert_die_gewaehlte_lage():
+    """`soll` gehört zum alten Ort; nach dem Umhängen wäre es dort ein falscher Kandidat."""
+    a, _, rechts, drw = _zwei_orte(lambda k, meld=None: (_AnnLage(), ((k.a[0] + k.e[0]) / 2, k.a[1])))
+    a.soll = (90.0, 140.0)
+    assert an._umhaengen(drw, a, rechts, []) is True
+    assert a.instanz() is rechts and a.soll is None
+
+
+def test_fixierte_lage_verfaellt_wenn_umhaengen_scheitert():
+    """Scheitert das Umhängen an den Ort der besten Runde, gilt deren Lage nicht am alten Anker."""
+    a, links, rechts, drw = _zwei_orte(lambda k, meld=None: None)
+    a.fixiert = ((170.0, 140.0), rechts)
+    meld: list = []
+    an.instanzen_umhaengen(drw, [a], meld)
+    assert a.instanz() is links and a.fixiert is None
+    assert any(m.startswith("ANMERKUNG_NICHT_UMGEHAENGT") for m in meld)

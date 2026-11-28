@@ -633,3 +633,13 @@ def test_gewinde_nimmt_die_notiz_des_merkmals():
     am_gewinde = IstAngabe("hinweis", "haupt", "5 × M6", None, None, (), "g1")
     p = pruefe_gewinde(_ist_mit(angaben=[frei, am_gewinde]), [angabe], REGELN)
     assert p["ok"] is False and "tief" in p["maengel"][0]["text"]
+
+
+def test_schnittbezeichnung_doppelt_ist_z_ans_2():
+    """Gesamtreview (a): zwei Schnitte mit derselben Bezeichnung sind nicht zu unterscheiden."""
+    zwei = [IstAnsicht("Schnittansicht A-A", "haupt", "schnitt", "1:1", "SCHNITT A-A"),
+            IstAnsicht("Schnittansicht A-A (2)", "drauf", "schnitt", "1:1", "SCHNITT  A-A")]
+    p = pruefe_ansichten(_ist_mit(ansichten=zwei), REGELN)
+    assert p["ok"] is False and [m["regel"] for m in p["maengel"]] == ["Z-ANS-2"] and "doppelt" in p["maengel"][0]["text"]
+    anders = [zwei[0], replace(zwei[1], beschriftung="SCHNITT B-B")]
+    assert not pruefe_ansichten(_ist_mit(ansichten=anders), REGELN)["maengel"]

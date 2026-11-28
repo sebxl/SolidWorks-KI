@@ -2,9 +2,10 @@
 
 Die Pläne kommen aus den Referenzen (`massplan`), nie von Hand kopiert."""
 
-from swki.zeichnung.anforderungen_setzen import instanzen
+from swki.zeichnung.anforderungen_setzen import SAMMEL_OBERKANTE_MM, instanzen
 from swki.zeichnung.ist import Ist, IstAngabe, IstAnsicht, IstMass, IstToleranz
 from swki.zeichnung.massplan import Mass, massplan
+from swki.zeichnung.pruefen import sammelband_der_spec
 from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, Toleranz, sammelangaben
 from tests.zeichnung.test_massplan import _buchse_protokoll, _lade_ref, _spannplatte_protokoll
 
@@ -76,8 +77,10 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: d
             richtung, punkte = "h", ((0.0, 0.0), (m.wert, 0.0))
         masse.append(IstMass(m.name or m.id, ansicht, art, m.wert, praefix, suffix, False, tol, richtung, punkte,
                              False if art == "laenge" else None))
-    if spec is not None:
-        angaben += [IstAngabe("hinweis", erste, zeile, None, None, ()) for zeile in sammelangaben(spec)]
-        angaben.append(IstAngabe("hinweis", erste, SAMMEL_RAUHEIT, None, None, ()))
+    if spec is not None:  # Sammelnotizen mit Ankerpunkt im Band über dem Schriftfeld (Gesamtreview c)
+        x0, _, x1, oben = sammelband_der_spec("A3quer", spec)
+        lage = (x0, oben - SAMMEL_OBERKANTE_MM)
+        angaben += [IstAngabe("hinweis", erste, zeile, None, None, (), lage=lage) for zeile in sammelangaben(spec)]
+        angaben.append(IstAngabe("hinweis", erste, SAMMEL_RAUHEIT, None, None, (), lage=((x0 + x1) / 2, lage[1])))
     eig = {**schriftfeld_eigenschaften(spec), **(eigenschaften or {})} if spec is not None else dict(eigenschaften or {})
     return Ist("A3quer", "1:1", tuple(ist_ansichten.values()), tuple(masse), tuple(angaben), eig)

@@ -9,7 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from swki.zeichnung.angaben import _enthalten, zahl
-from swki.zeichnung.blatt import FORMATE, SCHRIFTFELD_MM, zeichenfeld
+from swki.zeichnung.blatt import FORMATE, SAMMEL_ZEILE_MM, SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.ist import Ist, IstAngabe, IstMass, IstToleranz
 from swki.zeichnung.lesbarkeit import pruefe_pdf, texte
 from swki.zeichnung.massplan import Mass
@@ -322,7 +322,7 @@ def pruefe_ueberbestimmt(ist: Ist, regeln: list[Regel]) -> dict:
 
 
 def pruefe_ansichten(ist: Ist, regeln: list[Regel]) -> dict:
-    """Z-ANS-1 (Maß an verdeckter Kante), Z-ANS-2 (Schnitt ohne Bezeichnung), Z-ANS-3 (Einzelheit: Maßstab fehlt oder
+    """Z-ANS-1 (Maß an verdeckter Kante), Z-ANS-2 (Schnitt ohne oder mit doppelter Bezeichnung), Z-ANS-3 (Einzelheit: Maßstab fehlt oder
     nicht aus der Vorzugsreihe). Lineare Maße mit `verdeckt None` sind nicht prüfbar."""
     maengel, unbekannt = [], 0
     for m in ist.masse:
@@ -331,9 +331,14 @@ def pruefe_ansichten(ist: Ist, regeln: list[Regel]) -> dict:
                                    f"Maß {zahl(m.wert)} an verdeckter Kante oder ohne sichtbaren Bezug ({m.ansicht})"))
         elif m.verdeckt is None and m.art == "laenge":
             unbekannt += 1
+    bezeichnungen: dict[str, str] = {}
     for a in ist.ansichten:
         if a.art == "schnitt" and not _norm(a.beschriftung):
             maengel.append(_mangel(regeln, "Z-ANS-2", a.name, f"Schnittansicht {a.name} ohne Bezeichnung"))
+        elif a.art == "schnitt":   # Gesamtreview (a): zwei Schnitte mit gleicher Bezeichnung sind nicht zu unterscheiden
+            if (erste := bezeichnungen.setdefault(_norm(a.beschriftung), a.name)) != a.name:
+                maengel.append(_mangel(regeln, "Z-ANS-2", a.name, f"Schnittbezeichnung doppelt: „{_norm(a.beschriftung)}“ "
+                                                                  f"an {erste} und {a.name}"))
         if a.art == "einzelheit":
             massstab = re.sub(r"\s+", "", a.massstab or "")
             if not massstab:
@@ -542,45 +547,129 @@ _BS = "[-–−‑]"   # Bindestrich, Gedankenstrich, Minus, geschützter Bindes
 _ISO_2768_K = re.compile(rf"2768(?:\s*{_BS}\s*\d?(?::\d{{4}})?)?\s*{_BS}?\s*[fmcv]?\s*{_BS}?\s*K\b", re.I)
 
 
+_LAGE_TOL_MM = 1.0   # Lage einer Sammelnotiz: Ankerpunkt im Band, ±1 mm
+
+
+def _sam_regel(i: int) -> str:
+    return _SAM_REGEL[i] if i < len(_SAM_REGEL) else "Z-SAM-5"
+
+
+def sammelband_der_spec(format_: str, spec: dict) -> tuple[float, float, float, float] | None:
+    """Band der Sammelangaben über dem Schriftfeld wie beim Zeichnen (`anforderungen_setzen.sammelband`, Höhe wie
+    `zeichnen.sammelhoehe_mm`); None bei unbekanntem Format."""
+    if format_ not in FORMATE:
+        return None
+    from swki.zeichnung.anforderungen_setzen import sammel_zeilenzahl, sammelband  # spät: pywin32
+
+    return sammelband(format_, sammel_zeilenzahl(sammelangaben(spec)) * SAMMEL_ZEILE_MM)
+
+
+def _im_band(lage: tuple[float, float], band: tuple[float, float, float, float]) -> bool:
+    x, y = lage
+    return (band[0] - _LAGE_TOL_MM <= x <= band[2] + _LAGE_TOL_MM
+            and band[1] - _LAGE_TOL_MM <= y <= band[3] + _LAGE_TOL_MM)
+
+
+def _sammel_lage(ist: Ist, spec: dict, regeln: list[Regel]) -> tuple[list[dict], str | None]:
+    """Gesamtreview (c): jede Notiz, die eine Zeile der Sammelangaben oder die Sammelrauheit trägt, steht mit ihrem
+    Ankerpunkt (`IstAngabe.lage`, linke obere Ecke) im Band über dem Schriftfeld (`sammelband_der_spec`). Sonst ein
+    Mangel der Regel ihrer ersten Zeile (Z-SAM-1, …; die Sammelrauheit Z-SAM-7: nahe dem Schriftfeld). Ohne Lage oder
+    ohne bekanntes Format: nicht geprüft (Grund)."""
+    zeilen = [normtext(z) for z in sammelangaben(spec)]
+    band = sammelband_der_spec(ist.format_, spec)
+    maengel, ohne_lage = [], 0
+    for a in ist.angaben:
+        if a.art != "hinweis":
+            continue
+        text = normtext(a.text)
+        treffer = [i for i, z in enumerate(zeilen) if z in text]
+        rauheit = re.search(re.escape(SAMMEL_RAUHEIT) + r"(?!\d)", text) is not None
+        if not treffer and not rauheit:
+            continue
+        if band is None:
+            return [], f"Format {ist.format_} unbekannt: Lage der Sammelangaben nicht geprüft"
+        if a.lage is None:
+            ohne_lage += 1
+            continue
+        if not _im_band(a.lage, band):
+            regel_id = _sam_regel(treffer[0]) if treffer else "Z-SAM-7"
+            erste = (a.text or "").strip().splitlines()[0].strip()
+            maengel.append(_mangel(regeln, regel_id, "sammelangabe",
+                                   f"außerhalb des Bands: „{erste}“ bei ({a.lage[0]:.0f}, {a.lage[1]:.0f}) mm, Band "
+                                   f"({band[0]:.0f}, {band[1]:.0f})–({band[2]:.0f}, {band[3]:.0f}) mm"))
+    grund = f"Lage von {ohne_lage} Sammelnotiz(en) nicht gelesen: nicht geprüft" if ohne_lage else None
+    return maengel, grund
+
+
 def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
     """Jede Zeile von `sammelangaben(spec)` steht (normalisiert) im Text aller Notizen, dazu die Sammelrauheit (Z-SAM-7).
     Verboten (Z-SAM-3, je Notiz geprüft, damit „… 2768-1 m“ und eine Folgenotiz „K…“ kein „mK“ ergeben): „2768-…K“ und
-    „DIN 7167“. Das Muster erlaubt Leerraum, verschiedene Striche, Jahr und Groß-/Kleinschreibung. Nur der Text, nicht
-    die Lage: ob die Zeilen auf dem Blatt und im Band stehen, prüft `swki zeichnen` am PDF (SAMMELANGABE_FEHLT,
-    SAMMELANGABE_UEBERLAUF; Mängel über `MELDUNG_REGEL`, Review 4b I3)."""
+    „DIN 7167“. Das Muster erlaubt Leerraum, verschiedene Striche, Jahr und Groß-/Kleinschreibung. Die Lage prüft
+    `_sammel_lage` (Gesamtreview c: Ankerpunkt im Band; vorher erfüllte eine Notiz unter dem Blatt die Regeln); die
+    Ausdehnung der Zeilen im PDF prüft `swki zeichnen` (SAMMELANGABE_FEHLT, SAMMELANGABE_UEBERLAUF; Mängel über
+    `MELDUNG_REGEL`, Review 4b I3)."""
     notizen = [normtext(a.text) for a in ist.angaben if a.art == "hinweis"]
     alle = " ".join(notizen)
     maengel = []
     for i, zeile in enumerate(sammelangaben(spec)):
         if normtext(zeile) not in alle:
-            maengel.append(_mangel(regeln, _SAM_REGEL[i] if i < len(_SAM_REGEL) else "Z-SAM-5", "sammelangabe",
-                                   f"fehlt: {zeile}"))
+            maengel.append(_mangel(regeln, _sam_regel(i), "sammelangabe", f"fehlt: {zeile}"))
     if not re.search(re.escape(SAMMEL_RAUHEIT) + r"(?!\d)", alle):
         maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe", f"fehlt: Sammelrauheit {SAMMEL_RAUHEIT}"))
     for n in notizen:
         if _ISO_2768_K.search(n) or "DIN 7167" in n:
             maengel.append(_mangel(regeln, "Z-SAM-3", "sammelangabe", f"verboten: {n}"))
-    return _pruefung("sammelangaben", regeln, tuple(f"Z-SAM-{i}" for i in range(1, 8)), maengel)
+    lage, grund = _sammel_lage(ist, spec, regeln)
+    return _pruefung("sammelangaben", regeln, tuple(f"Z-SAM-{i}" for i in range(1, 8)), maengel + lage,
+                     unpruefbar=grund)
 
 
 _PFLICHT = (("sachnummer", "Sachnummer"), ("titel", "Benennung"), ("ersteller", "Ersteller"),
             ("ausgabedatum", "Ausgabedatum"), ("dokumentart", "Dokumentart"), ("blatt", "Blatt"))
 
 
-def pruefe_schriftfeld(ist: Ist, standard: dict, regeln: list[Regel]) -> dict:
+def _schriftfeld_rechteck(format_: str) -> tuple[float, float, float, float] | None:
+    if format_ not in FORMATE:
+        return None
+    _, y0, x1, _ = zeichenfeld(format_)
+    return (x1 - SCHRIFTFELD_MM[0], y0, x1, y0 + SCHRIFTFELD_MM[1])
+
+
+def _auf_dem_blatt(werte: list[tuple[str, str, str]], pdf_texte: list[tuple[str, tuple]],
+                   rechteck: tuple[float, float, float, float]) -> list[tuple[str, str, str]]:
+    """Die Werte (Feld, Bezeichnung, Wert), die keine Zeile im Schriftfeld des PDFs tragen: Zeilenmitte im Rechteck,
+    der Wert als ganzes Wort (normalisiert; „Spannplatte“ steht nicht in „SpannplatteZ“), jede Zeile deckt einen Wert
+    (Mehrfachmenge: zwei gleiche Werte brauchen zwei Zeilen)."""
+    x0, y0, x1, y1 = rechteck
+    frei = [normtext(t) for t, r in pdf_texte if x0 <= (r[0] + r[2]) / 2 <= x1 and y0 <= (r[1] + r[3]) / 2 <= y1]
+    fehlt = []
+    for feld, bezeichnung, w in werte:
+        muster = re.compile(rf"(?<!\w){re.escape(normtext(w))}(?!\w)")
+        i = next((i for i, z in enumerate(frei) if muster.search(z)), None)
+        if i is None:
+            fehlt.append((feld, bezeichnung, w))
+        else:
+            frei.pop(i)
+    return fehlt
+
+
+def pruefe_schriftfeld(ist: Ist, standard: dict, regeln: list[Regel],
+                       pdf_texte: list[tuple[str, tuple]] | None = None) -> dict:
     """Pflichtfelder (Z-SCH-1), „Freigegeben“ leer (Z-SCH-2), Blattmaßstab aus der Vorzugsreihe (Z-SCH-3). Die Werte
     stehen in `ist.eigenschaften` unter den Namen aus `standard["zeichnung"]["schriftfeld"]`. Eigentümer leer ist nur
     ein Hinweis (`ok` None) bis Z1.5. Blatt (Review 4b, M5): den Blattzähler füllt SolidWorks aus dem Blatt selbst
     (Systemeigenschaft), `swki zeichnen` schreibt keine Eigenschaft „Blatt“ und der Rückleser erfindet keine – fehlt
     sie in den Eigenschaften, ist das Feld nicht geprüft (bis Z1.5, Schriftfeld des Nutzers); ist sie da, aber leer,
-    ein Mangel."""
+    ein Mangel. Gesamtreview (Controller „Z“): eine gesetzte Eigenschaft ist erst ein Pflichtfeld, wenn ihr Wert im
+    Schriftfeld des Blatts steht (`pdf_texte`: Zeilen von `lesbarkeit.texte`, `_auf_dem_blatt`; die Vorlage verknüpft
+    nicht jedes Feld) – sonst Z-SCH-1 „nicht auf dem Blatt“; ohne PDF nicht geprüft (Grund)."""
     sf = (standard.get("zeichnung") or {}).get("schriftfeld") or {}
 
     def wert(feld: str) -> str:
         name = sf.get(feld, "")
         return (ist.eigenschaften.get(name) or "").strip() if name else ""
 
-    maengel, ungeprueft = [], []
+    maengel, ungeprueft, gesetzt = [], [], []
     for feld, bezeichnung in _PFLICHT:
         if feld == "blatt" and sf.get(feld) and sf[feld] not in ist.eigenschaften:
             ungeprueft.append(f"Blatt nicht gelesen (Eigenschaft {sf[feld]} fehlt, Blattzähler von SolidWorks; "
@@ -589,6 +678,18 @@ def pruefe_schriftfeld(ist: Ist, standard: dict, regeln: list[Regel]) -> dict:
         if not wert(feld):
             maengel.append(_mangel(regeln, "Z-SCH-1", bezeichnung,
                                    f"Pflichtfeld {bezeichnung} leer (Eigenschaft {sf.get(feld) or 'nicht zugeordnet'})"))
+        else:
+            gesetzt.append((feld, bezeichnung, wert(feld)))
+    rechteck = _schriftfeld_rechteck(ist.format_)
+    if pdf_texte is None:
+        ungeprueft.append("kein PDF: Pflichtfelder auf dem Blatt nicht geprüft")
+    elif rechteck is None:
+        ungeprueft.append(f"Format {ist.format_} unbekannt: Pflichtfelder auf dem Blatt nicht geprüft")
+    else:
+        for feld, bezeichnung, w in _auf_dem_blatt(gesetzt, pdf_texte, rechteck):
+            maengel.append(_mangel(regeln, "Z-SCH-1", bezeichnung,
+                                   f"Pflichtfeld {bezeichnung} nicht auf dem Blatt (Eigenschaft {sf.get(feld)} = „{w}“ "
+                                   "steht nicht im Schriftfeld des PDFs)"))
     if wert("freigegeben"):
         maengel.append(_mangel(regeln, "Z-SCH-2", "Freigegeben", f"Feld Freigegeben ist gefüllt: {wert('freigegeben')}"))
     massstab = re.sub(r"\s+", "", ist.massstab or "")
@@ -824,10 +925,16 @@ def bewerte(ist: Ist, plan: list[Mass], spec: dict, standard: dict, regeln: list
     from swki.zeichnung.anforderungen_setzen import instanzen  # spät: das Modul zieht pywin32 nach
 
     anzahl = {m.merkmal: instanzen(spec, m.merkmal) for m in plan if m.quelle == "form_lage"}
+    pdf_texte = None
+    if pdf is not None:
+        try:
+            pdf_texte = texte(pdf)
+        except ImportError:   # ohne pymupdf: Schriftfeld auf dem Blatt nicht geprüft (wie die Lesbarkeit)
+            pdf_texte = None
     pruefungen = {p["id"]: p for p in (
         pruefe_vollstaendig(ist, plan, regeln), pruefe_ueberbestimmt(ist, regeln),
         pruefe_toleranzen(ist, plan, regeln, anzahl), pruefe_sammelangaben(ist, spec, regeln),
-        pruefe_schriftfeld(ist, standard, regeln), pruefe_ansichten(ist, regeln),
+        pruefe_schriftfeld(ist, standard, regeln, pdf_texte), pruefe_ansichten(ist, regeln),
         pruefe_lesbarkeit(pdf, ist.format_, regeln, rahmen_texte(ist)), pruefe_gewinde(ist, plan, regeln),
         pruefe_drehteil(ist, plan, regeln))}
     alle = list(dict.fromkeys(list(meldungen_soll) + list(meldungen) + list(ist.meldungen)))

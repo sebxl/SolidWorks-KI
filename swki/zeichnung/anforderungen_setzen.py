@@ -1452,6 +1452,7 @@ def _umhaengen(drw, a: Anmerkung, ziel: Kante, meldungen: list | None) -> bool:
     if not _loesche_anmerkung(drw, a.ann):
         _melde(meldungen, f"ANMERKUNG_DOPPELT: {a.merkmal} {a.zeilen[0]} – alte nicht gelöscht")
     a.ann, a.anker = neu
+    a.soll = None  # Gesamtreview (b): die gewählte Lage gehört zum alten Ort
     if not ziel.kreis:
         a.kante = (ziel.a, ziel.e)
     if alt is not None:
@@ -1474,8 +1475,8 @@ def instanzen_umhaengen(drw, anmerkungen: list[Anmerkung], meldungen: list | Non
         if a.fixiert is None or len(a.orte) < 2 or a.einhaengen is None:
             continue
         ziel = a.fixiert[1]
-        if ziel is not None and ziel is not a.instanz():
-            _umhaengen(drw, a, ziel, meldungen)
+        if ziel is not None and ziel is not a.instanz() and not _umhaengen(drw, a, ziel, meldungen):
+            a.fixiert = None  # Gesamtreview (b): die Lage am anderen Ort gilt nicht am alten Anker – neu legen
 
 
 def _setze(a: Anmerkung, lage: tuple[float, float]) -> None:

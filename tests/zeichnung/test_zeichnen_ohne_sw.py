@@ -67,17 +67,17 @@ class _Drw:
 
 def test_fraesteil_schnitt_nicht_unterstuetzt_wird_gemeldet():
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                           [Ansicht("haupt", "*Oben"), Ansicht("drauf", None, schnitt=True)])
+    views, schnitt, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                              [Ansicht("haupt", "*Oben"), Ansicht("drauf", None, schnitt=True)])
     assert set(views) == {"haupt", "drauf"} and schnitt is None and drw.schnitte == 0
     assert any("SCHNITT_NICHT_UNTERSTUETZT" in m for m in meldungen)
 
 
 def test_drehteil_laengsschnitt_aus_stirn():
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                           [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
-    assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == []
+    views, schnitt, meldungen, buchstaben = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                                       [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
+    assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == [] and buchstaben == {"A"}
 
 
 def test_schnittbuchstabe_ohne_bezugsbuchstaben():
@@ -88,13 +88,14 @@ def test_schnittbuchstabe_ohne_bezugsbuchstaben():
     alle = [z.schnitt_buchstabe(i) for i in range(23)]
     assert not {"I", "O", "Q"} & set(alle) and len(set(alle)) == 23 and alle[-1] == "Z"
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                           [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], "C")
+    views, schnitt, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                              [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)],
+                                              {"A", "B"})
     assert schnitt == "Schnittansicht C-C" and meldungen == []
     drw = _Drw()
     drw.label = "A"                                                  # SolidWorks übergeht den verlangten Buchstaben
-    _, _, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                 [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], "C")
+    _, _, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                    [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], {"A", "B"})
     assert meldungen == ["SCHNITT_BUCHSTABE: „C“ verlangt, Schnitt trägt „A“"]
 
 
@@ -107,8 +108,8 @@ def test_buchstaben_aus_gemeldet_statt_indexerror():
     assert z._einzelheit(None, None, {"haupt": None}, "haupt", [("t1", ["D1"])], [], {}, set(), None, {}, meld) is None
     assert meld == ["EINZELHEIT_BUCHSTABE: kein freier Buchstabe – Einzelheit entfällt"]
     drw = _Drw()
-    _, _, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                 [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], None)
+    _, _, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                    [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], alle)
     assert meldungen[0].startswith("SCHNITT_BUCHSTABE: kein freier Buchstabe") and drw.schnitte == 1
 
 
@@ -501,3 +502,33 @@ def test_zeichnen_bricht_bei_funktionen_veraltet_ab(monkeypatch, tmp_path):
     with pytest.raises(z.ZeichnungFehler) as e:
         z.zeichnen(tmp_path / "s.yaml", 1)
     assert e.value.daten["code"] == "FUNKTIONEN_VERALTET"
+
+
+# --- Gesamtreview (a), I4 ----------------------------------------------------------------------------------------------
+
+def test_zwei_schnitte_bekommen_verschiedene_buchstaben(monkeypatch):
+    """(a): Längsschnitt und Frässchnitt in einer Zeichnung – je Schnitt der nächste freie Buchstabe, ohne Bezüge."""
+    gesehen = []
+
+    def fraes(drw, mu, haupt, durch, buchstabe):
+        gesehen.append(("fraes", buchstabe))
+        return drw.CreateSectionViewAt5(0, 0, 0, buchstabe)
+
+    monkeypatch.setattr(z, "_fraesschnitt", fraes)
+    ansichten = [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True),
+                 Ansicht("drauf", None, schnitt=True, durch=("st",))]
+    views, _, meldungen, buchstaben = z._erzeuge(_Drw(), None, z.Path("t.sldprt"), ansichten, {"A"})
+    assert meldungen == [] and buchstaben == {"B", "C"} and gesehen == [("fraes", "C")]
+    assert views["haupt"].GetName2 == "Schnittansicht B-B" and views["drauf"].GetName2 == "Schnittansicht C-C"
+
+
+def test_sammelangaben_ohne_pymupdf_gemeldet(monkeypatch, tmp_path):
+    """I4: ohne Extra pdf kein roher ImportError, sondern SAMMELANGABE_FEHLT (ungeprüft, Z-SAM-1)."""
+    from swki.zeichnung.pruefen import soll_luecken
+
+    def ohne(pdf):
+        raise ImportError("pymupdf")
+    monkeypatch.setattr(z, "texte", ohne)
+    meldungen = z._sammel_im_pdf(tmp_path / "z.pdf", ["Allgemeintoleranzen"], (230, 65, 410, 90))
+    assert [m.split(":")[0] for m in meldungen] == ["SAMMELANGABE_FEHLT"] and "pymupdf" in meldungen[0]
+    assert [(m["pruefung"], m["regel"]) for m in soll_luecken(meldungen)] == [("sammelangaben", "Z-SAM-1")]

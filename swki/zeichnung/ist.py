@@ -37,6 +37,8 @@ class IstAngabe:
     merkmal: str | None = None  # Feature-ID, wenn das Rücklesen sie kennt (Task 3: Abgleich je Merkmal), sonst None
     anzahl: int | None = None  # Form/Lage: „n ד über dem Rahmen (Task 4b), sonst None
     features: tuple[str, ...] = ()  # Features der Flächen an der angehängten Kante (Rückleser, roh; Task 4b)
+    lage: tuple[float, float] | None = None  # Notiz: Blatt-mm von `IAnnotation.GetPosition` (linke obere Ecke des
+    #                                          Textkastens); None: nicht gelesen (Gesamtreview c, Sammelangaben)
 
 
 @dataclass(frozen=True)
@@ -76,7 +78,8 @@ def ist_aus_dict(d: dict) -> Ist:
         format_=d["format_"], massstab=d["massstab"],
         ansichten=tuple(IstAnsicht(**a) for a in d["ansichten"]),
         masse=tuple(_mass(m) for m in d["masse"]),
-        angaben=tuple(IstAngabe(**{**a, "bezug": tuple(a["bezug"]), "features": tuple(a.get("features") or ())})
+        angaben=tuple(IstAngabe(**{**a, "bezug": tuple(a["bezug"]), "features": tuple(a.get("features") or ()),
+                                   "lage": tuple(a["lage"]) if a.get("lage") is not None else None})
                       for a in d["angaben"]),
         eigenschaften=dict(d["eigenschaften"]), sha256_slddrw=d["sha256_slddrw"],
         meldungen=tuple(d.get("meldungen") or ()),

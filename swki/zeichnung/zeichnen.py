@@ -1082,8 +1082,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         _blatt(drw, "A3quer", (1, 1), r.zeichnung.get("A3quer") or next(iter(r.zeichnung.values())))
         mu = mathutil(app)
         bezugsbuchstaben = set(spec.get("bezuege") or {})  # Runde E: der Schnitt heißt nicht wie ein Bezug
-        schnittbuchstabe = schnitt_buchstabe(0, bezugsbuchstaben)
-        views, schnitt, nicht_erzeugt = _erzeuge(drw, mu, teil, ansichten, schnittbuchstabe)
+        views, schnitt, nicht_erzeugt, schnittbuchstaben = _erzeuge(drw, mu, teil, ansichten, bezugsbuchstaben)
         meldungen += nicht_erzeugt
         protokoll = json.loads(lauf_datei(spec_pfad, lauf, "protokoll").read_text(encoding="utf-8"))
         plan = massplan(spec, protokoll)
@@ -1091,7 +1090,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         basis = next(a.rolle for a in ansichten if a.modellansicht)
         # Runde D/E: Einzelheit ab Z rückwärts, Schnitt ab A; Bezugsbuchstaben und der Schnittbuchstabe sind vergeben
         buchstabe = einzelheit_buchstabe(0, {m.text for m in plan if m.quelle == "bezug"} | bezugsbuchstaben
-                                         | ({schnittbuchstabe} if schnittbuchstabe else set()))
+                                         | schnittbuchstaben)
         bereich: dict = {}
         gruppe = _gruppen(spec)
         mitten = {m.name for m in plan if m.quelle == "modell" and m.bezug in MITTENBEZUG}
@@ -1188,7 +1187,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                                      _kennbuchstabe(views[bereich["eltern"]], fest["rahmen"], buchstabe)
                                      if "rahmen" in fest else None, runden=5 if anmerkungen else 3,
                                      hinweise=notizen + anmerkungen, band=band, fremde_texte=fremde)
-        meldungen += angaben_meld + anf.sammel_pruefen(texte(pdf), zeilen_sammel, band)
+        meldungen += angaben_meld + _sammel_im_pdf(pdf, zeilen_sammel, band)
         meldungen += anf.anmerkungen_wirkung(anmerkungen)  # Runde E (M7): Rahmen im Endstand nach Wirkung
         if anmerkungen:  # Nachbesserung C: was nach der letzten Runde noch kreuzt, steht in den Meldungen
             meldungen += _anmerkungen_kreuzen(views, notizen, anmerkungen, anm_kanten, pdf, anm_linien)
@@ -1216,6 +1215,16 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             "angaben": {"plan": _planzahlen(plan)[1], "gesetzt": len(notizen)},
             "anmerkungen": {"plan": anm_plan, "gesetzt": len(anmerkungen)},
             "zeichnungsmasse": namen, "dauer_s": round(time.time() - t0, 1)}
+
+
+def _sammel_im_pdf(pdf: Path, zeilen: list[str], band: tuple) -> list[str]:
+    """`anforderungen_setzen.sammel_pruefen` am PDF; ohne pymupdf (Extra pdf) die Meldung SAMMELANGABE_FEHLT
+    „ungeprüft“ (Z-SAM-1, hart) statt eines rohen ImportError (Gesamtreview I4)."""
+    try:
+        pdf_texte = texte(pdf)
+    except ImportError:
+        return ["SAMMELANGABE_FEHLT: Sammelangaben im PDF ungeprüft – pymupdf fehlt (Extra pdf)"]
+    return anf.sammel_pruefen(pdf_texte, zeilen, band)
 
 
 def sammelhoehe_mm(spec: dict) -> float:
@@ -1460,29 +1469,41 @@ def waehle_lauf(spec_pfad: Path, lauf: int | None) -> tuple[int, list[str]]:
 
 
 def _erzeuge(drw, mu, teil: Path, ansichten: list[Ansicht],
-             buchstabe: str | None = "A") -> tuple[dict, str | None, list[str]]:
+             vergeben: set[str] | frozenset = frozenset()) -> tuple[dict, str | None, list[str], set[str]]:
     """Basis = die Ansicht mit Modellansicht. Ein Schnitt ohne Modellansicht entsteht aus ihr (Längsschnitt eines
     Drehteils), die übrigen werden aus der Hauptansicht projiziert. Liefert Ansichten, Name des wirklich erzeugten
-    Schnitts und Meldungen für verlangte, aber nicht erzeugte Schnitte (Review I1). Der Schnitt heißt `buchstabe`
-    (`schnitt_buchstabe`; nach Wirkung geprüft, `SCHNITT_BUCHSTABE`; None: keiner frei – gemeldet, SolidWorks wählt)."""
+    Schnitts, Meldungen für verlangte, aber nicht erzeugte Schnitte (Review I1) und die vergebenen Schnittbuchstaben.
+    Jeder Schnitt heißt nach dem nächsten freien `schnitt_buchstabe` ohne `vergeben` (Bezüge) und ohne die Buchstaben
+    der Schnitte davor (Gesamtreview a; nach Wirkung geprüft, `SCHNITT_BUCHSTABE`; None: keiner frei – gemeldet,
+    SolidWorks wählt)."""
     basis = next(a for a in ansichten if a.modellansicht)
+    belegt: set[str] = set()
+
+    def naechster() -> str | None:
+        b = schnitt_buchstabe(0, set(vergeben) | belegt)
+        if b is None:
+            meldungen.append("SCHNITT_BUCHSTABE: kein freier Buchstabe (alle als Bezug vergeben) – SolidWorks wählt")
+        else:
+            belegt.add(b)
+        return b
+
     view = drw.CreateDrawViewFromModelView3(str(teil), basis.modellansicht, 0.25, 0.2, 0)
     if view is None:
         raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Modellansicht {basis.modellansicht} nicht erzeugt")
     if basis.winkel_grad:
         view.Angle = math.radians(basis.winkel_grad)
     views, schnitt, meldungen = {basis.rolle: view}, None, []
-    if buchstabe is None and any(a.schnitt for a in ansichten):
-        meldungen.append("SCHNITT_BUCHSTABE: kein freier Buchstabe (alle als Bezug vergeben) – SolidWorks wählt")
     for a in ansichten:
         if a is basis:
             continue
         if a.modellansicht is None and a.schnitt and a.rolle == "haupt":
+            buchstabe = naechster()
             v = _laengsschnitt(drw, view, buchstabe or "")
             schnitt = _ruf(v, "GetName2") if v is not None else None
             if v is not None and buchstabe:
                 meldungen += _schnitt_pruefen(v, buchstabe)
         elif a.schnitt and a.durch and a.rolle == "drauf":
+            buchstabe = naechster()
             v = _fraesschnitt(drw, mu, views["haupt"], a.durch, buchstabe or "")
             if v is not None and buchstabe:
                 meldungen += _schnitt_pruefen(v, buchstabe)
@@ -1499,7 +1520,7 @@ def _erzeuge(drw, mu, teil: Path, ansichten: list[Ansicht],
         if v is None:
             raise ZeichnungFehler("ZEICHNUNG_ANSICHT", f"Ansicht {a.rolle} nicht erzeugt")
         views[a.rolle] = v
-    return views, schnitt, meldungen
+    return views, schnitt, meldungen, belegt
 
 
 def _png(pdf: Path) -> str | None:

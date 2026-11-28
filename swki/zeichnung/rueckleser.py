@@ -332,11 +332,22 @@ def lage_des_masses(typ2: int, art: str, h, kanten: list[anf.Kante], mittel: lis
     return None, None, sicht, False
 
 
+def _lage(ann) -> tuple[float, float] | None:
+    """`IAnnotation.GetPosition` in Blatt-mm (Notiz: linke obere Ecke des Textkastens); None, wenn nicht lesbar – die
+    Prüfung der Sammelangaben nennt die Lage dann „nicht geprüft“ (Gesamtreview c)."""
+    try:
+        p = list(_ruf(ann, "GetPosition") or ())
+    except Exception:  # noqa: BLE001 – COM
+        return None
+    return (round(p[0] * 1000, 3), round(p[1] * 1000, 3)) if len(p) >= 2 else None
+
+
 def _notiz(n, name: str) -> IstAngabe | None:
     text = str(_ruf(n, "GetText") or "")
     if not text.strip():
         return None
-    return IstAngabe("hinweis", name, text, None, None, (), None, None, _features(_ruf(n, "GetAnnotation")))
+    ann = _ruf(n, "GetAnnotation")
+    return IstAngabe("hinweis", name, text, None, None, (), None, None, _features(ann), _lage(ann))
 
 
 def _rahmen(g, name: str) -> IstAngabe:

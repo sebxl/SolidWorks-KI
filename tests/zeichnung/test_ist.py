@@ -52,3 +52,20 @@ def test_ist_aus_altem_dict():
         a.pop("anzahl"), a.pop("features")
     d.pop("meldungen")
     assert ist_aus_dict(d) == _ist()
+
+
+def test_lage_ueberlebt_json():
+    """Gesamtreview (c): `lage` der Notiz geht durch den Prüfbericht (JSON macht Listen daraus)."""
+    import json
+
+    from swki.zeichnung.ist import ist_aus_dict, ist_zu_dict
+    from tests.zeichnung.ist_bau import ideal_ist, plan_spannplatte_z
+    from tests.zeichnung.test_massplan import _lade_ref
+
+    ist = ideal_ist(plan_spannplatte_z(), spec=_lade_ref("zeichnung/spannplatte_z.yaml"))
+    assert any(a.lage for a in ist.angaben)
+    assert ist_aus_dict(json.loads(json.dumps(ist_zu_dict(ist)))) == ist
+    alt = json.loads(json.dumps(ist_zu_dict(ist)))
+    for a in alt["angaben"]:
+        a.pop("lage")                                                # Bericht von vor dem Gesamtreview
+    assert all(a.lage is None for a in ist_aus_dict(alt).angaben)
