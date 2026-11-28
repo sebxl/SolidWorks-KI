@@ -207,7 +207,7 @@
       - Ebenso wird `ANMERKUNG_KREUZT` aus der Übergabe zu Z-LES-1 (Hinweisregel), `MASS_NICHT_DAUERHAFT` zu Z-VOLL-1.
       - Nachtrag 2 (Runde C, 28.11.): Die Zuordnung Meldungscode → Regel steht als Tabelle `MELDUNG_REGEL` in
         `pruefen.py` (`ANMERKUNG_KREUZT`, `ANGABE_ZU_NAH`, `ANSATZ_NICHT_FREI`, `LESBARKEIT` → Z-LES-1;
-        `*_NICHT_GESETZT` → Regel der Angabe (Z-TOL-1/2/4/5, Bezug Z-TOL-3); `*_NUR_EINE_INSTANZ` → Z-TOL-4/5;
+        `*_NICHT_GESETZT` → Regel der Angabe (Z-TOL-1/2/4/5, Bezug Z-TOL-6); `*_NUR_EINE_INSTANZ` → Z-TOL-4/5;
         `MASS_NICHT_DAUERHAFT`, `TOLERANZ_OHNE_MASS`, `TOLERANZ_MEHRDEUTIG`, `MASS_NICHT_GEPLANT` → Z-VOLL-1 bzw. Z-TOL-1;
         `FUNKTION_UNBESTAETIGT` nur Hinweis). Test `test_jeder_meldungscode_hat_regel`: Er sammelt per Regex alle Codes
         `"[A-Z][A-Z_]+:` aus `swki/zeichnung/*.py` und verlangt für jeden einen Eintrag (oder einen Eintrag in einer
