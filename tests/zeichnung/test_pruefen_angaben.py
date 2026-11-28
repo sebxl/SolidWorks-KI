@@ -70,6 +70,13 @@ def _notizen(ist, *texte):
                                                     for t in texte))
 
 
+def _tol(ist, plan, regeln=None):
+    """`pruefe_toleranzen` wie in `bewerte`: ohne die Symbole des Rauheitsfelds (Nutzer 28.11.2026)."""
+    return pruefe_toleranzen(replace(ist, angaben=tuple(a for a in ist.angaben
+                                                        if not (a.art == "rauheit" and a.ansicht == "Blatt1"))),
+                             plan, regeln or REGELN)
+
+
 def _ohne_notiz_mit(ist, teil):
     return _ohne_angabe(ist, lambda a: a.art == "hinweis" and teil in a.text)
 
@@ -107,7 +114,7 @@ def test_falsche_passung():
     plan = plan_buchse_z()
     ist = _ersetze_mass(_ideal_bu(), lambda m: m.art == "durchmesser" and m.toleranz.passung == "H7",
                         toleranz=IstToleranz("passung", "H8", None, None))
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-1"}
     assert "H7" in p["maengel"][0]["text"] and "H8" in p["maengel"][0]["text"]
 
@@ -116,47 +123,47 @@ def test_falsche_abmasse_und_toleranz_fehlt():
     plan = plan_spannplatte_z()
     ist = _ersetze_mass(_ideal_sp(), lambda m: m.toleranz.typ == "symmetrisch",
                         toleranz=IstToleranz("symmetrisch", None, 0.05, -0.05))
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert _regeln_der(p) == {"Z-TOL-1"} and "0,02" in p["maengel"][0]["text"] and "0,05" in p["maengel"][0]["text"]
     ist = _ersetze_mass(_ideal_sp(), lambda m: m.toleranz.typ == "symmetrisch", toleranz=IstToleranz("keine", None, None, None))
-    assert _regeln_der(pruefe_toleranzen(ist, plan, REGELN)) == {"Z-TOL-1"}
+    assert _regeln_der(_tol(ist, plan)) == {"Z-TOL-1"}
 
 
 def test_huelle_an_nicht_passmass():
     """Review Focus 4: Ⓔ am Abmaß ±0,02 (Parameter A) ist Z-TOL-2, an H7 kein Mangel."""
     plan = plan_spannplatte_z()
     ist = _ersetze_mass(_ideal_sp(), lambda m: m.toleranz.typ == "symmetrisch", suffix=" Ⓔ")
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-2"}
     plan = plan_buchse_z()
-    assert pruefe_toleranzen(_ideal_bu(), plan, REGELN)["ok"] is True      # H7 und k6 tragen Ⓔ
+    assert _tol(_ideal_bu(), plan)["ok"] is True      # H7 und k6 tragen Ⓔ
 
 
 def test_huelle_fehlt_an_passmass():
     plan = plan_buchse_z()
     ist = _ersetze_mass(_ideal_bu(), lambda m: m.art == "durchmesser" and m.toleranz.passung == "H7", suffix="")
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-1"} and "Ⓔ" in p["maengel"][0]["text"]
 
 
 def test_huelle_als_tag_wird_erkannt():
     plan = plan_buchse_z()
     ist = _ersetze_mass(_ideal_bu(), lambda m: m.art == "durchmesser" and m.toleranz.passung == "H7", suffix=" <MOD-EP>")
-    assert pruefe_toleranzen(ist, plan, REGELN)["ok"] is True
+    assert _tol(ist, plan)["ok"] is True
 
 
 def test_toleranz_ohne_funktion():
     plan = plan_spannplatte_z()
     ist = _ersetze_mass(_ideal_sp(), lambda m: m.toleranz.typ == "keine" and m.art == "laenge" and m.wert == 200.0,
                         toleranz=IstToleranz("symmetrisch", None, 0.1, -0.1))
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-3"}
 
 
 def test_rauheit_fehlt():
     plan = plan_spannplatte_z()
     ist = _ohne_angabe(_ideal_sp(), lambda a: a.art == "rauheit" and a.text == "Ra 1,6")
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-4"} and "Ra 1,6" in p["maengel"][0]["text"]
     assert p["maengel"][0]["merkmal"] == "t1"
 
@@ -166,7 +173,7 @@ def test_rauheit_falscher_wert():
     ist = _ideal_sp()
     ist = replace(ist, angaben=tuple(replace(a, text="Ra 3,2") if a.art == "rauheit" and a.text == "Ra 1,6" else a
                                      for a in ist.angaben))
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert _regeln_der(p) == {"Z-TOL-4"} and "Ra 3,2" in p["maengel"][0]["text"] and "Ra 1,6" in p["maengel"][0]["text"]
 
 
@@ -175,7 +182,7 @@ def test_form_lage_falscher_wert():
     ist = _ideal_sp()
     ist = replace(ist, angaben=tuple(replace(a, wert="0,05") if a.art == "form_lage" and a.wert == "0,02" else a
                                      for a in ist.angaben))
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-5"}
     assert "0,02" in p["maengel"][0]["text"] and "0,05" in p["maengel"][0]["text"]
 
@@ -184,13 +191,13 @@ def test_form_lage_bezug_fehlt():
     plan = plan_spannplatte_z()
     ist = _ideal_sp()
     ist = replace(ist, angaben=tuple(replace(a, bezug=()) if a.art == "form_lage" and a.bezug else a for a in ist.angaben))
-    assert _regeln_der(pruefe_toleranzen(ist, plan, REGELN)) == {"Z-TOL-5"}
+    assert _regeln_der(_tol(ist, plan)) == {"Z-TOL-5"}
 
 
 def test_bezug_fehlt():
     plan = plan_spannplatte_z()
     ist = _ohne_angabe(_ideal_sp(), lambda a: a.art == "bezug" and a.text == "B")
-    p = pruefe_toleranzen(ist, plan, REGELN)
+    p = _tol(ist, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-6"} and "B" in p["maengel"][0]["text"]
 
 
@@ -199,19 +206,19 @@ def test_angaben_je_merkmal_ohne_merkmal_kein_joker():
     fehlt, die Angabe ist überzählig ohne Merkmal – beides harte Mängel der Art."""
     plan = plan_spannplatte_z()
     ideal = _ideal_sp()
-    assert all(a.merkmal for a in ideal.angaben if a.art in ("rauheit", "form_lage"))
+    assert all(a.merkmal for a in ideal.angaben if a.art in ("rauheit", "form_lage") and a.ansicht != "Blatt1")
     ohne = replace(ideal, angaben=tuple(replace(a, merkmal=None) for a in ideal.angaben))
-    p = pruefe_toleranzen(ohne, plan, REGELN)
+    p = _tol(ohne, plan)
     assert p["ok"] is False and _regeln_der(p) == {"Z-TOL-4", "Z-TOL-5", "Z-TOL-6"}
     assert any(m["text"].startswith("fehlt:") for m in p["maengel"])
     assert any(m["text"].startswith("überzählig:") and "ohne Merkmal" in m["text"] for m in p["maengel"])
     # gleiche Rauheit am falschen Merkmal zählt nicht
     vertauscht = replace(ideal, angaben=tuple(replace(a, merkmal="st" if a.art == "rauheit" and a.merkmal == "t1" else a.merkmal)
                                               if a.art == "rauheit" else a for a in ideal.angaben))
-    assert _regeln_der(pruefe_toleranzen(vertauscht, plan, REGELN)) == {"Z-TOL-4"}
+    assert _regeln_der(_tol(vertauscht, plan)) == {"Z-TOL-4"}
     # Multimenge je Merkmal: zweimal dieselbe Rauheit an t1 deckt nur den Plan-Eintrag von t1
     doppelt = replace(ideal, angaben=ideal.angaben + (IstAngabe("rauheit", "haupt", "Ra 1,6", None, None, (), "t1"),))
-    assert _regeln_der(pruefe_toleranzen(doppelt, plan, REGELN)) == {"Z-TOL-4"}
+    assert _regeln_der(_tol(doppelt, plan)) == {"Z-TOL-4"}
 
 
 def test_huelle_ohne_passmass_wie_task2():
@@ -220,7 +227,7 @@ def test_huelle_ohne_passmass_wie_task2():
 
     plan = [Mass("a", "modell", "laenge", 20.0, "f1", name="a")]
     ist = replace(ideal_ist(plan), masse=tuple(replace(m, suffix=" <MOD-EP>") for m in ideal_ist(plan).masse))
-    assert _regeln_der(pruefe_toleranzen(ist, plan, REGELN)) == {"Z-TOL-2"}
+    assert _regeln_der(_tol(ist, plan)) == {"Z-TOL-2"}
 
 
 # --- Sammelangaben ---------------------------------------------------------------------------------------------------
@@ -230,7 +237,7 @@ def test_sammelangaben_ideal_und_fehlend():
     assert pruefe_sammelangaben(_ideal_bu(), spec, REGELN)["ok"] is True
     for teil, regel in (("ISO 2768-1:1989", "Z-SAM-1"), ("ISO 8015", "Z-SAM-2"), ("ISO 13715", "Z-SAM-6"),
                         ("Maßgebend", "Z-SAM-4"), ("einsatzgehärtet", "Z-SAM-5"), ("Halbzeug", "Z-SAM-5"),
-                        ("Ra 3,2", "Z-SAM-7")):
+                        ("Alle Flächen ohne", "Z-SAM-7")):
         p = pruefe_sammelangaben(_ohne_notiz_mit(_ideal_bu(), teil), spec, REGELN)
         assert p["ok"] is False and regel in _regeln_der(p), teil
 
@@ -460,10 +467,72 @@ def test_iso_2768_k_kein_treffer(text):
     assert _regeln_der(pruefe_sammelangaben(_notizen(_ideal_bu(), text), _spec_bu(), REGELN)) == set()
 
 
-def test_sammelrauheit_wortgrenze():
-    ist = _ohne_notiz_mit(_ideal_bu(), "Ra 3,2")
-    assert "Z-SAM-7" not in _regeln_der(pruefe_sammelangaben(_notizen(ist, "Ra 3,2"), _spec_bu(), REGELN))
-    assert "Z-SAM-7" in _regeln_der(pruefe_sammelangaben(_notizen(ist, "Ra 3,25"), _spec_bu(), REGELN))
+# --- Sammelrauheit als Rauheitsfeld (Nutzer 28.11.2026) --------------------------------------------------------------
+
+def _sammelsymbol(ist):
+    [s] = [a for a in ist.angaben if a.art == "rauheit" and a.merkmal is None]
+    return s
+
+
+def _mit_symbol(ist, **kw):
+    s = _sammelsymbol(ist)
+    return replace(ist, angaben=tuple(replace(a, **kw) if a is s else a for a in ist.angaben))
+
+
+def test_sammelrauheit_ist_symbol_im_feld():
+    """Rauheitssymbol ohne Anhängung im Band über dem Schriftfeld mit Feld a „Ra 3,2“ und dem Hinweis „Alle Flächen ohne
+    andere Angabe“: die Sammelrauheit (Z-SAM-7) – keine Merkmalsrauheit, kein „überzählig, ohne Merkmal“ (Z-TOL-4)."""
+    ist = _ideal_sp()
+    s = _sammelsymbol(ist)
+    assert s.text == "Ra 3,2" and s.features == () and s.lage is not None
+    assert pruefe_sammelangaben(ist, _spec_sp(), REGELN)["ok"] is True
+    u = _bewerte(ist, plan_spannplatte_z(), _spec_sp())
+    assert u["bestanden"] is True and not [m for m in u["maengel"] if m["regel"] in ("Z-TOL-4", "Z-SAM-7")]
+
+
+@pytest.mark.parametrize("text", ["Ra 6,3", "Ra 3,25"])
+def test_sammelrauheit_falscher_wert(text):
+    u = _bewerte(_mit_symbol(_ideal_sp(), text=text), plan_spannplatte_z(), _spec_sp())
+    assert u["bestanden"] is False
+    assert [m["text"] for m in u["maengel"] if m["regel"] == "Z-SAM-7"] == [
+        f"weicht ab: Rauheitssymbol {text} statt Ra 3,2 im Rauheitsfeld"]
+    assert not [m for m in u["maengel"] if m["regel"] == "Z-TOL-4"]
+
+
+def test_sammelrauheit_ausserhalb_des_felds_bleibt_mangel():
+    """Ein freies Rauheitssymbol außerhalb des Felds ist keine Sammelrauheit: Z-SAM-7 fehlt, und das Symbol ist eine
+    Rauheit ohne Merkmal (Z-TOL-4, hart)."""
+    u = _bewerte(_mit_symbol(_ideal_sp(), lage=(60.0, 250.0)), plan_spannplatte_z(), _spec_sp())
+    assert u["bestanden"] is False
+    assert any(m["regel"] == "Z-SAM-7" and m["text"].startswith("fehlt: Rauheitssymbol") for m in u["maengel"])
+    assert any(m["regel"] == "Z-TOL-4" and "ohne Merkmal" in m["text"] for m in u["maengel"])
+
+
+def test_sammelrauheit_ohne_lage_bleibt_mangel():
+    u = _bewerte(_mit_symbol(_ideal_sp(), lage=None), plan_spannplatte_z(), _spec_sp())
+    assert u["bestanden"] is False and {"Z-SAM-7", "Z-TOL-4"} <= {m["regel"] for m in u["maengel"]}
+
+
+def test_sammelrauheit_fehlt():
+    ist = _ohne_angabe(_ideal_sp(), lambda a: a.art == "rauheit" and a.merkmal is None)
+    p = pruefe_sammelangaben(ist, _spec_sp(), REGELN)
+    assert p["ok"] is False and [m["text"] for m in p["maengel"]] == [
+        "fehlt: Rauheitssymbol Ra 3,2 im Rauheitsfeld über dem Schriftfeld"]
+
+
+def test_alte_textzeile_genuegt_nicht():
+    """„Oberflächen ohne Angabe: Ra 3,2“ als Notiz (bis 28.11.2026) ersetzt weder Symbol noch Hinweis."""
+    ist = _ohne_angabe(_ideal_sp(), lambda a: (a.art == "rauheit" and a.merkmal is None)
+                       or (a.art == "hinweis" and "Alle Flächen" in a.text))
+    p = pruefe_sammelangaben(_notizen(ist, "Oberflächen ohne Angabe: Ra 3,2"), _spec_sp(), REGELN)
+    assert p["ok"] is False and _regeln_der(p) == {"Z-SAM-7"} and len(p["maengel"]) == 2
+
+
+def test_zwei_symbole_im_feld():
+    ist = _ideal_sp()
+    s = _sammelsymbol(ist)
+    p = pruefe_sammelangaben(replace(ist, angaben=ist.angaben + (s,)), _spec_sp(), REGELN)
+    assert p["ok"] is False and [m["text"] for m in p["maengel"]] == ["überzählig: Rauheitssymbol Ra 3,2 im Rauheitsfeld"]
 
 
 def test_tolerenz_gleich_mit_rundungsrand():
@@ -563,7 +632,7 @@ def test_sammelangabe_unter_dem_blatt_ist_z_sam_1():
 
 
 def test_sammelrauheit_weg_vom_schriftfeld_ist_z_sam_7():
-    p = pruefe_sammelangaben(_verschiebe_notiz(_ideal_sp(), "Ra 3,2", (60.0, 250.0)), _spec_sp(), REGELN)
+    p = pruefe_sammelangaben(_verschiebe_notiz(_ideal_sp(), "Alle Flächen", (60.0, 250.0)), _spec_sp(), REGELN)
     assert p["ok"] is False and _regeln_der(p) == {"Z-SAM-7"}
 
 

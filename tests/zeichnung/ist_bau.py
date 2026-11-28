@@ -2,11 +2,12 @@
 
 Die Pläne kommen aus den Referenzen (`massplan`), nie von Hand kopiert."""
 
-from swki.zeichnung.anforderungen_setzen import SAMMEL_OBERKANTE_MM, instanzen
+from swki.zeichnung.anforderungen_setzen import instanzen
 from swki.zeichnung.ist import Ist, IstAngabe, IstAnsicht, IstMass, IstToleranz
 from swki.zeichnung.massplan import Mass, massplan
 from swki.zeichnung.pruefen import sammelband_der_spec
-from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, Toleranz, sammelangaben
+from swki.zeichnung.sammelfeld import rauheitsfeld, sammelzeilen_lage
+from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, SAMMEL_RAUHEIT_HINWEIS_ZEILEN, Toleranz, sammelangaben
 from tests.zeichnung.test_massplan import _buchse_protokoll, _lade_ref, _spannplatte_protokoll
 
 _IST_ART = {"laenge": "laenge", "lage": "laenge", "tiefe": "laenge", "abstand": "laenge", "paarabstand": "laenge",
@@ -56,7 +57,8 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: d
               eigenschaften: dict[str, str] | None = None) -> Ist:
     """Ideale Zeichnung zum Plan. `ansichten`: Name → Art (ansicht | schnitt | einzelheit), die erste nimmt die
     Maße und Notizen auf; Vorgabe {"haupt": "ansicht"}. Alle Maße liegen in dieser Ansicht, alle starten bei 0.
-    Mit `spec`: Sammelangaben (je Zeile eine Notiz, dazu die Sammelrauheit) und die Schriftfeld-Eigenschaften
+    Mit `spec`: Sammelangaben (je Zeile eine Notiz, dazu das Rauheitsfeld: Rauheitssymbol ohne Anhängung und
+    Hinweis, Nutzer 28.11.2026) und die Schriftfeld-Eigenschaften
     (`eigenschaften` überschreibt sie). Rauheit, Form/Lage und Bezüge des Plans stehen mit Merkmal im Ist."""
     ansichten = ansichten or {"haupt": "ansicht"}
     erste = next(iter(ansichten))
@@ -91,9 +93,12 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: d
         masse.append(IstMass(m.name or m.id, ansicht, art, m.wert, praefix, suffix, False, tol, richtung, punkte,
                              False if art == "laenge" else None))
     if spec is not None:  # Sammelnotizen mit Ankerpunkt im Band über dem Schriftfeld (Gesamtreview c)
-        x0, _, x1, oben = sammelband_der_spec("A3quer", spec)
-        lage = (x0, oben - SAMMEL_OBERKANTE_MM)
+        band = sammelband_der_spec("A3quer", spec)
+        lage = sammelzeilen_lage(band)
         angaben += [IstAngabe("hinweis", erste, zeile, None, None, (), lage=lage) for zeile in sammelangaben(spec)]
-        angaben.append(IstAngabe("hinweis", erste, SAMMEL_RAUHEIT, None, None, (), lage=((x0 + x1) / 2, lage[1])))
+        feld = rauheitsfeld(band, sammelangaben(spec))
+        angaben.append(IstAngabe("rauheit", "Blatt1", SAMMEL_RAUHEIT, None, None, (), lage=feld.symbol))
+        angaben.append(IstAngabe("hinweis", "Blatt1", "\r\n".join(SAMMEL_RAUHEIT_HINWEIS_ZEILEN), None, None, (),
+                                 lage=feld.hinweis))
     eig = {**schriftfeld_eigenschaften(spec), **(eigenschaften or {})} if spec is not None else dict(eigenschaften or {})
     return Ist("A3quer", "1:1", tuple(ist_ansichten.values()), tuple(masse), tuple(angaben), eig)

@@ -498,3 +498,20 @@ def test_notiz_liest_lage_in_blatt_mm():
     assert a.lage == (231.0, 85.1)
     (b,) = rl._angaben(_Ansicht([_Notiz("ISO 8015")]), "Blatt1", [])
     assert b.lage is None
+
+
+def test_freies_rauheitssymbol_auf_dem_blatt_mit_lage_ohne_meldung():
+    """Nutzer 28.11.2026: Die Sammelrauheit ist ein Rauheitssymbol ohne Hinweislinie auf dem Blatt (Rauheitsfeld). Auf
+    der Blattansicht meldet der Rückleser es nicht als „ohne angehängte Kante“ und liest seine Lage (Spitze); ob es im
+    Rauheitsfeld steht, entscheidet die Prüfung. In einer Zeichenansicht bleibt die Meldung."""
+    class _AnnMitLage(_Ann):
+        def GetPosition(self):
+            return (0.3435, 0.0880, 0.0)
+
+    frei = _Rauheit("Ra 3,2", _AnnMitLage())
+    meldungen = []
+    (a,) = rl._angaben(_Ansicht(rauheit=frei), "Blatt1", meldungen, blatt=True)
+    assert (a.art, a.text, a.features, a.lage, meldungen) == ("rauheit", "Ra 3,2", (), (343.5, 88.0), [])
+    (b,) = rl._angaben(_Ansicht(rauheit=frei), "Zeichenansicht1", meldungen)
+    assert b.lage == (343.5, 88.0)
+    assert meldungen == ["RUECKLESEN_UNVOLLSTAENDIG: Zeichenansicht1 – rauheit „Ra 3,2“ ohne angehängte Kante"]

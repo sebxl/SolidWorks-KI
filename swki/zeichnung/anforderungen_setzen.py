@@ -21,6 +21,9 @@ Nachbesserung C: IView.GetFaceHatches (0, 2003), IFaceHatch.Face (2003), IFace2.
 Runde D: IView.Type (swDrawingViewTypes_e, swDrawingSectionView = 2), ISelectionMgr.GetSelectedObject6 (2),
 IEdge.GetCurveParams3 (0) zur Prüfung der am Punkt gewählten Kante; kein IVertex mehr (Eckpunkte liegen live 54–89 mm
 neben ihrem Ort).
+Rauheitsfeld (Nutzer 28.11.2026): InsertSurfaceFinishSymbol3 mit swSFBasic = 0, swNO_LEADER = 0, ISFSymbol.SetText (2),
+IModelDoc2.SketchManager (2005) → ISketchManager.AddToDB (2008), CreateCornerRectangle (6, 2008), ISheet.GetProperties2
+(Maßstab; eine Blattskizze folgt ihm, spikes/z1_diag_rauheitsfeld.py).
 """
 
 import math
@@ -32,7 +35,11 @@ from swki.zeichnung.bemassen import _anzeige, _loesche, _ruf, kurzname
 from swki.zeichnung.blatt import SCHRIFTFELD_MM, zeichenfeld
 from swki.zeichnung.lesbarkeit import _schneidet
 from swki.zeichnung.massplan import Mass
-from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT_ZEILE, Toleranz
+from swki.zeichnung.sammelfeld import (SAMMEL_OBERKANTE_MM, SAMMEL_ZEICHEN, SAMMEL_ZEILENABSTAND_MM,  # noqa: F401
+                                       Rauheitsfeld, rauheitsfeld, sammel_aufteilung, sammel_zeilenzahl, sammelband,
+                                       sammelzeilen_lage, umbrechen)
+from swki.zeichnung.toleranzangaben import (SAMMEL_RAUHEIT, SAMMEL_RAUHEIT_FELD, SAMMEL_RAUHEIT_HINWEIS_ZEILEN,
+                                            Toleranz)
 
 TOL_BILAT, TOL_SYMMETRISCH, TOL_PASSUNG = 2, 4, 7   # swTolType_e
 PASSUNG_EINZEILIG = 3                               # FitDisplayStyle (Spike e: „200,00 H7“ in einer Zeile)
@@ -84,11 +91,7 @@ JENSEITS_MAX_MM = 50.0                              # Runde D (M4): weiter weg l
 VERTIEFT = ("schnitt", "bohrung", "normbohrung")    # Merkmale mit Öffnung: Hinweislinie darf über ihren Rand (`offen`)
 KONZENTRISCH_MM, OFFEN_RAND_MM = 0.3, 0.5           # `Anmerkung._offen_hier`: Kreise derselben Mitte; Ränder im Feld
 SCHRAFFUR_BOGEN_STUECKE = 12
-SAMMEL_ZEICHEN = 72                                 # Zeichen je Zeile im Band (180 mm, live 2,36 mm je Zeichen)
-SAMMEL_ZEILENABSTAND_MM = 4.55                      # Hinweistext 3,5 mm, live 27.11. vermessen
-SAMMEL_RAUHEIT_ZEICHEN_MM = 2.6                     # „Oberflächen ohne Angabe: Ra 3,2“ live 78 mm für 31 Zeichen
-SAMMEL_SPALT_ZEICHEN = 4                            # Abstand Sammelzeile – allgemeine Rauheit rechts daneben
-SAMMEL_OBERKANTE_MM = 1.4                           # Textoberkante über `IAnnotation.GetPosition` (Live 19.11.)
+SF_GRUND, OHNE_FUEHRUNG = 0, 0                      # swSFSymType_e.swSFBasic, swLeaderStyle_e.swNO_LEADER
 
 
 def wert_mm(dd) -> float | None:
@@ -1656,51 +1659,6 @@ def _rechteck_strecken(r: tuple) -> list[tuple]:
 # --- Sammelangaben ----------------------------------------------------------------------------------------------------
 
 
-def umbrechen(zeilen: list[str], zeichen: int = SAMMEL_ZEICHEN) -> list[str]:
-    """Zeilen, die breiter als das Band wären, nach „, “ bzw. am letzten Leerzeichen umbrechen (Härteangabe der
-    Buchse: 77 Zeichen ≈ 182 mm gegen 180 mm Schriftfeldbreite). Zusammengefügt mit Leerzeichen ergibt sich die
-    Zeile wieder (Prüfung Z1.4 vergleicht whitespace-normalisiert)."""
-    aus = []
-    for z in zeilen:
-        while len(z) > zeichen:
-            schnitt = z.rfind(", ", 0, zeichen)
-            if schnitt > 0:
-                aus.append(z[:schnitt + 1])
-                z = z[schnitt + 2:]
-                continue
-            schnitt = z.rfind(" ", 0, zeichen)
-            if schnitt <= 0:
-                break
-            aus.append(z[:schnitt])
-            z = z[schnitt + 1:]
-        aus.append(z)
-    return aus
-
-
-
-def sammel_aufteilung(zeilen: list[str]) -> tuple[list[str], int]:
-    """Zeilen des Sammelhinweises (umgebrochen auf die Bandbreite) und die Zeile, in der rechts die allgemeine Rauheit
-    steht (eigener Hinweis `SAMMEL_RAUHEIT_ZEILE`, Vorschlag Task 5): die erste Zeile, neben die sie passt; passt sie
-    nirgends, eine Zeile mehr (Index = Zeilenzahl). Live 27.11.: eine eigene Zeile hob das Band der Spannplatte um
-    5 mm, die Ansichten passten nicht mehr auf A3 1:2 (A4 1:5)."""
-    umbrochen = umbrechen(zeilen)
-    frei = SAMMEL_ZEICHEN - len(SAMMEL_RAUHEIT_ZEILE) - SAMMEL_SPALT_ZEICHEN
-    return umbrochen, next((i for i, z in enumerate(umbrochen) if len(z) <= frei), len(umbrochen))
-
-
-def sammel_zeilenzahl(zeilen: list[str]) -> int:
-    """Zeilen, die das Band über dem Schriftfeld braucht (Höhe = Zahl × `SAMMEL_ZEILE_MM`)."""
-    umbrochen, zeile = sammel_aufteilung(zeilen)
-    return max(len(umbrochen), zeile + 1)
-
-
-def sammelband(format_: str, hoehe_mm: float) -> tuple[float, float, float, float]:
-    """Reserviertes Band über dem Schriftfeld (Blatt-mm), so breit wie das Schriftfeld, rechtsbündig."""
-    x0, y0, x1, _ = zeichenfeld(format_)
-    sb, sh = SCHRIFTFELD_MM
-    return (x1 - sb, y0 + sh, x1, y0 + sh + hoehe_mm)
-
-
 def _notiz_an(drw, text: str, x_mm: float, oben_mm: float):
     """Hinweis auf dem Blatt (`IDrawingDoc.EditSheet` vorher; Live 27.11.: sonst gehört er zur zuletzt aktiven
     Ansicht) mit der linken oberen Ecke bei (x, oben)."""
@@ -1714,33 +1672,99 @@ def _notiz_an(drw, text: str, x_mm: float, oben_mm: float):
     return ann
 
 
+def _rauheitssymbol_frei(drw, text: str, x_mm: float, y_mm: float):
+    """Rauheitssymbol (Grundsymbol, ohne Hinweislinie) auf dem Blatt, Feld a `text`, Spitze bei (x, y)."""
+    _ruf(drw, "EditSheet")
+    drw.ClearSelection2(True)
+    sf = _ruf(drw, "Extension").InsertSurfaceFinishSymbol3(SF_GRUND, OHNE_FUEHRUNG, x_mm / 1000, y_mm / 1000, 0, 0,
+                                                           PFEIL_GESCHLOSSEN, "", "", "", "", "", "", "")
+    if sf is None:
+        return None
+    sf.SetText(SF_TEXT_FELD_A, text)
+    if sf.GetText(SF_TEXT_FELD_A) != text:
+        return None
+    ann = _ruf(sf, "GetAnnotation")
+    ann.SetPosition2(x_mm / 1000, y_mm / 1000, 0)
+    return ann
+
+
+def _rechteck_auf_blatt(drw, r: tuple[float, float, float, float]) -> bool:
+    """Rechteck (Blatt-mm) als Skizze auf dem Blatt. Eine Blattskizze folgt dem Blattmaßstab (Spike 28.11.: bei 1:2
+    halb so groß), die Koordinaten werden deshalb durch ihn geteilt; `AddToDB`, damit nichts einrastet."""
+    _ruf(drw, "EditSheet")
+    drw.ClearSelection2(True)
+    eig = list(_ruf(_ruf(drw, "GetCurrentSheet"), "GetProperties2"))
+    f = eig[2] / eig[3] if eig[3] else 1.0
+    skm = _ruf(drw, "SketchManager")
+    skm.AddToDB = True
+    try:
+        segs = skm.CreateCornerRectangle(r[0] / 1000 / f, r[1] / 1000 / f, 0, r[2] / 1000 / f, r[3] / 1000 / f, 0)
+    finally:
+        skm.AddToDB = False
+    drw.ClearSelection2(True)
+    return len(list(segs or ())) == 4
+
+
 def sammelangaben_setzen(drw, zeilen: list[str], format_: str, hoehe_mm: float) -> list[str]:
-    """Sammelhinweis ohne Hinweislinie, linke obere Ecke an der Oberkante des Bands, und rechts daneben die allgemeine
-    Rauheit (`sammel_aufteilung`). Lage über `SetPosition2` (`InsertNote` ohne Auswahl legt den Hinweis sonst unter
-    das Blatt, Spike a). Liefert Meldungen `SAMMELANGABEN_NICHT_GESETZT`."""
-    umbrochen, zeile = sammel_aufteilung(zeilen)
-    x0, _, x1, y1 = sammelband(format_, hoehe_mm)
+    """Sammelhinweis ohne Hinweislinie, linke obere Ecke an der Oberkante des Bands, und rechts das Rauheitsfeld
+    (Nutzer 28.11.2026, `sammelfeld.rauheitsfeld`): Kasten, Rauheitssymbol nach ISO 1302:2002 (Grundsymbol – die
+    Halbzeugflächen bleiben roh –, Feld a `SAMMEL_RAUHEIT`) und der Hinweis „Alle Flächen ohne andere Angabe“. Lage
+    über `SetPosition2` (`InsertNote` ohne Auswahl legt den Hinweis sonst unter das Blatt, Spike a). Liefert Meldungen
+    `SAMMELANGABEN_NICHT_GESETZT`."""
+    umbrochen, _ = sammel_aufteilung(zeilen)
+    band = sammelband(format_, hoehe_mm)
+    feld = rauheitsfeld(band, zeilen)
     meldungen = []
-    if umbrochen and _notiz_an(drw, "\n".join(umbrochen), x0 + 1.0, y1) is None:
+    x, lage_y = sammelzeilen_lage(band)
+    if umbrochen and _notiz_an(drw, "\n".join(umbrochen), x, lage_y + SAMMEL_OBERKANTE_MM) is None:
         meldungen.append("SAMMELANGABEN_NICHT_GESETZT: InsertNote abgelehnt")
-    rechts = x1 - 3.0 - len(SAMMEL_RAUHEIT_ZEILE) * SAMMEL_RAUHEIT_ZEICHEN_MM
-    if _notiz_an(drw, SAMMEL_RAUHEIT_ZEILE, rechts, y1 - zeile * SAMMEL_ZEILENABSTAND_MM) is None:
-        meldungen.append(f"SAMMELANGABEN_NICHT_GESETZT: {SAMMEL_RAUHEIT_ZEILE} – InsertNote abgelehnt")
+    if _rauheitssymbol_frei(drw, SAMMEL_RAUHEIT, *feld.symbol) is None:
+        meldungen.append(f"SAMMELANGABEN_NICHT_GESETZT: Rauheitssymbol {SAMMEL_RAUHEIT} – nicht eingefügt")
+    hinweis = "\n".join(SAMMEL_RAUHEIT_HINWEIS_ZEILEN)
+    if _notiz_an(drw, hinweis, feld.hinweis[0], feld.hinweis[1] + SAMMEL_OBERKANTE_MM) is None:
+        meldungen.append(f"SAMMELANGABEN_NICHT_GESETZT: {' '.join(SAMMEL_RAUHEIT_HINWEIS_ZEILEN)} – InsertNote abgelehnt")
+    if not _rechteck_auf_blatt(drw, feld.rahmen):
+        meldungen.append("SAMMELANGABEN_NICHT_GESETZT: Rahmen des Rauheitsfelds – Skizze abgelehnt")
     drw.ClearSelection2(True)
     return meldungen
 
 
+def _ausserhalb(r: tuple, feld: tuple, tol: float = 0.5) -> bool:
+    return r[0] < feld[0] - tol or r[1] < feld[1] - tol or r[2] > feld[2] + tol or r[3] > feld[3] + tol
+
+
+def _ueber(r: tuple, feld: tuple, tol: float = 0.5) -> bool:
+    return r[0] < feld[2] - tol and feld[0] < r[2] - tol and r[1] < feld[3] - tol and feld[1] < r[3] - tol
+
+
+def _mm(r: tuple) -> str:
+    return f"({r[0]:.0f}, {r[1]:.0f})–({r[2]:.0f}, {r[3]:.0f}) mm"
+
+
 def sammel_pruefen(pdf_texte: list[tuple[str, tuple]], zeilen: list[str], band: tuple) -> list[str]:
-    """Stehen alle Zeilen der Sammelangaben (`sammel_aufteilung` samt allgemeiner Rauheit) im PDF und innerhalb des
-    Bands? (`pruefe_pdf` übergeht Texte am Schriftfeld; ein Überlauf fiele sonst nicht auf.)"""
+    """Stehen alle Zeilen der Sammelangaben (`sammel_aufteilung`) im PDF und innerhalb des Bands, ohne das
+    Rauheitsfeld zu überdecken, und die Texte des Rauheitsfelds (`SAMMEL_RAUHEIT_FELD`) im Kasten? (`pruefe_pdf`
+    übergeht Texte am Schriftfeld; ein Überlauf fiele sonst nicht auf.) Gleiche Texte anderswo (eine Merkmalsrauheit
+    „Ra 3,2“) zählen nicht: es gilt der nächste Treffer."""
     meldungen = []
-    for z in sammel_aufteilung(zeilen)[0] + [SAMMEL_RAUHEIT_ZEILE]:
+    feld = rauheitsfeld(band, zeilen).rahmen
+    for z in sammel_aufteilung(zeilen)[0]:
         treffer = [r for t, r in pdf_texte if t == z.strip()]
         if not treffer:
             meldungen.append(f"SAMMELANGABE_FEHLT: „{z}“ nicht im PDF")
             continue
         r = min(treffer, key=lambda r: math.dist((r[0], r[1]), (band[0], band[3])))
-        if r[0] < band[0] - 0.5 or r[1] < band[1] - 0.5 or r[2] > band[2] + 0.5 or r[3] > band[3] + 0.5:
-            meldungen.append(f"SAMMELANGABE_UEBERLAUF: „{z}“ bei ({r[0]:.0f}, {r[1]:.0f})–({r[2]:.0f}, {r[3]:.0f}) mm "
-                             f"außerhalb des Bands ({band[0]:.0f}, {band[1]:.0f})–({band[2]:.0f}, {band[3]:.0f})")
+        if _ausserhalb(r, band):
+            meldungen.append(f"SAMMELANGABE_UEBERLAUF: „{z}“ bei {_mm(r)} außerhalb des Bands {_mm(band)}")
+        elif _ueber(r, feld):
+            meldungen.append(f"SAMMELANGABE_UEBERLAUF: „{z}“ bei {_mm(r)} überdeckt das Rauheitsfeld {_mm(feld)}")
+    mitte = ((feld[0] + feld[2]) / 2, (feld[1] + feld[3]) / 2)
+    for z in SAMMEL_RAUHEIT_FELD:
+        treffer = [r for t, r in pdf_texte if t == z]
+        if not treffer:
+            meldungen.append(f"SAMMELANGABE_FEHLT: „{z}“ nicht im PDF")
+            continue
+        r = min(treffer, key=lambda r: math.dist(((r[0] + r[2]) / 2, (r[1] + r[3]) / 2), mitte))
+        if _ausserhalb(r, feld):
+            meldungen.append(f"SAMMELANGABE_UEBERLAUF: „{z}“ bei {_mm(r)} außerhalb des Rauheitsfelds {_mm(feld)}")
     return meldungen

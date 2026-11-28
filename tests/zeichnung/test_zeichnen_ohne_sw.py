@@ -340,7 +340,8 @@ def test_uebergabe_json_mit_toleranz_und_form_lage():
 
 
 def test_sammelhoehe_aus_spec():
-    """Task 5: die allgemeine Rauheit steht rechts neben der zweiten Zeile, das Band bleibt so hoch wie die Zeilen."""
+    """Task 5, Nutzer 28.11.2026: das Rauheitsfeld steht rechts neben den ersten Zeilen, das Band bleibt so hoch wie die
+    Zeilen."""
     from swki.zeichnung.toleranzangaben import sammelangaben
     spec = {}
     assert z.sammelhoehe_mm(spec) == len(sammelangaben(spec)) * z.SAMMEL_ZEILE_MM

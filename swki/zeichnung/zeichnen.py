@@ -1239,8 +1239,8 @@ def _sammel_im_pdf(pdf: Path, zeilen: list[str], band: tuple) -> list[str]:
 
 
 def sammelhoehe_mm(spec: dict) -> float:
-    """Höhe der Sammelangaben über dem Schriftfeld: eine Zeile je Zeile des Sammelhinweises (umgebrochen, mit der
-    allgemeinen Rauheit, `anforderungen_setzen.sammel_zeilenzahl`)."""
+    """Höhe der Sammelangaben über dem Schriftfeld: eine Zeile je Zeile des Sammelhinweises (umgebrochen, mit dem
+    Rauheitsfeld daneben, `sammelfeld.sammel_zeilenzahl`)."""
     return anf.sammel_zeilenzahl(sammelangaben(spec)) * SAMMEL_ZEILE_MM
 
 

@@ -365,8 +365,10 @@ def _bezugsdreieck(d, name: str) -> IstAngabe:
 
 
 def _rauheitssymbol(s, name: str) -> IstAngabe:
+    """Rauheit mit Features der angehängten Kante und Lage (Spitze; Rauheitsfeld, Nutzer 28.11.2026)."""
+    ann = _ruf(s, "GetAnnotation")
     return IstAngabe("rauheit", name, rauheitstext(s.GetText(SF_FELD_A), s.GetText(SF_FELD_C)), None, None, (),
-                     None, None, _features(_ruf(s, "GetAnnotation")))
+                     None, None, _features(ann), _lage(ann))
 
 
 # (Wort für Meldungen, erstes, nächstes, Leser) je verketteter Anmerkungsart der Ansicht
@@ -376,11 +378,13 @@ _KETTEN = (("Toleranzrahmen", "GetFirstGTOL", "GetNextGTOL", _rahmen),
 _ANFORDERUNG = ("rauheit", "form_lage", "bezug")   # Anforderungen hängen an einer Kante (Merkmal über ihre Flächen)
 
 
-def _angaben(view, name: str, meldungen: list[str]) -> list[IstAngabe]:
+def _angaben(view, name: str, meldungen: list[str], blatt: bool = False) -> list[IstAngabe]:
     """Notizen, Toleranzrahmen, Bezugsdreiecke, Rauheitssymbole der Ansicht (auch des Blatts: Sammelangaben).
     Nie still (Review 4b): eine Anforderung ohne angehängte Kante – Ausnahme beim Lesen, Fläche, Ecke oder Silhouette
     statt Kante – meldet RUECKLESEN_UNVOLLSTAENDIG (ohne Kante kein Merkmal, I2); ein Hinweis ohne Anhängung
-    (Sammelangabe) bleibt still. Ein COM-Fehler an einer Anmerkung ist eine Meldung, die übrigen werden gelesen (M4)."""
+    (Sammelangabe) bleibt still, ebenso ein Rauheitssymbol ohne Anhängung auf dem Blatt (`blatt`; Rauheitsfeld, Nutzer
+    28.11.2026: ob es im Feld steht, entscheidet `pruefen.sammelrauheit_symbole`, sonst ist es ein Mangel Z-TOL-4).
+    Ein COM-Fehler an einer Anmerkung ist eine Meldung, die übrigen werden gelesen (M4)."""
     aus = []
 
     def eins(lies, x, wort: str) -> None:
@@ -391,7 +395,7 @@ def _angaben(view, name: str, meldungen: list[str]) -> list[IstAngabe]:
             return
         if a is None:
             return
-        if a.art in _ANFORDERUNG and not a.features:
+        if a.art in _ANFORDERUNG and not a.features and not (blatt and a.art == "rauheit"):
             _melde(meldungen, f"RUECKLESEN_UNVOLLSTAENDIG: {name} – {a.art} „{a.text}“ ohne angehängte Kante")
         aus.append(a)
 
@@ -438,7 +442,7 @@ def _lies(app, drw, rollen: dict[str, str]) -> Ist:
     v = _ruf(drw, "GetFirstView")
     while v is not None:
         name, typ = str(_ruf(v, "GetName2")), int(_ruf(v, "Type"))
-        angaben += _angaben(v, name, meldungen)
+        angaben += _angaben(v, name, meldungen, blatt=typ == BLATT)
         if typ != BLATT:
             zaehler, nenner = list(_ruf(v, "ScaleRatio"))[:2]
             art = {SCHNITT: "schnitt", EINZELHEIT: "einzelheit"}.get(typ, "ansicht")

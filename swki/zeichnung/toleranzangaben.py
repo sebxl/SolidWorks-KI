@@ -7,10 +7,12 @@ from swki.spec.ausdruck import AusdruckFehler, auswerten, namen
 from swki.zeichnung.angaben import zahl
 
 SAMMEL_RAUHEIT = "Ra 3,2"
-# Allgemeine Rauheit als eigener Hinweis rechts im Band (Z1.4 sucht `SAMMEL_RAUHEIT` im Text der Notizen); Wortlaut
-# ist ein Vorschlag (ISO 21920-1 zeichnet sie als Symbol „√Ra 3,2 (√)“ in Schriftfeldnähe, recherche.md Kap. 6: C).
-# Hier statt in `anforderungen_setzen` (pywin32), damit `pruefen.soll_luecken` die Zeile erkennt (Review 4b, I3)
-SAMMEL_RAUHEIT_ZEILE = f"Oberflächen ohne Angabe: {SAMMEL_RAUHEIT}"
+# Sammelrauheit (Nutzer 28.11.2026): Rauheitsfeld über dem Schriftfeld (`sammelfeld.rauheitsfeld`) mit dem
+# Rauheitssymbol nach ISO 1302:2002 (Feld a `SAMMEL_RAUHEIT`) und diesem Hinweis in zwei Zeilen; ersetzt die Textzeile
+# „Oberflächen ohne Angabe: Ra 3,2“. Hier statt in `anforderungen_setzen` (pywin32), damit `pruefen` sie kennt.
+SAMMEL_RAUHEIT_HINWEIS_ZEILEN = ("Alle Flächen ohne", "andere Angabe")
+SAMMEL_RAUHEIT_HINWEIS = " ".join(SAMMEL_RAUHEIT_HINWEIS_ZEILEN)
+SAMMEL_RAUHEIT_FELD = (SAMMEL_RAUHEIT,) + SAMMEL_RAUHEIT_HINWEIS_ZEILEN   # Textzeilen des Felds im PDF
 _ALLGEMEINTOLERANZ = "Allgemeintoleranzen ISO 2768-1:1989 – m"
 _TOLERIERUNG = "Tolerierung ISO 8015:2011"
 _KANTEN = "Kanten ISO 13715 −0,1 … −0,3"

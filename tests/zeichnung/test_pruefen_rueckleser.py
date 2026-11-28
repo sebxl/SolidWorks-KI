@@ -212,7 +212,8 @@ def test_form_lage_anzahl_ohne_soll_nicht_geprueft():
     """Direktaufruf ohne `anzahl` (Task 3): die Instanzzahl wird nicht verglichen."""
     ist = _ideal_sp()
     angaben = tuple(replace(a, anzahl=None) for a in ist.angaben)
-    assert pruefe_toleranzen(replace(ist, angaben=angaben), plan_spannplatte_z(), REGELN)["ok"] is True
+    ist = pruefen.ohne_sammelrauheit(replace(ist, angaben=angaben), _spec_sp())   # wie in `bewerte`
+    assert pruefe_toleranzen(ist, plan_spannplatte_z(), REGELN)["ok"] is True
 
 
 def test_mmc_tag():
@@ -279,7 +280,7 @@ def test_mehrdeutig_gleicher_inhalt_deckt_genau_einen():
     t1 = next(a for a in ideal.angaben if a.art == "rauheit" and a.merkmal == "t1")
     gemeinsam = replace(t1, merkmal=None, features=("st", "t1"))
     ist = merkmale_zuordnen(replace(ideal, angaben=tuple(gemeinsam if a is t1 else a for a in ideal.angaben)), spec, plan)
-    assert sorted(a.merkmal for a in ist.angaben if a.art == "rauheit") == ["st", "st/t1"]
+    assert sorted(a.merkmal for a in ist.angaben if a.art == "rauheit" and a.lage is None) == ["st", "st/t1"]
     assert _bewerte(ist, plan, spec)["bestanden"] is True
     # deckt nur einen: fehlt auch die Angabe an st, fehlt ein Eintrag
     ohne_st = replace(ist, angaben=tuple(a for a in ist.angaben if not (a.art == "rauheit" and a.merkmal == "st")))
@@ -367,9 +368,12 @@ def test_stil_spannplatte_ideal_bleibt_bestanden():
 
 @pytest.mark.parametrize("meldung,pruefung,regel_id,bestanden", [
     ("SAMMELANGABE_FEHLT: „Halbzeug: Flach“ nicht im PDF", "sammelangaben", "Z-SAM-1", False),
-    ("SAMMELANGABE_FEHLT: „Oberflächen ohne Angabe: Ra 3,2“ nicht im PDF", "sammelangaben", "Z-SAM-7", False),
-    ("SAMMELANGABE_UEBERLAUF: „Oberflächen ohne Angabe: Ra 3,2“ bei (300, 20)–(400, 24) mm außerhalb des Bands "
-     "(200, 30)–(390, 60)", "sammelangaben", "Z-SAM-7", False),
+    ("SAMMELANGABE_FEHLT: „Ra 3,2“ nicht im PDF", "sammelangaben", "Z-SAM-7", False),
+    ("SAMMELANGABE_FEHLT: „andere Angabe“ nicht im PDF", "sammelangaben", "Z-SAM-7", False),
+    ("SAMMELANGABE_UEBERLAUF: „Alle Flächen ohne“ bei (300, 20)–(400, 24) mm außerhalb des Rauheitsfelds "
+     "(339, 81)–(410, 95)", "sammelangaben", "Z-SAM-7", False),
+    ("SAMMELANGABE_UEBERLAUF: „Maßgebend ist die Zeichnung“ bei (200, 20)–(380, 24) mm überdeckt das Rauheitsfeld "
+     "(339, 81)–(410, 95)", "lesbarkeit", "Z-LES-1", True),
     ("SAMMELANGABE_UEBERLAUF: „Maßgebend ist die Zeichnung“ bei (200, 20)–(300, 24) mm außerhalb des Bands "
      "(200, 30)–(390, 60)", "lesbarkeit", "Z-LES-1", True),
 ])
@@ -383,7 +387,7 @@ def test_sammelangabe_aus_dem_pdf(meldung, pruefung, regel_id, bestanden):
     assert any(m["regel"] == regel_id and m["pruefung"] == pruefung and m["text"] == meldung for m in u["maengel"])
 
 
-def test_sammel_rauheit_zeile_eine_quelle():
+def test_sammel_rauheitsfeld_eine_quelle():
     from swki.zeichnung import anforderungen_setzen, toleranzangaben
 
-    assert anforderungen_setzen.SAMMEL_RAUHEIT_ZEILE is toleranzangaben.SAMMEL_RAUHEIT_ZEILE
+    assert anforderungen_setzen.SAMMEL_RAUHEIT_FELD is toleranzangaben.SAMMEL_RAUHEIT_FELD

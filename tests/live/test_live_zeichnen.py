@@ -33,12 +33,12 @@ REFERENZ = Path(__file__).parents[1] / "referenz"
 FAELLE = [("buchse", "buchse.yaml", True), ("stil", "spannplatte.yaml", False)]
 
 # Erlaubte Restmeldungen der Stufe-4-Fälle, nach Code (live 28.11.2026). Jeder andere Code – und jede Meldung ohne
-# Code – lässt den Test scheitern. Ra 0,8 an den Stiftbohrungen ohne freie Lage (ANMERKUNG_KREUZT) und die Rauheit an
-# nur einer von n Instanzen (RAUHEIT_NUR_EINE_INSTANZ) sind offene Nutzerentscheidungen (ergebnisse.md, Stufe 4).
+# Code – lässt den Test scheitern. Die Rauheit an nur einer von n Instanzen (RAUHEIT_NUR_EINE_INSTANZ) ist eine offene
+# Nutzerentscheidung (ergebnisse.md, Stufe 4). Stiftbohrungen ohne eigene Rauheit (Nutzer 28.11.2026): kein
+# ANMERKUNG_KREUZT mehr.
 REST_SPANNPLATTE_Z = {
-    "ANMERKUNG_KREUZT",          # nur „st rauheit „Ra 0,8““, siehe unten
-    "RAUHEIT_NUR_EINE_INSTANZ",  # Taschenboden (t1/s1) und Stiftbohrungen: SolidWorks setzt eine Hinweislinie
-    "FUNKTION_UNBESTAETIGT",     # stiftbohrung: C-Werte bestätigt der Nutzer
+    "RAUHEIT_NUR_EINE_INSTANZ",  # nur der Taschenboden (t1/s1): SolidWorks setzt eine Hinweislinie
+    "FUNKTION_UNBESTAETIGT",     # stiftbohrung: Passung H7 (C) bestätigt der Nutzer
     "ANSICHT_DICHT",             # Nutzer 19.11.2026: „13 Maße hinnehmen“
     "EINZELHEIT_NICHT_FUER",     # Protokoll der Ansichtswahl
     "EINZELHEIT",                # Protokoll: Tasche in die Einzelheit ausgelagert
@@ -266,9 +266,9 @@ def test_zeichnen_stufe4(capsys, tmp_path, spec, drehteil, erlaubt, min_tol, min
         meldungen = z["meldungen"]
         fremd = [m for m in meldungen if meldungscode(m) not in erlaubt]
         assert not fremd, fremd
-        # Ra 0,8 an den Stiftbohrungen findet keine freie Lage (Nutzerentscheidung); jede andere Kreuzung ist neu
-        kreuzt = [m for m in meldungen if meldungscode(m) == "ANMERKUNG_KREUZT"]
-        assert all(m.startswith("ANMERKUNG_KREUZT: st rauheit „Ra 0,8“") for m in kreuzt), kreuzt
+        # Nutzer 28.11.2026: Rauheit an nur einer Instanz bleibt allein beim Taschenboden (Stiftbohrung ohne Rauheit)
+        eine = [m for m in meldungen if meldungscode(m) == "RAUHEIT_NUR_EINE_INSTANZ"]
+        assert all(m.startswith("RAUHEIT_NUR_EINE_INSTANZ: t1 ") for m in eine), eine
         assert any(m.startswith("LAUF_NICHT_BESTANDEN") for m in meldungen), meldungen
         assert z["masse"]["gesetzt"] == z["masse"]["plan"], (z["masse"], meldungen)
         assert z["angaben"]["plan"] >= 1 and z["angaben"]["gesetzt"] == z["angaben"]["plan"], (z["angaben"], meldungen)
@@ -279,10 +279,12 @@ def test_zeichnen_stufe4(capsys, tmp_path, spec, drehteil, erlaubt, min_tol, min
         assert Path(z["zeichnung"]).stem in roh, "Zeichnungsnummer fehlt im Schriftfeld"
         text = " ".join(roh.split())
         spec_daten = freigegebene_spec(spec_pfad)
-        from swki.zeichnung.anforderungen_setzen import SAMMEL_RAUHEIT_ZEILE  # spät: pywin32
+        from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT_FELD
         erwartet = list(sammelangaben({})[:4])  # die vier immer geltenden Sammelzeilen
         assert erwartet == sammelangaben(spec_daten)[:4]
-        erwartet += sammelangaben(spec_daten)[4:] + [SAMMEL_RAUHEIT_ZEILE]  # Behandlung, Halbzeug, allgemeine Rauheit
+        # Behandlung, Halbzeug; Rauheitsfeld (Nutzer 28.11.2026): „Ra 3,2“ im Symbol, „Alle Flächen ohne“ / „andere Angabe“
+        erwartet += sammelangaben(spec_daten)[4:] + list(SAMMEL_RAUHEIT_FELD)
+        assert "Oberflächen ohne Angabe" not in text
         if drehteil:
             erwartet += ["4 × Ø6 – durch", "TK Ø40", "H7", "k6", "einsatzgehärtet und angelassen (60 ± 2) HRC"]
         else:
@@ -291,8 +293,9 @@ def test_zeichnen_stufe4(capsys, tmp_path, spec, drehteil, erlaubt, min_tol, min
                          "EINZELHEIT Z"]
             # Anmerkungen als ganze Zeilen (sonst erfüllt „±0,02“ schon „0,02“): Rauheit, ▱-Rahmen, //-Rahmen mit Bezug
             zeilen = {" ".join(z.split()) for z in roh.splitlines()}
-            fehlt = [z for z in ("Ra 0,8", "Ra 1,6", "0,02", "0,05 A", "2 ×") if z not in zeilen]
+            fehlt = [z for z in ("Ra 1,6", "0,02", "0,05 A", "2 ×") if z not in zeilen]
             assert not fehlt, (fehlt, roh)
+            assert "Ra 0,8" not in zeilen, "Rauheit an der Stiftbohrung (Nutzer 28.11.2026: keine eigene)"
         fehlt = [zeile for zeile in erwartet if zeile not in text]
         assert not fehlt, (fehlt, roh)
         assert "– 15 tief" not in text, "Stiftangabe mit Strich am Zeilenende (vor Nachbesserung D)"

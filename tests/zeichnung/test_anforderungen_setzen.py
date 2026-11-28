@@ -323,22 +323,46 @@ def test_umbrechen_und_aufteilung():
     haerte = "einsatzgehärtet und angelassen (60 ± 2) HRC, CHD = (0,8 +0,4/0) mm (550 HV1)"
     assert an.umbrechen([haerte]) == ["einsatzgehärtet und angelassen (60 ± 2) HRC,", "CHD = (0,8 +0,4/0) mm (550 HV1)"]
     assert " ".join(an.umbrechen([haerte])) == haerte                # Z1.4 vergleicht whitespace-normalisiert
-    # allgemeine Rauheit rechts neben der ersten kurzen Zeile, kein eigener Platz im Band (Live 27.11.: A3 1:2 → A4 1:5)
+    # Rauheitsfeld rechts neben den ersten kurzen Zeilen, kein eigener Platz im Band (Live 27.11.: A3 1:2 → A4 1:5)
     zeilen = ["Allgemeintoleranzen ISO 2768-1:1989 – m", "Tolerierung ISO 8015:2011"]
-    assert an.sammel_aufteilung(zeilen) == (zeilen, 1) and an.sammel_zeilenzahl(zeilen) == 2
-    lang = ["x" * 60, "y" * 60]
-    assert an.sammel_aufteilung(lang) == (lang, 2) and an.sammel_zeilenzahl(lang) == 3  # passt nirgends: eine Zeile mehr
+    assert an.sammel_aufteilung(zeilen) == (zeilen, 0) and an.sammel_zeilenzahl(zeilen) == 3   # Kasten 14 mm hoch
+
+
+def _feldtexte(feld):
+    """PDF-Zeilen des Rauheitsfelds an ihrer gemessenen Lage (Spike 28.11.2026)."""
+    (sx, sy), (hx, hy) = feld.symbol, feld.hinweis
+    return [("Ra 3,2", (sx + 7.0, sy + 4.6, sx + 20.8, sy + 11.0)),
+            ("Alle Flächen ohne", (hx, hy - 4.95, hx + 40.8, hy + 1.43)),
+            ("andere Angabe", (hx, hy - 9.47, hx + 36.8, hy - 3.1))]
 
 
 def test_sammel_pruefen_ueberlauf_und_fehlend():
     band = (230.0, 65.0, 410.0, 100.0)
-    texte = [("Tolerierung ISO 8015:2011", (231.0, 93.0, 288.0, 99.5)), ("Maßgebend ist die Zeichnung", (231.0, 60.0, 298.0, 66.0)),
-             ("Oberflächen ohne Angabe: Ra 3,2", (330.0, 88.0, 408.0, 95.0))]
-    assert an.sammel_pruefen(texte, ["Tolerierung ISO 8015:2011"], band) == []
-    meld = an.sammel_pruefen(texte, ["Maßgebend ist die Zeichnung", "Halbzeug: Flach"], band)
+    feld = an.rauheitsfeld(band, ["Tolerierung ISO 8015:2011"])
+    texte = [("Tolerierung ISO 8015:2011", (231.0, 93.0, 288.0, 99.5)), ("Maßgebend ist die Zeichnung", (231.0, 60.0, 298.0, 66.0))]
+    assert an.sammel_pruefen(texte + _feldtexte(feld), ["Tolerierung ISO 8015:2011"], band) == []
+    meld = an.sammel_pruefen(texte + _feldtexte(feld), ["Maßgebend ist die Zeichnung", "Halbzeug: Flach"], band)
     assert meld[0].startswith("SAMMELANGABE_UEBERLAUF: „Maßgebend ist die Zeichnung“")
     assert meld[1] == "SAMMELANGABE_FEHLT: „Halbzeug: Flach“ nicht im PDF"
-    assert an.sammel_pruefen(texte[:1], [], band) == ["SAMMELANGABE_FEHLT: „Oberflächen ohne Angabe: Ra 3,2“ nicht im PDF"]
+    assert an.sammel_pruefen(texte[:1], ["Tolerierung ISO 8015:2011"], band) == [
+        f"SAMMELANGABE_FEHLT: „{t}“ nicht im PDF" for t in ("Ra 3,2", "Alle Flächen ohne", "andere Angabe")]
+
+
+def test_sammel_pruefen_rauheitsfeld_lage():
+    """Nutzer 28.11.2026: Symbol und Hinweis stehen im Kasten; eine Sammelzeile darf ihn nicht überdecken. Ein „Ra 3,2“
+    einer Merkmalsrauheit anderswo auf dem Blatt zählt nicht (der Treffer am Feld gilt)."""
+    band = (230.0, 65.0, 410.0, 100.0)
+    zeilen = ["Tolerierung ISO 8015:2011"]
+    feld = an.rauheitsfeld(band, zeilen)
+    zeile = [("Tolerierung ISO 8015:2011", (231.0, 93.0, 288.0, 99.5))]
+    anderswo = [("Ra 3,2", (100.0, 200.0, 114.0, 206.0))]
+    assert an.sammel_pruefen(zeile + anderswo + _feldtexte(feld), zeilen, band) == []
+    verrutscht = [(t, (r[0], r[1] - 30, r[2], r[3] - 30)) if t == "Ra 3,2" else (t, r) for t, r in _feldtexte(feld)]
+    meld = an.sammel_pruefen(zeile + verrutscht, zeilen, band)
+    assert len(meld) == 1 and meld[0].startswith("SAMMELANGABE_UEBERLAUF: „Ra 3,2“") and "Rauheitsfeld" in meld[0]
+    breit = [("Tolerierung ISO 8015:2011", (231.0, 93.0, 380.0, 99.5))]   # breiter gedruckt als geschätzt
+    meld = an.sammel_pruefen(breit + _feldtexte(feld), zeilen, band)
+    assert len(meld) == 1 and meld[0].startswith("SAMMELANGABE_UEBERLAUF: „Tolerierung") and "Rauheitsfeld" in meld[0]
 
 
 def test_notiztext_huelle_als_symbol():

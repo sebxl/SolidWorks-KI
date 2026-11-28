@@ -105,12 +105,17 @@ def test_zeichnung_pruefen(capsys, tmp_path, spec, bestanden):
         # Ø an Linearmaßen des Längsschnitts (Präfix <MOD-DIAM>): Hilfslinien lesbar, `verdeckt` bestimmt (Review 4b, M3)
         oe_linear = [m for m in ist["masse"] if m["art"] == "durchmesser" and "<MOD-DIAM>" in m["praefix"]]
         assert all(m["verdeckt"] is False for m in oe_linear), [(m["name"], m["verdeckt"]) for m in oe_linear]
-        # jede Rauheit, Form/Lage und jeder Bezug hängt an einer Kante mit Merkmal (Review 4b, I1/I2)
-        anf = [a for a in ist["angaben"] if a["art"] in ANFORDERUNGEN]
+        # Rauheitsfeld (Nutzer 28.11.2026): genau ein Rauheitssymbol ohne Kante auf dem Blatt, „Ra 3,2“, mit Lage
+        sammel = [a for a in ist["angaben"] if a["art"] == "rauheit" and not a["features"]]
+        assert [(a["text"], a["merkmal"], a["lage"] is not None) for a in sammel] == [("Ra 3,2", None, True)], sammel
+        assert next(p for p in b["pruefungen"] if p["id"] == "sammelangaben")["ok"] is True, b["maengel"]
+        # jede andere Rauheit, Form/Lage und jeder Bezug hängt an einer Kante mit Merkmal (Review 4b, I1/I2)
+        anf = [a for a in ist["angaben"] if a["art"] in ANFORDERUNGEN and a not in sammel]
         assert all(a["features"] and a["merkmal"] for a in anf), [(a["art"], a["text"]) for a in anf
                                                                  if not (a["features"] and a["merkmal"])]
         if spec == "spannplatte_z.yaml":   # die Buchse Z hat keine Rauheit, Form/Lage oder Bezüge
-            assert len(anf) == 6, [(a["art"], a["text"]) for a in anf]
+            # Ra 1,6, ⏥ 0,02, // 0,05 A, A, B (Stiftbohrung ohne Rauheit, Nutzer 28.11.2026)
+            assert len(anf) == 5, [(a["art"], a["text"]) for a in anf]
         # kein Maß an verdeckter Kante oder ohne sichtbaren Bezug (auch nicht an der gedachten Ecke der R4-Tasche)
         assert next(p for p in b["pruefungen"] if p["id"] == "ansichten")["ok"] is True
         assert next(p for p in b["pruefungen"] if p["id"] == "ueberbestimmt")["ok"] is True
@@ -308,6 +313,32 @@ def test_sammelnotiz_ausserhalb_des_blatts(capsys, tmp_path):
         assert (_sha(teil), _sha(drw)) == vorher, "das Original (Teil oder Zeichnung) wurde verändert"
         assert [(p, r, m) for p, r, m, _ in neu] == [("sammelangaben", "Z-SAM-1", "sammelangabe")], neu
         assert "außerhalb des Bands" in neu[0][3] and f"{lage[0] * 1000:.0f}) mm" in neu[0][3], neu
+        assert bericht["bestanden"] is False
+    finally:
+        shutil.rmtree(lade_rechner().arbeitsordner / auftrag.name, ignore_errors=True)
+
+
+def test_rauheitssymbol_ausserhalb_des_felds(capsys, tmp_path):
+    """Nutzer 28.11.2026: Das Rauheitssymbol des Rauheitsfelds ist die Sammelrauheit nur im Feld über dem Schriftfeld.
+    In der Kopie per `SetPosition2` links oben aufs Blatt gesetzt: genau zwei neue Mängel – die Sammelrauheit fehlt
+    (Z-SAM-7), und das freie Symbol ist eine Rauheit ohne Merkmal (Z-TOL-4)."""
+    auftrag = tmp_path / "Z1-Z14NEG-rauheitsfeld"
+    auftrag.mkdir()
+    try:
+        spec_pfad, lauf, teil, drw, z = _gezeichnet(capsys, auftrag, "spannplatte_z.yaml")
+        vorher = (_sha(teil), _sha(drw))
+
+        def aendern(doc):
+            s = _ruf(_blatt(doc), "GetFirstSFSymbol")
+            assert s is not None and _ruf(s, "GetNext") is None, "genau ein Rauheitssymbol auf dem Blatt erwartet"
+            assert _ruf(s, "GetAnnotation").SetPosition2(0.06, 0.25, 0)
+
+        kopie = _veraendere(drw, "rauheitsfeld", aendern)
+        neu, bericht = _neue_maengel(capsys, spec_pfad, lauf, kopie)
+        assert (_sha(teil), _sha(drw)) == vorher, "das Original (Teil oder Zeichnung) wurde verändert"
+        assert [(p, r, m) for p, r, m, _ in neu] == [("sammelangaben", "Z-SAM-7", "sammelangabe"),
+                                                     ("toleranzen", "Z-TOL-4", "ohne Merkmal")], neu
+        assert neu[0][3].startswith("fehlt: Rauheitssymbol") and "Ra 3,2" in neu[1][3], neu
         assert bericht["bestanden"] is False
     finally:
         shutil.rmtree(lade_rechner().arbeitsordner / auftrag.name, ignore_errors=True)

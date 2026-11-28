@@ -14,7 +14,9 @@ from swki.zeichnung.ist import Ist, IstAngabe, IstMass, IstToleranz
 from swki.zeichnung.lesbarkeit import pruefe_pdf, texte
 from swki.zeichnung.massplan import Mass
 from swki.zeichnung.regeln import Regel, regel
-from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, SAMMEL_RAUHEIT_ZEILE, Toleranz, sammelangaben, toleranztext
+from swki.zeichnung.sammelfeld import sammel_zeilenzahl, sammelband
+from swki.zeichnung.toleranzangaben import (SAMMEL_RAUHEIT, SAMMEL_RAUHEIT_FELD, SAMMEL_RAUHEIT_HINWEIS, Toleranz,
+                                            sammelangaben, toleranztext)
 
 # ISO 5455 (Entscheidung 5): Vorzugsreihe für das Blatt und jede Einzelheit.
 VORZUGSMASSSTAEBE: tuple[str, ...] = ("1:1", "1:2", "1:5", "1:10", "1:20", "1:50", "1:100",
@@ -555,12 +557,10 @@ def _sam_regel(i: int) -> str:
 
 
 def sammelband_der_spec(format_: str, spec: dict) -> tuple[float, float, float, float] | None:
-    """Band der Sammelangaben über dem Schriftfeld wie beim Zeichnen (`anforderungen_setzen.sammelband`, Höhe wie
+    """Band der Sammelangaben über dem Schriftfeld wie beim Zeichnen (`sammelfeld.sammelband`, Höhe wie
     `zeichnen.sammelhoehe_mm`); None bei unbekanntem Format."""
     if format_ not in FORMATE:
         return None
-    from swki.zeichnung.anforderungen_setzen import sammel_zeilenzahl, sammelband  # spät: pywin32
-
     return sammelband(format_, sammel_zeilenzahl(sammelangaben(spec)) * SAMMEL_ZEILE_MM)
 
 
@@ -570,11 +570,28 @@ def _im_band(lage: tuple[float, float], band: tuple[float, float, float, float])
             and band[1] - _LAGE_TOL_MM <= y <= band[3] + _LAGE_TOL_MM)
 
 
+def sammelrauheit_symbole(ist: Ist, spec: dict) -> list[IstAngabe]:
+    """Rauheitssymbole des Rauheitsfelds (Nutzer 28.11.2026): ohne angehängte Kante, ohne Merkmal, Lage (Spitze) im
+    Band über dem Schriftfeld. Sie sind die Sammelrauheit (Z-SAM-7), keine Merkmalsrauheit; ein freies Symbol außerhalb
+    des Bands oder ohne Lage bleibt eine Rauheit ohne Merkmal (Z-TOL-4)."""
+    band = sammelband_der_spec(ist.format_, spec)
+    if band is None:
+        return []
+    return [a for a in ist.angaben if a.art == "rauheit" and not a.features and a.merkmal is None
+            and a.lage is not None and _im_band(a.lage, band)]
+
+
+def ohne_sammelrauheit(ist: Ist, spec: dict) -> Ist:
+    """Ist ohne die Symbole des Rauheitsfelds (`sammelrauheit_symbole`): Eingabe der Merkmalsprüfung Z-TOL-4."""
+    sammel = {id(a) for a in sammelrauheit_symbole(ist, spec)}
+    return replace(ist, angaben=tuple(a for a in ist.angaben if id(a) not in sammel))
+
+
 def _sammel_lage(ist: Ist, spec: dict, regeln: list[Regel]) -> tuple[list[dict], str | None]:
-    """Gesamtreview (c): jede Notiz, die eine Zeile der Sammelangaben oder die Sammelrauheit trägt, steht mit ihrem
-    Ankerpunkt (`IstAngabe.lage`, linke obere Ecke) im Band über dem Schriftfeld (`sammelband_der_spec`). Sonst ein
-    Mangel der Regel ihrer ersten Zeile (Z-SAM-1, …; die Sammelrauheit Z-SAM-7: nahe dem Schriftfeld). Ohne Lage oder
-    ohne bekanntes Format: nicht geprüft (Grund)."""
+    """Gesamtreview (c): jede Notiz, die eine Zeile der Sammelangaben oder den Hinweis des Rauheitsfelds trägt, steht
+    mit ihrem Ankerpunkt (`IstAngabe.lage`, linke obere Ecke) im Band über dem Schriftfeld (`sammelband_der_spec`).
+    Sonst ein Mangel der Regel ihrer ersten Zeile (Z-SAM-1, …; der Hinweis der Sammelrauheit Z-SAM-7: nahe dem
+    Schriftfeld). Ohne Lage oder ohne bekanntes Format: nicht geprüft (Grund)."""
     zeilen = [normtext(z) for z in sammelangaben(spec)]
     band = sammelband_der_spec(ist.format_, spec)
     maengel, ohne_lage = [], 0
@@ -583,7 +600,7 @@ def _sammel_lage(ist: Ist, spec: dict, regeln: list[Regel]) -> tuple[list[dict],
             continue
         text = normtext(a.text)
         treffer = [i for i, z in enumerate(zeilen) if z in text]
-        rauheit = re.search(re.escape(SAMMEL_RAUHEIT) + r"(?!\d)", text) is not None
+        rauheit = normtext(SAMMEL_RAUHEIT_HINWEIS) in text
         if not treffer and not rauheit:
             continue
         if band is None:
@@ -601,8 +618,29 @@ def _sammel_lage(ist: Ist, spec: dict, regeln: list[Regel]) -> tuple[list[dict],
     return maengel, grund
 
 
+def _sammelrauheit(ist: Ist, spec: dict, alle: str, regeln: list[Regel]) -> list[dict]:
+    """Z-SAM-7 (Nutzer 28.11.2026): genau ein Rauheitssymbol im Rauheitsfeld (`sammelrauheit_symbole`) mit Feld a
+    `SAMMEL_RAUHEIT`, dazu der Hinweis „Alle Flächen ohne andere Angabe“. Die Textzeile „Oberflächen ohne Angabe: Ra 3,2“
+    (bis 28.11.) genügt nicht mehr."""
+    maengel = []
+    soll = normtext(SAMMEL_RAUHEIT)
+    symbole = [normtext(a.text) for a in sammelrauheit_symbole(ist, spec)]
+    if not symbole:
+        maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe",
+                               f"fehlt: Rauheitssymbol {SAMMEL_RAUHEIT} im Rauheitsfeld über dem Schriftfeld"))
+    elif soll not in symbole:
+        maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe",
+                               f"weicht ab: Rauheitssymbol {symbole[0]} statt {SAMMEL_RAUHEIT} im Rauheitsfeld"))
+    for s in symbole[1:]:
+        maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe", f"überzählig: Rauheitssymbol {s} im Rauheitsfeld"))
+    if normtext(SAMMEL_RAUHEIT_HINWEIS) not in alle:
+        maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe", f"fehlt: {SAMMEL_RAUHEIT_HINWEIS}"))
+    return maengel
+
+
 def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
-    """Jede Zeile von `sammelangaben(spec)` steht (normalisiert) im Text aller Notizen, dazu die Sammelrauheit (Z-SAM-7).
+    """Jede Zeile von `sammelangaben(spec)` steht (normalisiert) im Text aller Notizen, dazu die Sammelrauheit als
+    Rauheitsfeld (Z-SAM-7, `_sammelrauheit`).
     Verboten (Z-SAM-3, je Notiz geprüft, damit „… 2768-1 m“ und eine Folgenotiz „K…“ kein „mK“ ergeben): „2768-…K“ und
     „DIN 7167“. Das Muster erlaubt Leerraum, verschiedene Striche, Jahr und Groß-/Kleinschreibung. Die Lage prüft
     `_sammel_lage` (Gesamtreview c: Ankerpunkt im Band; vorher erfüllte eine Notiz unter dem Blatt die Regeln); die
@@ -614,8 +652,7 @@ def pruefe_sammelangaben(ist: Ist, spec: dict, regeln: list[Regel]) -> dict:
     for i, zeile in enumerate(sammelangaben(spec)):
         if normtext(zeile) not in alle:
             maengel.append(_mangel(regeln, _sam_regel(i), "sammelangabe", f"fehlt: {zeile}"))
-    if not re.search(re.escape(SAMMEL_RAUHEIT) + r"(?!\d)", alle):
-        maengel.append(_mangel(regeln, "Z-SAM-7", "sammelangabe", f"fehlt: Sammelrauheit {SAMMEL_RAUHEIT}"))
+    maengel += _sammelrauheit(ist, spec, alle, regeln)
     for n in notizen:
         if _ISO_2768_K.search(n) or "DIN 7167" in n:
             maengel.append(_mangel(regeln, "Z-SAM-3", "sammelangabe", f"verboten: {n}"))
@@ -757,8 +794,8 @@ MELDUNG_REGEL: dict[str, tuple[str, str]] = {
     # Sammelangaben im PDF (`anforderungen_setzen.sammel_pruefen`, Review 4b I3; den Ankerpunkt je Notiz prüft seit dem
     # Gesamtreview (c) `pruefe_sammelangaben` selbst). Vorher: eine Notiz unter dem Blatt (gescheitertes
     # `SetPosition2`) erfüllte Z-SAM-1/2/4/6 trotzdem. Fehlt eine Zeile im PDF, fehlt die Sammelangabe (Z-SAM-1, hart). Läuft eine Zeile über das Band
-    # hinaus, steht sie noch auf dem Blatt: ein Lesbarkeitshinweis – außer der Sammelrauheit, die nahe dem Schriftfeld
-    # stehen muss (Z-SAM-7, `_SAMMEL_RAUHEIT_REGEL`).
+    # hinaus oder überdeckt sie das Rauheitsfeld, steht sie noch auf dem Blatt: ein Lesbarkeitshinweis – außer den
+    # Texten des Rauheitsfelds, die nahe dem Schriftfeld stehen müssen (Z-SAM-7, `_SAMMEL_RAUHEIT_REGEL`).
     "SAMMELANGABE_FEHLT": ("sammelangaben", "Z-SAM-1"), "SAMMELANGABE_UEBERLAUF": _LES,
     # Bezeichnung der Ansichten, sichtbarer Bezug
     "EINZELHEIT_BUCHSTABE": ("ansichten", "Z-ANS-2"), "SCHNITT_BUCHSTABE": ("ansichten", "Z-ANS-2"),
@@ -809,8 +846,10 @@ _SAMMEL_RAUHEIT_REGEL = ("sammelangaben", "Z-SAM-7")
 
 
 def _regel_der_meldung(code: str, meldung: str) -> tuple[str, str]:
-    """`MELDUNG_REGEL`, bei den Sammelangaben im PDF je Zeile: die Sammelrauheit (`SAMMEL_RAUHEIT_ZEILE`) ist Z-SAM-7."""
-    if code in ("SAMMELANGABE_FEHLT", "SAMMELANGABE_UEBERLAUF") and f"„{SAMMEL_RAUHEIT_ZEILE}“" in meldung:
+    """`MELDUNG_REGEL`, bei den Sammelangaben im PDF je Zeile: die Texte des Rauheitsfelds (`SAMMEL_RAUHEIT_FELD`) sind
+    Z-SAM-7."""
+    if code in ("SAMMELANGABE_FEHLT", "SAMMELANGABE_UEBERLAUF") and any(
+            meldung.partition(": ")[2].startswith("„" + z + "“") for z in SAMMEL_RAUHEIT_FELD):
         return _SAMMEL_RAUHEIT_REGEL
     return MELDUNG_REGEL[code]
 
@@ -925,6 +964,7 @@ def bewerte(ist: Ist, plan: list[Mass], spec: dict, standard: dict, regeln: list
     from swki.zeichnung.anforderungen_setzen import instanzen  # spät: das Modul zieht pywin32 nach
 
     anzahl = {m.merkmal: instanzen(spec, m.merkmal) for m in plan if m.quelle == "form_lage"}
+    ohne_sammel = ohne_sammelrauheit(ist, spec)  # Rauheitsfeld: Z-SAM-7, keine Merkmalsrauheit (Nutzer 28.11.2026)
     pdf_texte = None
     if pdf is not None:
         try:
@@ -933,7 +973,7 @@ def bewerte(ist: Ist, plan: list[Mass], spec: dict, standard: dict, regeln: list
             pdf_texte = None
     pruefungen = {p["id"]: p for p in (
         pruefe_vollstaendig(ist, plan, regeln), pruefe_ueberbestimmt(ist, regeln),
-        pruefe_toleranzen(ist, plan, regeln, anzahl), pruefe_sammelangaben(ist, spec, regeln),
+        pruefe_toleranzen(ohne_sammel, plan, regeln, anzahl), pruefe_sammelangaben(ist, spec, regeln),
         pruefe_schriftfeld(ist, standard, regeln, pdf_texte), pruefe_ansichten(ist, regeln),
         pruefe_lesbarkeit(pdf, ist.format_, regeln, rahmen_texte(ist)), pruefe_gewinde(ist, plan, regeln),
         pruefe_drehteil(ist, plan, regeln))}
