@@ -116,3 +116,65 @@ Spike `spikes/z1_diag_bohrungsangabe.py` auf der Spannplatten-Zeichnung (SW 2025
 | Ansatz der Hinweislinie am Kreis (Task 4, `spikes/z1_diag_hinweis_ansatz.py`) | Nach `SelectEntity(kante)` endet der Pfeil auf der Gegenseite des Kreises (Spannplatte und Buchse unten links), die Hinweislinie läuft quer durch die Bohrung. `SelectByID2("", "EDGE", x, y, 0, …)` mit einem Blattpunkt auf dem Kreis wählt Ansicht (Typ 12) und Kante (Typ 1); der Pfeil sitzt dann an diesem Punkt (Soll 45°/135°, Ist 49°/137°) | `IModelDocExtension.SelectByID2` (9), `ISelectionMgr.GetSelectedObjectType3` (2), `GetSelectedObject6` (2) | Kreispunkt zum Text hin wählen; dreht die Lage um mehr als 30°, Hinweis neu einfügen |
 | Größe und Bezugspunkt des Hinweises (Task 4) | `INote.GetExtent` gleich nach `InsertNote`: 53 × 13,5 mm, 13,5 mm links vor dem Text (Hinweislinie eingerechnet); im PDF 39,8 × 10,9 mm. `IAnnotation.GetPosition` = linke obere Ecke, Textoberkante im PDF 1,4 mm darüber | `INote.GetExtent`, `IAnnotation.GetPosition` | Größe am PDF vermessen (`lesbarkeit.texte`), nicht über `GetExtent` |
 | Beschriftung über der Einzelheit (Task 4) | Unter der Ansicht lag „EINZELHEIT B“ (8,5 mm Schrift) auf der unteren Maßreihe; die Reihen rückten aus dem Zeichenfeld. Über der Ansicht kein Befund | `SetUserPreferenceToggle(337, 0, True)` (`swDetailingDetailViewLabels_AboveView`) | in jeder Zeichnung vor dem Anlegen der Einzelheit setzen |
+
+## Nachtrag: Stufe 4 – Toleranzen, Ⓔ, Rauheit, Bezug, Form/Lage (27.11.2026)
+
+Spikes `spikes/z1_diag_stufe4.py` (a) bis `z1_diag_stufe4f.py` (f) auf der Spannplatten-Zeichnung aus `swki zeichnen`
+(Lauf 1, SW 2025). Jeder Spike speichert eine Kopie der Zeichnung, schließt sie ohne das Teil zu speichern, öffnet sie
+neu und liest zurück. Bewertet wurde nach PDF-Text und Ausschnitt-PNG, nicht nur nach der Rücklesung. Die Teil-SHA blieb
+in allen Läufen gleich.
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Passung/Abmaße/Zusätze an **eingefügten Modellmaßen** (a) | Gehen beim Wiederöffnen verloren (Typ 0, Präfix/Suffix leer). Sie hängen am Maß des Teils, und das Teil wird nie gespeichert (SHA-Regel). Das betrifft auch die Stufe-3-Zusätze: „4 × 30,00 (= 120)“ steht im PDF aus `swki zeichnen`, fehlt aber in der wieder geöffneten SLDDRW. Das PDF stimmt, weil es vor dem Schließen entsteht. | `IDimension.Tolerance`, `IDisplayDimension.SetText` | Toleranz und Zusatz nie am Modellmaß, sondern am **Zeichnungsmaß** |
+| Modellmaß in Zeichnungsmaß umwandeln über die angehängten Entitäten (b) | Geht nicht: `GetAttachedEntities3` liefert Typ 11 (Skizzenelemente, in der Ansicht nicht wählbar); `D3@m1` (Musterabstand) hat keine Entitäten | `IAnnotation.GetAttachedEntities3`, `GetAttachedEntityTypes` | Umwandeln über die **Bezugspunkte der Hilfslinien** (`_bezuege`) und die sichtbaren Kanten oder Kreise an diesen Punkten |
+| Zeichnungsmaß über zwei Kanten (c, d) | Bleibt erhalten: Passung (Typ 7, „H7“), Präfix/Suffix, Abmaße. Name `RD<n>@<Ansicht>` | `IView.SelectEntity` ×2, `IModelDoc2.AddDimension2` | Zeichnungsmaß = dauerhafter Träger aller Anforderungen am Maß |
+| Wert eines Zeichnungsmaßes (c) | `GetSystemValue3(1, None)` liefert None; `GetSystemValue2("")` liefert den Wert | `IDimension.GetSystemValue2` | beide Wege, Modellmaß zuerst |
+| Abmaße setzen (d) | `SetValues2(min, max, w, None)` liefert für w = −1, 0, 1, 2 False und zeigt „0,00/0,00“. `SetValues(min, max)` liefert True, im PDF „120,00 +0,10 −0,05“, nach dem Wiederöffnen gleich | `IDimensionTolerance.SetValues` (2) | an Zeichnungsmaßen `SetValues` |
+| Passung darstellen (e) | `FitDisplayStyle` 3 (Vorgabe): „200,00 H7“ in einer Zeile; 1 und 2: H7 hochgestellt; Typ 8 (FITWITHTOL): „200,00 H7 +0,05/0,00“ | `IDimensionTolerance.Type = 7`, `SetFitValues("H7", "")`, `FitDisplayStyle` | Typ 7, Stil 3 |
+| Hülle Ⓔ (e, f) | Das Unicode-Zeichen „Ⓔ“ (U+24BA) im Suffix lässt den **ganzen Maßtext** verschwinden; im Spike a fehlte deshalb die 200. Das Symbol `<MOD-EP>` (Symboldatei `lang/german/gtol97.sym`, „Encompassing“, Kreis mit E) ergibt „200,00 H7 Ⓔ“ | `IDisplayDimension.SetText(2, " <MOD-EP>")` | Ⓔ an Maßen immer als `<MOD-EP>`, Rücklesen liefert den Tag |
+| Rauheitssymbol (a, c, d) | An einer Kreiskante gewählt, entsteht das Symbol mit Hinweislinie. Von den sieben Textparametern erscheint im PDF nur der dritte (ProdMethod) über dem Symbol. „Ra 0,8“ dort ist sichtbar. Ohne `SetPosition2` liegt das Symbol irgendwo. `GetText(2)` liefert den Text zurück | `IModelDocExtension.InsertSurfaceFinishSymbol3` (14), `ISFSymbol.GetText`, `GetNext` | Text an Platz 3, Lage immer setzen |
+| Bezugsdreieck, Toleranzrahmen (a) | Beide entstehen ohne Dialog an einer gewählten Kante und bleiben nach dem Wiederöffnen erhalten („⊥ 0,02 A“ im PDF). Ohne `SetPosition2` liegt ein Rahmen am Blattursprung, und `IView.GetFirstGTOL` der Ansicht findet nur die an die Ansicht gebundenen | `IModelDoc2.InsertDatumTag2`, `IDatumTag.SetLabel`, `IModelDoc2.InsertGtol`, `IGtol.SetFrameSymbols2` (9), `SetFrameValues2` (6), `GetNextGTOL` | Lage immer setzen; Rückleser geht auch über die Blattansicht |
+| Freier Hinweis (a, b) | `InsertNote` ohne Auswahl legt den Hinweis unter das Blatt (y = −18,8 mm). Nach `SetPosition2` steht „Tolerierung ISO 8015:2011“ im PDF | `IModelDoc2.InsertNote`, `IAnnotation.SetPosition2` | Sammelangaben mit fester Lage |
+| Aufrufe ohne Parameter | `drw.InsertDatumTag2()` → „Mitglied nicht gefunden“; über `_ruf(drw, "InsertDatumTag2")` geht es | pywin32 dynamic | Methoden ohne Parameter immer über `_ruf` |
+
+Folge für Stufe 4 Task 5:
+- Jedes Plan-Maß mit Toleranz oder Textzusatz wird zum Zeichnungsmaß. Die Zusätze aus Stufe 3 sind eingeschlossen, damit die SLDDRW dem PDF entspricht.
+- Fall Modellmaß: umwandeln an denselben Bezugspunkten. Wo das nicht gelingt, bleibt das Modellmaß stehen, mit der Meldung `MASS_NICHT_DAUERHAFT`.
+- Fall Drehteil-Maß (`neu`): Es ist schon ein Zeichnungsmaß, Toleranz und Zusatz kommen direkt daran.
+
+## Nachtrag: Stufe 4, Teil g und h – Rauheitstext und Hinweislinien (28.11.2026)
+
+Spikes `spikes/z1_diag_stufe4g.py` (g) und `z1_diag_stufe4h.py` (h) auf der SpannplatteZ (Review Task 5, I6, C2, I4).
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Wo erscheinen die Textplätze von `InsertSurfaceFinishSymbol3`? (g) | Vorlage: Norm 2 = ISO 21920-1. Dort und bei ISO 1302:2002 zeigt nur Platz 3 (ProdMethod) Text, **über** dem Strich (Feld c); 1302:2002 zeigt dazu Platz 1 links. ISO 1302:1992 zeigt alle sieben | `swDetailingSFSymbolStandard` (629), `swDetailingSFSymbolStandard_e` 0/1/2 | Text an Platz 3 ist das Fertigungsverfahren, nicht die Anforderung |
+| Feld a unter dem Strich (g) | `ISFSymbol.SetText(swSFSymbolRoughnessValue1 = 8, "Ra 0,8")` setzt den Text unter den Strich, bei 1302:2002 und 21920-1 | `ISFSymbol.SetText` (2), `swSurfaceFinishSymbolText_e` | Anforderung über `SetText(8)` |
+| Loser Strich über dem Dreieck (g) | Erscheint nur bei Norm 2 (ISO 21920-1), an jedem Symbol; bei 1302:2002 nicht | `SetUserPreferenceInteger(629, 0, 1)` | `zeichnen` stellt die Zeichnung auf ISO 1302:2002 (Abweichung von der Vorlage, im Bericht) |
+| Kante am Punkt wählen (h) | `SelectByID2("", "EDGE", x, y, …)` wählt die Kante; Hinweislinie von Rauheit und Rahmen endet am Punkt (102,53 statt 102,56 mm). Bezugsdreieck: `GetLeaderPointsAtIndex` liefert keine Punkte | `IModelDocExtension.SelectByID2` (9), `IAnnotation.GetLeaderPointsAtIndex` (1) | Ansatz wählbar und rücklesbar (letzter Punkt) |
+| Mehrfachauswahl vor dem Einfügen (h) | Zwei Kreiskanten bzw. zwei Taschenböden gewählt: eine Hinweislinie | `IAnnotation.GetLeaderCount` | Rahmen: „2 ×“ darüber (`IGtol.SetText(swGTolTextCalloutAbove = 3)`, gelesen „2 ×“); Rauheit: Meldung `RAUHEIT_NUR_EINE_INSTANZ` |
+
+## Nachtrag: Stufe 4, Teil i – Lagen und Hindernisse im Schnitt (28.11.2026)
+
+Spike `spikes/z1_diag_stufe4i.py` auf einer Kopie der SpannplatteZ (Nachbesserung C, Task 5). Die Teil-SHA blieb gleich.
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Bezugsdreieck über das Kantenende hinaus (i) | Bezug B an der linken Kante im Schnitt (x = 75,06, y 122,56–132,56). Mit `SetPosition2` auf (69,06; 139,06) bzw. (69,06; 116,06) liest `GetPosition` dieselbe Lage zurück. SolidWorks zieht die Verlängerung der Kante bis zum Dreieck selbst (PDF), über und unter dem Teil | `IAnnotation.SetPosition2` (3), `GetPosition` | Lagen auf der Verlängerung der Fläche (ISO 5459) sind setzbar; die Verlängerung zählt wie eine Hinweislinie |
+| Schraffierte Schnittfläche (i) | Eine `IFaceHatch` im Schnitt A-A; ihre Fläche liefert zwölf Kanten, gleich den Kanten der Schnittfläche (die `sichtbare_kanten` zusätzlich mit Feature „Schnitt1“ führt). Der Rand der Taschenöffnung hinter dem Schnitt gehört nicht dazu | `IView.GetFaceHatches` (0, 2003), `IFaceHatch.Face` (2003), `IFace2.GetEdges` (0, 2001) | „Hinweislinie durch die Schraffur“ ist prüfbar (Punkt in der Fläche), sprachunabhängig |
+| Eckpunkte über `ModelToViewTransform` (i) | Alle 20 Eckpunkte des Schnitts liegen 54–89 mm neben dem nächsten Kantenende; in der Hauptansicht stimmt y, x ist um 62,5 mm versetzt | `IView.GetVisibleEntities2` (2), `IVertex.GetPoint` | Eckpunktlagen nicht für Umriss oder Wahl am Punkt verwenden (offen: richtige Umrechnung) |
+
+## Nachtrag: Rauheitsfeld über dem Schriftfeld (28.11.2026)
+
+Spike `spikes/z1_diag_rauheitsfeld.py` auf einem leeren Blatt A3 quer 1:2 (Vorlage, Rauheitsnorm ISO 1302:2002,
+Rauheitstext so hoch wie Hinweise). Nutzerentscheidung 28.11.: Sammelrauheit als Kasten mit Symbol und Hinweis.
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Freies Symbol, welcher Punkt ist die Lage? | Ohne Auswahl und mit `swNO_LEADER` entsteht das Symbol ohne Hinweislinie (vorher bei (0, 0)); nach `SetPosition2(x, y)` liest `GetPosition` (x, y) zurück, und im PDF liegt die **Spitze** dort. Grundsymbol: kurzer Schenkel 3,0 mm nach links, Höhe 10,0 mm, Strich über „Ra 3,2“ bis 20,8 mm rechts der Spitze; „Bearbeitung verlangt“ zieht dazu den Querstrich | `IModelDocExtension.InsertSurfaceFinishSymbol3` (14; `swSFBasic` = 0, `swNO_LEADER` = 0), `ISFSymbol.SetText(8)`, `IAnnotation.SetPosition2`/`GetPosition` | Lage = Spitze; Grundsymbol, weil die Halbzeugflächen roh bleiben dürfen |
+| Hinweis zweizeilig | „Alle Flächen ohne“ / „andere Angabe“: 40,8 × 10,9 mm, Text 1,4 mm über der Lage bis 9,5 mm darunter | `IModelDoc2.InsertNote`, `IAnnotation.SetPosition2` | Kasten 71 × 14 mm genügt |
+| Rahmen als Blattskizze | `CreateCornerRectangle` nach `EditSheet` legt vier Linien auf das Blatt – **im Blattmaßstab**: (330…400, 70…90) mm erschien bei 1:2 als (165…200, 35…45) mm | `IModelDoc2.SketchManager` → `ISketchManager.CreateCornerRectangle` (6), `AddToDB`, `ISheet.GetProperties2` | Koordinaten durch den Blattmaßstab teilen |
+| Farbe des Rahmens | Die vier Linien kamen **blau** ins PDF (Farbe der unterbestimmten Skizze; erster Live-Lauf 28.11.). `ISketchSegment.Color = 0` (vorher 16711680) oder die Beziehung „Fixieren“ (`sgFIXED`) machen sie schwarz | `ISketchSegment.Color`, `IModelDoc2.SketchAddConstraints` | Farbe 0 je Segment setzen (keine Beziehung nötig) |
+| Wiederöffnen (schreibgeschützt) | `IView.GetFirstSFSymbol` der Blattansicht („Blatt1“) findet beide Symbole, Feld a „Ra 3,2“, Lage wie gesetzt, keine Anhängung (`GetAttachedEntityTypes` leer) | `ISFSymbol.GetNext`, `IAnnotation.GetAttachedEntities3` | Rückleser: freies Symbol auf dem Blatt ist kein Lesefehler; ob es die Sammelrauheit ist, entscheidet die Lage |
+| PDF-Lesbarkeit | Symbol, „Ra 3,2“ und Hinweis ohne Befund in `pruefe_pdf` | – | – |

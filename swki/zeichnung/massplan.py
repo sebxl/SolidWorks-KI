@@ -6,13 +6,21 @@ Je Merkmal genau ein Maß, je Richtung ein Bezug, keine geschlossene Kette.
 - Drehteil: Durchmesser je Absatz und Längen von einer Bezugsplanfläche aus dem Rotationsprofil (Quelle `neu`), dazu
   die Modellmaße der übrigen Features (Fasen, Bohrungen). Die Skizzenmaße des Profils (Radien, Lagen ab Ursprung)
   entfallen.
+- Anforderungen (Stufe 4): Toleranz je Parameter an den Maßen, die ihn treiben (`Mass.toleranz`); Rauheit, Form/Lage und
+  Bezüge als eigene Plan-Einträge (Quelle `rauheit`/`form_lage`/`bezug`, `wert` 0, kein Maß – Konsumenten filtern nach
+  `quelle`).
 """
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, replace
 
-from swki.spec.ausdruck import auswerten
+from swki.spec.ausdruck import AusdruckFehler, auswerten, namen
+from swki.spec.funktionen import FunktionFehler, aufloesen
+from swki.spec.konturen import kontur_punkte_roh
 from swki.zeichnung.angaben import _enthalten, bohrbilder, bohrungsangabe, reihenzusatz, zahl
 from swki.zeichnung.ansichten import achsvektor, drehachse, elementpunkte, ist_drehteil, profilpunkte
+from swki.zeichnung.toleranzangaben import (FormLage, Toleranz, form_lage_angaben, parameter_toleranzen, rauheitstext,
+                                            treibende_parameter)
 
 WEG_ARTEN = {"versatz", "konstruktion", "skript"}
 _ARTEN = {"groesse": "laenge"}
@@ -21,8 +29,9 @@ _ARTEN = {"groesse": "laenge"}
 @dataclass(frozen=True)
 class Mass:
     id: str
-    quelle: str                 # modell | neu | angabe
+    quelle: str                 # modell | neu | angabe | rauheit | form_lage | bezug (die letzten drei sind keine Maße)
     art: str                    # laenge | durchmesser | radius | tiefe | lage | paarabstand | abstand | winkel | fase | angabe
+                                # | rauheit | form_lage | bezug
     wert: float
     merkmal: str                # Feature-ID der Spec
     name: str | None = None     # SolidWorks-Maßname ohne Dokument, z. B. "D3@t1_skizze" (nur modell)
@@ -33,6 +42,11 @@ class Mass:
     text: str | None = None     # nur angabe: Angabetext mit Zeilenumbrüchen (Stufe 3)
     praefix: str = ""           # Textzusatz vor dem Maßwert, z. B. "4 × "
     suffix: str = ""            # Textzusatz nach dem Maßwert, z. B. " (= 120)" oder " × 45°"
+    toleranz: Toleranz | None = None   # Stufe 4: Toleranz des Parameters, der das Maß treibt (modell/neu)
+    treiber: str | None = None  # Parameter, dessen Toleranz das Maß trägt (auch bei Ø in der Bohrungsangabe)
+    treiber_alle: tuple[str, ...] = ()  # alle tolerierten Parameter im Ausdruck, wenn es mehr als einer ist
+    form_lage: FormLage | None = None  # nur quelle form_lage
+    anker: dict | None = None   # nur quelle bezug: Flächenanker aus `bezuege`
 
 
 def _rund(x: float) -> float:
@@ -100,6 +114,7 @@ def _angabe_achse(spec: dict, f: dict) -> int | None:
 def _angaben(spec: dict) -> tuple[list[Mass], list[str]]:
     """Je Bohrung/Normbohrung ein Angabe-Eintrag (Quelle angabe) und die Meldungen der Angabetexte."""
     bilder = bohrbilder(spec)
+    tol = parameter_toleranzen(spec)
     plan, meldungen = [], []
     for f in spec.get("features", []):
         if f.get("typ") not in ("bohrung", "normbohrung"):
@@ -109,7 +124,10 @@ def _angaben(spec: dict) -> tuple[list[Mass], list[str]]:
         if achse is None:
             meld.append(f"ANGABE_OHNE_ACHSE: {f['id']}")
         meldungen += meld
-        plan.append(Mass(f"{f['id']}:angabe", "angabe", "angabe", 0.0, f["id"], text=text, achse=achse, modus="flach"))
+        alle = treibende_parameter(f.get("durchmesser"), tol) if f["typ"] == "bohrung" else []
+        treiber = alle[0] if alle else None
+        plan.append(Mass(f"{f['id']}:angabe", "angabe", "angabe", 0.0, f["id"], text=text, achse=achse, modus="flach",
+                         treiber=treiber, treiber_alle=tuple(alle) if len(alle) > 1 else ()))
     return plan, meldungen
 
 
@@ -123,6 +141,7 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
     bilder = bohrbilder(spec)
     im_kreismuster = {fid for fid in bilder if any(m["typ"] == "muster_kreis" for m in _enthalten(spec, fid))}
     reihen = {b.reihe: b for b in bilder.values() if b.reihe}
+    tol = parameter_toleranzen(spec)
     plan, gesehen, punktmasse = [], set(), set()
     for knoten in protokoll.get("knoten", []):
         fid = knoten.get("id")
@@ -156,9 +175,51 @@ def massplan_fraesteil(spec: dict, protokoll: dict, ohne: frozenset[str] = froze
                     continue
                 punktmasse.add(schluessel)
             achse, modus = _achse_modus(features, fid, pfad)
+            alle = treibende_parameter(m.get("roh"), tol)
+            treiber = alle[0] if alle else None
             plan.append(Mass(m["name"], "modell", art, _rund(m["wert"]), fid, name=m["name"], achse=achse, modus=modus,
-                             bezug=m.get("bezug"), praefix=praefix, suffix=suffix))
+                             bezug=m.get("bezug"), praefix=praefix, suffix=suffix,
+                             toleranz=tol.get(treiber), treiber=treiber,
+                             treiber_alle=tuple(alle) if len(alle) > 1 else ()))
     return plan + _angaben(spec)[0]
+
+
+def _roh_ausdruecke(e: dict) -> list[tuple[list, list]] | None:
+    """Rohausdrücke je Eckpunkt eines Profilelements in der Reihenfolge von `elementpunkte`: je Punkt die Ausdrücke,
+    aus denen u bzw. v entstehen (Rechteck: Mitte und Breite/Höhe). None = nicht lesbar."""
+    if "polygon" in e:
+        return [([p[0]], [p[1]]) for p in e["polygon"]["punkte"]]
+    if "rechteck" in e:
+        r = e["rechteck"]
+        return [([r["mitte"][0], r["breite"]], [r["mitte"][1], r["hoehe"]])] * 4
+    if "kontur" in e:
+        return [([u], [v]) for u, v in kontur_punkte_roh(e["kontur"])]
+    return None
+
+
+def _namen_aus(ausdruecke: list) -> set[str]:
+    aus: set[str] = set()
+    for x in ausdruecke:
+        if isinstance(x, str) and x.startswith("="):
+            try:
+                aus |= namen(x)
+            except AusdruckFehler:
+                pass
+    return aus
+
+
+def _profil_roh(f: dict, parameter: dict, achse: str) -> list[tuple[float, float, set[str], set[str]]]:
+    """(Radius, Lage auf der Achse, Parameter im Radius, Parameter in der Lage) je Eckpunkt – Stufe 4: aus den rohen
+    Punkten der Spec, nicht aus `profilpunkte` (dort sind die Ausdrücke schon ausgewertet)."""
+    ir, ia = (0, 1) if achse == "v" else (1, 0)
+    aus = []
+    for e in f.get("skizze", {}).get("elemente", []):
+        punkte, roh = elementpunkte(e, parameter), _roh_ausdruecke(e)
+        if not punkte or roh is None or len(roh) != len(punkte):
+            continue
+        for p, rr in zip(punkte, roh):
+            aus.append((abs(p[ir]), p[ia], _namen_aus(rr[ir]), _namen_aus(rr[ia])))
+    return aus
 
 
 def massplan_drehteil(spec: dict) -> list[Mass]:
@@ -171,6 +232,12 @@ def massplan_drehteil(spec: dict) -> list[Mass]:
     rotationen = [f for f in spec.get("features", []) if f.get("typ") == "rotation"]
     if not rotationen:
         return []
+    tol = parameter_toleranzen(spec)
+    roh = {f["id"]: _profil_roh(f, parameter, drehachse(f, parameter)) for f in rotationen} if tol else {}
+
+    def treiber_von(vorhanden: set[str]) -> list[str]:
+        return [p for p in tol if p in vorhanden]
+
     erste = rotationen[0]
     achse = drehachse(erste, parameter)
     punkte = profilpunkte(erste, parameter, achse)
@@ -192,14 +259,20 @@ def massplan_drehteil(spec: dict) -> list[Mass]:
         if r > 1e-9 and schluessel not in durchmesser_gesetzt:  # Review I1: nach Lage, nicht nach Wert
             durchmesser_gesetzt.add(schluessel)
             mid = f"{fid}:d{_rund(2 * r)!r}@{schluessel[1]!r}-{schluessel[2]!r}"
+            alle = treiber_von(set().union(*(rt for rr, _, rt, _ in roh.get(fid, []) if abs(rr - r) < 1e-6)))
+            p = alle[0] if alle else None
             plan[mid] = Mass(mid, "neu", "durchmesser", _rund(2 * r), fid,
-                             geometrie={"radius": r, "achse_von": min(lagen), "achse_bis": max(lagen)})
+                             geometrie={"radius": r, "achse_von": min(lagen), "achse_bis": max(lagen)},
+                             toleranz=tol.get(p), treiber=p, treiber_alle=tuple(alle) if len(alle) > 1 else ())
 
     def laenge(fid: str, a: float) -> None:
         if _rund(a) not in lagen_gesetzt:
             lagen_gesetzt.add(_rund(a))
             mid = f"{fid}:a{_rund(a)!r}"
-            plan[mid] = Mass(mid, "neu", "laenge", _rund(abs(a - bezug)), fid, geometrie={"von": bezug, "bis": _rund(a)})
+            alle = treiber_von(set().union(*(at for _, aa, _, at in roh.get(fid, []) if abs(aa - a) < 1e-6)))
+            p = alle[0] if alle else None
+            plan[mid] = Mass(mid, "neu", "laenge", _rund(abs(a - bezug)), fid, geometrie={"von": bezug, "bis": _rund(a)},
+                             toleranz=tol.get(p), treiber=p, treiber_alle=tuple(alle) if len(alle) > 1 else ())
 
     for r in sorted({r for r, _ in punkte}, reverse=True):
         durchmesser(erste["id"], r, [a for rr, a in punkte if rr == r])
@@ -222,8 +295,72 @@ def massplan_drehteil(spec: dict) -> list[Mass]:
     return list(plan.values())
 
 
-def massplan_meldungen(spec: dict) -> list[str]:
-    """Profilelemente von Rotationen, die der Maßplan nicht lesen kann (nie still weglassen)."""
+def _anforderung_achse(spec: dict, f: dict) -> tuple[int | None, str | None]:
+    """Achse und Modus für Rauheit und Form/Lage eines Features: Bohrung → Achse ihrer Angabe (flach); Schnitt und
+    Extrusion → Achse der Skizze, Ansicht quer dazu (Endfläche bzw. Boden); sonst unbekannt."""
+    typ = f.get("typ")
+    if typ in ("bohrung", "normbohrung"):
+        return _angabe_achse(spec, f), "flach"
+    if typ in ("extrusion", "schnitt"):
+        return _ebene_achse(f.get("skizze", {}).get("ebene")), "quer"
+    return None, None
+
+
+def _anforderungen(spec: dict) -> tuple[list[Mass], list[str]]:
+    """Plan-Einträge für Rauheit, Form/Lage und Bezüge (keine Maße) und die Meldungen zu den Anforderungen."""
+    plan, meldungen = [], []
+    for f in spec.get("features", []):
+        fid = f["id"]
+        try:
+            a = aufloesen(f)
+        except FunktionFehler as e:
+            meldungen.append(f"FUNKTION_UNBEKANNT: {fid}: {e}")
+            continue
+        if a["unbestaetigt"]:
+            meldungen.append(f"FUNKTION_UNBESTAETIGT: {fid}: {', '.join(a['unbestaetigt'])}")
+        if f.get("typ") in ("extrusion", "schnitt", "rotation") and (a["passung"] or a["toleranz"]):
+            meldungen.append(f"TOLERANZ_OHNE_MASS: {fid}")
+        achse, modus = _anforderung_achse(spec, f)
+        if a["rauheit"]:
+            plan.append(Mass(f"{fid}:rauheit", "rauheit", "rauheit", 0.0, fid, text=rauheitstext(a["rauheit"]),
+                             achse=achse, modus=modus))
+        angaben, meld = form_lage_angaben(fid, a["form_lage"] or [])
+        meldungen += meld
+        for i, x in enumerate(angaben):
+            plan.append(Mass(f"{fid}:form_lage:{i}", "form_lage", "form_lage", 0.0, fid, text=x.wert, achse=achse,
+                             modus=modus, form_lage=x))
+    for name, anker in (spec.get("bezuege") or {}).items():
+        plan.append(Mass(f"bezug:{name}", "bezug", "bezug", 0.0, anker.get("feature", ""), text=name, anker=dict(anker)))
+    return plan, meldungen
+
+
+def _namen_in(x) -> set[str]:
+    """Alle Parameternamen in den Ausdrücken beliebig verschachtelter Werte."""
+    if isinstance(x, str):
+        return _namen_aus([x])
+    if isinstance(x, dict):
+        return set().union(*(_namen_in(v) for v in x.values()), set())
+    if isinstance(x, (list, tuple)):
+        return set().union(*(_namen_in(v) for v in x), set())
+    return set()
+
+
+def _benutzte_parameter(spec: dict, protokoll: dict | None) -> set[str]:
+    """Parameter aus `toleranzen`, die ein Maß (oder den Ø einer Bohrungsangabe) treiben. Mit Maßprotokoll genau nach
+    dem Maßplan; ohne es für Frästeile näherungsweise: der Parameter steht in einem Ausdruck eines Features."""
+    if protokoll is not None:
+        return {m.treiber for m in massplan(spec, protokoll) if m.treiber}
+    benutzt = {m.treiber for m in massplan_drehteil(spec) if m.treiber}
+    for f in spec.get("features", []):
+        if f.get("typ") != "rotation":
+            benutzt |= _namen_in(f)
+    return benutzt
+
+
+def massplan_meldungen(spec: dict, protokoll: dict | None = None) -> list[str]:
+    """Meldungen zum Maßplan: Profilelemente von Rotationen, die der Maßplan nicht lesen kann (nie still weglassen),
+    Angabetexte und (Stufe 4) Anforderungen: TOLERANZ_OHNE_MASS, FORM_LAGE_IT_OHNE_TABELLE, FUNKTION_UNBESTAETIGT.
+    `protokoll`: das Maßprotokoll des Laufs – damit prüft TOLERANZ_OHNE_MASS genau, sonst näherungsweise."""
     parameter = spec.get("parameter", {})
     aus = []
     for f in spec.get("features", []):
@@ -232,12 +369,63 @@ def massplan_meldungen(spec: dict) -> list[str]:
         for e in f.get("skizze", {}).get("elemente", []):
             if elementpunkte(e, parameter) is None:
                 aus.append(f"MASS_NICHT_GEPLANT: {f['id']} – Profilelement {next(iter(e))} wird nicht bemaßt")
-    return aus + _angaben(spec)[1]
+    anforderung = _anforderungen(spec)[1]
+    tol = parameter_toleranzen(spec)
+    if tol:
+        benutzt = _benutzte_parameter(spec, protokoll)
+        aus += [f"TOLERANZ_OHNE_MASS: {p}" for p in tol if p not in benutzt]
+        plan = massplan(spec, protokoll) if protokoll is not None else massplan_drehteil(spec) + _angaben(spec)[0]
+        for m in plan:
+            if m.treiber_alle:
+                meldung = f"TOLERANZ_MEHRDEUTIG: {m.name or m.merkmal}: {', '.join(m.treiber_alle)}"
+                if meldung not in aus:
+                    aus.append(meldung)
+    return aus + _angaben(spec)[1] + anforderung
+
+
+def _an_rotationskante(spec: dict, m: Mass, achse: int, rotationen: frozenset[str]) -> bool:
+    """Liegt die Fase des Maßes an einer Rotationskante (Kreis um die Drehachse an einem Eckpunkt eines
+    Rotationsprofils)? Mit bekannter Ansicht: Blick entlang der Drehachse (`(achse, "flach")`). Ohne (Fasen des
+    Drehteils haben keine): jede Kantenangabe nennt ein Rotations-Feature oder ihr `nahe`-Punkt liegt auf dem Kreis
+    eines Profileckpunkts (Radius und Lage auf der Achse; Nachbesserung C)."""
+    if m.achse is not None:
+        return (m.achse, m.modus) == (achse, "flach")
+    parameter = spec.get("parameter", {})
+    features = {f["id"]: f for f in spec.get("features", [])}
+    kanten = [k for k in features.get(m.merkmal, {}).get("kanten", []) if isinstance(k, dict)]
+    ecken = [p for fid in rotationen
+             for p in profilpunkte(features[fid], parameter, drehachse(features[fid], parameter)) or ()]
+    if not kanten:
+        return False
+    for k in kanten:
+        if "feature" in k:
+            if k["feature"] not in rotationen:
+                return False
+            continue
+        try:
+            p = [float(auswerten(c, parameter)) for c in k.get("nahe", [])][:3]
+        except (AusdruckFehler, TypeError, ValueError):
+            return False
+        if len(p) != 3:
+            return False
+        lage = p[achse]
+        radius = math.hypot(*(c for i, c in enumerate(p) if i != achse))
+        if not any(abs(r - radius) < 1e-3 and min(abs(a - lage), abs(a + lage)) < 1e-3 for r, a in ecken):
+            return False
+    return True
 
 
 def massplan(spec: dict, protokoll: dict) -> list[Mass]:
-    """Maßplan je nach Teileart (Drehteil mit Rotationsprofil, sonst Frästeil)."""
+    """Maßplan je nach Teileart (Drehteil mit Rotationsprofil, sonst Frästeil), dazu die Anforderungseinträge."""
     rotationen = frozenset(f["id"] for f in spec.get("features", []) if f.get("typ") == "rotation")
     if ist_drehteil(spec) and rotationen:
-        return massplan_drehteil(spec) + massplan_fraesteil(spec, protokoll, ohne=rotationen)
-    return massplan_fraesteil(spec, protokoll)
+        # Fasenmaße an Rotationskanten (Blick entlang der Drehachse) in die Ansicht quer zur Drehachse (Review Task 5,
+        # I5: in der Stirnansicht setzte D1@f2 an zwei konzentrischen Kreisen an und ließ sich nicht als Zeichnungsmaß
+        # setzen); andere Fasen bleiben, wo der Maßplan sie hinlegt (Nachbesserung C)
+        achse = next(i for i, c in enumerate(achsvektor(spec)) if c)
+        plan = massplan_drehteil(spec) + [replace(m, achse=achse, modus="quer")
+                                          if m.art == "fase" and _an_rotationskante(spec, m, achse, rotationen) else m
+                                          for m in massplan_fraesteil(spec, protokoll, ohne=rotationen)]
+    else:
+        plan = massplan_fraesteil(spec, protokoll)
+    return plan + _anforderungen(spec)[0]

@@ -1,0 +1,184 @@
+# Regelkatalog der Zeichnungsprüfung (Design 2026-11-16 §8.1, Plan Z1.4 Task 1). Prüfer und Code lesen dieselbe Liste.
+# Eintrag: id, pruefung (eine der neun Prüfungen), text, quelle, beleg, art, herkunft.
+# beleg (A: >= 2 Quellen, B: eine Quelle, C: unbelegt) beschreibt nur die Norm- und Praxisstütze (docs/zeichnungsableitung/
+# recherche.md, R-Kap. = Kapitel). art: hart (Mangel macht den Lauf nicht bestanden) oder hinweis (nie ok false).
+# herkunft: norm (die Regel stützt sich auf Norm und Praxis) oder projekt (Entscheidung des Nutzers oder des Designs;
+# quelle nennt dann Nutzer bzw. Design mit Datum oder Abschnitt).
+# Invariante: art hart gilt nur mit beleg A oder B oder herkunft projekt (regeln.py prüft das beim Laden).
+# Erweitern nur mit Quelle und Beleg.
+
+- id: Z-VOLL-1
+  pruefung: vollstaendig
+  text: Jedes Merkmal des Maßplans ist bemaßt; jedes Spec-Maß der freigegebenen Kopie findet sich mit gleichem Wert.
+  quelle: "Design §2 (Vollständigkeit, selbst entschieden 16.11.); R-Kap. 8 (Pflichtinhalt, clean-invoice)"
+  beleg: B
+  art: hart
+  herkunft: norm
+- id: Z-VOLL-2
+  pruefung: vollstaendig
+  text: Kein Doppelmaß; jedes Merkmal ist genau einmal bemaßt.
+  quelle: "R-Kap. 8 (jedes Maß nur einmal; Cambridge Network, buffl.co, Fictiv)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-UEB-1
+  pruefung: ueberbestimmt
+  text: Je Richtung kein geschlossener Maßzyklus; Ausnahme Hilfsmaß in Klammern.
+  quelle: "R-Kap. 4 (keine Überbemaßung, unterbrochene Kette; TUM, buffl.co, Fictiv, WTCS)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-TOL-1
+  pruefung: toleranzen
+  text: Passung oder Abmaße am Maß entsprechen der aufgelösten Spec (auch ein Maß, das die Zeichnung nicht tragen kann).
+  quelle: "Design §3/§8.1; Nutzer 16.11.2026; Passungen R-Kap. 7 (ISO 286)"
+  beleg: C
+  art: hart
+  herkunft: projekt
+- id: Z-TOL-2
+  pruefung: toleranzen
+  text: Die Hülle Ⓔ steht nur an Passmaßen aus der Funktion, nicht an Maßen mit reiner Abmaßtoleranz.
+  quelle: "Nutzer 16.11.2026 (ISO 8015, Hülle nur an Passmaßen); Design §2 (Tolerierungsgrundsatz); R-Kap. 7 (Hülle am Einzelmaß, Suchauszug)"
+  beleg: B
+  art: hart
+  herkunft: projekt
+- id: Z-TOL-3
+  pruefung: toleranzen
+  text: Keine Toleranz am Maß ohne Funktion oder ausdrückliche Vorgabe (`toleranzen`).
+  quelle: "R-Kap. 8 (keine unnötig engen Toleranzen; clean-invoice, Fictiv); Design §1/§2 (Nutzer 16.11.2026: Funktion → Toleranz)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-TOL-4
+  pruefung: toleranzen
+  text: Rauheit je Merkmal wie in der aufgelösten Spec (ISO 21920, Max-Regel Standard).
+  quelle: "R-Kap. 6 (ISO 21920 ersetzt ISO 1302); Design §8.1 (Wert wie Spec)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-TOL-5
+  pruefung: toleranzen
+  text: Form- und Lagetoleranz je Merkmal mit Symbol, Wert und Bezug wie in der aufgelösten Spec.
+  quelle: "R-Kap. 7 (Toleranzrahmen ISO 1101, Keyence); Design §8.1 (Wert wie Spec)"
+  beleg: B
+  art: hart
+  herkunft: norm
+- id: Z-TOL-6
+  pruefung: toleranzen
+  text: Bezüge (Buchstaben) sind gezeichnet und stimmen mit den Bezügen der Spec überein.
+  quelle: "R-Kap. 7 (Toleranzrahmen ISO 1101, Bezüge ISO 5459; Keyence, Zeiss); Design §8.1 (wie Spec)"
+  beleg: B
+  art: hart
+  herkunft: norm
+- id: Z-SAM-1
+  pruefung: sammelangaben
+  text: Allgemeintoleranz mit Normjahr und Klasse m nach ISO 2768-1.
+  quelle: "Nutzer 16.11.2026 (Klasse m, Ausgabejahr); R-Kap. 7 (Folge undatierter Verweise, GPSlife, Wevolver)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-SAM-2
+  pruefung: sammelangaben
+  text: Tolerierungsgrundsatz ISO 8015 ist vermerkt.
+  quelle: "R-Kap. 7 (DIN 7167 zurückgezogen 2011, Wikipedia DE, DIN Media); Vermerkpflicht: Nutzer 16.11.2026"
+  beleg: A
+  art: hart
+  herkunft: projekt
+- id: Z-SAM-3
+  pruefung: sammelangaben
+  text: Kein Vermerk "ISO 2768-...K" und kein "DIN 7167".
+  quelle: "R-Kap. 7 (ISO 2768-2 zurückgezogen 2021; DIN 7167 zurückgezogen 2011; genorma, Wevolver, GPSlife)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-SAM-4
+  pruefung: sammelangaben
+  text: Der Satz "Maßgebend ist die Zeichnung" steht in den Sammelangaben.
+  quelle: "Nutzer 16.11.2026 (Design §2 Modellmaß, §13)"
+  beleg: C
+  art: hart
+  herkunft: projekt
+- id: Z-SAM-5
+  pruefung: sammelangaben
+  text: Behandlung und Halbzeug stehen wie in der Spec, soweit dort vorhanden.
+  quelle: "Nutzer 16.11.2026 (Design §2, §4.1)"
+  beleg: C
+  art: hart
+  herkunft: projekt
+- id: Z-SAM-6
+  pruefung: sammelangaben
+  text: Kantenzustand als Sammelangabe nach ISO 13715.
+  quelle: "R-Kap. 5 (ISO 13715, Sammelangabe, werk24 Edges); Design §2 (Sammelangaben)"
+  beleg: B
+  art: hart
+  herkunft: norm
+- id: Z-SAM-7
+  pruefung: sammelangaben
+  text: Sammelrauheit steht nahe dem Schriftfeld.
+  quelle: "R-Kap. 2 (Kästen neben dem Schriftfeld, checkedcalc); Design §2 (Sammelangaben)"
+  beleg: B
+  art: hart
+  herkunft: norm
+- id: Z-SCH-1
+  pruefung: schriftfeld
+  text: Pflichtfelder nach ISO 7200 gefüllt, außer Freigegeben (Z-SCH-2); Eigentümer bis Z1.5 nur Hinweis (Plan Entscheidung 3).
+  quelle: "R-Kap. 2 (ISO 7200, acht Pflichtfelder; Wikipedia DE, checkedcalc)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-SCH-2
+  pruefung: schriftfeld
+  text: Das Feld "Freigegeben" bleibt leer; ein gefülltes Feld vor der Abnahme ist ein Mangel.
+  quelle: "Design §2/§7 (selbst entschieden 16.11.2026: Freigegeben bleibt bis zur Abnahme leer)"
+  beleg: C
+  art: hart
+  herkunft: projekt
+- id: Z-SCH-3
+  pruefung: schriftfeld
+  text: Der Maßstab des Blatts liegt in der Vorzugsreihe (ISO 5455).
+  quelle: "R-Kap. 2 (ISO 5455, Vorzugsmaßstäbe; ingenieurkurse, checkedcalc)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-ANS-1
+  pruefung: ansichten
+  text: Kein Maß an verdeckter Kante oder ohne sichtbaren Bezug.
+  quelle: "Nutzer 19.11.2026 (Stufe 2: Maß ohne sichtbaren Bezug, Taschentiefe 12)"
+  beleg: C
+  art: hart
+  herkunft: projekt
+- id: Z-ANS-2
+  pruefung: ansichten
+  text: Jede Schnittansicht trägt ihre Schnittbezeichnung (z. B. A-A).
+  quelle: "R-Kap. 3 (Schnittverlauf und Bezeichnung, mechatronik-automatisierung.com)"
+  beleg: B
+  art: hart
+  herkunft: norm
+- id: Z-ANS-3
+  pruefung: ansichten
+  text: Jede Einzelheit trägt einen Maßstab aus der Vorzugsreihe.
+  quelle: "R-Kap. 2 (ISO 5455: abweichende Maßstäbe bei Einzelheit angeben; ingenieurkurse, checkedcalc)"
+  beleg: A
+  art: hart
+  herkunft: norm
+- id: Z-LES-1
+  pruefung: lesbarkeit
+  text: Keine überlappenden Maße und Annotationen; Maße außerhalb der Kontur, wo möglich.
+  quelle: "R-Kap. 8 (Cambridge Network)"
+  beleg: B
+  art: hinweis
+  herkunft: norm
+- id: Z-GEW-1
+  pruefung: gewinde
+  text: Ein Gewinde trägt Bezeichnung (z. B. M6) und Gewindetiefe; die Bohrtiefe steht getrennt.
+  quelle: "R-Kap. 5 (Gewindebezeichnung, B); Design §8.1 (Tiefe wie Spec)"
+  beleg: B
+  art: hart
+  herkunft: projekt
+- id: Z-DRE-1
+  pruefung: drehteil
+  text: Durchmesser stehen mit dem Zeichen Ø.
+  quelle: "R-Kap. 4 (Symbole, Wikipedia DE nach DIN 406)"
+  beleg: B
+  art: hart
+  herkunft: norm

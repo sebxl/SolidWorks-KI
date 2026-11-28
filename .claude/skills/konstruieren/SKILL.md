@@ -217,7 +217,13 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
 - Zeichnung (Zeichnungsableitung Z1.3): `swki zeichnen <spec>` zeichnet den letzten bestandenen Lauf (`--lauf N` für einen
   ungeprüften, mit Meldung) – Blatt, Ansichten nach Maßbedarf, Maße aus dem Maßplan (SLDDRW, PDF, PNG im Laufordner unter
   `zeichnung/`). Die Maße kommen aus der Spec: `bezug` an Lagen entscheidet, von wo bemaßt wird. `meldungen` lesen;
-  Bohrungsangaben und Toleranzen folgen in den Stufen 3–4. Fertigungszeichnungen nur auf der SolidWorks-Vollversion (Firmenrechner).
+  Bohrungsangaben, Toleranzen, Rauheit, Form/Lage und Sammelangaben setzt es mit (Stufen 3–4). Fertigungszeichnungen nur auf der SolidWorks-Vollversion (Firmenrechner).
+  Prüfen (Z1.4): `swki zeichnung pruefen <spec>` liest die Zeichnung zurück und prüft sie maschinell (`kopf`, `nicht_geprueft`
+  lesen); danach ist der Agent `zeichnungspruefer` Pflicht (Prompt: `zeichnungspruefer_auftrag` aus `swki durchlauf --zeichnung`),
+  Urteil unverändert nach `protokolle/<spec>.lauf-<n>.zeichnungspruefer.json` (Feld `sha256_slddrw` muss zur Zeichnung passen).
+  `swki durchlauf <spec> --zeichnung` zeichnet und prüft den letzten bestandenen Lauf ohne Bauen; ist noch keiner bestanden,
+  läuft der normale Durchlauf und `naechstes` nennt zuerst den Prüfer. Ohne Urteil meldet `swki bericht` `ZEICHNUNGSPRUEFER_FEHLT`, bei einem Urteil zu einer anderen Zeichnung
+  `ZEICHNUNGSPRUEFER_VERALTET`, bei einem Prüfbericht zu einer anderen SLDDRW `ZEICHNUNG_PRUEFBERICHT_VERALTET` (jeweils "Zeichnung ungeprüft").
 
 ### Modellierregeln (Feature-Baum wie vom Konstrukteur)
 Änderbarkeit zuerst, dann der Baum, wie ihn ein Konstrukteur anlegt; Standard des Nutzers (01.11.2026) in Regel 3, 6, 8:
@@ -268,7 +274,7 @@ Eingabe): sie hängen bis zum 2-min-Zeitlimit.
   „Selbst entschieden“ (eigene Entscheidungen und umgesetzte Review-Befunde, je eine Zeile mit Grund).
   Bezüge stehen in der Feature-Liste in Worten („2 × M6, 10 mm vom linken Rand, symmetrisch zur Mitte, Abstand 40“).
   Der Bezug ist Bauweg: die Prüfsumme schützt ihn nicht, die KI darf ihn beim Nachbessern ändern.
-- Funktionsangaben in Worten zeigen („2 × Stiftbohrung Ø 8 H7 Ⓔ, Ra 0,8“). Hinweise `art: funktion` (Wert aus
+- Funktionsangaben in Worten zeigen („2 × Stiftbohrung Ø 8 H7 Ⓔ“; Lagersitz „Ø 32 k6 Ⓔ, Ra 0,8“). Hinweise `art: funktion` (Wert aus
   `funktionen.yaml` mit Beleg C, unbestätigt) dem Nutzer ausdrücklich vorlegen; bestätigt er, in der Tabelle
   `bestaetigt: true` setzen (mit Datum in `quelle`).
 - Erst nach ausdrücklichem OK freigeben – am schnellsten zusammen mit Bau und Prüfung:

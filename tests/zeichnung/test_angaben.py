@@ -197,3 +197,24 @@ def test_referenzen_bohrungsangaben_ohne_fehler():
             if f.get("senkung"):
                 assert "Senkung" in text, (pfad.name, f["id"], text)
     assert gesehen > 5
+
+
+def test_bohrungsangabe_mit_toleranz():
+    spec = _lade("zeichnung/spannplatte_z.yaml")
+    text, _ = bohrungsangabe(_feature(spec, "st"), spec, bohrbilder(spec)["st"])
+    assert text == "2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°"
+
+
+def test_bohrung_mit_abmass_und_parameter_toleranz():
+    f = {"id": "b1", "typ": "bohrung", "durchmesser": "=D", "durch": True, "positionen": [[0, 0]],
+         "toleranz": {"oben": 0.05, "unten": 0}}
+    spec = {"parameter": {"D": 6}, "features": [f]}
+    assert bohrungsangabe(f, spec, Bohrbild("b1", 1, None, None, None))[0] == "Ø6 +0,05/0 – durch"
+    g = {"id": "b1", "typ": "bohrung", "durchmesser": "=D", "durch": True, "positionen": [[0, 0]]}
+    spec = {"parameter": {"D": 6}, "toleranzen": {"D": {"passung": "H7"}}, "features": [g]}
+    assert bohrungsangabe(g, spec, Bohrbild("b1", 1, None, None, None))[0] == "Ø6 H7 Ⓔ – durch"
+
+
+def test_bohrungsangabe_ohne_anforderung_unveraendert():
+    spec = _lade("stil/spannplatte.yaml")
+    assert bohrungsangabe(_feature(spec, "st"), spec, bohrbilder(spec)["st"])[0] == "2 × Ø8 – 15 tief\nFase 0,5 × 45°"

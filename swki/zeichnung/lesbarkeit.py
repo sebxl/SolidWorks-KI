@@ -9,11 +9,16 @@ aus dem PDF (pymupdf), nicht die API-Rückgabe.
 Koordinaten der Befunde in Blatt-mm, Ursprung links unten (wie `IAnnotation.SetPosition2`).
 """
 
+import math
+
 from dataclasses import dataclass
 from pathlib import Path
 
 PT_MM = 25.4 / 72
 KERN = 0.22  # Anteil der Texthöhe, um den das Rechteck oben/unten verkleinert wird (Abstand zur eigenen Maßlinie)
+GLYPHE_MM = 0.5  # kürzer gezeichnete Striche können Teil eines Symbols sein (Hüllring Ⓔ)
+# Hüllring um das E von <MOD-EP>: Radius live 3,20–3,46 mm bei Schriftgröße 4,67 mm (BuchseZ, SpannplatteZ 27.11.)
+HUELLRING, HUELLRING_TOL_MM = 0.71, 0.25
 
 
 @dataclass(frozen=True)
@@ -91,7 +96,51 @@ def texte(pdf: Path, seite: int = 0) -> list[tuple[str, tuple[float, float, floa
     return aus
 
 
-def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int = 0) -> list[Befund]:
+def _luecken(zeichen: list, mm) -> list[tuple[float, float]]:
+    """x-Bereiche (Blatt-mm) der Leerzeichen zwischen zwei Zeichen einer waagrechten Zeile: von der rechten Kante des
+    Zeichens davor bis zur linken Kante des Zeichens danach."""
+    aus = []
+    for i in range(1, len(zeichen) - 1):
+        if zeichen[i]["c"] == " " and zeichen[i - 1]["c"] != " " and zeichen[i + 1]["c"] != " ":
+            aus.append((mm(zeichen[i - 1]["bbox"][2], 0)[0], mm(zeichen[i + 1]["bbox"][0], 0)[0]))
+    return aus
+
+
+def _zellteiler(a, b, r, luecken: list[tuple[float, float]]) -> bool:
+    """Senkrechte Trennlinie einer Rahmenzelle (Z1.3 Stufe 4, Live 27.11.: das PDF liest „0,05 A“ als eine Zeile, der
+    Strich zwischen Wert- und Bezugszelle kreuzt sie): senkrecht, in einer Lücke zwischen zwei Zeichen, über die ganze
+    Schrifthöhe, nicht länger als die Rahmenhöhe (Texthöhe + 6 mm). Review Task 5: eine fremde Linie durch eine Ziffer
+    zählt weiter."""
+    h = r[3] - r[1]
+    return (abs(a[0] - b[0]) < 0.05 and any(x0 - 0.1 <= a[0] <= x1 + 0.1 for x0, x1 in luecken)
+            and abs(a[1] - b[1]) <= h + 6.0
+            and min(a[1], b[1]) <= r[1] + 0.3 * h and max(a[1], b[1]) >= r[3] - 0.3 * h)
+
+
+def _huellringe(zeichen: list, mm) -> list[tuple[tuple[float, float], float]]:
+    """Ringe des Hüllsymbols `<MOD-EP>` (pymupdf liest es als einzelnes „E“, Live 27.11.: „32,00 k6 E“): je
+    alleinstehendem „E“ die Mitte seiner Zeichenbox und der Ringradius `HUELLRING` × Schriftgröße."""
+    aus = []
+    for i, c in enumerate(zeichen):
+        if c["c"] != "E" or (i > 0 and zeichen[i - 1]["c"] != " ") or (i + 1 < len(zeichen) and zeichen[i + 1]["c"] != " "):
+            continue
+        x0, y0, x1, y1 = c["bbox"]
+        aus.append((mm((x0 + x1) / 2, (y0 + y1) / 2), HUELLRING * c["groesse"] * PT_MM))
+    return aus
+
+
+def _ringstrich(a, b, ringe) -> bool:
+    """Kurzer Strich (< `GLYPHE_MM`) auf einem Hüllring: beide Enden im Radius ± `HUELLRING_TOL_MM` um die Mitte des
+    E. Review Task 5: ein Bohrungskreis aus gleich kurzen Strichen durch den Text zählt weiter."""
+    return math.dist(a, b) < GLYPHE_MM and any(
+        all(abs(math.dist(p, m) - r) <= HUELLRING_TOL_MM for p in (a, b)) for m, r in ringe)
+
+
+def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int = 0,
+               rahmen: tuple[tuple[str, tuple], ...] = ()) -> list[Befund]:
+    """`rahmen`: (Text, Rechteck) gelegter Toleranzrahmen; ein Text gleichen Wortlauts, der dieses Rechteck berührt,
+    darf von höchstens (Zellen − 1) Zelltrennlinien in den Lücken zwischen seinen Zeichen gekreuzt werden
+    (`_zellteiler`). Die Striche des Hüllrings um ein alleinstehendes „E“ zählen nicht (`_ringstrich`)."""
     import pymupdf
 
     ausschluss_mm = ausschluss_mm or []
@@ -102,10 +151,10 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
         def mm(x, y):
             return (x * PT_MM, hoehe_mm - y * PT_MM)
 
-        texte = []  # (Text, Rechteck mm, achsparallel, gedrehter Kern oder None)
+        texte = []  # (Text, Rechteck mm, achsparallel, gedrehter Kern oder None, Lücken, Hüllringe)
         for block in page.get_text("rawdict")["blocks"]:
             for zeile in block.get("lines", []):
-                zeichen = [c for s in zeile["spans"] for c in s["chars"]]
+                zeichen = [{**c, "groesse": s["size"]} for s in zeile["spans"] for c in s["chars"]]
                 wort = "".join(c["c"] for c in zeichen).strip()
                 if not wort:
                     continue
@@ -122,8 +171,9 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
                     laenge = max((mm(*c["origin"])[0] - o[0]) * d[0] + (mm(*c["origin"])[1] - o[1]) * d[1]
                                  for c in zeichen) + 0.55 * groesse
                     kern = (o, d, (0.1 * groesse, laenge - 0.1 * groesse), (0.15 * groesse, 0.6 * groesse))
+                luecken = _luecken(zeichen, mm) if cos > 0.99 else []
                 if not _im(r, ausschluss_mm):
-                    texte.append((wort, r, achsparallel, kern))
+                    texte.append((wort, r, achsparallel, kern, luecken, _huellringe(zeichen, mm)))
         linien = []
         for zeichnung in page.get_drawings():
             for element in zeichnung["items"]:
@@ -133,19 +183,30 @@ def pruefe_pdf(pdf: Path, ausschluss_mm: list[tuple] | None = None, seite: int =
                     q = element[1]
                     ecken = [mm(q.x0, q.y0), mm(q.x1, q.y0), mm(q.x1, q.y1), mm(q.x0, q.y1)]
                     linien += list(zip(ecken, ecken[1:] + ecken[:1]))
+                elif element[0] == "qu":  # Nutzer 28.11.2026: Rahmen der Einzelheit kommt als Viereck, brach „R4,00“
+                    q = element[1]
+                    ecken = [mm(p.x, p.y) for p in (q.ul, q.ur, q.lr, q.ll)]  # reihum (Punktfolge ist ul, ur, ll, lr)
+                    linien += list(zip(ecken, ecken[1:] + ecken[:1]))
     befunde = []
-    kerne = [_kern(r) for _, r, _, _ in texte]
-    for i, (wort, r, achsparallel, gedreht) in enumerate(texte):
+    kerne = [_kern(t[1]) for t in texte]
+    for i, (wort, r, achsparallel, gedreht, luecken, ringe) in enumerate(texte):
         for j in range(i + 1, len(texte)):
             if _ueberlappt(kerne[i], kerne[j]):  # Kern gegen Kern: Zeilenabstand des Textrahmens zählt nicht
                 befunde.append(Befund("text_ueber_text", wort, r, texte[j][0]))
-        if achsparallel and any(_schneidet(a, b, kerne[i]) for a, b in linien):
+        an_rahmen = any(t == wort and _ueberlappt(r, rr) for t, rr in rahmen)
+        kreuzend = [(a, b) for a, b in linien if _schneidet(a, b, kerne[i]) and not _ringstrich(a, b, ringe)]
+        teiler = [ab for ab in kreuzend if an_rahmen and _zellteiler(*ab, r, luecken)]
+        # SolidWorks zeichnet die Trennlinie doppelt (Live 27.11.): gleiche Lage zählt einmal
+        verschieden = {(round(a[0], 2), round(min(a[1], b[1]), 2), round(max(a[1], b[1]), 2)) for a, b in teiler}
+        if achsparallel and (len(kreuzend) > len(teiler) or len(verschieden) > len(luecken)):
             befunde.append(Befund("linie_durch_text", wort, r))
         # schräge Schrift an ihrer Hinweislinie (R4, Ø6; Nutzer 18.11.2026: lag auf Kanten): gedrehter Kern, Linien
         # parallel zur Schrift (die eigene Hinweislinie) zählen nicht
         elif gedreht and any(_quer_durch(a, b, *gedreht) for a, b in linien):
             befunde.append(Befund("linie_durch_text", wort, r))
     return befunde
+
+
 
 
 def ausserhalb(zahlen: list[tuple[str, float, float, float, str]], feld: tuple, sperren: list[tuple],

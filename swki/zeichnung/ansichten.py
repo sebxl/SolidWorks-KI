@@ -140,7 +140,8 @@ def vorzugsansichten(spec: dict, plan: list) -> dict[str, str]:
         quellen = f.get("features", []) if f.get("typ") in ("muster_linear", "muster_kreis", "spiegeln") else \
             [k.get("feature") for k in f.get("kanten", []) if isinstance(k, dict)]
         richtung[f["id"]] = next((richtung.get(q) for q in quellen if richtung.get(q)), None)
-    return {m.id: "haupt" for m in plan if m.merkmal == basis or richtung.get(m.merkmal) == haupt}
+    return {m.id: "haupt" for m in plan if m.quelle in ("modell", "neu", "angabe")
+            and (m.merkmal == basis or richtung.get(m.merkmal) == haupt)}
 
 
 def _fraesteil(spec: dict) -> list[Ansicht]:

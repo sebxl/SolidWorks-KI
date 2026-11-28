@@ -5,7 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from swki.zeichnung.massplan import Mass, massplan, massplan_drehteil, massplan_fraesteil
+from swki.zeichnung.massplan import Mass, massplan, massplan_drehteil, massplan_fraesteil, massplan_meldungen
+from swki.zeichnung.toleranzangaben import Toleranz
 
 DATEN = Path(__file__).parent / "daten"
 REF = Path(__file__).parents[1] / "referenz"
@@ -245,3 +246,191 @@ def test_fase_mit_winkel_suffix_nur_am_abstand():
     spec["features"][0].pop("winkel")
     assert massplan_fraesteil(spec, {"knoten": [{"id": "fa", "masse": protokoll["knoten"][0]["masse"][:1]}]})[0].suffix \
         == " × 45°"
+
+
+# --- Stufe 4 Task 2: Anforderungen im Maßplan ---------------------------------------------------------------------------
+
+def _lade_ref(pfad: str) -> dict:
+    return yaml.safe_load((REF / pfad).read_text(encoding="utf-8"))
+
+
+def _spannplatte_protokoll():
+    return _spannplatte()[1]
+
+
+def test_spannplatte_z_anforderungen():
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    plan = massplan(spec, _spannplatte_protokoll())
+    stift = next(m for m in plan if m.quelle == "angabe" and m.merkmal == "st")
+    assert stift.text.startswith("2 × Ø8 H7 Ⓔ – 15 tief")
+    # Nutzer 28.11.2026: Stiftbohrung ohne eigene Rauheit (Sammelrauheit gilt)
+    assert {(m.merkmal, m.text) for m in plan if m.quelle == "rauheit"} == {("t1", "Ra 1,6")}
+    assert {(m.merkmal, m.form_lage.symbol, m.text) for m in plan if m.quelle == "form_lage"} == {
+        ("f1", "<IGTOL-FLAT>", "0,02"), ("t1", "<IGTOL-PARA>", "0,05")}
+    assert sorted(m.text for m in plan if m.quelle == "bezug") == ["A", "B"]
+    assert {m.anker["flaeche"] for m in plan if m.quelle == "bezug"} == {"-y", "-x"}
+    abstand = _nach_name(plan)["D1@st_positionen"]          # Paarabstand 150 aus "=2 * (-A/2)", Parameter A ±0,02
+    assert abstand.toleranz == Toleranz(None, 0.02, -0.02, False)
+    assert len({m.id for m in plan}) == len(plan)
+
+
+def test_anforderungseintraege_sind_keine_masse():
+    plan = massplan(_lade_ref("zeichnung/spannplatte_z.yaml"), _spannplatte_protokoll())
+    for m in plan:
+        if m.quelle in ("rauheit", "form_lage", "bezug"):
+            assert m.wert == 0.0 and m.name is None and m.art == m.quelle
+
+
+def test_achse_der_anforderungseintraege():
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    next(f for f in spec["features"] if f["id"] == "st")["rauheit"] = {"Ra": 0.8}  # eigene Rauheit an der Bohrung
+    plan = massplan(spec, _spannplatte_protokoll())
+    ra = {m.merkmal: (m.achse, m.modus) for m in plan if m.quelle == "rauheit"}
+    assert ra["st"] == (1, "flach")                         # Bohrung: Achse ihrer Angabe
+    assert ra["t1"] == (1, "quer")                          # Schnitt mit Tiefe: Achse der Skizze, Ansicht quer
+    fl = {m.merkmal: (m.achse, m.modus) for m in plan if m.quelle == "form_lage"}
+    assert fl["f1"] == (1, "quer")                          # Extrusion: Achse der Skizze, Modus quer
+
+
+def test_buchse_z_passungen():
+    plan = massplan(_lade_ref("zeichnung/buchse_z.yaml"), _buchse_protokoll())
+    d = {m.wert: m.toleranz for m in plan if m.art == "durchmesser"}
+    assert d[20] == Toleranz("H7", None, None, True) and d[32] == Toleranz("k6", None, None, True)
+    assert d[50] is None and d[30] is None
+
+
+def test_toleranz_ohne_mass_gemeldet():
+    spec = {**_lade_ref("zeichnung/buchse_z.yaml")}
+    spec["toleranzen"] = {**spec["toleranzen"], "L_bund": {"oben": 0.1, "unten": 0}, "GIBTSNICHT": {"passung": "h9"}}
+    meld = massplan_meldungen(spec)
+    assert "TOLERANZ_OHNE_MASS: GIBTSNICHT" in meld
+    assert "TOLERANZ_OHNE_MASS: L_bund" not in meld and "TOLERANZ_OHNE_MASS: D_innen" not in meld
+    plan = massplan(spec, _buchse_protokoll())
+    assert next(m for m in plan if m.art == "laenge" and m.wert == 8).toleranz == Toleranz(None, 0.1, 0, False)
+
+
+def test_toleranz_ohne_mass_mit_protokoll():
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    spec["toleranzen"] = {**spec["toleranzen"], "GR": {"oben": 0.1, "unten": -0.1}}   # GR steckt im Lagemaß der Gewinde
+    assert "TOLERANZ_OHNE_MASS: GR" not in massplan_meldungen(spec, _spannplatte_protokoll())
+    spec["toleranzen"] = {**spec["toleranzen"], "NB": {"oben": 0.1, "unten": 0}, "ZZ": {"oben": 0.1, "unten": 0}}
+    assert "TOLERANZ_OHNE_MASS: ZZ" in massplan_meldungen(spec, _spannplatte_protokoll())
+
+
+def test_feature_toleranz_an_schnitt_ohne_mass():
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    spec["features"][1]["passung"] = "H8"                    # t1 (schnitt): kein eindeutiges Maß
+    assert "TOLERANZ_OHNE_MASS: t1" in massplan_meldungen(spec)
+
+
+def test_ohne_anforderungen_wie_bisher():
+    plan = massplan(*_spannplatte())
+    assert all(m.toleranz is None for m in plan) and not [m for m in plan if m.quelle in ("rauheit", "form_lage", "bezug")]
+    spec, protokoll = _spannplatte()
+    assert not [m for m in massplan_meldungen(spec, protokoll) if m.split(":")[0] in
+                ("TOLERANZ_OHNE_MASS", "FORM_LAGE_IT_OHNE_TABELLE", "FUNKTION_UNBESTAETIGT")]
+
+
+def test_funktion_unbestaetigt_gemeldet():
+    assert any(m.startswith("FUNKTION_UNBESTAETIGT: st")
+               for m in massplan_meldungen(_lade_ref("zeichnung/spannplatte_z.yaml")))
+
+
+def test_form_lage_it_ohne_tabelle_gemeldet():
+    spec = {"parameter": {}, "features": [{"id": "w1", "typ": "extrusion", "funktion": "lagersitz_welle"}]}
+    plan = massplan(spec, {"knoten": []})
+    assert "FORM_LAGE_IT_OHNE_TABELLE: w1 rundheit IT4 – keine ISO-286-Tabelle" in massplan_meldungen(spec)
+    assert not [m for m in plan if m.quelle == "form_lage"] and [m.text for m in plan if m.quelle == "rauheit"] == ["Ra 0,8"]
+
+
+def test_parameter_treibt_zwei_masse():
+    spec = {"parameter": {"A": 10}, "toleranzen": {"A": {"oben": 0.1, "unten": -0.1}}, "features": [{"id": "f1"}]}
+    protokoll = {"knoten": [{"id": "f1", "masse": [
+        {"name": "D1@f1_skizze", "art": "lage", "pfad": "features[0].skizze.elemente[0].kreis.mitte[0]", "wert": 5,
+         "bezug": None, "roh": "=A/2"},
+        {"name": "D2@f1_skizze", "art": "groesse", "pfad": "features[0].skizze.elemente[0].kreis.durchmesser",
+         "wert": 10, "bezug": None, "roh": "=A"}]}]}
+    plan = massplan(spec, protokoll)
+    assert [m.toleranz for m in plan] == [Toleranz(None, 0.1, -0.1, False)] * 2
+    assert len(plan) == 2
+
+
+# --- Nachbesserung Review Task 2 ----------------------------------------------------------------------------------------
+
+def test_unbekannte_funktion_an_bohrung_stuerzt_nicht_ab():
+    spec = _lade_ref("zeichnung/spannplatte_z.yaml")
+    next(f for f in spec["features"] if f["id"] == "st")["funktion"] = "gibtsnicht"
+    plan = massplan(spec, _spannplatte_protokoll())
+    assert any(m.quelle == "angabe" and m.merkmal == "st" for m in plan)
+    assert any(m.startswith("FUNKTION_UNBEKANNT: st") for m in massplan_meldungen(spec))
+
+
+def test_toleranz_mehrdeutig_gemeldet():
+    spec = {"parameter": {"A": 10, "AB": 4}, "toleranzen": {"A": {"oben": 0.1, "unten": -0.1},
+                                                             "AB": {"oben": 0.2, "unten": -0.2}},
+            "features": [{"id": "f1"}]}
+    protokoll = {"knoten": [{"id": "f1", "masse": [
+        {"name": "D1@f1_skizze", "art": "groesse", "pfad": "features[0].skizze.elemente[0].kreis.durchmesser",
+         "wert": 14, "bezug": None, "roh": "=A+AB"}]}]}
+    plan = massplan(spec, protokoll)
+    assert plan[0].toleranz == Toleranz(None, 0.1, -0.1, False)                 # erster gewinnt
+    assert "TOLERANZ_MEHRDEUTIG: D1@f1_skizze: A, AB" in massplan_meldungen(spec, protokoll)
+    assert "TOLERANZ_OHNE_MASS: A" not in massplan_meldungen(spec, protokoll)       # AB verliert (erster gewinnt)
+
+
+def test_toleranz_an_gewinde_ohne_aufnahme_gemeldet():
+    spec = {"parameter": {}, "features": [
+        {"id": "g1", "typ": "normbohrung", "art": "gewinde", "groesse": "M6", "positionen": [[0, 0]], "tiefe": 10,
+         "flaeche": "oben", "toleranz": {"oben": 0.1, "unten": 0}}]}
+    assert "TOLERANZ_OHNE_MASS: g1" in massplan_meldungen(spec)
+
+
+def test_treibender_parameter_nur_ganze_namen():
+    from swki.zeichnung.toleranzangaben import treibender_parameter
+
+    tol = {"A": Toleranz(None, 0.1, -0.1, False)}
+    assert [treibender_parameter(r, tol) for r in ("=AB*2", "=TA+1", "=A2", 5, "=A/2")] == [None, None, None, None, "A"]
+
+
+def test_drehteil_fasenmass_quer_zur_drehachse():
+    """Review Task 5 (I5): Das Fasenmaß eines Drehteils gehört in die Ansicht quer zur Drehachse (Längsschnitt); in
+    der Stirnansicht setzte D1@f2 an zwei konzentrischen Kreisen an und ließ sich nicht als Zeichnungsmaß setzen."""
+    plan = massplan(_lade_ref("zeichnung/buchse_z.yaml"), _buchse_protokoll())
+    fasen = [m for m in plan if m.art == "fase"]
+    assert fasen and all((m.achse, m.modus) == (1, "quer") for m in fasen)
+    platte = massplan(*_spannplatte())
+    assert all(m.modus != "quer" or m.art != "fase" for m in platte)
+
+
+def test_fasenmass_nur_an_rotationskanten_quer(monkeypatch):
+    """Nachbesserung C: Nur Fasen an Rotationskanten wandern in die Ansicht quer zur Drehachse – mit bekannter Ansicht
+    die Blickrichtung entlang der Drehachse (flach); ohne (Fasen des Drehteils) Kanten eines Rotationsprofils. Eine Fase
+    mit anderer Achse, schon quer oder an der Bohrung im Bund bleibt."""
+    import swki.zeichnung.massplan as mp
+
+    spec = _lade_ref("zeichnung/buchse_z.yaml")
+    spec["features"].append({"id": "fx", "typ": "fase", "kanten": [{"feature": "f5"}], "abstand": 0.5})
+    spec["features"].append({"id": "fy", "typ": "fase", "kanten": [{"nahe": [20, 8, 3]}], "abstand": 0.5})
+    achse = next(i for i, c in enumerate(mp.achsvektor(spec)) if c)
+    andere = (achse + 1) % 3
+    fasen = [Mass("D1@fa", "modell", "fase", 0.5, "fa", name="D1@fa", achse=achse, modus="flach"),
+             Mass("D1@fb", "modell", "fase", 0.5, "fb", name="D1@fb", achse=andere, modus="flach"),
+             Mass("D1@fc", "modell", "fase", 0.5, "fc", name="D1@fc", achse=andere, modus="quer"),
+             Mass("D1@fx", "modell", "fase", 0.5, "fx", name="D1@fx"),
+             Mass("D1@fy", "modell", "fase", 0.5, "fy", name="D1@fy"),
+             Mass("D1@f2", "modell", "fase", 1.0, "f2", name="D1@f2")]
+    monkeypatch.setattr(mp, "massplan_fraesteil", lambda s, p, ohne=frozenset(): list(fasen))
+    plan = {m.name: (m.achse, m.modus) for m in mp.massplan(spec, _buchse_protokoll()) if m.art == "fase"}
+    assert plan == {"D1@fa": (achse, "quer"), "D1@fb": (andere, "flach"), "D1@fc": (andere, "quer"),
+                    "D1@fx": (None, None), "D1@fy": (None, None), "D1@f2": (achse, "quer")}
+
+
+def test_position_nicht_unterstuetzt_in_den_meldungen():
+    """Gesamtreview M2: die Meldung geht über `massplan_meldungen` in die Prüfung (Z-TOL-5)."""
+    from swki.zeichnung.pruefen import MELDUNG_REGEL
+
+    spec = {"parameter": {}, "features": [{"id": "f1", "typ": "extrusion",
+                                           "form_lage": [{"art": "koaxialitaet", "wert": 0.02, "bezug": ["A"]}]}]}
+    meldung = next(m for m in massplan_meldungen(spec) if m.startswith("FORM_LAGE_NICHT_UNTERSTUETZT: f1"))
+    assert MELDUNG_REGEL[meldung.split(":")[0]] == ("toleranzen", "Z-TOL-5")
+    assert [m.form_lage.art for m in massplan(spec, {"knoten": []}) if m.quelle == "form_lage"] == ["koaxialitaet"]

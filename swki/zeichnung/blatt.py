@@ -9,6 +9,7 @@ FORMATE: dict[str, tuple[float, float]] = {"A4": (210, 297), "A3quer": (420, 297
 MASSSTAEBE: list[tuple[int, int]] = [(5, 1), (2, 1), (1, 1), (1, 2), (1, 5), (1, 10), (1, 20)]
 SCHRIFTFELD_MM = (180, 55)  # Breite nach ISO 7200; Höhe des Schriftfelds im SW-2025-Format (Hausregel bis Z1.5)
 RAND_LINKS_MM, RAND_MM = 20, 10
+SAMMEL_ZEILE_MM = 5.0  # Zeilenhöhe der Sammelangaben über dem Schriftfeld (Hausregel bis Z1.5)
 
 
 def zeichenfeld(format_: str) -> tuple[float, float, float, float]:
@@ -17,16 +18,17 @@ def zeichenfeld(format_: str) -> tuple[float, float, float, float]:
     return (RAND_LINKS_MM, RAND_MM, b - RAND_MM, h - RAND_MM)
 
 
-def freiflaechen(format_: str) -> list[tuple[float, float, float, float]]:
-    """Rechtecke ohne Schriftfeld: über dem Schriftfeld (volle Breite) und links daneben (volle Höhe)."""
+def freiflaechen(format_: str, sammel_mm: float = 0.0) -> list[tuple[float, float, float, float]]:
+    """Rechtecke ohne Schriftfeld: über dem Schriftfeld (volle Breite) und links daneben (volle Höhe). Die
+    Sammelangaben (`sammel_mm` hoch) stehen über dem Schriftfeld; das obere Rechteck beginnt deshalb höher."""
     x0, y0, x1, y1 = zeichenfeld(format_)
     sb, sh = SCHRIFTFELD_MM
-    return [(x0, y0 + sh, x1, y1), (x0, y0, x1 - sb, y1)]
+    return [(x0, y0 + sh + sammel_mm, x1, y1), (x0, y0, x1 - sb, y1)]
 
 
-def passt(bedarf_mm: tuple[float, float], format_: str) -> bool:
+def passt(bedarf_mm: tuple[float, float], format_: str, sammel_mm: float = 0.0) -> bool:
     b, h = bedarf_mm
-    return any(b <= x1 - x0 and h <= y1 - y0 for x0, y0, x1, y1 in freiflaechen(format_))
+    return any(b <= x1 - x0 and h <= y1 - y0 for x0, y0, x1, y1 in freiflaechen(format_, sammel_mm))
 
 
 def _skaliert(bedarf_mm: tuple[float, float], massstab: tuple[int, int]) -> tuple[float, float]:
@@ -45,9 +47,9 @@ def kandidaten():
             yield format_, m
 
 
-def waehle(bedarf_mm: tuple[float, float]) -> tuple[str, tuple[int, int]]:
+def waehle(bedarf_mm: tuple[float, float], sammel_mm: float = 0.0) -> tuple[str, tuple[int, int]]:
     """Format und Maßstab für einen Platzbedarf bei 1:1 (Ansichten samt Maßrand): der erste passende Kandidat."""
     for format_, m in kandidaten():
-        if passt(_skaliert(bedarf_mm, m), format_):
+        if passt(_skaliert(bedarf_mm, m), format_, sammel_mm):
             return format_, m
     return "A3quer", MASSSTAEBE[-1]

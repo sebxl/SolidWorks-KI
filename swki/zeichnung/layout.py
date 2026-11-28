@@ -35,22 +35,25 @@ def _einzelheit_massstaebe(massstab: tuple[int, int]) -> list[tuple[int, int]]:
     return [min(groesser, key=lambda m: m[0] / m[1])] if groesser else []
 
 
-def einzelheit_passt(groessen_1zu1: dict[str, tuple[float, float]], einzelheit: tuple[float, float]) -> bool:
+def einzelheit_passt(groessen_1zu1: dict[str, tuple[float, float]], einzelheit: tuple[float, float],
+                     sammel_mm: float = 0.0) -> bool:
     """Lohnt die Einzelheit? Nur wenn sie vergrößert aufs Blatt passt, ohne Format oder Blattmaßstab zu ändern."""
-    ohne = anordnen(groessen_1zu1)[:2]
     try:
-        format_, massstab, plaetze = anordnen({**groessen_1zu1, "einzelheit": einzelheit})
+        ohne = anordnen(groessen_1zu1, sammel_mm)[:2]
+        format_, massstab, plaetze = anordnen({**groessen_1zu1, "einzelheit": einzelheit}, sammel_mm)
     except ValueError:
         return False
     detail = next((p for p in plaetze if p.rolle == "einzelheit"), None)
     return (format_, massstab) == ohne and detail is not None and detail.massstab != massstab
 
 
-def anordnen(groessen_1zu1: dict[str, tuple[float, float]]) -> tuple[str, tuple[int, int], list[Platz]]:
+def anordnen(groessen_1zu1: dict[str, tuple[float, float]],
+             sammel_mm: float = 0.0) -> tuple[str, tuple[int, int], list[Platz]]:
     """groessen_1zu1: Umriss je Rolle (haupt, seite, drauf, seite_rechts, unter, einzelheit) in mm bei 1:1. Liefert
     Format, Maßstab und Plätze. Die Einzelheit (Nutzer 18.11.2026) bekommt einen eigenen, vergrößerten Maßstab und
     liegt in der Ecke unter der Seitenansicht oder rechts neben ihr; sie verbreitert dort Spalte und Reihe, ohne die
-    Projektionen aus der Flucht zu bringen. Ob sie das Blatt verkleinern würde, prüft `einzelheit_passt` vorher."""
+    Projektionen aus der Flucht zu bringen. Ob sie das Blatt verkleinern würde, prüft `einzelheit_passt` vorher.
+    `sammel_mm`: Höhe der Sammelangaben über dem Schriftfeld, die keine Ansicht belegen darf."""
     detail = groessen_1zu1.get("einzelheit")
     for format_, massstab in kandidaten():
         f = massstab[0] / massstab[1]
@@ -64,7 +67,7 @@ def anordnen(groessen_1zu1: dict[str, tuple[float, float]]) -> tuple[str, tuple[
             rechts, unten = max(z["seite"][0], ecke[0]), max(z["drauf"][1], ecke[1])
             breite = z["seite_rechts"][0] + spalte + rechts + daneben[0]
             hoehe = z["unter"][1] + reihe + unten
-            for x0, y0, x1, y1 in freiflaechen(format_):
+            for x0, y0, x1, y1 in freiflaechen(format_, sammel_mm):
                 if breite > x1 - x0 or hoehe > y1 - y0:
                     continue
                 links = x0 + (x1 - x0 - breite) / 2

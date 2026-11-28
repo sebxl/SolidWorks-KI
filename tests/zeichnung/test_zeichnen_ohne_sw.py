@@ -5,6 +5,7 @@ import math
 
 import pytest
 
+from swki.zeichnung import anforderungen_setzen as anf
 from swki.zeichnung import zeichnen as z
 from swki.zeichnung.ansichten import Ansicht
 from swki.zeichnung.massplan import Mass
@@ -39,7 +40,7 @@ class _View:
 
 class _Drw:
     def __init__(self):
-        self.n, self.schnitte = 0, 0
+        self.n, self.schnitte, self.label = 0, 0, None
         self.Extension = type("E", (), {"SelectByID2": lambda *a: True})()
         self.SketchManager = type("S", (), {"CreateLine": lambda *a: object()})()
 
@@ -53,10 +54,11 @@ class _Drw:
     def CreateUnfoldedViewAt3(self, *a):
         return self._neu()
 
-    def CreateSectionViewAt5(self, *a):
+    def CreateSectionViewAt5(self, x, y, z, label, *a):
         self.schnitte += 1
         v = self._neu()
-        v.GetName2 = "Schnittansicht A-A"
+        v.GetName2 = f"Schnittansicht {label}-{label}"
+        v.GetSection = type("Sch", (), {"GetLabel": self.label or label})()  # `label`: so trägt ihn SolidWorks
         return v
 
     def ActivateView(self, name):
@@ -65,17 +67,50 @@ class _Drw:
 
 def test_fraesteil_schnitt_nicht_unterstuetzt_wird_gemeldet():
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                           [Ansicht("haupt", "*Oben"), Ansicht("drauf", None, schnitt=True)])
+    views, schnitt, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                              [Ansicht("haupt", "*Oben"), Ansicht("drauf", None, schnitt=True)])
     assert set(views) == {"haupt", "drauf"} and schnitt is None and drw.schnitte == 0
     assert any("SCHNITT_NICHT_UNTERSTUETZT" in m for m in meldungen)
 
 
 def test_drehteil_laengsschnitt_aus_stirn():
     drw = _Drw()
-    views, schnitt, meldungen = z._erzeuge(drw, None, z.Path("t.sldprt"),
-                                           [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
-    assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == []
+    views, schnitt, meldungen, buchstaben = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                                       [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)])
+    assert schnitt == "Schnittansicht A-A" and drw.schnitte == 1 and meldungen == [] and buchstaben == {"A"}
+
+
+def test_schnittbuchstabe_ohne_bezugsbuchstaben():
+    """Runde E: Schnitte ab A vorwärts ohne I, O, Q und ohne die Bezugsbuchstaben (SpannplatteZ: Bezüge A, B →
+    Schnitt C-C); der Buchstabe wird nach Wirkung geprüft (`IView.GetSection` → `IDrSection.GetLabel`)."""
+    assert [z.schnitt_buchstabe(i) for i in range(4)] == ["A", "B", "C", "D"]
+    assert z.schnitt_buchstabe(0, {"A", "B"}) == "C"
+    alle = [z.schnitt_buchstabe(i) for i in range(23)]
+    assert not {"I", "O", "Q"} & set(alle) and len(set(alle)) == 23 and alle[-1] == "Z"
+    drw = _Drw()
+    views, schnitt, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                              [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)],
+                                              {"A", "B"})
+    assert schnitt == "Schnittansicht C-C" and meldungen == []
+    drw = _Drw()
+    drw.label = "A"                                                  # SolidWorks übergeht den verlangten Buchstaben
+    _, _, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                    [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], {"A", "B"})
+    assert meldungen == ["SCHNITT_BUCHSTABE: „C“ verlangt, Schnitt trägt „A“"]
+
+
+def test_buchstaben_aus_gemeldet_statt_indexerror():
+    """Runde E: Gehen die Buchstaben aus, kommt None (Meldung beim Aufrufer), kein IndexError."""
+    alle = set("ABCDEFGHJKLMNPRSTUVWXYZ")
+    assert z.schnitt_buchstabe(0, alle) is None and z.einzelheit_buchstabe(0, alle) is None
+    assert z.schnitt_buchstabe(23) is None and z.einzelheit_buchstabe(23) is None
+    meld: list = []
+    assert z._einzelheit(None, None, {"haupt": None}, "haupt", [("t1", ["D1"])], [], {}, set(), None, {}, meld) is None
+    assert meld == ["EINZELHEIT_BUCHSTABE: kein freier Buchstabe – Einzelheit entfällt"]
+    drw = _Drw()
+    _, _, meldungen, _ = z._erzeuge(drw, None, z.Path("t.sldprt"),
+                                    [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True)], alle)
+    assert meldungen[0].startswith("SCHNITT_BUCHSTABE: kein freier Buchstabe") and drw.schnitte == 1
 
 
 def test_zeichnungsname_kurz():
@@ -140,7 +175,7 @@ def test_zusaetze_an_passenden_anzeigemassen():
             Mass("D1@fa1", "modell", "fase", 1.0, "fa1", name="D1@fa1", suffix=" × 45°"),
             Mass("D1@t1_skizze", "modell", "laenge", 20.0, "t1", name="D1@t1_skizze"),
             _angabe(1)]
-    z._zusaetze_setzen({"haupt": view}, plan)
+    assert anf.zusaetze_setzen({"haupt": view}, plan) == []
     assert teilung.texte == {1: "4 × ", 2: " (= 120)"}
     assert fase.texte == {2: " × 45°"}            # kein leeres Präfix (würde z. B. <MOD-DIAM> löschen)
     assert andere.texte == {}
@@ -287,3 +322,234 @@ def test_neuer_hinweis_ohne_hinweislinie_gemeldet():
     meldungen = []
     z._hinweise_legen(drw, [h], {}, sperre, meldungen)
     assert meldungen == ["ANGABE_OHNE_HINWEISLINIE: g1 in haupt"]
+
+
+def test_uebergabe_json_mit_toleranz_und_form_lage():
+    import json
+    from swki.zeichnung.toleranzangaben import FormLage, Toleranz
+    plan = [Mass(id="m1", quelle="modell", art="durchmesser", wert=20.0, merkmal="welle",
+                 toleranz=Toleranz("h7", 0.0, -0.021, True), treiber="d"),
+            Mass(id="f1", quelle="form_lage", art="form_lage", wert=0.0, merkmal="welle",
+                 form_lage=FormLage("welle", "rundlauf", "↗", "0,02", ("A",), False))]
+    u = z.uebergabe(plan, {"plan": 1, "gesetzt": 1}, "ab" * 32, ["X: y"])
+    u2 = json.loads(json.dumps(u))
+    assert u2["plan"][0]["toleranz"]["passung"] == "h7" and u2["plan"][0]["toleranz"]["unten"] == -0.021
+    assert u2["plan"][1]["form_lage"]["bezug"] == ["A"]
+    assert u2["gesetzt"] == {"plan": 1, "gesetzt": 1} and u2["sha256_slddrw"] == "ab" * 32 and u2["meldungen"] == ["X: y"]
+    assert set(u2) == {"schema", "format", "massstab", "lauf", "plan", "gesetzt", "sha256_slddrw", "meldungen"}
+
+
+def test_sammelhoehe_aus_spec():
+    """Task 5, Nutzer 28.11.2026: das Rauheitsfeld steht rechts neben den ersten Zeilen, das Band bleibt so hoch wie die
+    Zeilen."""
+    from swki.zeichnung.toleranzangaben import sammelangaben
+    spec = {}
+    assert z.sammelhoehe_mm(spec) == len(sammelangaben(spec)) * z.SAMMEL_ZEILE_MM
+
+
+def test_uebergabe_kopf_und_ansichten():
+    u = z.uebergabe([], {}, "x", [], "A3quer", (1, 2), 7, {"haupt": "Zeichnungsansicht1"})
+    assert (u["schema"], u["format"], u["massstab"], u["lauf"]) == (1, "A3quer", "1:2", 7)
+    assert u["ansichten"] == {"haupt": "Zeichnungsansicht1"}
+    assert "ansichten" not in z.uebergabe([], {}, "x", [])
+
+
+def test_uebergabe_tupel_anker_und_leere_toleranz():
+    import json
+    from swki.zeichnung.toleranzangaben import FormLage, Toleranz
+    plan = [Mass(id="m", quelle="modell", art="laenge", wert=5.0, merkmal="a", treiber_alle=("p", "q"),
+                 toleranz=Toleranz(None, None, None, False)),
+            Mass(id="b", quelle="bezug", art="bezug", wert=0.0, merkmal="a", anker={"feature": "a", "flaeche": "+y"}),
+            Mass(id="f", quelle="form_lage", art="form_lage", wert=0.0, merkmal="a",
+                 form_lage=FormLage("a", "ebenheit", "⏥", "0,05", ("A", "B"), False))]
+    u = json.loads(json.dumps(z.uebergabe(plan, {}, "x", [])))
+    assert u["plan"][0]["treiber_alle"] == ["p", "q"] and u["plan"][0]["toleranz"]["passung"] is None
+    assert u["plan"][1]["anker"] == {"feature": "a", "flaeche": "+y"}
+    assert u["plan"][2]["form_lage"]["bezug"] == ["A", "B"]
+
+
+def test_schreibe_uebergabe_atomar_utf8(tmp_path):
+    import json
+    ziel = tmp_path / "zeichnung.json"
+    ziel.write_text("alt", encoding="utf-8")
+    assert z.schreibe_uebergabe(ziel, {"text": "Hülle Ⓔ, Größe", "n": 1}) == ziel
+    roh = ziel.read_text(encoding="utf-8")
+    assert "Hülle Ⓔ, Größe" in roh and json.loads(roh)["n"] == 1
+    assert not (tmp_path / "zeichnung.json.tmp").exists()
+
+
+def test_sammelhoehe_ohne_und_mit_behandlung_halbzeug():
+    from pathlib import Path
+    from swki.spec.laden import lade_spec
+    assert z.sammelhoehe_mm({}) >= 20.0
+    spec = lade_spec(Path(__file__).resolve().parents[1] / "referenz" / "zeichnung" / "buchse_z.yaml")
+    n = len(spec["behandlung"])
+    # 4 feste Zeilen, Härteangabe (77 Zeichen) umgebrochen auf zwei (Task 5), Halbzeug
+    assert z.sammelhoehe_mm(spec) == (4 + 2 * n + 1) * 5
+
+
+def test_eigenschaften_mit_dokumentart():
+    """Nachbesserung A: Z1.4 Entscheidung 3 – Dokumentart im Schriftfeld."""
+    gesetzt = {}
+    cpm = type("CPM", (), {"Add3": lambda s, n, t, w, o: gesetzt.__setitem__(n, w) or 1})()
+    ext = type("E", (), {"CustomPropertyManager": lambda s, k: cpm})()
+    drw = type("D", (), {"Extension": ext})()
+    werte = z._eigenschaften(drw, {"name": "Platte"}, "A3quer", (1, 2))
+    assert werte["Dokumentart"] == gesetzt["Dokumentart"] == "Einzelteilzeichnung"
+
+
+def test_zeichnen_loescht_alten_zeichnungspruefbericht(monkeypatch, tmp_path):
+    """Nachbesserung A: Nach dem Neuzeichnen gilt ein alter Zeichnungs-Prüfbericht nicht mehr – er wird gelöscht,
+    bevor SolidWorks gebraucht wird."""
+    ordner = tmp_path / "lauf-1"
+    ordner.mkdir()
+    (ordner / "teil.sldprt").write_bytes(b"x")
+    bericht = tmp_path / "s.lauf-1.zeichnung.pruefbericht.json"
+    bericht.write_text("{}", encoding="utf-8")
+    rechner = type("R", (), {"zeichnung": {"A3quer": "v"}, "sw_jahr": 2025})()
+    monkeypatch.setattr(z, "lade_spec", lambda p: {"name": "s", "features": []})
+    monkeypatch.setattr(z, "pruefe_freigabe", lambda p, s: None)
+    monkeypatch.setattr(z, "funktionen_veraltet", lambda p: None)
+    monkeypatch.setattr(z, "lade_rechner", lambda: rechner)
+    monkeypatch.setattr(z, "lade_standard", lambda: {})
+    monkeypatch.setattr(z, "auftrag_name", lambda p: "A")
+    monkeypatch.setattr(z, "waehle_lauf", lambda p, lauf: (1, []))
+    monkeypatch.setattr(z, "lauf_ordner", lambda r, a, lauf: ordner)
+    monkeypatch.setattr(z, "dateiname", lambda s, a, st: "teil")
+    monkeypatch.setattr(z, "lauf_datei", lambda p, lauf, art: tmp_path / f"s.lauf-{lauf}.{art}.json")
+
+    def halt(jahr):
+        raise RuntimeError("kein SolidWorks im Test")
+    monkeypatch.setattr(z, "verbinde", halt)
+    with pytest.raises(RuntimeError):
+        z.zeichnen(tmp_path / "s.yaml", 1)
+    assert not bericht.exists()
+
+
+# --- Nachbesserung B (Review Task 5) -----------------------------------------------------------------------------------
+
+
+def test_dreizeilige_form_der_bohrungsangabe():
+    # Runde D: der Umbruch trennt, der Strich entfällt (im PDF stand „… Ⓔ –“ vor „16,00“ und las sich als „–16,00“)
+    assert z._dreizeilig("2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°") == "2 × Ø8 H7 Ⓔ\n15 tief\nFase 0,5 × 45°"
+    assert z._dreizeilig("Ø6 durch") is None
+
+
+def test_dreizeilig_nur_wenn_zweizeilig_nicht_frei():
+    """I1: Die dreizeilige Form gewinnt nur, wenn die zweizeilige keine freie Lage hat (Stift der SpannplatteZ: 48,9 mm
+    Text, 46 mm Platz zwischen Hilfslinie und Seitenansicht)."""
+    drw = _NotizDrw()
+    alt = _NotizAnn(drw)
+    drw.notizen.append(alt)
+    text = "2 × Ø8 H7 Ⓔ – 15 tief\nFase 0,5 × 45°"
+    zwei, drei = z._notiztext(text), z._notiztext(z._dreizeilig(text))
+    h = z._Hinweis("st", zwei[1], alt, "haupt", [("k0", ((146.0, 240.0), 1.5))], 0, (111.0, 190.0, 211.0, 250.0),
+                   (60.0, 11.0), (30.0, -4.1), text=zwei[0], view=drw.view, winkel=45.0, varianten=[zwei, drei])
+    sperre = [((199.5, 0.0), (199.5, 400.0)), ((100.0, 0.0), (100.0, 400.0))]
+    z._hinweise_legen(drw, [h], {}, sperre, [])
+    assert h.variante == 1 and len(h.zeilen) == 3 and h.zeilen[0] == "2 × Ø8 H7 E" and not h.vermessen
+    assert drw.notizen == [h.ann]                                   # neu eingefügt, alter gelöscht
+    frei = z._Hinweis("st", zwei[1], _NotizAnn(drw), "haupt", [("k0", ((146.0, 240.0), 1.5))], 0,
+                      (111.0, 190.0, 211.0, 250.0), (60.0, 11.0), (30.0, -4.1), text=zwei[0], view=drw.view,
+                      winkel=45.0, varianten=[zwei, drei])
+    z._hinweise_legen(drw, [frei], {}, [], [])
+    assert frei.variante == 0                                       # Stufe-3-Fälle bleiben zweizeilig
+
+
+def test_zusaetze_nur_an_dauerhaften_massen():
+    """I5: Ein Modellmaß, das nicht umgewandelt werden konnte, bekommt keinen Zusatz (PDF wie SLDDRW)."""
+    a, b = _ZusatzDim("RD1@Zeichenansicht1"), _ZusatzDim("D1@f2")
+    view = type("V", (), {"GetDisplayDimensions": lambda s: (a, b)})()
+    plan = [Mass("D3@m1", "modell", "abstand", 30.0, "m1", name="D3@m1", praefix="4 × "),
+            Mass("D1@f2", "modell", "fase", 1.0, "f2", name="D1@f2", suffix=" × 45°")]
+    assert anf.zusaetze_setzen({"haupt": view}, plan, {"D3@m1": "RD1@Zeichenansicht1"}, nur={"D3@m1"}) == []
+    assert a.texte == {1: "4 × "} and b.texte == {}
+
+
+# --- Runde D: Einzelheit-Buchstaben ab Z rückwärts (recherche.md, TUM, Beleg B) ---------------------------------------
+
+
+def test_einzelheit_buchstabe_ab_z_rueckwaerts():
+    assert [z.einzelheit_buchstabe(i) for i in range(4)] == ["Z", "Y", "X", "W"]
+    # ohne I, O, Q und ohne Buchstaben, die schon vergeben sind (Bezüge, Schnitte)
+    assert [z.einzelheit_buchstabe(i, {"Y", "W"}) for i in range(3)] == ["Z", "X", "V"]
+    alle = [z.einzelheit_buchstabe(i) for i in range(23)]
+    assert not {"I", "O", "Q"} & set(alle) and len(set(alle)) == 23 and alle[-1] == "A"
+
+
+def test_einzelheit_buchstabe_nach_wirkung_geprueft():
+    class _Kreis:
+        def __init__(self, label):
+            self.label = label
+
+        def GetLabel(self):
+            return self.label
+
+    eltern = type("V", (), {"GetDetailCircles": lambda s: (_Kreis("B"),)})()
+    assert z._buchstabe_pruefen(eltern, "Z") == ["EINZELHEIT_BUCHSTABE: „Z“ verlangt, Einzelheitenkreis trägt „B“"]
+    eltern = type("V", (), {"GetDetailCircles": lambda s: (_Kreis("Z"),)})()
+    assert z._buchstabe_pruefen(eltern, "Z") == []
+
+
+def test_zeichnen_bricht_bei_funktionen_veraltet_ab(monkeypatch, tmp_path):
+    """Gesamtreview C1: geänderte Werte in funktionen.yaml nach der Freigabe – nie still mit den neuen Werten zeichnen."""
+    monkeypatch.setattr(z, "lade_spec", lambda p: {"name": "s", "features": []})
+    monkeypatch.setattr(z, "pruefe_freigabe", lambda p, s: None)
+    monkeypatch.setattr(z, "funktionen_veraltet", lambda p: "FUNKTIONEN_VERALTET: H7 → H8")
+
+    def halt(*a):
+        raise AssertionError("darf nicht bis zu SolidWorks kommen")
+    monkeypatch.setattr(z, "lade_rechner", halt)
+    with pytest.raises(z.ZeichnungFehler) as e:
+        z.zeichnen(tmp_path / "s.yaml", 1)
+    assert e.value.daten["code"] == "FUNKTIONEN_VERALTET"
+
+
+# --- Gesamtreview (a), I4 ----------------------------------------------------------------------------------------------
+
+def test_zwei_schnitte_bekommen_verschiedene_buchstaben(monkeypatch):
+    """(a): Längsschnitt und Frässchnitt in einer Zeichnung – je Schnitt der nächste freie Buchstabe, ohne Bezüge."""
+    gesehen = []
+
+    def fraes(drw, mu, haupt, durch, buchstabe):
+        gesehen.append(("fraes", buchstabe))
+        return drw.CreateSectionViewAt5(0, 0, 0, buchstabe)
+
+    monkeypatch.setattr(z, "_fraesschnitt", fraes)
+    ansichten = [Ansicht("seite", "*Oben"), Ansicht("haupt", None, schnitt=True),
+                 Ansicht("drauf", None, schnitt=True, durch=("st",))]
+    views, _, meldungen, buchstaben = z._erzeuge(_Drw(), None, z.Path("t.sldprt"), ansichten, {"A"})
+    assert meldungen == [] and buchstaben == {"B", "C"} and gesehen == [("fraes", "C")]
+    assert views["haupt"].GetName2 == "Schnittansicht B-B" and views["drauf"].GetName2 == "Schnittansicht C-C"
+
+
+def test_sammelangaben_ohne_pymupdf_gemeldet(monkeypatch, tmp_path):
+    """I4: ohne Extra pdf kein roher ImportError, sondern SAMMELANGABE_FEHLT (ungeprüft, Z-SAM-1)."""
+    from swki.zeichnung.pruefen import soll_luecken
+
+    def ohne(pdf):
+        raise ImportError("pymupdf")
+    monkeypatch.setattr(z, "texte", ohne)
+    meldungen = z._sammel_im_pdf(tmp_path / "z.pdf", ["Allgemeintoleranzen"], (230, 65, 410, 90))
+    assert [m.split(":")[0] for m in meldungen] == ["SAMMELANGABE_FEHLT"] and "pymupdf" in meldungen[0]
+    assert [(m["pruefung"], m["regel"]) for m in soll_luecken(meldungen)] == [("sammelangaben", "Z-SAM-1")]
+
+
+def test_radiuszahl_meidet_den_rahmen_der_einzelheit():
+    """Nutzer 28.11.2026: In der Einzelheit Z brach der Rahmen der Einzelheit das „R“ von „R4,00“ – Hindernis war nur der
+    Rahmen in der Elternansicht. Jetzt gilt der eigene Rahmen in der Einzelheit mit (`_radius_rahmen`); Zahlen wie live
+    (SpannplatteZ: Bogen um (352,85; 213,43), r = 4, Rahmen bis x = 360,86)."""
+    from swki.zeichnung.reihen import radius_zahl_frei
+
+    fest = {"rahmen": (60.0, 180.0, 90.0, 200.0), "einzelheit": (302.86, 205.42, 360.86, 243.42)}
+    assert z._radius_rahmen(fest, "haupt") == {"haupt": fest["rahmen"], "einzelheit": fest["einzelheit"]}
+    assert z._radius_rahmen({}, "haupt") is None
+    mitte, a, e = (352.85, 213.43), (352.85, 209.41), (356.87, 213.43)
+    kanten = [((310.87, 209.41), (352.85, 209.41)), ((356.87, 213.43), (356.87, 235.41)),
+              ((356.87, 208.42), (356.87, 193.43))]           # Taschenkanten, Hilfslinie des Maßes 50
+    hindernisse = kanten + z._rechteck_strecken(z._radius_rahmen(fest, "haupt")["einzelheit"])
+    laenge = z.ZEICHENBREITE_MM * len("R4,00")
+    x, y = radius_zahl_frei(mitte, a, e, z.RADIUS_ABSTAND_MM, hindernisse, laenge)
+    d = ((x - mitte[0]) / math.dist((x, y), mitte), (y - mitte[1]) / math.dist((x, y), mitte))
+    anfang = (x - d[0] * laenge / 2, y - d[1] * laenge / 2)
+    assert anfang[0] > 360.86 + 1.0, (x, y)                    # die ganze Zahl außerhalb des Rahmens

@@ -98,8 +98,30 @@ def _nenn(groesse: str) -> str:
     return zahl(float(m.group(1))) if m else groesse
 
 
+def bohrungstoleranz(feature: dict, spec: dict):
+    """Toleranz des Ø einer Bohrung/Normbohrung: eigene Anforderung des Features (Funktion, Passung, Abmaße), sonst die
+    Toleranz eines Parameters aus `toleranzen`, der im Ausdruck des Ø steht (nur `bohrung`); sonst None."""
+    from swki.spec.funktionen import FunktionFehler, aufloesen
+    from swki.zeichnung.toleranzangaben import parameter_toleranzen, toleranz_aus, treibender_parameter
+
+    param = spec.get("parameter", {})
+    try:
+        a = aufloesen(feature)
+    except FunktionFehler:
+        return None                                   # FUNKTION_UNBEKANNT meldet der Maßplan
+    eigene = toleranz_aus(a["passung"], a["toleranz"], a["huelle"], param)
+    if eigene is not None or feature.get("typ") != "bohrung":
+        return eigene
+    tol = parameter_toleranzen(spec)
+    p = treibender_parameter(feature.get("durchmesser"), tol)
+    return tol[p] if p else None
+
+
 def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list[str]]:
-    """(Text mit Zeilenumbrüchen, Meldungen) der Bohrungsangabe."""
+    """(Text mit Zeilenumbrüchen, Meldungen) der Bohrungsangabe; die Toleranz des Ø steht hinter dem Ø
+    („2 × Ø8 H7 Ⓔ – 15 tief“, Stufe 4)."""
+    from swki.zeichnung.toleranzangaben import toleranztext
+
     param = spec.get("parameter", {})
     meld: list[str] = []
     fid, art, groesse = feature["id"], feature.get("art"), str(feature.get("groesse", ""))
@@ -133,6 +155,11 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
     else:
         tief = ""
         meld.append(f"ANGABE_UNVOLLSTAENDIG: {fid} Tiefe fehlt (weder durch noch tiefe/gewindetiefe)")
+    if (toleranz := bohrungstoleranz(feature, spec)) is not None:
+        if not (feature["typ"] == "normbohrung" and art == "gewinde") and kopf.startswith("Ø"):
+            kopf += " " + toleranztext(toleranz)
+        else:
+            meld.append(f"TOLERANZ_OHNE_MASS: {fid}")   # die Angabe hat kein Ø, an das die Toleranz gehört
     kopfzeile = (f"{bild.anzahl} × " if bild.anzahl > 1 else "") + kopf + (f" – {tief}" if tief else "")
     fase = feature.get("fase")
     if fase == "nenn" and art == "gewinde":
@@ -159,16 +186,20 @@ def bohrungsangabe(feature: dict, spec: dict, bild: Bohrbild) -> tuple[str, list
 
 HINWEIS_RICHTUNGEN_GRAD = (45, 135, 315, 225)
 HINWEIS_ABSTAENDE_MM = (12.0, 18.0, 25.0, 35.0)
+# Mindestabstand des Hinweistexts zu fremdem Text und Maß-/Hilfslinien (Nachbesserung C: „2 × Ø8 H7 Ⓔ –“ endete
+# 0,6 mm vor „16,00“ und las sich wie „– 16,00“): in Zeilenrichtung eine Schrifthöhe, quer dazu 1 mm
+HINWEIS_ABSTAND_ZEILE_MM, HINWEIS_ABSTAND_QUER_MM = 3.5, 1.0
 
 
 def hinweis_lagen(kreis: tuple[tuple[float, float], float], umriss: tuple[float, float, float, float],
-                  hindernisse: list[tuple], groesse: tuple[float, float]) -> list[tuple[float, float]]:
+                  hindernisse: list[tuple], groesse: tuple[float, float], nah: list[tuple] = ()) -> list[tuple[float, float]]:
     """Alle Lagen des Hinweistexts, beste zuerst (`hinweis_lagen_bewertet` ohne Bewertung)."""
-    return [lage for _, lage in hinweis_lagen_bewertet(kreis, umriss, hindernisse, groesse)]
+    return [lage for _, lage in hinweis_lagen_bewertet(kreis, umriss, hindernisse, groesse, nah)]
 
 
 def hinweis_lagen_bewertet(kreis: tuple[tuple[float, float], float], umriss: tuple[float, float, float, float],
-                           hindernisse: list[tuple], groesse: tuple[float, float]) -> list[tuple[tuple, tuple]]:
+                           hindernisse: list[tuple], groesse: tuple[float, float],
+                           nah: list[tuple] = ()) -> list[tuple[tuple, tuple]]:
     """Alle Lagen des Hinweistexts einer Bohrungsangabe (Blatt-mm, Mitte des Texts), beste zuerst.
 
     Die Hinweislinie endet in Richtung 45°/135°/315°/225° im Abstand 12/18/25/35 mm von der Kreismitte; dort beginnt
@@ -177,18 +208,24 @@ def hinweis_lagen_bewertet(kreis: tuple[tuple[float, float], float], umriss: tup
     innerhalb eines Paars rechts vor links (Lesefluss; Plan Task 4 Step 1: Bohrung links oben → Text rechts oben).
     Reihenfolge: Abstand vor Richtung; zuerst Lagen, deren Textrechteck keine Strecke aus `hindernisse` kreuzt und
     außerhalb des Umrisses liegt, dann die ohne Kreuzung im Umriss, zuletzt die übrigen. Bewertung je Lage:
-    (kreuzt, im Umriss, Rang) – kleiner ist besser (Wahl unter mehreren Bohrungen eines Bohrbilds)."""
+    (kreuzt, im Umriss, Rang) – kleiner ist besser (Wahl unter mehreren Bohrungen eines Bohrbilds). `kreuzt`: 2, wenn
+    das Rechteck eine Strecke aus `hindernisse` kreuzt; 1, wenn es eine Strecke aus `nah` (fremder Text, Maß- und
+    Hilfslinien) näher als `HINWEIS_ABSTAND_ZEILE_MM` in Zeilenrichtung bzw. `HINWEIS_ABSTAND_QUER_MM` quer dazu
+    berührt (Nachbesserung C); sonst 0."""
     (mx, my), _ = kreis
     breite, hoehe = groesse
     oben = my >= (umriss[1] + umriss[3]) / 2
     paare = [(45, 135), (315, 225)] if oben else [(315, 225), (45, 135)]
     richtungen = [w for paar in paare for w in paar]
+    gx, gy = HINWEIS_ABSTAND_ZEILE_MM, HINWEIS_ABSTAND_QUER_MM
     lagen = []
     for i, (d, w) in enumerate((d, w) for d in HINWEIS_ABSTAENDE_MM for w in richtungen):
         ex, ey = mx + d * math.cos(math.radians(w)), my + d * math.sin(math.radians(w))
         cx = ex + breite / 2 if math.cos(math.radians(w)) > 0 else ex - breite / 2
         r = (cx - breite / 2, ey - hoehe / 2, cx + breite / 2, ey + hoehe / 2)
-        kreuzt = any(_schneidet(a, b, r) for a, b in hindernisse)
+        weit = (r[0] - gx, r[1] - gy, r[2] + gx, r[3] + gy)
+        kreuzt = (2 if any(_schneidet(a, b, r) for a, b in hindernisse)
+                  else 1 if any(_schneidet(a, b, weit) for a, b in nah) else 0)
         lagen.append(((kreuzt, _ueberlappt(r, umriss), i), (round(cx, 3), round(ey, 3))))
     return sorted(lagen)
 

@@ -15,8 +15,15 @@ def test_tabelle_vollstaendig():
 
 def test_aufloesen_aus_tabelle():
     a = aufloesen({"id": "f3", "typ": "normbohrung", "funktion": "stiftbohrung"})
-    assert a["passung"] == "H7" and a["huelle"] is True and a["rauheit"] == {"Ra": 0.8}
+    assert a["passung"] == "H7" and a["huelle"] is True and a["rauheit"] is None
     assert "passung" in a["unbestaetigt"]
+
+
+def test_stiftbohrung_ohne_eigene_rauheit():
+    """Nutzer 28.11.2026: Stiftbohrungen brauchen keine eigene Rauheitsangabe (Sammelrauheit gilt)."""
+    e = lade_funktionen()["stiftbohrung"]
+    assert "rauheit" not in e and "rauheit" not in e["beleg"] and "Nutzer 28.11.2026" in e["quelle"]
+    assert e["passung"] == "H7" and e["beleg"]["passung"] == "C" and e["bestaetigt"] is False
 
 
 def test_feature_ueberschreibt_tabelle():

@@ -197,15 +197,77 @@ def _aenderung_abschnitt(spec: dict, letzter: dict, ausgabe: dict | None, protok
     return zeilen
 
 
+def zeichnung_urteil_hinweise(zeichnung: dict | None) -> list[str]:
+    """Meldungen, die das Urteil des Zeichnungsprüfers ungültig machen: fehlt (ZEICHNUNGSPRUEFER_FEHLT) oder gehört zu einer
+    anderen Zeichnung (ZEICHNUNGSPRUEFER_VERALTET, SHA-256 der SLDDRW)."""
+    if not zeichnung:
+        return []
+    if zeichnung.get("pruefbericht_fehlt"):   # Gesamtreview I2: neu gezeichnet oder Prüfung abgebrochen
+        return ["ZEICHNUNG_PRUEFBERICHT_FEHLT: im Lauf liegt eine Zeichnung, aber kein Zeichnungs-Prüfbericht – "
+                "swki zeichnung pruefen ausführen"]
+    if zeichnung.get("pruefbericht_veraltet"):
+        return ["ZEICHNUNG_PRUEFBERICHT_VERALTET: der Zeichnungs-Prüfbericht gehört nicht zur SLDDRW auf der Platte – "
+                "swki zeichnung pruefen neu ausführen"]
+    urteil = zeichnung.get("urteil")
+    if urteil is None:
+        return ["ZEICHNUNGSPRUEFER_FEHLT: kein Urteil des Zeichnungsprüfers – Zeichnung ungeprüft"]
+    sha = ((zeichnung.get("pruefbericht") or {}).get("ist") or {}).get("sha256_slddrw")
+    if not sha or urteil.get("sha256_slddrw") != sha:   # ohne SHA im Bericht ist keine Bindung möglich
+        return ["ZEICHNUNGSPRUEFER_VERALTET: das Urteil gehört nicht zur aktuellen Zeichnung (sha256_slddrw) – "
+                "Zeichnungsprüfer neu starten"]
+    return []
+
+
+def zeichnung_stufe(zeichnung: dict | None) -> str:
+    """geprueft | maengel | ungeprueft. Ungeprüft: Urteil fehlt oder ist veraltet, oder der Prüfbericht ist veraltet.
+    Mängel: Prüfbericht oder Urteil nicht bestanden (auch wenn der Prüfer „bestanden“ sagt, die Maschine aber nicht)."""
+    if zeichnung_urteil_hinweise(zeichnung):
+        return "ungeprueft"
+    if not (zeichnung["pruefbericht"] or {}).get("bestanden") or not zeichnung["urteil"].get("bestanden"):
+        return "maengel"
+    return "geprueft"
+
+
+def _zeichnung_abschnitt(zeichnung: dict, hinweise: list[str]) -> list[str]:
+    pb = zeichnung.get("pruefbericht") or {}
+    urteil = zeichnung.get("urteil")
+    maschinell = ("kein Prüfbericht" if zeichnung.get("pruefbericht") is None
+                  else "bestanden" if pb.get("bestanden") else "nicht bestanden")
+    zeilen = ["", "## Zeichnung (letzter Lauf)", "", f"- PDF: `{pb.get('pdf') or 'fehlt'}`", f"- maschinell: {maschinell}"]
+    kopf = pb.get("kopf") or {}
+    zeilen += [f"- Kopfprüfung: {m}" for m in kopf.get("meldungen", [])]
+    if pb.get("nicht_geprueft"):
+        zeilen.append(f"- nicht geprüft (ok: null): {', '.join(pb['nicht_geprueft'])}")
+    zeilen += [f"- {m.get('merkmal') or 'Zeichnung'}: {m.get('text')} ({m.get('regel')}, {m.get('pruefung')})"
+               for m in pb.get("maengel", [])]
+    zeilen += [f"- Meldung: {m}" for m in pb.get("meldungen", [])]
+    zeilen += [f"- {h}" for h in hinweise]
+    if urteil is not None:
+        zeilen.append(f"- Zeichnungsprüfer: {'bestanden' if urteil.get('bestanden') else 'Mängel'}")
+        zeilen += [f"  - {', '.join(m['knoten']) or 'Zeichnung'}: {m['beschreibung']}"
+                   + (f" ({m['regel']})" if m.get("regel") else "") for m in urteil.get("maengel", [])]
+        hinweise_urteil = urteil.get("hinweise", [])
+        if isinstance(hinweise_urteil, list):
+            zeilen += [f"  - Hinweis: {h}" for h in hinweise_urteil]
+        else:
+            zeilen.append("  - Das Feld hinweise des Urteils ist keine Liste und wird ignoriert")
+    return zeilen
+
+
 def bericht_markdown(
     spec: dict, auftrag: str, laeufe: list[dict], empfehlung: tuple[str, str],
     letzter_bericht: dict | None, letztes_urteil: dict | None, letztes_protokoll: dict | None,
-    compiler_aenderungen: list[str], ausgabe: dict | None = None,
+    compiler_aenderungen: list[str], ausgabe: dict | None = None, zeichnung: dict | None = None,
 ) -> str:
     """`ausgabe`: nur für `art: aenderung`, das Ergebnis von `ausgabe_liste` (`None` solange kein Lauf bestanden ist, bei einem
     Fehler `{"fehler": Text}`)."""
     code, text = empfehlung
     status = "bestanden" if code == "bestanden" else f"offen ({code})"
+    zeichnung_hinweise = zeichnung_urteil_hinweise(zeichnung)
+    if zeichnung:
+        stufe = zeichnung_stufe(zeichnung)
+        if stufe != "geprueft":
+            status += " – Zeichnung ungeprüft" if stufe == "ungeprueft" else " – Zeichnung mit Mängeln"
     zeilen = [
         f"# Bericht {spec['name']} (Auftrag {auftrag})",
         "",
@@ -289,6 +351,8 @@ def bericht_markdown(
         if wege:
             zeilen += ["", "## Endlagen und Sollweg (letzter Lauf)", "", "| Prüfung | Ergebnis | Befund |", "|---|---|---|"]
             zeilen += [f"| {e['id']} | {_ERGEBNIS[e['ok']]} | {'–' if e['ok'] else beschreibung(e)} |" for e in wege]
+    if zeichnung:
+        zeilen += _zeichnung_abschnitt(zeichnung, zeichnung_hinweise)
     zeilen += ["", "## Screenshots (letzter Lauf)", ""]
     bilder = (letzter_bericht or {}).get("bilder", {})
     zeilen += [f"- {name}: `{pfad}`" for name, pfad in bilder.items()] or ["- keine"]
