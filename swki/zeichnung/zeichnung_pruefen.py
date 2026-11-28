@@ -1,7 +1,9 @@
-"""`swki zeichnung pruefen`: Zeichnung zurücklesen und maschinell prüfen (Plan Z1.4 Task 4a, Design §8).
+"""`swki zeichnung pruefen`: Zeichnung zurücklesen und maschinell prüfen (Plan Z1.4 Task 4a/4b, Design §8).
 
 Die Orchestrierung ist rein: Der Leser (`slddrw, rollen -> Ist`) kommt von außen. Vorgabe ist der COM-Rückleser aus
 Task 4b (`swki.zeichnung.rueckleser`), spät importiert; Tests übergeben einen Fake-Leser. Kein COM in diesem Modul.
+Nach dem Lesen: Zeichnungsmaße bekommen über `zeichnungsmasse` der Übergabe den Plan-Namen, Angaben ihr Merkmal über
+die Features der angehängten Kante (`pruefen.merkmale_zuordnen`).
 """
 
 import json
@@ -14,7 +16,7 @@ from swki.konfig import lade_rechner, lade_standard
 from swki.spec.freigabe import freigegebene_spec
 from swki.zeichnung.ist import Ist, ist_zu_dict
 from swki.zeichnung.massplan import Mass, _rund, massplan, massplan_meldungen
-from swki.zeichnung.pruefen import bewerte
+from swki.zeichnung.pruefen import bewerte, masse_umbenennen, merkmale_zuordnen
 from swki.zeichnung.regeln import lade_regeln
 from swki.zeichnung.zeichnen import ZeichnungFehler, _sha, schreibe_uebergabe, waehle_lauf, zeichnungsname
 
@@ -95,7 +97,9 @@ def zeichnung_pruefen(spec_pfad: Path, lauf: int | None = None, leser: Leser | N
     ist = leser(zeichnung, dict(daten.get("ansichten") or {}))
     if _sha(zeichnung) != sha_drw or _sha(teil) != sha_teil:
         raise ZeichnungFehler("ZEICHNUNG_PRUEFUNG_AENDERT", "das Rücklesen hat Zeichnung oder Teil verändert")
-    ist = replace(ist, sha256_slddrw=sha_drw)
+    # Task 4b: umgewandelte Modellmaße tragen wieder den Plan-Namen; Merkmal je Angabe über die angehängte Kante
+    ist = merkmale_zuordnen(masse_umbenennen(replace(ist, sha256_slddrw=sha_drw), daten.get("zeichnungsmasse")),
+                            spec, plan)
     pdf_ok = pdf.exists() and not kopf
     if kopf and pdf.exists():
         meldungen.append("PDF_VERWORFEN: das PDF gehört nicht sicher zur geprüften Zeichnung")

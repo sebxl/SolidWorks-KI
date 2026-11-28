@@ -19,6 +19,9 @@ from tests.zeichnung.ist_bau import ideal_ist
 from tests.zeichnung.test_massplan import _lade_ref, _spannplatte_protokoll
 
 
+VORMELDUNG = "EINZELHEIT: t1 aus haupt ausgelagert (3 Maße)"  # Übergabe-Meldung „nur Bericht“ (Task 4b)
+
+
 def _sha(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
@@ -67,7 +70,7 @@ def auftrag(tmp_path, monkeypatch):
     drw.write_bytes(b"zeichnung")
     plan = massplan(spec, protokoll)
     schreibe_uebergabe(ordner / "zeichnung" / "zeichnung.json",
-                       uebergabe(plan, {}, _sha(b"zeichnung"), ["VORMELDUNG"], "A3quer", (1, 1), 1,
+                       uebergabe(plan, {}, _sha(b"zeichnung"), [VORMELDUNG], "A3quer", (1, 1), 1,
                                  {"haupt": "Zeichnungsansicht1"}))
     monkeypatch.setattr(zp, "lade_rechner", lambda: SimpleNamespace(arbeitsordner=arbeits, sw_jahr=2025))
     monkeypatch.setattr(zp, "waehle_lauf", lambda p, lauf: (lauf or 1, []))
@@ -87,7 +90,7 @@ def test_pruefung_mit_fake_leser_bestanden(auftrag):
     bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag, gesehen))
     assert bericht["bestanden"] is True, bericht["maengel"]
     assert gesehen == [(auftrag.drw, {"haupt": "Zeichnungsansicht1"})]
-    assert "VORMELDUNG" in bericht["meldungen"]
+    assert VORMELDUNG in bericht["meldungen"]
     assert bericht["zeichnung"] == str(auftrag.drw)
     assert bericht["pdf"] is None  # im Test liegt kein PDF
     assert bericht["kopf"] == {"ok": True, "meldungen": []}
@@ -253,3 +256,64 @@ def test_cli_reicht_lauf_durch(monkeypatch, capsys):
     monkeypatch.setattr(zp, "zeichnung_pruefen", lambda spec, lauf=None, leser=None: aufrufe.append((spec, lauf)) or {"x": 1})
     assert main(["zeichnung", "pruefen", "a/spec.yaml", "--lauf", "3"]) == 0
     assert aufrufe == [(Path("a/spec.yaml"), 3)]
+
+
+# --- Task 4b: Anbindung des Rücklesers ------------------------------------------------------------------------------
+
+def _uebergabe_aendern(auftrag, **felder):
+    pfad = auftrag.ordner / "zeichnung" / "zeichnung.json"
+    daten = json.loads(pfad.read_text(encoding="utf-8"))
+    daten.update(felder)
+    pfad.write_text(json.dumps(daten, ensure_ascii=False), encoding="utf-8")
+    sha = _sha(auftrag.drw.read_bytes())
+    assert daten["sha256_slddrw"] == sha
+
+
+def test_unbekannte_uebergabemeldung_ist_mangel(auftrag):
+    _uebergabe_aendern(auftrag, meldungen=["NEU_ERFUNDEN: x"])
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
+    assert bericht["bestanden"] is False
+    assert any("unbekannte Zeichnungsmeldung: NEU_ERFUNDEN" in m["text"] for m in bericht["maengel"])
+
+
+def test_rauheit_nur_eine_instanz_aus_der_uebergabe(auftrag):
+    meldung = "RAUHEIT_NUR_EINE_INSTANZ: t1 Ra 1,6 – Symbol an einer von 2 Instanzen"
+    _uebergabe_aendern(auftrag, meldungen=[meldung])
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=_ideal_leser(auftrag))
+    assert bericht["bestanden"] is False
+    assert [m["regel"] for m in bericht["maengel"] if m["text"] == meldung] == ["Z-TOL-4"]
+
+
+def test_zeichnungsmasse_und_merkmale_nach_dem_lesen(auftrag):
+    """Der Rückleser liefert Zeichnungsmaße unter `RD<n>@…` und Angaben nur mit den Features der Kante; die Prüfung
+    ordnet über `zeichnungsmasse` und die `enthalten`-Logik zu."""
+    from dataclasses import replace
+    _uebergabe_aendern(auftrag, zeichnungsmasse={"D3@m1": "RD1@Zeichenansicht1"})
+    features = {"t1": ("Schnitt1", "s1"), "st": ("st", "st_fase"), "f1": ("Schnitt1", "f1")}
+
+    def leser(slddrw, rollen):
+        ist = ideal_ist(auftrag.plan, spec=auftrag.spec)
+        masse = tuple(replace(m, name="RD1@Zeichenansicht1") if m.name == "D3@m1" else m for m in ist.masse)
+        angaben = tuple(replace(a, merkmal=None, features=features.get(a.merkmal, ())) for a in ist.angaben)
+        return replace(ist, masse=masse, angaben=angaben)
+
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=leser)
+    assert bericht["bestanden"] is True, bericht["maengel"]
+    assert any(m["name"] == "D3@m1" for m in bericht["ist"]["masse"])
+    assert {a["merkmal"] for a in bericht["ist"]["angaben"] if a["art"] == "rauheit"} == {"t1", "st"}
+
+
+def test_meldungen_des_ruecklesers_im_bericht(auftrag):
+    from dataclasses import replace
+    meldung = "RUECKLESEN_UNVOLLSTAENDIG: Zeichenansicht1 – Maß RD3 ohne Wert"
+
+    def leser(slddrw, rollen):
+        return replace(ideal_ist(auftrag.plan, spec=auftrag.spec), meldungen=(meldung,))
+
+    bericht = zp.zeichnung_pruefen(auftrag.spec_pfad, leser=leser)
+    assert bericht["bestanden"] is False and meldung in bericht["meldungen"]
+
+
+def test_standardleser_ist_der_rueckleser():
+    from swki.zeichnung import rueckleser
+    assert zp._standardleser() is rueckleser.lies_zeichnung

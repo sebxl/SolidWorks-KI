@@ -2,6 +2,7 @@
 
 Die Pläne kommen aus den Referenzen (`massplan`), nie von Hand kopiert."""
 
+from swki.zeichnung.anforderungen_setzen import instanzen
 from swki.zeichnung.ist import Ist, IstAngabe, IstAnsicht, IstMass, IstToleranz
 from swki.zeichnung.massplan import Mass, massplan
 from swki.zeichnung.toleranzangaben import SAMMEL_RAUHEIT, Toleranz, sammelangaben
@@ -57,8 +58,9 @@ def ideal_ist(plan: list[Mass], ansichten: dict[str, str] | None = None, spec: d
             angaben.append(IstAngabe("rauheit", erste, m.text, None, None, (), m.merkmal))
             continue
         if m.quelle == "form_lage":
+            n = instanzen(spec, m.merkmal) if spec is not None else 1  # „n ד über dem Rahmen (Task 4b)
             angaben.append(IstAngabe("form_lage", erste, f"{m.form_lage.symbol} {m.text}", m.form_lage.symbol, m.text,
-                                     m.form_lage.bezug, m.merkmal))
+                                     m.form_lage.bezug, m.merkmal, n if n > 1 else None))
             continue
         if m.quelle == "bezug":
             angaben.append(IstAngabe("bezug", erste, m.text, None, None, (m.text,), m.merkmal))

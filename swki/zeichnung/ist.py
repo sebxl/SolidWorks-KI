@@ -35,6 +35,8 @@ class IstAngabe:
     wert: str | None
     bezug: tuple[str, ...]
     merkmal: str | None = None  # Feature-ID, wenn das Rücklesen sie kennt (Task 3: Abgleich je Merkmal), sonst None
+    anzahl: int | None = None  # Form/Lage: „n ד über dem Rahmen (Task 4b), sonst None
+    features: tuple[str, ...] = ()  # Features der Flächen an der angehängten Kante (Rückleser, roh; Task 4b)
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,7 @@ class Ist:
     angaben: tuple[IstAngabe, ...]
     eigenschaften: dict[str, str] = field(default_factory=dict)
     sha256_slddrw: str = ""
+    meldungen: tuple[str, ...] = ()  # Rückleser: was nicht gelesen werden konnte („CODE: Text“, nie still; Task 4b)
 
 
 def ist_zu_dict(ist: Ist) -> dict:
@@ -73,6 +76,8 @@ def ist_aus_dict(d: dict) -> Ist:
         format_=d["format_"], massstab=d["massstab"],
         ansichten=tuple(IstAnsicht(**a) for a in d["ansichten"]),
         masse=tuple(_mass(m) for m in d["masse"]),
-        angaben=tuple(IstAngabe(**{**a, "bezug": tuple(a["bezug"])}) for a in d["angaben"]),
+        angaben=tuple(IstAngabe(**{**a, "bezug": tuple(a["bezug"]), "features": tuple(a.get("features") or ())})
+                      for a in d["angaben"]),
         eigenschaften=dict(d["eigenschaften"]), sha256_slddrw=d["sha256_slddrw"],
+        meldungen=tuple(d.get("meldungen") or ()),
     )

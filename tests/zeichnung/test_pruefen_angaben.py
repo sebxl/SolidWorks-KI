@@ -348,6 +348,7 @@ def test_lesbarkeit_ist_hinweis(monkeypatch, tmp_path):
     ort = []
     monkeypatch.setattr(pruefen, "pruefe_pdf", lambda pdf, ausschluss=None, **kw: (ort.append(ausschluss) or
                         [Befund("text_ueber_text", "40", (1.0, 2.0, 3.0, 4.0), "50")]))
+    monkeypatch.setattr(pruefen, "texte", lambda pdf: [])  # Rahmentexte (Task 4b) aus der Test-PDF
     pdf = tmp_path / "z.pdf"
     pdf.write_bytes(b"%PDF")
     p = pruefe_lesbarkeit(pdf, "A3quer", REGELN)
