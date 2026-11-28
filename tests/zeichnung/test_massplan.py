@@ -397,3 +397,26 @@ def test_drehteil_fasenmass_quer_zur_drehachse():
     assert fasen and all((m.achse, m.modus) == (1, "quer") for m in fasen)
     platte = massplan(*_spannplatte())
     assert all(m.modus != "quer" or m.art != "fase" for m in platte)
+
+
+def test_fasenmass_nur_an_rotationskanten_quer(monkeypatch):
+    """Nachbesserung C: Nur Fasen an Rotationskanten wandern in die Ansicht quer zur Drehachse – mit bekannter Ansicht
+    die Blickrichtung entlang der Drehachse (flach); ohne (Fasen des Drehteils) Kanten eines Rotationsprofils. Eine Fase
+    mit anderer Achse, schon quer oder an der Bohrung im Bund bleibt."""
+    import swki.zeichnung.massplan as mp
+
+    spec = _lade_ref("zeichnung/buchse_z.yaml")
+    spec["features"].append({"id": "fx", "typ": "fase", "kanten": [{"feature": "f5"}], "abstand": 0.5})
+    spec["features"].append({"id": "fy", "typ": "fase", "kanten": [{"nahe": [20, 8, 3]}], "abstand": 0.5})
+    achse = next(i for i, c in enumerate(mp.achsvektor(spec)) if c)
+    andere = (achse + 1) % 3
+    fasen = [Mass("D1@fa", "modell", "fase", 0.5, "fa", name="D1@fa", achse=achse, modus="flach"),
+             Mass("D1@fb", "modell", "fase", 0.5, "fb", name="D1@fb", achse=andere, modus="flach"),
+             Mass("D1@fc", "modell", "fase", 0.5, "fc", name="D1@fc", achse=andere, modus="quer"),
+             Mass("D1@fx", "modell", "fase", 0.5, "fx", name="D1@fx"),
+             Mass("D1@fy", "modell", "fase", 0.5, "fy", name="D1@fy"),
+             Mass("D1@f2", "modell", "fase", 1.0, "f2", name="D1@f2")]
+    monkeypatch.setattr(mp, "massplan_fraesteil", lambda s, p, ohne=frozenset(): list(fasen))
+    plan = {m.name: (m.achse, m.modus) for m in mp.massplan(spec, _buchse_protokoll()) if m.art == "fase"}
+    assert plan == {"D1@fa": (achse, "quer"), "D1@fb": (andere, "flach"), "D1@fc": (andere, "quer"),
+                    "D1@fx": (None, None), "D1@fy": (None, None), "D1@f2": (achse, "quer")}

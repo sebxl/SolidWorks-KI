@@ -11,6 +11,7 @@ Je Merkmal genau ein Maß, je Richtung ein Bezug, keine geschlossene Kette.
   `quelle`).
 """
 
+import math
 from dataclasses import dataclass, replace
 
 from swki.spec.ausdruck import AusdruckFehler, auswerten, namen
@@ -382,14 +383,48 @@ def massplan_meldungen(spec: dict, protokoll: dict | None = None) -> list[str]:
     return aus + _angaben(spec)[1] + anforderung
 
 
+def _an_rotationskante(spec: dict, m: Mass, achse: int, rotationen: frozenset[str]) -> bool:
+    """Liegt die Fase des Maßes an einer Rotationskante (Kreis um die Drehachse an einem Eckpunkt eines
+    Rotationsprofils)? Mit bekannter Ansicht: Blick entlang der Drehachse (`(achse, "flach")`). Ohne (Fasen des
+    Drehteils haben keine): jede Kantenangabe nennt ein Rotations-Feature oder ihr `nahe`-Punkt liegt auf dem Kreis
+    eines Profileckpunkts (Radius und Lage auf der Achse; Nachbesserung C)."""
+    if m.achse is not None:
+        return (m.achse, m.modus) == (achse, "flach")
+    parameter = spec.get("parameter", {})
+    features = {f["id"]: f for f in spec.get("features", [])}
+    kanten = [k for k in features.get(m.merkmal, {}).get("kanten", []) if isinstance(k, dict)]
+    ecken = [p for fid in rotationen
+             for p in profilpunkte(features[fid], parameter, drehachse(features[fid], parameter)) or ()]
+    if not kanten:
+        return False
+    for k in kanten:
+        if "feature" in k:
+            if k["feature"] not in rotationen:
+                return False
+            continue
+        try:
+            p = [float(auswerten(c, parameter)) for c in k.get("nahe", [])][:3]
+        except (AusdruckFehler, TypeError, ValueError):
+            return False
+        if len(p) != 3:
+            return False
+        lage = p[achse]
+        radius = math.hypot(*(c for i, c in enumerate(p) if i != achse))
+        if not any(abs(r - radius) < 1e-3 and min(abs(a - lage), abs(a + lage)) < 1e-3 for r, a in ecken):
+            return False
+    return True
+
+
 def massplan(spec: dict, protokoll: dict) -> list[Mass]:
     """Maßplan je nach Teileart (Drehteil mit Rotationsprofil, sonst Frästeil), dazu die Anforderungseinträge."""
     rotationen = frozenset(f["id"] for f in spec.get("features", []) if f.get("typ") == "rotation")
     if ist_drehteil(spec) and rotationen:
-        # Fasenmaße in die Ansicht quer zur Drehachse (Review Task 5, I5: in der Stirnansicht setzte D1@f2 an zwei
-        # konzentrischen Kreisen an und ließ sich nicht als Zeichnungsmaß setzen)
+        # Fasenmaße an Rotationskanten (Blick entlang der Drehachse) in die Ansicht quer zur Drehachse (Review Task 5,
+        # I5: in der Stirnansicht setzte D1@f2 an zwei konzentrischen Kreisen an und ließ sich nicht als Zeichnungsmaß
+        # setzen); andere Fasen bleiben, wo der Maßplan sie hinlegt (Nachbesserung C)
         achse = next(i for i, c in enumerate(achsvektor(spec)) if c)
-        plan = massplan_drehteil(spec) + [replace(m, achse=achse, modus="quer") if m.art == "fase" else m
+        plan = massplan_drehteil(spec) + [replace(m, achse=achse, modus="quer")
+                                          if m.art == "fase" and _an_rotationskante(spec, m, achse, rotationen) else m
                                           for m in massplan_fraesteil(spec, protokoll, ohne=rotationen)]
     else:
         plan = massplan_fraesteil(spec, protokoll)

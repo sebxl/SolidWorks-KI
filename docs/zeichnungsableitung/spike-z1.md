@@ -154,3 +154,13 @@ Spikes `spikes/z1_diag_stufe4g.py` (g) und `z1_diag_stufe4h.py` (h) auf der Span
 | Loser Strich über dem Dreieck (g) | Erscheint nur bei Norm 2 (ISO 21920-1), an jedem Symbol; bei 1302:2002 nicht | `SetUserPreferenceInteger(629, 0, 1)` | `zeichnen` stellt die Zeichnung auf ISO 1302:2002 (Abweichung von der Vorlage, im Bericht) |
 | Kante am Punkt wählen (h) | `SelectByID2("", "EDGE", x, y, …)` wählt die Kante; Hinweislinie von Rauheit und Rahmen endet am Punkt (102,53 statt 102,56 mm). Bezugsdreieck: `GetLeaderPointsAtIndex` liefert keine Punkte | `IModelDocExtension.SelectByID2` (9), `IAnnotation.GetLeaderPointsAtIndex` (1) | Ansatz wählbar und rücklesbar (letzter Punkt) |
 | Mehrfachauswahl vor dem Einfügen (h) | Zwei Kreiskanten bzw. zwei Taschenböden gewählt: eine Hinweislinie | `IAnnotation.GetLeaderCount` | Rahmen: „2 ×“ darüber (`IGtol.SetText(swGTolTextCalloutAbove = 3)`, gelesen „2 ×“); Rauheit: Meldung `RAUHEIT_NUR_EINE_INSTANZ` |
+
+## Nachtrag: Stufe 4, Teil i – Lagen und Hindernisse im Schnitt (28.11.2026)
+
+Spike `spikes/z1_diag_stufe4i.py` auf einer Kopie der SpannplatteZ (Nachbesserung C, Task 5). Die Teil-SHA blieb gleich.
+
+| Frage | Ergebnis | API | Lehre |
+|---|---|---|---|
+| Bezugsdreieck über das Kantenende hinaus (i) | Bezug B an der linken Kante im Schnitt (x = 75,06, y 122,56–132,56). Mit `SetPosition2` auf (69,06; 139,06) bzw. (69,06; 116,06) liest `GetPosition` dieselbe Lage zurück. SolidWorks zieht die Verlängerung der Kante bis zum Dreieck selbst (PDF), über und unter dem Teil | `IAnnotation.SetPosition2` (3), `GetPosition` | Lagen auf der Verlängerung der Fläche (ISO 5459) sind setzbar; die Verlängerung zählt wie eine Hinweislinie |
+| Schraffierte Schnittfläche (i) | Eine `IFaceHatch` im Schnitt A-A; ihre Fläche liefert zwölf Kanten, gleich den Kanten der Schnittfläche (die `sichtbare_kanten` zusätzlich mit Feature „Schnitt1“ führt). Der Rand der Taschenöffnung hinter dem Schnitt gehört nicht dazu | `IView.GetFaceHatches` (0, 2003), `IFaceHatch.Face` (2003), `IFace2.GetEdges` (0, 2001) | „Hinweislinie durch die Schraffur“ ist prüfbar (Punkt in der Fläche), sprachunabhängig |
+| Eckpunkte über `ModelToViewTransform` (i) | Alle 20 Eckpunkte des Schnitts liegen 54–89 mm neben dem nächsten Kantenende; in der Hauptansicht stimmt y, x ist um 62,5 mm versetzt | `IView.GetVisibleEntities2` (2), `IVertex.GetPoint` | Eckpunktlagen nicht für Umriss oder Wahl am Punkt verwenden (offen: richtige Umrechnung) |

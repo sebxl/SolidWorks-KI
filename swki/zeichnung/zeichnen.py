@@ -38,8 +38,8 @@ from swki.spec.freigabe import pruefe_freigabe
 from swki.spec.laden import lade_spec
 from swki.verbindung import byref_long, callout_leer, r8_array, verbinde
 from swki.zeichnung import anforderungen_setzen as anf
-from swki.zeichnung.angaben import (HINWEIS_ABSTAENDE_MM, HINWEIS_RICHTUNGEN_GRAD, _enthalten, hinweis_lagen,
-                                    hinweis_lagen_bewertet)
+from swki.zeichnung.angaben import (HINWEIS_ABSTAENDE_MM, HINWEIS_ABSTAND_QUER_MM, HINWEIS_ABSTAND_ZEILE_MM,
+                                    HINWEIS_RICHTUNGEN_GRAD, _enthalten, hinweis_lagen, hinweis_lagen_bewertet)
 from swki.zeichnung.ansichten import (Ansicht, achsvektor, blickachsen, hinweise, vorzugsansichten,
                                      waehle_ansichten, weitere_rollen)
 from swki.zeichnung.bemassen import EINZELHEIT_MIN, MASSABSTAND_M, bemasse, kurzname, ordne_masse_an, setze_neu
@@ -52,6 +52,7 @@ from swki.zeichnung.toleranzangaben import sammelangaben
 from swki.zeichnung.mittellinien import bezugspunkt, linien, ohne_kante
 from swki.zeichnung.zuordnung import max_je_ansicht
 
+NAEHE_EIGENER_TEXT_MM = 4.0  # PDF-Text gehört zum Hinweis/zur Anmerkung gleichen Wortlauts, wenn so nah am Rechteck
 NAEHE_MM = 25.0  # Befund gehört zur nächsten Maßzahl in diesem Umkreis (Live 18.11.: Kennbuchstabe „A“ auf der Maßlinie, Zahl 18 mm weg)
 
 SW_DEFAULT_TEMPLATE_DRAWING = 10            # swUserPreferenceStringValue_e
@@ -533,11 +534,28 @@ def _hinweise_vermessen(hinweise: list, pdf_texte: list[tuple[str, tuple]]) -> l
     return neu
 
 
-def _enthaltene(spec: dict, plan: list) -> dict[str, set[str]]:
-    """Je Angabe die Features, deren Flächen die Kreiskanten tragen dürfen: die Bohrung, ihre Muster und Spiegel
-    (Spike Stufe 3: Kanten von Musterinstanzen gehören zum Muster-Feature)."""
+def _enthaltene(spec: dict, plan: list, quellen: tuple[str, ...] = ("angabe",)) -> dict[str, set[str]]:
+    """Je Angabe (bzw. Eintrag aus `quellen`) die Features, deren Flächen die Kanten tragen dürfen: das Merkmal, seine
+    Muster und Spiegel (Spike Stufe 3: Kanten von Musterinstanzen gehören zum Muster-Feature; Nachbesserung C: Ra 1,6
+    darf auch an den gespiegelten Taschenboden)."""
     return {m.merkmal: {m.merkmal} | {f["id"] for f in _enthalten(spec, m.merkmal)}
-            for m in plan if m.quelle == "angabe"}
+            for m in plan if m.quelle in quellen}
+
+
+def _fremde_texte(pdf_texte: list[tuple[str, tuple]], hinweise: list) -> list[tuple]:
+    """Textrechtecke des PDFs, die zu keinem Hinweis bzw. keiner Anmerkung gehören. Eigen ist ein Text nur in der Nähe
+    seines Hinweises (Nachbesserung C: Bezug „A“ machte sonst die Kennbuchstaben „A“ der Schnittlinie unsichtbar, der
+    Stifthinweis legte sich darauf)."""
+    def eigen(wort, r) -> bool:
+        for h in hinweise:
+            q = h.rechteck()
+            if q is None or wort not in h.zeilen:
+                continue
+            n = NAEHE_EIGENER_TEXT_MM
+            if r[0] < q[2] + n and q[0] - n < r[2] and r[1] < q[3] + n and q[1] - n < r[3]:
+                return True
+        return False
+    return [r for wort, r in pdf_texte if not eigen(wort, r)]
 
 
 def _kreiskanten(mu, view, namen: set[str]) -> list[tuple]:
@@ -739,7 +757,7 @@ def _alten_hinweis_loeschen(drw, h) -> bool:
 
 
 def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
-                    meldungen: list | None = None) -> list[tuple]:
+                    meldungen: list | None = None, nah_texte: list[tuple] = ()) -> list[tuple]:
     """Lage jedes Hinweises neu wählen (nach der Reihenanlage, vor den Radiuszahlen): über alle Bohrungen des Bohrbilds
     die beste Lage aus `hinweis_lagen_bewertet`, die kein PDF-Befund verworfen hat (bei Gleichstand die heutige
     Bohrung). Hindernisse sind `statisch`, die Maße, wie sie jetzt liegen, und die schon gelegten Hinweise (Live 19.11.,
@@ -749,12 +767,17 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
     (`_hinweis_einfuegen` am Kreispunkt zum Text hin) und der alte gelöscht; bleibt der alte stehen, meldet
     `meldungen` `ANGABE_DOPPELT`, fehlt dem neuen die Hinweislinie, `ANGABE_OHNE_HINWEISLINIE`.
     `IAnnotation.SetPosition2` setzt den Bezugspunkt der Notiz (Mitte − `versatz`); die Hinweislinie zieht mit
-    (Spike Stufe 3). Liefert Rechtecke und Hinweislinien aller Hinweise als Strecken."""
+    (Spike Stufe 3). Mindestabstand (Nachbesserung C, `angaben.HINWEIS_ABSTAND_ZEILE_MM`): zu den Maß- und
+    Hilfslinien und Maßzahlen, zu `nah_texte` (fremde Texte, Anmerkungen; als Strecken) und den Texten der schon
+    gelegten Hinweise – nicht zu Kanten. Liefert Rechtecke und Hinweislinien aller Hinweise als Strecken."""
     if not hinweise:
         return []
-    hindernisse = statisch + _masslinien(views)
+    masslinien = _masslinien(views)
+    hindernisse = statisch + masslinien
     gelegt: list[tuple] = []
+    texte_gelegt: list[tuple] = []
     for h in hinweise:
+        nah = masslinien + list(nah_texte) + texte_gelegt
         formen = range(len(h.varianten)) if h.varianten else [h.variante]
         beste = None
         if h.fixiert is not None:  # beste Runde wiederherstellen
@@ -762,7 +785,7 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
         for v in ([] if beste else formen):
             groesse = h.groesse_von(v)
             for j, (_, kreis) in enumerate(h.kreise):
-                for wert, lage in hinweis_lagen_bewertet(kreis, h.umriss, hindernisse + gelegt, groesse):
+                for wert, lage in hinweis_lagen_bewertet(kreis, h.umriss, hindernisse + gelegt, groesse, nah):
                     if any(math.dist(lage, w) <= 0.5 for w in h.verworfen):
                         continue
                     # frei vor Form: die dreizeilige Form nur, wenn die zweizeilige keine freie Lage hat (Review I1)
@@ -771,7 +794,7 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
                         beste = (schluessel, j, lage, v)
                     break  # Lagen kommen sortiert: die erste nicht verworfene ist die beste dieser Bohrung
         if beste is None:  # alle verworfen: heutige Bohrung und Form, erste Lage
-            beste = (None, h.instanz, hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0],
+            beste = (None, h.instanz, hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse, nah)[0],
                      h.variante)
         _, j, lage, v = beste
         if v != h.variante:
@@ -792,11 +815,80 @@ def _hinweise_legen(drw, hinweise: list, views: dict, statisch: list[tuple],
                 if _ruf(h.ann, "GetLeaderCount") != 1:
                     _melde(meldungen, f"ANGABE_OHNE_HINWEISLINIE: {h.merkmal} in {h.rolle}")
             elif j != h.instanz:
-                lage = hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse)[0]
+                lage = hinweis_lagen(h.kreis, h.umriss, hindernisse + gelegt, h.groesse, nah)[0]
         h.lage = lage
         h.ann.SetPosition2((h.lage[0] - h.versatz[0]) / 1000, (h.lage[1] - h.versatz[1]) / 1000, 0)
         gelegt += _rechteck_strecken(h.rechteck()) + [h.hinweislinie()]
+        texte_gelegt += _rechteck_strecken(h.rechteck())
     return gelegt
+
+
+def _anmerkungen_kreuzen(views: dict, notizen: list, anmerkungen: list, statisch: list[tuple], pdf: Path) -> list[str]:
+    """`ANMERKUNG_KREUZT` aus dem Endstand (Nachbesserung C): Maße, wie sie liegen, Bohrungsangaben (Rechteck und
+    Hinweislinie), fremde Texte des letzten PDFs, Kanten (`statisch`) und die anderen Anmerkungen an ihrer
+    zurückgelesenen Lage (`anforderungen_setzen.anmerkungen_pruefen`)."""
+    masslinien = _masslinien(views)
+    try:
+        fremde = _fremde_texte(texte(pdf), notizen + anmerkungen) if pdf.exists() else []
+    except ImportError:  # ohne pymupdf: nur gegen Maße, Angaben und Kanten
+        fremde = []
+    hinw = [s for h in notizen if h.lage for s in _rechteck_strecken(h.rechteck()) + [h.hinweislinie()]]
+    return anf.anmerkungen_pruefen(anmerkungen, masslinien + hinw + [s for r in fremde for s in _rechteck_strecken(r)],
+                                   [h.rechteck() for h in notizen if h.rechteck()] + fremde, statisch, masslinien,
+                                   [h.hinweislinie() for h in notizen if h.lage])
+
+
+def hinweis_im_pdf(h, pdf_texte: list[tuple[str, tuple]]) -> tuple | None:
+    """Rechteck eines Hinweises, wie das PDF ihn zeigt: je Zeile der nächste gleichlautende Text (wie
+    `_hinweise_vermessen`), vereinigt; None, wenn eine Zeile fehlt."""
+    if h.lage is None:
+        return None
+    rechtecke = []
+    for zeile in h.zeilen:
+        treffer = [r for wort, r in pdf_texte if wort == zeile]
+        if not treffer:
+            return None
+        rechtecke.append(min(treffer, key=lambda r: math.dist(h.lage, ((r[0] + r[2]) / 2, (r[1] + r[3]) / 2))))
+    return (min(r[0] for r in rechtecke), min(r[1] for r in rechtecke), max(r[2] for r in rechtecke),
+            max(r[3] for r in rechtecke))
+
+
+def zu_nah(rechteck: tuple, strecken: list[tuple]) -> int:
+    """Wie viele Strecken das Rechteck näher als `HINWEIS_ABSTAND_ZEILE_MM` in Zeilenrichtung bzw.
+    `HINWEIS_ABSTAND_QUER_MM` quer dazu berühren (Nachbesserung C, Punkt 4)."""
+    gx, gy = HINWEIS_ABSTAND_ZEILE_MM, HINWEIS_ABSTAND_QUER_MM
+    weit = (rechteck[0] - gx, rechteck[1] - gy, rechteck[2] + gx, rechteck[3] + gy)
+    return sum(1 for a, b in strecken if _schneidet(a, b, weit))
+
+
+def _hinweise_zu_nah(views: dict, notizen: list, anmerkungen: list, pdf: Path) -> list[str]:
+    """Endprüfung Punkt 4 am PDF (nie still): ein Hinweis, dessen Text (Rechteck aus dem PDF) näher als eine
+    Schrifthöhe in Zeilenrichtung bzw. 1 mm quer an fremdem Text, Maß- oder Hilfslinien liegt → `ANGABE_ZU_NAH`."""
+    if not notizen:
+        return []
+    try:
+        pdf_texte = texte(pdf) if pdf.exists() else []
+    except ImportError:
+        return ["ANGABE_ZU_NAH: ungeprüft – pymupdf fehlt (Extra pdf)"]
+    alle = notizen + anmerkungen
+    fremde = _fremde_texte(pdf_texte, alle)
+    aus = []
+    for h in notizen:
+        r = hinweis_im_pdf(h, pdf_texte) or h.rechteck()
+        if r is None:
+            continue
+        nah = (_masslinien(views) + [s for q in fremde for s in _rechteck_strecken(q)]
+               + [s for o in alle if o is not h and o.rechteck() for s in _rechteck_strecken(o.rechteck())])
+        n = zu_nah(r, nah)
+        if n:
+            aus.append(f"ANGABE_ZU_NAH: {h.merkmal} in {h.rolle} – Text „{h.zeilen[0]}“ näher als "
+                       f"{zahl_mm(HINWEIS_ABSTAND_ZEILE_MM)} mm (Zeilenrichtung) bzw. {zahl_mm(HINWEIS_ABSTAND_QUER_MM)} mm "
+                       f"an fremdem Text oder Maßlinie ({n})")
+    return aus
+
+
+def zahl_mm(x: float) -> str:
+    return f"{x:g}".replace(".", ",")
 
 
 def _gruppen(spec: dict) -> dict[str, str]:
@@ -935,7 +1027,7 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
         anmerkungen: list[anf.Anmerkung] = []
         meldungen += anf.anmerkungen_setzen(drw, mu, views, plan, achsen,
                                             {f["id"]: f.get("typ") for f in spec.get("features", [])},
-                                            _enthaltene(spec, plan), anmerkungen,
+                                            _enthaltene(spec, plan, ("angabe", "rauheit", "form_lage")), anmerkungen,
                                             {h.merkmal: [h.kreis[0]] for h in notizen},
                                             {m.merkmal: anf.instanzen(spec, m.merkmal) for m in plan})
         zeilen_sammel = sammelangaben(spec)
@@ -956,16 +1048,17 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
             if notizen or anmerkungen:  # IDisplayData zeigt die eben gesetzten Reihen erst nach dem Neuaufbau (19.11.)
                 _ruf(drw, "EditRebuild3")
             # Anmerkungen der letzten Runde sind Hindernis für die Hinweise (Review Task 5, I1)
-            anm = [s for a in anmerkungen if a.lage for s in _rechteck_strecken(a.rechteck()) + [a.hinweislinie()]]
+            anm_text = [s for a in anmerkungen if a.lage for s in _rechteck_strecken(a.rechteck())]
+            anm = anm_text + [s for a in anmerkungen if a.lage for s in a.linien()]
             fremd = [s for r in fremde for s in _rechteck_strecken(r)]
-            gelegt = _hinweise_legen(drw, notizen, views, statisch + anm + fremd, angaben_meld)
+            gelegt = _hinweise_legen(drw, notizen, views, statisch + anm + fremd, angaben_meld, fremd + anm_text)
             if anmerkungen:
                 masslinien = _masslinien(views)
-                anf.instanzen_umhaengen(drw, anmerkungen, notizen, angaben_meld, masslinien + gelegt, statisch,
-                                        masslinien)
+                anf.instanzen_umhaengen(drw, anmerkungen, notizen, angaben_meld, masslinien + gelegt + fremd, statisch,
+                                        masslinien, fremde)
                 gelegt += anf.anmerkungen_legen(anmerkungen, masslinien + gelegt + fremd,
                                                 [h.rechteck() for h in notizen if h.rechteck()] + fremde, statisch,
-                                                masslinien)
+                                                masslinien, [h.hinweislinie() for h in notizen if h.lage])
             _radien_setzen(mu, views, rahmen, mittel, gelegt)
 
         meldungen += _lesbar_anlegen(drw, ext, views, pdf, format_, fest, nach_reihen,
@@ -973,6 +1066,9 @@ def zeichnen(spec_pfad: Path, lauf: int | None = None) -> dict:
                                      if "rahmen" in fest else None, runden=5 if anmerkungen else 3,
                                      hinweise=notizen + anmerkungen, band=band, fremde_texte=fremde)
         meldungen += angaben_meld + anf.sammel_pruefen(texte(pdf), zeilen_sammel, band)
+        if anmerkungen:  # Nachbesserung C: was nach der letzten Runde noch kreuzt, steht in den Meldungen
+            meldungen += _anmerkungen_kreuzen(views, notizen, anmerkungen, statisch, pdf)
+        meldungen += _hinweise_zu_nah(views, notizen, anmerkungen, pdf)
         _speichern(ext, zeichnung)
         info = [{"rolle": rolle, "name": _ruf(v, "GetName2"), "massstab": round(_ruf(v, "ScaleDecimal"), 4),
                  "umriss_mm": [round(x, 1) for x in fest.get(rolle) or _umriss_mm(v)]} for rolle, v in views.items()]
@@ -1145,8 +1241,7 @@ def _lesbar_anlegen(drw, ext, views: dict, pdf: Path, format_: str, fest: dict |
         if befunde is None:
             return ["LESBARKEIT_UNGEPRUEFT: pymupdf fehlt (Extra pdf)"]
         if fremde_texte is not None:  # Texte, die sich nicht bewegen (Ansichtsbeschriftung, Maßzahlen): Hindernis
-            eigene = {z for h in hinweise or [] for z in h.zeilen}
-            fremde_texte[:] = [r for wort, r in texte(pdf) if wort not in eigene]
+            fremde_texte[:] = _fremde_texte(texte(pdf), hinweise or [])
         if beste is None or len(befunde) < beste[0]:  # Review Task 5 (I1): beste Runde merken
             beste = (len(befunde), dict(vorlauf), [(h, h.stand()) for h in hinweise or []])
         if not befunde or runde == runden + 1:

@@ -457,7 +457,7 @@ def test_umhaengen_an_bohrung_ohne_angabe():
     alt = type("Ann", (), {"Select2": lambda s, a, m: True})()
     neu = object()
     a = an.Anmerkung("rauheit", "st", ("Ra 0,8",), alt, "haupt", (164.0, 205.8), (0, 0, 1, 1), (20.0, 10.0), (0.0, 0.0),
-                     kreise=[k1, k2], einhaengen=lambda k: (neu, (k.kreis[0][0] + 1.4, k.kreis[0][1] + 1.4)))
+                     orte=[k1, k2], einhaengen=lambda k, meld=None: (neu, (k.kreis[0][0] + 1.4, k.kreis[0][1] + 1.4)))
     hinweis = type("H", (), {"merkmal": "st", "kreis": ((162.6, 204.4), 2.0), "rechteck": lambda s: None})()
     drw = _Drw(_View())
     drw.Extension.DeleteSelection2 = lambda o: True
@@ -493,3 +493,253 @@ def test_kantenende_ohne_eckpunkt_wird_punkt():
     wand = _kante((129.06, 178.5), (129.06, 183.0))
     k = an.kante_am_punkt((129.06, 178.5), "v", [wand])
     assert k is not None and k.punkt and k.obj is None and k.a == (129.06, 178.5)
+
+
+# --- Nachbesserung C -------------------------------------------------------------------------------------------------
+
+
+def test_kreismitte_vor_verlaengerter_wand():
+    """I2-Rest (Nachweis kante_1mm.py): Eine kollineare Wand, die 0,8 mm vor der Kreismitte endet, verliert gegen den
+    Kreis mit der Mitte im Punkt; allein gilt sie nur innerhalb 1 mm × Maßstab."""
+    p = (110.0, 246.5)
+    kreis = _kante((112.0, 246.5), (112.0, 246.5), ((110.0, 246.5), 2.0), ["bohrung"])
+    wand = _kante((110.0, 236.0), (110.0, 245.7), features=["tasche"])
+    assert an.kante_am_punkt(p, "h", [kreis, wand]) is kreis
+    assert an.kante_am_punkt(p, "h", [wand]) is wand                   # 0,8 mm bei 1:1
+    assert an.kante_am_punkt(p, "h", [wand], massstab=0.5) is None     # 1:2 → 0,5 mm auf dem Blatt
+    auf = _kante((110.0, 240.0), (110.0, 250.0))
+    assert an.kante_am_punkt(p, "h", [kreis, wand, auf]) is auf        # auf der Strecke: Kante vor Kreis
+
+
+def test_ersetze_rund_nimmt_den_naechsten_kreis(monkeypatch):
+    """Zwei Kreise gleichen Radius berühren Linien des Maßes; gewählt wird der nächste, nicht der erste."""
+    v = _View()
+    alt = _DD(v, "D1@r1", 4.0, [((20.0, 20.0), (13.4, 13.4)), ((13.4, 13.4), (12.0, 12.0))])
+    alt.Type2 = 5
+    v.masse.append(alt)
+    fern = _kante((28.0, 12.0), (32.0, 8.0), ((32.0, 12.0), 2.0))
+    nah = _kante((8.0, 12.0), (12.0, 8.0), ((12.0, 12.0), 2.0))
+    fern.radius_mm = nah.radius_mm = 4.0
+    monkeypatch.setattr(an, "sichtbare_kanten", lambda mu, view: [fern, nah])
+    alt.daten.linien.append(((30.2, 12.0), (30.25, 12.0)))             # streift den fernen Rand (0,2 mm)
+    m = Mass("D1@r1", "modell", "radius", 4.0, "r1", name="D1@r1", suffix=" (x)")
+    an.dauerhaft_machen(_Drw(v, neu_wert=4.0), None, {"haupt": v}, [m])
+    assert v.auswahl == [nah.obj]
+
+
+def test_ansatzpunkt_rueckfall_gemeldet():
+    """Ist kein Ansatzpunkt frei, kommt der erste – mit Meldung, einmal."""
+    boden = _kante((85.0, 128.6), (95.0, 128.6))
+    belegt = [(85.0 + t * 10.0, 128.6) for t in an.ANSATZ_TEILUNG]
+    meld: list = []
+    for _ in range(2):
+        p = an.ansatzpunkt(boden, [boden], belegt, None, meld, "t1 Ra 1,6")
+    assert p == pytest.approx((90.0, 128.6))
+    assert meld == ["ANSATZ_NICHT_FREI: t1 Ra 1,6 – kein Ansatzpunkt der Kante frei (belegt oder an einer anderen "
+                    "Kante), Hinweislinie am ersten"]
+
+
+class _AnnLage:
+    def __init__(self):
+        self.p = (0.0, 0.0)
+
+    def SetPosition2(self, x, y, zz):
+        self.p = (x, y)
+        return True
+
+    def GetPosition(self):
+        return (*self.p, 0.0)
+
+    def Select2(self, a, m):
+        return True
+
+
+def test_wiederherstellen_haengt_zurueck():
+    """I3-Rest: `stand()` umfasst die Instanz. Hat das Umhängen nach der besten Runde die Bohrung gewechselt, hängt die
+    Wiederherstellung zurück, statt die alte Lage an die neue Bohrung zu setzen; der alte Ansatz verlässt `belegt`."""
+    k1 = _kante((86.0, 204.4), (86.0, 204.4), ((87.6, 204.4), 2.0))
+    k2 = _kante((161.0, 204.4), (161.0, 204.4), ((162.6, 204.4), 2.0))
+    belegt: list = []
+
+    def einhaengen(k, meld=None):
+        ansatz = (k.kreis[0][0] + 1.4, k.kreis[0][1] + 1.4)
+        belegt.append(ansatz)
+        return _AnnLage(), ansatz
+
+    ann, anker = einhaengen(k1)
+    a = an.Anmerkung("rauheit", "st", ("Ra 0,8",), ann, "haupt", anker, (0, 0, 1, 1), (20.0, 10.0), (0.0, 0.0),
+                     orte=[k1, k2], einhaengen=einhaengen, belegt=belegt)
+    an.anmerkungen_legen([a], [])
+    beste = a.stand()
+    assert beste == (a.soll, k1)
+    drw = _Drw(_View())
+    drw.Extension.DeleteSelection2 = lambda o: True
+    hinweis = type("H", (), {"merkmal": "st", "kreis": ((87.6, 204.4), 2.0), "rechteck": lambda s: None})()
+    an.instanzen_umhaengen(drw, [a], [hinweis])                        # Angabe an k1 → Rauheit an k2
+    assert a.instanz() is k2 and belegt == [(164.0, 205.8)]
+    a.fixiert = beste
+    an.instanzen_umhaengen(drw, [a], [])
+    an.anmerkungen_legen([a], [])
+    assert a.instanz() is k1 and a.soll == beste[0] and belegt == [(89.0, 205.8)]
+
+
+# Schnitt A-A der SpannplatteZ (Live 28.11., dump): Platte 75–175 × 122,56–132,56, Taschen von unten bis 128,56
+_SCHNITT = [((75.06, 122.56), (75.06, 132.56)), ((75.06, 132.56), (175.06, 132.56)), ((175.06, 132.56), (175.06, 122.56)),
+            ((175.06, 122.56), (165.06, 122.56)), ((165.06, 122.56), (165.06, 128.56)),
+            ((165.06, 128.56), (140.06, 128.56)), ((140.06, 128.56), (140.06, 122.56)),
+            ((140.06, 122.56), (110.06, 122.56)), ((110.06, 122.56), (110.06, 128.56)),
+            ((110.06, 128.56), (85.06, 128.56)), ((85.06, 128.56), (85.06, 122.56)), ((85.06, 122.56), (75.06, 122.56))]
+_RAND_T1 = _kante((87.06, 122.56), (108.06, 122.56), features=["f1", "t1"])  # Rand der Taschenöffnung, hinter dem Schnitt
+_UMRISS = (75.06, 122.56, 175.06, 132.56)
+_VON_RECHTS_UNTEN = (129.15, 105.0)  # Rauheit (23,5 × 10, Versatz 9,15/5): Spitze (120, 100), Linie unter 128° zum Boden
+
+
+def test_hinweislinie_durch_kontur_und_schraffur_zaehlt():
+    """(c): Ebenheit an der Unterseite – nach oben kreuzt die Linie die Oberkante und läuft durch die Schraffur, nach
+    unten ist sie frei."""
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), None, "drauf", (124.9, 122.56), _UMRISS, (16.0, 7.0), (8.0, -3.5),
+                     kante=((110.06, 122.56), (140.06, 122.56)), schraffur=_SCHNITT)
+    oben, unten = (120.0, 145.0), (140.0, 105.0)
+    assert a.verstoesse(oben, kanten=_SCHNITT) == {an.V_KANTE: 1, an.V_SCHRAFFUR: 1, an.V_SYMBOL: 1}  # Ecke
+    assert a.verstoesse(unten, kanten=_SCHNITT) == {}
+    assert a.kandidaten(kanten=_SCHNITT)[0][1] < 122.56
+
+
+def test_taschenboden_von_unten_durch_die_oeffnung():
+    """(c): Ra am Taschenboden – von unten über den Rand der eigenen Öffnung zählt nicht, von oben Kante und
+    Schraffur."""
+    boden = _kante((110.06, 128.56), (85.06, 128.56), features=["t1"])
+    offen = an.offene_kanten([boden, _RAND_T1], {"t1"}, _SCHNITT)
+    assert offen == [_RAND_T1]
+    a = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), None, "drauf", (97.5, 128.56), _UMRISS, (23.5, 10.0), (9.15, 5.0),
+                     kante=(boden.a, boden.e), schraffur=_SCHNITT, offen=offen)
+    kanten = _SCHNITT + [(_RAND_T1.a, _RAND_T1.e)]
+    assert a.bewerten(_VON_RECHTS_UNTEN, kanten=kanten) == 0
+    assert a.verstoesse((110.0, 145.0), kanten=kanten) == {an.V_KANTE: 1, an.V_SCHRAFFUR: 1}
+
+
+def test_rauheit_hinweislinie_durch_das_eigene_symbol():
+    """Live 28.11.: Ra 1,6 von unten – kommt die Linie von oben an die Spitze, läuft sie durch Dreieck und Text."""
+    a = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), None, "drauf", (97.5, 128.56), _UMRISS, (23.5, 10.0), (9.15, 5.0))
+    assert a.verstoesse((80.0, 105.0)) == {an.V_SYMBOL: 1}            # Spitze links unten, Linie von rechts oben
+    assert a.verstoesse(_VON_RECHTS_UNTEN) == {}                       # Spitze rechts unten, Linie von links oben
+
+
+def test_bezug_auf_der_verlaengerung():
+    """(b), ISO 5459: Bezug B an der linken Kante des Schnitts – daneben kreuzt jede Lage das 12,00; frei ist der Kasten
+    auf der Verlängerung über oder unter dem Teil (Spike Stufe 4 i: SolidWorks zieht die Verlängerung selbst)."""
+    a = an.Anmerkung("bezug", "f1", ("B",), None, "drauf", (75.06, 127.56), _UMRISS, (7.0, 7.0), (0.0, 0.0),
+                     kante=((75.06, 122.56), (75.06, 132.56)))
+    masslinien = [((64.12, 106.84), (64.12, 134.91)), ((109.06, 122.56), (63.12, 122.56)),
+                  ((109.06, 128.56), (63.12, 128.56))]
+    lagen = a.kandidaten(kanten=_SCHNITT, masslinien=masslinien, hindernisse=masslinien)
+    beste = lagen[0]
+    assert a.bewerten(beste, hindernisse=masslinien, kanten=_SCHNITT, masslinien=masslinien) == 0
+    fuss = a.fusspunkt(beste)
+    assert fuss[0] == pytest.approx(75.06) and not 122.56 <= fuss[1] <= 132.56
+    assert a.verlaengerung(beste) is not None and a.verlaengerung(beste)[1] == pytest.approx(fuss)
+    assert all(a.bewerten(lage, hindernisse=masslinien, kanten=_SCHNITT, masslinien=masslinien) > 0
+               for lage in lagen if 122.56 <= a.fusspunkt(lage)[1] <= 132.56)
+
+
+def test_kreuzung_nach_der_letzten_runde_gemeldet():
+    """(a): Was nach der letzten Runde kreuzt, steht als ANMERKUNG_KREUZT da (Lage zurückgelesen, gegen die anderen)."""
+    a = an.Anmerkung("bezug", "f1", ("B",), None, "drauf", (75.06, 127.56), _UMRISS, (7.0, 7.0), (0.0, 0.0),
+                     kante=((75.06, 122.56), (75.06, 132.56)), lage=(56.56, 127.56))
+    b = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), None, "drauf", (97.5, 128.56), _UMRISS, (23.5, 10.0), (9.15, 5.0),
+                     lage=_VON_RECHTS_UNTEN)
+    masslinien = [((64.12, 106.84), (64.12, 134.91))]
+    assert an.anmerkungen_pruefen([a, b], masslinien=masslinien) == [
+        "ANMERKUNG_KREUZT: f1 bezug „B“ – Maßlinie (1)"]
+
+
+def test_hinweis_haelt_abstand_zu_masszahl():
+    """Punkt 4: „2 × Ø8 H7 Ⓔ –“ endete 0,6 mm vor „16,00“ – in Zeilenrichtung zählt erst eine Schrifthöhe Abstand
+    als frei, quer dazu 1 mm."""
+    from swki.zeichnung.angaben import hinweis_lagen_bewertet
+
+    kreis, umriss, groesse = ((100.0, 100.0), 2.0), (0.0, 0.0, 101.0, 101.0), (30.0, 6.0)
+    lage = next(l for w, l in hinweis_lagen_bewertet(kreis, umriss, [], groesse) if w[2] == 0)
+
+    def zahl(x0, y0):
+        return z._rechteck_strecken((x0, y0, x0 + 14.0, y0 + 4.0))
+
+    def wert(nah):
+        return next(w for w, l in hinweis_lagen_bewertet(kreis, umriss, [], groesse, nah) if l == lage)[0]
+
+    rechts, oben = lage[0] + groesse[0] / 2, lage[1] + groesse[1] / 2
+    assert wert(zahl(rechts + 0.6, lage[1] - 2.0)) == 1
+    assert wert(zahl(rechts + 4.0, lage[1] - 2.0)) == 0
+    assert wert(zahl(lage[0] - 7.0, oben + 0.6)) == 1                  # darüber, 0,6 mm
+    assert wert(zahl(lage[0] - 7.0, oben + 1.5)) == 0
+
+
+def test_orte_der_flaeche_im_schnitt():
+    """(b): Die Unterseite zeigt sich im Schnitt dreimal (links, zwischen, rechts der Taschen); der Rand der
+    Taschenöffnung hinter dem Schnitt gehört nicht dazu."""
+    def kante(a, e, features):
+        return an.Kante(object(), a, e, (a[0], 0.0, a[1]), (e[0], 0.0, e[1]), None, set(features))
+
+    mitte = kante((110.06, 122.56), (140.06, 122.56), ["Schnitt1", "f1"])
+    links = kante((75.06, 122.56), (85.06, 122.56), ["Schnitt1", "f1"])
+    rechts = kante((165.06, 122.56), (175.06, 122.56), ["Schnitt1", "f1"])
+    rand = kante((87.06, 122.56), (108.06, 122.56), ["f1", "t1"])
+    oben = kante((75.06, 132.56), (175.06, 132.56), ["Schnitt1", "f1"])
+    orte = an.orte_der_flaeche([oben, links, rand, mitte, rechts], mitte, {"f1"}, 2, -1, _SCHNITT)
+    assert orte[0] is mitte and set(map(id, orte[1:])) == {id(links), id(rechts)}
+
+
+def test_hilfslinie_auf_der_kante_zaehlt_als_kante():
+    """Die Hilfslinie des 12,00 liegt auf dem Rand der Taschenöffnung: wo die Hinweislinie über die (erlaubte) Öffnung
+    läuft, zählt sie nicht zusätzlich als Maßlinie."""
+    boden = _kante((110.06, 128.56), (85.06, 128.56), features=["t1"])
+    a = an.Anmerkung("rauheit", "t1", ("Ra 1,6",), None, "drauf", (97.5, 128.56), _UMRISS, (23.5, 10.0), (9.15, 5.0),
+                     kante=(boden.a, boden.e), schraffur=_SCHNITT, offen=[_RAND_T1])
+    kanten = _SCHNITT + [(_RAND_T1.a, _RAND_T1.e)]
+    hilfslinie = [((109.06, 122.56), (63.12, 122.56))]
+    assert a.verstoesse(_VON_RECHTS_UNTEN, kanten=kanten, masslinien=hilfslinie) == {}
+    assert a.verstoesse(_VON_RECHTS_UNTEN, masslinien=hilfslinie) == {an.V_MASSLINIE: 1}
+
+
+def test_fremder_text_gleichen_wortlauts_bleibt_fremd():
+    """Bezug „A“ machte die Kennbuchstaben „A“ der Schnittlinie unsichtbar: eigen ist ein Text nur nahe seiner
+    Anmerkung."""
+    a = an.Anmerkung("bezug", "f1", ("A",), None, "drauf", (125.0, 132.6), _UMRISS, (7.0, 7.0), (0.0, 0.0),
+                     kante=((75.06, 132.56), (175.06, 132.56)), lage=(125.06, 142.06))
+    nah, fern = (123.6, 139.0, 126.5, 145.0), (186.5, 227.6, 192.8, 239.2)
+    assert z._fremde_texte([("A", nah), ("A", fern), ("20,00", (58.1, 228.7, 64.5, 242.9))], [a]) == [
+        fern, (58.1, 228.7, 64.5, 242.9)]
+
+
+def test_umriss_ohne_eckpunkte():
+    """Eckpunkte landen live neben der Ansicht (IVertex.GetPoint): der Umriss zählt nur Kanten."""
+    kanten = [_kante((75.0, 122.5), (175.0, 122.5)), _kante((75.0, 132.5), (175.0, 132.5)),
+              _kante((137.6, 68.8), (137.6, 68.8), punkt=True)]
+    assert an._umriss(kanten) == (75.0, 122.5, 175.0, 132.5)
+
+
+def test_zu_nah_am_pdf_rechteck():
+    """Punkt 4, Endprüfung: „2 × Ø8 H7 E –“ (187,3–221,4) gegen „16,00“ (221,2–235,4) – zu nah; 4 mm weiter frei."""
+    hinweis = (187.3, 181.6, 221.4, 188.1)
+    assert z.zu_nah(hinweis, z._rechteck_strecken((221.2, 183.1, 235.4, 189.5))) > 0
+    assert z.zu_nah(hinweis, z._rechteck_strecken((225.0, 183.1, 239.2, 189.5))) == 0
+
+
+def test_hinweislinie_auf_der_kante_und_durch_das_massende_zaehlt():
+    """Live 28.11.: Der Rahmen hing links an der Unterseite, seine Hinweislinie lag auf Unterkante und Hilfslinie und
+    lief genau durch das Ende der Maßlinie 12,00 – das ist kein freier Weg."""
+    links = ((75.06, 122.56), (85.06, 122.56))
+    a = an.Anmerkung("form_lage", "f1", ("0,02",), None, "drauf", (79.0, 122.56), _UMRISS, (16.0, 7.0), (8.0, -3.5),
+                     kante=links)
+    lage = (47.0, 122.56)                                              # Rahmen links, Hinweislinie waagrecht
+    masslinien = [((64.12, 106.84), (64.12, 122.56)), ((109.06, 122.56), (63.12, 122.56))]
+    v = a.verstoesse(lage, kanten=_SCHNITT, masslinien=masslinien)
+    assert v.get(an.V_MASSLINIE, 0) >= 1 and v.get(an.V_KANTE, 0) >= 1
+
+
+def test_rahmen_hinweislinie_durch_das_eigene_rechteck():
+    """Live 28.11.: Die Hinweislinie des Rahmens lief von oben rechts zur linken Schmalseite durch „2 ×“."""
+    a = an.Anmerkung("form_lage", "t1", ("0,05 A", "2 ×"), None, "drauf", (145.0, 128.56), _UMRISS, (26.0, 12.5),
+                     (13.0, 6.25 - 7.0))
+    assert a.verstoesse((150.0, 90.0)) == {an.V_SYMBOL: 1}            # Anker über dem Rahmen, Linie zur linken Seite
+    assert a.verstoesse((185.0, 90.0)) == {}                           # Rahmen rechts unten, Linie zur linken Seite
